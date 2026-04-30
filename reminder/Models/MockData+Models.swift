@@ -19,6 +19,8 @@ extension FamilyMember {
             phoneNumber: "13800138000",
             avatarEmoji: "👨",
             notificationsEnabled: true,
+            inviteToken: "invite-father-demo",
+            bindingStatus: .linked,
             createdAt: .mockISO("2026-04-01T08:00:00.000Z"),
             updatedAt: .mockISO("2026-04-27T08:30:00.000Z")
         ),
@@ -31,6 +33,8 @@ extension FamilyMember {
             phoneNumber: "13900139000",
             avatarEmoji: "👩",
             notificationsEnabled: true,
+            inviteToken: "invite-mother-demo",
+            bindingStatus: .linked,
             createdAt: .mockISO("2026-04-01T08:00:00.000Z"),
             updatedAt: .mockISO("2026-04-27T08:32:00.000Z")
         ),
@@ -43,6 +47,8 @@ extension FamilyMember {
             phoneNumber: "13700137000",
             avatarEmoji: "👵",
             notificationsEnabled: true,
+            inviteToken: "invite-grandma-demo",
+            bindingStatus: .linked,
             createdAt: .mockISO("2026-04-05T09:20:00.000Z"),
             updatedAt: .mockISO("2026-04-27T07:45:00.000Z")
         ),
@@ -55,6 +61,8 @@ extension FamilyMember {
             phoneNumber: "13600136000",
             avatarEmoji: "🧑",
             notificationsEnabled: false,
+            inviteToken: "invite-caregiver-demo",
+            bindingStatus: .pending,
             createdAt: .mockISO("2026-04-10T03:10:00.000Z"),
             updatedAt: .mockISO("2026-04-27T07:50:00.000Z")
         )

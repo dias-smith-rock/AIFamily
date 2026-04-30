@@ -11,6 +11,7 @@ import SwiftData
 @main
 struct reminderApp: App {
     @StateObject private var appBootstrap = AppBootstrap()
+    @StateObject private var appRouter = AppRouter()
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -28,6 +29,7 @@ struct reminderApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(appRouter)
                 .environmentObject(appBootstrap)
                 .environmentObject(appBootstrap.viewModelFactory)
         }

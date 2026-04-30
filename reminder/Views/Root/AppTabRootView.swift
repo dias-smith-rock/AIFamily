@@ -13,7 +13,9 @@ struct AppTabRootView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             TabView(selection: $selectedTab) {
-                ScheduleView()
+                ScheduleView(onRequestAIInput: {
+                    showsAssistant = true
+                })
                     .tabItem {
                         Label("日程表", systemImage: "calendar")
                     }

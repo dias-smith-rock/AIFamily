@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AssistantSheetView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var inputText = ""
+    @StateObject private var viewModel = AppViewModels.makeAssistantViewModel()
 
     var body: some View {
         NavigationStack {
@@ -11,6 +11,7 @@ struct AssistantSheetView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
                         aiHintCard
+                        stateContent
                         Spacer(minLength: 360)
                     }
                     .padding(.horizontal, 16)
@@ -88,12 +89,48 @@ struct AssistantSheetView: View {
         )
     }
 
+    @ViewBuilder
+    private var stateContent: some View {
+        switch viewModel.state {
+        case .idle:
+            EmptyView()
+        case .parsing:
+            ProgressView("正在解析任务...")
+                .padding(12)
+        case let .preview(draft):
+            TaskPreviewCard(
+                draft: draft,
+                onConfirm: {
+                    await viewModel.confirmSend(assigneeId: FamilyMember.mockMembers.first?.id ?? UUID())
+                },
+                onCorrection: { correction in
+                    await viewModel.applyNaturalLanguageCorrection(correction)
+                }
+            )
+        case .sending:
+            ProgressView("正在写入任务...")
+                .padding(12)
+        case let .sent(task):
+            ContentUnavailableView(
+                "已发送：\(task.title)",
+                systemImage: "checkmark.circle.fill",
+                description: Text("任务已写入日程，可返回查看。")
+            )
+        case let .failed(message):
+            ContentUnavailableView(
+                "解析失败",
+                systemImage: "exclamationmark.triangle",
+                description: Text(message)
+            )
+        }
+    }
+
     private var composer: some View {
         HStack(spacing: 8) {
             iconButton("photo.badge.plus")
             iconButton("mic")
 
-            TextField("粘贴通知或说出需求", text: $inputText)
+            TextField("粘贴通知或说出需求", text: $viewModel.inputText)
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 11)
@@ -101,6 +138,9 @@ struct AssistantSheetView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Button {
+                _Concurrency.Task {
+                    await viewModel.parseInput()
+                }
             } label: {
                 Image(systemName: "paperplane.fill")
                     .foregroundStyle(.white)
@@ -126,6 +166,49 @@ struct AssistantSheetView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 10))
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct TaskPreviewCard: View {
+    let draft: TaskDraft
+    let onConfirm: () async -> Void
+    let onCorrection: (String) async -> Void
+    @State private var correction = ""
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("任务确认预检卡片")
+                .font(.system(size: 16, weight: .bold))
+            Label(draft.title, systemImage: "checklist")
+            Label(draft.scheduledAt.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+            if let location = draft.location {
+                Label(location, systemImage: "location")
+            }
+            if let childName = draft.childName {
+                Label(childName, systemImage: "person")
+            }
+            TextField("自然语言修正：例如“时间改成明天下午”", text: $correction)
+                .textFieldStyle(.roundedBorder)
+            HStack {
+                Button("应用修正") {
+                    _Concurrency.Task {
+                        await onCorrection(correction)
+                    }
+                }
+                .buttonStyle(.bordered)
+
+                Button("确认发送") {
+                    _Concurrency.Task {
+                        await onConfirm()
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 }
 

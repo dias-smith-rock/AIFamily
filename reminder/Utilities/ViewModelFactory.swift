@@ -14,11 +14,34 @@ final class ViewModelFactory: ObservableObject {
     }
 
     func makeFeedbackFeedViewModel() -> FeedbackFeedViewModel {
-        FeedbackFeedViewModel(feedbackService: services.feedbackService)
+        FeedbackFeedViewModel(
+            feedbackService: services.feedbackService,
+            voiceStorageService: services.voiceStorageService,
+            feedbackRealtimeService: services.feedbackRealtimeService
+        )
     }
 
     func makeFamilyViewModel() -> FamilyViewModel {
-        FamilyViewModel(familyMemberService: services.familyMemberService)
+        FamilyViewModel(
+            familyMemberService: services.familyMemberService,
+            inviteLinkService: services.inviteLinkService,
+            authService: services.authService
+        )
+    }
+
+    func makeAssistantViewModel() -> AssistantViewModel {
+        AssistantViewModel(
+            taskService: services.taskService,
+            parser: RuleBasedAIParserService()
+        )
+    }
+
+    func makeAuthViewModel() -> AuthViewModel {
+        AuthViewModel(authService: services.authService)
+    }
+
+    func makeOrgRoutingViewModel() -> OrgRoutingViewModel {
+        OrgRoutingViewModel(householdRoutingService: services.householdRoutingService)
     }
 }
 
@@ -40,6 +63,18 @@ enum AppViewModels {
 
     static func makeFamilyViewModel() -> FamilyViewModel {
         factory.makeFamilyViewModel()
+    }
+
+    static func makeAssistantViewModel() -> AssistantViewModel {
+        factory.makeAssistantViewModel()
+    }
+
+    static func makeAuthViewModel() -> AuthViewModel {
+        factory.makeAuthViewModel()
+    }
+
+    static func makeOrgRoutingViewModel() -> OrgRoutingViewModel {
+        factory.makeOrgRoutingViewModel()
     }
 }
 

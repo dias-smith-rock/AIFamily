@@ -6,6 +6,11 @@ struct ScheduleView: View {
     @State private var anchorDate = Date.mockISO("2026-04-27T00:00:00.000Z")
     @State private var monthSheetDate: Date?
     @State private var showsMonthSheet = false
+    let onRequestAIInput: () -> Void
+
+    init(onRequestAIInput: @escaping () -> Void = {}) {
+        self.onRequestAIInput = onRequestAIInput
+    }
 
     enum SchedulePeriod: String, CaseIterable, Identifiable {
         case day = "日"
@@ -132,6 +137,25 @@ struct ScheduleView: View {
 
     @ViewBuilder
     private var contentByPeriod: some View {
+        if viewModel.isLoading {
+            ProgressView("正在加载任务...")
+                .frame(maxWidth: .infinity, minHeight: 220)
+        } else if let errorMessage = viewModel.errorMessage {
+            ContentUnavailableView {
+                Label("加载失败", systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(errorMessage)
+            } actions: {
+                Button("重新加载") {
+                    _Concurrency.Task {
+                        await viewModel.loadTasks()
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 220)
+        } else if filteredTasks.isEmpty {
+            emptyStateView
+        } else {
         switch period {
         case .day:
             taskList(tasks: filteredTasks)
@@ -142,6 +166,23 @@ struct ScheduleView: View {
         case .year:
             yearView
         }
+        }
+    }
+
+    private var emptyStateView: some View {
+        EmptyStateView(
+            systemImage: "calendar.badge.exclamationmark",
+            title: "暂无任务",
+            message: "当前时间范围还没有任务，试试让 AI 快速生成一条提醒。",
+            primaryActionTitle: "让 AI 帮我创建",
+            primaryAction: onRequestAIInput,
+            secondaryActionTitle: "重新加载",
+            secondaryAction: {
+                _Concurrency.Task {
+                    await viewModel.loadTasks()
+                }
+            }
+        )
     }
 
     private func taskList(tasks: [Task]) -> some View {

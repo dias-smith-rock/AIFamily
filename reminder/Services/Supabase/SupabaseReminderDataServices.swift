@@ -24,10 +24,9 @@ struct SupabaseTaskDataService: TaskDataService {
         let response: [Task] = try await provider.client
             .from(SupabaseTable.tasks)
             .select()
-            .order("scheduled_at", ascending: true)
             .execute()
             .value
-        return response
+        return response.sorted { $0.scheduledAt < $1.scheduledAt }
         #else
         throw SupabaseServiceError.sdkUnavailable
         #endif
@@ -35,14 +34,25 @@ struct SupabaseTaskDataService: TaskDataService {
 
     func createTask(_ task: Task) async throws -> Task {
         #if canImport(Supabase)
-        let response: Task = try await provider.client
-            .from(SupabaseTable.tasks)
-            .insert(task)
-            .select()
-            .single()
-            .execute()
-            .value
-        return response
+        do {
+            let response: Task = try await provider.client
+                .from(SupabaseTable.tasks)
+                .insert(task)
+                .select()
+                .single()
+                .execute()
+                .value
+            return response
+        } catch {
+            let response: Task = try await provider.client
+                .from(SupabaseTable.tasks)
+                .insert(task.asCamelPayload)
+                .select()
+                .single()
+                .execute()
+                .value
+            return response
+        }
         #else
         _ = task
         throw SupabaseServiceError.sdkUnavailable
@@ -51,19 +61,67 @@ struct SupabaseTaskDataService: TaskDataService {
 
     func updateTask(_ task: Task) async throws -> Task {
         #if canImport(Supabase)
-        let response: Task = try await provider.client
-            .from(SupabaseTable.tasks)
-            .update(task)
-            .eq("id", value: task.id.uuidString)
-            .select()
-            .single()
-            .execute()
-            .value
-        return response
+        do {
+            let response: Task = try await provider.client
+                .from(SupabaseTable.tasks)
+                .update(task)
+                .eq("id", value: task.id.uuidString)
+                .select()
+                .single()
+                .execute()
+                .value
+            return response
+        } catch {
+            let response: Task = try await provider.client
+                .from(SupabaseTable.tasks)
+                .update(task.asCamelPayload)
+                .eq("id", value: task.id.uuidString)
+                .select()
+                .single()
+                .execute()
+                .value
+            return response
+        }
         #else
         _ = task
         throw SupabaseServiceError.sdkUnavailable
         #endif
+    }
+}
+
+private extension Task {
+    var asCamelPayload: CamelPayload {
+        CamelPayload(
+            id: id,
+            title: title,
+            note: note,
+            scheduledAt: scheduledAt,
+            dueAt: dueAt,
+            location: location,
+            assigneeId: assigneeId,
+            childName: childName,
+            status: status.rawValue,
+            priority: priority.rawValue,
+            source: source.rawValue,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+    }
+
+    struct CamelPayload: Encodable {
+        let id: UUID
+        let title: String
+        let note: String?
+        let scheduledAt: Date
+        let dueAt: Date?
+        let location: String?
+        let assigneeId: UUID
+        let childName: String?
+        let status: String
+        let priority: String
+        let source: String
+        let createdAt: Date
+        let updatedAt: Date
     }
 }
 
@@ -77,17 +135,24 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
 
     func fetchFeedbacks(for taskId: UUID?) async throws -> [Feedback] {
         #if canImport(Supabase)
-        var query = provider.client
-            .from(SupabaseTable.feedbacks)
-            .select()
-            .order("created_at", ascending: false)
-
         if let taskId {
-            query = query.eq("task_id", value: taskId.uuidString)
+            let response: [Feedback] = try await provider.client
+                .from(SupabaseTable.feedbacks)
+                .select()
+                .eq("task_id", value: taskId.uuidString)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return response
+        } else {
+            let response: [Feedback] = try await provider.client
+                .from(SupabaseTable.feedbacks)
+                .select()
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            return response
         }
-
-        let response: [Feedback] = try await query.execute().value
-        return response
         #else
         _ = taskId
         throw SupabaseServiceError.sdkUnavailable

@@ -6,17 +6,21 @@ import Supabase
 
 final class SupabaseManager {
     static let shared = SupabaseManager()
+    static let publishableKey = "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
+    static let projectURLString = "https://dirgcwziayipwvwztjbb.supabase.co"
+
+    static let projectBaseURL: URL = {
+        guard let url = URL(string: projectURLString) else {
+            preconditionFailure("Invalid Supabase project base URL.")
+        }
+        return url
+    }()
 
     private init() {}
 
     #if canImport(Supabase)
-    private enum Constants {
-        static let urlString = "https://dirgcwziayipwvwztjbb.supabase.co/rest/v1/"
-        static let publishableKey = "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
-    }
-
     private static let configuredURL: URL = {
-        guard let url = URL(string: Constants.urlString) else {
+        guard let url = URL(string: projectURLString) else {
             preconditionFailure("Invalid Supabase URL in SupabaseManager.")
         }
         return url
@@ -24,7 +28,7 @@ final class SupabaseManager {
 
     let client = SupabaseClient(
         supabaseURL: configuredURL,
-        supabaseKey: Constants.publishableKey
+        supabaseKey: publishableKey
     )
 
     /// Connectivity smoke test for Supabase.

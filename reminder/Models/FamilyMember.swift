@@ -9,6 +9,8 @@ struct FamilyMember: Identifiable, Codable, Equatable {
     var phoneNumber: String?
     var avatarEmoji: String?
     var notificationsEnabled: Bool
+    var inviteToken: String?
+    var bindingStatus: BindingStatus
     var createdAt: Date
     var updatedAt: Date
 
@@ -34,6 +36,12 @@ struct FamilyMember: Identifiable, Codable, Equatable {
         case sms
     }
 
+    enum BindingStatus: String, Codable {
+        case pending
+        case linked
+        case disabled
+    }
+
     enum CodingKeys: String, CodingKey {
         case id
         case displayName = "display_name"
@@ -43,6 +51,8 @@ struct FamilyMember: Identifiable, Codable, Equatable {
         case phoneNumber = "phone_number"
         case avatarEmoji = "avatar_emoji"
         case notificationsEnabled = "notifications_enabled"
+        case inviteToken = "invite_token"
+        case bindingStatus = "binding_status"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
