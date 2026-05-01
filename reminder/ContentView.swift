@@ -9,7 +9,7 @@ struct ContentView: View {
             switch appRouter.appState {
             case .unauthenticated:
                 LoginView()
-            case .noHousehold:
+            case .orgRouting:
                 OrgRoutingView()
             case .pendingApproval:
                 PendingView()

@@ -9,7 +9,7 @@ import Supabase
 final class AppRouter: ObservableObject {
     enum AppState: Equatable {
         case unauthenticated
-        case noHousehold
+        case orgRouting
         case pendingApproval
         case activeMember
     }
@@ -24,20 +24,19 @@ final class AppRouter: ObservableObject {
             let membership = try await fetchMembership(client: client, userId: session.user.id)
 
             guard let membership else {
-                appState = .noHousehold
+                appState = .orgRouting
                 return
             }
 
-            if membership.status == "invited" {
+            let normalizedStatus = membership.status.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            switch normalizedStatus {
+            case "active":
+                appState = .activeMember
+            case "invited", "pending":
                 appState = .pendingApproval
-                return
+            default:
+                appState = .orgRouting
             }
-
-            let hasPendingBinding = try await hasPendingBindingMember(
-                client: client,
-                householdId: membership.householdId
-            )
-            appState = hasPendingBinding ? .pendingApproval : .activeMember
         } catch {
             appState = .unauthenticated
         }
@@ -46,8 +45,8 @@ final class AppRouter: ObservableObject {
         #endif
     }
 
-    func goToNoHousehold() {
-        appState = .noHousehold
+    func goToOrgRouting() {
+        appState = .orgRouting
     }
 
     func goToPendingApproval() {
@@ -69,14 +68,6 @@ final class AppRouter: ObservableObject {
         }
     }
 
-    private struct BindingRow: Decodable {
-        let bindingStatus: String
-
-        enum CodingKeys: String, CodingKey {
-            case bindingStatus = "binding_status"
-        }
-    }
-
     private func fetchMembership(client: SupabaseClient, userId: UUID) async throws -> MembershipRow? {
         let rows: [MembershipRow] = try await client
             .from("household_memberships")
@@ -87,17 +78,6 @@ final class AppRouter: ObservableObject {
             .execute()
             .value
         return rows.first
-    }
-
-    private func hasPendingBindingMember(client: SupabaseClient, householdId: UUID) async throws -> Bool {
-        let rows: [BindingRow] = try await client
-            .from("family_members")
-            .select("binding_status")
-            .eq("household_id", value: householdId.uuidString)
-            .limit(20)
-            .execute()
-            .value
-        return rows.contains { $0.bindingStatus == "pending" }
     }
     #endif
 }

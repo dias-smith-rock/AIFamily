@@ -1,8 +1,12 @@
 import SwiftUI
+#if canImport(Supabase)
+import Supabase
+#endif
 
 struct LoginView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @State private var loadingProvider: LoginProvider?
+    @State private var errorMessage: String?
 
     private enum LoginProvider {
         case apple
@@ -22,6 +26,9 @@ struct LoginView: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
+        .onOpenURL { url in
+            handleAuthCallback(url)
+        }
     }
 
     private var brandSection: some View {
@@ -57,6 +64,14 @@ struct LoginView: View {
                 foreground: .white,
                 border: .white.opacity(0.25)
             )
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.red.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 8)
+            }
         }
     }
 
@@ -108,12 +123,49 @@ struct LoginView: View {
     }
 
     private func triggerLogin(_ provider: LoginProvider) {
+        errorMessage = nil
         loadingProvider = provider
         _Concurrency.Task {
-            try? await _Concurrency.Task.sleep(nanoseconds: 1_000_000_000)
-            await appRouter.refreshStateFromBackend()
+            do {
+                try await signInWithOAuth(provider: provider)
+                await appRouter.refreshStateFromBackend()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
             loadingProvider = nil
         }
+    }
+
+    private func signInWithOAuth(provider: LoginProvider) async throws {
+        #if canImport(Supabase)
+        let redirectURL = URL(string: "aifamily://auth-callback")
+        try await SupabaseManager.shared.client.auth.signInWithOAuth(
+            provider: provider == .google ? .google : .apple,
+            redirectTo: redirectURL
+        )
+        #else
+        _ = provider
+        throw NSError(
+            domain: "LoginView",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "当前构建环境未包含 Supabase SDK。"]
+        )
+        #endif
+    }
+
+    private func handleAuthCallback(_ url: URL) {
+        #if canImport(Supabase)
+        _Concurrency.Task {
+            do {
+                _ = try await SupabaseManager.shared.client.auth.session(from: url)
+                await appRouter.refreshStateFromBackend()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+        #else
+        _ = url
+        #endif
     }
 }
 

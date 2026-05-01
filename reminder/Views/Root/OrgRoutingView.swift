@@ -9,6 +9,7 @@ struct OrgRoutingView: View {
     @State private var detectedInviteCode = ""
     @State private var showClipboardPrompt = false
     @State private var showErrorAlert = false
+    @State private var showCreateNameHint = false
     @FocusState private var focusedField: InputField?
 
     private enum InputField: Hashable {
@@ -74,10 +75,21 @@ struct OrgRoutingView: View {
             TextField("请输入家庭名称（如：小明一家）", text: $householdName)
                 .autocorrectionDisabled(true)
                 .focused($focusedField, equals: .householdName)
+                .onChange(of: householdName) { _, newValue in
+                    if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+                        showCreateNameHint = false
+                    }
+                }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 12)
                 .background(Color(.systemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+
+            if showCreateNameHint {
+                Text("请先输入家庭名称，再创建家庭。")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
 
             Button {
                 submitCreate()
@@ -88,7 +100,7 @@ struct OrgRoutingView: View {
                 )
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isCreating || viewModel.isJoining || normalizedHouseholdName.isEmpty)
+            .disabled(viewModel.isCreating || viewModel.isJoining)
         }
         .padding(14)
         .background(Color(.secondarySystemGroupedBackground))
@@ -176,6 +188,11 @@ struct OrgRoutingView: View {
     }
 
     private func submitCreate() {
+        guard normalizedHouseholdName.isEmpty == false else {
+            showCreateNameHint = true
+            focusedField = .householdName
+            return
+        }
         _Concurrency.Task {
             let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
             guard success else { return }
