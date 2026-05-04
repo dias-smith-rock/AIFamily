@@ -8,24 +8,44 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
 
     private let taskService: TaskDataService
+    private var currentHouseholdId: UUID?
 
     init(taskService: TaskDataService) {
         self.taskService = taskService
     }
 
+    func setHouseholdContext(_ householdId: UUID?) {
+        currentHouseholdId = householdId
+    }
+
     func loadTasks() async {
+        guard let householdId = currentHouseholdId else {
+            tasks = []
+            errorMessage = "当前未选择家庭。"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            tasks = try await taskService.fetchTasks()
+            tasks = try await taskService.fetchTasks(in: householdId)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
     func createTask(_ task: FamilyTask) async {
+        guard let householdId = currentHouseholdId else {
+            errorMessage = "当前未选择家庭。"
+            return
+        }
+        guard task.householdId == householdId else {
+            errorMessage = "任务写入失败：家庭上下文不一致。"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }

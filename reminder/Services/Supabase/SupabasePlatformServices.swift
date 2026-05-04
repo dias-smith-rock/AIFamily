@@ -34,12 +34,17 @@ protocol InviteLinkService {
 protocol HouseholdRoutingService {
     func createHousehold(displayName: String) async throws
     func joinHousehold(inviteCode: String) async throws
+    func renameHousehold(householdId: UUID, newName: String) async throws
 }
 
 enum HouseholdRoutingError: LocalizedError {
     case invalidHouseholdName
+    case householdNameTaken
     case invalidInviteCode
     case unauthenticated
+    case forbidden
+    case householdNotFound
+    case backendMigrationRequired
     case alreadyActiveMember
     case joinRequestPending
     case nonceExpired
@@ -246,39 +251,26 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw HouseholdRoutingError.invalidHouseholdName
         }
 
-        let session: Session
         do {
-            session = try await provider.client.auth.session
+            let rows: [CreatedHouseholdByRPCRow] = try await provider.client
+                .rpc("create_household_with_creator", params: ["p_name": normalizedName])
+                .execute()
+                .value
+            guard rows.first != nil else {
+                throw SupabaseServiceError.invalidResponse
+            }
         } catch {
-            throw HouseholdRoutingError.unauthenticated
+            if isUnauthenticatedError(error) {
+                throw HouseholdRoutingError.unauthenticated
+            }
+            if isHouseholdNameTakenError(error) {
+                throw HouseholdRoutingError.householdNameTaken
+            }
+            if isMissingCreateHouseholdRPCError(error) {
+                throw HouseholdRoutingError.backendMigrationRequired
+            }
+            throw error
         }
-        let userId = session.user.id
-
-        let households: [CreatedHouseholdRow] = try await provider.client
-            .from("households")
-            .insert(NewHouseholdRow(name: normalizedName, creatorId: userId))
-            .select("id")
-            .limit(1)
-            .execute()
-            .value
-
-        guard let householdId = households.first?.id else {
-            throw SupabaseServiceError.invalidResponse
-        }
-
-        let nickname = session.user.email ?? "管理员"
-
-        _ = try await provider.client
-            .from("household_memberships")
-            .insert(NewMembershipRow(
-                householdId: householdId,
-                userId: userId,
-                role: MembershipRole.creator.rawValue,
-                nickname: nickname,
-                contactMethod: ContactMethod.appPush.rawValue,
-                status: MembershipStatus.active.rawValue
-            ))
-            .execute()
         #else
         _ = displayName
         throw SupabaseServiceError.sdkUnavailable
@@ -374,17 +366,54 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    func renameHousehold(householdId: UUID, newName: String) async throws {
+        #if canImport(Supabase)
+        let normalizedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedName.isEmpty == false else {
+            throw HouseholdRoutingError.invalidHouseholdName
+        }
+
+        do {
+            _ = try await provider.client
+                .rpc(
+                    "rename_household",
+                    params: [
+                        "p_household_id": householdId.uuidString,
+                        "p_name": normalizedName
+                    ]
+                )
+                .execute()
+        } catch {
+            if isUnauthenticatedError(error) {
+                throw HouseholdRoutingError.unauthenticated
+            }
+            if isHouseholdNameTakenError(error) {
+                throw HouseholdRoutingError.householdNameTaken
+            }
+            if isForbiddenError(error) {
+                throw HouseholdRoutingError.forbidden
+            }
+            if isHouseholdNotFoundError(error) {
+                throw HouseholdRoutingError.householdNotFound
+            }
+            if isMissingRenameHouseholdRPCError(error) {
+                throw HouseholdRoutingError.backendMigrationRequired
+            }
+            throw error
+        }
+        #else
+        _ = householdId
+        _ = newName
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
 }
 
 // MARK: - Wire payloads
 
-private struct NewHouseholdRow: Encodable {
-    let name: String
-    let creatorId: UUID
-}
-
-private struct CreatedHouseholdRow: Decodable {
-    let id: UUID
+private struct CreatedHouseholdByRPCRow: Decodable {
+    let householdId: UUID
 }
 
 private struct InviteNonceRow: Decodable {
@@ -418,4 +447,35 @@ private struct InviteLinkPayload: Encodable {
 
 private struct InviteLinkResponse: Decodable {
     let url: String
+}
+
+private func isUnauthenticatedError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("unauthenticated") || message.contains("jwt")
+}
+
+private func isMissingCreateHouseholdRPCError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("create_household_with_creator")
+        && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
+private func isMissingRenameHouseholdRPCError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("rename_household")
+        && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
+private func isHouseholdNameTakenError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("household_name_taken")
+        || (message.contains("duplicate key") && message.contains("households_name_unique_normalized_idx"))
+}
+
+private func isForbiddenError(_ error: Error) -> Bool {
+    error.localizedDescription.lowercased().contains("forbidden")
+}
+
+private func isHouseholdNotFoundError(_ error: Error) -> Bool {
+    error.localizedDescription.lowercased().contains("household_not_found")
 }

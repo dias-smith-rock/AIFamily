@@ -1,11 +1,14 @@
 import SwiftUI
 
 struct FamilyView: View {
+    @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var keyword = ""
     @State private var showsInviteSheet = false
     @State private var showsLoginSheet = false
+    @State private var showsRenameHouseholdSheet = false
+    @State private var renameErrorMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -25,8 +28,16 @@ struct FamilyView: View {
             .navigationBarHidden(true)
         }
         .task {
+            viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             await viewModel.loadMembers()
             showsLoginSheet = viewModel.requiresLogin
+        }
+        .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
+            viewModel.setHouseholdContext(newValue)
+            Task {
+                await viewModel.loadMembers()
+                showsLoginSheet = viewModel.requiresLogin
+            }
         }
         .onChange(of: viewModel.requiresLogin) { _, requiresLogin in
             showsLoginSheet = requiresLogin
@@ -47,6 +58,18 @@ struct FamilyView: View {
                 showsLoginSheet = viewModel.requiresLogin
             }
             .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showsRenameHouseholdSheet) {
+            RenameHouseholdSheet(
+                initialName: appRouter.selectedHouseholdName ?? "",
+                isSubmitting: viewModel.isLoading,
+                errorMessage: renameErrorMessage,
+                onSubmit: { newName in
+                    await renameCurrentHousehold(to: newName)
+                }
+            )
+            .presentationDetents([.fraction(0.35), .medium])
             .presentationDragIndicator(.visible)
         }
     }
@@ -171,17 +194,31 @@ struct FamilyView: View {
             Text("快捷设置")
                 .font(.title3.weight(.semibold))
 
-            HStack {
-                Image(systemName: "bell.badge")
-                Text("通知权限检查")
-                    .font(.headline)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(.tertiary)
+            Button {
+                renameErrorMessage = nil
+                showsRenameHouseholdSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "textformat")
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("修改家庭名称")
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                        Text(appRouter.selectedHouseholdName ?? "未命名家庭")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(14)
+                .background(Color(.systemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
             }
-            .padding(14)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .buttonStyle(.plain)
+            .disabled(appRouter.selectedHouseholdId == nil)
 
             NavigationLink {
                 InviteConsumeDemoView()
@@ -201,12 +238,33 @@ struct FamilyView: View {
             .buttonStyle(.plain)
         }
     }
+
+    private func renameCurrentHousehold(to newName: String) async {
+        renameErrorMessage = nil
+        guard let householdId = appRouter.selectedHouseholdId else {
+            renameErrorMessage = "当前未选择家庭。"
+            return
+        }
+
+        let success = await viewModel.renameHousehold(
+            householdId: householdId,
+            newName: newName
+        )
+        guard success else {
+            renameErrorMessage = viewModel.errorMessage ?? "修改家庭名称失败，请稍后重试。"
+            return
+        }
+
+        await appRouter.refreshStateFromBackend()
+        showsRenameHouseholdSheet = false
+    }
 }
 
 // MARK: - Invite Sheet
 
 private struct InviteMemberSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appRouter: AppRouter
 
     @State private var nickname = ""
     @State private var contactMethod: ContactMethod = .wechat
@@ -374,10 +432,14 @@ private struct InviteMemberSheet: View {
         let now = Date()
         let trimmedPhone = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let householdId = appRouter.selectedHouseholdId else {
+            submitError = "当前未选择家庭，请先切换家庭后再邀请。"
+            return
+        }
 
         let member = HouseholdMembership(
             id: UUID(),
-            householdId: MockIDs.household,
+            householdId: householdId,
             userId: nil,
             role: .member,
             nickname: trimmedName,
@@ -396,6 +458,79 @@ private struct InviteMemberSheet: View {
             return
         }
         generatedLink = signedLink
+    }
+}
+
+private struct RenameHouseholdSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    let isSubmitting: Bool
+    let errorMessage: String?
+    let onSubmit: (String) async -> Void
+
+    init(
+        initialName: String,
+        isSubmitting: Bool,
+        errorMessage: String?,
+        onSubmit: @escaping (String) async -> Void
+    ) {
+        _name = State(initialValue: initialName)
+        self.isSubmitting = isSubmitting
+        self.errorMessage = errorMessage
+        self.onSubmit = onSubmit
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("家庭名称")
+                    .font(.system(size: 14, weight: .semibold))
+                TextField("请输入新的家庭名称", text: $name)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+
+                Button {
+                    Task {
+                        await onSubmit(name)
+                    }
+                } label: {
+                    if isSubmitting {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    } else {
+                        Text("保存名称")
+                            .font(.system(size: 16, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                    }
+                }
+                .disabled(isSubmitting || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .buttonStyle(.borderedProminent)
+
+                Spacer()
+            }
+            .padding(16)
+            .navigationTitle("重命名家庭")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -590,4 +725,5 @@ private struct FamilySessionLoginSheet: View {
 
 #Preview {
     FamilyView()
+        .environmentObject(AppRouter())
 }

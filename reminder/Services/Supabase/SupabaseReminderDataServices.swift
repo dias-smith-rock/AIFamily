@@ -23,16 +23,18 @@ struct SupabaseTaskDataService: TaskDataService {
         self.provider = provider
     }
 
-    func fetchTasks() async throws -> [FamilyTask] {
+    func fetchTasks(in householdId: UUID) async throws -> [FamilyTask] {
         #if canImport(Supabase)
         let response: [FamilyTask] = try await provider.client
             .from(SupabaseTable.tasks)
             .select()
+            .eq("household_id", value: householdId.uuidString)
             .order("due_date", ascending: true)
             .execute()
             .value
         return response
         #else
+        _ = householdId
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -80,12 +82,13 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
         self.provider = provider
     }
 
-    func fetchFeedbacks(for taskId: UUID?) async throws -> [Feedback] {
+    func fetchFeedbacks(in householdId: UUID, for taskId: UUID?) async throws -> [Feedback] {
         #if canImport(Supabase)
         if let taskId {
             let response: [Feedback] = try await provider.client
                 .from(SupabaseTable.feedbacks)
                 .select()
+                .eq("household_id", value: householdId.uuidString)
                 .eq("task_id", value: taskId.uuidString)
                 .order("created_at", ascending: false)
                 .execute()
@@ -95,12 +98,14 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
             let response: [Feedback] = try await provider.client
                 .from(SupabaseTable.feedbacks)
                 .select()
+                .eq("household_id", value: householdId.uuidString)
                 .order("created_at", ascending: false)
                 .execute()
                 .value
             return response
         }
         #else
+        _ = householdId
         _ = taskId
         throw SupabaseServiceError.sdkUnavailable
         #endif
@@ -167,16 +172,18 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
         self.provider = provider
     }
 
-    func fetchMemberships() async throws -> [HouseholdMembership] {
+    func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership] {
         #if canImport(Supabase)
         let response: [HouseholdMembership] = try await provider.client
             .from(SupabaseTable.memberships)
             .select()
+            .eq("household_id", value: householdId.uuidString)
             .order("created_at", ascending: true)
             .execute()
             .value
         return response
         #else
+        _ = householdId
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }

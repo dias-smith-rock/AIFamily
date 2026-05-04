@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AssistantSheetView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeAssistantViewModel()
 
     var body: some View {
@@ -101,11 +102,16 @@ struct AssistantSheetView: View {
             TaskPreviewCard(
                 draft: draft,
                 onConfirm: {
-                    let creator = HouseholdMembership.mockMembers.first
-                    let assignee = HouseholdMembership.mockMembers.dropFirst().first ?? creator
+                    guard
+                        let householdId = appRouter.selectedHouseholdId,
+                        let creatorMembershipId = appRouter.selectedMembershipId
+                    else {
+                        return
+                    }
+                    let assignee = HouseholdMembership.mockMembers.first(where: { $0.householdId == householdId && $0.id != creatorMembershipId })
                     await viewModel.confirmSend(
-                        householdId: creator?.householdId ?? MockIDs.household,
-                        creatorMembershipId: creator?.id ?? UUID(),
+                        householdId: householdId,
+                        creatorMembershipId: creatorMembershipId,
                         involvedMemberIds: assignee.map { [$0.id] } ?? []
                     )
                 },
@@ -220,4 +226,5 @@ private struct TaskPreviewCard: View {
 
 #Preview {
     AssistantSheetView()
+        .environmentObject(AppRouter())
 }

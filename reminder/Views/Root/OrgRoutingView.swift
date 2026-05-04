@@ -196,6 +196,7 @@ struct OrgRoutingView: View {
         Task {
             let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
             guard success else { return }
+            appRouter.goToActiveMember()
             await appRouter.refreshStateFromBackend()
         }
     }

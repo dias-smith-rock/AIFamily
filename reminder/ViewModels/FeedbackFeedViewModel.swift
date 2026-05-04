@@ -12,6 +12,7 @@ final class FeedbackFeedViewModel: ObservableObject {
     private let voiceStorageService: VoiceStorageService
     private let feedbackRealtimeService: FeedbackRealtimeService
     private var isRealtimeSubscribed = false
+    private var currentHouseholdId: UUID?
 
     init(
         feedbackService: FeedbackDataService,
@@ -23,7 +24,18 @@ final class FeedbackFeedViewModel: ObservableObject {
         self.feedbackRealtimeService = feedbackRealtimeService
     }
 
+    func setHouseholdContext(_ householdId: UUID?) {
+        currentHouseholdId = householdId
+    }
+
     func loadFeedbacks(taskId: UUID? = nil) async {
+        guard let householdId = currentHouseholdId else {
+            feedbacks = []
+            errorMessage = "当前未选择家庭。"
+            hasLoadedOnce = true
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer {
@@ -32,13 +44,22 @@ final class FeedbackFeedViewModel: ObservableObject {
         }
 
         do {
-            feedbacks = try await feedbackService.fetchFeedbacks(for: taskId)
+            feedbacks = try await feedbackService.fetchFeedbacks(in: householdId, for: taskId)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
     func createFeedback(_ feedback: Feedback) async {
+        guard let householdId = currentHouseholdId else {
+            errorMessage = "当前未选择家庭。"
+            return
+        }
+        guard feedback.householdId == householdId else {
+            errorMessage = "反馈写入失败：家庭上下文不一致。"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -90,12 +111,16 @@ final class FeedbackFeedViewModel: ObservableObject {
     }
 
     func uploadVoiceFeedback(
-        householdId: UUID,
         taskId: UUID,
         senderId: UUID,
         audioData: Data,
         duration: Int
     ) async {
+        guard let householdId = currentHouseholdId else {
+            errorMessage = "当前未选择家庭。"
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }

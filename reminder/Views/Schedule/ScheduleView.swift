@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ScheduleView: View {
+    @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
     @State private var period: SchedulePeriod = .day
     @State private var anchorDate = Date.mockISO("2026-04-27T00:00:00.000Z")
@@ -40,7 +41,14 @@ struct ScheduleView: View {
             .navigationBarHidden(true)
         }
         .task {
+            viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             await viewModel.loadTasks()
+        }
+        .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
+            viewModel.setHouseholdContext(newValue)
+            Task {
+                await viewModel.loadTasks()
+            }
         }
         .sheet(isPresented: $showsMonthSheet) {
             if let selectedDate = monthSheetDate {
@@ -724,4 +732,5 @@ private struct ScheduleTaskCard: View {
 
 #Preview {
     ScheduleView()
+        .environmentObject(AppRouter())
 }

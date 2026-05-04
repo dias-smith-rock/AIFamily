@@ -51,10 +51,18 @@ final class OrgRoutingViewModel: ObservableObject {
             switch routingError {
             case .invalidHouseholdName:
                 return "家庭名称不能为空，请输入后再创建。"
+            case .householdNameTaken:
+                return "该家庭名称已被占用，请换一个名称。"
             case .invalidInviteCode:
                 return "邀请码格式不正确或不存在，请检查后重试。"
             case .unauthenticated:
                 return "当前登录状态已失效，请重新登录后再试。"
+            case .forbidden:
+                return "你没有权限执行该操作。"
+            case .householdNotFound:
+                return "家庭不存在或已被删除，请刷新后重试。"
+            case .backendMigrationRequired:
+                return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
             case .alreadyActiveMember:
                 return "你已经是该家庭成员，无需重复加入。"
             case .joinRequestPending:

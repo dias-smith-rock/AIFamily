@@ -135,7 +135,7 @@ struct LoginView: View {
         Task {
             do {
                 try await signInWithOAuth(provider: provider)
-                await appRouter.refreshStateFromBackend()
+                try await settlePostOAuthState()
             } catch {
                 if isUserCancelled(error) == false {
                     errorMessage = error.localizedDescription
@@ -178,13 +178,54 @@ struct LoginView: View {
         Task {
             do {
                 _ = try await SupabaseManager.shared.client.auth.session(from: url)
-                await appRouter.refreshStateFromBackend()
+                try await settlePostOAuthState()
             } catch {
                 errorMessage = error.localizedDescription
             }
         }
         #else
         _ = url
+        #endif
+    }
+
+    /// OAuth 结束后，Auth 会话与 RLS 可见性在本地可能有短暂传播延迟。
+    /// 这里做轻量重试，避免刚回调就误判成未登录，留在登录页。
+    private func settlePostOAuthState() async throws {
+        #if canImport(Supabase)
+        let maxAttempts = 8
+        var hasValidSession = false
+        for attempt in 1...maxAttempts {
+            do {
+                _ = try await SupabaseManager.shared.client.auth.session
+                hasValidSession = true
+                await appRouter.refreshStateFromBackend()
+                if appRouter.appState != .unauthenticated {
+                    return
+                }
+            } catch {
+                if attempt == maxAttempts {
+                    throw error
+                }
+            }
+
+            if attempt < maxAttempts {
+                try? await Task.sleep(nanoseconds: 250_000_000)
+            }
+        }
+
+        if hasValidSession {
+            // OAuth 已成功，但组织状态读取出现瞬时失败时，先放行到组织路由页，避免卡死登录。
+            await MainActor.run {
+                appRouter.goToOrgRouting()
+            }
+            return
+        }
+
+        throw NSError(
+            domain: "LoginView",
+            code: -2,
+            userInfo: [NSLocalizedDescriptionKey: "登录会话尚未就绪，请稍后重试。"]
+        )
         #endif
     }
 }

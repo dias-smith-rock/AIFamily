@@ -11,10 +11,12 @@ struct ContentView: View {
                 LoginView()
             case .orgRouting:
                 OrgRoutingView()
+            case .householdSelection:
+                HouseholdPickerView()
             case .pendingApproval:
                 PendingView()
             case .activeMember:
-                MainTabView()
+                AppTabRootView()
             }
         }
         .animation(.easeInOut, value: appRouter.appState)

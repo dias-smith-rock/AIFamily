@@ -25,7 +25,8 @@ final class ViewModelFactory: ObservableObject {
         FamilyViewModel(
             membershipService: services.membershipService,
             inviteLinkService: services.inviteLinkService,
-            authService: services.authService
+            authService: services.authService,
+            householdRoutingService: services.householdRoutingService
         )
     }
 

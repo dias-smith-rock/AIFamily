@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FeedbackFeedView: View {
     @EnvironmentObject private var appBootstrap: AppBootstrap
+    @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFeedbackFeedViewModel()
     @State private var filter: FeedbackFilter = .all
 
@@ -29,8 +30,15 @@ struct FeedbackFeedView: View {
             .navigationBarHidden(true)
         }
         .task {
+            viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             await viewModel.loadFeedbacks()
             await viewModel.startRealtime()
+        }
+        .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
+            viewModel.setHouseholdContext(newValue)
+            Task {
+                await viewModel.loadFeedbacks()
+            }
         }
         .onDisappear {
             Task {
@@ -75,14 +83,14 @@ struct FeedbackFeedView: View {
         Button {
             Task {
                 guard
-                    let task = FamilyTask.mockTasks.first,
+                    let householdId = appRouter.selectedHouseholdId,
+                    let task = FamilyTask.mockTasks.first(where: { $0.householdId == householdId }) ?? FamilyTask.mockTasks.first,
                     let sender = HouseholdMembership.mockMembers.first
                 else {
                     return
                 }
                 let audioData = Data(repeating: 0x10, count: 2048)
                 await viewModel.uploadVoiceFeedback(
-                    householdId: task.householdId,
                     taskId: task.id,
                     senderId: sender.id,
                     audioData: audioData,
@@ -333,4 +341,5 @@ private struct FeedbackCardView: View {
 #Preview {
     FeedbackFeedView()
         .environmentObject(AppBootstrap())
+        .environmentObject(AppRouter())
 }

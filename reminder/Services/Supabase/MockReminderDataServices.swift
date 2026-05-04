@@ -5,10 +5,12 @@ import Foundation
 actor MockTaskDataService: TaskDataService {
     private var tasks: [FamilyTask] = FamilyTask.mockTasks
 
-    func fetchTasks() async throws -> [FamilyTask] {
-        tasks.sorted { lhs, rhs in
+    func fetchTasks(in householdId: UUID) async throws -> [FamilyTask] {
+        tasks
+            .filter { $0.householdId == householdId }
+            .sorted { lhs, rhs in
             (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
-        }
+            }
     }
 
     func createTask(_ task: FamilyTask) async throws -> FamilyTask {
@@ -30,10 +32,11 @@ actor MockTaskDataService: TaskDataService {
 actor MockFeedbackDataService: FeedbackDataService {
     private var feedbacks: [Feedback] = Feedback.mockFeedbacks
 
-    func fetchFeedbacks(for taskId: UUID?) async throws -> [Feedback] {
+    func fetchFeedbacks(in householdId: UUID, for taskId: UUID?) async throws -> [Feedback] {
+        let householdScoped = feedbacks.filter { $0.householdId == householdId }
         let filtered = taskId.map { id in
-            feedbacks.filter { $0.taskId == id }
-        } ?? feedbacks
+            householdScoped.filter { $0.taskId == id }
+        } ?? householdScoped
 
         return filtered.sorted { $0.createdAt > $1.createdAt }
     }
@@ -60,8 +63,10 @@ actor MockFeedbackDataService: FeedbackDataService {
 actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
     private var members: [HouseholdMembership] = HouseholdMembership.mockMembers
 
-    func fetchMemberships() async throws -> [HouseholdMembership] {
-        members.sorted { $0.createdAt < $1.createdAt }
+    func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership] {
+        members
+            .filter { $0.householdId == householdId }
+            .sorted { $0.createdAt < $1.createdAt }
     }
 
     func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership {
@@ -134,5 +139,10 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
 
     func joinHousehold(inviteCode: String) async throws {
         _ = inviteCode
+    }
+
+    func renameHousehold(householdId: UUID, newName: String) async throws {
+        _ = householdId
+        _ = newName
     }
 }
