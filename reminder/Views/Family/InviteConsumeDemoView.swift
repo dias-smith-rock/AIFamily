@@ -48,7 +48,7 @@ struct InviteConsumeDemoView: View {
     private var actionButtons: some View {
         HStack(spacing: 10) {
             Button {
-                _Concurrency.Task {
+                Task {
                     await viewModel.consume()
                 }
             } label: {

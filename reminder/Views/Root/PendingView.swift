@@ -30,8 +30,8 @@ struct PendingView: View {
 
             Button {
                 showToast = true
-                _Concurrency.Task {
-                    try? await _Concurrency.Task.sleep(nanoseconds: 1_500_000_000)
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_500_000_000)
                     showToast = false
                 }
             } label: {

@@ -3,7 +3,7 @@ import Combine
 
 @MainActor
 final class ScheduleViewModel: ObservableObject {
-    @Published private(set) var tasks: [Task] = []
+    @Published private(set) var tasks: [FamilyTask] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
 
@@ -25,7 +25,7 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
-    func createTask(_ task: Task) async {
+    func createTask(_ task: FamilyTask) async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -33,13 +33,15 @@ final class ScheduleViewModel: ObservableObject {
         do {
             let createdTask = try await taskService.createTask(task)
             tasks.append(createdTask)
-            tasks.sort { $0.scheduledAt < $1.scheduledAt }
+            tasks.sort { lhs, rhs in
+                (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func updateTask(_ task: Task) async {
+    func updateTask(_ task: FamilyTask) async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -51,17 +53,18 @@ final class ScheduleViewModel: ObservableObject {
                 return
             }
             tasks[index] = updatedTask
-            tasks.sort { $0.scheduledAt < $1.scheduledAt }
+            tasks.sort { lhs, rhs in
+                (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
-    func updateTaskStatus(taskId: UUID, to status: Task.TaskStatus) async {
+    func updateTaskStatus(taskId: UUID, to status: TaskStatus) async {
         guard let currentTask = tasks.first(where: { $0.id == taskId }) else { return }
         var updatedTask = currentTask
         updatedTask.status = status
-        updatedTask.updatedAt = Date()
         await updateTask(updatedTask)
     }
 }

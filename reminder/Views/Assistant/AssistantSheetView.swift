@@ -101,7 +101,13 @@ struct AssistantSheetView: View {
             TaskPreviewCard(
                 draft: draft,
                 onConfirm: {
-                    await viewModel.confirmSend(assigneeId: FamilyMember.mockMembers.first?.id ?? UUID())
+                    let creator = HouseholdMembership.mockMembers.first
+                    let assignee = HouseholdMembership.mockMembers.dropFirst().first ?? creator
+                    await viewModel.confirmSend(
+                        householdId: creator?.householdId ?? MockIDs.household,
+                        creatorMembershipId: creator?.id ?? UUID(),
+                        involvedMemberIds: assignee.map { [$0.id] } ?? []
+                    )
                 },
                 onCorrection: { correction in
                     await viewModel.applyNaturalLanguageCorrection(correction)
@@ -138,7 +144,7 @@ struct AssistantSheetView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             Button {
-                _Concurrency.Task {
+                Task {
                     await viewModel.parseInput()
                 }
             } label: {
@@ -180,25 +186,25 @@ private struct TaskPreviewCard: View {
             Text("任务确认预检卡片")
                 .font(.system(size: 16, weight: .bold))
             Label(draft.title, systemImage: "checklist")
-            Label(draft.scheduledAt.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
-            if let location = draft.location {
+            Label(draft.dueDate.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+            if let location = draft.locationName {
                 Label(location, systemImage: "location")
             }
-            if let childName = draft.childName {
-                Label(childName, systemImage: "person")
+            if let subject = draft.targetSubject {
+                Label(subject, systemImage: "person")
             }
             TextField("自然语言修正：例如“时间改成明天下午”", text: $correction)
                 .textFieldStyle(.roundedBorder)
             HStack {
                 Button("应用修正") {
-                    _Concurrency.Task {
+                    Task {
                         await onCorrection(correction)
                     }
                 }
                 .buttonStyle(.bordered)
 
                 Button("确认发送") {
-                    _Concurrency.Task {
+                    Task {
                         await onConfirm()
                     }
                 }

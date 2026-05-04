@@ -59,6 +59,10 @@ final class OrgRoutingViewModel: ObservableObject {
                 return "你已经是该家庭成员，无需重复加入。"
             case .joinRequestPending:
                 return "你的加入申请已提交，请等待管理员审批。"
+            case .nonceExpired:
+                return "邀请链接已过期，请向管理员重新获取。"
+            case .nonceConsumed:
+                return "邀请链接已被使用，请向管理员重新获取。"
             case .networkFailure:
                 return "网络或服务异常，请稍后再试。"
             case .unknown:

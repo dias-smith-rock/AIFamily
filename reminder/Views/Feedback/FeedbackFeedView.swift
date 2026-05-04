@@ -33,7 +33,7 @@ struct FeedbackFeedView: View {
             await viewModel.startRealtime()
         }
         .onDisappear {
-            _Concurrency.Task {
+            Task {
                 await viewModel.stopRealtime()
             }
         }
@@ -73,15 +73,16 @@ struct FeedbackFeedView: View {
 
     private var simulateVoiceButton: some View {
         Button {
-            _Concurrency.Task {
+            Task {
                 guard
-                    let task = Task.mockTasks.first,
-                    let sender = FamilyMember.mockMembers.first
+                    let task = FamilyTask.mockTasks.first,
+                    let sender = HouseholdMembership.mockMembers.first
                 else {
                     return
                 }
                 let audioData = Data(repeating: 0x10, count: 2048)
                 await viewModel.uploadVoiceFeedback(
+                    householdId: task.householdId,
                     taskId: task.id,
                     senderId: sender.id,
                     audioData: audioData,
@@ -111,7 +112,7 @@ struct FeedbackFeedView: View {
                 Text(errorMessage)
             } actions: {
                 Button("重新加载") {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.loadFeedbacks()
                     }
                 }
@@ -123,10 +124,11 @@ struct FeedbackFeedView: View {
             ForEach(filteredFeedbacks) { feedback in
                 FeedbackCardView(
                     feedback: feedback,
-                    task: Task.mockTasks.first(where: { $0.id == feedback.taskId }),
+                    task: FamilyTask.mockTasks.first(where: { $0.id == feedback.taskId }),
                     showTranscription: appBootstrap.featureFlags.enableAITranscription,
                     onMarkRead: {
-                        await viewModel.markAsRead(feedback.id)
+                        guard let firstMember = HouseholdMembership.mockMembers.first else { return }
+                        await viewModel.markAsRead(feedback.id, readerId: firstMember.id)
                     }
                 )
             }
@@ -138,7 +140,12 @@ struct FeedbackFeedView: View {
         case .all:
             return viewModel.feedbacks
         case .unread:
-            return viewModel.feedbacks.filter { $0.isRead == false }
+            // 当前阅读者粗略以"是否在 readBy 数组里"判断；先用第一个 mock 成员作为占位的"我"。
+            let me = HouseholdMembership.mockMembers.first?.id
+            return viewModel.feedbacks.filter { feedback in
+                guard let me else { return true }
+                return (feedback.readBy ?? []).contains(me) == false
+            }
         }
     }
 
@@ -153,7 +160,7 @@ struct FeedbackFeedView: View {
             primaryActionTitle: isFirstEmpty ? "重新加载" : "查看全部消息",
             primaryAction: {
                 if isFirstEmpty {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.loadFeedbacks()
                     }
                 } else {
@@ -168,20 +175,36 @@ struct FeedbackFeedView: View {
     }
 }
 
+// MARK: - Card
+
 private struct FeedbackCardView: View {
     let feedback: Feedback
-    let task: Task?
+    let task: FamilyTask?
     let showTranscription: Bool
     let onMarkRead: () async -> Void
     @State private var progress: Double = 0
     @State private var isPlaying = false
 
+    private var isReadByMe: Bool {
+        guard let me = HouseholdMembership.mockMembers.first?.id else { return false }
+        return (feedback.readBy ?? []).contains(me)
+    }
+
     private var borderColor: Color {
-        feedback.type == .system ? .red.opacity(0.4) : .gray.opacity(0.2)
+        feedback.contentType == .system ? .red.opacity(0.4) : .gray.opacity(0.2)
     }
 
     private var senderName: String {
-        FamilyMember.mockMembers.first(where: { $0.id == feedback.senderId })?.displayName ?? "系统"
+        guard let senderId = feedback.senderId else { return "系统" }
+        return HouseholdMembership.mockMembers.first(where: { $0.id == senderId })?.nickname ?? "系统"
+    }
+
+    private var taskScheduledAt: Date? {
+        task.flatMap { $0.dueDate ?? $0.originalDueDate }
+    }
+
+    private var taskLocationLabel: String? {
+        task?.locationData?.name ?? task?.locationData?.address
     }
 
     var body: some View {
@@ -191,9 +214,14 @@ private struct FeedbackCardView: View {
                     Label("引用任务", systemImage: "quote.opening")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
-                    Text("\(task.scheduledAt.formatted(date: .omitted, time: .shortened)) \(task.title)")
-                        .font(.system(size: 20, weight: .semibold))
-                    Text(task.location ?? "未设置地点")
+                    HStack(spacing: 6) {
+                        if let taskScheduledAt {
+                            Text(taskScheduledAt.formatted(date: .omitted, time: .shortened))
+                        }
+                        Text(task.title)
+                    }
+                    .font(.system(size: 20, weight: .semibold))
+                    Text(taskLocationLabel ?? "未设置地点")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -215,7 +243,7 @@ private struct FeedbackCardView: View {
                 }
             }
 
-            if feedback.type == .voice || feedback.audioDurationSeconds != nil {
+            if feedback.contentType == .voice || feedback.duration != nil {
                 HStack(spacing: 12) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .foregroundStyle(.blue)
@@ -223,7 +251,7 @@ private struct FeedbackCardView: View {
                         .background(Color.blue.opacity(0.12))
                         .clipShape(Circle())
                         .onTapGesture {
-                            _Concurrency.Task {
+                            Task {
                                 await togglePlayback()
                             }
                         }
@@ -238,7 +266,7 @@ private struct FeedbackCardView: View {
                                 .animation(.linear(duration: 0.15), value: progress)
                         }
 
-                    Text("0:\(String(format: "%02d", feedback.audioDurationSeconds ?? 0))")
+                    Text("0:\(String(format: "%02d", feedback.duration ?? 0))")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -248,7 +276,7 @@ private struct FeedbackCardView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
-            if let text = feedback.text, showTranscription || feedback.type != .voice {
+            if let text = feedback.textContent, showTranscription || feedback.contentType != .voice {
                 Label {
                     Text(text)
                         .font(.system(size: 16, weight: .medium))
@@ -269,11 +297,11 @@ private struct FeedbackCardView: View {
             RoundedRectangle(cornerRadius: 18)
                 .stroke(borderColor, lineWidth: 2)
         )
-        .opacity(feedback.isRead ? 0.56 : 1)
-        .animation(.easeInOut(duration: 0.25), value: feedback.isRead)
+        .opacity(isReadByMe ? 0.56 : 1)
+        .animation(.easeInOut(duration: 0.25), value: isReadByMe)
         .onTapGesture {
-            if feedback.isRead == false {
-                _Concurrency.Task {
+            if isReadByMe == false {
+                Task {
                     await onMarkRead()
                 }
             }
@@ -288,12 +316,12 @@ private struct FeedbackCardView: View {
 
         isPlaying = true
         progress = 0
-        let duration = max(1, feedback.audioDurationSeconds ?? 3)
+        let duration = max(1, feedback.duration ?? 3)
         let steps = duration * 10
 
         for step in 1...steps {
             if isPlaying == false { break }
-            try? await _Concurrency.Task.sleep(nanoseconds: 100_000_000)
+            try? await Task.sleep(nanoseconds: 100_000_000)
             progress = Double(step) / Double(steps)
         }
 

@@ -4,48 +4,142 @@ import Foundation
 import Supabase
 #endif
 
-final class SupabaseManager {
-    static let shared = SupabaseManager()
-    static let publishableKey = "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
-    static let projectURLString = "https://dirgcwziayipwvwztjbb.supabase.co"
+// MARK: - Environment
 
-    static let projectBaseURL: URL = {
-        guard let url = URL(string: projectURLString) else {
-            preconditionFailure("Invalid Supabase project base URL.")
+/// 按编译配置切换本地 / 云端，避免把本地与线上 URL、密钥混在同一套常量里。
+/// - Note: 本地 REST API 端口以 `supabase/config.toml` 的 `[api].port` 为准（默认 54321）；54323 一般为 Studio。
+enum SupabaseEnvironment {
+    static var supabaseURL: URL {
+        #if DEBUG
+        return urlOrFail("http://127.0.0.1:54321")
+        #else
+        return urlOrFail("https://dirgcwziayipwvwztjbb.supabase.co")
+        #endif
+    }
+
+    static var supabaseAnonKey: String {
+        #if DEBUG
+        // 运行 `supabase status` 核对本地 anon key；未改动时为 CLI 默认 JWT。
+        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+        #else
+        return "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
+        #endif
+    }
+
+    private static func urlOrFail(_ string: String) -> URL {
+        guard let url = URL(string: string) else {
+            preconditionFailure("Invalid Supabase URL string: \(string)")
         }
         return url
+    }
+}
+
+// MARK: - Codec Strategies
+
+/// 全局编解码策略：
+/// - 写入时把驼峰 → snake_case，匹配 PostgREST 字段命名。
+/// - 读取时把 snake_case → 驼峰，让 Swift 模型直接以驼峰命名属性。
+/// - 时间统一按 ISO8601 处理，兼容含/不含毫秒、含/不含时区偏移的情况。
+enum SupabaseCodec {
+    static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(isoFormatterWithFractional.string(from: date))
+        }
+        return encoder
+    }
+
+    static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let raw = try container.decode(String.self)
+
+            if let date = isoFormatterWithFractional.date(from: raw) {
+                return date
+            }
+            if let date = isoFormatterPlain.date(from: raw) {
+                return date
+            }
+            if let date = postgresFormatter.date(from: raw) {
+                return date
+            }
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Unsupported date format: \(raw)"
+            )
+        }
+        return decoder
+    }
+
+    private static let isoFormatterWithFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
     }()
+
+    private static let isoFormatterPlain: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    /// Postgres `timestamp with time zone` 在 PostgREST 序列化时常见格式：
+    /// `2026-04-27T08:30:00.123456+00:00`。这里覆盖六位小数 + 偏移量的兜底解析。
+    private static let postgresFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXXXX"
+        return formatter
+    }()
+}
+
+// MARK: - SupabaseManager
+
+final class SupabaseManager {
+    static let shared = SupabaseManager()
+
+    static var publishableKey: String { SupabaseEnvironment.supabaseAnonKey }
+
+    static var projectURLString: String { SupabaseEnvironment.supabaseURL.absoluteString }
+
+    static var projectBaseURL: URL { SupabaseEnvironment.supabaseURL }
 
     private init() {}
 
     #if canImport(Supabase)
-    private static let configuredURL: URL = {
-        guard let url = URL(string: projectURLString) else {
-            preconditionFailure("Invalid Supabase URL in SupabaseManager.")
-        }
-        return url
+    let client: SupabaseClient = {
+        let options = SupabaseClientOptions(
+            db: SupabaseClientOptions.DatabaseOptions(
+                encoder: SupabaseCodec.makeEncoder(),
+                decoder: SupabaseCodec.makeDecoder()
+            )
+        )
+        return SupabaseClient(
+            supabaseURL: SupabaseEnvironment.supabaseURL,
+            supabaseKey: SupabaseEnvironment.supabaseAnonKey,
+            options: options
+        )
     }()
 
-    let client = SupabaseClient(
-        supabaseURL: configuredURL,
-        supabaseKey: publishableKey
-    )
-
-    /// Connectivity smoke test for Supabase.
-    /// Tries to fetch the first row from `family_members`.
+    /// Connectivity smoke test for Supabase. 拉取一条 households 记录验证可达性。
     func testConnection() async {
         do {
-            let rows: [[String: String]] = try await client
-                .from("family_members")
+            let rows: [Household] = try await client
+                .from("households")
                 .select()
                 .limit(1)
                 .execute()
                 .value
 
-            if let firstRow = rows.first {
-                print("Supabase connected. First family member row: \(firstRow)")
+            if let first = rows.first {
+                print("Supabase connected. First household: \(first.name)")
             } else {
-                print("Supabase connected. `family_members` is reachable, but no rows found.")
+                print("Supabase connected. `households` 可达，但当前账号尚无可见家庭。")
             }
         } catch {
             print("Supabase connection test failed: \(error.localizedDescription)")

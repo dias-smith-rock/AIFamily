@@ -49,7 +49,7 @@ struct ScheduleView: View {
                     tasks: tasks(on: selectedDate),
                     assigneeName: assigneeName(for:)
                 ) { task in
-                    let nextStatus: Task.TaskStatus = task.status == .completed ? .pending : .completed
+                    let nextStatus: TaskStatus = task.status == .completed ? .new : .completed
                     await viewModel.updateTaskStatus(taskId: task.id, to: nextStatus)
                 }
                 .presentationDetents([.medium, .large])
@@ -147,7 +147,7 @@ struct ScheduleView: View {
                 Text(errorMessage)
             } actions: {
                 Button("重新加载") {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.loadTasks()
                     }
                 }
@@ -156,16 +156,16 @@ struct ScheduleView: View {
         } else if filteredTasks.isEmpty {
             emptyStateView
         } else {
-        switch period {
-        case .day:
-            taskList(tasks: filteredTasks)
-        case .week:
-            weekView
-        case .month:
-            monthView
-        case .year:
-            yearView
-        }
+            switch period {
+            case .day:
+                taskList(tasks: filteredTasks)
+            case .week:
+                weekView
+            case .month:
+                monthView
+            case .year:
+                yearView
+            }
         }
     }
 
@@ -178,21 +178,21 @@ struct ScheduleView: View {
             primaryAction: onRequestAIInput,
             secondaryActionTitle: "重新加载",
             secondaryAction: {
-                _Concurrency.Task {
+                Task {
                     await viewModel.loadTasks()
                 }
             }
         )
     }
 
-    private func taskList(tasks: [Task]) -> some View {
+    private func taskList(tasks: [FamilyTask]) -> some View {
         LazyVStack(spacing: 12) {
             ForEach(tasks) { task in
                 ScheduleTaskCard(
                     task: task,
-                    assigneeName: assigneeName(for: task.assigneeId),
+                    assigneeName: assigneeName(for: primaryAssignee(of: task)),
                     onToggleStatus: {
-                        let nextStatus: Task.TaskStatus = task.status == .completed ? .pending : .completed
+                        let nextStatus: TaskStatus = task.status == .completed ? .new : .completed
                         await viewModel.updateTaskStatus(taskId: task.id, to: nextStatus)
                     }
                 )
@@ -304,17 +304,18 @@ struct ScheduleView: View {
         }
     }
 
-    private var filteredTasks: [Task] {
+    private var filteredTasks: [FamilyTask] {
         viewModel.tasks.filter { task in
+            guard let scheduledAt = task.dueDate ?? task.originalDueDate else { return false }
             switch period {
             case .day:
-                return Calendar.current.isDate(task.scheduledAt, inSameDayAs: anchorDate)
+                return Calendar.current.isDate(scheduledAt, inSameDayAs: anchorDate)
             case .week:
-                return Calendar.current.isDate(task.scheduledAt, equalTo: anchorDate, toGranularity: .weekOfYear)
+                return Calendar.current.isDate(scheduledAt, equalTo: anchorDate, toGranularity: .weekOfYear)
             case .month:
-                return Calendar.current.isDate(task.scheduledAt, equalTo: anchorDate, toGranularity: .month)
+                return Calendar.current.isDate(scheduledAt, equalTo: anchorDate, toGranularity: .month)
             case .year:
-                return Calendar.current.isDate(task.scheduledAt, equalTo: anchorDate, toGranularity: .year)
+                return Calendar.current.isDate(scheduledAt, equalTo: anchorDate, toGranularity: .year)
             }
         }
     }
@@ -406,12 +407,18 @@ struct ScheduleView: View {
         }
     }
 
-    private func tasks(on date: Date) -> [Task] {
-        viewModel.tasks.filter { Calendar.current.isDate($0.scheduledAt, inSameDayAs: date) }
+    private func tasks(on date: Date) -> [FamilyTask] {
+        viewModel.tasks.filter { task in
+            guard let scheduledAt = task.dueDate ?? task.originalDueDate else { return false }
+            return Calendar.current.isDate(scheduledAt, inSameDayAs: date)
+        }
     }
 
-    private func tasks(inMonthOf date: Date) -> [Task] {
-        viewModel.tasks.filter { Calendar.current.isDate($0.scheduledAt, equalTo: date, toGranularity: .month) }
+    private func tasks(inMonthOf date: Date) -> [FamilyTask] {
+        viewModel.tasks.filter { task in
+            guard let scheduledAt = task.dueDate ?? task.originalDueDate else { return false }
+            return Calendar.current.isDate(scheduledAt, equalTo: date, toGranularity: .month)
+        }
     }
 
     private func monthIntensity(for monthStart: Date) -> Double {
@@ -419,8 +426,13 @@ struct ScheduleView: View {
         return min(1, count / 8.0)
     }
 
-    private func assigneeName(for id: UUID) -> String {
-        FamilyMember.mockMembers.first(where: { $0.id == id })?.displayName ?? "执行人"
+    private func primaryAssignee(of task: FamilyTask) -> UUID? {
+        task.involvedMemberIds?.first
+    }
+
+    private func assigneeName(for id: UUID?) -> String {
+        guard let id else { return "执行人" }
+        return HouseholdMembership.mockMembers.first(where: { $0.id == id })?.nickname ?? "执行人"
     }
 
     private func colorForMember(_ memberId: UUID) -> Color {
@@ -430,11 +442,13 @@ struct ScheduleView: View {
     }
 }
 
+// MARK: - Subviews
+
 private struct MonthDayTasksSheet: View {
     let date: Date
-    let tasks: [Task]
-    let assigneeName: (UUID) -> String
-    let onToggleStatus: (Task) async -> Void
+    let tasks: [FamilyTask]
+    let assigneeName: (UUID?) -> String
+    let onToggleStatus: (FamilyTask) async -> Void
 
     var body: some View {
         ZStack {
@@ -460,7 +474,7 @@ private struct MonthDayTasksSheet: View {
                                 ForEach(tasks) { task in
                                     ScheduleTaskCard(
                                         task: task,
-                                        assigneeName: assigneeName(task.assigneeId),
+                                        assigneeName: assigneeName(task.involvedMemberIds?.first),
                                         onToggleStatus: {
                                             await onToggleStatus(task)
                                         }
@@ -527,7 +541,7 @@ private struct SheetTopRoundedShape: Shape {
 
 private struct MonthDateCell: View {
     let date: Date
-    let tasks: [Task]
+    let tasks: [FamilyTask]
     let isSelected: Bool
     let colorForMember: (UUID) -> Color
 
@@ -552,7 +566,8 @@ private struct MonthDateCell: View {
     }
 
     private var uniqueMemberIds: [UUID] {
-        Array(Set(tasks.map(\.assigneeId)))
+        let assignees = tasks.compactMap { $0.involvedMemberIds?.first }
+        return Array(Set(assignees))
     }
 }
 
@@ -584,20 +599,19 @@ private struct YearMonthHeatCell: View {
 }
 
 private struct ScheduleTaskCard: View {
-    let task: Task
+    let task: FamilyTask
     let assigneeName: String
     let onToggleStatus: () async -> Void
 
     private var statusText: String {
         switch task.status {
-        case .completed:
-            return "已完成"
-        case .pending:
-            return "待执行"
-        case .inProgress:
-            return "执行中"
-        case .overdue:
-            return "已过期"
+        case .completed: return "已完成"
+        case .new: return "待执行"
+        case .accepted: return "已接受"
+        case .inProgress: return "执行中"
+        case .expired: return "已过期"
+        case .failed: return "执行失败"
+        case .cancelled: return "已取消"
         }
     }
 
@@ -605,10 +619,12 @@ private struct ScheduleTaskCard: View {
         switch task.status {
         case .completed:
             return .green.opacity(0.15)
-        case .pending, .inProgress:
+        case .new, .accepted, .inProgress:
             return .blue.opacity(0.15)
-        case .overdue:
+        case .expired, .failed:
             return .orange.opacity(0.2)
+        case .cancelled:
+            return .gray.opacity(0.15)
         }
     }
 
@@ -616,10 +632,12 @@ private struct ScheduleTaskCard: View {
         switch task.status {
         case .completed:
             return .green.opacity(0.55)
-        case .pending, .inProgress:
+        case .new, .accepted, .inProgress:
             return .blue.opacity(0.45)
-        case .overdue:
+        case .expired, .failed:
             return .orange.opacity(0.55)
+        case .cancelled:
+            return .gray.opacity(0.45)
         }
     }
 
@@ -627,11 +645,21 @@ private struct ScheduleTaskCard: View {
         switch task.status {
         case .completed:
             return "checkmark.circle"
-        case .pending, .inProgress:
+        case .new, .accepted, .inProgress:
             return "clock"
-        case .overdue:
+        case .expired, .failed:
             return "exclamationmark.circle"
+        case .cancelled:
+            return "xmark.circle"
         }
+    }
+
+    private var scheduledAt: Date {
+        task.dueDate ?? task.originalDueDate ?? task.createdAt
+    }
+
+    private var locationLabel: String? {
+        task.locationData?.name ?? task.locationData?.address
     }
 
     var body: some View {
@@ -649,25 +677,25 @@ private struct ScheduleTaskCard: View {
                     .clipShape(Capsule())
             }
 
-            Label(task.scheduledAt.formatted(date: .omitted, time: .shortened), systemImage: "clock")
+            Label(scheduledAt.formatted(date: .omitted, time: .shortened), systemImage: "clock")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
 
             Text(task.title)
                 .font(.system(size: 42, weight: .bold))
 
             VStack(alignment: .leading, spacing: 6) {
-                if let location = task.location {
-                    Label(location, systemImage: "location")
+                if let locationLabel {
+                    Label(locationLabel, systemImage: "location")
                 }
-                if let childName = task.childName {
-                    Label(childName, systemImage: "person")
+                if let subject = task.targetSubject {
+                    Label(subject, systemImage: "person")
                 }
             }
             .font(.title3)
             .foregroundStyle(.secondary)
 
             Button {
-                _Concurrency.Task {
+                Task {
                     await onToggleStatus()
                 }
             } label: {

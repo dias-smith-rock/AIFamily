@@ -52,12 +52,16 @@ final class FeedbackFeedViewModel: ObservableObject {
         }
     }
 
-    func markAsRead(_ id: UUID) async {
+    func markAsRead(_ id: UUID, readerId: UUID) async {
         errorMessage = nil
         do {
-            try await feedbackService.markFeedbackAsRead(id: id)
+            try await feedbackService.markFeedbackAsRead(id: id, readerId: readerId)
             guard let index = feedbacks.firstIndex(where: { $0.id == id }) else { return }
-            feedbacks[index].isRead = true
+            var existing = feedbacks[index].readBy ?? []
+            if existing.contains(readerId) == false {
+                existing.append(readerId)
+            }
+            feedbacks[index].readBy = existing
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -67,7 +71,7 @@ final class FeedbackFeedViewModel: ObservableObject {
         guard isRealtimeSubscribed == false else { return }
         do {
             try await feedbackRealtimeService.subscribeToFeedbackInserts { [weak self] feedback in
-                _Concurrency.Task { @MainActor in
+                Task { @MainActor in
                     guard let self else { return }
                     if self.feedbacks.contains(where: { $0.id == feedback.id }) == false {
                         self.feedbacks.insert(feedback, at: 0)
@@ -85,7 +89,13 @@ final class FeedbackFeedViewModel: ObservableObject {
         isRealtimeSubscribed = false
     }
 
-    func uploadVoiceFeedback(taskId: UUID, senderId: UUID, audioData: Data, duration: Int) async {
+    func uploadVoiceFeedback(
+        householdId: UUID,
+        taskId: UUID,
+        senderId: UUID,
+        audioData: Data,
+        duration: Int
+    ) async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -94,13 +104,19 @@ final class FeedbackFeedViewModel: ObservableObject {
             let audioURL = try await voiceStorageService.uploadVoiceFeedback(data: audioData, fileName: fileName)
             let feedback = Feedback(
                 id: UUID(),
+                householdId: householdId,
                 taskId: taskId,
                 senderId: senderId,
-                type: .voice,
-                text: nil,
-                audioURL: audioURL,
-                audioDurationSeconds: duration,
-                isRead: false,
+                contentType: .voice,
+                textContent: nil,
+                voiceUrl: audioURL.absoluteString,
+                imageUrls: nil,
+                videoUrl: nil,
+                duration: duration,
+                reactions: nil,
+                readBy: nil,
+                isDeleted: false,
+                mediaClearedAt: nil,
                 createdAt: Date()
             )
             _ = try await feedbackService.createFeedback(feedback)

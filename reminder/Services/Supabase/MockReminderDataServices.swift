@@ -1,18 +1,22 @@
 import Foundation
 
-actor MockTaskDataService: TaskDataService {
-    private var tasks: [Task] = Task.mockTasks
+// MARK: - Tasks
 
-    func fetchTasks() async throws -> [Task] {
-        tasks.sorted { $0.scheduledAt < $1.scheduledAt }
+actor MockTaskDataService: TaskDataService {
+    private var tasks: [FamilyTask] = FamilyTask.mockTasks
+
+    func fetchTasks() async throws -> [FamilyTask] {
+        tasks.sorted { lhs, rhs in
+            (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
+        }
     }
 
-    func createTask(_ task: Task) async throws -> Task {
+    func createTask(_ task: FamilyTask) async throws -> FamilyTask {
         tasks.append(task)
         return task
     }
 
-    func updateTask(_ task: Task) async throws -> Task {
+    func updateTask(_ task: FamilyTask) async throws -> FamilyTask {
         guard let index = tasks.firstIndex(where: { $0.id == task.id }) else {
             throw SupabaseServiceError.invalidResponse
         }
@@ -20,6 +24,8 @@ actor MockTaskDataService: TaskDataService {
         return task
     }
 }
+
+// MARK: - Feedbacks
 
 actor MockFeedbackDataService: FeedbackDataService {
     private var feedbacks: [Feedback] = Feedback.mockFeedbacks
@@ -37,34 +43,42 @@ actor MockFeedbackDataService: FeedbackDataService {
         return feedback
     }
 
-    func markFeedbackAsRead(id: UUID) async throws {
+    func markFeedbackAsRead(id: UUID, readerId: UUID) async throws {
         guard let index = feedbacks.firstIndex(where: { $0.id == id }) else {
             throw SupabaseServiceError.invalidResponse
         }
-        feedbacks[index].isRead = true
+        var existing = feedbacks[index].readBy ?? []
+        if existing.contains(readerId) == false {
+            existing.append(readerId)
+        }
+        feedbacks[index].readBy = existing
     }
 }
 
-actor MockFamilyMemberDataService: FamilyMemberDataService {
-    private var members: [FamilyMember] = FamilyMember.mockMembers
+// MARK: - Memberships
 
-    func fetchFamilyMembers() async throws -> [FamilyMember] {
+actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
+    private var members: [HouseholdMembership] = HouseholdMembership.mockMembers
+
+    func fetchMemberships() async throws -> [HouseholdMembership] {
         members.sorted { $0.createdAt < $1.createdAt }
     }
 
-    func createFamilyMember(_ member: FamilyMember) async throws -> FamilyMember {
-        members.append(member)
-        return member
+    func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership {
+        members.append(membership)
+        return membership
     }
 
-    func updateFamilyMember(_ member: FamilyMember) async throws -> FamilyMember {
-        guard let index = members.firstIndex(where: { $0.id == member.id }) else {
+    func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership {
+        guard let index = members.firstIndex(where: { $0.id == membership.id }) else {
             throw SupabaseServiceError.invalidResponse
         }
-        members[index] = member
-        return member
+        members[index] = membership
+        return membership
     }
 }
+
+// MARK: - Auth & Platform Mocks
 
 actor MockAuthService: AuthService {
     func signInWithApple(idToken: String, nonce: String) async throws {
@@ -105,11 +119,11 @@ actor MockFeedbackRealtimeService: FeedbackRealtimeService {
 actor MockInviteLinkService: InviteLinkService {
     func generateSignedInviteLink(
         token: String,
-        channel: FamilyMember.NotificationChannel,
+        contactMethod: ContactMethod,
         expiresInSeconds: Int
     ) async throws -> URL {
         _ = expiresInSeconds
-        return URL(string: "https://aifamily.app/invite/signed?token=\(token)&channel=\(channel.rawValue)") ?? URL(fileURLWithPath: "/tmp/invite")
+        return URL(string: "https://aifamily.app/invite/signed?token=\(token)&channel=\(contactMethod.rawValue)") ?? URL(fileURLWithPath: "/tmp/invite")
     }
 }
 

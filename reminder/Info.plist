@@ -8,7 +8,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>aifamily</string>
+			<string>com.aifamilygroup.reminder</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>aifamily</string>
@@ -18,12 +18,17 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>aifamily-dev</string>
+			<string>com.aifamilygroup.reminder.dev</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>aifamily-dev</string>
 			</array>
 		</dict>
 	</array>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

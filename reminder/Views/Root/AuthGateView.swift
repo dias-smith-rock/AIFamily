@@ -42,7 +42,7 @@ struct AuthGateView: View {
                 }
 
                 Button {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.submit()
                     }
                 } label: {

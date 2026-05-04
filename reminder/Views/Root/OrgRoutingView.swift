@@ -193,7 +193,7 @@ struct OrgRoutingView: View {
             focusedField = .householdName
             return
         }
-        _Concurrency.Task {
+        Task {
             let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
             guard success else { return }
             await appRouter.refreshStateFromBackend()
@@ -205,7 +205,7 @@ struct OrgRoutingView: View {
         guard isInviteCodeValid else {
             return
         }
-        _Concurrency.Task {
+        Task {
             let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
             guard success else { return }
             await appRouter.refreshStateFromBackend()

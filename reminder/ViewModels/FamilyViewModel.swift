@@ -3,22 +3,22 @@ import Combine
 
 @MainActor
 final class FamilyViewModel: ObservableObject {
-    @Published private(set) var members: [FamilyMember] = []
+    @Published private(set) var members: [HouseholdMembership] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var hasLoadedOnce = false
     @Published private(set) var requiresLogin = false
 
-    private let familyMemberService: FamilyMemberDataService
+    private let membershipService: HouseholdMembershipDataService
     private let inviteLinkService: InviteLinkService
     private let authService: AuthService
 
     init(
-        familyMemberService: FamilyMemberDataService,
+        membershipService: HouseholdMembershipDataService,
         inviteLinkService: InviteLinkService,
         authService: AuthService
     ) {
-        self.familyMemberService = familyMemberService
+        self.membershipService = membershipService
         self.inviteLinkService = inviteLinkService
         self.authService = authService
     }
@@ -42,7 +42,7 @@ final class FamilyViewModel: ObservableObject {
         }
 
         do {
-            members = try await familyMemberService.fetchFamilyMembers()
+            members = try await membershipService.fetchMemberships()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -54,13 +54,13 @@ final class FamilyViewModel: ObservableObject {
     }
 
     @discardableResult
-    func createMember(_ member: FamilyMember) async -> FamilyMember? {
+    func createMember(_ member: HouseholdMembership) async -> HouseholdMembership? {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            let createdMember = try await familyMemberService.createFamilyMember(member)
+            let createdMember = try await membershipService.createMembership(member)
             members.append(createdMember)
             members.sort { $0.createdAt < $1.createdAt }
             return createdMember
@@ -70,12 +70,13 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func generateSignedInviteLink(for member: FamilyMember) async -> URL? {
-        let token = member.inviteToken ?? "invite-\(member.id.uuidString.lowercased())"
+    /// 影子成员的邀请链接以 `membership.id` 作为 token。
+    func generateSignedInviteLink(for member: HouseholdMembership) async -> URL? {
+        let token = "invite-\(member.id.uuidString.lowercased())"
         do {
             return try await inviteLinkService.generateSignedInviteLink(
                 token: token,
-                channel: member.notificationChannel,
+                contactMethod: member.contactMethod,
                 expiresInSeconds: 900
             )
         } catch {
@@ -84,13 +85,13 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func updateMember(_ member: FamilyMember) async {
+    func updateMember(_ member: HouseholdMembership) async {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
         do {
-            let updatedMember = try await familyMemberService.updateFamilyMember(member)
+            let updatedMember = try await membershipService.updateMembership(member)
             guard let index = members.firstIndex(where: { $0.id == updatedMember.id }) else {
                 await loadMembers()
                 return

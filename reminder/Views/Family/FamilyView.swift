@@ -78,7 +78,7 @@ struct FamilyView: View {
             }
             .buttonStyle(.plain)
 
-            Text("支持微信/WhatsApp免安装使用")
+            Text("支持 App / 微信 / 邮箱触达")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -120,7 +120,7 @@ struct FamilyView: View {
                 Text(errorMessage)
             } actions: {
                 Button("重新加载") {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.loadMembers()
                     }
                 }
@@ -133,11 +133,11 @@ struct FamilyView: View {
         }
     }
 
-    private var filteredMembers: [FamilyMember] {
+    private var filteredMembers: [HouseholdMembership] {
         let trimmed = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return viewModel.members }
         return viewModel.members.filter { member in
-            member.displayName.localizedCaseInsensitiveContains(trimmed)
+            member.nickname.localizedCaseInsensitiveContains(trimmed)
         }
     }
 
@@ -159,7 +159,7 @@ struct FamilyView: View {
             },
             secondaryActionTitle: isFirstEmpty ? "重新加载" : nil,
             secondaryAction: isFirstEmpty ? {
-                _Concurrency.Task {
+                Task {
                     await viewModel.loadMembers()
                 }
             } : nil
@@ -203,18 +203,20 @@ struct FamilyView: View {
     }
 }
 
+// MARK: - Invite Sheet
+
 private struct InviteMemberSheet: View {
     @Environment(\.dismiss) private var dismiss
 
-    @State private var displayName = ""
-    @State private var role: FamilyMember.FamilyRole = .grandparent
-    @State private var channel: FamilyMember.NotificationChannel = .wechat
+    @State private var nickname = ""
+    @State private var contactMethod: ContactMethod = .wechat
     @State private var phoneNumber = ""
+    @State private var email = ""
     @State private var isSubmitting = false
     @State private var generatedLink: URL?
     @State private var submitError: String?
 
-    let onCreateMember: (FamilyMember) async -> URL?
+    let onCreateMember: (HouseholdMembership) async -> URL?
 
     var body: some View {
         NavigationStack {
@@ -228,10 +230,10 @@ private struct InviteMemberSheet: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    nameField
-                    rolePicker
-                    channelPicker
+                    nicknameField
+                    contactMethodPicker
                     phoneField
+                    emailField
                     createButton
 
                     if let generatedLink {
@@ -257,11 +259,11 @@ private struct InviteMemberSheet: View {
         }
     }
 
-    private var nameField: some View {
+    private var nicknameField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("成员称呼")
                 .font(.system(size: 14, weight: .semibold))
-            TextField("例如：奶奶 / 王阿姨", text: $displayName)
+            TextField("例如：奶奶 / 王阿姨", text: $nickname)
                 .textFieldStyle(.plain)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
@@ -270,25 +272,12 @@ private struct InviteMemberSheet: View {
         }
     }
 
-    private var rolePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("角色")
-                .font(.system(size: 14, weight: .semibold))
-            Picker("角色", selection: $role) {
-                ForEach(FamilyMember.FamilyRole.allCases, id: \.self) { value in
-                    Text(value.displayTitle).tag(value)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-
-    private var channelPicker: some View {
+    private var contactMethodPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("触达渠道")
                 .font(.system(size: 14, weight: .semibold))
-            Picker("触达渠道", selection: $channel) {
-                ForEach(FamilyMember.NotificationChannel.allCases, id: \.self) { value in
+            Picker("触达渠道", selection: $contactMethod) {
+                ForEach(ContactMethod.allCases, id: \.self) { value in
                     Text(value.displayTitle).tag(value)
                 }
             }
@@ -310,9 +299,25 @@ private struct InviteMemberSheet: View {
         }
     }
 
+    private var emailField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("邮箱（可选）")
+                .font(.system(size: 14, weight: .semibold))
+            TextField("用于邮件邀请或登录", text: $email)
+                .textFieldStyle(.plain)
+                .keyboardType(.emailAddress)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled(true)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
     private var createButton: some View {
         Button {
-            _Concurrency.Task {
+            Task {
                 await createShadowMember()
             }
         } label: {
@@ -327,7 +332,7 @@ private struct InviteMemberSheet: View {
                     .padding(.vertical, 12)
             }
         }
-        .disabled(isSubmitting || displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        .disabled(isSubmitting || nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .buttonStyle(.borderedProminent)
     }
 
@@ -360,24 +365,28 @@ private struct InviteMemberSheet: View {
         isSubmitting = true
         defer { isSubmitting = false }
 
-        let trimmedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedName = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmedName.isEmpty == false else {
             submitError = "请先填写成员称呼。"
             return
         }
 
         let now = Date()
-        let member = FamilyMember(
+        let trimmedPhone = phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let member = HouseholdMembership(
             id: UUID(),
-            displayName: trimmedName,
-            role: role,
-            permission: .executor,
-            notificationChannel: channel,
-            phoneNumber: phoneNumber.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : phoneNumber,
-            avatarEmoji: role.defaultAvatarEmoji,
-            notificationsEnabled: true,
-            inviteToken: "invite-\(UUID().uuidString.lowercased())",
-            bindingStatus: .pending,
+            householdId: MockIDs.household,
+            userId: nil,
+            role: .member,
+            nickname: trimmedName,
+            avatarUrl: nil,
+            contactMethod: contactMethod,
+            phoneNumber: trimmedPhone.isEmpty ? nil : trimmedPhone,
+            email: trimmedEmail.isEmpty ? nil : trimmedEmail,
+            status: .pending,
+            joinedAt: nil,
             createdAt: now,
             updatedAt: now
         )
@@ -390,99 +399,64 @@ private struct InviteMemberSheet: View {
     }
 }
 
-private extension FamilyMember.FamilyRole {
-    static var allCases: [FamilyMember.FamilyRole] {
-        [.father, .mother, .grandparent, .caregiver, .child]
-    }
+// MARK: - Display Helpers
 
+private extension ContactMethod {
     var displayTitle: String {
         switch self {
-        case .father:
-            return "父亲"
-        case .mother:
-            return "母亲"
-        case .grandparent:
-            return "长辈"
-        case .caregiver:
-            return "保姆"
-        case .child:
-            return "孩子"
-        }
-    }
-
-    var defaultAvatarEmoji: String {
-        switch self {
-        case .father:
-            return "👨"
-        case .mother:
-            return "👩"
-        case .grandparent:
-            return "👵"
-        case .caregiver:
-            return "🧑"
-        case .child:
-            return "🧒"
+        case .appPush: return "App"
+        case .wechat: return "微信"
+        case .email: return "邮箱"
         }
     }
 }
 
-private extension FamilyMember.NotificationChannel {
-    static var allCases: [FamilyMember.NotificationChannel] {
-        [.wechat, .app, .whatsapp, .sms]
-    }
-
+private extension MembershipRole {
     var displayTitle: String {
         switch self {
-        case .app:
-            return "App"
-        case .wechat:
-            return "微信"
-        case .whatsapp:
-            return "WhatsApp"
-        case .sms:
-            return "短信"
+        case .creator: return "创建者"
+        case .admin: return "管理员"
+        case .member: return "成员"
+        }
+    }
+
+    var badgeIcon: String? {
+        switch self {
+        case .creator, .admin: return "crown"
+        case .member: return nil
         }
     }
 }
+
+private extension MembershipStatus {
+    var displayTitle: String {
+        switch self {
+        case .active: return "已激活"
+        case .pending: return "待审批"
+        case .disabled: return "已停用"
+        }
+    }
+
+    var displayColor: Color {
+        switch self {
+        case .active: return .green
+        case .pending: return .orange
+        case .disabled: return .secondary
+        }
+    }
+}
+
+// MARK: - Member Card
 
 private struct FamilyMemberCard: View {
-    let member: FamilyMember
+    let member: HouseholdMembership
 
     private var channelLabel: String {
-        switch member.notificationChannel {
-        case .app:
-            return "APP"
-        case .wechat:
-            return "微信"
-        case .whatsapp:
-            return "WhatsApp"
-        case .sms:
-            return "短信"
-        }
+        member.contactMethod.displayTitle
     }
 
-    private var notificationText: String {
-        member.notificationsEnabled ? "通知已开启" : "通知未开启"
-    }
-
-    private var bindingText: String {
-        switch member.bindingStatus {
-        case .pending:
-            return "待绑定"
-        case .linked:
-            return "已绑定"
-        case .disabled:
-            return "已停用"
-        }
-    }
-
-    private var roleBadgeIcon: String? {
-        switch member.permission {
-        case .owner, .manager:
-            return "crown"
-        case .executor, .viewer:
-            return nil
-        }
+    private var avatarText: String {
+        String(member.nickname.prefix(1))
     }
 
     var body: some View {
@@ -491,16 +465,17 @@ private struct FamilyMemberCard: View {
                 .fill(Color.purple.opacity(0.12))
                 .frame(width: 50, height: 50)
                 .overlay {
-                    Text(member.avatarEmoji ?? "🙂")
-                        .font(.title2)
+                    Text(avatarText)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.purple)
                 }
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 5) {
-                    Text(member.displayName)
+                    Text(member.nickname)
                         .font(.title3.weight(.semibold))
-                    if let roleBadgeIcon {
-                        Image(systemName: roleBadgeIcon)
+                    if let badgeIcon = member.role.badgeIcon {
+                        Image(systemName: badgeIcon)
                             .font(.subheadline)
                             .foregroundStyle(.yellow)
                     }
@@ -512,13 +487,13 @@ private struct FamilyMemberCard: View {
                         .padding(.vertical, 2)
                         .background(Color(.secondarySystemBackground))
                         .clipShape(Capsule())
-                    Label(notificationText, systemImage: "bell")
+                    Label(member.role.displayTitle, systemImage: "person.text.rectangle")
                         .font(.subheadline)
-                        .foregroundStyle(member.notificationsEnabled ? .green : .orange)
+                        .foregroundStyle(.secondary)
                 }
-                Label(bindingText, systemImage: "link")
+                Label(member.status.displayTitle, systemImage: "checkmark.seal")
                     .font(.subheadline)
-                    .foregroundStyle(member.bindingStatus == .linked ? .green : .secondary)
+                    .foregroundStyle(member.status.displayColor)
             }
             Spacer()
             Image(systemName: "gearshape")
@@ -534,9 +509,7 @@ private struct FamilyMemberCard: View {
     }
 }
 
-#Preview {
-    FamilyView()
-}
+// MARK: - Login Sheet
 
 private struct FamilySessionLoginSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -571,7 +544,7 @@ private struct FamilySessionLoginSheet: View {
                 }
 
                 Button {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.submit()
                         if viewModel.isLoggedIn {
                             await onLoginSuccess()
@@ -591,7 +564,7 @@ private struct FamilySessionLoginSheet: View {
                 .buttonStyle(.borderedProminent)
 
                 Button("刷新会话状态") {
-                    _Concurrency.Task {
+                    Task {
                         await viewModel.refreshSessionState()
                         if viewModel.isLoggedIn {
                             await onLoginSuccess()
@@ -613,4 +586,8 @@ private struct FamilySessionLoginSheet: View {
             .navigationBarTitleDisplayMode(.inline)
         }
     }
+}
+
+#Preview {
+    FamilyView()
 }

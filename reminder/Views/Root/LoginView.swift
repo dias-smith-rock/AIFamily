@@ -13,6 +13,10 @@ struct LoginView: View {
         case google
     }
 
+    /// 必须与 `supabase/config.toml` 中 `[auth].additional_redirect_urls` 完全一致，
+    /// 同时也需要在 Info.plist 的 URL Types 中注册 `aifamily` scheme。
+    private static let oauthRedirectURL = URL(string: "aifamily://login-callback")
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 80)
@@ -26,6 +30,7 @@ struct LoginView: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
+        // 保留：处理 Magic Link 邮件回跳等非 ASWebAuthenticationSession 场景
         .onOpenURL { url in
             handleAuthCallback(url)
         }
@@ -122,26 +127,32 @@ struct LoginView: View {
         .disabled(loadingProvider != nil)
     }
 
+    // MARK: - Actions
+
     private func triggerLogin(_ provider: LoginProvider) {
         errorMessage = nil
         loadingProvider = provider
-        _Concurrency.Task {
+        Task {
             do {
                 try await signInWithOAuth(provider: provider)
                 await appRouter.refreshStateFromBackend()
             } catch {
-                errorMessage = error.localizedDescription
+                if isUserCancelled(error) == false {
+                    errorMessage = error.localizedDescription
+                }
             }
             loadingProvider = nil
         }
     }
 
+    /// 走 supabase-swift 的内置 `signInWithOAuth`：iOS 上会用 `ASWebAuthenticationSession`
+    /// 在当前 App 内弹出 Safari View 卡片完成登录，回跳由 SDK 内部接管，不需要 `onOpenURL`。
     private func signInWithOAuth(provider: LoginProvider) async throws {
         #if canImport(Supabase)
-        let redirectURL = URL(string: "aifamily://auth-callback")
+        let oauthProvider: Provider = provider == .google ? .google : .apple
         try await SupabaseManager.shared.client.auth.signInWithOAuth(
-            provider: provider == .google ? .google : .apple,
-            redirectTo: redirectURL
+            provider: oauthProvider,
+            redirectTo: Self.oauthRedirectURL
         )
         #else
         _ = provider
@@ -153,9 +164,18 @@ struct LoginView: View {
         #endif
     }
 
+    /// 用户在 Safari View 卡片里点了"取消"会抛 `ASWebAuthenticationSessionError.canceledLogin`，
+    /// 这是正常交互而非错误，不要把它显示成红字提示。
+    private func isUserCancelled(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        return nsError.domain == "com.apple.AuthenticationServices.WebAuthenticationSession"
+            && nsError.code == 1
+    }
+
+    /// 兜底：处理 Magic Link 等通过 URL Scheme 直接拉起 App 的回跳。
     private func handleAuthCallback(_ url: URL) {
         #if canImport(Supabase)
-        _Concurrency.Task {
+        Task {
             do {
                 _ = try await SupabaseManager.shared.client.auth.session(from: url)
                 await appRouter.refreshStateFromBackend()

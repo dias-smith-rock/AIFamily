@@ -2,10 +2,10 @@ import Foundation
 
 struct TaskDraft: Equatable {
     var title: String
-    var note: String?
-    var scheduledAt: Date
-    var location: String?
-    var childName: String?
+    var description: String?
+    var dueDate: Date
+    var locationName: String?
+    var targetSubject: String?
 }
 
 protocol AIParsingService {
@@ -26,10 +26,10 @@ struct RuleBasedAIParserService: AIParsingService {
 
         return TaskDraft(
             title: extractTitle(from: trimmed),
-            note: trimmed,
-            scheduledAt: scheduled,
-            location: normalized.contains("医院") ? "社区医院" : nil,
-            childName: normalized.contains("小明") ? "小明" : nil
+            description: trimmed,
+            dueDate: scheduled,
+            locationName: normalized.contains("医院") ? "社区医院" : nil,
+            targetSubject: normalized.contains("小明") ? "小明" : nil
         )
     }
 

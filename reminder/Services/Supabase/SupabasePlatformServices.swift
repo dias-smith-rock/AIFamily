@@ -4,6 +4,8 @@ import Foundation
 import Supabase
 #endif
 
+// MARK: - Protocols
+
 protocol AuthService {
     func signInWithApple(idToken: String, nonce: String) async throws
     func sendMagicLink(email: String) async throws
@@ -24,7 +26,7 @@ protocol FeedbackRealtimeService {
 protocol InviteLinkService {
     func generateSignedInviteLink(
         token: String,
-        channel: FamilyMember.NotificationChannel,
+        contactMethod: ContactMethod,
         expiresInSeconds: Int
     ) async throws -> URL
 }
@@ -40,13 +42,18 @@ enum HouseholdRoutingError: LocalizedError {
     case unauthenticated
     case alreadyActiveMember
     case joinRequestPending
+    case nonceExpired
+    case nonceConsumed
     case networkFailure
     case unknown
 }
 
+// MARK: - Auth
+
 struct SupabaseAuthService: AuthService {
     private let provider: SupabaseClientProviding
-    private let magicLinkRedirectURL = URL(string: "aifamily://auth-callback")
+    /// 必须与 `supabase/config.toml` 中 `[auth].additional_redirect_urls` 完全一致。
+    private let magicLinkRedirectURL = URL(string: "aifamily://login-callback")
 
     init(provider: SupabaseClientProviding) {
         self.provider = provider
@@ -111,6 +118,8 @@ struct SupabaseAuthService: AuthService {
     }
 }
 
+// MARK: - Voice Storage
+
 struct SupabaseVoiceStorageService: VoiceStorageService {
     private let provider: SupabaseClientProviding
     private let bucket = "voice-feedbacks"
@@ -143,6 +152,8 @@ struct SupabaseVoiceStorageService: VoiceStorageService {
         #endif
     }
 }
+
+// MARK: - Realtime
 
 final class SupabaseFeedbackRealtimeService: FeedbackRealtimeService {
     #if canImport(Supabase)
@@ -179,10 +190,12 @@ final class SupabaseFeedbackRealtimeService: FeedbackRealtimeService {
     #endif
 }
 
+// MARK: - Invite Link
+
 struct SupabaseInviteLinkService: InviteLinkService {
     func generateSignedInviteLink(
         token: String,
-        channel: FamilyMember.NotificationChannel,
+        contactMethod: ContactMethod,
         expiresInSeconds: Int
     ) async throws -> URL {
         let functionURL = SupabaseManager.projectBaseURL
@@ -196,7 +209,7 @@ struct SupabaseInviteLinkService: InviteLinkService {
 
         let payload = InviteLinkPayload(
             token: token,
-            channel: channel.rawValue,
+            channel: contactMethod.rawValue,
             expiresInSeconds: expiresInSeconds
         )
         request.httpBody = try JSONEncoder().encode(payload)
@@ -216,6 +229,8 @@ struct SupabaseInviteLinkService: InviteLinkService {
         return url
     }
 }
+
+// MARK: - Household Routing
 
 struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
     private let provider: SupabaseClientProviding
@@ -241,7 +256,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
 
         let households: [CreatedHouseholdRow] = try await provider.client
             .from("households")
-            .insert(NewHouseholdRow(name: normalizedName))
+            .insert(NewHouseholdRow(name: normalizedName, creatorId: userId))
             .select("id")
             .limit(1)
             .execute()
@@ -251,26 +266,31 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw SupabaseServiceError.invalidResponse
         }
 
+        let nickname = session.user.email ?? "管理员"
+
         _ = try await provider.client
             .from("household_memberships")
             .insert(NewMembershipRow(
                 householdId: householdId,
                 userId: userId,
-                userRole: "owner",
-                status: "active"
+                role: MembershipRole.creator.rawValue,
+                nickname: nickname,
+                contactMethod: ContactMethod.appPush.rawValue,
+                status: MembershipStatus.active.rawValue
             ))
             .execute()
-        
         #else
         _ = displayName
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
 
+    /// 通过 `invite_link_nonces.nonce` 找到归属家庭，并以 `pending` 状态写入 `household_memberships`。
+    /// 真正的核销（写 `is_used / used_by`）由 Edge Function 负责，本端只负责入驻申请。
     func joinHousehold(inviteCode: String) async throws {
         #if canImport(Supabase)
         let normalizedCode = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        guard normalizedCode.range(of: "^[A-Z0-9]{6}$", options: .regularExpression) != nil else {
+        guard normalizedCode.isEmpty == false else {
             throw HouseholdRoutingError.invalidInviteCode
         }
 
@@ -282,19 +302,27 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         }
         let userId = session.user.id
 
-        let members: [InviteMemberRow] = try await provider.client
-            .from("family_members")
-            .select("household_id")
-            .eq("invite_token", value: normalizedCode)
+        let nonces: [InviteNonceRow] = try await provider.client
+            .from("invite_link_nonces")
+            .select("household_id,is_used,expires_at")
+            .eq("nonce", value: normalizedCode)
             .limit(1)
             .execute()
             .value
 
-        guard let householdId = members.first?.householdId else {
+        guard let nonce = nonces.first else {
             throw HouseholdRoutingError.invalidInviteCode
         }
+        if nonce.isUsed {
+            throw HouseholdRoutingError.nonceConsumed
+        }
+        if nonce.expiresAt < Date() {
+            throw HouseholdRoutingError.nonceExpired
+        }
 
-        let existingMemberships: [MembershipStatusRow] = try await provider.client
+        let householdId = nonce.householdId
+
+        let existing: [MembershipStatusRow] = try await provider.client
             .from("household_memberships")
             .select("status")
             .eq("household_id", value: householdId.uuidString)
@@ -303,14 +331,19 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             .execute()
             .value
 
-        if let status = existingMemberships.first?.status.lowercased() {
-            if status == "active" {
+        if let statusRaw = existing.first?.status,
+           let status = MembershipStatus(rawValue: statusRaw) {
+            switch status {
+            case .active:
                 throw HouseholdRoutingError.alreadyActiveMember
-            }
-            if status == "invited" || status == "pending" {
+            case .pending:
                 throw HouseholdRoutingError.joinRequestPending
+            case .disabled:
+                break
             }
         }
+
+        let nickname = session.user.email ?? "新成员"
 
         do {
             _ = try await provider.client
@@ -318,15 +351,17 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
                 .insert(NewMembershipRow(
                     householdId: householdId,
                     userId: userId,
-                    userRole: "viewer",
-                    status: "invited"
+                    role: MembershipRole.member.rawValue,
+                    nickname: nickname,
+                    contactMethod: ContactMethod.appPush.rawValue,
+                    status: MembershipStatus.pending.rawValue
                 ))
                 .execute()
         } catch {
             do {
                 _ = try await provider.client
                     .from("household_memberships")
-                    .update(MembershipPatch(status: "invited"))
+                    .update(MembershipPatch(status: MembershipStatus.pending.rawValue))
                     .eq("household_id", value: householdId.uuidString)
                     .eq("user_id", value: userId.uuidString)
                     .execute()
@@ -341,34 +376,30 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
     }
 }
 
+// MARK: - Wire payloads
+
 private struct NewHouseholdRow: Encodable {
     let name: String
+    let creatorId: UUID
 }
 
 private struct CreatedHouseholdRow: Decodable {
     let id: UUID
 }
 
-private struct InviteMemberRow: Decodable {
+private struct InviteNonceRow: Decodable {
     let householdId: UUID
-
-    enum CodingKeys: String, CodingKey {
-        case householdId = "household_id"
-    }
+    let isUsed: Bool
+    let expiresAt: Date
 }
 
 private struct NewMembershipRow: Encodable {
     let householdId: UUID
     let userId: UUID
-    let userRole: String
+    let role: String
+    let nickname: String
+    let contactMethod: String
     let status: String
-
-    enum CodingKeys: String, CodingKey {
-        case householdId = "household_id"
-        case userId = "user_id"
-        case userRole = "user_role"
-        case status
-    }
 }
 
 private struct MembershipPatch: Encodable {

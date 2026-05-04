@@ -1,31 +1,25 @@
 import Foundation
 
+// MARK: - 5. 消息与反馈 (Feedback)
+/// 系统下发消息时 `senderId` 为空。
 struct Feedback: Identifiable, Codable, Equatable {
     let id: UUID
-    var taskId: UUID
-    var senderId: UUID
-    var type: FeedbackType
-    var text: String?
-    var audioURL: URL?
-    var audioDurationSeconds: Int?
-    var isRead: Bool
-    var createdAt: Date
+    let householdId: UUID
+    let taskId: UUID
+    let senderId: UUID?
+    var contentType: FeedbackContentType
 
-    enum FeedbackType: String, Codable {
-        case text
-        case voice
-        case system
-    }
+    var textContent: String?
+    var voiceUrl: String?
+    var imageUrls: [String]?
+    var videoUrl: String?
+    var duration: Int?
 
-    enum CodingKeys: String, CodingKey {
-        case id
-        case taskId = "task_id"
-        case senderId = "sender_id"
-        case type
-        case text
-        case audioURL = "audio_url"
-        case audioDurationSeconds = "audio_duration_seconds"
-        case isRead = "is_read"
-        case createdAt = "created_at"
-    }
+    /// 反应表情：`["👍": [memberId1, memberId2]]`
+    var reactions: [String: [UUID]]?
+    var readBy: [UUID]?
+    var isDeleted: Bool
+    var mediaClearedAt: Date?
+
+    let createdAt: Date
 }

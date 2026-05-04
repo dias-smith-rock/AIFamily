@@ -23,7 +23,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                _Concurrency.Task {
+                Task {
                     await appRouter.refreshStateFromBackend()
                 }
             }
