@@ -89,7 +89,7 @@ struct AppTabRootView: View {
             isPresented: $showsRecentHouseholdsQuickSwitch,
             titleVisibility: .visible
         ) {
-            ForEach(appRouter.recentHouseholds.prefix(5)) { option in
+            ForEach(Array(appRouter.recentHouseholds.prefix(5))) { option in
                 Button(option.name) {
                     chooseHousehold(option)
                 }

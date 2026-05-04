@@ -242,13 +242,35 @@ final class AppRouter: ObservableObject {
     }
 
     private func loadRecentHouseholdIds(for userId: UUID) -> [UUID] {
-        let strings = UserDefaults.standard.stringArray(forKey: recentHouseholdsKey(for: userId)) ?? []
-        return strings.compactMap(UUID.init(uuidString:))
+        let key = recentHouseholdsKey(for: userId)
+        let rawStrings = UserDefaults.standard.stringArray(forKey: key) ?? []
+
+        let parsed = rawStrings.compactMap(UUID.init(uuidString:))
+        var seen: Set<UUID> = []
+        var sanitized: [UUID] = []
+        sanitized.reserveCapacity(min(parsed.count, 5))
+
+        for id in parsed where seen.contains(id) == false {
+            seen.insert(id)
+            sanitized.append(id)
+            if sanitized.count == 5 { break }
+        }
+
+        let sanitizedStrings = sanitized.map(\.uuidString)
+        if sanitizedStrings != rawStrings {
+            UserDefaults.standard.set(sanitizedStrings, forKey: key)
+            debugLog("recent_households.sanitized user=\(userId.uuidString) before=\(rawStrings.count) after=\(sanitizedStrings.count)")
+        }
+
+        return sanitized
     }
 
     private func sortHouseholdsByRecentUsage(_ options: [HouseholdOption], userId: UUID) -> [HouseholdOption] {
         let recent = loadRecentHouseholdIds(for: userId)
-        let order = Dictionary(uniqueKeysWithValues: recent.enumerated().map { ($1, $0) })
+        var order: [UUID: Int] = [:]
+        for (index, id) in recent.enumerated() where order[id] == nil {
+            order[id] = index
+        }
         return options.sorted { lhs, rhs in
             let l = order[lhs.id] ?? Int.max
             let r = order[rhs.id] ?? Int.max

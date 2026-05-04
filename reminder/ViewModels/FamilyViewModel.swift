@@ -127,16 +127,14 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    @discardableResult
-    func renameHousehold(householdId: UUID, newName: String) async -> Bool {
-        let normalizedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+    func renameHousehold(householdId: UUID, newName: String) async -> String? {
+        let stableName = String(newName)
+        let normalizedName = stableName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
-            errorMessage = "家庭名称不能为空。"
-            return false
+            return "家庭名称不能为空。"
         }
 
         isLoading = true
-        errorMessage = nil
         defer { isLoading = false }
 
         do {
@@ -144,13 +142,11 @@ final class FamilyViewModel: ObservableObject {
                 householdId: householdId,
                 newName: normalizedName
             )
-            return true
+            return nil
         } catch let error as HouseholdRoutingError {
-            errorMessage = mapHouseholdRenameError(error)
-            return false
+            return mapHouseholdRenameError(error)
         } catch {
-            errorMessage = error.localizedDescription
-            return false
+            return error.localizedDescription
         }
     }
 

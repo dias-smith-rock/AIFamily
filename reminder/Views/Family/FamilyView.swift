@@ -239,6 +239,7 @@ struct FamilyView: View {
         }
     }
 
+    @MainActor
     private func renameCurrentHousehold(to newName: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
@@ -246,12 +247,12 @@ struct FamilyView: View {
             return
         }
 
-        let success = await viewModel.renameHousehold(
+        let renameFailureMessage = await viewModel.renameHousehold(
             householdId: householdId,
             newName: newName
         )
-        guard success else {
-            renameErrorMessage = viewModel.errorMessage ?? "修改家庭名称失败，请稍后重试。"
+        if let renameFailureMessage {
+            renameErrorMessage = renameFailureMessage
             return
         }
 
@@ -467,13 +468,13 @@ private struct RenameHouseholdSheet: View {
     @State private var name: String
     let isSubmitting: Bool
     let errorMessage: String?
-    let onSubmit: (String) async -> Void
+    let onSubmit: @MainActor (String) async -> Void
 
     init(
         initialName: String,
         isSubmitting: Bool,
         errorMessage: String?,
-        onSubmit: @escaping (String) async -> Void
+        onSubmit: @escaping @MainActor (String) async -> Void
     ) {
         _name = State(initialValue: initialName)
         self.isSubmitting = isSubmitting
@@ -500,8 +501,9 @@ private struct RenameHouseholdSheet: View {
                 }
 
                 Button {
-                    Task {
-                        await onSubmit(name)
+                    let snapshot = String(name)
+                    Task { @MainActor in
+                        await onSubmit(snapshot)
                     }
                 } label: {
                     if isSubmitting {
