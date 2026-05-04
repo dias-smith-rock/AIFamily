@@ -9,7 +9,7 @@ import SwiftUI
 import SwiftData
 
 @main
-struct reminderApp: App {
+struct WeFamilyApp: App {
     @StateObject private var appBootstrap = AppBootstrap()
     @StateObject private var appRouter = AppRouter()
 

@@ -17,7 +17,7 @@ struct AuthGateView: View {
     private var loginView: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("登录 AIFamily")
+                Text("登录 家音")
                     .font(.system(size: 32, weight: .bold))
                 Text("支持 Apple、Magic Link、Phone OTP")
                     .font(.system(size: 15, weight: .medium))

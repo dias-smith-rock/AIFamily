@@ -11,7 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		DD17A5EF2F9F4E500059AE67 /* reminder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = reminder.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD17A5EF2F9F4E500059AE67 /* WeFamily.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeFamily.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -58,7 +58,7 @@
 		DD17A5F02F9F4E500059AE67 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DD17A5EF2F9F4E500059AE67 /* reminder.app */,
+				DD17A5EF2F9F4E500059AE67 /* WeFamily.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -85,8 +85,8 @@
 			packageProductDependencies = (
 				DDC2AF6F2F9F860600D9A032 /* Supabase */,
 			);
-			productName = reminder;
-			productReference = DD17A5EF2F9F4E500059AE67 /* reminder.app */;
+			productName = WeFamily;
+			productReference = DD17A5EF2F9F4E500059AE67 /* WeFamily.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -290,7 +290,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = WeFamily;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -323,7 +323,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = WeFamily;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
