@@ -71,6 +71,28 @@ struct SupabaseTaskDataService: TaskDataService {
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+        #if canImport(Supabase)
+        struct StatusPatch: Encodable {
+            let status: String
+        }
+
+        let response: FamilyTask = try await provider.client
+            .from(SupabaseTable.tasks)
+            .update(StatusPatch(status: status.rawValue))
+            .eq("id", value: taskId.uuidString)
+            .select()
+            .single()
+            .execute()
+            .value
+        return response
+        #else
+        _ = taskId
+        _ = status
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
 }
 
 // MARK: - Feedback Service

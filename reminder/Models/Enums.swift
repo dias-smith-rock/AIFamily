@@ -43,6 +43,7 @@ enum TaskStatus: String, Codable, Equatable {
     case accepted
     case inProgress = "in_progress"
     case completed
+    case issue
     case failed
     case expired
     case cancelled

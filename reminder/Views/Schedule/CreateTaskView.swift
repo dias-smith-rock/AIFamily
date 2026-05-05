@@ -24,10 +24,44 @@ struct CreateTaskView: View {
     @State private var isSaving = false
     @State private var errorMessage: String?
 
-    let onSaveSuccess: ((Date) -> Void)?
+    private let editingTask: FamilyTask?
+    private let onSaveSuccess: ((Date) -> Void)?
+    private let onUpdateSuccess: ((FamilyTask) -> Void)?
 
-    init(onSaveSuccess: ((Date) -> Void)? = nil) {
+    init(
+        editingTask: FamilyTask? = nil,
+        onSaveSuccess: ((Date) -> Void)? = nil,
+        onUpdateSuccess: ((FamilyTask) -> Void)? = nil
+    ) {
+        self.editingTask = editingTask
         self.onSaveSuccess = onSaveSuccess
+        self.onUpdateSuccess = onUpdateSuccess
+
+        if let task = editingTask {
+            _title = State(initialValue: task.title)
+            _dueDate = State(initialValue: task.dueDate ?? task.originalDueDate ?? Date())
+            _isAllDay = State(initialValue: task.isAllDay)
+            _repeatOption = State(initialValue: TaskRepeatOption(recurrenceRule: task.recurrenceRule))
+            _reminderOption = State(initialValue: TaskReminderOption(offsets: task.reminderOffsets))
+            if task.involvesWholeHousehold {
+                _selectedAssigneeIds = State(initialValue: [])
+            } else {
+                _selectedAssigneeIds = State(initialValue: Set(task.involvedMemberIds ?? []))
+            }
+            _note = State(initialValue: task.description ?? "")
+            _financeDetailNote = State(initialValue: "")
+            _costInput = State(initialValue: Self.displayCost(fromMinorUnits: task.estimatedCost))
+        } else {
+            _title = State(initialValue: "")
+            _dueDate = State(initialValue: Date())
+            _isAllDay = State(initialValue: false)
+            _repeatOption = State(initialValue: .never)
+            _reminderOption = State(initialValue: .atTimeOfEvent)
+            _selectedAssigneeIds = State(initialValue: [])
+            _note = State(initialValue: "")
+            _financeDetailNote = State(initialValue: "")
+            _costInput = State(initialValue: "")
+        }
     }
 
     private enum Field: Hashable {
@@ -96,7 +130,7 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            .navigationTitle("新建任务")
+            .navigationTitle(editingTask == nil ? "新建任务" : "编辑任务")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -130,7 +164,9 @@ struct CreateTaskView: View {
                 }
             }
             .onAppear {
-                focusedField = .title
+                if editingTask == nil {
+                    focusedField = .title
+                }
             }
         }
         .task {
@@ -371,6 +407,14 @@ struct CreateTaskView: View {
         defer { isSaving = false }
 
         #if canImport(Supabase)
+        if let existing = editingTask {
+            await saveEditedTask(
+                existing: existing,
+                householdId: householdId
+            )
+            return
+        }
+
         do {
             let now = Date()
             let membershipContext = creatorMembershipId
@@ -411,6 +455,58 @@ struct CreateTaskView: View {
         errorMessage = "当前构建环境未包含 Supabase SDK。"
         #endif
     }
+
+    private func saveEditedTask(existing: FamilyTask, householdId: UUID) async {
+        #if canImport(Supabase)
+        guard existing.householdId == householdId else {
+            errorMessage = "当前家庭与任务不一致，无法保存。"
+            return
+        }
+
+        do {
+            let payload = TaskUpdatePayload(
+                title: normalizedTitle,
+                description: mergedDescriptionForPayload,
+                involvedMemberIds: resolvedInvolvedMemberIds,
+                dueDate: dueDate,
+                isAllDay: isAllDay,
+                recurrenceRule: repeatOption.recurrenceRule,
+                reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                estimatedCost: estimatedCostMinorUnits,
+                updatedAt: Date()
+            )
+
+            let updated: FamilyTask = try await SupabaseManager.shared.client
+                .from("tasks")
+                .update(payload)
+                .eq("id", value: existing.id.uuidString)
+                .select()
+                .single()
+                .execute()
+                .value
+
+            onUpdateSuccess?(updated)
+            dismiss()
+        } catch {
+            #if DEBUG
+            print("[CreateTaskView] saveEditedTask failed: \(error.localizedDescription)")
+            #endif
+            errorMessage = "任务更新失败：\(error.localizedDescription)"
+        }
+        #else
+        errorMessage = "当前构建环境未包含 Supabase SDK。"
+        #endif
+    }
+
+    private static func displayCost(fromMinorUnits minor: Int?) -> String {
+        guard let minor else { return "" }
+        if minor == 0 { return "" }
+        let value = Double(minor) / 100.0
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0f", value)
+        }
+        return String(format: "%.2f", value)
+    }
 }
 
 // MARK: - Repeat / Reminder
@@ -440,6 +536,22 @@ private enum TaskRepeatOption: String, CaseIterable, Identifiable {
         case .monthly: return "FREQ=MONTHLY"
         }
     }
+
+    init(recurrenceRule: String?) {
+        guard let rule = recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines), rule.isEmpty == false else {
+            self = .never
+            return
+        }
+        if rule.contains("DAILY") {
+            self = .daily
+        } else if rule.contains("WEEKLY") {
+            self = .weekly
+        } else if rule.contains("MONTHLY") {
+            self = .monthly
+        } else {
+            self = .never
+        }
+    }
 }
 
 private enum TaskReminderOption: String, CaseIterable, Identifiable {
@@ -465,6 +577,22 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         case .atTimeOfEvent: return [0]
         case .minutesBefore10: return [10]
         case .hourBefore1: return [60]
+        }
+    }
+
+    init(offsets: [Int]?) {
+        guard let offsets, offsets.isEmpty == false else {
+            self = .none
+            return
+        }
+        if offsets == [0] {
+            self = .atTimeOfEvent
+        } else if offsets.contains(10) {
+            self = .minutesBefore10
+        } else if offsets.contains(60) {
+            self = .hourBefore1
+        } else {
+            self = .atTimeOfEvent
         }
     }
 }
@@ -512,6 +640,30 @@ private struct TaskInsertPayload: Encodable {
         case reminderOffsets = "reminder_offsets"
         case estimatedCost = "estimated_cost"
         case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+private struct TaskUpdatePayload: Encodable {
+    let title: String
+    let description: String?
+    let involvedMemberIds: [UUID]?
+    let dueDate: Date
+    let isAllDay: Bool
+    let recurrenceRule: String?
+    let reminderOffsets: [Int]?
+    let estimatedCost: Int?
+    let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case title
+        case description
+        case involvedMemberIds = "involved_member_ids"
+        case dueDate = "due_date"
+        case isAllDay = "is_all_day"
+        case recurrenceRule = "recurrence_rule"
+        case reminderOffsets = "reminder_offsets"
+        case estimatedCost = "estimated_cost"
         case updatedAt = "updated_at"
     }
 }

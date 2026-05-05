@@ -87,4 +87,20 @@ final class ScheduleViewModel: ObservableObject {
         updatedTask.status = status
         await updateTask(updatedTask)
     }
+
+    /// 成员详情页状态机：仅 PATCH `status`，避免整行写入与并发覆盖。
+    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+        errorMessage = nil
+
+        let updated = try await taskService.patchTaskStatus(taskId: taskId, to: status)
+        if let index = tasks.firstIndex(where: { $0.id == updated.id }) {
+            tasks[index] = updated
+        } else {
+            tasks.append(updated)
+        }
+        tasks.sort { lhs, rhs in
+            (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
+        }
+        return updated
+    }
 }

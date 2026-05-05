@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if canImport(Supabase)
+import Supabase
+#endif
+
 struct ScheduleView: View {
     private let topFamilyBarOffset: CGFloat = 56
     @EnvironmentObject private var appRouter: AppRouter
@@ -9,6 +13,8 @@ struct ScheduleView: View {
     @State private var monthSheetDate: Date?
     @State private var showsMonthSheet = false
     @State private var showingCreateTask = false
+    @State private var taskForDetailSheet: FamilyTask?
+    @State private var currentMembershipRole: MembershipRole = .member
     let onRequestAIInput: () -> Void
 
     init(onRequestAIInput: @escaping () -> Void = {}) {
@@ -25,34 +31,51 @@ struct ScheduleView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    header
-                    periodSelector
-                    periodNavigator
-                    rangeHint
-                    Divider()
-                    contentByPeriod
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, topFamilyBarOffset)
-                .padding(.bottom, 120)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                periodSelector
+                periodNavigator
+                rangeHint
+                Divider()
+                contentByPeriod
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationBarHidden(true)
-            .safeAreaInset(edge: .bottom) {
-                floatingActionCapsule
+            .padding(.horizontal, 16)
+            .padding(.top, topFamilyBarOffset)
+            .padding(.bottom, 120)
+        }
+        .background(Color(.systemGroupedBackground))
+        .safeAreaInset(edge: .bottom) {
+            floatingActionCapsule
+        }
+        .sheet(item: $taskForDetailSheet) { task in
+            NavigationStack {
+                TaskDetailView(
+                    initialTask: task,
+                    currentUserRole: currentMembershipRole,
+                    assigneeDisplayName: assigneeLabel(for: task),
+                    scheduleViewModel: viewModel
+                )
+                .environmentObject(appRouter)
             }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
         }
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+            await refreshCurrentMembershipRole()
             await viewModel.loadTasks()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             viewModel.setHouseholdContext(newValue)
             Task {
+                await refreshCurrentMembershipRole()
                 await viewModel.loadTasks()
+            }
+        }
+        .onChange(of: appRouter.selectedMembershipId) { _, _ in
+            Task {
+                await refreshCurrentMembershipRole()
             }
         }
         .sheet(isPresented: $showsMonthSheet) {
@@ -254,21 +277,57 @@ struct ScheduleView: View {
         .padding(.bottom, 8)
     }
 
+    // 任务详情以 `.sheet(item:)` 弹出；列表行用 `Button` 赋值 `taskForDetailSheet`。
     private func taskList(tasks: [FamilyTask]) -> some View {
         LazyVStack(spacing: 12) {
             ForEach(tasks) { task in
-                ScheduleTaskCard(
-                    task: task,
-                    assigneeName: assigneeLabel(for: task),
-                    onToggleStatus: {
-                        let nextStatus: TaskStatus = task.status == .completed ? .new : .completed
-                        await viewModel.updateTaskStatus(taskId: task.id, to: nextStatus)
-                    }
-                )
+                Button {
+                    taskForDetailSheet = task
+                } label: {
+                    ScheduleTaskCard(
+                        task: task,
+                        assigneeName: assigneeLabel(for: task),
+                        onToggleStatus: nil
+                    )
+                }
+                .buttonStyle(.plain)
                 .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))
             }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.82), value: tasks)
+    }
+
+    #if canImport(Supabase)
+    private struct MembershipRoleRow: Decodable {
+        let role: MembershipRole
+    }
+    #endif
+
+    private func refreshCurrentMembershipRole() async {
+        guard let membershipId = appRouter.selectedMembershipId else {
+            currentMembershipRole = .member
+            return
+        }
+        #if canImport(Supabase)
+        do {
+            let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client
+                .from("household_memberships")
+                .select("role")
+                .eq("id", value: membershipId.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            if let row = rows.first {
+                currentMembershipRole = row.role
+            } else {
+                currentMembershipRole = .member
+            }
+        } catch {
+            currentMembershipRole = .member
+        }
+        #else
+        currentMembershipRole = .member
+        #endif
     }
 
     private var weekView: some View {
@@ -696,7 +755,7 @@ private struct YearMonthHeatCell: View {
 private struct ScheduleTaskCard: View {
     let task: FamilyTask
     let assigneeName: String
-    let onToggleStatus: () async -> Void
+    let onToggleStatus: (() async -> Void)?
 
     private var statusText: String {
         switch task.status {
@@ -704,6 +763,7 @@ private struct ScheduleTaskCard: View {
         case .new: return "待执行"
         case .accepted: return "已接受"
         case .inProgress: return "执行中"
+        case .issue: return "遇到问题"
         case .expired: return "已过期"
         case .failed: return "执行失败"
         case .cancelled: return "已取消"
@@ -716,7 +776,7 @@ private struct ScheduleTaskCard: View {
             return .green.opacity(0.15)
         case .new, .accepted, .inProgress:
             return .blue.opacity(0.15)
-        case .expired, .failed:
+        case .expired, .failed, .issue:
             return .orange.opacity(0.2)
         case .cancelled:
             return .gray.opacity(0.15)
@@ -729,7 +789,7 @@ private struct ScheduleTaskCard: View {
             return .green.opacity(0.55)
         case .new, .accepted, .inProgress:
             return .blue.opacity(0.45)
-        case .expired, .failed:
+        case .expired, .failed, .issue:
             return .orange.opacity(0.55)
         case .cancelled:
             return .gray.opacity(0.45)
@@ -742,7 +802,7 @@ private struct ScheduleTaskCard: View {
             return "checkmark.circle"
         case .new, .accepted, .inProgress:
             return "clock"
-        case .expired, .failed:
+        case .expired, .failed, .issue:
             return "exclamationmark.circle"
         case .cancelled:
             return "xmark.circle"
@@ -789,20 +849,22 @@ private struct ScheduleTaskCard: View {
             .font(.title3)
             .foregroundStyle(.secondary)
 
-            Button {
-                Task {
-                    await onToggleStatus()
+            if let onToggleStatus {
+                Button {
+                    Task {
+                        await onToggleStatus()
+                    }
+                } label: {
+                    Label(task.status == .completed ? "恢复待办" : "标记完成", systemImage: task.status == .completed ? "arrow.counterclockwise" : "checkmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(task.status == .completed ? .orange : .green)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color(.systemBackground).opacity(0.85))
+                        .clipShape(Capsule())
                 }
-            } label: {
-                Label(task.status == .completed ? "恢复待办" : "标记完成", systemImage: task.status == .completed ? "arrow.counterclockwise" : "checkmark")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(task.status == .completed ? .orange : .green)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
-                    .background(Color(.systemBackground).opacity(0.85))
-                    .clipShape(Capsule())
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)

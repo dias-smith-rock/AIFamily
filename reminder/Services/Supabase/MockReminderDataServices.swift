@@ -25,6 +25,16 @@ actor MockTaskDataService: TaskDataService {
         tasks[index] = task
         return task
     }
+
+    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
+            throw SupabaseServiceError.invalidResponse
+        }
+        var row = tasks[index]
+        row.status = status
+        tasks[index] = row
+        return row
+    }
 }
 
 // MARK: - Feedbacks

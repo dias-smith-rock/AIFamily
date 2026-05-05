@@ -4,6 +4,7 @@ struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @State private var selectedTab: Tab = .schedule
     @State private var showsAssistant = false
+    @State private var hideScheduleAssistantFAB = false
 
     enum Tab {
         case schedule
@@ -18,10 +19,10 @@ struct AppTabRootView: View {
                 ScheduleView(onRequestAIInput: {
                     showsAssistant = true
                 })
-                    .tabItem {
-                        Label("日程表", systemImage: "calendar")
-                    }
-                    .tag(Tab.schedule)
+                .tabItem {
+                    Label("日程表", systemImage: "calendar")
+                }
+                .tag(Tab.schedule)
 
                 FeedbackFeedView()
                     .tabItem {
@@ -42,8 +43,16 @@ struct AppTabRootView: View {
                     }
                     .tag(Tab.personalSettings)
             }
+            .onPreferenceChange(ScheduleAssistantFABVisibility.PreferenceKey.self) { shouldHide in
+                hideScheduleAssistantFAB = shouldHide
+            }
+            .onChange(of: selectedTab) { _, tab in
+                if tab != .schedule {
+                    hideScheduleAssistantFAB = false
+                }
+            }
 
-            if selectedTab == .schedule {
+            if selectedTab == .schedule, hideScheduleAssistantFAB == false {
                 Button {
                     showsAssistant.toggle()
                 } label: {

@@ -4,6 +4,8 @@ protocol TaskDataService {
     func fetchTasks(in householdId: UUID) async throws -> [FamilyTask]
     func createTask(_ task: FamilyTask) async throws -> FamilyTask
     func updateTask(_ task: FamilyTask) async throws -> FamilyTask
+    /// 仅更新 `status` 列并返回最新行，用于成员侧状态机操作。
+    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask
 }
 
 protocol FeedbackDataService {
