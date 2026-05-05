@@ -34,8 +34,8 @@ struct OrgRoutingView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("请选择一种方式继续")
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.FontToken.subtitle)
+                        .foregroundStyle(AppTheme.ColorToken.textSecondary)
 
                     RouteActionCard(
                         icon: "house.fill",
@@ -59,7 +59,7 @@ struct OrgRoutingView: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground))
+            .background(AppTheme.ColorToken.background)
             .navigationTitle("欢迎来到 WeFamily")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -307,11 +307,11 @@ private struct RouteActionCard: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(title)
-                        .font(.system(size: 22, weight: .bold))
+                        .font(AppTheme.FontToken.section)
                         .foregroundStyle(.primary)
                     Text(subtitle)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .font(AppTheme.FontToken.subtitle)
+                        .foregroundStyle(AppTheme.ColorToken.textSecondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")

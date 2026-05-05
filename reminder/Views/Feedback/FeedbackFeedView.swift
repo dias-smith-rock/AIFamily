@@ -51,10 +51,10 @@ struct FeedbackFeedView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("消息中心")
-                .font(.system(size: 36, weight: .bold))
+                .font(AppTheme.FontToken.title)
             Text("异步反馈与提醒")
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(.secondary)
+                .font(AppTheme.FontToken.subtitle)
+                .foregroundStyle(AppTheme.ColorToken.textSecondary)
         }
     }
 
@@ -76,7 +76,7 @@ struct FeedbackFeedView: View {
             }
         }
         .padding(6)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(AppTheme.ColorToken.surfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 

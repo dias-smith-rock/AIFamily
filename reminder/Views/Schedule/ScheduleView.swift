@@ -72,10 +72,10 @@ struct ScheduleView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("日程表")
-                .font(.system(size: 36, weight: .bold))
+                .font(AppTheme.FontToken.title)
             Text(headerDateText)
-                .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(.secondary)
+                .font(AppTheme.FontToken.subtitle)
+                .foregroundStyle(AppTheme.ColorToken.textSecondary)
         }
     }
 
@@ -98,7 +98,7 @@ struct ScheduleView: View {
             }
         }
         .padding(6)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(AppTheme.ColorToken.surfaceMuted)
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 

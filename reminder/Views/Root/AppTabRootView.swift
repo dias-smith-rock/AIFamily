@@ -114,15 +114,15 @@ struct AppTabRootView: View {
                 HStack(spacing: 6) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("当前家庭")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
+                            .font(AppTheme.FontToken.caption)
+                            .foregroundStyle(AppTheme.ColorToken.textSecondary)
                         HStack(spacing: 4) {
                             Text(appRouter.selectedHouseholdName ?? "未选择")
-                                .font(.system(size: 18, weight: .semibold))
+                                .font(AppTheme.FontToken.bodyStrong)
                                 .lineLimit(1)
                             Image(systemName: "chevron.down")
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(AppTheme.ColorToken.textSecondary)
                         }
                     }
                     Spacer(minLength: 0)
@@ -135,7 +135,7 @@ struct AppTabRootView: View {
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 6)
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(AppTheme.ColorToken.surfaceMuted)
     }
 
     private func chooseHousehold(_ option: AppRouter.HouseholdOption) {

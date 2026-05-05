@@ -16,10 +16,17 @@ struct FamilyView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
-                    inviteButton
+                    if canManageHousehold {
+                        inviteButton
+                    }
                     memberFilterField
                     memberContent
-                    quickSection
+                    if canManageHousehold {
+                        householdProfileSection
+                    }
+                    if isMemberRole {
+                        leaveHouseholdSection
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, topFamilyBarOffset)
@@ -46,7 +53,7 @@ struct FamilyView: View {
         .sheet(isPresented: $showsInviteSheet) {
             InviteMemberView(
                 currentHouseholdId: appRouter.selectedHouseholdId,
-                currentUserId: appRouter.selectedMembershipId
+                creatorMembershipId: appRouter.selectedMembershipId
             )
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
@@ -76,10 +83,10 @@ struct FamilyView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("家庭成员")
-                .font(.system(size: 40, weight: .bold))
+                .font(AppTheme.FontToken.title)
             Text("管理成员与权限")
-                .font(.headline)
-                .foregroundStyle(.secondary)
+                .font(AppTheme.FontToken.subtitle)
+                .foregroundStyle(AppTheme.ColorToken.textSecondary)
         }
     }
 
@@ -89,30 +96,38 @@ struct FamilyView: View {
                 showsInviteSheet = true
             } label: {
                 Label("邀请新成员", systemImage: "person.badge.plus")
-                    .font(.title3.weight(.semibold))
+                    .font(AppTheme.FontToken.bodyStrong)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
-                        LinearGradient(colors: [.blue.opacity(0.8), .blue], startPoint: .leading, endPoint: .trailing)
+                        LinearGradient(
+                            colors: [AppTheme.ColorToken.accent.opacity(0.85), AppTheme.ColorToken.accent],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
                     .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(.plain)
 
             Text("支持 App / 微信 / 邮箱触达")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(AppTheme.FontToken.caption)
+                .foregroundStyle(AppTheme.ColorToken.textSecondary)
         }
     }
 
     private var memberSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("成员列表")
-                .font(.title3.weight(.semibold))
+                .font(AppTheme.FontToken.section)
 
             ForEach(filteredMembers) { member in
-                FamilyMemberCard(member: member)
+                if canManageHousehold {
+                    AdminMemberRow(member: member)
+                } else {
+                    BasicMemberRow(member: member)
+                }
             }
         }
     }
@@ -188,19 +203,41 @@ struct FamilyView: View {
         )
     }
 
-    private var quickSection: some View {
+    private var leaveHouseholdSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("快捷设置")
-                .font(.title3.weight(.semibold))
+            Text("成员操作")
+                .font(AppTheme.FontToken.section)
+
+            Button(role: .destructive) {
+                // TODO: 调用 supabase 删除当前用户的 membership 记录，并跳转回路由选择页。
+            } label: {
+                HStack {
+                    Spacer()
+                    Text("退出该家庭")
+                        .font(.system(size: 17, weight: .semibold))
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+        }
+    }
+
+    private var householdProfileSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("家庭资料")
+                .font(AppTheme.FontToken.section)
 
             Button {
                 renameErrorMessage = nil
                 showsRenameHouseholdSheet = true
             } label: {
                 HStack {
-                    Image(systemName: "textformat")
+                    Image(systemName: "square.and.pencil")
+                        .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("修改家庭名称")
+                        Text("修改家庭资料")
                             .font(.headline)
                             .foregroundStyle(.primary)
                         Text(appRouter.selectedHouseholdName ?? "未命名家庭")
@@ -218,24 +255,30 @@ struct FamilyView: View {
             }
             .buttonStyle(.plain)
             .disabled(appRouter.selectedHouseholdId == nil)
-
-            NavigationLink {
-                InviteConsumeDemoView()
-            } label: {
-                HStack {
-                    Image(systemName: "link.badge.plus")
-                    Text("邀请链接消费调试")
-                        .font(.headline)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(14)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(.plain)
         }
+    }
+
+    private var canManageHousehold: Bool {
+        switch currentUserRole {
+        case .creator, .admin:
+            return true
+        case .member:
+            return false
+        }
+    }
+
+    private var isMemberRole: Bool {
+        currentUserRole == .member
+    }
+
+    private var currentUserRole: MembershipRole {
+        guard
+            let selectedMembershipId = appRouter.selectedMembershipId,
+            let currentMembership = viewModel.members.first(where: { $0.id == selectedMembershipId })
+        else {
+            return .member
+        }
+        return currentMembership.role
     }
 
     @MainActor
@@ -383,7 +426,7 @@ private extension MembershipStatus {
 
 // MARK: - Member Card
 
-private struct FamilyMemberCard: View {
+private struct AdminMemberRow: View {
     let member: HouseholdMembership
 
     private var channelLabel: String {
@@ -408,31 +451,88 @@ private struct FamilyMemberCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 5) {
                     Text(member.nickname)
-                        .font(.title3.weight(.semibold))
+                        .font(.system(size: 18, weight: .semibold))
                     if let badgeIcon = member.role.badgeIcon {
                         Image(systemName: badgeIcon)
-                            .font(.subheadline)
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(.yellow)
                     }
                 }
                 HStack(spacing: 6) {
                     Text(channelLabel)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.system(size: 14, weight: .semibold))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
                         .background(Color(.secondarySystemBackground))
                         .clipShape(Capsule())
                     Label(member.role.displayTitle, systemImage: "person.text.rectangle")
-                        .font(.subheadline)
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
                 Label(member.status.displayTitle, systemImage: "checkmark.seal")
-                    .font(.subheadline)
+                    .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(member.status.displayColor)
             }
             Spacer()
             Image(systemName: "gearshape")
                 .foregroundStyle(.secondary)
+        }
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1.5)
+        )
+    }
+}
+
+private struct BasicMemberRow: View {
+    let member: HouseholdMembership
+
+    private var avatarText: String {
+        String(member.nickname.prefix(1))
+    }
+
+    private var roleIcon: String? {
+        switch member.role {
+        case .creator, .admin:
+            return "crown.fill"
+        case .member:
+            return nil
+        }
+    }
+
+    private var roleTitle: String {
+        member.role.displayTitle
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Circle()
+                .fill(Color.purple.opacity(0.12))
+                .frame(width: 46, height: 46)
+                .overlay {
+                    Text(avatarText)
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(.purple)
+                }
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(member.nickname)
+                    .font(.title3.weight(.semibold))
+                HStack(spacing: 6) {
+                    if let roleIcon {
+                        Image(systemName: roleIcon)
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                    }
+                    Text(roleTitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
         }
         .padding(14)
         .background(Color(.systemBackground))

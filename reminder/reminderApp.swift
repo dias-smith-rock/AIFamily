@@ -32,6 +32,7 @@ struct WeFamilyApp: App {
                 .environmentObject(appRouter)
                 .environmentObject(appBootstrap)
                 .environmentObject(appBootstrap.viewModelFactory)
+                .tint(AppTheme.ColorToken.accent)
         }
         .modelContainer(sharedModelContainer)
     }

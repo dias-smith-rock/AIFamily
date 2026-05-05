@@ -11,7 +11,7 @@ struct InviteMemberView: View {
     @Environment(\.dismiss) private var dismiss
 
     let currentHouseholdId: UUID?
-    let currentUserId: UUID?
+    let creatorMembershipId: UUID?
 
     @State private var inviteCode: String?
     @State private var isLoading = true
@@ -147,9 +147,9 @@ struct InviteMemberView: View {
         String(format: "%06d", Int.random(in: 0...999_999))
     }
 
-    private func resolveCurrentUserId() throws -> UUID {
-        if let currentUserId {
-            return currentUserId
+    private func resolveCreatorMembershipId() throws -> UUID {
+        if let creatorMembershipId {
+            return creatorMembershipId
         }
         throw NSError(
             domain: "InviteMemberView",
@@ -170,14 +170,14 @@ struct InviteMemberView: View {
 
         #if canImport(Supabase)
         do {
-            let userId = try resolveCurrentUserId()
+            let creatorMembershipId = try resolveCreatorMembershipId()
             let client = SupabaseManager.shared.client
             let rows: [InviteNonceRPCRow] = try await client
                 .rpc(
                     "get_or_create_invite_nonce",
                     params: GetOrCreateInviteNonceParams(
                         pHouseholdId: currentHouseholdId,
-                        pCreatorId: userId
+                        pCreatorId: creatorMembershipId
                     )
                 )
                 .execute()
@@ -232,6 +232,6 @@ struct InviteMemberView: View {
 #Preview {
     InviteMemberView(
         currentHouseholdId: UUID(),
-        currentUserId: UUID()
+        creatorMembershipId: UUID()
     )
 }

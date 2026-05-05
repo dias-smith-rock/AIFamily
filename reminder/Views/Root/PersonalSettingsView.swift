@@ -63,25 +63,6 @@ struct PersonalSettingsView: View {
                         iconBackground: Color.teal.opacity(0.16)
                     )
                 }
-
-                Section {
-                    Button(role: .destructive) {
-                        Task {
-                            await signOut()
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            if isSigningOut {
-                                ProgressView()
-                            } else {
-                                Text("退出登录")
-                            }
-                            Spacer()
-                        }
-                    }
-                    .disabled(isSigningOut)
-                }
             }
             .listStyle(.grouped)
             .scrollContentBackground(.hidden)
@@ -106,6 +87,32 @@ struct PersonalSettingsView: View {
                 await loadCurrentUserProfile()
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            Button(role: .destructive) {
+                Task {
+                    await signOut()
+                }
+            } label: {
+                HStack {
+                    Spacer()
+                    if isSigningOut {
+                        ProgressView()
+                    } else {
+                        Text("退出登录")
+                            .font(AppTheme.FontToken.bodyStrong)
+                    }
+                    Spacer()
+                }
+                .padding(.vertical, 12)
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+            .disabled(isSigningOut)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 6)
+            .background(.ultraThinMaterial)
+        }
     }
 
     private var personalInfoRow: some View {
@@ -116,10 +123,10 @@ struct PersonalSettingsView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(displayName)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(AppTheme.FontToken.bodyStrong)
                 Text(accountSubtitle)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(AppTheme.FontToken.caption)
+                    .foregroundStyle(AppTheme.ColorToken.textSecondary)
             }
 
             Spacer()
@@ -149,7 +156,7 @@ struct PersonalSettingsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "sparkles")
                     Text("解锁 WeFamily AI 语音统筹高级版")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(AppTheme.FontToken.bodyStrong)
                         .lineLimit(1)
                 }
                 .foregroundStyle(.black.opacity(0.78))

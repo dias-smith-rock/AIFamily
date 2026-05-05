@@ -44,7 +44,7 @@ struct LoginView: View {
                 .frame(width: 82, height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
             Text("From chaos to clarity.\nPrecision care for every family.")
-                .font(.system(size: 16, weight: .medium))
+                .font(AppTheme.FontToken.subtitle)
                 .foregroundStyle(.white.opacity(0.82))
                 .multilineTextAlignment(.center)
         }
