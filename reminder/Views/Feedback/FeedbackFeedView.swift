@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FeedbackFeedView: View {
+    private let topFamilyBarOffset: CGFloat = 56
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFeedbackFeedViewModel()
@@ -23,7 +24,7 @@ struct FeedbackFeedView: View {
                     content
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 10)
+                .padding(.top, topFamilyBarOffset)
                 .padding(.bottom, 96)
             }
             .background(Color(.systemGroupedBackground))

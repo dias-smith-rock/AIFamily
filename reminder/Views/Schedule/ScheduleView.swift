@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ScheduleView: View {
+    private let topFamilyBarOffset: CGFloat = 56
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
     @State private var period: SchedulePeriod = .day
@@ -34,7 +35,7 @@ struct ScheduleView: View {
                     contentByPeriod
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 10)
+                .padding(.top, topFamilyBarOffset)
                 .padding(.bottom, 120)
             }
             .background(Color(.systemGroupedBackground))

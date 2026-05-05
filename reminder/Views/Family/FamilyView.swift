@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FamilyView: View {
+    private let topFamilyBarOffset: CGFloat = 56
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
@@ -21,7 +22,7 @@ struct FamilyView: View {
                     quickSection
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, topFamilyBarOffset)
                 .padding(.bottom, 96)
             }
             .background(Color(.systemGroupedBackground))
