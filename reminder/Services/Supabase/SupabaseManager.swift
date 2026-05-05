@@ -20,7 +20,7 @@ enum SupabaseEnvironment {
     static var supabaseAnonKey: String {
         #if DEBUG
         // 运行 `supabase status` 核对本地 anon key；未改动时为 CLI 默认 JWT。
-        return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+        return "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
         #else
         return "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
         #endif
