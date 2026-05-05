@@ -6,6 +6,7 @@ actor MockTaskDataService: TaskDataService {
     private var tasks: [FamilyTask] = FamilyTask.mockTasks
 
     func fetchTasks(in householdId: UUID) async throws -> [FamilyTask] {
+        // Mock：与线上一致，不按 user id 过滤 involvedMemberIds（该数组为 membership id）。
         tasks
             .filter { $0.householdId == householdId }
             .sorted { lhs, rhs in

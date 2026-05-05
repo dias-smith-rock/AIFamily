@@ -9,6 +9,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     var parentTaskId: UUID?
     var originalDueDate: Date?
 
+    /// 被指派的成员在 `household_memberships` 表中的 **主键 id**（与当前登录用户的 **membership id** 同维度），不是 `auth.users.id`。
     var involvedMemberIds: [UUID]?
     var targetSubject: String?
     var title: String
@@ -51,9 +52,14 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 
 extension FamilyTask {
     /// `involved_member_ids` 为数据库 `NULL`（或空数组）时，表示任务指派给**整个家庭**，
-    /// 语义随成员增减扩展；若写入具体 UUID 列表则为创建时的指派快照。
+    /// 语义随成员增减扩展；若写入具体 UUID 列表则为创建时的指派快照（列表元素为 **membership id**）。
     var involvesWholeHousehold: Bool {
         guard let ids = involvedMemberIds else { return true }
         return ids.isEmpty
+    }
+
+    /// 当前 **成员身份**（`household_memberships.id`）是否在本任务的指派范围内。
+    func involvesMembership(id membershipId: UUID) -> Bool {
+        involvesWholeHousehold || (involvedMemberIds?.contains(membershipId) == true)
     }
 }

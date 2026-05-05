@@ -2,6 +2,18 @@ import Foundation
 
 #if canImport(Supabase)
 import Supabase
+
+/// 将 `involved_member_ids` 明确写成 SQL `NULL`。库中 `[]` 在常见 RLS 下不等价于「全员可见」，成员会拉不到任务行。
+private struct TasksInvolvedMemberIdsNullPatch: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case involvedMemberIds = "involved_member_ids"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeNil(forKey: .involvedMemberIds)
+    }
+}
 #endif
 
 // MARK: - Table Names
@@ -25,6 +37,7 @@ struct SupabaseTaskDataService: TaskDataService {
 
     func fetchTasks(in householdId: UUID) async throws -> [FamilyTask] {
         #if canImport(Supabase)
+        // 不添加基于 `involved_member_ids` + `auth.uid()` 的过滤：`involved_member_ids` 为 membership id 数组，与 user id 维度不同；隔离交给 RLS。
         let response: [FamilyTask] = try await provider.client
             .from(SupabaseTable.tasks)
             .select()
@@ -32,7 +45,7 @@ struct SupabaseTaskDataService: TaskDataService {
             .order("due_date", ascending: true)
             .execute()
             .value
-        return response
+        return response.map(Self.normalizeInvolvedMemberIdsForRowSemantics)
         #else
         _ = householdId
         throw SupabaseServiceError.sdkUnavailable
@@ -48,7 +61,7 @@ struct SupabaseTaskDataService: TaskDataService {
             .single()
             .execute()
             .value
-        return response
+        return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
         #else
         _ = task
         throw SupabaseServiceError.sdkUnavailable
@@ -57,15 +70,29 @@ struct SupabaseTaskDataService: TaskDataService {
 
     func updateTask(_ task: FamilyTask) async throws -> FamilyTask {
         #if canImport(Supabase)
+        /// 与 `FamilyTask.involvesWholeHousehold` 一致：库中 `[]` 在部分 RLS 下不等价于 `NULL`，成员会看不到行。
+        if task.involvesWholeHousehold {
+            _ = try await provider.client
+                .from(SupabaseTable.tasks)
+                .update(TasksInvolvedMemberIdsNullPatch())
+                .eq("id", value: task.id.uuidString)
+                .execute()
+        }
+
+        var normalized = task
+        if normalized.involvedMemberIds?.isEmpty == true {
+            normalized.involvedMemberIds = nil
+        }
+
         let response: FamilyTask = try await provider.client
             .from(SupabaseTable.tasks)
-            .update(task)
+            .update(normalized)
             .eq("id", value: task.id.uuidString)
             .select()
             .single()
             .execute()
             .value
-        return response
+        return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
         #else
         _ = task
         throw SupabaseServiceError.sdkUnavailable
@@ -86,12 +113,19 @@ struct SupabaseTaskDataService: TaskDataService {
             .single()
             .execute()
             .value
-        return response
+        return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
         #else
         _ = taskId
         _ = status
         throw SupabaseServiceError.sdkUnavailable
         #endif
+    }
+
+    private static func normalizeInvolvedMemberIdsForRowSemantics(_ task: FamilyTask) -> FamilyTask {
+        guard task.involvedMemberIds?.isEmpty == true else { return task }
+        var copy = task
+        copy.involvedMemberIds = nil
+        return copy
     }
 }
 

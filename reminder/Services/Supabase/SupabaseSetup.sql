@@ -126,6 +126,26 @@ as $$
     )
 $$;
 
+create or replace function public.membership_ids_for_current_user_in_household(p_household_id uuid)
+returns uuid[]
+language sql
+stable
+security definer
+set search_path = public
+as $$
+    select coalesce(
+        array_agg(hm.id order by hm.created_at),
+        '{}'::uuid[]
+    )
+    from public.household_memberships hm
+    where hm.household_id = p_household_id
+      and hm.user_id = auth.uid()
+      and hm.status = 'active'
+$$;
+
+revoke all on function public.membership_ids_for_current_user_in_household(uuid) from public;
+grant execute on function public.membership_ids_for_current_user_in_household(uuid) to authenticated;
+
 -- 4) RLS policies
 alter table public.household_memberships enable row level security;
 alter table public.family_members enable row level security;
@@ -164,11 +184,26 @@ for update
 using (public.can_manage_household(household_id))
 with check (public.can_manage_household(household_id));
 
+-- involved_member_ids: household_memberships.id（非 auth.uid）。creator_id 同为 membership id。
 drop policy if exists "tasks_select_same_household" on public.tasks;
-create policy "tasks_select_same_household"
+drop policy if exists "tasks_select_household_and_involvement" on public.tasks;
+create policy "tasks_select_household_and_involvement"
 on public.tasks
 for select
-using (household_id in (select public.current_household_ids()));
+using (
+    household_id in (select public.current_household_ids())
+    and (
+        public.can_manage_household(household_id)
+        or tasks.creator_id = any (public.membership_ids_for_current_user_in_household(tasks.household_id))
+        or tasks.involved_member_ids is null
+        or cardinality(tasks.involved_member_ids) = 0
+        or (
+            tasks.involved_member_ids is not null
+            and tasks.involved_member_ids
+                && public.membership_ids_for_current_user_in_household(tasks.household_id)
+        )
+    )
+);
 
 drop policy if exists "tasks_insert_managers" on public.tasks;
 create policy "tasks_insert_managers"

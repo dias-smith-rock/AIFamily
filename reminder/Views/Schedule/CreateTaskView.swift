@@ -642,6 +642,29 @@ private struct TaskInsertPayload: Encodable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(householdId, forKey: .householdId)
+        try container.encode(creatorId, forKey: .creatorId)
+        if let involvedMemberIds {
+            try container.encode(involvedMemberIds, forKey: .involvedMemberIds)
+        } else {
+            try container.encodeNil(forKey: .involvedMemberIds)
+        }
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        try container.encode(status, forKey: .status)
+        try container.encode(priority, forKey: .priority)
+        try container.encode(dueDate, forKey: .dueDate)
+        try container.encode(isAllDay, forKey: .isAllDay)
+        try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
+        try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
+        try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
 }
 
 private struct TaskUpdatePayload: Encodable {
@@ -665,6 +688,23 @@ private struct TaskUpdatePayload: Encodable {
         case reminderOffsets = "reminder_offsets"
         case estimatedCost = "estimated_cost"
         case updatedAt = "updated_at"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(title, forKey: .title)
+        try container.encodeIfPresent(description, forKey: .description)
+        if let involvedMemberIds {
+            try container.encode(involvedMemberIds, forKey: .involvedMemberIds)
+        } else {
+            try container.encodeNil(forKey: .involvedMemberIds)
+        }
+        try container.encode(dueDate, forKey: .dueDate)
+        try container.encode(isAllDay, forKey: .isAllDay)
+        try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
+        try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
+        try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 

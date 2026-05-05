@@ -30,6 +30,7 @@ final class ScheduleViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
+            // `tasks` 已由 RLS 裁剪为当前登录用户在该家庭下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
             tasks = try await taskService.fetchTasks(in: householdId)
         } catch {
             errorMessage = error.localizedDescription
