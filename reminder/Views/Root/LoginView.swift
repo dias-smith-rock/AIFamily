@@ -152,7 +152,8 @@ struct LoginView: View {
         let oauthProvider: Provider = provider == .google ? .google : .apple
         try await SupabaseManager.shared.client.auth.signInWithOAuth(
             provider: oauthProvider,
-            redirectTo: Self.oauthRedirectURL
+            redirectTo: Self.oauthRedirectURL,
+            queryParams: oauthQueryParams(for: provider)
         )
         #else
         _ = provider
@@ -162,6 +163,20 @@ struct LoginView: View {
             userInfo: [NSLocalizedDescriptionKey: "当前构建环境未包含 Supabase SDK。"]
         )
         #endif
+    }
+
+    /// Google OAuth 默认会复用上次账号会话，这里强制拉起账号选择器，
+    /// 让用户每次都可以切换到不同 Google 账号登录。
+    private func oauthQueryParams(for provider: LoginProvider) -> [(name: String, value: String?)] {
+        switch provider {
+        case .google:
+            return [
+                (name: "prompt", value: "select_account"),
+                (name: "access_type", value: "offline")
+            ]
+        case .apple:
+            return []
+        }
     }
 
     /// 用户在 Safari View 卡片里点了"取消"会抛 `ASWebAuthenticationSessionError.canceledLogin`，

@@ -8,6 +8,7 @@ struct OrgRoutingView: View {
     @State private var inviteCode = ""
     @State private var detectedInviteCode = ""
     @State private var showClipboardPrompt = false
+    @State private var clipboardHint: String?
     @State private var showErrorAlert = false
     @State private var showCreateNameHint = false
     @FocusState private var focusedField: InputField?
@@ -35,9 +36,6 @@ struct OrgRoutingView: View {
                     focusedField = nil
                 }
             }
-        }
-        .onAppear {
-            sniffClipboard()
         }
         .onChange(of: viewModel.errorMessage) { _, newValue in
             showErrorAlert = newValue != nil
@@ -121,6 +119,21 @@ struct OrgRoutingView: View {
                 .background(Color(.systemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
 
+            Button {
+                sniffClipboard()
+            } label: {
+                Label("从剪贴板读取邀请码", systemImage: "doc.on.clipboard")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.blue)
+            }
+            .buttonStyle(.plain)
+
+            if let clipboardHint {
+                Text(clipboardHint)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
             if normalizedInviteCode.isEmpty == false && isInviteCodeValid == false {
                 Text("邀请码格式错误：需为 6 位字母或数字")
                     .font(.system(size: 13, weight: .medium))
@@ -171,11 +184,14 @@ struct OrgRoutingView: View {
     }
 
     private func sniffClipboard() {
+        clipboardHint = nil
         guard let text = UIPasteboard.general.string?.uppercased() else { return }
         if let code = firstInviteCode(from: text) {
             inviteCode = code
             detectedInviteCode = code
             showClipboardPrompt = true
+        } else {
+            clipboardHint = "剪贴板中未检测到 6 位邀请码。"
         }
     }
 
