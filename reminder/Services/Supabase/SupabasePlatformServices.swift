@@ -277,8 +277,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         #endif
     }
 
-    /// 通过 `invite_link_nonces.nonce` 找到归属家庭，并以 `pending` 状态写入 `household_memberships`。
-    /// 真正的核销（写 `is_used / used_by`）由 Edge Function 负责，本端只负责入驻申请。
+    /// 通过 RPC `join_household_by_nonce` 完成邀请码核销 + 加入家庭原子流程。
     func joinHousehold(inviteCode: String) async throws {
         #if canImport(Supabase)
         let normalizedCode = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -286,80 +285,37 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw HouseholdRoutingError.invalidInviteCode
         }
 
-        let session: Session
+        let currentUserId: UUID
         do {
-            session = try await provider.client.auth.session
+            currentUserId = try await provider.client.auth.session.user.id
         } catch {
             throw HouseholdRoutingError.unauthenticated
         }
-        let userId = session.user.id
-
-        let nonces: [InviteNonceRow] = try await provider.client
-            .from("invite_link_nonces")
-            .select("household_id,is_used,expires_at")
-            .eq("nonce", value: normalizedCode)
-            .limit(1)
-            .execute()
-            .value
-
-        guard let nonce = nonces.first else {
-            throw HouseholdRoutingError.invalidInviteCode
-        }
-        if nonce.isUsed {
-            throw HouseholdRoutingError.nonceConsumed
-        }
-        if nonce.expiresAt < Date() {
-            throw HouseholdRoutingError.nonceExpired
-        }
-
-        let householdId = nonce.householdId
-
-        let existing: [MembershipStatusRow] = try await provider.client
-            .from("household_memberships")
-            .select("status")
-            .eq("household_id", value: householdId.uuidString)
-            .eq("user_id", value: userId.uuidString)
-            .limit(1)
-            .execute()
-            .value
-
-        if let statusRaw = existing.first?.status,
-           let status = MembershipStatus(rawValue: statusRaw) {
-            switch status {
-            case .active:
-                throw HouseholdRoutingError.alreadyActiveMember
-            case .pending:
-                throw HouseholdRoutingError.joinRequestPending
-            case .disabled:
-                break
-            }
-        }
-
-        let nickname = session.user.email ?? "新成员"
 
         do {
             _ = try await provider.client
-                .from("household_memberships")
-                .insert(NewMembershipRow(
-                    householdId: householdId,
-                    userId: userId,
-                    role: MembershipRole.member.rawValue,
-                    nickname: nickname,
-                    contactMethod: ContactMethod.appPush.rawValue,
-                    status: MembershipStatus.pending.rawValue
-                ))
+                .rpc(
+                    "join_household_by_nonce",
+                    params: JoinHouseholdByNonceParams(
+                        pNonce: normalizedCode,
+                        pUserId: currentUserId
+                    )
+                )
                 .execute()
         } catch {
-            do {
-                _ = try await provider.client
-                    .from("household_memberships")
-                    .update(MembershipPatch(status: MembershipStatus.pending.rawValue))
-                    .eq("household_id", value: householdId.uuidString)
-                    .eq("user_id", value: userId.uuidString)
-                    .execute()
-            } catch {
-                throw HouseholdRoutingError.networkFailure
+            if isUnauthenticatedError(error) {
+                throw HouseholdRoutingError.unauthenticated
             }
+            if isInvalidOrUsedInviteCodeError(error) {
+                throw HouseholdRoutingError.invalidInviteCode
+            }
+            if isAlreadyActiveMemberError(error) {
+                throw HouseholdRoutingError.alreadyActiveMember
+            }
+            if isMissingJoinHouseholdRPCError(error) {
+                throw HouseholdRoutingError.backendMigrationRequired
+            }
+            throw HouseholdRoutingError.networkFailure
         }
         #else
         _ = inviteCode
@@ -416,27 +372,9 @@ private struct CreatedHouseholdByRPCRow: Decodable {
     let householdId: UUID
 }
 
-private struct InviteNonceRow: Decodable {
-    let householdId: UUID
-    let isUsed: Bool
-    let expiresAt: Date
-}
-
-private struct NewMembershipRow: Encodable {
-    let householdId: UUID
-    let userId: UUID
-    let role: String
-    let nickname: String
-    let contactMethod: String
-    let status: String
-}
-
-private struct MembershipPatch: Encodable {
-    let status: String
-}
-
-private struct MembershipStatusRow: Decodable {
-    let status: String
+private struct JoinHouseholdByNonceParams: Encodable {
+    let pNonce: String
+    let pUserId: UUID
 }
 
 private struct InviteLinkPayload: Encodable {
@@ -460,10 +398,27 @@ private func isMissingCreateHouseholdRPCError(_ error: Error) -> Bool {
         && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
 }
 
+private func isMissingJoinHouseholdRPCError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("join_household_by_nonce")
+        && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
 private func isMissingRenameHouseholdRPCError(_ error: Error) -> Bool {
     let message = error.localizedDescription.lowercased()
     return message.contains("rename_household")
         && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
+private func isInvalidOrUsedInviteCodeError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("invalid_or_used_invitation_code")
+        || message.contains("invalid or used invitation code")
+        || message.contains("invalid invite code")
+}
+
+private func isAlreadyActiveMemberError(_ error: Error) -> Bool {
+    error.localizedDescription.lowercased().contains("already_active_member")
 }
 
 private func isHouseholdNameTakenError(_ error: Error) -> Bool {

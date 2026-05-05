@@ -1,174 +1,172 @@
 import SwiftUI
+import PhotosUI
+import CoreImage
+import AVFoundation
+import VisionKit
+import Vision
 import UIKit
+
+#if canImport(Supabase)
+import Supabase
+#endif
 
 struct OrgRoutingView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var householdName = ""
     @State private var inviteCode = ""
-    @State private var detectedInviteCode = ""
-    @State private var showClipboardPrompt = false
-    @State private var clipboardHint: String?
     @State private var showErrorAlert = false
-    @State private var showCreateNameHint = false
-    @FocusState private var focusedField: InputField?
-
-    private enum InputField: Hashable {
-        case householdName
-        case inviteCode
-    }
+    @State private var localErrorMessage: String?
+    @State private var showCreateSheet = false
+    @State private var showJoinSheet = false
+    @State private var createInputError: String?
+    @State private var joinInputError: String?
+    @State private var isSigningOut = false
+    @State private var showScanOptions = false
+    @State private var showCameraScanner = false
+    @State private var showPhotoPicker = false
+    @State private var selectedPhotoItem: PhotosPickerItem?
+    @State private var isDecodingPhoto = false
+    @State private var isJoiningFullScreenLoading = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                header
-                createSection
-                joinSection
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("请选择一种方式继续")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(.secondary)
+
+                    RouteActionCard(
+                        icon: "house.fill",
+                        title: "我是家长",
+                        subtitle: "创建一个全新的家庭空间",
+                        backgroundColor: Color.orange.opacity(0.12)
+                    ) {
+                        createInputError = nil
+                        showCreateSheet = true
+                    }
+
+                    RouteActionCard(
+                        icon: "qrcode.viewfinder",
+                        title: "加入家人",
+                        subtitle: "通过扫码或邀请码加入",
+                        backgroundColor: Color.green.opacity(0.12)
+                    ) {
+                        joinInputError = nil
+                        showJoinSheet = true
+                    }
+                }
+                .padding(20)
             }
-            .padding(20)
-        }
-        .background(Color(.systemGroupedBackground))
-        .scrollDismissesKeyboard(.interactively)
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("完成") {
-                    focusedField = nil
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("欢迎来到 WeFamily")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        Task { await signOut() }
+                    } label: {
+                        if isSigningOut {
+                            ProgressView()
+                        } else {
+                            Text("退出登录")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .disabled(isSigningOut)
                 }
             }
         }
         .onChange(of: viewModel.errorMessage) { _, newValue in
-            showErrorAlert = newValue != nil
-        }
-        .alert("检测到邀请码", isPresented: $showClipboardPrompt) {
-            Button("直接加入") {
-                submitJoin()
+            if let newValue {
+                localErrorMessage = newValue
+                showErrorAlert = true
             }
-            Button("稍后再说", role: .cancel) {}
-        } message: {
-            Text("检测到邀请码 \(detectedInviteCode)，是否直接加入？")
         }
         .alert("操作失败", isPresented: $showErrorAlert) {
             Button("知道了", role: .cancel) {}
         } message: {
-            Text(viewModel.errorMessage ?? "请稍后重试")
+            Text(localErrorMessage ?? "请稍后重试")
         }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("选择组织方式")
-                .font(.system(size: 30, weight: .bold))
-            Text("创建新家庭，或通过邀请码加入家人组织。")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var createSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("创建新家庭")
-                .font(.system(size: 18, weight: .semibold))
-
-            TextField("请输入家庭名称（如：小明一家）", text: $householdName)
-                .autocorrectionDisabled(true)
-                .focused($focusedField, equals: .householdName)
-                .onChange(of: householdName) { _, newValue in
-                    if newValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
-                        showCreateNameHint = false
-                    }
+        .sheet(isPresented: $showCreateSheet) {
+            CreateHouseholdSheet(
+                householdName: $householdName,
+                inputError: $createInputError,
+                isSubmitting: viewModel.isCreating,
+                onSubmit: {
+                    await submitCreate()
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 12)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            if showCreateNameHint {
-                Text("请先输入家庭名称，再创建家庭。")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                submitCreate()
-            } label: {
-                rowButtonLabel(
-                    title: "我是家庭管理员，立即创建",
-                    loading: viewModel.isCreating
-                )
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isCreating || viewModel.isJoining)
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
-        .padding(14)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private var joinSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("扫码 / 输入邀请码加入")
-                .font(.system(size: 18, weight: .semibold))
-
-            TextField("请输入 6 位邀请码", text: $inviteCode)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled(true)
-                .focused($focusedField, equals: .inviteCode)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 12)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-            Button {
-                sniffClipboard()
-            } label: {
-                Label("从剪贴板读取邀请码", systemImage: "doc.on.clipboard")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.blue)
-            }
-            .buttonStyle(.plain)
-
-            if let clipboardHint {
-                Text(clipboardHint)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            if normalizedInviteCode.isEmpty == false && isInviteCodeValid == false {
-                Text("邀请码格式错误：需为 6 位字母或数字")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-
-            Button {
-                submitJoin()
-            } label: {
-                rowButtonLabel(
-                    title: "提交邀请码并申请加入",
-                    loading: viewModel.isJoining
-                )
-            }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isCreating || viewModel.isJoining || isInviteCodeValid == false)
+        .sheet(isPresented: $showJoinSheet) {
+            JoinHouseholdSheet(
+                inviteCode: $inviteCode,
+                inputError: $joinInputError,
+                isSubmitting: viewModel.isJoining,
+                isDecodingPhoto: isDecodingPhoto,
+                onScan: {
+                    showScanOptions = true
+                },
+                onSubmit: {
+                    await submitJoin()
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
-        .padding(14)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-    }
-
-    private func rowButtonLabel(title: String, loading: Bool) -> some View {
-        HStack(spacing: 8) {
-            if loading {
-                ProgressView()
+        .confirmationDialog("选择识别方式", isPresented: $showScanOptions, titleVisibility: .visible) {
+            Button("相机扫码") {
+                showCameraScanner = true
             }
-            Text(title)
-                .font(.system(size: 16, weight: .semibold))
+            Button("从相册识别") {
+                showPhotoPicker = true
+            }
+            Button("取消", role: .cancel) {}
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color.blue)
-        .foregroundStyle(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .sheet(isPresented: $showCameraScanner) {
+            QRScannerSheet { raw in
+                handleRecognizedCode(raw)
+                showCameraScanner = false
+            } onError: { message in
+                joinInputError = message
+                showCameraScanner = false
+            }
+        }
+        .photosPicker(
+            isPresented: $showPhotoPicker,
+            selection: $selectedPhotoItem,
+            matching: .images,
+            preferredItemEncoding: .automatic
+        )
+        .onChange(of: selectedPhotoItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                await decodeInviteCodeFromPhoto(newItem)
+            }
+        }
+        .overlay {
+            if isJoiningFullScreenLoading {
+                ZStack {
+                    Color.black.opacity(0.18)
+                        .ignoresSafeArea()
+                    VStack(spacing: 10) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("正在加入家庭…")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                }
+                .transition(.opacity)
+            }
+        }
     }
 
     private var normalizedInviteCode: String {
@@ -183,15 +181,15 @@ struct OrgRoutingView: View {
         normalizedInviteCode.range(of: "^[A-Z0-9]{6}$", options: .regularExpression) != nil
     }
 
-    private func sniffClipboard() {
-        clipboardHint = nil
-        guard let text = UIPasteboard.general.string?.uppercased() else { return }
-        if let code = firstInviteCode(from: text) {
-            inviteCode = code
-            detectedInviteCode = code
-            showClipboardPrompt = true
-        } else {
-            clipboardHint = "剪贴板中未检测到 6 位邀请码。"
+    private func handleRecognizedCode(_ raw: String) {
+        guard let code = firstInviteCode(from: raw.uppercased()) else {
+            joinInputError = "未识别到有效邀请码，请重试。"
+            return
+        }
+        inviteCode = code
+        joinInputError = nil
+        Task {
+            await submitJoin()
         }
     }
 
@@ -203,29 +201,344 @@ struct OrgRoutingView: View {
         return String(text[range])
     }
 
-    private func submitCreate() {
-        guard normalizedHouseholdName.isEmpty == false else {
-            showCreateNameHint = true
-            focusedField = .householdName
-            return
+    private func decodeInviteCodeFromPhoto(_ item: PhotosPickerItem) async {
+        await MainActor.run {
+            isDecodingPhoto = true
+            joinInputError = nil
         }
-        Task {
-            let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
-            guard success else { return }
-            appRouter.goToActiveMember()
-            await appRouter.refreshStateFromBackend()
+        defer {
+            Task { @MainActor in
+                isDecodingPhoto = false
+                selectedPhotoItem = nil
+            }
+        }
+
+        do {
+            guard let data = try await item.loadTransferable(type: Data.self),
+                  let ciImage = CIImage(data: data) else {
+                await MainActor.run {
+                    joinInputError = "图片读取失败，请换一张清晰二维码图片。"
+                }
+                return
+            }
+
+            let detector = CIDetector(
+                ofType: CIDetectorTypeQRCode,
+                context: nil,
+                options: [CIDetectorAccuracy: CIDetectorAccuracyHigh]
+            )
+            let features = detector?.features(in: ciImage) as? [CIQRCodeFeature]
+            let payload = features?.compactMap(\.messageString).joined(separator: " ") ?? ""
+
+            await MainActor.run {
+                handleRecognizedCode(payload)
+            }
+        } catch {
+            await MainActor.run {
+                joinInputError = "二维码识别失败，请重试。"
+            }
         }
     }
 
-    private func submitJoin() {
-        focusedField = nil
-        guard isInviteCodeValid else {
+    private func submitCreate() async {
+        createInputError = nil
+        guard normalizedHouseholdName.isEmpty == false else {
+            createInputError = "请输入家庭名称。"
             return
         }
-        Task {
-            let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
-            guard success else { return }
-            await appRouter.refreshStateFromBackend()
+        let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
+        guard success else { return }
+        showCreateSheet = false
+        appRouter.goToActiveMember()
+        await appRouter.refreshStateFromBackend()
+    }
+
+    private func submitJoin() async {
+        joinInputError = nil
+        guard isInviteCodeValid else {
+            joinInputError = "邀请码格式错误：需为 6 位字母或数字。"
+            return
+        }
+        guard isJoiningFullScreenLoading == false else { return }
+        isJoiningFullScreenLoading = true
+        defer { isJoiningFullScreenLoading = false }
+
+        let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
+        guard success else { return }
+        showJoinSheet = false
+        await appRouter.refreshStateFromBackend()
+    }
+
+    private func signOut() async {
+        guard isSigningOut == false else { return }
+        isSigningOut = true
+        defer { isSigningOut = false }
+
+        #if canImport(Supabase)
+        do {
+            try await SupabaseManager.shared.client.auth.signOut()
+            appRouter.appState = .unauthenticated
+        } catch {
+            localErrorMessage = error.localizedDescription
+            showErrorAlert = true
+        }
+        #else
+        appRouter.appState = .unauthenticated
+        #endif
+    }
+}
+
+private struct RouteActionCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let backgroundColor: Color
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(.blue)
+                    .frame(width: 42, height: 42)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(18)
+            .background(backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct CreateHouseholdSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var householdName: String
+    @Binding var inputError: String?
+    let isSubmitting: Bool
+    let onSubmit: () async -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("请输入家庭名称")
+                    .font(.system(size: 15, weight: .semibold))
+                TextField("例如：王家小院", text: $householdName)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 11)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if let inputError {
+                    Text(inputError)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+
+                Button {
+                    Task { await onSubmit() }
+                } label: {
+                    if isSubmitting {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    } else {
+                        Text("确认创建")
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isSubmitting)
+
+                Spacer()
+            }
+            .padding(16)
+            .navigationTitle("创建家庭")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+private struct JoinHouseholdSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var inviteCode: String
+    @Binding var inputError: String?
+    let isSubmitting: Bool
+    let isDecodingPhoto: Bool
+    let onScan: () -> Void
+    let onSubmit: () async -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Button(action: onScan) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "qrcode.viewfinder")
+                            .font(.system(size: 18, weight: .semibold))
+                        Text("扫一扫加入")
+                            .font(.system(size: 20, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                }
+                .buttonStyle(.plain)
+                .disabled(isDecodingPhoto)
+
+                HStack(spacing: 10) {
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(height: 1)
+                    Text("或")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                    Rectangle()
+                        .fill(Color(.separator))
+                        .frame(height: 1)
+                }
+
+                TextField("输入 6 位邀请码", text: $inviteCode)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled(true)
+                    .font(.system(size: 22, weight: .semibold, design: .monospaced))
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 14)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                if let inputError {
+                    Text(inputError)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.red)
+                }
+
+                if isDecodingPhoto {
+                    Label("正在识别图片中的邀请码…", systemImage: "photo")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                Button {
+                    Task { await onSubmit() }
+                } label: {
+                    if isSubmitting {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    } else {
+                        Text("确认加入")
+                            .font(.system(size: 17, weight: .semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isSubmitting)
+
+                Spacer()
+            }
+            .padding(16)
+            .navigationTitle("加入家庭")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+private struct QRScannerSheet: UIViewControllerRepresentable {
+    let onCode: (String) -> Void
+    let onError: (String) -> Void
+
+    func makeUIViewController(context: Context) -> UIViewController {
+        guard DataScannerViewController.isSupported else {
+            onError("当前设备不支持相机扫码。")
+            return UIViewController()
+        }
+        guard DataScannerViewController.isAvailable else {
+            onError("相机当前不可用，请检查权限后重试。")
+            return UIViewController()
+        }
+
+        let scanner = DataScannerViewController(
+            recognizedDataTypes: [.barcode(symbologies: [.qr])],
+            qualityLevel: .balanced,
+            recognizesMultipleItems: false,
+            isHighFrameRateTrackingEnabled: true,
+            isPinchToZoomEnabled: true,
+            isGuidanceEnabled: true,
+            isHighlightingEnabled: true
+        )
+        scanner.delegate = context.coordinator
+        do {
+            try scanner.startScanning()
+        } catch {
+            onError("启动扫码失败，请稍后重试。")
+        }
+        return scanner
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onCode: onCode)
+    }
+
+    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        let onCode: (String) -> Void
+
+        init(onCode: @escaping (String) -> Void) {
+            self.onCode = onCode
+        }
+
+        func dataScanner(
+            _ dataScanner: DataScannerViewController,
+            didTapOn item: RecognizedItem
+        ) {
+            if case .barcode(let barcode) = item,
+               let payload = barcode.payloadStringValue {
+                onCode(payload)
+            }
+        }
+
+        func dataScanner(
+            _ dataScanner: DataScannerViewController,
+            didAdd addedItems: [RecognizedItem],
+            allItems: [RecognizedItem]
+        ) {
+            guard let first = addedItems.first else { return }
+            if case .barcode(let barcode) = first,
+               let payload = barcode.payloadStringValue {
+                onCode(payload)
+            }
         }
     }
 }

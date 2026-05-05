@@ -34,5 +34,7 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>用于扫描家人分享的邀请码二维码，帮助你快速加入家庭。</string>
 </dict>
 </plist>
