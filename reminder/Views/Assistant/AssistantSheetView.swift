@@ -112,7 +112,7 @@ struct AssistantSheetView: View {
                     await viewModel.confirmSend(
                         householdId: householdId,
                         creatorMembershipId: creatorMembershipId,
-                        involvedMemberIds: assignee.map { [$0.id] } ?? []
+                        involvedMemberIds: assignee.map { [$0.id] }
                     )
                 },
                 onCorrection: { correction in

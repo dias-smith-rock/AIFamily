@@ -46,7 +46,7 @@ final class AssistantViewModel: ObservableObject {
     func confirmSend(
         householdId: UUID,
         creatorMembershipId: UUID,
-        involvedMemberIds: [UUID]
+        involvedMemberIds: [UUID]?
     ) async {
         guard case let .preview(draft) = state else { return }
         state = .sending

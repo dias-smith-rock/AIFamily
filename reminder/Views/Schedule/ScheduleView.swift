@@ -5,9 +5,10 @@ struct ScheduleView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
     @State private var period: SchedulePeriod = .day
-    @State private var anchorDate = Date.mockISO("2026-04-27T00:00:00.000Z")
+    @State private var anchorDate = Date()
     @State private var monthSheetDate: Date?
     @State private var showsMonthSheet = false
+    @State private var showingCreateTask = false
     let onRequestAIInput: () -> Void
 
     init(onRequestAIInput: @escaping () -> Void = {}) {
@@ -40,6 +41,9 @@ struct ScheduleView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
+            .safeAreaInset(edge: .bottom) {
+                floatingActionCapsule
+            }
         }
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
@@ -56,7 +60,7 @@ struct ScheduleView: View {
                 MonthDayTasksSheet(
                     date: selectedDate,
                     tasks: tasks(on: selectedDate),
-                    assigneeName: assigneeName(for:)
+                    assigneeLabel: assigneeLabel(for:)
                 ) { task in
                     let nextStatus: TaskStatus = task.status == .completed ? .new : .completed
                     await viewModel.updateTaskStatus(taskId: task.id, to: nextStatus)
@@ -66,6 +70,20 @@ struct ScheduleView: View {
                 .presentationBackground(.clear)
                 .presentationCornerRadius(30)
             }
+        }
+        .sheet(isPresented: $showingCreateTask) {
+            CreateTaskView(onSaveSuccess: { createdDueDate in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    period = .day
+                    anchorDate = createdDueDate
+                }
+                Task {
+                    await viewModel.loadTasks()
+                }
+            })
+            .environmentObject(appRouter)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
         }
     }
 
@@ -179,19 +197,61 @@ struct ScheduleView: View {
     }
 
     private var emptyStateView: some View {
-        EmptyStateView(
-            systemImage: "calendar.badge.exclamationmark",
-            title: "暂无任务",
-            message: "当前时间范围还没有任务，试试让 AI 快速生成一条提醒。",
-            primaryActionTitle: "让 AI 帮我创建",
-            primaryAction: onRequestAIInput,
-            secondaryActionTitle: "重新加载",
-            secondaryAction: {
-                Task {
-                    await viewModel.loadTasks()
-                }
+        VStack(spacing: 12) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(AppTheme.ColorToken.textSecondary)
+            Text("暂无任务")
+                .font(AppTheme.FontToken.section)
+            Text("快来安排今天的生活吧")
+                .font(AppTheme.FontToken.subtitle)
+                .foregroundStyle(AppTheme.ColorToken.textSecondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 220)
+        .padding(20)
+        .background(AppTheme.ColorToken.surfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var floatingActionCapsule: some View {
+        HStack(spacing: 10) {
+            Button {
+                showingCreateTask = true
+            } label: {
+                Label("手动", systemImage: "square.and.pencil")
+                    .font(AppTheme.FontToken.bodyStrong)
+                    .foregroundStyle(AppTheme.ColorToken.textSecondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
             }
-        )
+            .buttonStyle(.plain)
+
+            Divider()
+                .frame(height: 24)
+
+            Button {
+                // TODO: 弹出 AI 语音录入面板
+                onRequestAIInput()
+            } label: {
+                HStack(spacing: 7) {
+                    Image(systemName: "waveform")
+                    Text("AI 语音")
+                }
+                .font(AppTheme.FontToken.bodyStrong)
+                .foregroundStyle(.white)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 11)
+                .background(Color.orange)
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(6)
+        .background(.ultraThinMaterial)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.14), radius: 12, y: 6)
+        .padding(.horizontal, 18)
+        .padding(.bottom, 8)
     }
 
     private func taskList(tasks: [FamilyTask]) -> some View {
@@ -199,7 +259,7 @@ struct ScheduleView: View {
             ForEach(tasks) { task in
                 ScheduleTaskCard(
                     task: task,
-                    assigneeName: assigneeName(for: primaryAssignee(of: task)),
+                    assigneeName: assigneeLabel(for: task),
                     onToggleStatus: {
                         let nextStatus: TaskStatus = task.status == .completed ? .new : .completed
                         await viewModel.updateTaskStatus(taskId: task.id, to: nextStatus)
@@ -435,8 +495,18 @@ struct ScheduleView: View {
         return min(1, count / 8.0)
     }
 
-    private func primaryAssignee(of task: FamilyTask) -> UUID? {
-        task.involvedMemberIds?.first
+    private func assigneeLabel(for task: FamilyTask) -> String {
+        if task.involvesWholeHousehold {
+            return "所有人"
+        }
+        let ids = task.involvedMemberIds ?? []
+        if ids.count == 1 {
+            return assigneeName(for: ids.first)
+        }
+        if ids.isEmpty {
+            return "所有人"
+        }
+        return "\(ids.count) 人"
     }
 
     private func assigneeName(for id: UUID?) -> String {
@@ -456,7 +526,7 @@ struct ScheduleView: View {
 private struct MonthDayTasksSheet: View {
     let date: Date
     let tasks: [FamilyTask]
-    let assigneeName: (UUID?) -> String
+    let assigneeLabel: (FamilyTask) -> String
     let onToggleStatus: (FamilyTask) async -> Void
 
     var body: some View {
@@ -483,7 +553,7 @@ private struct MonthDayTasksSheet: View {
                                 ForEach(tasks) { task in
                                     ScheduleTaskCard(
                                         task: task,
-                                        assigneeName: assigneeName(task.involvedMemberIds?.first),
+                                        assigneeName: assigneeLabel(task),
                                         onToggleStatus: {
                                             await onToggleStatus(task)
                                         }
@@ -561,7 +631,12 @@ private struct MonthDateCell: View {
                 .foregroundStyle(isSelected ? .blue : .primary)
 
             HStack(spacing: 3) {
-                ForEach(Array(uniqueMemberIds.prefix(3)), id: \.self) { memberId in
+                if hasHouseholdWideTask {
+                    Circle()
+                        .fill(Color.orange.opacity(0.88))
+                        .frame(width: 6, height: 6)
+                }
+                ForEach(Array(memberIdsForDots.prefix(memberDotCap)), id: \.self) { memberId in
                     Circle()
                         .fill(colorForMember(memberId))
                         .frame(width: 6, height: 6)
@@ -574,9 +649,20 @@ private struct MonthDateCell: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
-    private var uniqueMemberIds: [UUID] {
-        let assignees = tasks.compactMap { $0.involvedMemberIds?.first }
+    private var hasHouseholdWideTask: Bool {
+        tasks.contains { $0.involvesWholeHousehold }
+    }
+
+    private var memberIdsForDots: [UUID] {
+        let assignees = tasks.compactMap { task -> UUID? in
+            if task.involvesWholeHousehold { return nil }
+            return task.involvedMemberIds?.first
+        }
         return Array(Set(assignees))
+    }
+
+    private var memberDotCap: Int {
+        hasHouseholdWideTask ? 2 : 3
     }
 }
 
