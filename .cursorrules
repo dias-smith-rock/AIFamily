@@ -31,3 +31,11 @@
 # 针对当前 MVP 项目的特殊指令
 - 在生成 UI 预览 (Preview) 时，必须主动提供极其丰富、具有真实感的 Mock Data，不要使用 "Test", "Abc" 这种毫无意义的占位符。
 - 当前阶段优先使用本地 Mock 数据跑通纯 UI 交互，预留好未来接入云端数据库（如 Supabase）的接口层 (Protocols)。
+
+# Supabase / 家庭任务：`involved_member_ids` 与身份 ID（必读，避免 RLS 与前端逻辑踩坑）
+
+- **`tasks.involved_member_ids`** 存的是 **`household_memberships.id`（Membership ID / 成员身份主键）**，**不是** `auth.users.id`（User ID / 全局登录用户 ID）。
+- **指派 UI（Picker 等）** 里选的「成员」若是按 **`HouseholdMembership.id`** 传的，写入数组的也**必须**是同一维度；**禁止**把 `auth.uid()` 或仅 user id 塞进该数组去表示「指派给自己」。
+- **RLS / SQL**：判断「当前用户是否被指派人」时，**禁止**写 `auth.uid() = ANY(involved_member_ids)` 或把 user id 与数组元素直接比较。正确做法是：用 **`auth.uid()` 在 `household_memberships` 里解析出当前用户在本家庭下的 `id`**，再判断该 **`membership.id`** 是否在 `involved_member_ids` 中（或空/NULL 表示全家任务）。
+- **前端**：列表若交给 RLS 裁剪，**不要**再用 `auth.uid()` 去查询或 `.filter` 里匹配 `involvedMemberIds`；若要做「是否派给我」，应使用 **`AppRouter.selectedMembershipId`**（或当前上下文的 membership id）与 `involvedMemberIds` 比较，可用 `FamilyTask.involvesMembership(id:)`。
+- **根因口诀**：拿苹果（User ID）去橘子堆（Membership ID 数组）里找，永远对不上 → 数据库认为任务与该成员无关并隐藏行。
