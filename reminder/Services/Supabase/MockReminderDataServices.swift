@@ -36,6 +36,13 @@ actor MockTaskDataService: TaskDataService {
         tasks[index] = row
         return row
     }
+
+    func deleteTask(taskId: UUID) async throws {
+        guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
+            throw SupabaseServiceError.invalidResponse
+        }
+        tasks.remove(at: index)
+    }
 }
 
 // MARK: - Feedbacks

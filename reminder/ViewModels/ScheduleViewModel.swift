@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import SwiftUI
 
 @MainActor
 final class ScheduleViewModel: ObservableObject {
@@ -103,5 +104,17 @@ final class ScheduleViewModel: ObservableObject {
             (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
         }
         return updated
+    }
+
+    func deleteTask(taskId: UUID) async {
+        errorMessage = nil
+        do {
+            try await taskService.deleteTask(taskId: taskId)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                tasks.removeAll { $0.id == taskId }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }

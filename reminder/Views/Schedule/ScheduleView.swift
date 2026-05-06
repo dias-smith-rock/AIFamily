@@ -14,6 +14,8 @@ struct ScheduleView: View {
     @State private var showsMonthSheet = false
     @State private var showingCreateTask = false
     @State private var taskForDetailSheet: FamilyTask?
+    /// 待二次确认删除的任务（勿命名为 `Task`，会与 Swift 并发 `Task` 冲突）。
+    @State private var taskToDelete: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     let onRequestAIInput: () -> Void
 
@@ -31,20 +33,103 @@ struct ScheduleView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                periodSelector
-                periodNavigator
-                rangeHint
-                Divider()
-                contentByPeriod
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 16) {
+                    header
+                    periodSelector
+                    periodNavigator
+                    rangeHint
+                    Divider()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, topFamilyBarOffset)
-            .padding(.bottom, 120)
+            .listRowInsets(EdgeInsets(top: topFamilyBarOffset, leading: 16, bottom: 8, trailing: 16))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+
+            if viewModel.isLoading {
+                Section {
+                    ProgressView("正在加载任务...")
+                        .frame(maxWidth: .infinity, minHeight: 220)
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowBackground(Color.clear)
+            } else if let errorMessage = viewModel.errorMessage {
+                Section {
+                    ContentUnavailableView {
+                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button("重新加载") {
+                            Task {
+                                await viewModel.loadTasks()
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 220)
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+                .listRowBackground(Color.clear)
+            } else if filteredTasks.isEmpty {
+                Section {
+                    emptyStateView
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                .listRowBackground(Color.clear)
+            } else {
+                switch period {
+                case .day:
+                    Section {
+                        ForEach(filteredTasks) { task in
+                            taskScheduleRow(task)
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                case .week:
+                    Section {
+                        weekDayStrip
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    Section {
+                        ForEach(filteredTasks) { task in
+                            taskScheduleRow(task)
+                        }
+                    }
+                    .listRowBackground(Color.clear)
+                case .month:
+                    Section {
+                        monthView
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                case .year:
+                    Section {
+                        yearView
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 8, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+            }
+
+            Section {
+                Color.clear
+                    .frame(height: 120)
+                    .accessibilityHidden(true)
+            }
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
         .background(Color(.systemGroupedBackground))
+        .animation(.spring(response: 0.35, dampingFraction: 0.82), value: filteredTasks.map(\.id))
         .safeAreaInset(edge: .bottom) {
             floatingActionCapsule
         }
@@ -83,7 +168,11 @@ struct ScheduleView: View {
                 MonthDayTasksSheet(
                     date: selectedDate,
                     tasks: tasks(on: selectedDate),
-                    assigneeLabel: assigneeLabel(for:)
+                    assigneeLabel: assigneeLabel(for:),
+                    canDeleteTask: canDelete,
+                    onRequestDeleteConfirmation: { task in
+                        taskToDelete = task
+                    }
                 ) { task in
                     let nextStatus: TaskStatus = task.status == .completed ? .new : .completed
                     await viewModel.updateTaskStatus(taskId: task.id, to: nextStatus)
@@ -93,6 +182,35 @@ struct ScheduleView: View {
                 .presentationBackground(.clear)
                 .presentationCornerRadius(30)
             }
+        }
+        .confirmationDialog(
+            "确认删除该任务？",
+            isPresented: Binding(
+                get: { taskToDelete != nil },
+                set: { newValue in
+                    if newValue == false {
+                        taskToDelete = nil
+                    }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                guard let task = taskToDelete else { return }
+                let id = task.id
+                taskToDelete = nil
+                Task { @MainActor in
+                    await viewModel.deleteTask(taskId: id)
+                    if taskForDetailSheet?.id == id {
+                        taskForDetailSheet = nil
+                    }
+                }
+            }
+            Button("取消", role: .cancel) {
+                taskToDelete = nil
+            }
+        } message: {
+            Text("此操作无法撤销。如果任务不需要了，你也可以选择在详情页将其标记为‘已完结’。")
         }
         .sheet(isPresented: $showingCreateTask) {
             CreateTaskView(onSaveSuccess: { createdDueDate in
@@ -185,40 +303,6 @@ struct ScheduleView: View {
             .foregroundStyle(.tertiary)
     }
 
-    @ViewBuilder
-    private var contentByPeriod: some View {
-        if viewModel.isLoading {
-            ProgressView("正在加载任务...")
-                .frame(maxWidth: .infinity, minHeight: 220)
-        } else if let errorMessage = viewModel.errorMessage {
-            ContentUnavailableView {
-                Label("加载失败", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(errorMessage)
-            } actions: {
-                Button("重新加载") {
-                    Task {
-                        await viewModel.loadTasks()
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 220)
-        } else if filteredTasks.isEmpty {
-            emptyStateView
-        } else {
-            switch period {
-            case .day:
-                taskList(tasks: filteredTasks)
-            case .week:
-                weekView
-            case .month:
-                monthView
-            case .year:
-                yearView
-            }
-        }
-    }
-
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: "calendar.badge.exclamationmark")
@@ -277,24 +361,70 @@ struct ScheduleView: View {
         .padding(.bottom, 8)
     }
 
-    // 任务详情以 `.sheet(item:)` 弹出；列表行用 `Button` 赋值 `taskForDetailSheet`。
-    private func taskList(tasks: [FamilyTask]) -> some View {
-        LazyVStack(spacing: 12) {
-            ForEach(tasks) { task in
-                Button {
-                    taskForDetailSheet = task
+    private func taskScheduleRow(_ task: FamilyTask) -> some View {
+        ScheduleTaskCard(
+            task: task,
+            assigneeName: assigneeLabel(for: task),
+            onToggleStatus: nil
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 20))
+        .onTapGesture {
+            taskForDetailSheet = task
+        }
+        .listRowSeparator(.hidden)
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
+        .listRowBackground(Color.clear)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            if canDelete(task) {
+                Button(role: .destructive) {
+                    taskToDelete = task
                 } label: {
-                    ScheduleTaskCard(
-                        task: task,
-                        assigneeName: assigneeLabel(for: task),
-                        onToggleStatus: nil
-                    )
+                    Image(systemName: "trash")
                 }
-                .buttonStyle(.plain)
-                .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))
             }
         }
-        .animation(.spring(response: 0.35, dampingFraction: 0.82), value: tasks)
+    }
+
+    private var weekDayStrip: some View {
+        let days = weekDates
+        return HStack(spacing: 8) {
+            ForEach(Array(days.enumerated()), id: \.offset) { _, date in
+                let dayTasks = tasks(on: date)
+                VStack(spacing: 6) {
+                    Text(date.formatted(.dateTime.weekday(.narrow)))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text(date.formatted(.dateTime.day()))
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 28, height: 28)
+                        .background(Calendar.current.isDate(date, inSameDayAs: anchorDate) ? Color.blue.opacity(0.15) : .clear)
+                        .clipShape(Circle())
+                    Text("\(dayTasks.count)")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(dayTasks.isEmpty ? Color.secondary : Color.blue)
+                }
+                .frame(maxWidth: .infinity)
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        anchorDate = date
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 8)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private func canDelete(_ task: FamilyTask) -> Bool {
+        switch currentMembershipRole {
+        case .admin, .creator:
+            return true
+        case .member:
+            guard let membershipId = appRouter.selectedMembershipId else { return false }
+            return task.creatorId == membershipId
+        }
     }
 
     #if canImport(Supabase)
@@ -328,42 +458,6 @@ struct ScheduleView: View {
         #else
         currentMembershipRole = .member
         #endif
-    }
-
-    private var weekView: some View {
-        let days = weekDates
-        return VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                ForEach(Array(days.enumerated()), id: \.offset) { _, date in
-                    let dayTasks = tasks(on: date)
-                    VStack(spacing: 6) {
-                        Text(date.formatted(.dateTime.weekday(.narrow)))
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.secondary)
-                        Text(date.formatted(.dateTime.day()))
-                            .font(.system(size: 15, weight: .semibold))
-                            .frame(width: 28, height: 28)
-                            .background(Calendar.current.isDate(date, inSameDayAs: anchorDate) ? Color.blue.opacity(0.15) : .clear)
-                            .clipShape(Circle())
-                        Text("\(dayTasks.count)")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(dayTasks.isEmpty ? Color.secondary : Color.blue)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            anchorDate = date
-                        }
-                    }
-                }
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 8)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 14))
-
-            taskList(tasks: filteredTasks)
-        }
     }
 
     private var monthView: some View {
@@ -586,6 +680,8 @@ private struct MonthDayTasksSheet: View {
     let date: Date
     let tasks: [FamilyTask]
     let assigneeLabel: (FamilyTask) -> String
+    let canDeleteTask: (FamilyTask) -> Bool
+    let onRequestDeleteConfirmation: (FamilyTask) -> Void
     let onToggleStatus: (FamilyTask) async -> Void
 
     var body: some View {
@@ -598,34 +694,46 @@ private struct MonthDayTasksSheet: View {
                 sheetHeader
                 Divider()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if tasks.isEmpty {
-                            ContentUnavailableView(
-                                "当天暂无任务",
-                                systemImage: "calendar.badge.exclamationmark",
-                                description: Text("可以通过 AI 助手快速创建任务")
+                if tasks.isEmpty {
+                    ContentUnavailableView(
+                        "当天暂无任务",
+                        systemImage: "calendar.badge.exclamationmark",
+                        description: Text("可以通过 AI 助手快速创建任务")
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 34)
+                    .padding(.bottom, 20)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(tasks) { task in
+                            ScheduleTaskCard(
+                                task: task,
+                                assigneeName: assigneeLabel(task),
+                                onToggleStatus: {
+                                    await onToggleStatus(task)
+                                }
                             )
-                            .padding(.top, 34)
-                        } else {
-                            LazyVStack(spacing: 10) {
-                                ForEach(tasks) { task in
-                                    ScheduleTaskCard(
-                                        task: task,
-                                        assigneeName: assigneeLabel(task),
-                                        onToggleStatus: {
-                                            await onToggleStatus(task)
-                                        }
-                                    )
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 10, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                if canDeleteTask(task) {
+                                    Button(role: .destructive) {
+                                        onRequestDeleteConfirmation(task)
+                                    } label: {
+                                        Image(systemName: "trash")
+                                    }
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
-                    .padding(.bottom, 20)
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(.ultraThinMaterial)
             .clipShape(SheetTopRoundedShape(radius: 30))
             .overlay(

@@ -9,6 +9,7 @@ protocol TaskDataService {
     func updateTask(_ task: FamilyTask) async throws -> FamilyTask
     /// 仅更新 `status` 列并返回最新行，用于成员侧状态机操作。
     func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask
+    func deleteTask(taskId: UUID) async throws
 }
 
 protocol FeedbackDataService {

@@ -121,6 +121,19 @@ struct SupabaseTaskDataService: TaskDataService {
         #endif
     }
 
+    func deleteTask(taskId: UUID) async throws {
+        #if canImport(Supabase)
+        try await provider.client
+            .from(SupabaseTable.tasks)
+            .delete()
+            .eq("id", value: taskId.uuidString)
+            .execute()
+        #else
+        _ = taskId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
     private static func normalizeInvolvedMemberIdsForRowSemantics(_ task: FamilyTask) -> FamilyTask {
         guard task.involvedMemberIds?.isEmpty == true else { return task }
         var copy = task
