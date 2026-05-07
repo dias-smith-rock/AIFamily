@@ -12,6 +12,8 @@ struct ScheduleView: View {
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
     @State private var selectedDate: Date = Date()
     @State private var isShowingCalendarSheet = false
+    @State private var isShowingCreateTaskSheet = false
+    @State private var prefillTitle = ""
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     let onRequestAIInput: () -> Void
@@ -51,6 +53,20 @@ struct ScheduleView: View {
                     monthTaskDots: monthTaskDots
                 )
                 .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $isShowingCreateTaskSheet) {
+                CreateTaskView(
+                    initialTitle: prefillTitle,
+                    onSaveSuccess: { createdDueDate in
+                        selectedDate = dayID(for: createdDueDate)
+                        Task {
+                            await viewModel.loadTasks()
+                        }
+                    }
+                )
+                .environmentObject(appRouter)
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
             .task {
@@ -108,14 +124,8 @@ struct ScheduleView: View {
 
             HStack(spacing: 12) {
                 avatarBadge
-                NavigationLink {
-                    CreateTaskView(onSaveSuccess: { createdDueDate in
-                        selectedDate = dayID(for: createdDueDate)
-                        Task {
-                            await viewModel.loadTasks()
-                        }
-                    })
-                    .environmentObject(appRouter)
+                Button {
+                    openCreateTask(prefill: "")
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .bold))
@@ -220,30 +230,39 @@ struct ScheduleView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollViewReader { proxy in
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: 12) {
-                            if allDayTasks.isEmpty == false {
-                                allDaySection
-                            }
-
-                            ZStack(alignment: .topLeading) {
-                                timeGrid
-                                taskCardsLayer
-                                if Calendar.current.isDateInToday(selectedDate) {
-                                    currentTimeIndicator
+                ZStack {
+                    ScrollViewReader { proxy in
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 12) {
+                                if allDayTasks.isEmpty == false {
+                                    allDaySection
                                 }
+
+                                ZStack(alignment: .topLeading) {
+                                    timeGrid
+                                    taskCardsLayer
+                                    if Calendar.current.isDateInToday(selectedDate) {
+                                        currentTimeIndicator
+                                    }
+                                }
+                                .frame(height: hourHeight * 24, alignment: .topLeading)
                             }
-                            .frame(height: hourHeight * 24, alignment: .topLeading)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 24)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 24)
+                        .onAppear {
+                            scrollToFocusedHour(with: proxy, animated: false)
+                        }
+                        .onChange(of: selectedDate) { _, _ in
+                            scrollToFocusedHour(with: proxy)
+                        }
                     }
-                    .onAppear {
-                        scrollToFocusedHour(with: proxy, animated: false)
-                    }
-                    .onChange(of: selectedDate) { _, _ in
-                        scrollToFocusedHour(with: proxy)
+
+                    if timedTasks.isEmpty {
+                        emptyStateView()
+                            .padding(.leading, timeAxisWidth)
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
             }
@@ -327,6 +346,57 @@ struct ScheduleView: View {
                     }
             }
         }
+    }
+
+    @ViewBuilder
+    private func emptyStateView() -> some View {
+        VStack(spacing: 24) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.12))
+                    .frame(width: 132, height: 132)
+                Image(systemName: "sun.max")
+                    .font(.system(size: 48, weight: .medium))
+                    .foregroundStyle(.orange)
+            }
+
+            VStack(spacing: 8) {
+                Text("No tasks scheduled today")
+                    .font(.title3.bold())
+                    .foregroundStyle(.primary)
+                Text("Enjoy your family time, or plan something new.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            VStack(spacing: 12) {
+                quickActionChip(icon: "sparkles", title: "Family Dinner")
+                quickActionChip(icon: "cart", title: "Grocery List")
+                quickActionChip(icon: "teddybear", title: "Kids Activity")
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .offset(y: -50)
+    }
+
+    private func quickActionChip(icon: String, title: String) -> some View {
+        Button {
+            openCreateTask(prefill: title)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.semibold))
+                Text(title)
+                    .font(.title3.weight(.semibold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private var currentTimeIndicator: some View {
@@ -427,6 +497,11 @@ struct ScheduleView: View {
 
     private func dayID(for date: Date) -> Date {
         Calendar.current.startOfDay(for: date)
+    }
+
+    private func openCreateTask(prefill: String) {
+        prefillTitle = prefill
+        isShowingCreateTaskSheet = true
     }
 
     private var selectedDay: Date {

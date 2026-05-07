@@ -54,15 +54,18 @@ struct CreateTaskView: View {
     @State private var isShowingRecurringUpdateScopeDialog = false
 
     private let editingTask: FamilyTask?
+    private let initialTitle: String?
     private let onSaveSuccess: ((Date) -> Void)?
     private let onUpdateSuccess: ((FamilyTask) -> Void)?
 
     init(
         editingTask: FamilyTask? = nil,
+        initialTitle: String? = nil,
         onSaveSuccess: ((Date) -> Void)? = nil,
         onUpdateSuccess: ((FamilyTask) -> Void)? = nil
     ) {
         self.editingTask = editingTask
+        self.initialTitle = initialTitle
         self.onSaveSuccess = onSaveSuccess
         self.onUpdateSuccess = onUpdateSuccess
 
@@ -81,7 +84,7 @@ struct CreateTaskView: View {
             _financeDetailNote = State(initialValue: "")
             _costInput = State(initialValue: Self.displayCost(fromMinorUnits: task.estimatedCost))
         } else {
-            _title = State(initialValue: "")
+            _title = State(initialValue: initialTitle ?? "")
             _dueDate = State(initialValue: Date())
             _isAllDay = State(initialValue: false)
             _repeatOption = State(initialValue: .never)
