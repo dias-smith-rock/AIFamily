@@ -74,81 +74,11 @@ struct AppTabRootView: View {
                 .padding(.bottom, 92)
             }
         }
-        .safeAreaInset(edge: .top) {
-            householdBar
-        }
         .sheet(isPresented: $showsAssistant) {
             AssistantSheetView()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
-    }
-
-    private var householdBar: some View {
-        HStack {
-            Menu {
-                Picker(
-                    "切换家庭",
-                    selection: Binding<UUID?>(
-                        get: { appRouter.selectedHouseholdId },
-                        set: { selectedId in
-                            guard
-                                let selectedId,
-                                let option = appRouter.selectableHouseholds.first(where: { $0.id == selectedId })
-                            else {
-                                return
-                            }
-                            chooseHousehold(option)
-                        }
-                    )
-                ) {
-                    ForEach(appRouter.selectableHouseholds) { option in
-                        Text(option.name).tag(Optional(option.id))
-                    }
-                }
-
-                Divider()
-
-                Button {
-                    appRouter.goToOrgRouting()
-                } label: {
-                    Label("创建新家庭", systemImage: "plus")
-                }
-                Button {
-                    appRouter.goToOrgRouting()
-                } label: {
-                    Label("扫码加入家庭", systemImage: "qrcode.viewfinder")
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("当前家庭")
-                            .font(AppTheme.FontToken.caption)
-                            .foregroundStyle(AppTheme.ColorToken.textSecondary)
-                        HStack(spacing: 4) {
-                            Text(appRouter.selectedHouseholdName ?? "未选择")
-                                .font(AppTheme.FontToken.bodyStrong)
-                                .lineLimit(1)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(AppTheme.ColorToken.textSecondary)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
-        .background(AppTheme.ColorToken.surfaceMuted)
-    }
-
-    private func chooseHousehold(_ option: AppRouter.HouseholdOption) {
-        appRouter.chooseHousehold(option)
     }
 }
 
