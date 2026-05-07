@@ -4,6 +4,33 @@ import SwiftUI
 import Supabase
 #endif
 
+extension Notification.Name {
+    static let scheduleTasksDidChange = Notification.Name("scheduleTasksDidChange")
+}
+
+private enum RecurringTaskScope {
+    case singleOnly
+    case thisAndFuture
+}
+
+private struct RecurringTaskUpdateRPCParams: Encodable {
+    let targetTaskId: UUID
+    let updateScope: String
+    let newTitle: String
+    let newDescription: String?
+    let newCost: Decimal?
+    let newTargetIds: [UUID]?
+
+    enum CodingKeys: String, CodingKey {
+        case targetTaskId = "target_task_id"
+        case updateScope = "update_scope"
+        case newTitle = "new_title"
+        case newDescription = "new_description"
+        case newCost = "new_cost"
+        case newTargetIds = "new_target_ids"
+    }
+}
+
 struct CreateTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
@@ -23,6 +50,8 @@ struct CreateTaskView: View {
     @State private var costInput = ""
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var pendingRecurringUpdateTask: FamilyTask?
+    @State private var isShowingRecurringUpdateScopeDialog = false
 
     private let editingTask: FamilyTask?
     private let onSaveSuccess: ((Date) -> Void)?
@@ -171,6 +200,31 @@ struct CreateTaskView: View {
         }
         .task {
             await loadAssignees()
+        }
+        .confirmationDialog(
+            "这是循环任务",
+            isPresented: $isShowingRecurringUpdateScopeDialog,
+            titleVisibility: .visible
+        ) {
+            Button("仅修改此任务") {
+                guard let existing = pendingRecurringUpdateTask else { return }
+                pendingRecurringUpdateTask = nil
+                Task {
+                    await performUpdate(existing: existing, scope: .singleOnly)
+                }
+            }
+            Button("修改此任务及以后", role: .destructive) {
+                guard let existing = pendingRecurringUpdateTask else { return }
+                pendingRecurringUpdateTask = nil
+                Task {
+                    await performUpdate(existing: existing, scope: .thisAndFuture)
+                }
+            }
+            Button("取消", role: .cancel) {
+                pendingRecurringUpdateTask = nil
+            }
+        } message: {
+            Text("请选择修改范围。")
         }
     }
 
@@ -402,100 +456,244 @@ struct CreateTaskView: View {
             return
         }
 
-        isSaving = true
-        errorMessage = nil
-        defer { isSaving = false }
-
         #if canImport(Supabase)
         if let existing = editingTask {
-            await saveEditedTask(
-                existing: existing,
-                householdId: householdId
-            )
+            if existing.groupId != nil {
+                pendingRecurringUpdateTask = existing
+                isShowingRecurringUpdateScopeDialog = true
+            } else {
+                await performUpdate(existing: existing, scope: .singleOnly)
+            }
             return
         }
 
-        do {
-            let now = Date()
-            let membershipContext = creatorMembershipId
-            let creatorIdLowercased = membershipContext.uuidString.lowercased()
-
-            let payload = TaskInsertPayload(
-                id: UUID(),
-                householdId: householdId,
-                creatorId: creatorIdLowercased,
-                involvedMemberIds: resolvedInvolvedMemberIds,
-                title: normalizedTitle,
-                description: mergedDescriptionForPayload,
-                status: TaskStatus.new.rawValue,
-                priority: TaskPriority.normal.rawValue,
-                dueDate: dueDate,
-                isAllDay: isAllDay,
-                recurrenceRule: repeatOption.recurrenceRule,
-                reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                estimatedCost: estimatedCostMinorUnits,
-                createdAt: now,
-                updatedAt: now
-            )
-
-            _ = try await SupabaseManager.shared.client
-                .from("tasks")
-                .insert(payload)
-                .execute()
-
-            onSaveSuccess?(dueDate)
-            dismiss()
-        } catch {
-            #if DEBUG
-            print("[CreateTaskView] saveTask failed: \(error.localizedDescription)")
-            #endif
-            errorMessage = "任务保存失败：\(error.localizedDescription)"
-        }
+        _ = creatorMembershipId
+        await performCreate(householdId: householdId, creatorMembershipId: creatorMembershipId)
         #else
         errorMessage = "当前构建环境未包含 Supabase SDK。"
         #endif
     }
 
-    private func saveEditedTask(existing: FamilyTask, householdId: UUID) async {
+    private func performUpdate(existing: FamilyTask, scope: RecurringTaskScope) async {
         #if canImport(Supabase)
+        guard let householdId = appRouter.selectedHouseholdId else {
+            errorMessage = "当前未选择家庭。"
+            return
+        }
         guard existing.householdId == householdId else {
             errorMessage = "当前家庭与任务不一致，无法保存。"
             return
         }
 
-        do {
-            let payload = TaskUpdatePayload(
-                title: normalizedTitle,
-                description: mergedDescriptionForPayload,
-                involvedMemberIds: resolvedInvolvedMemberIds,
-                dueDate: dueDate,
-                isAllDay: isAllDay,
-                recurrenceRule: repeatOption.recurrenceRule,
-                reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                estimatedCost: estimatedCostMinorUnits,
-                updatedAt: Date()
-            )
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
 
-            let updated: FamilyTask = try await SupabaseManager.shared.client
-                .from("tasks")
-                .update(payload)
-                .eq("id", value: existing.id.uuidString)
-                .select()
-                .single()
-                .execute()
-                .value
+        do {
+            let updated: FamilyTask
+            switch scope {
+            case .singleOnly:
+                if existing.groupId != nil {
+                    let rpcParams = RecurringTaskUpdateRPCParams(
+                        targetTaskId: existing.id,
+                        updateScope: "only_this",
+                        newTitle: normalizedTitle,
+                        newDescription: mergedDescriptionForPayload,
+                        newCost: estimatedCostMajorUnits,
+                        newTargetIds: resolvedInvolvedMemberIds
+                    )
+                    _ = try await SupabaseManager.shared.client
+                        .rpc("update_recurring_tasks", params: rpcParams)
+                        .execute()
+                    updated = FamilyTask(
+                        id: existing.id,
+                        householdId: existing.householdId,
+                        creatorId: existing.creatorId,
+                        parentTaskId: existing.parentTaskId,
+                        groupId: nil,
+                        originalDueDate: existing.originalDueDate,
+                        involvedMemberIds: resolvedInvolvedMemberIds,
+                        targetSubject: existing.targetSubject,
+                        title: normalizedTitle,
+                        description: mergedDescriptionForPayload,
+                        originalPrompt: existing.originalPrompt,
+                        attachmentUrls: existing.attachmentUrls,
+                        externalContacts: existing.externalContacts,
+                        locationData: existing.locationData,
+                        externalSyncRefs: existing.externalSyncRefs,
+                        alarmSetBy: existing.alarmSetBy,
+                        status: existing.status,
+                        priority: existing.priority,
+                        dueDate: dueDate,
+                        isAllDay: isAllDay,
+                        recurrenceRule: repeatOption.recurrenceRule,
+                        reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                        estimatedCost: estimatedCostMinorUnits,
+                        createdAt: existing.createdAt,
+                        updatedAt: Date()
+                    )
+                } else {
+                    let payload = TaskUpdatePayload(
+                        title: normalizedTitle,
+                        description: mergedDescriptionForPayload,
+                        involvedMemberIds: resolvedInvolvedMemberIds,
+                        dueDate: dueDate,
+                        isAllDay: isAllDay,
+                        recurrenceRule: repeatOption.recurrenceRule,
+                        reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                        estimatedCost: estimatedCostMinorUnits,
+                        updatedAt: Date()
+                    )
+                    updated = try await SupabaseManager.shared.client
+                        .from("tasks")
+                        .update(payload)
+                        .eq("id", value: existing.id.uuidString)
+                        .select()
+                        .single()
+                        .execute()
+                        .value
+                }
+            case .thisAndFuture:
+                guard existing.groupId != nil else {
+                    errorMessage = "循环任务标识缺失。"
+                    return
+                }
+                let rpcParams = RecurringTaskUpdateRPCParams(
+                    targetTaskId: existing.id,
+                    updateScope: "future",
+                    newTitle: normalizedTitle,
+                    newDescription: mergedDescriptionForPayload,
+                    newCost: estimatedCostMajorUnits,
+                    newTargetIds: resolvedInvolvedMemberIds
+                )
+                _ = try await SupabaseManager.shared.client
+                    .rpc("update_recurring_tasks", params: rpcParams)
+                    .execute()
+                updated = FamilyTask(
+                    id: existing.id,
+                    householdId: existing.householdId,
+                    creatorId: existing.creatorId,
+                    parentTaskId: existing.parentTaskId,
+                    groupId: existing.groupId,
+                    originalDueDate: existing.originalDueDate,
+                    involvedMemberIds: resolvedInvolvedMemberIds,
+                    targetSubject: existing.targetSubject,
+                    title: normalizedTitle,
+                    description: mergedDescriptionForPayload,
+                    originalPrompt: existing.originalPrompt,
+                    attachmentUrls: existing.attachmentUrls,
+                    externalContacts: existing.externalContacts,
+                    locationData: existing.locationData,
+                    externalSyncRefs: existing.externalSyncRefs,
+                    alarmSetBy: existing.alarmSetBy,
+                    status: existing.status,
+                    priority: existing.priority,
+                    dueDate: dueDate,
+                    isAllDay: isAllDay,
+                    recurrenceRule: repeatOption.recurrenceRule,
+                    reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                    estimatedCost: estimatedCostMinorUnits,
+                    createdAt: existing.createdAt,
+                    updatedAt: Date()
+                )
+            }
 
             onUpdateSuccess?(updated)
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
         } catch {
             #if DEBUG
-            print("[CreateTaskView] saveEditedTask failed: \(error.localizedDescription)")
+            print("[CreateTaskView] performUpdate failed: \(error.localizedDescription)")
             #endif
             errorMessage = "任务更新失败：\(error.localizedDescription)"
         }
         #else
         errorMessage = "当前构建环境未包含 Supabase SDK。"
         #endif
+    }
+
+    private func performCreate(householdId: UUID, creatorMembershipId: UUID) async {
+        #if canImport(Supabase)
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
+        do {
+            let now = Date()
+            let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
+            let recurrence = repeatOption.recurrenceRule
+            let groupId: UUID? = recurrence == nil ? nil : UUID()
+            let dates: [Date]
+            if let recurrence {
+                dates = generateFutureDates(start: dueDate, recurrenceRule: recurrence)
+            } else {
+                dates = [dueDate]
+            }
+            let payloads = dates.map { date in
+                TaskInsertPayload(
+                    id: UUID(),
+                    householdId: householdId,
+                    creatorId: creatorIdLowercased,
+                    groupId: groupId,
+                    involvedMemberIds: resolvedInvolvedMemberIds,
+                    title: normalizedTitle,
+                    description: mergedDescriptionForPayload,
+                    status: TaskStatus.new.rawValue,
+                    priority: TaskPriority.normal.rawValue,
+                    dueDate: date,
+                    isAllDay: isAllDay,
+                    recurrenceRule: recurrence,
+                    reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                    estimatedCost: estimatedCostMinorUnits,
+                    createdAt: now,
+                    updatedAt: now
+                )
+            }
+            _ = try await SupabaseManager.shared.client
+                .from("tasks")
+                .insert(payloads)
+                .execute()
+            onSaveSuccess?(dueDate)
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            dismiss()
+        } catch {
+            errorMessage = "任务保存失败：\(error.localizedDescription)"
+        }
+        #else
+        _ = householdId
+        _ = creatorMembershipId
+        errorMessage = "当前构建环境未包含 Supabase SDK。"
+        #endif
+    }
+
+    private func generateFutureDates(start: Date, recurrenceRule: String) -> [Date] {
+        let calendar = Calendar.current
+        guard
+            let sixMonthsLater = calendar.date(byAdding: .month, value: 6, to: start)
+        else {
+            return [start]
+        }
+        let normalized = recurrenceRule.uppercased()
+        let component: Calendar.Component
+        switch normalized {
+        case _ where normalized.contains("DAILY"):
+            component = .day
+        case _ where normalized.contains("WEEKLY"):
+            component = .weekOfYear
+        case _ where normalized.contains("MONTHLY"):
+            component = .month
+        default:
+            return [start]
+        }
+
+        var dates: [Date] = [start]
+        var cursor = start
+        while dates.count < 30 {
+            guard let next = calendar.date(byAdding: component, value: 1, to: cursor) else { break }
+            if next > sixMonthsLater { break }
+            dates.append(next)
+            cursor = next
+        }
+        return dates
     }
 
     private static func displayCost(fromMinorUnits minor: Int?) -> String {
@@ -612,6 +810,7 @@ private struct TaskInsertPayload: Encodable {
     let id: UUID
     let householdId: UUID
     let creatorId: String
+    let groupId: UUID?
     let involvedMemberIds: [UUID]?
     let title: String
     let description: String?
@@ -629,6 +828,7 @@ private struct TaskInsertPayload: Encodable {
         case id
         case householdId = "household_id"
         case creatorId = "creator_id"
+        case groupId = "group_id"
         case involvedMemberIds = "involved_member_ids"
         case title
         case description
@@ -648,6 +848,7 @@ private struct TaskInsertPayload: Encodable {
         try container.encode(id, forKey: .id)
         try container.encode(householdId, forKey: .householdId)
         try container.encode(creatorId, forKey: .creatorId)
+        try container.encodeIfPresent(groupId, forKey: .groupId)
         if let involvedMemberIds {
             try container.encode(involvedMemberIds, forKey: .involvedMemberIds)
         } else {
@@ -748,6 +949,12 @@ private extension CreateTaskView {
         guard t.isEmpty == false else { return nil }
         guard let value = Double(t) else { return nil }
         return Int((value * 100).rounded())
+    }
+
+    var estimatedCostMajorUnits: Decimal? {
+        let t = costInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard t.isEmpty == false else { return nil }
+        return Decimal(string: t)
     }
 
     static func normalizedDecimalInput(_ raw: String) -> String {

@@ -80,6 +80,11 @@ struct ScheduleView: View {
                     await viewModel.loadTasks()
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
+                Task {
+                    await viewModel.loadTasks()
+                }
+            }
         }
     }
 
@@ -217,14 +222,20 @@ struct ScheduleView: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
-                        ZStack(alignment: .topLeading) {
-                            timeGrid
-                            taskCardsLayer
-                            if Calendar.current.isDateInToday(selectedDate) {
-                                currentTimeIndicator
+                        VStack(spacing: 12) {
+                            if allDayTasks.isEmpty == false {
+                                allDaySection
                             }
+
+                            ZStack(alignment: .topLeading) {
+                                timeGrid
+                                taskCardsLayer
+                                if Calendar.current.isDateInToday(selectedDate) {
+                                    currentTimeIndicator
+                                }
+                            }
+                            .frame(height: hourHeight * 24, alignment: .topLeading)
                         }
-                        .frame(height: hourHeight * 24, alignment: .topLeading)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 24)
                     }
@@ -261,10 +272,52 @@ struct ScheduleView: View {
         }
     }
 
+    private var allDaySection: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(spacing: 6) {
+                Text("全天")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.secondary.opacity(0.12))
+                    .clipShape(Capsule())
+
+                Rectangle()
+                    .fill(Color.secondary.opacity(0.22))
+                    .frame(width: 1, height: 14)
+            }
+            .frame(width: timeAxisWidth)
+
+            if allDayTasks.count <= 2 {
+                VStack(spacing: 8) {
+                    ForEach(allDayTasks) { task in
+                        TaskRowView(task: task, profiles: taskProfiles(for: task))
+                            .onTapGesture {
+                                taskForDetailSheet = task
+                            }
+                    }
+                }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(allDayTasks) { task in
+                            TaskRowView(task: task, profiles: taskProfiles(for: task))
+                                .frame(width: 220)
+                                .onTapGesture {
+                                    taskForDetailSheet = task
+                                }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     private var taskCardsLayer: some View {
         GeometryReader { geo in
             let cardWidth = max(140, geo.size.width - timeAxisWidth - 16)
-            ForEach(selectedDateTasks) { task in
+            ForEach(timedTasks) { task in
                 TaskRowView(task: task, profiles: taskProfiles(for: task))
                     .frame(width: cardWidth, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
@@ -309,7 +362,7 @@ struct ScheduleView: View {
             let currentHour = calendar.component(.hour, from: Date())
             targetHour = max(0, currentHour - 1)
         } else {
-            if let firstTaskDate = selectedDateTasks.first.map(taskDisplayDate) {
+            if let firstTaskDate = timedTasks.first.map(taskDisplayDate) {
                 targetHour = max(0, min(23, calendar.component(.hour, from: firstTaskDate)))
             } else {
                 targetHour = 8
@@ -355,6 +408,14 @@ struct ScheduleView: View {
             .sorted { lhs, rhs in
                 taskDisplayDate(lhs) < taskDisplayDate(rhs)
             }
+    }
+
+    private var allDayTasks: [FamilyTask] {
+        selectedDateTasks.filter(\.isAllDay)
+    }
+
+    private var timedTasks: [FamilyTask] {
+        selectedDateTasks.filter { $0.isAllDay == false }
     }
 
     private var weekDates: [Date] {
@@ -502,6 +563,11 @@ private struct TaskRowView: View {
                         Text(task.title)
                             .font(.system(size: 16, weight: .bold))
                             .lineLimit(2)
+                        if task.isAllDay == false {
+                            Label(taskTimeText, systemImage: "clock")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
                         if let estimatedCost = task.estimatedCost, estimatedCost > 0 {
                             Text("¥\(estimatedCost)")
                                 .font(.system(size: 13, weight: .medium))
@@ -568,6 +634,11 @@ private struct TaskRowView: View {
         case .cancelled:
             return "已取消"
         }
+    }
+
+    private var taskTimeText: String {
+        let date = task.dueDate ?? task.originalDueDate ?? task.createdAt
+        return date.formatted(date: .omitted, time: .shortened)
     }
 }
 

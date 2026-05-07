@@ -8,6 +8,21 @@ import SwiftUI
 import Supabase
 #endif
 
+private enum RecurringDeleteScope {
+    case singleOnly
+    case thisAndFuture
+}
+
+private struct RecurringTaskDeleteRPCParams: Encodable {
+    let targetTaskId: UUID
+    let deleteScope: String
+
+    enum CodingKeys: String, CodingKey {
+        case targetTaskId = "target_task_id"
+        case deleteScope = "delete_scope"
+    }
+}
+
 struct TaskDetailView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @Environment(\.dismiss) private var dismiss
@@ -19,8 +34,10 @@ struct TaskDetailView: View {
     @State private var task: FamilyTask
     @State private var showingEditSheet = false
     @State private var isUpdatingStatus = false
+    @State private var isDeletingTask = false
     @State private var statusError: String?
     @State private var assigneeLine: String
+    @State private var isShowingDeleteScopeDialog = false
 
     init(
         initialTask: FamilyTask,
@@ -67,13 +84,26 @@ struct TaskDetailView: View {
                     dismiss()
                 }
                 .fontWeight(.medium)
+                .disabled(isUpdatingStatus || isDeletingTask)
             }
             if canEditTask {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("编辑") {
-                        showingEditSheet = true
+                    HStack(spacing: 14) {
+                        Button {
+                            showingEditSheet = true
+                        } label: {
+                            Text("编辑")
+                                .fontWeight(.semibold)
+                        }
+                        .disabled(isUpdatingStatus || isDeletingTask)
+
+                        Button(role: .destructive) {
+                            isShowingDeleteScopeDialog = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .disabled(isUpdatingStatus || isDeletingTask)
                     }
-                    .fontWeight(.semibold)
                 }
             }
         }
@@ -93,6 +123,27 @@ struct TaskDetailView: View {
         }
         .task(id: task.id) {
             await refreshAssigneeLine()
+        }
+        .confirmationDialog(
+            "删除任务",
+            isPresented: $isShowingDeleteScopeDialog,
+            titleVisibility: .visible
+        ) {
+            if task.groupId == nil {
+                Button("仅删除此任务", role: .destructive) {
+                    Task { await performDelete(scope: .singleOnly) }
+                }
+            } else {
+                Button("仅删除此任务", role: .destructive) {
+                    Task { await performDelete(scope: .singleOnly) }
+                }
+                Button("删除此任务及以后", role: .destructive) {
+                    Task { await performDelete(scope: .thisAndFuture) }
+                }
+            }
+            Button("取消", role: .cancel) { }
+        } message: {
+            Text(task.groupId == nil ? "此操作不可撤销。" : "请选择删除范围。")
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task { await refreshAssigneeLine() }
@@ -439,7 +490,7 @@ struct TaskDetailView: View {
             .ignoresSafeArea(edges: .bottom)
         }
         .overlay {
-            if isUpdatingStatus {
+            if isUpdatingStatus || isDeletingTask {
                 ZStack {
                     Rectangle()
                         .fill(Color.black.opacity(0.08))
@@ -464,6 +515,52 @@ struct TaskDetailView: View {
         } catch {
             statusError = error.localizedDescription
         }
+    }
+
+    private func performDelete(scope: RecurringDeleteScope) async {
+        guard isDeletingTask == false else { return }
+        isDeletingTask = true
+        statusError = nil
+        defer { isDeletingTask = false }
+        #if canImport(Supabase)
+        do {
+            switch scope {
+            case .singleOnly:
+                if task.groupId != nil {
+                    let params = RecurringTaskDeleteRPCParams(
+                        targetTaskId: task.id,
+                        deleteScope: "only_this"
+                    )
+                    _ = try await SupabaseManager.shared.client
+                        .rpc("delete_recurring_tasks", params: params)
+                        .execute()
+                    await scheduleViewModel.loadTasks()
+                } else {
+                    await scheduleViewModel.deleteTask(taskId: task.id)
+                }
+            case .thisAndFuture:
+                guard task.groupId != nil else {
+                    statusError = "循环任务标识缺失，无法批量删除。"
+                    return
+                }
+                let params = RecurringTaskDeleteRPCParams(
+                    targetTaskId: task.id,
+                    deleteScope: "future"
+                )
+                _ = try await SupabaseManager.shared.client
+                    .rpc("delete_recurring_tasks", params: params)
+                    .execute()
+                await scheduleViewModel.loadTasks()
+            }
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            dismiss()
+        } catch {
+            statusError = "删除失败：\(error.localizedDescription)"
+        }
+        #else
+        _ = scope
+        statusError = "当前构建环境未包含 Supabase SDK。"
+        #endif
     }
 }
 

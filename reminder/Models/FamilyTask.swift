@@ -7,6 +7,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     let householdId: UUID
     let creatorId: UUID
     var parentTaskId: UUID?
+    var groupId: UUID? = nil
     var originalDueDate: Date?
 
     /// 被指派的成员在 `household_memberships` 表中的 **主键 id**（与当前登录用户的 **membership id** 同维度），不是 `auth.users.id`。
