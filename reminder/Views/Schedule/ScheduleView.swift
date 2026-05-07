@@ -738,9 +738,10 @@ private struct CalendarSheetView: View {
             TabView(selection: $monthOffset) {
                 ForEach(-12...12, id: \.self) { offset in
                     let month = monthDate(for: offset)
+                    let cells = monthGridCells(for: month)
                     LazyVGrid(columns: columns, spacing: 8) {
-                        ForEach(monthCells(for: month).indices, id: \.self) { index in
-                            if let date = monthCells(for: month)[index] {
+                        ForEach(cells.indices, id: \.self) { index in
+                            if let date = cells[index] {
                                 Button {
                                     selectedDate = dayID(date)
                                 } label: {
@@ -792,27 +793,29 @@ private struct CalendarSheetView: View {
         headerMonth.formatted(.dateTime.month(.wide).year())
     }
 
-    private func monthCells(for monthBaseDate: Date) -> [Date?] {
+    private func monthGridCells(for monthBaseDate: Date) -> [Date?] {
         let calendar = Calendar.current
         guard
-            let monthInterval = calendar.dateInterval(of: .month, for: monthBaseDate),
-            let firstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start),
-            let lastWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.end.addingTimeInterval(-1))
+            let monthInterval = calendar.dateInterval(of: .month, for: monthBaseDate)
         else {
             return []
         }
 
-        var cells: [Date?] = []
-        var date = firstWeek.start
-        while date < lastWeek.end {
-            if calendar.isDate(date, equalTo: selectedDate, toGranularity: .month) {
+        let firstDay = monthInterval.start
+        let totalDays = calendar.dateComponents([.day], from: firstDay, to: monthInterval.end).day ?? 0
+        let weekdayOfFirstDay = calendar.component(.weekday, from: firstDay)
+        let leadingSlots = (weekdayOfFirstDay - calendar.firstWeekday + 7) % 7
+
+        var cells: [Date?] = Array(repeating: nil, count: leadingSlots)
+        for dayOffset in 0..<totalDays {
+            if let date = calendar.date(byAdding: .day, value: dayOffset, to: firstDay) {
                 cells.append(date)
-            } else {
-                cells.append(nil)
             }
-            guard let next = calendar.date(byAdding: .day, value: 1, to: date) else { break }
-            date = next
         }
+        while cells.count % 7 != 0 {
+            cells.append(nil)
+        }
+
         return cells
     }
 
