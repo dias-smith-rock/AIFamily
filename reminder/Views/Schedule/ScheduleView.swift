@@ -5,6 +5,9 @@ import Supabase
 #endif
 
 struct ScheduleView: View {
+    private let hourHeight: CGFloat = 100
+    private let timeAxisWidth: CGFloat = 60
+
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
     @State private var selectedDate: Date = Date()
@@ -17,31 +20,15 @@ struct ScheduleView: View {
         self.onRequestAIInput = onRequestAIInput
     }
 
-    private enum TimelineItem: Identifiable {
-        case task(FamilyTask)
-        case now(Date)
-
-        var id: String {
-            switch self {
-            case let .task(task):
-                return "task-\(task.id)"
-            case let .now(date):
-                return "now-\(date.timeIntervalSince1970)"
-            }
-        }
-    }
-
     var body: some View {
         NavigationStack {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 18) {
-                    headerSection
-                    weekSection
-                    timelineSection
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 24)
+            VStack(alignment: .leading, spacing: 18) {
+                headerSection
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                weekSection
+                    .padding(.horizontal, 16)
+                timelineSection
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
             .navigationBarHidden(true)
@@ -156,13 +143,14 @@ struct ScheduleView: View {
                 }
             }
         }
+        .frame(height: 78, alignment: .top)
     }
 
     private var timelineSection: some View {
-        LazyVStack(spacing: 16) {
+        Group {
             if viewModel.isLoading {
                 ProgressView("正在加载任务...")
-                    .frame(maxWidth: .infinity, minHeight: 220)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView {
                     Label("加载失败", systemImage: "exclamationmark.triangle")
@@ -175,86 +163,113 @@ struct ScheduleView: View {
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, minHeight: 220)
-            } else if timelineItems.isEmpty {
-                ContentUnavailableView(
-                    "暂无任务",
-                    systemImage: "calendar.badge.exclamationmark",
-                    description: Text("这一天还没有安排，点击右上角 + 创建任务。")
-                )
-                .frame(maxWidth: .infinity, minHeight: 220)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ForEach(Array(timelineItems.enumerated()), id: \.element.id) { index, item in
-                    switch item {
-                    case let .task(task):
-                        timelineTaskRow(task: task, index: index)
-                    case let .now(now):
-                        currentTimeRow(now: now)
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: false) {
+                        ZStack(alignment: .topLeading) {
+                            timeGrid
+                            taskCardsLayer
+                            if Calendar.current.isDateInToday(selectedDate) {
+                                currentTimeIndicator
+                            }
+                        }
+                        .frame(height: hourHeight * 24, alignment: .topLeading)
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 24)
+                    }
+                    .onAppear {
+                        scrollToFocusedHour(with: proxy, animated: false)
+                    }
+                    .onChange(of: selectedDate) { _, _ in
+                        scrollToFocusedHour(with: proxy)
                     }
                 }
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private func timelineTaskRow(task: FamilyTask, index: Int) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            timelineRail(
-                timeText: taskDisplayDate(task).formatted(date: .omitted, time: .shortened),
-                showTop: index > 0,
-                showBottom: index < timelineItems.count - 1,
-                dotColor: .secondary
-            )
-            TaskRowView(task: task, profiles: taskProfiles(for: task))
-                .onTapGesture {
-                    taskForDetailSheet = task
+    private var timeGrid: some View {
+        VStack(spacing: 0) {
+            ForEach(0..<24, id: \.self) { hour in
+                HStack(alignment: .top, spacing: 0) {
+                    Text(String(format: "%02d:00", hour))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: timeAxisWidth, alignment: .topTrailing)
+
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.22))
+                        .frame(width: 1)
+
+                    Spacer(minLength: 0)
                 }
+                .frame(height: hourHeight, alignment: .top)
+                .id(hour)
+            }
         }
     }
 
-    private func currentTimeRow(now: Date) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+    private var taskCardsLayer: some View {
+        GeometryReader { geo in
+            let cardWidth = max(140, geo.size.width - timeAxisWidth - 16)
+            ForEach(selectedDateTasks) { task in
+                TaskRowView(task: task, profiles: taskProfiles(for: task))
+                    .frame(width: cardWidth, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .offset(x: timeAxisWidth + 10, y: yOffset(for: taskDisplayDate(task)))
+                    .onTapGesture {
+                        taskForDetailSheet = task
+                    }
+            }
+        }
+    }
+
+    private var currentTimeIndicator: some View {
+        let now = Date()
+        return HStack(alignment: .center, spacing: 6) {
             Text(now.formatted(date: .omitted, time: .shortened))
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.red)
-                .frame(width: 56, alignment: .trailing)
+                .frame(width: timeAxisWidth, alignment: .trailing)
 
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(.red)
-                    .frame(width: 8, height: 8)
-                Rectangle()
-                    .fill(.red.opacity(0.9))
-                    .frame(height: 2)
-            }
+            Circle()
+                .fill(.red)
+                .frame(width: 8, height: 8)
+
+            Rectangle()
+                .fill(.red)
+                .frame(height: 1.5)
         }
+        .offset(y: yOffset(for: now))
     }
 
-    private func timelineRail(
-        timeText: String,
-        showTop: Bool,
-        showBottom: Bool,
-        dotColor: Color
-    ) -> some View {
-        HStack(spacing: 8) {
-            Text(timeText)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
-                .frame(width: 56, alignment: .trailing)
+    private func yOffset(for date: Date) -> CGFloat {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let startHour = components.hour ?? 0
+        let startMinute = components.minute ?? 0
+        return CGFloat(startHour) * hourHeight + (CGFloat(startMinute) / 60.0) * hourHeight
+    }
 
-            ZStack {
-                VStack(spacing: 0) {
-                    Rectangle()
-                        .fill(showTop ? Color.secondary.opacity(0.25) : .clear)
-                        .frame(width: 1, height: 24)
-                    Rectangle()
-                        .fill(showBottom ? Color.secondary.opacity(0.25) : .clear)
-                        .frame(width: 1, height: 84)
-                }
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: 8, height: 8)
+    private func scrollToFocusedHour(with proxy: ScrollViewProxy, animated: Bool = true) {
+        let calendar = Calendar.current
+        let targetHour: Int
+        if calendar.isDateInToday(selectedDate) {
+            let currentHour = calendar.component(.hour, from: Date())
+            targetHour = max(0, currentHour - 1)
+        } else {
+            targetHour = 8
+        }
+        let action = {
+            proxy.scrollTo(targetHour, anchor: .top)
+        }
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                action()
             }
-            .frame(width: 10)
+        } else {
+            action()
         }
     }
 
@@ -284,19 +299,6 @@ struct ScheduleView: View {
             .sorted { lhs, rhs in
                 taskDisplayDate(lhs) < taskDisplayDate(rhs)
             }
-    }
-
-    private var timelineItems: [TimelineItem] {
-        var items = selectedDateTasks.map { TimelineItem.task($0) }
-        guard Calendar.current.isDateInToday(selectedDate) else {
-            return items
-        }
-        let now = Date()
-        let insertionIndex = selectedDateTasks.firstIndex { task in
-            taskDisplayDate(task) > now
-        } ?? selectedDateTasks.count
-        items.insert(.now(now), at: insertionIndex)
-        return items
     }
 
     private var weekDates: [Date] {
@@ -447,6 +449,7 @@ private struct TaskRowView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.black.opacity(0.06), lineWidth: 1)
         )
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var statusColor: Color {
