@@ -71,6 +71,11 @@ struct ScheduleView: View {
                 }
             }
             .onChange(of: selectedDate) { _, _ in
+                let normalized = dayID(for: selectedDate)
+                if selectedDate != normalized {
+                    selectedDate = normalized
+                    return
+                }
                 Task {
                     await viewModel.loadTasks()
                 }
@@ -100,7 +105,7 @@ struct ScheduleView: View {
                 avatarBadge
                 NavigationLink {
                     CreateTaskView(onSaveSuccess: { createdDueDate in
-                        selectedDate = createdDueDate
+                        selectedDate = dayID(for: createdDueDate)
                         Task {
                             await viewModel.loadTasks()
                         }
@@ -120,30 +125,75 @@ struct ScheduleView: View {
     }
 
     private var weekSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 10) {
-                ForEach(weekDates, id: \.self) { date in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedDate = date
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 8) {
+                    ForEach(weekDates, id: \.self) { loopDate in
+                        let loopDay = dayID(for: loopDate)
+                        let selected = loopDay == selectedDay
+                        let isToday = loopDay == dayID(for: Date())
+                        let count = taskCount(for: loopDate)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedDate = loopDay
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text(loopDate.formatted(.dateTime.weekday(.abbreviated)))
+                                    .font(.caption2)
+                                    .fontWeight(.medium)
+                                    .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
+                                Text(loopDate.formatted(.dateTime.day()))
+                                    .font(.title3)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(selected ? .white : .primary)
+                                    .frame(width: 40, height: 40)
+                                    .background(
+                                        Group {
+                                            if selected {
+                                                Circle()
+                                                    .fill(AppTheme.ColorToken.accent)
+                                            } else if isToday {
+                                                Circle()
+                                                    .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
+                                            }
+                                        }
+                                    )
+                                HStack(spacing: 3) {
+                                    if count >= 1 {
+                                        Circle()
+                                            .fill(.blue)
+                                            .frame(width: 4, height: 4)
+                                    }
+                                    if count >= 3 {
+                                        Circle()
+                                            .fill(.orange)
+                                            .frame(width: 4, height: 4)
+                                    }
+                                    if count >= 5 {
+                                        Circle()
+                                            .fill(.red)
+                                            .frame(width: 4, height: 4)
+                                    }
+                                }
+                                .frame(height: 6)
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
                         }
-                    } label: {
-                        VStack(spacing: 6) {
-                            Text(date.formatted(.dateTime.weekday(.abbreviated)))
-                                .font(.system(size: 12, weight: .semibold))
-                            Text(date.formatted(.dateTime.day()))
-                                .font(.system(size: 16, weight: .bold))
-                        }
-                        .foregroundStyle(isSelected(date) ? .white : .primary)
-                        .frame(width: 50, height: 72)
-                        .background(isSelected(date) ? Color.black : Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 24))
+                        .buttonStyle(.plain)
+                        .id(dayID(for: loopDate))
                     }
-                    .buttonStyle(.plain)
                 }
             }
+            .onAppear {
+                scrollWeekToSelected(with: proxy, animated: false)
+            }
+            .onChange(of: selectedDate) { _, _ in
+                scrollWeekToSelected(with: proxy)
+            }
         }
-        .frame(height: 78, alignment: .top)
+        .frame(height: 84, alignment: .top)
     }
 
     private var timelineSection: some View {
@@ -259,7 +309,11 @@ struct ScheduleView: View {
             let currentHour = calendar.component(.hour, from: Date())
             targetHour = max(0, currentHour - 1)
         } else {
-            targetHour = 8
+            if let firstTaskDate = selectedDateTasks.first.map(taskDisplayDate) {
+                targetHour = max(0, min(23, calendar.component(.hour, from: firstTaskDate)))
+            } else {
+                targetHour = 8
+            }
         }
         let action = {
             proxy.scrollTo(targetHour, anchor: .top)
@@ -287,8 +341,10 @@ struct ScheduleView: View {
     private var selectedDateTitle: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.calendar = Calendar.current
         formatter.dateFormat = "d MMM yyyy"
-        return formatter.string(from: selectedDate)
+        return formatter.string(from: selectedDay)
     }
 
     private var selectedDateTasks: [FamilyTask] {
@@ -303,8 +359,38 @@ struct ScheduleView: View {
 
     private var weekDates: [Date] {
         let calendar = Calendar.current
-        return (-7...13).compactMap { offset in
-            calendar.date(byAdding: .day, value: offset, to: selectedDate)
+        return (-14...14).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: selectedDay)
+        }
+    }
+
+    private func dayID(for date: Date) -> Date {
+        Calendar.current.startOfDay(for: date)
+    }
+
+    private var selectedDay: Date {
+        dayID(for: selectedDate)
+    }
+
+    private func taskCount(for date: Date) -> Int {
+        viewModel.tasks.reduce(into: 0) { result, task in
+            if Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: date) {
+                result += 1
+            }
+        }
+    }
+
+    private func scrollWeekToSelected(with proxy: ScrollViewProxy, animated: Bool = true) {
+        let targetID = dayID(for: selectedDate)
+        let action = {
+            proxy.scrollTo(targetID, anchor: .center)
+        }
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                action()
+            }
+        } else {
+            action()
         }
     }
 
@@ -528,8 +614,17 @@ private struct CalendarSheetView: View {
     @Binding var selectedDate: Date
     let monthTaskDots: [Date: [Color]]
     @Environment(\.dismiss) private var dismiss
+    @State private var monthOffset = 0
+    @State private var headerMonth: Date
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+
+    init(selectedDate: Binding<Date>, monthTaskDots: [Date: [Color]]) {
+        self._selectedDate = selectedDate
+        self.monthTaskDots = monthTaskDots
+        let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: selectedDate.wrappedValue)) ?? selectedDate.wrappedValue
+        self._headerMonth = State(initialValue: monthStart)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -538,7 +633,10 @@ private struct CalendarSheetView: View {
                     .font(.title2.bold())
                 Spacer()
                 Button("Today") {
-                    selectedDate = Date()
+                    selectedDate = dayID(Date())
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        monthOffset = 0
+                    }
                 }
                 .font(.system(size: 13, weight: .semibold))
                 .padding(.horizontal, 12)
@@ -566,36 +664,53 @@ private struct CalendarSheetView: View {
                 }
             }
 
-            LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(monthCells.indices, id: \.self) { index in
-                    if let date = monthCells[index] {
-                        Button {
-                            selectedDate = date
-                        } label: {
-                            VStack(spacing: 4) {
-                                Text(date.formatted(.dateTime.day()))
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(isSelected(date) ? .white : .primary)
+            TabView(selection: $monthOffset) {
+                ForEach(-12...12, id: \.self) { offset in
+                    let month = monthDate(for: offset)
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(monthCells(for: month).indices, id: \.self) { index in
+                            if let date = monthCells(for: month)[index] {
+                                Button {
+                                    selectedDate = dayID(date)
+                                } label: {
+                                    VStack(spacing: 4) {
+                                        Text(date.formatted(.dateTime.day()))
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundStyle(isSelected(date) ? .white : .primary)
 
-                                HStack(spacing: 3) {
-                                    let dots = monthTaskDots[Calendar.current.startOfDay(for: date)] ?? []
-                                    ForEach(Array(dots.prefix(3).enumerated()), id: \.offset) { _, color in
-                                        Circle()
-                                            .fill(isSelected(date) ? Color.white : color)
-                                            .frame(width: 5, height: 5)
+                                        HStack(spacing: 3) {
+                                            let dots = monthTaskDots[Calendar.current.startOfDay(for: date)] ?? []
+                                            ForEach(Array(dots.prefix(3).enumerated()), id: \.offset) { _, color in
+                                                Circle()
+                                                    .fill(isSelected(date) ? Color.white : color)
+                                                    .frame(width: 5, height: 5)
+                                            }
+                                        }
+                                        .frame(height: 8)
                                     }
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .background(isSelected(date) ? Color.black : Color.clear)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
                                 }
-                                .frame(height: 8)
+                                .buttonStyle(.plain)
+                            } else {
+                                Color.clear
+                                    .frame(height: 44)
                             }
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(isSelected(date) ? Color.black : Color.clear)
-                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
-                        .buttonStyle(.plain)
-                    } else {
-                        Color.clear
-                            .frame(height: 44)
                     }
+                    .tag(offset)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .onChange(of: monthOffset) { _, newOffset in
+                headerMonth = monthDate(for: newOffset)
+            }
+            .onChange(of: selectedDate) { _, newDate in
+                let visibleOffset = monthOffsetDateDifference(from: newDate)
+                if (-12...12).contains(visibleOffset), visibleOffset != monthOffset {
+                    monthOffset = visibleOffset
+                    headerMonth = monthDate(for: visibleOffset)
                 }
             }
         }
@@ -603,13 +718,13 @@ private struct CalendarSheetView: View {
     }
 
     private var headerText: String {
-        selectedDate.formatted(.dateTime.month(.wide).year())
+        headerMonth.formatted(.dateTime.month(.wide).year())
     }
 
-    private var monthCells: [Date?] {
+    private func monthCells(for monthBaseDate: Date) -> [Date?] {
         let calendar = Calendar.current
         guard
-            let monthInterval = calendar.dateInterval(of: .month, for: selectedDate),
+            let monthInterval = calendar.dateInterval(of: .month, for: monthBaseDate),
             let firstWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start),
             let lastWeek = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.end.addingTimeInterval(-1))
         else {
@@ -632,6 +747,24 @@ private struct CalendarSheetView: View {
 
     private func isSelected(_ date: Date) -> Bool {
         Calendar.current.isDate(date, inSameDayAs: selectedDate)
+    }
+
+    private func monthDate(for offset: Int) -> Date {
+        let calendar = Calendar.current
+        let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
+        return calendar.date(byAdding: .month, value: offset, to: currentMonthStart) ?? currentMonthStart
+    }
+
+    private func monthOffsetDateDifference(from date: Date) -> Int {
+        let calendar = Calendar.current
+        let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
+        let targetMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
+        let diff = calendar.dateComponents([.month], from: currentMonthStart, to: targetMonthStart).month ?? 0
+        return max(-12, min(12, diff))
+    }
+
+    private func dayID(_ date: Date) -> Date {
+        Calendar.current.startOfDay(for: date)
     }
 }
 
