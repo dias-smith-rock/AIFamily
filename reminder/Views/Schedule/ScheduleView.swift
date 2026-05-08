@@ -73,12 +73,19 @@ struct ScheduleView: View {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
                 await refreshCurrentMembershipRole()
                 await viewModel.loadTasks()
+                await viewModel.setupRealtimeListener()
+            }
+            .onDisappear {
+                Task {
+                    await viewModel.stopRealtimeListener()
+                }
             }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
                 viewModel.setHouseholdContext(newValue)
                 Task {
                     await refreshCurrentMembershipRole()
                     await viewModel.loadTasks()
+                    await viewModel.setupRealtimeListener()
                 }
             }
             .onChange(of: appRouter.selectedMembershipId) { _, _ in

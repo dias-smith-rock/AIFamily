@@ -2,6 +2,10 @@ import Foundation
 import Combine
 import SwiftUI
 
+#if canImport(Supabase)
+import Supabase
+#endif
+
 @MainActor
 final class ScheduleViewModel: ObservableObject {
     @Published private(set) var tasks: [FamilyTask] = []
@@ -11,6 +15,14 @@ final class ScheduleViewModel: ObservableObject {
     private let taskService: TaskDataService
     private var currentHouseholdId: UUID?
 
+    #if canImport(Supabase)
+    private var tasksRealtimeChannel: RealtimeChannelV2?
+    private var tasksRealtimeSubscription: RealtimeSubscription?
+    #endif
+
+    /// Realtime 防抖：批量写入（如循环任务）时合并为单次拉取。
+    private var realtimeRefreshTask: Task<Void, Never>?
+
     init(taskService: TaskDataService) {
         self.taskService = taskService
     }
@@ -19,22 +31,91 @@ final class ScheduleViewModel: ObservableObject {
         currentHouseholdId = householdId
     }
 
-    func loadTasks() async {
+    func loadTasks(silent: Bool = false) async {
         guard let householdId = currentHouseholdId else {
             tasks = []
-            errorMessage = "当前未选择家庭。"
+            if !silent {
+                errorMessage = "当前未选择家庭。"
+            }
             return
         }
 
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+        let showLoading = !silent
+        if showLoading {
+            isLoading = true
+            errorMessage = nil
+        }
+        defer {
+            if showLoading {
+                isLoading = false
+            }
+        }
 
         do {
             // `tasks` 已由 RLS 裁剪为当前登录用户在该家庭下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
             tasks = try await taskService.fetchTasks(in: householdId)
+            errorMessage = nil
         } catch {
-            errorMessage = error.localizedDescription
+            if !silent {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    #if canImport(Supabase)
+    func setupRealtimeListener() async {
+        await stopRealtimeListener()
+        guard let householdId = currentHouseholdId else { return }
+
+        let client = SupabaseManager.shared.client
+        let channelTopic = "public:tasks:\(householdId.uuidString.lowercased())"
+        let channel = client.realtimeV2.channel(channelTopic)
+        tasksRealtimeChannel = channel
+
+        let filter = "household_id=eq.\(householdId.uuidString.lowercased())"
+        tasksRealtimeSubscription = channel.onPostgresChange(
+            AnyAction.self,
+            schema: "public",
+            table: "tasks",
+            filter: filter
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.scheduleDebouncedRealtimeReload()
+            }
+        }
+
+        do {
+            try await channel.subscribeWithError()
+        } catch {
+            tasksRealtimeSubscription?.cancel()
+            tasksRealtimeSubscription = nil
+            tasksRealtimeChannel = nil
+        }
+    }
+
+    func stopRealtimeListener() async {
+        realtimeRefreshTask?.cancel()
+        realtimeRefreshTask = nil
+
+        tasksRealtimeSubscription?.cancel()
+        tasksRealtimeSubscription = nil
+
+        guard let channel = tasksRealtimeChannel else { return }
+        tasksRealtimeChannel = nil
+        await SupabaseManager.shared.client.realtimeV2.removeChannel(channel)
+    }
+    #else
+    func setupRealtimeListener() async {}
+    func stopRealtimeListener() async {}
+    #endif
+
+    private func scheduleDebouncedRealtimeReload() {
+        realtimeRefreshTask?.cancel()
+        realtimeRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            await self.loadTasks(silent: true)
         }
     }
 
