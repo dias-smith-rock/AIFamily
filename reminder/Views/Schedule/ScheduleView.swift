@@ -8,6 +8,11 @@ struct ScheduleView: View {
     private let hourHeight: CGFloat = 100
     private let timeAxisWidth: CGFloat = 60
 
+    /// 固定锚点：用于把 TabView 页码映射成真实自然周（与 `weekOffset` 搭配使用）。
+    @State private var weekEpochStart: Date = ScheduleView.startOfWeek(for: Date())
+    /// 相对 `weekEpochStart` 的周偏移；与 `TabView` selection 绑定。
+    @State private var weekOffset: Int = 0
+
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
     @State private var selectedDate: Date = Date()
@@ -24,10 +29,10 @@ struct ScheduleView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 10) {
                 headerSection
                     .padding(.horizontal, 16)
-                    .padding(.top, 12)
+                    .padding(.top, 8)
                 weekSection
                     .padding(.horizontal, 16)
                 timelineSection
@@ -99,6 +104,10 @@ struct ScheduleView: View {
                     selectedDate = normalized
                     return
                 }
+                let targetWeekPage = weekOffsetForDate(normalized)
+                if weekOffset != targetWeekPage {
+                    weekOffset = targetWeekPage
+                }
                 Task {
                     await viewModel.loadTasks()
                 }
@@ -118,10 +127,10 @@ struct ScheduleView: View {
             } label: {
                 HStack(spacing: 8) {
                     Text(selectedDateTitle)
-                        .font(.largeTitle.bold())
+                        .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                     Image(systemName: "chevron.down")
-                        .font(.headline.weight(.semibold))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -147,75 +156,112 @@ struct ScheduleView: View {
     }
 
     private var weekSection: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 8) {
-                    ForEach(weekDates, id: \.self) { loopDate in
-                        let loopDay = dayID(for: loopDate)
-                        let selected = loopDay == selectedDay
-                        let isToday = loopDay == dayID(for: Date())
-                        let count = taskCount(for: loopDate)
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedDate = loopDay
-                            }
-                        } label: {
-                            VStack(spacing: 4) {
-                                Text(loopDate.formatted(.dateTime.weekday(.abbreviated)))
-                                    .font(.caption2)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
-                                Text(loopDate.formatted(.dateTime.day()))
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(selected ? .white : .primary)
-                                    .frame(width: 40, height: 40)
-                                    .background(
-                                        Group {
-                                            if selected {
-                                                Circle()
-                                                    .fill(AppTheme.ColorToken.accent)
-                                            } else if isToday {
-                                                Circle()
-                                                    .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
-                                            }
-                                        }
-                                    )
-                                HStack(spacing: 3) {
-                                    if count >= 1 {
-                                        Circle()
-                                            .fill(.blue)
-                                            .frame(width: 4, height: 4)
-                                    }
-                                    if count >= 3 {
-                                        Circle()
-                                            .fill(.orange)
-                                            .frame(width: 4, height: 4)
-                                    }
-                                    if count >= 5 {
-                                        Circle()
-                                            .fill(.red)
-                                            .frame(width: 4, height: 4)
-                                    }
-                                }
-                                .frame(height: 6)
-                            }
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                        }
-                        .buttonStyle(.plain)
-                        .id(dayID(for: loopDate))
-                    }
-                }
-            }
-            .onAppear {
-                scrollWeekToSelected(with: proxy, animated: false)
-            }
-            .onChange(of: selectedDate) { _, _ in
-                scrollWeekToSelected(with: proxy)
+        TabView(selection: $weekOffset) {
+            ForEach(Self.weekPageRange, id: \.self) { offset in
+                weekStrip(for: offset)
+                    .tag(offset)
             }
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(height: 84, alignment: .top)
+        .onAppear {
+            weekOffset = weekOffsetForDate(selectedDate)
+        }
+    }
+
+    /// 根据周偏移生成当周 7 天（从系统 locale 的「每周起始日」算起）。
+    private func daysInWeek(weekOffset offset: Int) -> [Date] {
+        let cal = Calendar.current
+        guard let weekStart = cal.date(byAdding: .day, value: offset * 7, to: weekEpochStart) else {
+            return []
+        }
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: weekStart) }
+    }
+
+    /// `date` 所在自然周相对 `weekEpochStart` 是第几周。
+    private func weekOffsetForDate(_ date: Date) -> Int {
+        let targetWeekStart = Self.startOfWeek(for: dayID(for: date))
+        let days = Calendar.current.dateComponents([.day], from: weekEpochStart, to: targetWeekStart).day ?? 0
+        return days / 7
+    }
+
+    private func weekStrip(for offset: Int) -> some View {
+        let days = daysInWeek(weekOffset: offset)
+        return HStack(spacing: 0) {
+            ForEach(days, id: \.self) { loopDate in
+                weekDayCell(for: loopDate)
+                    .frame(maxWidth: .infinity)
+            }
+        }
+    }
+
+    private func weekDayCell(for loopDate: Date) -> some View {
+        let loopDay = dayID(for: loopDate)
+        let selected = loopDay == selectedDay
+        let isToday = loopDay == dayID(for: Date())
+        let count = taskCount(for: loopDate)
+        return Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                selectedDate = loopDay
+            }
+        } label: {
+            VStack(spacing: 4) {
+                Text(loopDate.formatted(.dateTime.weekday(.abbreviated)))
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
+                Text(loopDate.formatted(.dateTime.day()))
+                    .font(.callout)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(selected ? .white : .primary)
+                    .frame(maxWidth: .infinity)
+                    .aspectRatio(1, contentMode: .fit)
+                    .frame(maxWidth: 36, maxHeight: 36)
+                    .background(
+                        Group {
+                            if selected {
+                                Circle()
+                                    .fill(AppTheme.ColorToken.accent)
+                            } else if isToday {
+                                Circle()
+                                    .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
+                            }
+                        }
+                    )
+                HStack(spacing: 3) {
+                    if count >= 1 {
+                        Circle()
+                            .fill(.blue)
+                            .frame(width: 4, height: 4)
+                    }
+                    if count >= 3 {
+                        Circle()
+                            .fill(.orange)
+                            .frame(width: 4, height: 4)
+                    }
+                    if count >= 5 {
+                        Circle()
+                            .fill(.red)
+                            .frame(width: 4, height: 4)
+                    }
+                }
+                .frame(height: 6)
+            }
+            .padding(.vertical, 6)
+            .padding(.horizontal, 2)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private static let weekPageRange = -500...500
+
+    private static func startOfWeek(for date: Date) -> Date {
+        let cal = Calendar.current
+        let day = cal.startOfDay(for: date)
+        let weekday = cal.component(.weekday, from: day)
+        let firstWeekday = cal.firstWeekday
+        let delta = (weekday - firstWeekday + 7) % 7
+        return cal.date(byAdding: .day, value: -delta, to: day) ?? day
     }
 
     private var timelineSection: some View {
@@ -498,13 +544,6 @@ struct ScheduleView: View {
         selectedDateTasks.filter { $0.isAllDay == false }
     }
 
-    private var weekDates: [Date] {
-        let calendar = Calendar.current
-        return (-14...14).compactMap { offset in
-            calendar.date(byAdding: .day, value: offset, to: selectedDay)
-        }
-    }
-
     private func dayID(for date: Date) -> Date {
         Calendar.current.startOfDay(for: date)
     }
@@ -523,20 +562,6 @@ struct ScheduleView: View {
             if Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: date) {
                 result += 1
             }
-        }
-    }
-
-    private func scrollWeekToSelected(with proxy: ScrollViewProxy, animated: Bool = true) {
-        let targetID = dayID(for: selectedDate)
-        let action = {
-            proxy.scrollTo(targetID, anchor: .center)
-        }
-        if animated {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                action()
-            }
-        } else {
-            action()
         }
     }
 
