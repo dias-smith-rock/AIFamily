@@ -23,6 +23,7 @@ final class ViewModelFactory: ObservableObject {
 
     func makeFamilyViewModel() -> FamilyViewModel {
         FamilyViewModel(
+            profileService: services.familyProfileService,
             membershipService: services.membershipService,
             inviteLinkService: services.inviteLinkService,
             authService: services.authService,

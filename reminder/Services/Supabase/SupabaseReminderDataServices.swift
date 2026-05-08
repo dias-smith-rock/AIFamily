@@ -22,6 +22,7 @@ private enum SupabaseTable {
     static let feedbacks = "feedbacks"
     static let households = "households"
     static let memberships = "household_memberships"
+    static let familyProfiles = "family_profiles"
     static let inviteLinkNonces = "invite_link_nonces"
     static let subscriptionOrders = "subscription_orders"
 }
@@ -227,6 +228,32 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
         #else
         _ = id
         _ = readerId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+}
+
+// MARK: - Family Profiles Service
+
+struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
+    private let provider: SupabaseClientProviding
+
+    init(provider: SupabaseClientProviding) {
+        self.provider = provider
+    }
+
+    func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile] {
+        #if canImport(Supabase)
+        let response: [FamilyProfile] = try await provider.client
+            .from(SupabaseTable.familyProfiles)
+            .select()
+            .eq("household_id", value: householdId.uuidString)
+            .order("name", ascending: true)
+            .execute()
+            .value
+        return response
+        #else
+        _ = householdId
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }

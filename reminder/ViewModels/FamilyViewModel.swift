@@ -3,12 +3,14 @@ import Combine
 
 @MainActor
 final class FamilyViewModel: ObservableObject {
+    @Published private(set) var profiles: [FamilyProfile] = []
     @Published private(set) var members: [HouseholdMembership] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var hasLoadedOnce = false
     @Published private(set) var requiresLogin = false
 
+    private let profileService: FamilyProfileDataService
     private let membershipService: HouseholdMembershipDataService
     private let inviteLinkService: InviteLinkService
     private let authService: AuthService
@@ -16,11 +18,13 @@ final class FamilyViewModel: ObservableObject {
     private var currentHouseholdId: UUID?
 
     init(
+        profileService: FamilyProfileDataService,
         membershipService: HouseholdMembershipDataService,
         inviteLinkService: InviteLinkService,
         authService: AuthService,
         householdRoutingService: HouseholdRoutingService
     ) {
+        self.profileService = profileService
         self.membershipService = membershipService
         self.inviteLinkService = inviteLinkService
         self.authService = authService
@@ -36,6 +40,7 @@ final class FamilyViewModel: ObservableObject {
         guard hasSession else {
             requiresLogin = true
             errorMessage = nil
+            profiles = []
             members = []
             hasLoadedOnce = true
             return
@@ -44,6 +49,7 @@ final class FamilyViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else {
             requiresLogin = false
             errorMessage = "当前未选择家庭。"
+            profiles = []
             members = []
             hasLoadedOnce = true
             return
@@ -58,7 +64,11 @@ final class FamilyViewModel: ObservableObject {
         }
 
         do {
-            members = try await membershipService.fetchMemberships(in: householdId)
+            async let profileRows = profileService.fetchProfiles(in: householdId)
+            async let membershipRows = membershipService.fetchMemberships(in: householdId)
+            let (p, m) = try await (profileRows, membershipRows)
+            profiles = p
+            members = m
         } catch {
             errorMessage = error.localizedDescription
         }

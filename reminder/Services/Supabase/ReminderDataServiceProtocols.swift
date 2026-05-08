@@ -23,3 +23,7 @@ protocol HouseholdMembershipDataService {
     func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
     func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
 }
+
+protocol FamilyProfileDataService {
+    func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile]
+}

@@ -17,6 +17,37 @@ enum MockIDs {
     static let creatorUserId = UUID(uuidString: "8AC693C1-B0EE-4E44-A87A-EFC3A3A11001") ?? UUID()
 }
 
+// MARK: - FamilyProfile Mock
+
+extension FamilyProfile {
+    static let mockProfiles: [FamilyProfile] = [
+        FamilyProfile(
+            id: UUID(uuidString: "A1B2C3D4-E5F6-4789-A012-34567890AB01") ?? UUID(),
+            householdId: MockIDs.household,
+            name: "爸爸",
+            userId: MockIDs.creatorUserId
+        ),
+        FamilyProfile(
+            id: UUID(uuidString: "B2C3D4E5-F6A7-4890-B123-45678901BC02") ?? UUID(),
+            householdId: MockIDs.household,
+            name: "妈妈",
+            userId: UUID(uuidString: "1E4F2CE0-7F66-4B2D-8A0A-3C880D5AAA02")
+        ),
+        FamilyProfile(
+            id: UUID(uuidString: "C3D4E5F6-A7B8-4901-C234-56789012CD03") ?? UUID(),
+            householdId: MockIDs.household,
+            name: "小宝",
+            userId: nil
+        ),
+        FamilyProfile(
+            id: UUID(uuidString: "D4E5F6A7-B8C9-4012-D345-67890123DE04") ?? UUID(),
+            householdId: MockIDs.household,
+            name: "奶奶",
+            userId: nil
+        )
+    ]
+}
+
 // MARK: - HouseholdMembership Mock
 
 extension HouseholdMembership {

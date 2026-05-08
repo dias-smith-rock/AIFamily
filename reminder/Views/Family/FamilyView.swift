@@ -4,7 +4,6 @@ struct FamilyView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
-    @State private var keyword = ""
     @State private var showsInviteSheet = false
     @State private var showsLoginSheet = false
     @State private var showsRenameHouseholdSheet = false
@@ -14,17 +13,28 @@ struct FamilyView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
-                    Text("家庭")
+                    Text("我的家庭")
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
+                } trailing: {
+                    Button {
+                        showsInviteSheet = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 34, height: 34)
+                            .background(AppTheme.ColorToken.accent)
+                            .clipShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("添加家庭成员")
                 }
+
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        if canManageHousehold {
-                            inviteButton
-                        }
-                        memberFilterField
-                        memberContent
+                    LazyVStack(spacing: 12) {
+                        familyListBody
+                        addMemberDashedCard
                         if canManageHousehold {
                             householdProfileSection
                         }
@@ -86,65 +96,12 @@ struct FamilyView: View {
         }
     }
 
-    private var inviteButton: some View {
-        VStack(spacing: 8) {
-            Button {
-                showsInviteSheet = true
-            } label: {
-                Label("邀请新成员", systemImage: "person.badge.plus")
-                    .font(AppTheme.FontToken.bodyStrong)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [AppTheme.ColorToken.accent.opacity(0.85), AppTheme.ColorToken.accent],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-            }
-            .buttonStyle(.plain)
-
-            Text("支持 App / 微信 / 邮箱触达")
-                .font(AppTheme.FontToken.caption)
-                .foregroundStyle(AppTheme.ColorToken.textSecondary)
-        }
-    }
-
-    private var memberSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("成员列表")
-                .font(AppTheme.FontToken.section)
-
-            ForEach(filteredMembers) { member in
-                if canManageHousehold {
-                    AdminMemberRow(member: member)
-                } else {
-                    BasicMemberRow(member: member)
-                }
-            }
-        }
-    }
-
-    private var memberFilterField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
-            TextField("搜索成员姓名", text: $keyword)
-                .textFieldStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
+    // MARK: - List Body
 
     @ViewBuilder
-    private var memberContent: some View {
+    private var familyListBody: some View {
         if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-            ProgressView("正在加载成员...")
+            ProgressView("正在加载家人档案…")
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else if let errorMessage = viewModel.errorMessage {
             ContentUnavailableView {
@@ -159,44 +116,69 @@ struct FamilyView: View {
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 220)
-        } else if filteredMembers.isEmpty {
-            memberEmptyState
+        } else if viewModel.profiles.isEmpty {
+            profilesEmptyState
         } else {
-            memberSection
+            ForEach(viewModel.profiles) { profile in
+                FamilyMemberRowView(profile: profile, subtitle: profileSubtitle(for: profile))
+            }
         }
     }
 
-    private var filteredMembers: [HouseholdMembership] {
-        let trimmed = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else { return viewModel.members }
-        return viewModel.members.filter { member in
-            member.nickname.localizedCaseInsensitiveContains(trimmed)
+    private var profilesEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "heart.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
+                .symbolRenderingMode(.hierarchical)
+            Text("还没有家人档案")
+                .font(.headline)
+            Text("添加第一位家人，一起分工协作、温柔提醒每一天。")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
+            Button("添加家庭成员") {
+                showsInviteSheet = true
+            }
+            .buttonStyle(.borderedProminent)
         }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
     }
 
-    private var memberEmptyState: some View {
-        let isFirstEmpty = viewModel.members.isEmpty
-        return EmptyStateView(
-            systemImage: isFirstEmpty ? "person.2.badge.plus" : "line.3.horizontal.decrease.circle",
-            title: isFirstEmpty ? "还没有家庭成员" : "没有匹配成员",
-            message: isFirstEmpty
-                ? "添加家人后，你可以为 TA 分配任务并接收反馈。"
-                : "当前搜索条件下没有结果，试试更短的关键词。",
-            primaryActionTitle: isFirstEmpty ? "邀请新成员" : "清空搜索",
-            primaryAction: {
-                if isFirstEmpty {
-                    showsInviteSheet = true
-                } else {
-                    keyword = ""
-                }
-            },
-            secondaryActionTitle: isFirstEmpty ? "重新加载" : nil,
-            secondaryAction: isFirstEmpty ? {
-                Task {
-                    await viewModel.loadMembers()
-                }
-            } : nil
-        )
+    private var addMemberDashedCard: some View {
+        Button {
+            showsInviteSheet = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "person.badge.plus")
+                    .font(.body.weight(.semibold))
+                Text("添加家庭成员")
+                    .font(.body.weight(.semibold))
+            }
+            .foregroundStyle(Color.accentColor)
+            .frame(maxWidth: .infinity)
+            .frame(height: 60)
+            .background(Color.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 1, dash: [5]))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("添加家庭成员")
+    }
+
+    private func profileSubtitle(for profile: FamilyProfile) -> String {
+        if profile.userId == nil {
+            return "托管角色"
+        }
+        if let uid = profile.userId,
+           let membership = viewModel.members.first(where: { $0.userId == uid }) {
+            return membership.role.displayTitle
+        }
+        return "家庭成员"
     }
 
     private var leaveHouseholdSection: some View {
@@ -233,7 +215,7 @@ struct FamilyView: View {
                     Image(systemName: "square.and.pencil")
                         .foregroundStyle(.secondary)
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("修改家庭资料")
+                        Text("修改家庭名称")
                             .font(.headline)
                             .foregroundStyle(.primary)
                         Text(appRouter.selectedHouseholdName ?? "未命名家庭")
@@ -246,8 +228,8 @@ struct FamilyView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(14)
-                .background(Color(.systemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .buttonStyle(.plain)
             .disabled(appRouter.selectedHouseholdId == nil)
@@ -373,18 +355,6 @@ private struct RenameHouseholdSheet: View {
     }
 }
 
-// MARK: - Display Helpers
-
-private extension ContactMethod {
-    var displayTitle: String {
-        switch self {
-        case .appPush: return "App"
-        case .wechat: return "微信"
-        case .email: return "邮箱"
-        }
-    }
-}
-
 private extension MembershipRole {
     var displayTitle: String {
         switch self {
@@ -393,154 +363,7 @@ private extension MembershipRole {
         case .member: return "成员"
         }
     }
-
-    var badgeIcon: String? {
-        switch self {
-        case .creator, .admin: return "crown"
-        case .member: return nil
-        }
-    }
 }
-
-private extension MembershipStatus {
-    var displayTitle: String {
-        switch self {
-        case .active: return "已激活"
-        case .pending: return "待审批"
-        case .disabled: return "已停用"
-        }
-    }
-
-    var displayColor: Color {
-        switch self {
-        case .active: return .green
-        case .pending: return .orange
-        case .disabled: return .secondary
-        }
-    }
-}
-
-// MARK: - Member Card
-
-private struct AdminMemberRow: View {
-    let member: HouseholdMembership
-
-    private var channelLabel: String {
-        member.contactMethod.displayTitle
-    }
-
-    private var avatarText: String {
-        String(member.nickname.prefix(1))
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(Color.purple.opacity(0.12))
-                .frame(width: 50, height: 50)
-                .overlay {
-                    Text(avatarText)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.purple)
-                }
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 5) {
-                    Text(member.nickname)
-                        .font(.system(size: 18, weight: .semibold))
-                    if let badgeIcon = member.role.badgeIcon {
-                        Image(systemName: badgeIcon)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(.yellow)
-                    }
-                }
-                HStack(spacing: 6) {
-                    Text(channelLabel)
-                        .font(.system(size: 14, weight: .semibold))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Color(.secondarySystemBackground))
-                        .clipShape(Capsule())
-                    Label(member.role.displayTitle, systemImage: "person.text.rectangle")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                Label(member.status.displayTitle, systemImage: "checkmark.seal")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(member.status.displayColor)
-            }
-            Spacer()
-            Image(systemName: "gearshape")
-                .foregroundStyle(.secondary)
-        }
-        .padding(14)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1.5)
-        )
-    }
-}
-
-private struct BasicMemberRow: View {
-    let member: HouseholdMembership
-
-    private var avatarText: String {
-        String(member.nickname.prefix(1))
-    }
-
-    private var roleIcon: String? {
-        switch member.role {
-        case .creator, .admin:
-            return "crown.fill"
-        case .member:
-            return nil
-        }
-    }
-
-    private var roleTitle: String {
-        member.role.displayTitle
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(Color.purple.opacity(0.12))
-                .frame(width: 46, height: 46)
-                .overlay {
-                    Text(avatarText)
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.purple)
-                }
-
-            VStack(alignment: .leading, spacing: 5) {
-                Text(member.nickname)
-                    .font(.title3.weight(.semibold))
-                HStack(spacing: 6) {
-                    if let roleIcon {
-                        Image(systemName: roleIcon)
-                            .font(.caption)
-                            .foregroundStyle(.yellow)
-                    }
-                    Text(roleTitle)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
-        }
-        .padding(14)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1.5)
-        )
-    }
-}
-
-// MARK: - Login Sheet
 
 private struct FamilySessionLoginSheet: View {
     @Environment(\.dismiss) private var dismiss

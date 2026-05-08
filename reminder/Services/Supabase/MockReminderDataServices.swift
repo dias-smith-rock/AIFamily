@@ -101,6 +101,18 @@ actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
     }
 }
 
+// MARK: - Family Profiles
+
+actor MockFamilyProfileDataService: FamilyProfileDataService {
+    private var profiles: [FamilyProfile] = FamilyProfile.mockProfiles
+
+    func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile] {
+        profiles
+            .filter { $0.householdId == householdId }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+}
+
 // MARK: - Auth & Platform Mocks
 
 actor MockAuthService: AuthService {
