@@ -1,6 +1,9 @@
 import Foundation
 import Combine
 import SwiftUI
+#if canImport(Supabase)
+import Supabase
+#endif
 
 @MainActor
 final class FamilyViewModel: ObservableObject {
@@ -137,6 +140,7 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async -> String? {
+        let idsBeforeCreate = Set(profiles.map(\.id))
         var normalizedDraft = draft
         let stableName = String(draft.name)
         let normalizedName = stableName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -152,14 +156,10 @@ final class FamilyViewModel: ObservableObject {
                 householdId: householdId,
                 draft: normalizedDraft
             )
-            if normalizedDraft.birthDate != nil {
-                await createBirthdayTasksIfNeeded(
-                    profileName: normalizedDraft.name,
-                    draft: normalizedDraft,
-                    householdId: householdId
-                )
-            }
             await loadMembers()
+            if let createdProfile = profiles.first(where: { idsBeforeCreate.contains($0.id) == false }) {
+                await syncBirthdayTasks(for: createdProfile)
+            }
             return nil
         } catch {
             errorMessage = error.localizedDescription
@@ -168,7 +168,6 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func updateProfile(_ profile: FamilyProfile, draft: ManagedProfileDraft) async -> String? {
-        let originalBirthDate = profile.birthDate
         var normalizedDraft = draft
         normalizedDraft.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedDraft.name.isEmpty == false else {
@@ -181,13 +180,6 @@ final class FamilyViewModel: ObservableObject {
 
         do {
             try await profileService.updateProfile(profileId: profile.id, draft: normalizedDraft)
-            if shouldCreateBirthdayAutomation(oldBirthDate: originalBirthDate, newBirthDate: normalizedDraft.birthDate) {
-                await createBirthdayTasksIfNeeded(
-                    profileName: normalizedDraft.name,
-                    draft: normalizedDraft,
-                    householdId: profile.householdId
-                )
-            }
             var updatedProfile = profile
             updatedProfile.name = normalizedDraft.name
             updatedProfile.avatarUrl = normalizedDraft.avatarURL
@@ -207,6 +199,7 @@ final class FamilyViewModel: ObservableObject {
                 profiles.append(updatedProfile)
             }
             applyLocalOrdering()
+            await syncBirthdayTasks(for: updatedProfile)
             errorMessage = nil
             return nil
         } catch {
@@ -383,82 +376,253 @@ final class FamilyViewModel: ObservableObject {
         return "family.profile.order.\(householdId.uuidString).\(userComponent)"
     }
 
-    private func shouldCreateBirthdayAutomation(oldBirthDate: String?, newBirthDate: Date?) -> Bool {
-        guard let newBirthDate else { return false }
-        let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.dateFormat = "yyyy-MM-dd"
-        let oldDate = oldBirthDate.flatMap { formatter.date(from: $0) }
-        return oldDate != newBirthDate
-    }
+    func syncBirthdayTasks(for profile: FamilyProfile) async {
+        #if canImport(Supabase)
+        struct ExistingBirthdayTaskRow: Decodable {
+            let id: UUID
+            let targetProfileIds: [UUID]?
+            let taskType: String?
+            let title: String?
+            let targetSubject: String?
+            let originalPrompt: String?
 
-    private func createBirthdayTasksIfNeeded(profileName: String, draft: ManagedProfileDraft, householdId: UUID) async {
-        guard
-            let birthDate = draft.birthDate,
-            let creatorId = currentMembershipId
-        else { return }
-
-        let now = Date()
-        let templates: [(daysBefore: Int, title: String)] = [
-            (30, "准备生日愿望清单"),
-            (15, "预订餐厅与场地"),
-            (7, "购买生日礼物"),
-            (3, "确认蛋糕预订"),
-            (1, "布置现场并取蛋糕"),
-            (0, "陪伴成员，生日快乐！")
-        ]
-
-        for template in templates {
-            let dueDate = birthdayReminderDate(baseBirthDate: birthDate, daysBefore: template.daysBefore, reference: now)
-            let task = FamilyTask(
-                id: UUID(),
-                householdId: householdId,
-                creatorId: creatorId,
-                parentTaskId: nil,
-                originalDueDate: dueDate,
-                involvedMemberIds: nil,
-                targetSubject: profileName,
-                title: template.title,
-                description: "生日自动任务（年度循环）",
-                originalPrompt: nil,
-                attachmentUrls: nil,
-                externalContacts: nil,
-                locationData: nil,
-                externalSyncRefs: nil,
-                alarmSetBy: nil,
-                status: .new,
-                priority: .normal,
-                dueDate: dueDate,
-                isAllDay: true,
-                recurrenceRule: "FREQ=YEARLY",
-                reminderOffsets: nil,
-                estimatedCost: 0,
-                createdAt: now,
-                updatedAt: now
-            )
-            do {
-                _ = try await taskService.createTask(task)
-            } catch {
-                #if DEBUG
-                print("⚠️ [FamilyDebug] birthday automation task create failed - \(error.localizedDescription)")
-                #endif
+            enum CodingKeys: String, CodingKey {
+                case id
+                case targetProfileIds = "target_profile_ids"
+                case taskType = "task_type"
+                case title
+                case targetSubject = "target_subject"
+                case originalPrompt = "original_prompt"
             }
         }
+
+        struct BirthdayTaskInsertFallbackPayload: Encodable {
+            let householdId: UUID
+            let creatorId: UUID
+            let title: String
+            let dueDate: Date
+            let recurrenceRule: String
+            let taskType: String
+            let targetProfileIds: [UUID]
+            let targetSubject: String
+            let description: String
+            let originalPrompt: String
+
+            enum CodingKeys: String, CodingKey {
+                case householdId = "household_id"
+                case creatorId = "creator_id"
+                case title
+                case dueDate = "due_date"
+                case recurrenceRule = "recurrence_rule"
+                case taskType = "task_type"
+                case targetProfileIds = "target_profile_ids"
+                case targetSubject = "target_subject"
+                case description
+                case originalPrompt = "original_prompt"
+            }
+        }
+
+        let client = SupabaseManager.shared.client
+        do {
+            var deletedCount = 0
+            var insertedCount = 0
+            #if DEBUG
+            print("🎂 [BirthdaySync] start - profileId=\(profile.id.uuidString), householdId=\(profile.householdId.uuidString), name=\(profile.name), birthDate=\(profile.birthDate ?? "nil")")
+            #endif
+
+            // Step 1: 强制清理（Clear First）- 先查 ID，再逐条删，保证 deleted 统计准确
+            let rows: [ExistingBirthdayTaskRow] = try await client
+                .from("tasks")
+                .select("id,target_profile_ids,task_type,title,target_subject,original_prompt")
+                .eq("household_id", value: profile.householdId.uuidString)
+                .execute()
+                .value
+            #if DEBUG
+            let hasTargetIdsCount = rows.filter { ($0.targetProfileIds?.isEmpty == false) }.count
+            let containsProfileCount = rows.filter { $0.targetProfileIds?.contains(profile.id) == true }.count
+            let taskTypeDistribution = Dictionary(grouping: rows, by: { $0.taskType ?? "nil" })
+                .map { (key: String, value: [ExistingBirthdayTaskRow]) in
+                    "\(key)=\(value.count)"
+                }
+                .sorted()
+                .joined(separator: ", ")
+            let sample = rows.prefix(12).map { row in
+                let ids = row.targetProfileIds?.map(\.uuidString).joined(separator: ",") ?? "nil"
+                return "id=\(row.id.uuidString), task_type=\(row.taskType ?? "nil"), target_profile_ids=\(ids)"
+            }.joined(separator: "\n")
+            print(
+                """
+                🎂 [BirthdaySync] clear debug - fetchedRows=\(rows.count)
+                🎂 [BirthdaySync] clear debug - hasTargetIds=\(hasTargetIdsCount), containsProfileId=\(containsProfileCount)
+                🎂 [BirthdaySync] clear debug - taskTypeDistribution=\(taskTypeDistribution)
+                🎂 [BirthdaySync] clear debug - profileId=\(profile.id.uuidString), householdId=\(profile.householdId.uuidString)
+                🎂 [BirthdaySync] clear debug - sampleRows(<=12):
+                \(sample)
+                """
+            )
+            #endif
+            let tasksToDelete = rows.filter { row in
+                row.targetProfileIds?.contains(profile.id) == true
+            }
+            let syncMarker = birthdaySyncMarker(for: profile.id)
+            let legacyTasksToDelete = rows.filter { row in
+                let hasNoStructuredTag = (row.taskType?.isEmpty ?? true) || row.taskType == nil
+                guard hasNoStructuredTag else { return false }
+                let title = row.title ?? ""
+                let hitMarker = row.originalPrompt == syncMarker
+                let hitSubjectAndBirthday = (row.targetSubject == profile.name) && title.contains("生日")
+                let hitLegacyTitleOnly = title.contains("生日") && title.contains(profile.name)
+                return hitMarker || hitSubjectAndBirthday || hitLegacyTitleOnly
+            }
+            let deleteRows = Array(Dictionary(uniqueKeysWithValues: (tasksToDelete + legacyTasksToDelete).map { ($0.id, $0) }).values)
+            #if DEBUG
+            print("🎂 [BirthdaySync] clear path=structured+legacy, structuredFound=\(tasksToDelete.count), legacyFound=\(legacyTasksToDelete.count), merged=\(deleteRows.count), rawRows=\(rows.count)")
+            #endif
+
+            if deleteRows.isEmpty == false {
+                for row in deleteRows {
+                    do {
+                        _ = try await client
+                            .from("tasks")
+                            .delete()
+                            .eq("id", value: row.id.uuidString)
+                            .execute()
+                        deletedCount += 1
+                    } catch {
+                        #if DEBUG
+                        let nsError = error as NSError
+                        let ui = nsError.userInfo
+                        let code = (ui["code"] as? String)
+                            ?? (ui["SQLSTATE"] as? String)
+                            ?? "\(nsError.code)"
+                        let details = ui["details"] as? String
+                        let hint = ui["hint"] as? String
+                        print(
+                            """
+                            ⚠️ [BirthdaySync] delete failed - taskId=\(row.id.uuidString)
+                            localizedDescription=\(error.localizedDescription)
+                            domain=\(nsError.domain)
+                            code=\(code)
+                            details=\(details ?? "nil")
+                            hint=\(hint ?? "nil")
+                            userInfoKeys=\(Array(ui.keys).map { "\($0)" }.joined(separator: ","))
+                            """
+                        )
+                        #endif
+                    }
+                }
+            }
+
+            // Step 2: 若生日为空，清理后直接结束
+            let birthDateText = profile.birthDate?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if birthDateText.isEmpty {
+                #if DEBUG
+                print("🎂 [BirthdaySync] branch=clear-only (birthDate empty)")
+                print("🎂 [BirthdaySync] summary - deleted=\(deletedCount), inserted=\(insertedCount)")
+                #endif
+                return
+            }
+
+            // Step 3: 计算下一次生日
+            guard let birthDate = Self.profileDateFormatter.date(from: birthDateText) else {
+                #if DEBUG
+                print("🎂 [BirthdaySync] stop - invalid birthDate format: \(birthDateText)")
+                #endif
+                return
+            }
+            guard let nextBirthday = nextBirthdayDate(from: birthDate, reference: Date()) else {
+                #if DEBUG
+                print("🎂 [BirthdaySync] stop - nextBirthday calculate failed")
+                #endif
+                return
+            }
+            #if DEBUG
+            print("🎂 [BirthdaySync] nextBirthday=\(nextBirthday)")
+            #endif
+
+            guard let creatorId = currentMembershipId else { return }
+            #if DEBUG
+            print("🎂 [BirthdaySync] recreate start - creatorMembershipId=\(creatorId.uuidString)")
+            #endif
+            let templates: [(offset: Int, title: String)] = [
+                (-30, "准备 \(profile.name) 的生日愿望清单"),
+                (-15, "为 \(profile.name) 预订生日餐厅/场地"),
+                (-7, "购买 \(profile.name) 的生日礼物"),
+                (-3, "确认 \(profile.name) 的生日蛋糕预订"),
+                (-1, "布置现场并取回 \(profile.name) 的生日蛋糕"),
+                (0, "陪伴 \(profile.name)，祝生日快乐！")
+            ]
+
+            let fallbackPayloads = templates.compactMap { template -> BirthdayTaskInsertFallbackPayload? in
+                guard let dueDate = Calendar.current.date(byAdding: .day, value: template.offset, to: nextBirthday) else {
+                    return nil
+                }
+                return BirthdayTaskInsertFallbackPayload(
+                    householdId: profile.householdId,
+                    creatorId: creatorId,
+                    title: template.title,
+                    dueDate: dueDate,
+                    recurrenceRule: "yearly",
+                    taskType: "birthday_reminder",
+                    targetProfileIds: [profile.id],
+                    targetSubject: profile.name,
+                    description: "生日自动任务（年度循环）",
+                    originalPrompt: birthdaySyncMarker(for: profile.id)
+                )
+            }
+
+            if fallbackPayloads.isEmpty == false {
+                _ = try await client
+                    .from("tasks")
+                    .insert(fallbackPayloads)
+                    .execute()
+                insertedCount += fallbackPayloads.count
+                #if DEBUG
+                print("🎂 [BirthdaySync] insert path=target_profile_ids, inserted=\(fallbackPayloads.count)")
+                #endif
+            }
+            #if DEBUG
+            print("🎂 [BirthdaySync] done - profileId=\(profile.id.uuidString)")
+            print("🎂 [BirthdaySync] summary - deleted=\(deletedCount), inserted=\(insertedCount)")
+            #endif
+        } catch {
+            #if DEBUG
+            let nsError = error as NSError
+            let userInfo = nsError.userInfo
+            let code = (userInfo["code"] as? String)
+                ?? (userInfo["SQLSTATE"] as? String)
+                ?? "\(nsError.code)"
+            let details = userInfo["details"] as? String
+            let hint = userInfo["hint"] as? String
+            print(
+                """
+                ⚠️ [FamilyDebug] syncBirthdayTasks failed
+                localizedDescription=\(error.localizedDescription)
+                domain=\(nsError.domain)
+                code=\(code)
+                details=\(details ?? "nil")
+                hint=\(hint ?? "nil")
+                userInfoKeys=\(Array(userInfo.keys).map { "\($0)" }.joined(separator: ","))
+                """
+            )
+            #endif
+        }
+        #else
+        _ = profile
+        #endif
     }
 
-    private func birthdayReminderDate(baseBirthDate: Date, daysBefore: Int, reference: Date) -> Date {
-        let calendar = Calendar(identifier: .gregorian)
-        let birthComponents = calendar.dateComponents([.month, .day], from: baseBirthDate)
+    private func nextBirthdayDate(from birthDate: Date, reference: Date) -> Date? {
+        let calendar = Calendar.current
+        let birthComponents = calendar.dateComponents([.month, .day], from: birthDate)
         var targetComponents = calendar.dateComponents([.year], from: reference)
         targetComponents.month = birthComponents.month
         targetComponents.day = birthComponents.day
-        let currentYearBirthday = calendar.date(from: targetComponents) ?? reference
-        let candidateBirthday = currentYearBirthday < reference
-            ? calendar.date(byAdding: .year, value: 1, to: currentYearBirthday) ?? currentYearBirthday
-            : currentYearBirthday
-        return calendar.date(byAdding: .day, value: -daysBefore, to: candidateBirthday) ?? candidateBirthday
+        guard let thisYearBirthday = calendar.date(from: targetComponents) else { return nil }
+        if thisYearBirthday < calendar.startOfDay(for: reference) {
+            return calendar.date(byAdding: .year, value: 1, to: thisYearBirthday)
+        }
+        return thisYearBirthday
     }
 
     private static let profileDateFormatter: DateFormatter = {
@@ -469,6 +633,10 @@ final class FamilyViewModel: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+
+    private func birthdaySyncMarker(for profileId: UUID) -> String {
+        "birthday_sync_profile:\(profileId.uuidString.lowercased())"
+    }
 
     private func mapHouseholdRenameError(_ error: HouseholdRoutingError) -> String {
         switch error {

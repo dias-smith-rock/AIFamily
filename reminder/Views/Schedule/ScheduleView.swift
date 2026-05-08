@@ -563,10 +563,7 @@ struct ScheduleView: View {
 
     private var monthTaskDots: [Date: [Color]] {
         var result: [Date: [Color]] = [:]
-        let monthTasks = viewModel.tasks.filter { task in
-            Calendar.current.isDate(taskDisplayDate(task), equalTo: selectedDate, toGranularity: .month)
-        }
-        for task in monthTasks {
+        for task in viewModel.tasks {
             let day = Calendar.current.startOfDay(for: taskDisplayDate(task))
             let color = statusColor(for: task.status)
             var colors = result[day, default: []]
@@ -574,14 +571,6 @@ struct ScheduleView: View {
                 colors.append(color)
             }
             result[day] = colors
-        }
-
-        if result.isEmpty {
-            let today = Calendar.current.startOfDay(for: Date())
-            result[today] = [.blue, .red]
-            if let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) {
-                result[tomorrow] = [.green]
-            }
         }
         return result
     }

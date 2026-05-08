@@ -12,6 +12,10 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 
     /// 被指派的成员在 `household_memberships` 表中的 **主键 id**（与当前登录用户的 **membership id** 同维度），不是 `auth.users.id`。
     var involvedMemberIds: [UUID]?
+    /// 新版单目标档案字段：`target_profile_id`。
+    var targetProfileId: UUID?
+    /// 旧版多目标档案字段：`target_profile_ids`。
+    var targetProfileIds: [UUID]?
     var targetSubject: String?
     var title: String
     var description: String?
