@@ -244,16 +244,150 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
 
     func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile] {
         #if canImport(Supabase)
-        let response: [FamilyProfile] = try await provider.client
+        let rawResponse = try await provider.client
             .from(SupabaseTable.familyProfiles)
             .select()
             .eq("household_id", value: householdId.uuidString)
             .order("name", ascending: true)
             .execute()
-            .value
-        return response
+        do {
+            return try JSONDecoder().decode([FamilyProfile].self, from: rawResponse.data)
+        } catch {
+            #if DEBUG
+            let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"
+            print("❌ [FamilyDebug] family_profiles decode failed - householdId=\(householdId.uuidString)")
+            print("📦 [FamilyDebug] family_profiles raw payload: \(rawJSONString)")
+            print("🧨 [FamilyDebug] decode error: \(error.localizedDescription)")
+            #endif
+            throw error
+        }
         #else
         _ = householdId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async throws {
+        #if canImport(Supabase)
+        struct ProfileWriteRow: Encodable {
+            let householdId: UUID
+            let name: String
+            let avatarUrl: String?
+            let gender: String?
+            let birthDate: String?
+            let idCardNum: String?
+            let passportNum: String?
+            let permitNum: String?
+            let height: Double?
+            let weight: Double?
+            let school: String?
+            let grade: String?
+
+            enum CodingKeys: String, CodingKey {
+                case householdId = "household_id"
+                case name
+                case avatarUrl = "avatar_url"
+                case gender
+                case birthDate = "birth_date"
+                case idCardNum = "id_card_num"
+                case passportNum = "passport_num"
+                case permitNum = "permit_num"
+                case height
+                case weight
+                case school
+                case grade
+            }
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .gregorian)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let payload = ProfileWriteRow(
+            householdId: householdId,
+            name: draft.name,
+            avatarUrl: draft.avatarURL,
+            gender: draft.gender,
+            birthDate: draft.birthDate.map { dateFormatter.string(from: $0) },
+            idCardNum: draft.idCardNum,
+            passportNum: draft.passportNum,
+            permitNum: draft.permitNum,
+            height: draft.height,
+            weight: draft.weight,
+            school: draft.school,
+            grade: draft.grade
+        )
+        _ = try await provider.client
+            .from(SupabaseTable.familyProfiles)
+            .insert(payload)
+            .execute()
+        #else
+        _ = householdId
+        _ = draft
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func updateProfile(profileId: UUID, draft: ManagedProfileDraft) async throws {
+        #if canImport(Supabase)
+        struct ProfileUpdateRow: Encodable {
+            let name: String
+            let avatarUrl: String?
+            let gender: String?
+            let birthDate: String?
+            let idCardNum: String?
+            let passportNum: String?
+            let permitNum: String?
+            let height: Double?
+            let weight: Double?
+            let school: String?
+            let grade: String?
+
+            enum CodingKeys: String, CodingKey {
+                case name
+                case avatarUrl = "avatar_url"
+                case gender
+                case birthDate = "birth_date"
+                case idCardNum = "id_card_num"
+                case passportNum = "passport_num"
+                case permitNum = "permit_num"
+                case height
+                case weight
+                case school
+                case grade
+            }
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .gregorian)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        let payload = ProfileUpdateRow(
+            name: draft.name,
+            avatarUrl: draft.avatarURL,
+            gender: draft.gender,
+            birthDate: draft.birthDate.map { dateFormatter.string(from: $0) },
+            idCardNum: draft.idCardNum,
+            passportNum: draft.passportNum,
+            permitNum: draft.permitNum,
+            height: draft.height,
+            weight: draft.weight,
+            school: draft.school,
+            grade: draft.grade
+        )
+
+        _ = try await provider.client
+            .from(SupabaseTable.familyProfiles)
+            .update(payload)
+            .eq("id", value: profileId.uuidString)
+            .execute()
+        #else
+        _ = profileId
+        _ = draft
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -270,14 +404,37 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
 
     func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership] {
         #if canImport(Supabase)
-        let response: [HouseholdMembership] = try await provider.client
+        let rawResponse = try await provider.client
             .from(SupabaseTable.memberships)
             .select()
             .eq("household_id", value: householdId.uuidString)
             .order("created_at", ascending: true)
             .execute()
-            .value
-        return response
+        do {
+            return try JSONDecoder().decode([HouseholdMembership].self, from: rawResponse.data)
+        } catch let DecodingError.valueNotFound(value, context) {
+            #if DEBUG
+            let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"
+            print("❌ [FamilyDebug] household_memberships valueNotFound - type=\(value), codingPath=\(context.codingPath.map(\.stringValue).joined(separator: "."))")
+            print("📦 [FamilyDebug] household_memberships raw payload: \(rawJSONString)")
+            #endif
+            throw DecodingError.valueNotFound(value, context)
+        } catch let DecodingError.keyNotFound(key, context) {
+            #if DEBUG
+            let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"
+            print("❌ [FamilyDebug] household_memberships keyNotFound - key=\(key.stringValue), codingPath=\(context.codingPath.map(\.stringValue).joined(separator: "."))")
+            print("📦 [FamilyDebug] household_memberships raw payload: \(rawJSONString)")
+            #endif
+            throw DecodingError.keyNotFound(key, context)
+        } catch {
+            #if DEBUG
+            let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"
+            print("❌ [FamilyDebug] household_memberships decode failed - householdId=\(householdId.uuidString)")
+            print("📦 [FamilyDebug] household_memberships raw payload: \(rawJSONString)")
+            print("🧨 [FamilyDebug] decode error: \(error.localizedDescription)")
+            #endif
+            throw error
+        }
         #else
         _ = householdId
         throw SupabaseServiceError.sdkUnavailable

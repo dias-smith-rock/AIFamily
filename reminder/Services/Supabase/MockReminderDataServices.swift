@@ -111,6 +111,53 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
             .filter { $0.householdId == householdId }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
+
+    func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async throws {
+        let newProfile = FamilyProfile(
+            id: UUID(),
+            householdId: householdId,
+            name: draft.name,
+            userId: nil,
+            avatarUrl: draft.avatarURL,
+            gender: draft.gender,
+            birthDate: draft.birthDate.map { Self.dateFormatter.string(from: $0) },
+            idCardNum: draft.idCardNum,
+            passportNum: draft.passportNum,
+            permitNum: draft.permitNum,
+            height: draft.height,
+            weight: draft.weight,
+            school: draft.school,
+            grade: draft.grade
+        )
+        profiles.append(newProfile)
+    }
+
+    func updateProfile(profileId: UUID, draft: ManagedProfileDraft) async throws {
+        guard let index = profiles.firstIndex(where: { $0.id == profileId }) else {
+            throw SupabaseServiceError.invalidResponse
+        }
+
+        profiles[index].name = draft.name
+        profiles[index].avatarUrl = draft.avatarURL
+        profiles[index].gender = draft.gender
+        profiles[index].birthDate = draft.birthDate.map { Self.dateFormatter.string(from: $0) }
+        profiles[index].idCardNum = draft.idCardNum
+        profiles[index].passportNum = draft.passportNum
+        profiles[index].permitNum = draft.permitNum
+        profiles[index].height = draft.height
+        profiles[index].weight = draft.weight
+        profiles[index].school = draft.school
+        profiles[index].grade = draft.grade
+    }
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
 }
 
 // MARK: - Auth & Platform Mocks
@@ -140,6 +187,13 @@ actor MockVoiceStorageService: VoiceStorageService {
     func uploadVoiceFeedback(data: Data, fileName: String) async throws -> URL {
         _ = data
         return URL(string: "https://example.com/voice/\(fileName)") ?? URL(fileURLWithPath: "/tmp/\(fileName)")
+    }
+}
+
+actor MockAvatarStorageService: AvatarStorageService {
+    func uploadAvatarImage(data: Data, fileName: String) async throws -> URL {
+        _ = data
+        return URL(string: "https://example.com/avatar/\(fileName)") ?? URL(fileURLWithPath: "/tmp/\(fileName)")
     }
 }
 

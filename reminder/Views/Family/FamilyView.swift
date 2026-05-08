@@ -4,9 +4,14 @@ struct FamilyView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
-    @State private var showsInviteSheet = false
-    @State private var showsLoginSheet = false
-    @State private var showsRenameHouseholdSheet = false
+    @State private var isShowingInviteSheet = false
+    @State private var isShowingLoginSheet = false
+    @State private var isShowingRenameHouseholdSheet = false
+    @State private var isShowingAddMemberMenu = false
+    @State private var isShowingAddManagedProfile = false
+    @State private var editingProfile: FamilyProfile?
+    @State private var selectedProfileForDetail: FamilyProfile?
+    @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
 
     var body: some View {
@@ -17,35 +22,30 @@ struct FamilyView: View {
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 } trailing: {
-                    Button {
-                        showsInviteSheet = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(width: 34, height: 34)
-                            .background(AppTheme.ColorToken.accent)
-                            .clipShape(Circle())
+                    HStack(spacing: 10) {
+                        Button(isSortingMembers ? "完成" : "排序") {
+                            withAnimation(.snappy) {
+                                isSortingMembers.toggle()
+                            }
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+
+                        Button {
+                            isShowingAddMemberMenu = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 34, height: 34)
+                                .background(AppTheme.ColorToken.accent)
+                                .clipShape(Circle())
+                        }
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("添加家庭成员")
                 }
 
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        familyListBody
-                        addMemberDashedCard
-                        if canManageHousehold {
-                            householdProfileSection
-                        }
-                        if isMemberRole {
-                            leaveHouseholdSection
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-                    .padding(.bottom, 96)
-                }
+                familyListBody
                 .background(Color(.systemGroupedBackground))
             }
             .background(Color(.systemGroupedBackground))
@@ -53,20 +53,44 @@ struct FamilyView: View {
         }
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+            viewModel.setMembershipContext(appRouter.selectedMembershipId)
             await viewModel.loadMembers()
-            showsLoginSheet = viewModel.requiresLogin
+            isShowingLoginSheet = viewModel.requiresLogin
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             viewModel.setHouseholdContext(newValue)
             Task {
                 await viewModel.loadMembers()
-                showsLoginSheet = viewModel.requiresLogin
+                isShowingLoginSheet = viewModel.requiresLogin
             }
         }
-        .onChange(of: viewModel.requiresLogin) { _, requiresLogin in
-            showsLoginSheet = requiresLogin
+        .onChange(of: appRouter.selectedMembershipId) { _, newValue in
+            viewModel.setMembershipContext(newValue)
+            Task { await viewModel.loadMembers() }
         }
-        .sheet(isPresented: $showsInviteSheet) {
+        .onChange(of: viewModel.requiresLogin) { _, requiresLogin in
+            isShowingLoginSheet = requiresLogin
+        }
+        .confirmationDialog(
+            "添加成员",
+            isPresented: $isShowingAddMemberMenu,
+            titleVisibility: .visible
+        ) {
+            Button("邀请家人加入 (发送链接或扫码)") {
+                isShowingAddMemberMenu = false
+                isShowingInviteSheet = true
+            }
+            if canManageHousehold {
+                Button("添加托管角色 (小孩/宠物等)") {
+                    isShowingAddMemberMenu = false
+                    isShowingAddManagedProfile = true
+                }
+            }
+            Button("取消", role: .cancel) {
+                isShowingAddMemberMenu = false
+            }
+        }
+        .sheet(isPresented: $isShowingInviteSheet) {
             InviteMemberView(
                 currentHouseholdId: appRouter.selectedHouseholdId,
                 creatorMembershipId: appRouter.selectedMembershipId
@@ -74,15 +98,64 @@ struct FamilyView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showsLoginSheet) {
+        .sheet(isPresented: $isShowingLoginSheet) {
             FamilySessionLoginSheet(viewModel: authViewModel) {
                 await viewModel.didLoginSuccessfully()
-                showsLoginSheet = viewModel.requiresLogin
+                isShowingLoginSheet = viewModel.requiresLogin
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showsRenameHouseholdSheet) {
+        .sheet(isPresented: $isShowingAddManagedProfile) {
+            ProfileEditView(
+                mode: .createManaged,
+                householdId: appRouter.selectedHouseholdId,
+                canEdit: canManageHousehold,
+                uploadAvatar: { data, profileId in
+                    #if DEBUG
+                    print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
+                    #endif
+                    return await viewModel.uploadAvatar(data: data, profileId: profileId)
+                },
+                onSave: { householdId, draft in
+                    await viewModel.createManagedProfile(householdId: householdId, draft: draft)
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $editingProfile) { profile in
+            ProfileEditView(
+                mode: .edit(profile),
+                householdId: appRouter.selectedHouseholdId,
+                canEdit: viewModel.canEditProfile(profile),
+                uploadAvatar: { data, profileId in
+                    #if DEBUG
+                    print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
+                    #endif
+                    return await viewModel.uploadAvatar(data: data, profileId: profileId)
+                },
+                onSave: { _, draft in
+                    await viewModel.updateProfile(profile, draft: draft)
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(item: $selectedProfileForDetail) { profile in
+            ProfileDetailView(
+                profile: profile,
+                subtitle: profileSubtitle(for: profile),
+                canEdit: viewModel.canEditProfile(profile),
+                onEdit: {
+                    selectedProfileForDetail = nil
+                    editingProfile = profile
+                }
+            )
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingRenameHouseholdSheet) {
             RenameHouseholdSheet(
                 initialName: appRouter.selectedHouseholdName ?? "",
                 isSubmitting: viewModel.isLoading,
@@ -100,29 +173,78 @@ struct FamilyView: View {
 
     @ViewBuilder
     private var familyListBody: some View {
-        if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-            ProgressView("正在加载家人档案…")
-                .frame(maxWidth: .infinity, minHeight: 220)
-        } else if let errorMessage = viewModel.errorMessage {
-            ContentUnavailableView {
-                Label("加载失败", systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(errorMessage)
-            } actions: {
-                Button("重新加载") {
-                    Task {
-                        await viewModel.loadMembers()
+        List {
+            if viewModel.isLoading && viewModel.hasLoadedOnce == false {
+                ProgressView("正在加载家人档案…")
+                    .frame(maxWidth: .infinity, minHeight: 220)
+                    .listRowBackground(Color.clear)
+            } else if let errorMessage = viewModel.errorMessage {
+                ContentUnavailableView {
+                    Label("加载失败", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(errorMessage)
+                } actions: {
+                    Button("重新加载") {
+                        Task {
+                            await viewModel.loadMembers()
+                        }
                     }
                 }
-            }
-            .frame(maxWidth: .infinity, minHeight: 220)
-        } else if viewModel.profiles.isEmpty {
-            profilesEmptyState
-        } else {
-            ForEach(viewModel.profiles) { profile in
-                FamilyMemberRowView(profile: profile, subtitle: profileSubtitle(for: profile))
+                .frame(maxWidth: .infinity, minHeight: 220)
+                .listRowBackground(Color.clear)
+            } else if viewModel.orderedProfiles.isEmpty {
+                profilesEmptyState
+                    .listRowBackground(Color.clear)
+            } else {
+                if let me = viewModel.currentUserProfile {
+                    Section("我") {
+                        FamilyMemberRowView(profile: me, subtitle: profileSubtitle(for: me)) {
+                            selectedProfileForDetail = me
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .listRowBackground(Color.clear)
+                    }
+                }
+
+                Section("家庭成员") {
+                    ForEach(viewModel.otherProfiles) { profile in
+                        FamilyMemberRowView(profile: profile, subtitle: profileSubtitle(for: profile)) {
+                            selectedProfileForDetail = profile
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .listRowBackground(Color.clear)
+                    }
+                    .onMove { indexSet, destination in
+                        guard isSortingMembers else { return }
+                        viewModel.moveOtherProfiles(fromOffsets: indexSet, toOffset: destination)
+                    }
+                }
+
+                Section {
+                    addMemberDashedCard
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+
+                if canManageHousehold {
+                    Section("家庭资料") {
+                        householdProfileSection
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
+                }
+
+                if isMemberRole {
+                    Section("成员操作") {
+                        leaveHouseholdSection
+                    }
+                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                    .listRowBackground(Color.clear)
+                }
             }
         }
+        .listStyle(.insetGrouped)
+        .environment(\.editMode, .constant(isSortingMembers ? .active : .inactive))
     }
 
     private var profilesEmptyState: some View {
@@ -139,7 +261,7 @@ struct FamilyView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
             Button("添加家庭成员") {
-                showsInviteSheet = true
+                isShowingAddMemberMenu = true
             }
             .buttonStyle(.borderedProminent)
         }
@@ -149,7 +271,7 @@ struct FamilyView: View {
 
     private var addMemberDashedCard: some View {
         Button {
-            showsInviteSheet = true
+            isShowingAddMemberMenu = true
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "person.badge.plus")
@@ -209,7 +331,7 @@ struct FamilyView: View {
 
             Button {
                 renameErrorMessage = nil
-                showsRenameHouseholdSheet = true
+                isShowingRenameHouseholdSheet = true
             } label: {
                 HStack {
                     Image(systemName: "square.and.pencil")
@@ -277,8 +399,9 @@ struct FamilyView: View {
         }
 
         await appRouter.refreshStateFromBackend()
-        showsRenameHouseholdSheet = false
+        isShowingRenameHouseholdSheet = false
     }
+
 }
 
 private struct RenameHouseholdSheet: View {

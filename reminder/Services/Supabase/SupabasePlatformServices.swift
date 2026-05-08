@@ -18,6 +18,10 @@ protocol VoiceStorageService {
     func uploadVoiceFeedback(data: Data, fileName: String) async throws -> URL
 }
 
+protocol AvatarStorageService {
+    func uploadAvatarImage(data: Data, fileName: String) async throws -> URL
+}
+
 protocol FeedbackRealtimeService {
     func subscribeToFeedbackInserts(onEvent: @escaping @Sendable (Feedback) -> Void) async throws
     func unsubscribe() async
@@ -143,6 +147,39 @@ struct SupabaseVoiceStorageService: VoiceStorageService {
                 data: data,
                 options: .init(
                     contentType: "audio/m4a",
+                    upsert: true
+                )
+            )
+
+        return try provider.client.storage
+            .from(bucket)
+            .getPublicURL(path: path)
+        #else
+        _ = data
+        _ = fileName
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+}
+
+struct SupabaseAvatarStorageService: AvatarStorageService {
+    private let provider: SupabaseClientProviding
+    private let bucket = "avatars"
+
+    init(provider: SupabaseClientProviding) {
+        self.provider = provider
+    }
+
+    func uploadAvatarImage(data: Data, fileName: String) async throws -> URL {
+        #if canImport(Supabase)
+        let path = "profiles/\(fileName)"
+        _ = try await provider.client.storage
+            .from(bucket)
+            .upload(
+                path,
+                data: data,
+                options: .init(
+                    contentType: "image/jpeg",
                     upsert: true
                 )
             )

@@ -7,6 +7,7 @@ struct ReminderServiceContainer {
     let familyProfileService: FamilyProfileDataService
     let authService: AuthService
     let voiceStorageService: VoiceStorageService
+    let avatarStorageService: AvatarStorageService
     let feedbackRealtimeService: FeedbackRealtimeService
     let inviteLinkService: InviteLinkService
     let householdRoutingService: HouseholdRoutingService
@@ -20,6 +21,7 @@ struct ReminderServiceContainer {
             familyProfileService: SupabaseFamilyProfileDataService(provider: provider),
             authService: SupabaseAuthService(provider: provider),
             voiceStorageService: SupabaseVoiceStorageService(provider: provider),
+            avatarStorageService: SupabaseAvatarStorageService(provider: provider),
             feedbackRealtimeService: SupabaseFeedbackRealtimeService(provider: provider),
             inviteLinkService: SupabaseInviteLinkService(),
             householdRoutingService: SupabaseHouseholdRoutingService(provider: provider)
@@ -34,6 +36,7 @@ struct ReminderServiceContainer {
             familyProfileService: MockFamilyProfileDataService(),
             authService: MockAuthService(),
             voiceStorageService: MockVoiceStorageService(),
+            avatarStorageService: MockAvatarStorageService(),
             feedbackRealtimeService: MockFeedbackRealtimeService(),
             inviteLinkService: MockInviteLinkService(),
             householdRoutingService: MockHouseholdRoutingService()
