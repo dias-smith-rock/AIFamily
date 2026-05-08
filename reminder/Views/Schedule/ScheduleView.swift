@@ -360,11 +360,12 @@ struct ScheduleView: View {
         VStack(spacing: 24) {
             ZStack {
                 Circle()
-                    .fill(Color.orange.opacity(0.12))
-                    .frame(width: 132, height: 132)
-                Image(systemName: "sun.max")
-                    .font(.system(size: 48, weight: .medium))
+                    .fill(Color.orange.opacity(0.13))
+                    .frame(width: 120, height: 120)
+                Image(systemName: "sun.max.fill")
+                    .font(.system(size: 44, weight: .medium))
                     .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
             }
 
             VStack(spacing: 8) {
@@ -378,29 +379,31 @@ struct ScheduleView: View {
             }
 
             VStack(spacing: 12) {
-                quickActionChip(icon: "sparkles", title: "Family Dinner")
-                quickActionChip(icon: "cart", title: "Grocery List")
-                quickActionChip(icon: "teddybear", title: "Kids Activity")
+                actionChip(emoji: "✨", title: "Family Dinner")
+                actionChip(emoji: "🛒", title: "Grocery List")
+                actionChip(emoji: "🧸", title: "Kids Activity")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .offset(y: -50)
     }
 
-    private func quickActionChip(icon: String, title: String) -> some View {
+    /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
+    private func actionChip(emoji: String, title: String) -> some View {
         Button {
             openCreateTask(prefill: title)
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.subheadline.weight(.semibold))
+            HStack(spacing: 10) {
+                Text(emoji)
+                    .font(.system(size: 22))
+                    .fixedSize()
                 Text(title)
-                    .font(.title3.weight(.semibold))
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
             }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
-            .background(Color(.secondarySystemBackground))
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(AppTheme.ColorToken.surfaceMuted)
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
