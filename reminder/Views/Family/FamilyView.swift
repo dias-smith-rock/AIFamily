@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct FamilyView: View {
-    private let topFamilyBarOffset: CGFloat = 56
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
@@ -13,24 +12,31 @@ struct FamilyView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    header
-                    if canManageHousehold {
-                        inviteButton
-                    }
-                    memberFilterField
-                    memberContent
-                    if canManageHousehold {
-                        householdProfileSection
-                    }
-                    if isMemberRole {
-                        leaveHouseholdSection
-                    }
+            VStack(spacing: 0) {
+                GlobalHeaderView {
+                    Text("家庭")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, topFamilyBarOffset)
-                .padding(.bottom, 96)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if canManageHousehold {
+                            inviteButton
+                        }
+                        memberFilterField
+                        memberContent
+                        if canManageHousehold {
+                            householdProfileSection
+                        }
+                        if isMemberRole {
+                            leaveHouseholdSection
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 96)
+                }
+                .background(Color(.systemGroupedBackground))
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
@@ -77,16 +83,6 @@ struct FamilyView: View {
             )
             .presentationDetents([.fraction(0.35), .medium])
             .presentationDragIndicator(.visible)
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("家庭成员")
-                .font(AppTheme.FontToken.title)
-            Text("管理成员与权限")
-                .font(AppTheme.FontToken.subtitle)
-                .foregroundStyle(AppTheme.ColorToken.textSecondary)
         }
     }
 

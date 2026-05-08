@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct FeedbackFeedView: View {
-    private let topFamilyBarOffset: CGFloat = 56
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFeedbackFeedViewModel()
@@ -16,16 +15,33 @@ struct FeedbackFeedView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    header
-                    filterBar
-                    simulateVoiceButton
-                    content
+            VStack(spacing: 0) {
+                GlobalHeaderView {
+                    Text("消息")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                } trailing: {
+                    Button {
+                        // 预留：全部已读
+                    } label: {
+                        Image(systemName: "checkmark.circle")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(AppTheme.ColorToken.accent)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("全部已读")
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, topFamilyBarOffset)
-                .padding(.bottom, 96)
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        filterBar
+                        simulateVoiceButton
+                        content
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                    .padding(.bottom, 96)
+                }
+                .background(Color(.systemGroupedBackground))
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
@@ -45,16 +61,6 @@ struct FeedbackFeedView: View {
             Task {
                 await viewModel.stopRealtime()
             }
-        }
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("消息中心")
-                .font(AppTheme.FontToken.title)
-            Text("异步反馈与提醒")
-                .font(AppTheme.FontToken.subtitle)
-                .foregroundStyle(AppTheme.ColorToken.textSecondary)
         }
     }
 

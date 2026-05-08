@@ -14,60 +14,78 @@ struct PersonalSettingsView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    personalInfoRow
-
+            VStack(spacing: 0) {
+                GlobalHeaderView {
+                    Text("我的")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                } trailing: {
                     Button {
-                        showsUpgradeAlert = true
+                        // 预留：设置入口
                     } label: {
-                        upgradeCard
+                        Image(systemName: "gearshape.fill")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.primary)
                     }
                     .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .accessibilityLabel("设置")
                 }
 
-                Section("系统设置") {
-                    SettingsRow(
-                        title: "语言",
-                        systemImage: "character.rtl",
-                        iconForeground: .blue,
-                        iconBackground: Color.blue.opacity(0.16)
-                    )
-                    SettingsRow(
-                        title: "密码与面容 ID",
-                        systemImage: "faceid",
-                        iconForeground: .purple,
-                        iconBackground: Color.purple.opacity(0.16)
-                    )
-                    SettingsRow(
-                        title: "导入与集成",
-                        systemImage: "square.and.arrow.down",
-                        iconForeground: .green,
-                        iconBackground: Color.green.opacity(0.16),
-                        showsChevron: false
-                    )
-                }
+                List {
+                    Section {
+                        personalInfoRow
 
-                Section("支持与关于") {
-                    SettingsRow(
-                        title: "帮助与反馈",
-                        systemImage: "questionmark.circle",
-                        iconForeground: .orange,
-                        iconBackground: Color.orange.opacity(0.16)
-                    )
-                    SettingsRow(
-                        title: "关于 WeFamily",
-                        systemImage: "info.circle",
-                        iconForeground: .teal,
-                        iconBackground: Color.teal.opacity(0.16)
-                    )
+                        Button {
+                            showsUpgradeAlert = true
+                        } label: {
+                            upgradeCard
+                        }
+                        .buttonStyle(.plain)
+                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    }
+
+                    Section("系统设置") {
+                        SettingsRow(
+                            title: "语言",
+                            systemImage: "character.rtl",
+                            iconForeground: .blue,
+                            iconBackground: Color.blue.opacity(0.16)
+                        )
+                        SettingsRow(
+                            title: "密码与面容 ID",
+                            systemImage: "faceid",
+                            iconForeground: .purple,
+                            iconBackground: Color.purple.opacity(0.16)
+                        )
+                        SettingsRow(
+                            title: "导入与集成",
+                            systemImage: "square.and.arrow.down",
+                            iconForeground: .green,
+                            iconBackground: Color.green.opacity(0.16),
+                            showsChevron: false
+                        )
+                    }
+
+                    Section("支持与关于") {
+                        SettingsRow(
+                            title: "帮助与反馈",
+                            systemImage: "questionmark.circle",
+                            iconForeground: .orange,
+                            iconBackground: Color.orange.opacity(0.16)
+                        )
+                        SettingsRow(
+                            title: "关于 WeFamily",
+                            systemImage: "info.circle",
+                            iconForeground: .teal,
+                            iconBackground: Color.teal.opacity(0.16)
+                        )
+                    }
                 }
+                .listStyle(.grouped)
+                .scrollContentBackground(.hidden)
+                .background(Color(.systemGroupedBackground))
             }
-            .listStyle(.grouped)
-            .scrollContentBackground(.hidden)
-            .background(Color(.systemGroupedBackground))
-            .navigationTitle("个人设置")
+            .toolbar(.hidden, for: .navigationBar)
             .alert("敬请期待", isPresented: $showsUpgradeAlert) {
                 Button("我知道了", role: .cancel) {}
             } message: {

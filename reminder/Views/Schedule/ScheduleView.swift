@@ -31,8 +31,6 @@ struct ScheduleView: View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 10) {
                 headerSection
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
                 weekSection
                     .padding(.horizontal, 16)
                 timelineSection
@@ -121,7 +119,7 @@ struct ScheduleView: View {
     }
 
     private var headerSection: some View {
-        HStack(alignment: .top) {
+        GlobalHeaderView {
             Button {
                 isShowingCalendarSheet = true
             } label: {
@@ -135,9 +133,7 @@ struct ScheduleView: View {
                 }
             }
             .buttonStyle(.plain)
-
-            Spacer(minLength: 12)
-
+        } trailing: {
             HStack(spacing: 12) {
                 avatarBadge
                 Button {
