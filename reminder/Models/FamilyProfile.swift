@@ -17,23 +17,24 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     var school: String? = nil
     var grade: String? = nil
 
+    /// 与 `SupabaseCodec` 的 snake 互转一致：标准列用驼峰枚举名；`other_id_1` 经策略映射为 `otherId1`。
     enum CodingKeys: String, CodingKey {
         case id
-        case householdId = "household_id"
+        case householdId
         case name
-        case userId = "user_id"
-        case avatarUrl = "avatar_url"
+        case userId
+        case avatarUrl
         case gender
-        case birthDate = "birth_date"
-        case idCardNum = "id_card_num"
-        case passportNum = "passport_num"
-        case permitNum = "permit_num"
+        case birthDate
+        case idCardNum
+        case passportNum
+        case permitNum
         case height
         case weight
         case school
         case grade
-        case legacyOtherId1 = "other_id_1"
-        case legacyOtherId2 = "other_id_2"
+        case otherId1
+        case otherId2
     }
 
     init(
@@ -79,9 +80,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         birthDate = try container.decodeIfPresent(String.self, forKey: .birthDate)
         idCardNum = try container.decodeIfPresent(String.self, forKey: .idCardNum)
         passportNum = try container.decodeIfPresent(String.self, forKey: .passportNum)
-            ?? container.decodeIfPresent(String.self, forKey: .legacyOtherId1)
+            ?? container.decodeIfPresent(String.self, forKey: .otherId1)
         permitNum = try container.decodeIfPresent(String.self, forKey: .permitNum)
-            ?? container.decodeIfPresent(String.self, forKey: .legacyOtherId2)
+            ?? container.decodeIfPresent(String.self, forKey: .otherId2)
         height = try Self.decodeOptionalDouble(container: container, key: .height)
         weight = try Self.decodeOptionalDouble(container: container, key: .weight)
         school = try container.decodeIfPresent(String.self, forKey: .school)

@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 #if canImport(Supabase)
 import Supabase
@@ -643,9 +644,39 @@ struct ScheduleView: View {
     }
 }
 
+private enum TaskEmergencyDialURLs {
+    static func sanitizedPhone(_ raw: String) -> String {
+        raw.filter { character in
+            character.isWhitespace == false && character.isNewline == false
+        }
+    }
+
+    static func telURL(phone raw: String) -> URL? {
+        let s = sanitizedPhone(raw)
+        guard s.isEmpty == false else { return nil }
+        if let url = URL(string: "tel://\(s)") {
+            return url
+        }
+        let encoded = s.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? s
+        return URL(string: "tel://\(encoded)")
+    }
+
+    static func faceTimeURL(phone raw: String) -> URL? {
+        let s = sanitizedPhone(raw)
+        guard s.isEmpty == false else { return nil }
+        if let url = URL(string: "facetime://\(s)") {
+            return url
+        }
+        let encoded = s.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? s
+        return URL(string: "facetime://\(encoded)")
+    }
+}
+
 private struct TaskRowView: View {
     let task: FamilyTask
     let profiles: [HouseholdMembership]
+
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         HStack(spacing: 0) {
@@ -670,6 +701,34 @@ private struct TaskRowView: View {
                         }
                     }
                     Spacer(minLength: 8)
+
+                    if let rawPhone = task.emergencyPhone,
+                       TaskEmergencyDialURLs.sanitizedPhone(rawPhone).isEmpty == false {
+                        Menu {
+                            if let url = TaskEmergencyDialURLs.telURL(phone: rawPhone) {
+                                Button {
+                                    openURL(url)
+                                } label: {
+                                    Label("电话", systemImage: "phone.fill")
+                                }
+                            }
+                            if let url = TaskEmergencyDialURLs.faceTimeURL(phone: rawPhone) {
+                                Button {
+                                    openURL(url)
+                                } label: {
+                                    Label("FaceTime 视频", systemImage: "video.circle.fill")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "phone.circle.fill")
+                                .font(.system(size: 28, weight: .semibold))
+                                .symbolRenderingMode(.hierarchical)
+                                .foregroundStyle(.tint)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("紧急联系")
+                    }
+
                     HStack(spacing: -8) {
                         ForEach(Array(profiles.prefix(3).enumerated()), id: \.offset) { _, profile in
                             AvatarView(profile: profile)
@@ -690,7 +749,7 @@ private struct TaskRowView: View {
             }
             .padding(12)
         }
-        .background(Color.white)
+        .background(Color.taskCardListBackground(fromHex: task.backgroundColor))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
@@ -743,16 +802,11 @@ private struct AvatarView: View {
     var body: some View {
         ZStack {
             if let avatarString = profile.avatarUrl, let url = URL(string: avatarString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case let .success(image):
-                        image
-                            .resizable()
-                            .scaledToFill()
-                    default:
-                        fallbackAvatar
-                    }
-                }
+                KFImage.url(url)
+                    .placeholder { ProgressView() }
+                    .cacheMemoryOnly(false)
+                    .resizable()
+                    .scaledToFill()
             } else {
                 fallbackAvatar
             }

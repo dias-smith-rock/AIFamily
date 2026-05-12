@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 任务编辑表单：复用 `CreateTaskView` 的编辑模式，供详情页以 Sheet 呈现。
+/// 任务编辑 / 新建 UI（`CreateTaskView`）：分组卡片、简/详展开，与日程详情 Sheet 共用。
 struct EditTaskView: View {
     @EnvironmentObject private var appRouter: AppRouter
 

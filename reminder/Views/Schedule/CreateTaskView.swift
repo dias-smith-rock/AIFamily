@@ -13,6 +13,55 @@ private enum RecurringTaskScope {
     case thisAndFuture
 }
 
+/// 循环任务「仅改此条」RPC 之后补齐 PostgREST / RPC 未覆盖的列。
+private struct TaskRecurringSingleSupplementPatch: Encodable {
+    let endDatetime: Date?
+    let backgroundColor: String?
+    let emergencyPhone: String?
+    let priority: String
+    let locationData: FamilyTask.LocationData?
+    let targetProfileIds: [UUID]?
+
+    enum CodingKeys: String, CodingKey {
+        case endDatetime = "end_datetime"
+        case backgroundColor = "background_color"
+        case emergencyPhone = "emergency_phone"
+        case priority
+        case locationData = "location_data"
+        case targetProfileIds = "target_profile_ids"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if let endDatetime {
+            try container.encode(endDatetime, forKey: .endDatetime)
+        } else {
+            try container.encodeNil(forKey: .endDatetime)
+        }
+        if let backgroundColor {
+            try container.encode(backgroundColor, forKey: .backgroundColor)
+        } else {
+            try container.encodeNil(forKey: .backgroundColor)
+        }
+        if let emergencyPhone {
+            try container.encode(emergencyPhone, forKey: .emergencyPhone)
+        } else {
+            try container.encodeNil(forKey: .emergencyPhone)
+        }
+        try container.encode(priority, forKey: .priority)
+        if let locationData {
+            try container.encode(locationData, forKey: .locationData)
+        } else {
+            try container.encodeNil(forKey: .locationData)
+        }
+        if let targetProfileIds {
+            try container.encode(targetProfileIds, forKey: .targetProfileIds)
+        } else {
+            try container.encodeNil(forKey: .targetProfileIds)
+        }
+    }
+}
+
 private struct RecurringTaskUpdateRPCParams: Encodable {
     let targetTaskId: UUID
     let updateScope: String
@@ -39,15 +88,25 @@ struct CreateTaskView: View {
 
     @State private var title = ""
     @State private var dueDate = Date()
+    @State private var hasEndTime = false
+    @State private var endTime = Date()
     @State private var isAllDay = false
     @State private var repeatOption: TaskRepeatOption = .never
     @State private var reminderOption: TaskReminderOption = .atTimeOfEvent
 
     @State private var selectedAssigneeIds: Set<UUID> = []
+    /// `family_profiles.id`：「为了谁」；空表示未限定具体档案（全家）。
+    @State private var selectedTargetProfileIds: Set<UUID> = []
     @State private var assignees: [AssigneeOption] = []
+    @State private var forWhomProfileOptions: [AssigneeOption] = []
     @State private var note = ""
     @State private var financeDetailNote = ""
     @State private var costInput = ""
+    @State private var selectedBackgroundHex: String?
+    @State private var emergencyPhone = ""
+    @State private var isShowingMoreOptions = false
+    @State private var formPriority: TaskPriority = .normal
+    @State private var locationName = ""
     @State private var isSaving = false
     @State private var errorMessage: String?
     @State private var pendingRecurringUpdateTask: FamilyTask?
@@ -71,7 +130,15 @@ struct CreateTaskView: View {
 
         if let task = editingTask {
             _title = State(initialValue: task.title)
-            _dueDate = State(initialValue: task.dueDate ?? task.originalDueDate ?? Date())
+            let initialDue = task.dueDate ?? task.originalDueDate ?? Date()
+            _dueDate = State(initialValue: initialDue)
+            if let existingEnd = task.endDatetime {
+                _hasEndTime = State(initialValue: true)
+                _endTime = State(initialValue: existingEnd)
+            } else {
+                _hasEndTime = State(initialValue: false)
+                _endTime = State(initialValue: initialDue)
+            }
             _isAllDay = State(initialValue: task.isAllDay)
             _repeatOption = State(initialValue: TaskRepeatOption(recurrenceRule: task.recurrenceRule))
             _reminderOption = State(initialValue: TaskReminderOption(offsets: task.reminderOffsets))
@@ -80,89 +147,90 @@ struct CreateTaskView: View {
             } else {
                 _selectedAssigneeIds = State(initialValue: Set(task.involvedMemberIds ?? []))
             }
+            if let profileIds = task.targetProfileIds, profileIds.isEmpty == false {
+                _selectedTargetProfileIds = State(initialValue: Set(profileIds))
+            } else {
+                _selectedTargetProfileIds = State(initialValue: [])
+            }
             _note = State(initialValue: task.description ?? "")
             _financeDetailNote = State(initialValue: "")
             _costInput = State(initialValue: Self.displayCost(fromMinorUnits: task.estimatedCost))
+            _selectedBackgroundHex = State(initialValue: Self.normalizedStoredHex(task.backgroundColor))
+            _emergencyPhone = State(initialValue: task.emergencyPhone ?? "")
+            _formPriority = State(initialValue: Self.priorityForForm(task.priority))
+            _locationName = State(initialValue: task.locationData?.name ?? "")
         } else {
             _title = State(initialValue: initialTitle ?? "")
-            _dueDate = State(initialValue: Date())
+            let initialDue = Date()
+            _dueDate = State(initialValue: initialDue)
+            _hasEndTime = State(initialValue: false)
+            _endTime = State(initialValue: initialDue)
             _isAllDay = State(initialValue: false)
             _repeatOption = State(initialValue: .never)
             _reminderOption = State(initialValue: .atTimeOfEvent)
             _selectedAssigneeIds = State(initialValue: [])
+            _selectedTargetProfileIds = State(initialValue: [])
             _note = State(initialValue: "")
             _financeDetailNote = State(initialValue: "")
             _costInput = State(initialValue: "")
+            _selectedBackgroundHex = State(initialValue: nil)
+            _emergencyPhone = State(initialValue: "")
+            _formPriority = State(initialValue: .normal)
+            _locationName = State(initialValue: "")
         }
     }
 
     private enum Field: Hashable {
         case title
         case cost
+        case emergency
+        case locationSearch
     }
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField("准备做什么？", text: $title, axis: .vertical)
-                        .font(.title3.weight(.semibold))
-                        .lineLimit(3...8)
-                        .textFieldStyle(.plain)
-                        .focused($focusedField, equals: .title)
-                }
+            ZStack {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
 
-                Section {
-                    Toggle("全天", isOn: $isAllDay)
+                ScrollView {
+                    VStack(spacing: 14) {
+                        titleEditorCard
+                        timeSettingsCard
+                        forWhomCard
 
-                    DatePicker(
-                        isAllDay ? "执行日期" : "执行时间",
-                        selection: $dueDate,
-                        displayedComponents: isAllDay ? [.date] : [.date, .hourAndMinute]
-                    )
+                        if isShowingMoreOptions {
+                            endTimeCard
+                            repeatReminderPriorityCard
+                            emergencyContactCard
+                            assigneeWhoDoesCard
+                            locationCard
+                            moreDetailsCard
+                            financeCard
+                        }
 
-                    Picker("重复", selection: $repeatOption) {
-                        ForEach(TaskRepeatOption.allCases) { option in
-                            Text(option.title).tag(option)
+                        expandCollapseButton
+
+                        if let errorMessage {
+                            Text(errorMessage)
+                                .font(AppTheme.FontToken.caption)
+                                .foregroundStyle(.red)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 4)
                         }
                     }
-
-                    Picker("提醒", selection: $reminderOption) {
-                        ForEach(TaskReminderOption.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                } header: {
-                    Text("时间设置")
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
 
-                Section {
-                    assigneeSectionContent
-                } header: {
-                    Text("任务分配")
-                }
-
-                Section {
-                    moreDetailNoteEditor
-                } header: {
-                    Text("更多细节")
-                }
-
-                Section {
-                    financeAndNotesSectionContent
-                } header: {
-                    Text("财务与备注")
-                }
-
-                if let errorMessage {
-                    Section {
-                        Text(errorMessage)
-                            .font(AppTheme.FontToken.caption)
-                            .foregroundStyle(.red)
-                    }
+                if isSaving {
+                    Color.black.opacity(0.12)
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .scaleEffect(1.1)
                 }
             }
-            .navigationTitle(editingTask == nil ? "新建任务" : "编辑任务")
+            .navigationTitle(editingTask == nil ? "新建任务 ✨" : "编辑任务")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -178,7 +246,7 @@ struct CreateTaskView: View {
                         }
                     }
                     .fontWeight(.semibold)
-                    .disabled(title.isEmpty || isSaving)
+                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -187,21 +255,27 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            .overlay {
-                if isSaving {
-                    Color.black.opacity(0.12)
-                        .ignoresSafeArea()
-                    ProgressView()
-                        .scaleEffect(1.1)
-                }
-            }
             .onAppear {
                 if editingTask == nil {
                     focusedField = .title
+                } else {
+                    isShowingMoreOptions = true
+                }
+            }
+            .onChange(of: dueDate) { _, newDue in
+                guard hasEndTime else { return }
+                if endTime < newDue {
+                    endTime = newDue
+                }
+            }
+            .onChange(of: hasEndTime) { _, enabled in
+                guard enabled else { return }
+                if endTime < dueDate {
+                    endTime = dueDate
                 }
             }
         }
-        .task {
+        .task(id: appRouter.selectedHouseholdId ?? editingTask?.householdId) {
             await loadAssignees()
         }
         .confirmationDialog(
@@ -228,6 +302,317 @@ struct CreateTaskView: View {
             }
         } message: {
             Text("请选择修改范围。")
+        }
+    }
+
+    private func sheetCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    private var titleEditorCard: some View {
+        sheetCard {
+            ZStack(alignment: .bottomTrailing) {
+                ZStack(alignment: .topLeading) {
+                    TextEditor(text: $title)
+                        .font(.title3.weight(.semibold))
+                        .frame(minHeight: isShowingMoreOptions ? 120 : 96)
+                        .scrollContentBackground(.hidden)
+                        .focused($focusedField, equals: .title)
+
+                    if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text(titlePlaceholderText)
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                            .padding(.top, 8)
+                            .padding(.leading, 4)
+                            .allowsHitTesting(false)
+                    }
+                }
+
+                if isShowingMoreOptions {
+                    Button {
+                        // 语音输入：占位，后续接入识别管线
+                    } label: {
+                        Image(systemName: "mic.fill")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                            .padding(8)
+                            .background(.ultraThinMaterial, in: Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("语音输入")
+                    .accessibilityHint("功能即将推出")
+                }
+            }
+        }
+    }
+
+    private var titlePlaceholderText: String {
+        if isShowingMoreOptions {
+            return "准备做什么？可以说：明天下午花 500 港币带老大去洗牙……"
+        }
+        return "准备做什么？"
+    }
+
+    private var timeSettingsCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("时间设置")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Toggle("全天", isOn: $isAllDay)
+
+                if isAllDay {
+                    DatePicker(
+                        "执行日期",
+                        selection: $dueDate,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.compact)
+                } else {
+                    HStack(alignment: .center, spacing: 12) {
+                        Text("执行时间")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 72, alignment: .leading)
+
+                        DatePicker(
+                            "",
+                            selection: $dueDate,
+                            displayedComponents: [.date]
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+
+                        DatePicker(
+                            "",
+                            selection: $dueDate,
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                    }
+                }
+            }
+        }
+    }
+
+    private var forWhomCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("为了谁 (FOR)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                forWhomChipsRow
+            }
+        }
+    }
+
+    private var endTimeCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Toggle("设置结束时间", isOn: $hasEndTime)
+                if hasEndTime {
+                    DatePicker(
+                        "结束时间",
+                        selection: $endTime,
+                        in: dueDate...,
+                        displayedComponents: isAllDay ? [.date] : [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.compact)
+                }
+            }
+        }
+    }
+
+    private var repeatReminderPriorityCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Text("重复")
+                        .font(.body)
+                    Spacer()
+                    Picker("", selection: $repeatOption) {
+                        ForEach(TaskRepeatOption.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+                .padding(.vertical, 4)
+
+                Divider().padding(.vertical, 6)
+
+                HStack {
+                    Text("提醒")
+                        .font(.body)
+                    Spacer()
+                    Picker("", selection: $reminderOption) {
+                        ForEach(TaskReminderOption.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+                .padding(.vertical, 4)
+
+                Divider().padding(.vertical, 6)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("任务优先级")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $formPriority) {
+                        Text("紧急").tag(TaskPriority.urgent)
+                        Text("一般").tag(TaskPriority.normal)
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    private var emergencyContactCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("紧急联系号码 / 会议链接")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                HStack(alignment: .center, spacing: 10) {
+                    TextField("输入号码或链接", text: $emergencyPhone)
+                        .font(.body)
+                        .keyboardType(.phonePad)
+                        .textContentType(.telephoneNumber)
+                        .focused($focusedField, equals: .emergency)
+
+                    Button {
+                        // 通讯录：占位
+                    } label: {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.tint)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("从通讯录选择")
+                    .accessibilityHint("功能即将推出")
+                }
+            }
+        }
+    }
+
+    private var assigneeWhoDoesCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("谁去办 (Assignee)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    assigneeChipsRow(members: assigneesWithRegisteredAccount)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+        }
+    }
+
+    private var locationCard: some View {
+        sheetCard {
+            HStack(spacing: 12) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                TextField("搜索或添加位置", text: $locationName)
+                    .font(.body)
+                    .focused($focusedField, equals: .locationSearch)
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private var moreDetailsCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("更多细节")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                moreDetailNoteEditor
+            }
+        }
+    }
+
+    private var financeCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("财务与备注")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                financeAndNotesSectionContent
+            }
+        }
+    }
+
+    private var expandCollapseButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                isShowingMoreOptions.toggle()
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(isShowingMoreOptions ? "收起更多选项" : "显示更多选项")
+                    .font(.subheadline.weight(.semibold))
+                Image(systemName: isShowingMoreOptions ? "chevron.up" : "chevron.down")
+                    .font(.footnote.weight(.bold))
+            }
+            .foregroundStyle(.tint)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// 已绑定 `auth.users` 的成员（有账号），用于「谁去办」可选列表。
+    private var assigneesWithRegisteredAccount: [AssigneeOption] {
+        assignees.filter(\.hasRegisteredAccount)
+    }
+
+    @ViewBuilder
+    private func assigneeChipsRow(members: [AssigneeOption]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                assigneeChipAll
+                ForEach(members) { person in
+                    assigneeChip(for: person)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    /// 「为了谁」：`family_profiles` 行，与 `involved_member_ids`（身份）维度不同。
+    private var forWhomChipsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 14) {
+                forWhomChipAll
+                ForEach(forWhomProfileOptions) { person in
+                    forWhomProfileChip(for: person)
+                }
+            }
+            .padding(.vertical, 4)
         }
     }
 
@@ -310,45 +695,29 @@ struct CreateTaskView: View {
         }
     }
 
-    @ViewBuilder
-    private var assigneeSectionContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("指派给")
-                Spacer()
-                Text(assigneeSummary)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    assigneeChipAll
-
-                    ForEach(assignees) { person in
-                        assigneeChip(for: person)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
+    private var assigneeChipAll: some View {
+        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: "指派给所有人") {
+            selectedAssigneeIds = []
         }
     }
 
-    private var assigneeChipAll: some View {
-        let isAll = selectedAssigneeIds.isEmpty
-        return Button {
-            selectedAssigneeIds = []
-        } label: {
+    private var forWhomChipAll: some View {
+        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: "为了谁：全家人") {
+            selectedTargetProfileIds = []
+        }
+    }
+
+    private func everyoneChip(isSelected: Bool, accessibilityLabel: String, onTap: @escaping () -> Void) -> some View {
+        Button(action: onTap) {
             VStack(spacing: 6) {
                 ZStack {
                     Circle()
-                        .fill(isAll ? Color.accentColor.opacity(0.2) : Color(.secondarySystemFill))
+                        .fill(isSelected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemFill))
                         .frame(width: 52, height: 52)
                     Image(systemName: "person.3.fill")
                         .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(isAll ? Color.accentColor : Color.secondary)
-                    if isAll {
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 16, weight: .semibold))
                             .symbolRenderingMode(.palette)
@@ -363,15 +732,24 @@ struct CreateTaskView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("指派给所有人")
-        .accessibilityAddTraits(isAll ? .isSelected : [])
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func assigneeChip(for person: AssigneeOption) -> some View {
-        let selected = selectedAssigneeIds.contains(person.id)
-        return Button {
+        personChip(person: person, selected: selectedAssigneeIds.contains(person.id)) {
             toggleAssignee(person.id)
-        } label: {
+        }
+    }
+
+    private func forWhomProfileChip(for person: AssigneeOption) -> some View {
+        personChip(person: person, selected: selectedTargetProfileIds.contains(person.id)) {
+            toggleTargetProfile(person.id)
+        }
+    }
+
+    private func personChip(person: AssigneeOption, selected: Bool, onTap: @escaping () -> Void) -> some View {
+        Button(action: onTap) {
             VStack(spacing: 6) {
                 ZStack {
                     Circle()
@@ -404,16 +782,6 @@ struct CreateTaskView: View {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private var assigneeSummary: String {
-        if selectedAssigneeIds.isEmpty {
-            return "所有人"
-        }
-        let names = assignees
-            .filter { selectedAssigneeIds.contains($0.id) }
-            .map(\.name)
-        return names.isEmpty ? "所有人" : names.joined(separator: "、")
-    }
-
     private func toggleAssignee(_ id: UUID) {
         if selectedAssigneeIds.isEmpty {
             selectedAssigneeIds = [id]
@@ -426,11 +794,37 @@ struct CreateTaskView: View {
         }
     }
 
+    private func toggleTargetProfile(_ id: UUID) {
+        if selectedTargetProfileIds.isEmpty {
+            selectedTargetProfileIds = [id]
+            return
+        }
+        if selectedTargetProfileIds.contains(id) {
+            selectedTargetProfileIds.remove(id)
+        } else {
+            selectedTargetProfileIds.insert(id)
+        }
+    }
+
     private func loadAssignees() async {
-        guard let householdId = appRouter.selectedHouseholdId else { return }
+        let routerHouseholdId = appRouter.selectedHouseholdId
+        let taskHouseholdId = editingTask?.householdId
+        let householdId = routerHouseholdId ?? taskHouseholdId
+        forWhomDebugLog(
+            "load.start editingTaskId=\(editingTask?.id.uuidString ?? "nil") routerHousehold=\(routerHouseholdId?.uuidString ?? "nil") taskHousehold=\(taskHouseholdId?.uuidString ?? "nil") resolved=\(householdId?.uuidString ?? "nil")"
+        )
+        guard let householdId else {
+            assignees = []
+            forWhomProfileOptions = []
+            forWhomDebugLog("load.aborted reason=no_resolved_household_id")
+            return
+        }
         #if canImport(Supabase)
+        var members: [HouseholdMembership] = []
+        var profiles: [FamilyProfile] = []
+
         do {
-            let members: [HouseholdMembership] = try await SupabaseManager.shared.client
+            members = try await SupabaseManager.shared.client
                 .from("household_memberships")
                 .select()
                 .eq("household_id", value: householdId.uuidString)
@@ -438,13 +832,58 @@ struct CreateTaskView: View {
                 .order("created_at", ascending: true)
                 .execute()
                 .value
-
-            assignees = members.map { member in
-                AssigneeOption(id: member.id, name: member.nickname)
-            }
+            forWhomDebugLog(
+                "household_memberships OK count=\(members.count) ids=\(members.map(\.id.uuidString).joined(separator: ","))"
+            )
         } catch {
-            assignees = []
+            forWhomDebugLog(
+                "household_memberships FAILED household=\(householdId.uuidString) error=\(error.localizedDescription) detail=\(String(describing: error))"
+            )
         }
+
+        do {
+            profiles = try await SupabaseManager.shared.client
+                .from("family_profiles")
+                .select("id,household_id,name,user_id,avatar_url")
+                .eq("household_id", value: householdId.uuidString)
+                .order("created_at", ascending: true)
+                .execute()
+                .value
+            let summary = profiles.map { "\($0.name)(\($0.id.uuidString.prefix(8)))" }.joined(separator: "; ")
+            forWhomDebugLog("family_profiles OK count=\(profiles.count) rows=[\(summary)]")
+        } catch {
+            forWhomDebugLog(
+                "family_profiles FAILED household=\(householdId.uuidString) error=\(error.localizedDescription) detail=\(String(describing: error))"
+            )
+        }
+
+        assignees = members.map { member in
+            AssigneeOption(
+                id: member.id,
+                name: member.nickname,
+                hasRegisteredAccount: member.userId != nil
+            )
+        }
+        forWhomProfileOptions = profiles.map { profile in
+            AssigneeOption(
+                id: profile.id,
+                name: profile.name,
+                hasRegisteredAccount: profile.userId != nil
+            )
+        }
+        forWhomDebugLog(
+            "load.done assignees.count=\(assignees.count) forWhomProfileOptions.count=\(forWhomProfileOptions.count)"
+        )
+        #else
+        assignees = []
+        forWhomProfileOptions = []
+        forWhomDebugLog("load.skip reason=no_supabase_sdk")
+        #endif
+    }
+
+    private func forWhomDebugLog(_ message: String) {
+        #if DEBUG
+        print("🔎 [CreateTaskView.ForWhom] \(message)")
         #endif
     }
 
@@ -508,6 +947,20 @@ struct CreateTaskView: View {
                     _ = try await SupabaseManager.shared.client
                         .rpc("update_recurring_tasks", params: rpcParams)
                         .execute()
+                    _ = try await SupabaseManager.shared.client
+                        .from("tasks")
+                        .update(
+                            TaskRecurringSingleSupplementPatch(
+                                endDatetime: resolvedEndDatetime(for: dueDate),
+                                backgroundColor: resolvedBackgroundColorHex(),
+                                emergencyPhone: resolvedEmergencyPhoneForPayload(),
+                                priority: formPriority.rawValue,
+                                locationData: resolvedLocationData(),
+                                targetProfileIds: resolvedTargetProfileIds
+                            )
+                        )
+                        .eq("id", value: existing.id.uuidString)
+                        .execute()
                     updated = FamilyTask(
                         id: existing.id,
                         householdId: existing.householdId,
@@ -516,22 +969,27 @@ struct CreateTaskView: View {
                         groupId: nil,
                         originalDueDate: existing.originalDueDate,
                         involvedMemberIds: resolvedInvolvedMemberIds,
+                        targetProfileId: existing.targetProfileId,
+                        targetProfileIds: resolvedTargetProfileIds,
                         targetSubject: existing.targetSubject,
                         title: normalizedTitle,
                         description: mergedDescriptionForPayload,
                         originalPrompt: existing.originalPrompt,
                         attachmentUrls: existing.attachmentUrls,
                         externalContacts: existing.externalContacts,
-                        locationData: existing.locationData,
+                        locationData: resolvedLocationData(),
                         externalSyncRefs: existing.externalSyncRefs,
                         alarmSetBy: existing.alarmSetBy,
                         status: existing.status,
-                        priority: existing.priority,
+                        priority: formPriority,
                         dueDate: dueDate,
+                        endDatetime: resolvedEndDatetime(for: dueDate),
                         isAllDay: isAllDay,
                         recurrenceRule: repeatOption.recurrenceRule,
                         reminderOffsets: reminderOption.reminderOffsetsMinutes,
                         estimatedCost: estimatedCostMinorUnits,
+                        backgroundColor: resolvedBackgroundColorHex(),
+                        emergencyPhone: resolvedEmergencyPhoneForPayload(),
                         createdAt: existing.createdAt,
                         updatedAt: Date()
                     )
@@ -540,11 +998,17 @@ struct CreateTaskView: View {
                         title: normalizedTitle,
                         description: mergedDescriptionForPayload,
                         involvedMemberIds: resolvedInvolvedMemberIds,
+                        targetProfileIds: resolvedTargetProfileIds,
                         dueDate: dueDate,
+                        endDatetime: resolvedEndDatetime(for: dueDate),
                         isAllDay: isAllDay,
                         recurrenceRule: repeatOption.recurrenceRule,
                         reminderOffsets: reminderOption.reminderOffsetsMinutes,
                         estimatedCost: estimatedCostMinorUnits,
+                        backgroundColor: resolvedBackgroundColorHex(),
+                        emergencyPhone: resolvedEmergencyPhoneForPayload(),
+                        priority: formPriority.rawValue,
+                        locationData: resolvedLocationData(),
                         updatedAt: Date()
                     )
                     updated = try await SupabaseManager.shared.client
@@ -580,22 +1044,27 @@ struct CreateTaskView: View {
                     groupId: existing.groupId,
                     originalDueDate: existing.originalDueDate,
                     involvedMemberIds: resolvedInvolvedMemberIds,
+                    targetProfileId: existing.targetProfileId,
+                    targetProfileIds: resolvedTargetProfileIds,
                     targetSubject: existing.targetSubject,
                     title: normalizedTitle,
                     description: mergedDescriptionForPayload,
                     originalPrompt: existing.originalPrompt,
                     attachmentUrls: existing.attachmentUrls,
                     externalContacts: existing.externalContacts,
-                    locationData: existing.locationData,
+                    locationData: resolvedLocationData(),
                     externalSyncRefs: existing.externalSyncRefs,
                     alarmSetBy: existing.alarmSetBy,
                     status: existing.status,
-                    priority: existing.priority,
+                    priority: formPriority,
                     dueDate: dueDate,
+                    endDatetime: resolvedEndDatetime(for: dueDate),
                     isAllDay: isAllDay,
                     recurrenceRule: repeatOption.recurrenceRule,
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
                     estimatedCost: estimatedCostMinorUnits,
+                    backgroundColor: resolvedBackgroundColorHex(),
+                    emergencyPhone: resolvedEmergencyPhoneForPayload(),
                     createdAt: existing.createdAt,
                     updatedAt: Date()
                 )
@@ -638,15 +1107,20 @@ struct CreateTaskView: View {
                     creatorId: creatorIdLowercased,
                     groupId: groupId,
                     involvedMemberIds: resolvedInvolvedMemberIds,
+                    targetProfileIds: resolvedTargetProfileIds,
                     title: normalizedTitle,
                     description: mergedDescriptionForPayload,
                     status: TaskStatus.new.rawValue,
-                    priority: TaskPriority.normal.rawValue,
+                    priority: formPriority.rawValue,
                     dueDate: date,
+                    endDatetime: resolvedEndDatetime(for: date),
                     isAllDay: isAllDay,
                     recurrenceRule: recurrence,
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
                     estimatedCost: estimatedCostMinorUnits,
+                    backgroundColor: resolvedBackgroundColorHex(),
+                    emergencyPhone: resolvedEmergencyPhoneForPayload(),
+                    locationData: resolvedLocationData(),
                     createdAt: now,
                     updatedAt: now
                 )
@@ -699,6 +1173,13 @@ struct CreateTaskView: View {
         return dates
     }
 
+    private static func normalizedStoredHex(_ raw: String?) -> String? {
+        guard let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines), trimmed.isEmpty == false else {
+            return nil
+        }
+        return trimmed.uppercased()
+    }
+
     private static func displayCost(fromMinorUnits minor: Int?) -> String {
         guard let minor else { return "" }
         if minor == 0 { return "" }
@@ -707,6 +1188,17 @@ struct CreateTaskView: View {
             return String(format: "%.0f", value)
         }
         return String(format: "%.2f", value)
+    }
+
+    private static func priorityForForm(_ priority: TaskPriority) -> TaskPriority {
+        switch priority {
+        case .urgent, .high:
+            return .urgent
+        case .normal, .low:
+            return .normal
+        @unknown default:
+            return .normal
+        }
     }
 }
 
@@ -801,6 +1293,8 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
 private struct AssigneeOption: Identifiable, Equatable {
     let id: UUID
     let name: String
+    /// 与 `household_memberships.user_id` 一致：非空表示已注册账号，可出现在「谁去办」人选中。
+    let hasRegisteredAccount: Bool
 
     var initials: String {
         let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -815,15 +1309,20 @@ private struct TaskInsertPayload: Encodable {
     let creatorId: String
     let groupId: UUID?
     let involvedMemberIds: [UUID]?
+    let targetProfileIds: [UUID]?
     let title: String
     let description: String?
     let status: String
     let priority: String
     let dueDate: Date
+    let endDatetime: Date?
     let isAllDay: Bool
     let recurrenceRule: String?
     let reminderOffsets: [Int]?
     let estimatedCost: Int?
+    let backgroundColor: String?
+    let emergencyPhone: String?
+    let locationData: FamilyTask.LocationData?
     let createdAt: Date
     let updatedAt: Date
 
@@ -833,15 +1332,20 @@ private struct TaskInsertPayload: Encodable {
         case creatorId = "creator_id"
         case groupId = "group_id"
         case involvedMemberIds = "involved_member_ids"
+        case targetProfileIds = "target_profile_ids"
         case title
         case description
         case status
         case priority
         case dueDate = "due_date"
+        case endDatetime = "end_datetime"
         case isAllDay = "is_all_day"
         case recurrenceRule = "recurrence_rule"
         case reminderOffsets = "reminder_offsets"
         case estimatedCost = "estimated_cost"
+        case backgroundColor = "background_color"
+        case emergencyPhone = "emergency_phone"
+        case locationData = "location_data"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -857,15 +1361,40 @@ private struct TaskInsertPayload: Encodable {
         } else {
             try container.encodeNil(forKey: .involvedMemberIds)
         }
+        if let targetProfileIds {
+            try container.encode(targetProfileIds, forKey: .targetProfileIds)
+        } else {
+            try container.encodeNil(forKey: .targetProfileIds)
+        }
         try container.encode(title, forKey: .title)
         try container.encodeIfPresent(description, forKey: .description)
         try container.encode(status, forKey: .status)
         try container.encode(priority, forKey: .priority)
         try container.encode(dueDate, forKey: .dueDate)
+        if let endDatetime {
+            try container.encode(endDatetime, forKey: .endDatetime)
+        } else {
+            try container.encodeNil(forKey: .endDatetime)
+        }
         try container.encode(isAllDay, forKey: .isAllDay)
         try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
         try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
+        if let backgroundColor {
+            try container.encode(backgroundColor, forKey: .backgroundColor)
+        } else {
+            try container.encodeNil(forKey: .backgroundColor)
+        }
+        if let emergencyPhone {
+            try container.encode(emergencyPhone, forKey: .emergencyPhone)
+        } else {
+            try container.encodeNil(forKey: .emergencyPhone)
+        }
+        if let locationData {
+            try container.encode(locationData, forKey: .locationData)
+        } else {
+            try container.encodeNil(forKey: .locationData)
+        }
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
     }
@@ -875,22 +1404,34 @@ private struct TaskUpdatePayload: Encodable {
     let title: String
     let description: String?
     let involvedMemberIds: [UUID]?
+    let targetProfileIds: [UUID]?
     let dueDate: Date
+    let endDatetime: Date?
     let isAllDay: Bool
     let recurrenceRule: String?
     let reminderOffsets: [Int]?
     let estimatedCost: Int?
+    let backgroundColor: String?
+    let emergencyPhone: String?
+    let priority: String
+    let locationData: FamilyTask.LocationData?
     let updatedAt: Date
 
     enum CodingKeys: String, CodingKey {
         case title
         case description
         case involvedMemberIds = "involved_member_ids"
+        case targetProfileIds = "target_profile_ids"
         case dueDate = "due_date"
+        case endDatetime = "end_datetime"
         case isAllDay = "is_all_day"
         case recurrenceRule = "recurrence_rule"
         case reminderOffsets = "reminder_offsets"
         case estimatedCost = "estimated_cost"
+        case backgroundColor = "background_color"
+        case emergencyPhone = "emergency_phone"
+        case priority
+        case locationData = "location_data"
         case updatedAt = "updated_at"
     }
 
@@ -903,22 +1444,84 @@ private struct TaskUpdatePayload: Encodable {
         } else {
             try container.encodeNil(forKey: .involvedMemberIds)
         }
+        if let targetProfileIds {
+            try container.encode(targetProfileIds, forKey: .targetProfileIds)
+        } else {
+            try container.encodeNil(forKey: .targetProfileIds)
+        }
         try container.encode(dueDate, forKey: .dueDate)
+        if let endDatetime {
+            try container.encode(endDatetime, forKey: .endDatetime)
+        } else {
+            try container.encodeNil(forKey: .endDatetime)
+        }
         try container.encode(isAllDay, forKey: .isAllDay)
         try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
         try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
+        if let backgroundColor {
+            try container.encode(backgroundColor, forKey: .backgroundColor)
+        } else {
+            try container.encodeNil(forKey: .backgroundColor)
+        }
+        if let emergencyPhone {
+            try container.encode(emergencyPhone, forKey: .emergencyPhone)
+        } else {
+            try container.encodeNil(forKey: .emergencyPhone)
+        }
+        try container.encode(priority, forKey: .priority)
+        if let locationData {
+            try container.encode(locationData, forKey: .locationData)
+        } else {
+            try container.encodeNil(forKey: .locationData)
+        }
         try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 
 private extension CreateTaskView {
+    /// 与当前「开始/截止时间」对齐的结束时间；未开启开关时返回 `nil` 以清空数据库列。
+    func resolvedEndDatetime(for occurrenceDue: Date) -> Date? {
+        guard hasEndTime else { return nil }
+        let delta = max(0, endTime.timeIntervalSince(dueDate))
+        return occurrenceDue.addingTimeInterval(delta)
+    }
+
+    func resolvedBackgroundColorHex() -> String? {
+        guard let raw = selectedBackgroundHex?.trimmingCharacters(in: .whitespacesAndNewlines),
+              raw.isEmpty == false else {
+            return nil
+        }
+        return raw.uppercased()
+    }
+
+    func resolvedLocationData() -> FamilyTask.LocationData? {
+        let trimmed = locationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return nil }
+        return FamilyTask.LocationData(name: trimmed, address: nil, latitude: nil, longitude: nil)
+    }
+
+    func resolvedEmergencyPhoneForPayload() -> String? {
+        let collapsed = emergencyPhone.filter { character in
+            character.isWhitespace == false && character.isNewline == false
+        }
+        return collapsed.isEmpty ? nil : collapsed
+    }
+
     /// 「所有人」写入 `nil`；否则写入所选 membership id 列表。
     var resolvedInvolvedMemberIds: [UUID]? {
         if selectedAssigneeIds.isEmpty {
             return nil
         }
         return Array(selectedAssigneeIds)
+    }
+
+    /// 「为了谁」未选具体档案时写入 `nil`；否则写入 `family_profiles.id` 列表（`tasks.target_profile_ids`）。
+    var resolvedTargetProfileIds: [UUID]? {
+        if selectedTargetProfileIds.isEmpty {
+            return nil
+        }
+        return Array(selectedTargetProfileIds)
     }
 
     var normalizedNote: String? {

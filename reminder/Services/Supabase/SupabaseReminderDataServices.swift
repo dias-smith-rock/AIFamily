@@ -251,7 +251,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             .order("name", ascending: true)
             .execute()
         do {
-            return try JSONDecoder().decode([FamilyProfile].self, from: rawResponse.data)
+            return try SupabaseCodec.makeDecoder().decode([FamilyProfile].self, from: rawResponse.data)
         } catch {
             #if DEBUG
             let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"
@@ -411,7 +411,7 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
             .order("created_at", ascending: true)
             .execute()
         do {
-            return try JSONDecoder().decode([HouseholdMembership].self, from: rawResponse.data)
+            return try SupabaseCodec.makeDecoder().decode([HouseholdMembership].self, from: rawResponse.data)
         } catch let DecodingError.valueNotFound(value, context) {
             #if DEBUG
             let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"

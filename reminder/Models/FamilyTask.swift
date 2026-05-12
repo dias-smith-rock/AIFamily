@@ -31,11 +31,18 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     var status: TaskStatus
     var priority: TaskPriority
     var dueDate: Date?
+    /// 对应 `tasks.end_datetime`（TIMESTAMPTZ，可空）；应不早于 `due_date`。
+    var endDatetime: Date? = nil
     var isAllDay: Bool
     var recurrenceRule: String?
     var reminderOffsets: [Int]?
 
     var estimatedCost: Int?
+
+    /// `tasks.background_color`，`#RRGGBB`；`nil` 表示列表使用系统默认二级背景。
+    var backgroundColor: String? = nil
+    /// `tasks.emergency_phone`，用于卡片快捷拨号 / FaceTime。
+    var emergencyPhone: String? = nil
 
     let createdAt: Date
     let updatedAt: Date

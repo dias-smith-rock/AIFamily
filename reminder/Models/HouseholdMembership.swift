@@ -47,20 +47,22 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         self.updatedAt = updatedAt
     }
 
+    /// 与 `SupabaseCodec.makeDecoder()` 的 `convertFromSnakeCase` 一致：勿再写 `= "household_id"` 等显式 snake，
+    /// 否则与全局解码策略冲突，出现 `keyNotFound("household_id")`。
     enum CodingKeys: String, CodingKey {
         case id
-        case householdId = "household_id"
-        case userId = "user_id"
+        case householdId
+        case userId
         case role
         case nickname
-        case avatarUrl = "avatar_url"
-        case contactMethod = "contact_method"
-        case phoneNumber = "phone_number"
+        case avatarUrl
+        case contactMethod
+        case phoneNumber
         case email
         case status
-        case joinedAt = "joined_at"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
+        case joinedAt
+        case createdAt
+        case updatedAt
     }
 
     init(from decoder: Decoder) throws {

@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import Kingfisher
 
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
@@ -147,14 +148,11 @@ struct ProfileEditView: View {
     private var avatarView: some View {
         Group {
             if let avatarURL {
-                AsyncImage(url: avatarURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    default:
-                        fallbackAvatar
-                    }
-                }
+                KFImage.url(avatarURL)
+                    .placeholder { ProgressView() }
+                    .cacheMemoryOnly(false)
+                    .resizable()
+                    .scaledToFill()
             } else {
                 fallbackAvatar
             }

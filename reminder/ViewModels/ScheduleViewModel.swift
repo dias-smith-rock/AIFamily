@@ -31,6 +31,10 @@ final class ScheduleViewModel: ObservableObject {
         currentHouseholdId = householdId
     }
 
+    private static func tasksCacheKey(for householdId: UUID) -> String {
+        "schedule.tasks.snapshot.\(householdId.uuidString.lowercased())"
+    }
+
     func loadTasks(silent: Bool = false) async {
         guard let householdId = currentHouseholdId else {
             tasks = []
@@ -40,7 +44,16 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
 
-        let showLoading = !silent
+        let cacheKey = Self.tasksCacheKey(for: householdId)
+
+        var restoredFromDisk = false
+        if silent == false, let cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: cacheKey) {
+            tasks = cached
+            errorMessage = nil
+            restoredFromDisk = true
+        }
+
+        let showLoading = !silent && !restoredFromDisk
         if showLoading {
             isLoading = true
             errorMessage = nil
@@ -53,11 +66,17 @@ final class ScheduleViewModel: ObservableObject {
 
         do {
             // `tasks` 已由 RLS 裁剪为当前登录用户在该家庭下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
-            tasks = try await taskService.fetchTasks(in: householdId)
-            errorMessage = nil
+            let fresh = try await taskService.fetchTasks(in: householdId)
+            tasks = fresh
+            LocalCacheManager.shared.save(fresh, forKey: cacheKey)
+            if !silent {
+                errorMessage = nil
+            }
         } catch {
             if !silent {
-                errorMessage = error.localizedDescription
+                if restoredFromDisk == false {
+                    errorMessage = error.localizedDescription
+                }
             }
         }
     }

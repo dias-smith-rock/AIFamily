@@ -178,6 +178,7 @@ extension FamilyTask {
             recurrenceRule: "FREQ=WEEKLY;BYDAY=MO,WE,FR",
             reminderOffsets: [10],
             estimatedCost: 0,
+            emergencyPhone: "138 0013 8000",
             createdAt: .mockISO("2026-04-27T03:20:00.000Z"),
             updatedAt: .mockISO("2026-04-27T03:20:00.000Z")
         ),

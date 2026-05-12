@@ -1,4 +1,5 @@
 import SwiftUI
+import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
@@ -40,16 +41,11 @@ struct FamilyMemberRowView: View {
                 Group {
                     if let avatarURLString = profile.avatarUrl,
                        let avatarURL = URL(string: avatarURLString) {
-                        AsyncImage(url: avatarURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            default:
-                                avatarFallback
-                            }
-                        }
+                        KFImage.url(avatarURL)
+                            .placeholder { ProgressView() }
+                            .cacheMemoryOnly(false)
+                            .resizable()
+                            .scaledToFill()
                     } else {
                         avatarFallback
                     }

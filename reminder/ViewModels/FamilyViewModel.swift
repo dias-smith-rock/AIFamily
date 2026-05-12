@@ -25,6 +25,15 @@ final class FamilyViewModel: ObservableObject {
     private var currentHouseholdId: UUID?
     private var currentMembershipId: UUID?
 
+    private struct FamilyMembersCachePayload: Codable {
+        let profiles: [FamilyProfile]
+        let members: [HouseholdMembership]
+    }
+
+    private static func membersCacheKey(for householdId: UUID) -> String {
+        "family.members.snapshot.\(householdId.uuidString.lowercased())"
+    }
+
     init(
         profileService: FamilyProfileDataService,
         membershipService: HouseholdMembershipDataService,
@@ -83,10 +92,27 @@ final class FamilyViewModel: ObservableObject {
         }
 
         requiresLogin = false
-        isLoading = true
+
+        let cacheKey = Self.membersCacheKey(for: householdId)
+        let cachedPayload: FamilyMembersCachePayload? = LocalCacheManager.shared.load(forKey: cacheKey)
+        if let cachedPayload {
+            profiles = cachedPayload.profiles
+            members = cachedPayload.members
+            applyLocalOrdering()
+            errorMessage = nil
+            hasLoadedOnce = true
+        }
+
+        let hadDiskCache = cachedPayload != nil
+        let showBlockingSpinner = hadDiskCache == false
+        if showBlockingSpinner {
+            isLoading = true
+        }
         errorMessage = nil
         defer {
-            isLoading = false
+            if showBlockingSpinner {
+                isLoading = false
+            }
             hasLoadedOnce = true
         }
 
@@ -97,11 +123,15 @@ final class FamilyViewModel: ObservableObject {
             profiles = p
             members = m
             applyLocalOrdering()
+            let snapshot = FamilyMembersCachePayload(profiles: p, members: m)
+            LocalCacheManager.shared.save(snapshot, forKey: cacheKey)
             #if DEBUG
             print("✅ [FamilyDebug] loadMembers success - profiles=\(p.count), memberships=\(m.count)")
             #endif
         } catch {
-            errorMessage = error.localizedDescription
+            if hadDiskCache == false {
+                errorMessage = error.localizedDescription
+            }
             #if DEBUG
             print("❌ [FamilyDebug] loadMembers failed - \(error.localizedDescription)")
             #endif
