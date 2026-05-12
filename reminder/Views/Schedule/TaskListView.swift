@@ -34,7 +34,12 @@ struct TaskListView: View {
                 Group {
                     switch currentViewMode {
                     case .list:
-                        TaskModeListView(viewModel: viewModel)
+                        TaskModeListView(
+                            tasks: viewModel.tasks,
+                            isLoading: viewModel.isLoading,
+                            errorMessage: viewModel.errorMessage,
+                            onTaskTap: { taskForDetailSheet = $0 }
+                        )
                     case .day:
                         TaskModeDayView(
                             selectedDate: $selectedDate,
