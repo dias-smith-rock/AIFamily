@@ -11,7 +11,7 @@ enum ScheduleAnchorFlowScrollIDs {
     static let nowMarker = "scheduleAnchorFlowNow"
 }
 
-/// 定时任务锚点流：左侧 ~50pt 时间 + 竖线；右侧 `TaskCardView`。任务间固定 ~40pt 间隙，锚点时间差大时用虚线表示长空闲。
+/// 定时任务锚点流：左侧 ~50pt 时间（与卡片等高竖线 + 时间文案）；右侧 `TaskCardView`。任务间固定 ~40pt 间隙，间隙内竖线与任务列对齐，锚点时间差大时用虚线表示长空闲。
 struct ScheduleTaskAnchorFlow<Card: View>: View {
     let timedTasks: [FamilyTask]
     let selectedCalendarDay: Date
@@ -116,6 +116,11 @@ private enum GapKind {
     case containsNowMarker
 }
 
+private enum ScheduleTimeColumnMetrics {
+    /// 与时间标签并排时，竖线与文字间距（须与 `ScheduleAnchorTaskRow` / `ScheduleAnchorGapSegment` 一致）。
+    static let labelLineSpacing: CGFloat = 6
+}
+
 private struct ScheduleAnchorGapSegment: View {
     let stableID: String
     let previousAnchor: Date
@@ -139,9 +144,9 @@ private struct ScheduleAnchorGapSegment: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            ZStack(alignment: .center) {
+            HStack(alignment: .center, spacing: ScheduleTimeColumnMetrics.labelLineSpacing) {
                 ScheduleVerticalConnectorLine(height: compactHeight, dashed: anchorGapLong)
-                    .frame(width: timeColumnWidth)
+                    .frame(width: 1)
 
                 if gapKind == .containsNowMarker, nowInThisGap {
                     VStack(spacing: 2) {
@@ -152,9 +157,12 @@ private struct ScheduleAnchorGapSegment: View {
                             .fill(Color.red)
                             .frame(width: 7, height: 7)
                     }
-                    .frame(width: timeColumnWidth)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Spacer(minLength: 0)
                 }
             }
+            .frame(width: timeColumnWidth, alignment: .leading)
 
             Color.clear
                 .frame(height: compactHeight)
@@ -180,25 +188,20 @@ private struct ScheduleAnchorTaskRow<Card: View>: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            ZStack(alignment: .topTrailing) {
-                GeometryReader { geo in
-                    let topInset: CGFloat = 16
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.28))
+            GeometryReader { geo in
+                HStack(alignment: .top, spacing: ScheduleTimeColumnMetrics.labelLineSpacing) {
+                    ScheduleVerticalConnectorLine(height: max(0, geo.size.height), dashed: false)
                         .frame(width: 1)
-                        .frame(height: max(0, geo.size.height - topInset))
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                        .padding(.top, topInset)
-                }
-                .frame(width: timeColumnWidth)
 
-                Text(timeText)
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.secondary)
-                    .frame(width: timeColumnWidth, alignment: .leading)
-                    .padding(.top, 2)
+                    Text(timeText)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(width: timeColumnWidth, height: geo.size.height, alignment: .topLeading)
             }
-            .frame(width: timeColumnWidth, alignment: .topTrailing)
+            .frame(width: timeColumnWidth)
 
             card
                 .frame(maxWidth: .infinity, alignment: .leading)
