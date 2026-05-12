@@ -17,16 +17,22 @@ final class AssistantViewModel: ObservableObject {
 
     private let taskService: TaskDataService
     private let parser: AIParsingService
+    /// 与日程选中日对齐，用于 `parseTaskDraft` 的 `referenceDate`（含「明天」等相对语义）。
+    private var referenceCalendarDay: Date = Calendar.current.startOfDay(for: Date())
 
     init(taskService: TaskDataService, parser: AIParsingService) {
         self.taskService = taskService
         self.parser = parser
     }
 
+    func setReferenceCalendarDay(_ date: Date) {
+        referenceCalendarDay = Calendar.current.startOfDay(for: date)
+    }
+
     func parseInput() async {
         state = .parsing
         do {
-            let draft = try await parser.parseTaskDraft(from: inputText, referenceDate: Date())
+            let draft = try await parser.parseTaskDraft(from: inputText, referenceDate: referenceCalendarDay)
             state = .preview(draft)
         } catch {
             state = .failed(error.localizedDescription)

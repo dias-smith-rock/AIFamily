@@ -5,6 +5,7 @@ struct AppTabRootView: View {
     @State private var selectedTab: Tab = .schedule
     @State private var showsAssistant = false
     @State private var hideScheduleAssistantFAB = false
+    @State private var scheduleSelectedDay: Date?
 
     enum Tab {
         case schedule
@@ -51,6 +52,9 @@ struct AppTabRootView: View {
                     hideScheduleAssistantFAB = false
                 }
             }
+            .onPreferenceChange(ScheduleSelectedDayPreferenceKey.self) { day in
+                scheduleSelectedDay = day
+            }
 
             if selectedTab == .schedule, hideScheduleAssistantFAB == false {
                 Button {
@@ -75,7 +79,9 @@ struct AppTabRootView: View {
             }
         }
         .sheet(isPresented: $showsAssistant) {
-            AssistantSheetView()
+            AssistantSheetView(
+                scheduleAnchorDay: scheduleSelectedDay ?? Calendar.current.startOfDay(for: Date())
+            )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }

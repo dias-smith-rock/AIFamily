@@ -34,6 +34,14 @@ final class FamilyViewModel: ObservableObject {
         "family.members.snapshot.\(householdId.uuidString.lowercased())"
     }
 
+    private func postScheduleHouseholdRosterChangedIfNeeded() {
+        guard let householdId = currentHouseholdId else { return }
+        NotificationCenter.default.post(
+            name: .scheduleHouseholdRosterDidChange,
+            object: householdId
+        )
+    }
+
     init(
         profileService: FamilyProfileDataService,
         membershipService: HouseholdMembershipDataService,
@@ -162,6 +170,7 @@ final class FamilyViewModel: ObservableObject {
             let createdMember = try await membershipService.createMembership(member)
             members.append(createdMember)
             members.sort { $0.createdAt < $1.createdAt }
+            postScheduleHouseholdRosterChangedIfNeeded()
             return createdMember
         } catch {
             errorMessage = error.localizedDescription
@@ -190,6 +199,7 @@ final class FamilyViewModel: ObservableObject {
             if let createdProfile = profiles.first(where: { idsBeforeCreate.contains($0.id) == false }) {
                 await syncBirthdayTasks(for: createdProfile)
             }
+            postScheduleHouseholdRosterChangedIfNeeded()
             return nil
         } catch {
             errorMessage = error.localizedDescription
@@ -231,6 +241,7 @@ final class FamilyViewModel: ObservableObject {
             applyLocalOrdering()
             await syncBirthdayTasks(for: updatedProfile)
             errorMessage = nil
+            postScheduleHouseholdRosterChangedIfNeeded()
             return nil
         } catch {
             errorMessage = error.localizedDescription
@@ -324,9 +335,11 @@ final class FamilyViewModel: ObservableObject {
             let updatedMember = try await membershipService.updateMembership(member)
             guard let index = members.firstIndex(where: { $0.id == updatedMember.id }) else {
                 await loadMembers()
+                postScheduleHouseholdRosterChangedIfNeeded()
                 return
             }
             members[index] = updatedMember
+            postScheduleHouseholdRosterChangedIfNeeded()
         } catch {
             errorMessage = error.localizedDescription
         }

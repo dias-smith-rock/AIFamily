@@ -1,9 +1,16 @@
 import SwiftUI
 
 struct AssistantSheetView: View {
+    /// 与日程周历当前选中日对齐（`startOfDay`），用于解析「明天」等相对日期。
+    let scheduleAnchorDay: Date
+
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeAssistantViewModel()
+
+    init(scheduleAnchorDay: Date = Calendar.current.startOfDay(for: Date())) {
+        self.scheduleAnchorDay = scheduleAnchorDay
+    }
 
     var body: some View {
         NavigationStack {
@@ -22,6 +29,9 @@ struct AssistantSheetView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
+            .onAppear {
+                viewModel.setReferenceCalendarDay(scheduleAnchorDay)
+            }
         }
     }
 
@@ -108,11 +118,10 @@ struct AssistantSheetView: View {
                     else {
                         return
                     }
-                    let assignee = HouseholdMembership.mockMembers.first(where: { $0.householdId == householdId && $0.id != creatorMembershipId })
                     await viewModel.confirmSend(
                         householdId: householdId,
                         creatorMembershipId: creatorMembershipId,
-                        involvedMemberIds: assignee.map { [$0.id] }
+                        involvedMemberIds: nil
                     )
                 },
                 onCorrection: { correction in

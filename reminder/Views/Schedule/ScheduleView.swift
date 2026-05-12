@@ -19,7 +19,10 @@ struct ScheduleView: View {
     @State private var selectedDate: Date = Date()
     @State private var isShowingCalendarSheet = false
     @State private var isShowingCreateTaskSheet = false
+    @State private var createTaskFormInstanceID = UUID()
     @State private var prefillTitle = ""
+    /// 新建任务默认「开始日」：`nil` 表示使用周历当前选中的 `selectedDate`。
+    @State private var createTaskDueDateOverride: Date?
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     let onRequestAIInput: () -> Void
@@ -37,6 +40,7 @@ struct ScheduleView: View {
                 timelineSection
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .preference(key: ScheduleSelectedDayPreferenceKey.self, value: dayID(for: selectedDate))
             .navigationBarHidden(true)
             .sheet(item: $taskForDetailSheet) { task in
                 NavigationStack {
@@ -62,6 +66,8 @@ struct ScheduleView: View {
             .sheet(isPresented: $isShowingCreateTaskSheet) {
                 CreateTaskView(
                     initialTitle: prefillTitle,
+                    defaultDueDate: createTaskDueDateOverride ?? dayID(for: selectedDate),
+                    defaultAllDayForNewTask: true,
                     onSaveSuccess: { createdDueDate in
                         selectedDate = dayID(for: createdDueDate)
                         Task {
@@ -69,6 +75,7 @@ struct ScheduleView: View {
                         }
                     }
                 )
+                .id(createTaskFormInstanceID)
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -361,7 +368,11 @@ struct ScheduleView: View {
             if allDayTasks.count <= 2 {
                 VStack(spacing: 8) {
                     ForEach(allDayTasks) { task in
-                        TaskRowView(task: task, profiles: taskProfiles(for: task))
+                        TaskRowView(
+                            task: task,
+                            forWhomAvatars: forWhomAvatarSources(for: task),
+                            assigneeLabel: assigneeLabel(for: task)
+                        )
                             .onTapGesture {
                                 taskForDetailSheet = task
                             }
@@ -371,7 +382,11 @@ struct ScheduleView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(allDayTasks) { task in
-                            TaskRowView(task: task, profiles: taskProfiles(for: task))
+                            TaskRowView(
+                                task: task,
+                                forWhomAvatars: forWhomAvatarSources(for: task),
+                                assigneeLabel: assigneeLabel(for: task)
+                            )
                                 .frame(width: 220)
                                 .onTapGesture {
                                     taskForDetailSheet = task
@@ -387,7 +402,11 @@ struct ScheduleView: View {
         GeometryReader { geo in
             let cardWidth = max(140, geo.size.width - timeAxisWidth - 16)
             ForEach(timedTasks) { task in
-                TaskRowView(task: task, profiles: taskProfiles(for: task))
+                TaskRowView(
+                    task: task,
+                    forWhomAvatars: forWhomAvatarSources(for: task),
+                    assigneeLabel: assigneeLabel(for: task)
+                )
                     .frame(width: cardWidth, alignment: .leading)
                     .fixedSize(horizontal: false, vertical: true)
                     .offset(x: timeAxisWidth + 10, y: yOffset(for: taskDisplayDate(task)))
@@ -422,9 +441,9 @@ struct ScheduleView: View {
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", title: "Family Dinner")
-                actionChip(emoji: "🛒", title: "Grocery List")
-                actionChip(emoji: "🧸", title: "Kids Activity")
+                actionChip(emoji: "✨", title: "Family Dinner", dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", title: "Grocery List", dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", title: "Kids Activity", dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -432,9 +451,9 @@ struct ScheduleView: View {
     }
 
     /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
-    private func actionChip(emoji: String, title: String) -> some View {
+    private func actionChip(emoji: String, title: String, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
         Button {
-            openCreateTask(prefill: title)
+            openCreateTask(prefill: title, defaultDueDateOverride: defaultDueDate(for: dueDateKind))
         } label: {
             HStack(spacing: 10) {
                 Text(emoji)
@@ -545,8 +564,50 @@ struct ScheduleView: View {
         Calendar.current.startOfDay(for: date)
     }
 
-    private func openCreateTask(prefill: String) {
+    private enum QuickCreateDueDateKind {
+        /// 与顶栏「+」一致：当前选中日。
+        case selectedDay
+        /// 购物清单：选中日的次日 0 点。
+        case dayAfterSelected
+        /// 亲子活动：从选中日（含）起往后找第一个周六（自然周）。
+        case nextSaturdayFromSelected
+    }
+
+    private func defaultDueDate(for kind: QuickCreateDueDateKind) -> Date? {
+        switch kind {
+        case .selectedDay:
+            return nil
+        case .dayAfterSelected:
+            return calendarDayByAdding(1, to: selectedDate)
+        case .nextSaturdayFromSelected:
+            return nextSaturdayOnOrAfter(selectedDate)
+        }
+    }
+
+    private func calendarDayByAdding(_ days: Int, to anchor: Date) -> Date {
+        let cal = Calendar.current
+        let base = dayID(for: anchor)
+        guard let shifted = cal.date(byAdding: .day, value: days, to: base) else { return base }
+        return cal.startOfDay(for: shifted)
+    }
+
+    /// `weekday` 与 `Calendar.Component.weekday` 一致（如美国历：1=周日 … 7=周六）。
+    private func nextSaturdayOnOrAfter(_ anchor: Date) -> Date {
+        let cal = Calendar.current
+        let base = dayID(for: anchor)
+        for offset in 0..<14 {
+            guard let d = cal.date(byAdding: .day, value: offset, to: base) else { continue }
+            if cal.component(.weekday, from: d) == 7 {
+                return cal.startOfDay(for: d)
+            }
+        }
+        return base
+    }
+
+    private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {
         prefillTitle = prefill
+        createTaskDueDateOverride = defaultDueDateOverride
+        createTaskFormInstanceID = UUID()
         isShowingCreateTaskSheet = true
     }
 
@@ -584,10 +645,31 @@ struct ScheduleView: View {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    private func taskProfiles(for task: FamilyTask) -> [HouseholdMembership] {
-        let profileIds = task.involvedMemberIds ?? []
-        return profileIds.compactMap { id in
-            HouseholdMembership.mockMembers.first(where: { $0.id == id })
+    private func orderedTargetProfileIDs(for task: FamilyTask) -> [UUID] {
+        var ordered: [UUID] = []
+        var seen = Set<UUID>()
+        if let multi = task.targetProfileIds {
+            for id in multi where seen.insert(id).inserted {
+                ordered.append(id)
+            }
+        }
+        if let single = task.targetProfileId, seen.insert(single).inserted {
+            ordered.append(single)
+        }
+        return ordered
+    }
+
+    private func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {
+        let ids = orderedTargetProfileIDs(for: task)
+        guard ids.isEmpty == false else { return [] }
+        let profileById = Dictionary(uniqueKeysWithValues: viewModel.familyProfiles.map { ($0.id, $0) })
+        return ids.compactMap { id in
+            guard let profile = profileById[id] else { return nil }
+            return TaskCardAvatarSource(
+                id: profile.id,
+                displayName: profile.name,
+                imageURL: profile.avatarUrl.flatMap { URL(string: $0) }
+            )
         }
     }
 
@@ -605,13 +687,20 @@ struct ScheduleView: View {
     }
 
     private func assigneeLabel(for task: FamilyTask) -> String {
+        if task.involvesWholeHousehold {
+            return "所有人"
+        }
         guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
             return "所有人"
         }
-        if ids.count == 1 {
-            return HouseholdMembership.mockMembers.first(where: { $0.id == ids[0] })?.nickname ?? "成员"
+        let memberById = Dictionary(uniqueKeysWithValues: viewModel.householdMembers.map { ($0.id, $0) })
+        let names = ids.compactMap { id in memberById[id]?.nickname }
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { $0.isEmpty == false }
+        if names.isEmpty {
+            return ids.count == 1 ? "成员" : "\(ids.count) 人"
         }
-        return "\(ids.count) 人"
+        return names.joined(separator: "、")
     }
 
     #if canImport(Supabase)
@@ -674,159 +763,11 @@ private enum TaskEmergencyDialURLs {
 
 private struct TaskRowView: View {
     let task: FamilyTask
-    let profiles: [HouseholdMembership]
-
-    @Environment(\.openURL) private var openURL
-
-    var body: some View {
-        HStack(spacing: 0) {
-            statusColor
-                .frame(width: 4)
-
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(task.title)
-                            .font(.system(size: 16, weight: .bold))
-                            .lineLimit(2)
-                        if task.isAllDay == false {
-                            Label(taskTimeText, systemImage: "clock")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        if let estimatedCost = task.estimatedCost, estimatedCost > 0 {
-                            Text("¥\(estimatedCost)")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Spacer(minLength: 8)
-
-                    if let rawPhone = task.emergencyPhone,
-                       TaskEmergencyDialURLs.sanitizedPhone(rawPhone).isEmpty == false {
-                        Menu {
-                            if let url = TaskEmergencyDialURLs.telURL(phone: rawPhone) {
-                                Button {
-                                    openURL(url)
-                                } label: {
-                                    Label("电话", systemImage: "phone.fill")
-                                }
-                            }
-                            if let url = TaskEmergencyDialURLs.faceTimeURL(phone: rawPhone) {
-                                Button {
-                                    openURL(url)
-                                } label: {
-                                    Label("FaceTime 视频", systemImage: "video.circle.fill")
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "phone.circle.fill")
-                                .font(.system(size: 28, weight: .semibold))
-                                .symbolRenderingMode(.hierarchical)
-                                .foregroundStyle(.tint)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("紧急联系")
-                    }
-
-                    HStack(spacing: -8) {
-                        ForEach(Array(profiles.prefix(3).enumerated()), id: \.offset) { _, profile in
-                            AvatarView(profile: profile)
-                        }
-                    }
-                }
-
-                HStack {
-                    Spacer()
-                    Text(statusTitle)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(statusColor)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(statusColor.opacity(0.12))
-                        .clipShape(Capsule())
-                }
-            }
-            .padding(12)
-        }
-        .background(Color.taskCardListBackground(fromHex: task.backgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.black.opacity(0.06), lineWidth: 1)
-        )
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var statusColor: Color {
-        switch task.status {
-        case .new:
-            return .blue
-        case .accepted, .inProgress:
-            return .orange
-        case .completed:
-            return .green
-        case .issue, .expired, .failed, .cancelled:
-            return .red
-        }
-    }
-
-    private var statusTitle: String {
-        switch task.status {
-        case .new:
-            return "待接受"
-        case .accepted, .inProgress:
-            return "进行中"
-        case .completed:
-            return "已完成"
-        case .issue:
-            return "有问题"
-        case .expired:
-            return "已过期"
-        case .failed:
-            return "失败"
-        case .cancelled:
-            return "已取消"
-        }
-    }
-
-    private var taskTimeText: String {
-        let date = task.dueDate ?? task.originalDueDate ?? task.createdAt
-        return date.formatted(date: .omitted, time: .shortened)
-    }
-}
-
-private struct AvatarView: View {
-    let profile: HouseholdMembership
+    let forWhomAvatars: [TaskCardAvatarSource]
+    let assigneeLabel: String
 
     var body: some View {
-        ZStack {
-            if let avatarString = profile.avatarUrl, let url = URL(string: avatarString) {
-                KFImage.url(url)
-                    .placeholder { ProgressView() }
-                    .cacheMemoryOnly(false)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                fallbackAvatar
-            }
-        }
-        .frame(width: 24, height: 24)
-        .clipShape(Circle())
-        .overlay(
-            Circle()
-                .stroke(Color.white, lineWidth: 1.6)
-        )
-    }
-
-    private var fallbackAvatar: some View {
-        Circle()
-            .fill(Color.secondary.opacity(0.2))
-            .overlay {
-                Text(String(profile.nickname.prefix(1)))
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.primary)
-            }
+        TaskCardView(task: task, forWhomAvatars: forWhomAvatars, assigneeLabel: assigneeLabel)
     }
 }
 

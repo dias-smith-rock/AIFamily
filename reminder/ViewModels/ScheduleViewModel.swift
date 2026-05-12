@@ -9,11 +9,19 @@ import Supabase
 @MainActor
 final class ScheduleViewModel: ObservableObject {
     @Published private(set) var tasks: [FamilyTask] = []
+    /// 当前家庭下活跃成员（`household_memberships`），用于列表「谁去办」解析。
+    @Published private(set) var householdMembers: [HouseholdMembership] = []
+    /// 当前家庭档案（`family_profiles`），用于列表「为了谁」头像。
+    @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
 
     private let taskService: TaskDataService
+    private let membershipService: HouseholdMembershipDataService
+    private let familyProfileService: FamilyProfileDataService
     private var currentHouseholdId: UUID?
+    /// 避免在仅切换日期时重复拉取成员与档案。
+    private var rosterLoadedForHouseholdId: UUID?
 
     #if canImport(Supabase)
     private var tasksRealtimeChannel: RealtimeChannelV2?
@@ -23,12 +31,38 @@ final class ScheduleViewModel: ObservableObject {
     /// Realtime 防抖：批量写入（如循环任务）时合并为单次拉取。
     private var realtimeRefreshTask: Task<Void, Never>?
 
-    init(taskService: TaskDataService) {
+    private var rosterChangeCancellable: AnyCancellable?
+
+    init(
+        taskService: TaskDataService,
+        membershipService: HouseholdMembershipDataService,
+        familyProfileService: FamilyProfileDataService
+    ) {
         self.taskService = taskService
+        self.membershipService = membershipService
+        self.familyProfileService = familyProfileService
+
+        rosterChangeCancellable = NotificationCenter.default
+            .publisher(for: .scheduleHouseholdRosterDidChange)
+            .compactMap { notification in
+                notification.object as? UUID
+            }
+            .sink { [weak self] householdId in
+                Task { @MainActor [weak self] in
+                    await self?.refreshHouseholdRosterIfMatchesPostedHousehold(householdId)
+                }
+            }
     }
 
     func setHouseholdContext(_ householdId: UUID?) {
         currentHouseholdId = householdId
+        if householdId == nil {
+            householdMembers = []
+            familyProfiles = []
+            rosterLoadedForHouseholdId = nil
+        } else if rosterLoadedForHouseholdId != householdId {
+            rosterLoadedForHouseholdId = nil
+        }
     }
 
     private static func tasksCacheKey(for householdId: UUID) -> String {
@@ -42,6 +76,10 @@ final class ScheduleViewModel: ObservableObject {
                 errorMessage = "当前未选择家庭。"
             }
             return
+        }
+
+        if rosterLoadedForHouseholdId != householdId {
+            await loadHouseholdRoster(in: householdId)
         }
 
         let cacheKey = Self.tasksCacheKey(for: householdId)
@@ -79,6 +117,30 @@ final class ScheduleViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    private func loadHouseholdRoster(in householdId: UUID) async {
+        do {
+            async let memberships = membershipService.fetchMemberships(in: householdId)
+            async let profiles = familyProfileService.fetchProfiles(in: householdId)
+            let (rawMembers, rawProfiles) = try await (memberships, profiles)
+            householdMembers = rawMembers
+                .filter { $0.status == .active }
+                .sorted { $0.createdAt < $1.createdAt }
+            familyProfiles = rawProfiles
+            rosterLoadedForHouseholdId = householdId
+        } catch {
+            householdMembers = []
+            familyProfiles = []
+            rosterLoadedForHouseholdId = nil
+        }
+    }
+
+    /// 家庭页写入成员/档案后调用：`householdId` 须与当前日程上下文一致。
+    func refreshHouseholdRosterIfMatchesPostedHousehold(_ householdId: UUID?) async {
+        guard let householdId, householdId == currentHouseholdId else { return }
+        rosterLoadedForHouseholdId = nil
+        await loadHouseholdRoster(in: householdId)
     }
 
     #if canImport(Supabase)

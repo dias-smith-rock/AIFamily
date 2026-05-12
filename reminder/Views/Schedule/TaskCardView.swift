@@ -1,0 +1,246 @@
+import SwiftUI
+import Kingfisher
+
+// MARK: - 头像数据源（列表层解析后传入，避免卡片内发请求）
+
+struct TaskCardAvatarSource: Identifiable, Equatable {
+    let id: UUID
+    let displayName: String
+    let imageURL: URL?
+}
+
+// MARK: - TaskCardView
+
+/// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 叠层头像）。
+struct TaskCardView: View {
+    let task: FamilyTask
+    let forWhomAvatars: [TaskCardAvatarSource]
+    let assigneeLabel: String
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Rectangle()
+                .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
+                .frame(width: 6)
+                .frame(maxHeight: .infinity)
+
+            VStack(alignment: .leading, spacing: 8) {
+                headerRow
+
+                metaRow
+
+                forWhomRow
+
+                assigneeRow
+            }
+            .padding(.vertical, 10)
+            .padding(.horizontal, 12)
+        }
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+    }
+
+    // MARK: - Header
+
+    private var headerRow: some View {
+        HStack(alignment: .center) {
+            Text(task.title)
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+
+            Spacer(minLength: 8)
+
+            Text(statusTitle)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(statusCapsuleForeground)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(statusCapsuleBackground)
+                .clipShape(Capsule())
+        }
+    }
+
+    private var statusTitle: String {
+        switch task.status {
+        case .new: return "待接受"
+        case .accepted: return "已接受"
+        case .inProgress: return "进行中"
+        case .completed: return "已完成"
+        case .issue: return "有问题"
+        case .expired: return "已过期"
+        case .failed: return "失败"
+        case .cancelled: return "已取消"
+        }
+    }
+
+    private var statusCapsuleBackground: Color {
+        switch task.status {
+        case .new:
+            return Color.accentColor.opacity(0.15)
+        case .accepted, .inProgress:
+            return Color.orange.opacity(0.15)
+        case .completed:
+            return Color.green.opacity(0.15)
+        case .issue, .expired, .failed, .cancelled:
+            return Color.red.opacity(0.12)
+        }
+    }
+
+    private var statusCapsuleForeground: Color {
+        switch task.status {
+        case .new:
+            return Color.accentColor
+        case .accepted, .inProgress:
+            return Color.orange
+        case .completed:
+            return Color.green
+        case .issue, .expired, .failed, .cancelled:
+            return Color.red
+        }
+    }
+
+    // MARK: - Meta
+
+    private var metaRow: some View {
+        HStack(spacing: 16) {
+            Label(metaTimeText, systemImage: task.isAllDay ? "calendar" : "clock")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .labelStyle(.titleAndIcon)
+
+            if let place = locationDisplayName {
+                Label(place, systemImage: "mappin.and.ellipse")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .labelStyle(.titleAndIcon)
+                    .lineLimit(1)
+            }
+        }
+    }
+
+    private var metaTimeText: String {
+        let date = task.dueDate ?? task.originalDueDate ?? task.createdAt
+        if task.isAllDay {
+            return date.formatted(.dateTime.month(.abbreviated).day().weekday(.abbreviated))
+        }
+        return date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private var locationDisplayName: String? {
+        let name = task.locationData?.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let address = task.locationData?.address?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let name, name.isEmpty == false { return name }
+        if let address, address.isEmpty == false { return address }
+        return nil
+    }
+
+    // MARK: - 为了谁
+
+    private var forWhomRow: some View {
+        HStack(alignment: .center) {
+            Text("为了谁 (For)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            if forWhomAvatars.isEmpty {
+                Text("—")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            } else {
+                HStack(spacing: -8) {
+                    ForEach(forWhomAvatars) { source in
+                        TaskCardOverlappingAvatar(source: source)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - 谁去办
+
+    private var assigneeRow: some View {
+        HStack(alignment: .center) {
+            Text("谁去办 (Assignee)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Label(assigneeDisplayText, systemImage: "person")
+                .font(.footnote)
+                .foregroundStyle(assigneeForeground)
+                .labelStyle(.titleAndIcon)
+                .lineLimit(1)
+        }
+    }
+
+    private var assigneeDisplayText: String {
+        let trimmed = assigneeLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "未分配" : trimmed
+    }
+
+    private var assigneeForeground: Color {
+        let t = assigneeDisplayText
+        if t == "未分配" || t == "所有人" {
+            return Color.secondary
+        }
+        return Color.accentColor
+    }
+}
+
+// MARK: - 叠层头像
+
+private struct TaskCardOverlappingAvatar: View {
+    let source: TaskCardAvatarSource
+
+    var body: some View {
+        ZStack {
+            if let url = source.imageURL {
+                KFImage.url(url)
+                    .placeholder { Circle().fill(Color(.secondarySystemFill)) }
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                Circle()
+                    .fill(Color(.secondarySystemFill))
+                    .overlay {
+                        Text(String(source.displayName.prefix(1)))
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.primary)
+                    }
+            }
+        }
+        .frame(width: 24, height: 24)
+        .clipShape(Circle())
+        .overlay {
+            Circle()
+                .stroke(Color.white, lineWidth: 1.5)
+        }
+    }
+}
+
+#Preview("任务卡片") {
+    TaskCardView(
+        task: FamilyTask.mockTasks[0],
+        forWhomAvatars: [
+            TaskCardAvatarSource(
+                id: UUID(uuidString: "A1111111-1111-1111-1111-111111111111") ?? UUID(),
+                displayName: "老大",
+                imageURL: nil
+            ),
+            TaskCardAvatarSource(
+                id: UUID(uuidString: "B2222222-2222-2222-2222-222222222222") ?? UUID(),
+                displayName: "美美",
+                imageURL: nil
+            )
+        ],
+        assigneeLabel: "张老师"
+    )
+    .padding()
+    .background(Color(.systemGroupedBackground))
+}

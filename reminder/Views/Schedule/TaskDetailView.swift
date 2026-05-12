@@ -1,7 +1,9 @@
 import SwiftUI
+import Kingfisher
 
 //
-//  任务详情由 `ScheduleView` 以 `.sheet(item:)` 弹出；内部使用 `NavigationStack` 承载标题栏与「完成 / 编辑」Toolbar。
+//  任务详情：纯只读 + 底部状态扭转；编辑经右上角进入 `EditTaskView`。
+//  由 `ScheduleView` 以 `.sheet(item:)` 弹出，外层包 `NavigationStack`。
 //
 
 #if canImport(Supabase)
@@ -26,17 +28,20 @@ private struct RecurringTaskDeleteRPCParams: Encodable {
 struct TaskDetailView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @ObservedObject private var scheduleViewModel: ScheduleViewModel
 
     private let currentUserRole: MembershipRole
     private let assigneeDisplayNameFallback: String
 
     @State private var task: FamilyTask
+    @State private var showMoreOptions = false
     @State private var showingEditSheet = false
     @State private var isUpdatingStatus = false
     @State private var isDeletingTask = false
     @State private var statusError: String?
     @State private var assigneeLine: String
+    @State private var forWhomProfiles: [FamilyProfile] = []
     @State private var isShowingDeleteScopeDialog = false
 
     init(
@@ -55,18 +60,39 @@ struct TaskDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                headerBlock
+                titleHeader
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
 
-                attributeCard
+                coreInfoCard
                     .padding(.horizontal, 16)
-                    .padding(.top, 20)
+                    .padding(.top, 16)
+
+                forWhomSection
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
+                if showMoreOptions == false {
+                    expandMoreControl
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
+                }
+
+                if showMoreOptions {
+                    expandedReadonlySection
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    collapseMoreControl
+                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
+                }
 
                 if let statusError {
                     Text(statusError)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Color.red.opacity(0.9))
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.red)
                         .padding(.horizontal, 20)
                         .padding(.top, 16)
                 }
@@ -74,13 +100,12 @@ struct TaskDetailView: View {
             .padding(.bottom, bottomScrollPadding)
         }
         .background(Color(.systemGroupedBackground))
-        // Sheet 内嵌 NavigationStack 时：标题 + Toolbar（完成 / 编辑）
         .navigationTitle("任务详情")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("完成") {
+                Button("关闭") {
                     dismiss()
                 }
                 .fontWeight(.medium)
@@ -116,6 +141,7 @@ struct TaskDetailView: View {
                 Task {
                     await scheduleViewModel.loadTasks()
                     await refreshAssigneeLine()
+                    await loadForWhomProfiles()
                 }
             }
             .environmentObject(appRouter)
@@ -123,6 +149,7 @@ struct TaskDetailView: View {
         }
         .task(id: task.id) {
             await refreshAssigneeLine()
+            await loadForWhomProfiles()
         }
         .confirmationDialog(
             "删除任务",
@@ -146,7 +173,10 @@ struct TaskDetailView: View {
             Text(task.groupId == nil ? "此操作不可撤销。" : "请选择删除范围。")
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
-            Task { await refreshAssigneeLine() }
+            Task {
+                await refreshAssigneeLine()
+                await loadForWhomProfiles()
+            }
         }
         .preference(key: ScheduleAssistantFABVisibility.PreferenceKey.self, value: true)
     }
@@ -154,97 +184,59 @@ struct TaskDetailView: View {
     // MARK: - Layout
 
     private var bottomScrollPadding: CGFloat {
-        28
+        120
     }
 
-    // MARK: - 标题区
+    // MARK: - 大标题
 
-    private var headerBlock: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(task.title)
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.bottom, 20)
-
-            if let description = task.description?.trimmingCharacters(in: .whitespacesAndNewlines),
-               description.isEmpty == false {
-                Text(description)
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+    private var titleHeader: some View {
+        Text(task.title)
+            .font(.largeTitle)
+            .fontWeight(.bold)
+            .foregroundStyle(.primary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
-    // MARK: - 属性卡片
+    // MARK: - 核心信息卡片（始终）
 
-    private var attributeCard: some View {
+    private var coreInfoCard: some View {
         VStack(spacing: 0) {
-            attributeRow(
-                systemImage: "calendar",
-                label: "时间",
-                value: primaryScheduleText
-            )
+            coreRow(systemImage: "calendar", label: "时间", value: primaryScheduleText)
             cardDivider
-
-            attributeRow(
-                systemImage: "repeat",
-                label: "重复",
-                value: repeatDisplayText
-            )
+            coreRow(systemImage: "repeat", label: "重复", value: repeatDisplayText)
             cardDivider
-
-            attributeRow(
-                systemImage: "bell",
-                label: "提醒",
-                value: reminderDisplayText
-            )
+            coreRow(systemImage: "bell", label: "提醒", value: reminderDisplayText)
             cardDivider
-
-            attributeRow(
-                systemImage: "person.2",
-                label: "指派给",
-                value: assigneeLine
-            )
+            coreRow(systemImage: "person", label: "谁去办", value: assigneeLine)
             cardDivider
-
-            attributeRow(
-                systemImage: "banknote",
-                label: "预计开销",
-                value: costDisplayText
-            )
+            coreRow(systemImage: "banknote", label: "预计开销", value: costDisplayText, valueIsPlaceholder: costIsEmpty)
             cardDivider
-
-            attributeRow(
+            coreRow(
                 systemImage: "tag",
                 label: "当前状态",
-                value: statusFriendlyLabel
+                value: statusFriendlyLabel,
+                valueAccent: task.status == .new
             )
-
-            if let location = locationLine {
-                cardDivider
-                attributeRow(
-                    systemImage: "location",
-                    label: "地点",
-                    value: location
-                )
-            }
         }
-        .background(Color(UIColor.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
     }
 
     private var cardDivider: some View {
         Divider()
-            .padding(.leading, 52)
+            .padding(.leading, 50)
     }
 
-    private func attributeRow(systemImage: String, label: String, value: String) -> some View {
+    private func coreRow(
+        systemImage: String,
+        label: String,
+        value: String,
+        valueIsPlaceholder: Bool = false,
+        valueAccent: Bool = false
+    ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: systemImage)
                 .font(.body.weight(.medium))
@@ -259,20 +251,441 @@ struct TaskDetailView: View {
 
             Text(value)
                 .font(.body.weight(.medium))
-                .foregroundStyle(.primary)
+                .foregroundStyle(coreValueForeground(isPlaceholder: valueIsPlaceholder, accent: valueAccent))
                 .multilineTextAlignment(.trailing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 13)
     }
 
+    private func coreValueForeground(isPlaceholder: Bool, accent: Bool) -> Color {
+        if isPlaceholder {
+            return Color.secondary.opacity(0.75)
+        }
+        if accent {
+            return Color.accentColor
+        }
+        return Color.primary
+    }
+
+    // MARK: - 为了谁（纯展示）
+
+    private var forWhomSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "person.3")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text("为了谁")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    forWhomEveryoneChip
+                    ForEach(forWhomProfiles) { profile in
+                        forWhomProfileChip(profile: profile, selected: isProfileHighlighted(profile.id))
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    private var forWhomEveryoneChip: some View {
+        let selected = isForWhomEveryone
+        return VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(selected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemFill))
+                    .frame(width: 52, height: 52)
+                Image(systemName: "person.3.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.accentColor)
+                        .offset(x: 18, y: 18)
+                }
+            }
+            Text("所有人")
+                .font(.caption)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("为了谁：全家人")
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func forWhomProfileChip(profile: FamilyProfile, selected: Bool) -> some View {
+        VStack(spacing: 6) {
+            ZStack {
+                Circle()
+                    .fill(Color(.secondarySystemFill))
+                    .frame(width: 52, height: 52)
+
+                if let urlString = profile.avatarUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   let url = URL(string: urlString), urlString.isEmpty == false {
+                    KFImage(url)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 52, height: 52)
+                        .clipShape(Circle())
+                } else {
+                    Text(profileInitials(profile.name))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.primary)
+                }
+
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.accentColor)
+                        .offset(x: 18, y: 18)
+                }
+            }
+            .overlay {
+                Circle()
+                    .strokeBorder(selected ? Color.accentColor : Color.clear, lineWidth: 2.5)
+                    .frame(width: 56, height: 56)
+            }
+
+            Text(profile.name)
+                .font(.caption)
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .frame(maxWidth: 72)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(profile.name)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func profileInitials(_ name: String) -> String {
+        let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let c = t.first else { return "?" }
+        return String(c).uppercased()
+    }
+
+    private var highlightedProfileIds: Set<UUID> {
+        var s = Set<UUID>()
+        if let single = task.targetProfileId {
+            s.insert(single)
+        }
+        if let multi = task.targetProfileIds {
+            multi.forEach { s.insert($0) }
+        }
+        return s
+    }
+
+    private var isForWhomEveryone: Bool {
+        highlightedProfileIds.isEmpty
+    }
+
+    private func isProfileHighlighted(_ id: UUID) -> Bool {
+        highlightedProfileIds.contains(id)
+    }
+
+    // MARK: - 渐进展开
+
+    private var expandMoreControl: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                showMoreOptions = true
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text("显示更多选项")
+                    .font(.subheadline.weight(.semibold))
+                Text("˅")
+                    .font(.subheadline.weight(.bold))
+            }
+            .foregroundStyle(.tint)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var collapseMoreControl: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.22)) {
+                showMoreOptions = false
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text("收起更多选项")
+                    .font(.subheadline.weight(.semibold))
+                Text("˄")
+                    .font(.subheadline.weight(.bold))
+            }
+            .foregroundStyle(.tint)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - 展开区（只读，对齐设计稿）
+
+    private var expandedReadonlySection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            expandedCard(title: "任务优先级") {
+                priorityReadonlySegmentVisual
+            }
+
+            expandedCard(title: "紧急联系号码 / 会议链接") {
+                emergencyReadonlyBlock
+            }
+
+            expandedCard(title: "地理位置") {
+                locationReadonlyRow
+            }
+
+            expandedCard(title: "更多细节") {
+                readonlyMultilineBlock(
+                    text: descriptionMoreDetailsPart,
+                    emptyPlaceholder: "暂无备注"
+                )
+            }
+
+            expandedCard(title: "财务与备注") {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack {
+                        Text("预计开销")
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                        Spacer(minLength: 12)
+                        Text(financeCostLineText)
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(financeCostIsPlaceholder ? .tertiary : .primary)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("详细说明")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        readonlyMultilineBlock(
+                            text: descriptionFinancePart,
+                            emptyPlaceholder: "可填写开支明细、支付方式等…",
+                            emptyAsCaptionHint: true
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /// 与新建任务表单一致：`更多细节` 与 `财务详细说明` 以双换行拼在 `description`。
+    private var descriptionParts: (more: String?, finance: String?) {
+        let raw = task.description?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if raw.isEmpty { return (nil, nil) }
+        let parts = raw.components(separatedBy: "\n\n")
+        if parts.count >= 2 {
+            let head = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
+            let tail = parts.dropFirst().joined(separator: "\n\n").trimmingCharacters(in: .whitespacesAndNewlines)
+            return (head.isEmpty ? nil : head, tail.isEmpty ? nil : tail)
+        }
+        return (raw, nil)
+    }
+
+    private var descriptionMoreDetailsPart: String? {
+        descriptionParts.more
+    }
+
+    private var descriptionFinancePart: String? {
+        descriptionParts.finance
+    }
+
+    private var financeCostIsPlaceholder: Bool {
+        costIsEmpty
+    }
+
+    private var financeCostLineText: String {
+        costDisplayText
+    }
+
+    /// 只读分段外观（非 `Picker`）：展示当前优先级对应选中态。
+    private var priorityReadonlySegmentVisual: some View {
+        let isUrgent = (task.priority == .urgent || task.priority == .high)
+        return HStack(spacing: 0) {
+            Text("紧急")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .foregroundStyle(isUrgent ? Color.accentColor : Color.secondary)
+                .background(isUrgent ? Color.accentColor.opacity(0.18) : Color.clear)
+
+            Text("一般")
+                .font(.subheadline.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .foregroundStyle(isUrgent ? Color.secondary : Color.accentColor)
+                .background(isUrgent ? Color.clear : Color.accentColor.opacity(0.18))
+        }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("任务优先级：\(priorityReadonlyText)")
+    }
+
+    private var emergencyReadonlyBlock: some View {
+        let trimmed = task.emergencyPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return HStack(alignment: .center, spacing: 10) {
+            Group {
+                if trimmed.isEmpty {
+                    Text("无")
+                        .font(.body)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    emergencyReadonlyContent(trimmed)
+                }
+            }
+            Image(systemName: "person.crop.circle.fill")
+                .font(.title2)
+                .foregroundStyle(trimmed.isEmpty ? Color.secondary.opacity(0.35) : Color.accentColor)
+                .accessibilityHidden(true)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var locationReadonlyRow: some View {
+        let has = locationLine != nil
+        return HStack(spacing: 12) {
+            Image(systemName: "mappin.and.ellipse")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(has ? (locationLine ?? "") : "尚未添加位置")
+                .font(.body)
+                .foregroundStyle(has ? .primary : .tertiary)
+            Spacer(minLength: 8)
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    @ViewBuilder
+    private func readonlyMultilineBlock(
+        text: String?,
+        emptyPlaceholder: String,
+        emptyAsCaptionHint: Bool = false
+    ) -> some View {
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmed.isEmpty {
+            Text(emptyPlaceholder)
+                .font(emptyAsCaptionHint ? .subheadline : .body)
+                .italic(emptyAsCaptionHint == false)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .frame(minHeight: emptyAsCaptionHint ? 72 : 88, alignment: .topLeading)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        } else {
+            Text(trimmed)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .frame(minHeight: 88, alignment: .topLeading)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+    }
+
+    private func expandedCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    private var priorityReadonlyText: String {
+        switch task.priority {
+        case .urgent, .high:
+            return "🔴 紧急"
+        case .normal, .low:
+            return "🟢 一般"
+        @unknown default:
+            return "🟢 一般"
+        }
+    }
+
+    @ViewBuilder
+    private func emergencyReadonlyContent(_ raw: String) -> some View {
+        if let url = dialOrWebURL(from: raw) {
+            Text(raw)
+                .font(.body)
+                .foregroundStyle(.tint)
+                .underline()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    openURL(url)
+                }
+                .accessibilityHint("轻点以拨打或打开链接")
+        } else {
+            Text(raw)
+                .font(.body)
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func dialOrWebURL(from raw: String) -> URL? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.lowercased().hasPrefix("http://") || trimmed.lowercased().hasPrefix("https://") {
+            return URL(string: trimmed)
+        }
+        let collapsed = trimmed.filter { !$0.isWhitespace && !$0.isNewline }
+        let digits = collapsed.filter { $0.isNumber || $0 == "+" }
+        guard digits.isEmpty == false else { return nil }
+        return URL(string: "tel:\(digits)")
+    }
+
     // MARK: - 属性格式化
 
     private var primaryScheduleText: String {
+        let start = scheduledAt
         if task.isAllDay {
-            return Self.dayFormatter.string(from: scheduledAt)
+            var s = Self.dayFormatter.string(from: start)
+            if let end = task.endDatetime {
+                s += " – \(Self.dayFormatter.string(from: end))"
+            }
+            return s
         }
-        return Self.dateTimeFormatter.string(from: scheduledAt)
+        var base = Self.dateTimeFormatter.string(from: start)
+        if let end = task.endDatetime, end > start {
+            base += " – \(Self.timeFormatter.string(from: end))"
+        }
+        return base
     }
 
     private var scheduledAt: Date {
@@ -298,6 +711,14 @@ struct TaskDetailView: View {
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.calendar = chineseCalendar
         formatter.dateFormat = "M月d日 EEEE"
+        return formatter
+    }()
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.calendar = chineseCalendar
+        formatter.dateFormat = "HH:mm"
         return formatter
     }()
 
@@ -328,8 +749,13 @@ struct TaskDetailView: View {
         }
     }
 
+    private var costIsEmpty: Bool {
+        guard let minor = task.estimatedCost else { return true }
+        return minor == 0
+    }
+
     private var costDisplayText: String {
-        guard let minor = task.estimatedCost else { return "—" }
+        guard let minor = task.estimatedCost else { return "无" }
         if minor == 0 { return "无" }
         let value = Double(minor) / 100.0
         let symbol = Locale.current.currencySymbol ?? "¥"
@@ -363,7 +789,7 @@ struct TaskDetailView: View {
         return nil
     }
 
-    // MARK: - 指派明细
+    // MARK: - 数据加载
 
     @MainActor
     private func refreshAssigneeLine() async {
@@ -375,10 +801,7 @@ struct TaskDetailView: View {
             assigneeLine = "所有人"
             return
         }
-        guard let householdId = appRouter.selectedHouseholdId else {
-            assigneeLine = assigneeDisplayNameFallback
-            return
-        }
+        let householdId = appRouter.selectedHouseholdId ?? task.householdId
 
         #if canImport(Supabase)
         do {
@@ -405,6 +828,27 @@ struct TaskDetailView: View {
         #endif
     }
 
+    @MainActor
+    private func loadForWhomProfiles() async {
+        let householdId = appRouter.selectedHouseholdId ?? task.householdId
+        #if canImport(Supabase)
+        do {
+            let rows: [FamilyProfile] = try await SupabaseManager.shared.client
+                .from("family_profiles")
+                .select("id,household_id,name,user_id,avatar_url")
+                .eq("household_id", value: householdId.uuidString)
+                .order("created_at", ascending: true)
+                .execute()
+                .value
+            forWhomProfiles = rows
+        } catch {
+            forWhomProfiles = []
+        }
+        #else
+        forWhomProfiles = []
+        #endif
+    }
+
     private var canEditTask: Bool {
         switch currentUserRole {
         case .admin, .creator: return true
@@ -412,7 +856,7 @@ struct TaskDetailView: View {
         }
     }
 
-    // MARK: - 底部状态机（挂于 ScrollView.safeAreaInset）
+    // MARK: - 底部状态机
 
     private var statusMachineFooter: some View {
         VStack(spacing: 0) {
@@ -458,6 +902,20 @@ struct TaskDetailView: View {
                         .foregroundStyle(.secondary)
                         .disabled(isUpdatingStatus)
                     }
+
+                case .inProgress:
+                    Button {
+                        Task { await updateTaskStatus(to: .completed) }
+                    } label: {
+                        Text("标记为完成")
+                            .font(.body.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.green)
+                    .controlSize(.large)
+                    .disabled(isUpdatingStatus)
 
                 default:
                     Text("✅ 该任务已完结")
@@ -512,6 +970,7 @@ struct TaskDetailView: View {
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
             await refreshAssigneeLine()
+            await loadForWhomProfiles()
         } catch {
             statusError = error.localizedDescription
         }

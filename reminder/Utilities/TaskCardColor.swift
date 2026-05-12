@@ -3,6 +3,17 @@ import SwiftUI
 // MARK: - Hex ↔ SwiftUI（任务卡片 `background_color`）
 
 extension Color {
+    /// 列表卡片左侧强调条：`nil`/非法十六进制时返回 **系统强调色**（与 `taskCardListBackground` 的「卡片底色」语义不同）。
+    static func taskCardLeadingAccent(fromHex hex: String?) -> Color {
+        guard let raw = hex?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false else {
+            return Color.accentColor
+        }
+        guard let rgb = RGBComponents.parseHexString(raw) else {
+            return Color.accentColor
+        }
+        return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+
     /// 列表卡片：无自定义色或解析失败时使用系统二级分组背景。
     static func taskCardListBackground(fromHex hex: String?) -> Color {
         guard let raw = hex?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false else {

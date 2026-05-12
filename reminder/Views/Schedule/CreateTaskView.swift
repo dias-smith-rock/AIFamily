@@ -6,6 +6,8 @@ import Supabase
 
 extension Notification.Name {
     static let scheduleTasksDidChange = Notification.Name("scheduleTasksDidChange")
+    /// `object`：`UUID`（`households.id`）。家庭页保存成员/档案后发出，日程列表应刷新 roster 缓存。
+    static let scheduleHouseholdRosterDidChange = Notification.Name("scheduleHouseholdRosterDidChange")
 }
 
 private enum RecurringTaskScope {
@@ -120,6 +122,8 @@ struct CreateTaskView: View {
     init(
         editingTask: FamilyTask? = nil,
         initialTitle: String? = nil,
+        defaultDueDate: Date? = nil,
+        defaultAllDayForNewTask: Bool = true,
         onSaveSuccess: ((Date) -> Void)? = nil,
         onUpdateSuccess: ((FamilyTask) -> Void)? = nil
     ) {
@@ -161,11 +165,17 @@ struct CreateTaskView: View {
             _locationName = State(initialValue: task.locationData?.name ?? "")
         } else {
             _title = State(initialValue: initialTitle ?? "")
-            let initialDue = Date()
-            _dueDate = State(initialValue: initialDue)
+            let calendar = Calendar.current
+            let resolvedDue: Date = {
+                if let d = defaultDueDate {
+                    return calendar.startOfDay(for: d)
+                }
+                return calendar.startOfDay(for: Date())
+            }()
+            _dueDate = State(initialValue: resolvedDue)
             _hasEndTime = State(initialValue: false)
-            _endTime = State(initialValue: initialDue)
-            _isAllDay = State(initialValue: false)
+            _endTime = State(initialValue: resolvedDue)
+            _isAllDay = State(initialValue: defaultAllDayForNewTask)
             _repeatOption = State(initialValue: .never)
             _reminderOption = State(initialValue: .atTimeOfEvent)
             _selectedAssigneeIds = State(initialValue: [])

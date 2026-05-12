@@ -10,7 +10,11 @@ final class ViewModelFactory: ObservableObject {
     }
 
     func makeScheduleViewModel() -> ScheduleViewModel {
-        ScheduleViewModel(taskService: services.taskService)
+        ScheduleViewModel(
+            taskService: services.taskService,
+            membershipService: services.membershipService,
+            familyProfileService: services.familyProfileService
+        )
     }
 
     func makeFeedbackFeedViewModel() -> FeedbackFeedViewModel {
