@@ -220,6 +220,7 @@ final class ScheduleViewModel: ObservableObject {
             tasks.sort { lhs, rhs in
                 (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
             }
+            syncAlarms(for: createdTask)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -240,8 +241,24 @@ final class ScheduleViewModel: ObservableObject {
             tasks.sort { lhs, rhs in
                 (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
             }
+            syncAlarms(for: updatedTask)
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// 将本地通知与任务提醒规则对齐（保存 / 导入后可调用）。
+    /// 必须为**同步**方法：在首行从 `FamilyTask` 拆出 `TaskAlarmPayload`，再 `Task` 派发到通知 actor。
+    /// 若把大体积 `FamilyTask` 作为 `async` 函数入参，挂起恢复后帧内副本可能损坏（更新任务时 `memcpy`/LLDB parent NULL）。
+    func syncAlarms(for task: FamilyTask) {
+        let payload = TaskAlarmPayload(schedulingFrom: task)
+        #if DEBUG
+        print(
+            "[ScheduleViewModel] syncAlarms 从 FamilyTask 已抽出 DTO taskId=\(task.id) payloadTaskId=\(payload.id) isAllDay=\(payload.isAllDay)"
+        )
+        #endif
+        Task {
+            await NotificationManager.shared.syncTaskAlarms(for: payload)
         }
     }
 
@@ -255,6 +272,10 @@ final class ScheduleViewModel: ObservableObject {
     /// 成员详情页状态机：仅 PATCH `status`，避免整行写入与并发覆盖。
     func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
         errorMessage = nil
+
+        if status == .completed {
+            await NotificationManager.shared.cancelAllPending(for: taskId)
+        }
 
         let updated = try await taskService.patchTaskStatus(taskId: taskId, to: status)
         if let index = tasks.firstIndex(where: { $0.id == updated.id }) {
@@ -270,6 +291,7 @@ final class ScheduleViewModel: ObservableObject {
 
     func deleteTask(taskId: UUID) async {
         errorMessage = nil
+        await NotificationManager.shared.cancelAllPending(for: taskId)
         do {
             try await taskService.deleteTask(taskId: taskId)
             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {

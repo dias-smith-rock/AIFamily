@@ -94,7 +94,7 @@ struct CreateTaskView: View {
     @State private var endTime = Date()
     @State private var isAllDay = false
     @State private var repeatOption: TaskRepeatOption = .never
-    @State private var reminderOption: TaskReminderOption = .atTimeOfEvent
+    @State private var reminderOption: TaskReminderOption = .minutesBefore15
 
     @State private var selectedAssigneeIds: Set<UUID> = []
     /// `family_profiles.id`：「为了谁」；空表示未限定具体档案（全家）。
@@ -118,6 +118,8 @@ struct CreateTaskView: View {
     private let initialTitle: String?
     private let onSaveSuccess: ((Date) -> Void)?
     private let onUpdateSuccess: ((FamilyTask) -> Void)?
+    /// 保存成功后同步本地通知（由外层注入 `ScheduleViewModel.syncAlarms`）。须为同步闭包，避免再经 `async` 传递 `FamilyTask`。
+    private let onAlarmSync: ((FamilyTask) -> Void)?
 
     init(
         editingTask: FamilyTask? = nil,
@@ -125,12 +127,14 @@ struct CreateTaskView: View {
         defaultDueDate: Date? = nil,
         defaultAllDayForNewTask: Bool = true,
         onSaveSuccess: ((Date) -> Void)? = nil,
-        onUpdateSuccess: ((FamilyTask) -> Void)? = nil
+        onUpdateSuccess: ((FamilyTask) -> Void)? = nil,
+        onAlarmSync: ((FamilyTask) -> Void)? = nil
     ) {
         self.editingTask = editingTask
         self.initialTitle = initialTitle
         self.onSaveSuccess = onSaveSuccess
         self.onUpdateSuccess = onUpdateSuccess
+        self.onAlarmSync = onAlarmSync
 
         if let task = editingTask {
             _title = State(initialValue: task.title)
@@ -177,7 +181,7 @@ struct CreateTaskView: View {
             _endTime = State(initialValue: resolvedDue)
             _isAllDay = State(initialValue: defaultAllDayForNewTask)
             _repeatOption = State(initialValue: .never)
-            _reminderOption = State(initialValue: .atTimeOfEvent)
+            _reminderOption = State(initialValue: .minutesBefore15)
             _selectedAssigneeIds = State(initialValue: [])
             _selectedTargetProfileIds = State(initialValue: [])
             _note = State(initialValue: "")
@@ -1080,6 +1084,7 @@ struct CreateTaskView: View {
                 )
             }
 
+            onAlarmSync?(updated)
             onUpdateSuccess?(updated)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
@@ -1139,6 +1144,11 @@ struct CreateTaskView: View {
                 .from("tasks")
                 .insert(payloads)
                 .execute()
+            for payload in payloads {
+                if let synthetic = familyTaskFromInsertPayload(payload) {
+                    onAlarmSync?(synthetic)
+                }
+            }
             onSaveSuccess?(dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
@@ -1260,7 +1270,9 @@ private enum TaskRepeatOption: String, CaseIterable, Identifiable {
 private enum TaskReminderOption: String, CaseIterable, Identifiable {
     case none
     case atTimeOfEvent
-    case minutesBefore10
+    case minutesBefore5
+    case minutesBefore15
+    case minutesBefore30
     case hourBefore1
 
     var id: String { rawValue }
@@ -1269,8 +1281,10 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         switch self {
         case .none: return "无"
         case .atTimeOfEvent: return "准时"
-        case .minutesBefore10: return "提前 10 分钟"
-        case .hourBefore1: return "提前 1 小时"
+        case .minutesBefore5: return "提前5分钟"
+        case .minutesBefore15: return "提前15分钟"
+        case .minutesBefore30: return "提前30分钟"
+        case .hourBefore1: return "提前1小时"
         }
     }
 
@@ -1278,7 +1292,9 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         switch self {
         case .none: return nil
         case .atTimeOfEvent: return [0]
-        case .minutesBefore10: return [10]
+        case .minutesBefore5: return [5]
+        case .minutesBefore15: return [15]
+        case .minutesBefore30: return [30]
         case .hourBefore1: return [60]
         }
     }
@@ -1288,15 +1304,32 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
             self = .none
             return
         }
-        if offsets == [0] {
+        if offsets.contains(0), offsets.allSatisfy({ $0 == 0 }) {
             self = .atTimeOfEvent
-        } else if offsets.contains(10) {
-            self = .minutesBefore10
-        } else if offsets.contains(60) {
-            self = .hourBefore1
-        } else {
-            self = .atTimeOfEvent
+            return
         }
+        if offsets.contains(5) {
+            self = .minutesBefore5
+            return
+        }
+        if offsets.contains(15) {
+            self = .minutesBefore15
+            return
+        }
+        if offsets.contains(30) {
+            self = .minutesBefore30
+            return
+        }
+        if offsets.contains(60) {
+            self = .hourBefore1
+            return
+        }
+        /// 旧版「提前 10 分钟」数据映射为当前最接近项。
+        if offsets.contains(10) {
+            self = .minutesBefore15
+            return
+        }
+        self = .minutesBefore15
     }
 }
 
@@ -1587,6 +1620,45 @@ private extension CreateTaskView {
             }
         }
         return output
+    }
+
+    /// 插入成功后用于本地闹钟同步（字段与写入 payload 一致）。
+    func familyTaskFromInsertPayload(_ payload: TaskInsertPayload) -> FamilyTask? {
+        guard let creatorUUID = UUID(uuidString: payload.creatorId) else { return nil }
+        guard let status = TaskStatus(rawValue: payload.status) else { return nil }
+        let priority = TaskPriority(rawValue: payload.priority) ?? .normal
+        return FamilyTask(
+            id: payload.id,
+            householdId: payload.householdId,
+            creatorId: creatorUUID,
+            parentTaskId: nil,
+            groupId: payload.groupId,
+            originalDueDate: nil,
+            involvedMemberIds: payload.involvedMemberIds,
+            targetProfileId: nil,
+            targetProfileIds: payload.targetProfileIds,
+            targetSubject: nil,
+            title: payload.title,
+            description: payload.description,
+            originalPrompt: nil,
+            attachmentUrls: nil,
+            externalContacts: nil,
+            locationData: payload.locationData,
+            externalSyncRefs: nil,
+            alarmSetBy: nil,
+            status: status,
+            priority: priority,
+            dueDate: payload.dueDate,
+            endDatetime: payload.endDatetime,
+            isAllDay: payload.isAllDay,
+            recurrenceRule: payload.recurrenceRule,
+            reminderOffsets: payload.reminderOffsets,
+            estimatedCost: payload.estimatedCost,
+            backgroundColor: payload.backgroundColor,
+            emergencyPhone: payload.emergencyPhone,
+            createdAt: payload.createdAt,
+            updatedAt: payload.updatedAt
+        )
     }
 }
 

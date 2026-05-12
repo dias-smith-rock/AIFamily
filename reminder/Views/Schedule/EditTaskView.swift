@@ -6,11 +6,23 @@ struct EditTaskView: View {
 
     let task: FamilyTask
     let onUpdateSuccess: (FamilyTask) -> Void
+    var onAlarmSync: ((FamilyTask) -> Void)?
+
+    init(
+        task: FamilyTask,
+        onUpdateSuccess: @escaping (FamilyTask) -> Void,
+        onAlarmSync: ((FamilyTask) -> Void)? = nil
+    ) {
+        self.task = task
+        self.onUpdateSuccess = onUpdateSuccess
+        self.onAlarmSync = onAlarmSync
+    }
 
     var body: some View {
         CreateTaskView(
             editingTask: task,
-            onUpdateSuccess: onUpdateSuccess
+            onUpdateSuccess: onUpdateSuccess,
+            onAlarmSync: onAlarmSync
         )
         .environmentObject(appRouter)
     }

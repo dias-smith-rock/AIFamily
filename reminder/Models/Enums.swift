@@ -38,7 +38,7 @@ enum ContactMethod: String, Codable, Equatable, CaseIterable {
 
 // MARK: - Task
 
-enum TaskStatus: String, Codable, Equatable {
+enum TaskStatus: String, Codable, Equatable, Sendable {
     case new
     case accepted
     case inProgress = "in_progress"

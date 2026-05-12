@@ -43,6 +43,7 @@ struct TaskDetailView: View {
     @State private var assigneeLine: String
     @State private var forWhomProfiles: [FamilyProfile] = []
     @State private var isShowingDeleteScopeDialog = false
+    @State private var showCompletedReminderCleanupAlert = false
 
     init(
         initialTask: FamilyTask,
@@ -136,14 +137,20 @@ struct TaskDetailView: View {
             statusMachineFooter
         }
         .sheet(isPresented: $showingEditSheet) {
-            EditTaskView(task: task) { updated in
-                task = updated
-                Task {
-                    await scheduleViewModel.loadTasks()
-                    await refreshAssigneeLine()
-                    await loadForWhomProfiles()
+            EditTaskView(
+                task: task,
+                onUpdateSuccess: { updated in
+                    task = updated
+                    Task {
+                        await scheduleViewModel.loadTasks()
+                        await refreshAssigneeLine()
+                        await loadForWhomProfiles()
+                    }
+                },
+                onAlarmSync: { updated in
+                    scheduleViewModel.syncAlarms(for: updated)
                 }
-            }
+            )
             .environmentObject(appRouter)
             .presentationDragIndicator(.visible)
         }
@@ -743,8 +750,11 @@ struct TaskDetailView: View {
     private func reminderLabel(forMinutes m: Int) -> String {
         switch m {
         case 0: return "准时"
-        case 10: return "提前 10 分钟"
-        case 60: return "提前 1 小时"
+        case 5: return "提前5分钟"
+        case 10: return "提前10分钟"
+        case 15: return "提前15分钟"
+        case 30: return "提前30分钟"
+        case 60: return "提前1小时"
         default: return "提前 \(m) 分钟"
         }
     }
@@ -958,6 +968,16 @@ struct TaskDetailView: View {
                 .allowsHitTesting(true)
             }
         }
+        .alert("任务已完成", isPresented: $showCompletedReminderCleanupAlert) {
+            Button("是") {
+                Task {
+                    await NotificationManager.shared.cancelAllPending(for: task.id)
+                }
+            }
+            Button("否", role: .cancel) {}
+        } message: {
+            Text("是否需要为您删除对应的闹钟提醒？")
+        }
     }
 
     private func updateTaskStatus(to newStatus: TaskStatus) async {
@@ -966,11 +986,18 @@ struct TaskDetailView: View {
         statusError = nil
         defer { isUpdatingStatus = false }
 
+        if newStatus == .completed {
+            await NotificationManager.shared.cancelAllPending(for: task.id)
+        }
+
         do {
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
             await refreshAssigneeLine()
             await loadForWhomProfiles()
+            if newStatus == .completed, updated.isRecurring == false {
+                showCompletedReminderCleanupAlert = true
+            }
         } catch {
             statusError = error.localizedDescription
         }

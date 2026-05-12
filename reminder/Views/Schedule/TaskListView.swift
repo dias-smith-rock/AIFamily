@@ -96,6 +96,9 @@ struct TaskListView: View {
                         Task {
                             await viewModel.loadTasks()
                         }
+                    },
+                    onAlarmSync: { task in
+                        viewModel.syncAlarms(for: task)
                     }
                 )
                 .id(createTaskFormInstanceID)

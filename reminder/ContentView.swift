@@ -23,6 +23,11 @@ struct ContentView: View {
         .task {
             await appRouter.refreshStateFromBackend()
         }
+        .task(id: appRouter.appState) {
+            if case .activeMember = appRouter.appState {
+                _ = await NotificationManager.shared.requestAuthorizationIfNeeded()
+            }
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 Task {
