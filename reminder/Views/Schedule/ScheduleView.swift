@@ -1,10 +1,6 @@
 import SwiftUI
 import Kingfisher
 
-#if canImport(Supabase)
-import Supabase
-#endif
-
 private enum AllDayCardSlotWidthPreference: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -12,7 +8,8 @@ private enum AllDayCardSlotWidthPreference: PreferenceKey {
     }
 }
 
-struct ScheduleView: View {
+/// Day 模式：周历条 + 全天条 + 锚点时间轴（由 `TaskListView` 嵌入）。
+struct TaskModeDayView: View {
     private let taskFlowTimeColumnWidth: CGFloat = 50
     private let taskFlowCompactGapHeight: CGFloat = 40
     private let taskFlowLongIdleThreshold: TimeInterval = 3600
@@ -24,156 +21,49 @@ struct ScheduleView: View {
     }
 
     /// 固定锚点：用于把 TabView 页码映射成真实自然周（与 `weekOffset` 搭配使用）。
-    @State private var weekEpochStart: Date = ScheduleView.startOfWeek(for: Date())
+    @State private var weekEpochStart: Date = TaskModeDayView.startOfWeek(for: Date())
     /// 相对 `weekEpochStart` 的周偏移；与 `TabView` selection 绑定。
     @State private var weekOffset: Int = 0
 
-    @EnvironmentObject private var appRouter: AppRouter
-    @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
-    @State private var selectedDate: Date = Date()
-    @State private var isShowingCalendarSheet = false
-    @State private var isShowingCreateTaskSheet = false
-    @State private var createTaskFormInstanceID = UUID()
-    @State private var prefillTitle = ""
-    /// 新建任务默认「开始日」：`nil` 表示使用周历当前选中的 `selectedDate`。
-    @State private var createTaskDueDateOverride: Date?
-    @State private var taskForDetailSheet: FamilyTask?
-    @State private var currentMembershipRole: MembershipRole = .member
+    @ObservedObject var viewModel: ScheduleViewModel
+    @Binding var selectedDate: Date
+
     /// 横向全天列表可视区域宽度，用于单卡宽度与下方 `TaskCardView` 一致。
     @State private var allDayCardSlotWidth: CGFloat = 0
+
+    let onTaskSelect: (FamilyTask) -> Void
+    let onQuickCreate: (String, Date?) -> Void
     let onRequestAIInput: () -> Void
 
-    init(onRequestAIInput: @escaping () -> Void = {}) {
+    init(
+        selectedDate: Binding<Date>,
+        viewModel: ScheduleViewModel,
+        onTaskSelect: @escaping (FamilyTask) -> Void,
+        onQuickCreate: @escaping (String, Date?) -> Void,
+        onRequestAIInput: @escaping () -> Void = {}
+    ) {
+        self._selectedDate = selectedDate
+        self.viewModel = viewModel
+        self.onTaskSelect = onTaskSelect
+        self.onQuickCreate = onQuickCreate
         self.onRequestAIInput = onRequestAIInput
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 10) {
-                headerSection
-                weekSection
-                    .padding(.horizontal, 16)
-                if allDayTasks.isEmpty == false {
-                    allDayTasksPinnedStrip
-                }
-                timelineSection
+        VStack(alignment: .leading, spacing: 10) {
+            weekSection
+                .padding(.horizontal, 16)
+            if allDayTasks.isEmpty == false {
+                allDayTasksPinnedStrip
             }
-            .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .preference(key: ScheduleSelectedDayPreferenceKey.self, value: dayID(for: selectedDate))
-            .navigationBarHidden(true)
-            .sheet(item: $taskForDetailSheet) { task in
-                NavigationStack {
-                    TaskDetailView(
-                        initialTask: task,
-                        currentUserRole: currentMembershipRole,
-                        assigneeDisplayName: assigneeLabel(for: task),
-                        scheduleViewModel: viewModel
-                    )
-                    .environmentObject(appRouter)
-                }
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $isShowingCalendarSheet) {
-                CalendarSheetView(
-                    selectedDate: $selectedDate,
-                    monthTaskDots: monthTaskDots
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $isShowingCreateTaskSheet) {
-                CreateTaskView(
-                    initialTitle: prefillTitle,
-                    defaultDueDate: createTaskDueDateOverride ?? dayID(for: selectedDate),
-                    defaultAllDayForNewTask: true,
-                    onSaveSuccess: { createdDueDate in
-                        selectedDate = dayID(for: createdDueDate)
-                        Task {
-                            await viewModel.loadTasks()
-                        }
-                    }
-                )
-                .id(createTaskFormInstanceID)
-                .environmentObject(appRouter)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            }
-            .task {
-                viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-                await refreshCurrentMembershipRole()
-                await viewModel.loadTasks()
-                await viewModel.setupRealtimeListener()
-            }
-            .onDisappear {
-                Task {
-                    await viewModel.stopRealtimeListener()
-                }
-            }
-            .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
-                viewModel.setHouseholdContext(newValue)
-                Task {
-                    await refreshCurrentMembershipRole()
-                    await viewModel.loadTasks()
-                    await viewModel.setupRealtimeListener()
-                }
-            }
-            .onChange(of: appRouter.selectedMembershipId) { _, _ in
-                Task {
-                    await refreshCurrentMembershipRole()
-                }
-            }
-            .onChange(of: selectedDate) { _, _ in
-                let normalized = dayID(for: selectedDate)
-                if selectedDate != normalized {
-                    selectedDate = normalized
-                    return
-                }
-                let targetWeekPage = weekOffsetForDate(normalized)
-                if weekOffset != targetWeekPage {
-                    weekOffset = targetWeekPage
-                }
-                Task {
-                    await viewModel.loadTasks()
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
-                Task {
-                    await viewModel.loadTasks()
-                }
-            }
+            timelineSection
         }
-    }
-
-    private var headerSection: some View {
-        GlobalHeaderView {
-            Button {
-                isShowingCalendarSheet = true
-            } label: {
-                HStack(spacing: 8) {
-                    Text(selectedDateTitle)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
-                    Image(systemName: "chevron.down")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-        } trailing: {
-            HStack(spacing: 12) {
-                avatarBadge
-                Button {
-                    openCreateTask(prefill: "")
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 34, height: 34)
-                        .background(AppTheme.ColorToken.accent)
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
+        .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        .onChange(of: selectedDate) { _, newValue in
+            let normalized = dayID(for: newValue)
+            let targetWeekPage = weekOffsetForDate(normalized)
+            if weekOffset != targetWeekPage {
+                weekOffset = targetWeekPage
             }
         }
     }
@@ -319,7 +209,7 @@ struct ScheduleView: View {
                                         longIdleThreshold: taskFlowLongIdleThreshold,
                                         taskAnchor: { taskDisplayDate($0) },
                                         taskEnd: { taskEndDate($0) },
-                                        onTaskTap: { taskForDetailSheet = $0 },
+                                        onTaskTap: { onTaskSelect($0) },
                                         card: { task in
                                             TaskRowView(
                                                 task: task,
@@ -373,7 +263,7 @@ struct ScheduleView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            taskForDetailSheet = task
+                            onTaskSelect(task)
                         }
                     }
                 }
@@ -468,7 +358,7 @@ struct ScheduleView: View {
     /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
     private func actionChip(emoji: String, title: String, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
         Button {
-            openCreateTask(prefill: title, defaultDueDateOverride: defaultDueDate(for: dueDateKind))
+            onQuickCreate(title, defaultDueDate(for: dueDateKind))
         } label: {
             HStack(spacing: 10) {
                 Text(emoji)
@@ -484,26 +374,6 @@ struct ScheduleView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-    }
-
-    private var avatarBadge: some View {
-        Circle()
-            .fill(Color.secondary.opacity(0.18))
-            .frame(width: 34, height: 34)
-            .overlay {
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 20))
-                    .foregroundStyle(.secondary)
-            }
-    }
-
-    private var selectedDateTitle: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.calendar = Calendar.current
-        formatter.dateFormat = "d MMM yyyy"
-        return formatter.string(from: selectedDay)
     }
 
     private var selectedDateTasks: [FamilyTask] {
@@ -566,13 +436,6 @@ struct ScheduleView: View {
             }
         }
         return base
-    }
-
-    private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {
-        prefillTitle = prefill
-        createTaskDueDateOverride = defaultDueDateOverride
-        createTaskFormInstanceID = UUID()
-        isShowingCreateTaskSheet = true
     }
 
     private var selectedDay: Date {
@@ -666,35 +529,6 @@ struct ScheduleView: View {
         }
         return names.joined(separator: "、")
     }
-
-    #if canImport(Supabase)
-    private struct MembershipRoleRow: Decodable {
-        let role: MembershipRole
-    }
-    #endif
-
-    private func refreshCurrentMembershipRole() async {
-        guard let membershipId = appRouter.selectedMembershipId else {
-            currentMembershipRole = .member
-            return
-        }
-        #if canImport(Supabase)
-        do {
-            let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client
-                .from("household_memberships")
-                .select("role")
-                .eq("id", value: membershipId.uuidString)
-                .limit(1)
-                .execute()
-                .value
-            currentMembershipRole = rows.first?.role ?? .member
-        } catch {
-            currentMembershipRole = .member
-        }
-        #else
-        currentMembershipRole = .member
-        #endif
-    }
 }
 
 private enum TaskEmergencyDialURLs {
@@ -735,168 +569,11 @@ private struct TaskRowView: View {
     }
 }
 
-private struct CalendarSheetView: View {
-    @Binding var selectedDate: Date
-    let monthTaskDots: [Date: [Color]]
-    @Environment(\.dismiss) private var dismiss
-    @State private var monthOffset = 0
-    @State private var headerMonth: Date
-
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
-
-    init(selectedDate: Binding<Date>, monthTaskDots: [Date: [Color]]) {
-        self._selectedDate = selectedDate
-        self.monthTaskDots = monthTaskDots
-        let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: selectedDate.wrappedValue)) ?? selectedDate.wrappedValue
-        self._headerMonth = State(initialValue: monthStart)
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text(headerText)
-                    .font(.title2.bold())
-                Spacer()
-                Button("Today") {
-                    selectedDate = dayID(Date())
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        monthOffset = 0
-                    }
-                }
-                .font(.system(size: 13, weight: .semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.secondary.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 10))
-
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .bold))
-                        .frame(width: 32, height: 32)
-                        .background(Color.secondary.opacity(0.15))
-                        .clipShape(Circle())
-                }
-            }
-
-            HStack {
-                ForEach(Calendar.current.shortWeekdaySymbols, id: \.self) { symbol in
-                    Text(symbol)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                }
-            }
-
-            TabView(selection: $monthOffset) {
-                ForEach(-12...12, id: \.self) { offset in
-                    let month = monthDate(for: offset)
-                    let cells = monthGridCells(for: month)
-                    LazyVGrid(columns: columns, spacing: 8) {
-                        ForEach(cells.indices, id: \.self) { index in
-                            if let date = cells[index] {
-                                Button {
-                                    selectedDate = dayID(date)
-                                } label: {
-                                    VStack(spacing: 4) {
-                                        Text(date.formatted(.dateTime.day()))
-                                            .font(.system(size: 14, weight: .semibold))
-                                            .foregroundStyle(isSelected(date) ? .white : .primary)
-
-                                        HStack(spacing: 3) {
-                                            let dots = monthTaskDots[Calendar.current.startOfDay(for: date)] ?? []
-                                            ForEach(Array(dots.prefix(3).enumerated()), id: \.offset) { _, color in
-                                                Circle()
-                                                    .fill(isSelected(date) ? Color.white : color)
-                                                    .frame(width: 5, height: 5)
-                                            }
-                                        }
-                                        .frame(height: 8)
-                                    }
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                                    .background(isSelected(date) ? Color.black : Color.clear)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                Color.clear
-                                    .frame(height: 44)
-                            }
-                        }
-                    }
-                    .tag(offset)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .onChange(of: monthOffset) { _, newOffset in
-                headerMonth = monthDate(for: newOffset)
-            }
-            .onChange(of: selectedDate) { _, newDate in
-                let visibleOffset = monthOffsetDateDifference(from: newDate)
-                if (-12...12).contains(visibleOffset), visibleOffset != monthOffset {
-                    monthOffset = visibleOffset
-                    headerMonth = monthDate(for: visibleOffset)
-                }
-            }
-        }
-        .padding(16)
-    }
-
-    private var headerText: String {
-        headerMonth.formatted(.dateTime.month(.wide).year())
-    }
-
-    private func monthGridCells(for monthBaseDate: Date) -> [Date?] {
-        let calendar = Calendar.current
-        guard
-            let monthInterval = calendar.dateInterval(of: .month, for: monthBaseDate)
-        else {
-            return []
-        }
-
-        let firstDay = monthInterval.start
-        let totalDays = calendar.dateComponents([.day], from: firstDay, to: monthInterval.end).day ?? 0
-        let weekdayOfFirstDay = calendar.component(.weekday, from: firstDay)
-        let leadingSlots = (weekdayOfFirstDay - calendar.firstWeekday + 7) % 7
-
-        var cells: [Date?] = Array(repeating: nil, count: leadingSlots)
-        for dayOffset in 0..<totalDays {
-            if let date = calendar.date(byAdding: .day, value: dayOffset, to: firstDay) {
-                cells.append(date)
-            }
-        }
-        while cells.count % 7 != 0 {
-            cells.append(nil)
-        }
-
-        return cells
-    }
-
-    private func isSelected(_ date: Date) -> Bool {
-        Calendar.current.isDate(date, inSameDayAs: selectedDate)
-    }
-
-    private func monthDate(for offset: Int) -> Date {
-        let calendar = Calendar.current
-        let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
-        return calendar.date(byAdding: .month, value: offset, to: currentMonthStart) ?? currentMonthStart
-    }
-
-    private func monthOffsetDateDifference(from date: Date) -> Int {
-        let calendar = Calendar.current
-        let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
-        let targetMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
-        let diff = calendar.dateComponents([.month], from: currentMonthStart, to: targetMonthStart).month ?? 0
-        return max(-12, min(12, diff))
-    }
-
-    private func dayID(_ date: Date) -> Date {
-        Calendar.current.startOfDay(for: date)
-    }
-}
-
-#Preview {
-    ScheduleView()
-        .environmentObject(AppRouter())
+#Preview("Day mode") {
+    TaskModeDayView(
+        selectedDate: .constant(Date()),
+        viewModel: AppViewModels.makeScheduleViewModel(),
+        onTaskSelect: { _ in },
+        onQuickCreate: { _, _ in }
+    )
 }

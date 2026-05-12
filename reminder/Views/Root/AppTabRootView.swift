@@ -17,7 +17,7 @@ struct AppTabRootView: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             TabView(selection: $selectedTab) {
-                ScheduleView(onRequestAIInput: {
+                TaskListView(onRequestAIInput: {
                     showsAssistant = true
                 })
                 .tabItem {

@@ -3,7 +3,7 @@ import Kingfisher
 
 //
 //  任务详情：纯只读 + 底部状态扭转；编辑经右上角进入 `EditTaskView`。
-//  由 `ScheduleView` 以 `.sheet(item:)` 弹出，外层包 `NavigationStack`。
+//  由 `TaskListView` 以 `.sheet(item:)` 弹出，外层包 `NavigationStack`。
 //
 
 #if canImport(Supabase)
