@@ -5,9 +5,23 @@ import Kingfisher
 import Supabase
 #endif
 
+private enum AllDayCardSlotWidthPreference: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ScheduleView: View {
-    private let hourHeight: CGFloat = 100
-    private let timeAxisWidth: CGFloat = 60
+    private let taskFlowTimeColumnWidth: CGFloat = 50
+    private let taskFlowCompactGapHeight: CGFloat = 40
+    private let taskFlowLongIdleThreshold: TimeInterval = 3600
+    /// 未收到 ScrollView 宽度前占位，避免首张卡片过窄（约等于常见屏宽减去左右边距与时间列）。
+    private let allDayCardFallbackWidth: CGFloat = 300
+
+    private var resolvedAllDayCardWidth: CGFloat {
+        allDayCardSlotWidth > 8 ? allDayCardSlotWidth : allDayCardFallbackWidth
+    }
 
     /// 固定锚点：用于把 TabView 页码映射成真实自然周（与 `weekOffset` 搭配使用）。
     @State private var weekEpochStart: Date = ScheduleView.startOfWeek(for: Date())
@@ -25,6 +39,8 @@ struct ScheduleView: View {
     @State private var createTaskDueDateOverride: Date?
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
+    /// 横向全天列表可视区域宽度，用于单卡宽度与下方 `TaskCardView` 一致。
+    @State private var allDayCardSlotWidth: CGFloat = 0
     let onRequestAIInput: () -> Void
 
     init(onRequestAIInput: @escaping () -> Void = {}) {
@@ -37,6 +53,9 @@ struct ScheduleView: View {
                 headerSection
                 weekSection
                     .padding(.horizontal, 16)
+                if allDayTasks.isEmpty == false {
+                    allDayTasksPinnedStrip
+                }
                 timelineSection
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
@@ -291,33 +310,39 @@ struct ScheduleView: View {
                     ScrollViewReader { proxy in
                         ScrollView(.vertical, showsIndicators: false) {
                             VStack(spacing: 12) {
-                                if allDayTasks.isEmpty == false {
-                                    allDaySection
+                                if timedTasks.isEmpty == false {
+                                    ScheduleTaskAnchorFlow(
+                                        timedTasks: timedTasks,
+                                        selectedCalendarDay: selectedDay,
+                                        timeColumnWidth: taskFlowTimeColumnWidth,
+                                        compactGapHeight: taskFlowCompactGapHeight,
+                                        longIdleThreshold: taskFlowLongIdleThreshold,
+                                        taskAnchor: { taskDisplayDate($0) },
+                                        taskEnd: { taskEndDate($0) },
+                                        onTaskTap: { taskForDetailSheet = $0 },
+                                        card: { task in
+                                            TaskRowView(
+                                                task: task,
+                                                forWhomAvatars: forWhomAvatarSources(for: task),
+                                                assigneeLabel: assigneeLabel(for: task)
+                                            )
+                                        }
+                                    )
                                 }
-
-                                ZStack(alignment: .topLeading) {
-                                    timeGrid
-                                    taskCardsLayer
-                                    if Calendar.current.isDateInToday(selectedDate) {
-                                        currentTimeIndicator
-                                    }
-                                }
-                                .frame(height: hourHeight * 24, alignment: .topLeading)
                             }
                             .padding(.horizontal, 16)
                             .padding(.bottom, 24)
                         }
                         .onAppear {
-                            scrollToFocusedHour(with: proxy, animated: false)
+                            scrollTaskAnchorFlowToInitial(proxy: proxy, animated: false)
                         }
                         .onChange(of: selectedDate) { _, _ in
-                            scrollToFocusedHour(with: proxy)
+                            scrollTaskAnchorFlowToInitial(proxy: proxy)
                         }
                     }
 
-                    if timedTasks.isEmpty {
+                    if selectedDateTasks.isEmpty {
                         emptyStateView()
-                            .padding(.leading, timeAxisWidth)
                             .padding(.horizontal, 16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
@@ -327,93 +352,83 @@ struct ScheduleView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    private var timeGrid: some View {
-        VStack(spacing: 0) {
-            ForEach(0..<24, id: \.self) { hour in
-                HStack(alignment: .top, spacing: 0) {
-                    Text(String(format: "%02d:00", hour))
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: timeAxisWidth, alignment: .topTrailing)
-
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.22))
-                        .frame(width: 1)
-
-                    Spacer(minLength: 0)
-                }
-                .frame(height: hourHeight, alignment: .top)
-                .id(hour)
-            }
-        }
-    }
-
-    private var allDaySection: some View {
+    /// 周历下方置顶：`is_all_day` 任务专用紧凑卡片（标题 + 为了谁），横向滑动。
+    /// 左侧「全天」与时间列同宽左对齐；卡片宽度与锚点行右侧任务卡一致（随 ScrollView 可视宽度）。
+    private var allDayTasksPinnedStrip: some View {
         HStack(alignment: .top, spacing: 10) {
-            VStack(spacing: 6) {
-                Text("全天")
-                    .font(.caption2.bold())
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.secondary.opacity(0.12))
-                    .clipShape(Capsule())
+            Text("全天")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(width: taskFlowTimeColumnWidth, alignment: .leading)
+                .padding(.top, 2)
 
-                Rectangle()
-                    .fill(Color.secondary.opacity(0.22))
-                    .frame(width: 1, height: 14)
-            }
-            .frame(width: timeAxisWidth)
-
-            if allDayTasks.count <= 2 {
-                VStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
                     ForEach(allDayTasks) { task in
-                        TaskRowView(
+                        AllDayTaskRowView(
                             task: task,
-                            forWhomAvatars: forWhomAvatarSources(for: task),
-                            assigneeLabel: assigneeLabel(for: task)
+                            forWhomAvatars: forWhomAvatarSources(for: task)
                         )
-                            .onTapGesture {
-                                taskForDetailSheet = task
-                            }
-                    }
-                }
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(allDayTasks) { task in
-                            TaskRowView(
-                                task: task,
-                                forWhomAvatars: forWhomAvatarSources(for: task),
-                                assigneeLabel: assigneeLabel(for: task)
-                            )
-                                .frame(width: 220)
-                                .onTapGesture {
-                                    taskForDetailSheet = task
-                                }
+                        .frame(width: resolvedAllDayCardWidth)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            taskForDetailSheet = task
                         }
                     }
                 }
+                .padding(.vertical, 2)
+            }
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(
+                        key: AllDayCardSlotWidthPreference.self,
+                        value: proxy.size.width
+                    )
+                }
+            )
+            .onPreferenceChange(AllDayCardSlotWidthPreference.self) { width in
+                if abs(width - allDayCardSlotWidth) > 0.5 {
+                    allDayCardSlotWidth = width
+                }
             }
         }
+        .padding(.horizontal, 16)
+        /// 与下方「08:32」首行之间的区块留白（叠加上层 `VStack` spacing 10 ≈ 22–24pt）。
+        .padding(.bottom, 14)
     }
 
-    private var taskCardsLayer: some View {
-        GeometryReader { geo in
-            let cardWidth = max(140, geo.size.width - timeAxisWidth - 16)
-            ForEach(timedTasks) { task in
-                TaskRowView(
-                    task: task,
-                    forWhomAvatars: forWhomAvatarSources(for: task),
-                    assigneeLabel: assigneeLabel(for: task)
-                )
-                    .frame(width: cardWidth, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .offset(x: timeAxisWidth + 10, y: yOffset(for: taskDisplayDate(task)))
-                    .onTapGesture {
-                        taskForDetailSheet = task
-                    }
+    private func taskEndDate(_ task: FamilyTask) -> Date {
+        let cal = Calendar.current
+        let start = taskDisplayDate(task)
+        if let end = task.endDatetime {
+            return end
+        }
+        return cal.date(byAdding: .hour, value: 1, to: start) ?? start
+    }
+
+    private func scrollTaskAnchorFlowToInitial(proxy: ScrollViewProxy, animated: Bool = true) {
+        guard timedTasks.isEmpty == false else { return }
+        let cal = Calendar.current
+        let viewingToday = cal.isDateInToday(selectedDay)
+        let sorted = timedTasks.sorted { taskDisplayDate($0) < taskDisplayDate($1) }
+        guard let first = sorted.first else { return }
+        let firstID = "task-\(first.id.uuidString)"
+
+        let action = {
+            if viewingToday {
+                proxy.scrollTo(ScheduleAnchorFlowScrollIDs.nowMarker, anchor: .center)
+            } else {
+                proxy.scrollTo(firstID, anchor: .top)
             }
+        }
+
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                action()
+            }
+        } else {
+            action()
         }
     }
 
@@ -469,57 +484,6 @@ struct ScheduleView: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
-    }
-
-    private var currentTimeIndicator: some View {
-        let now = Date()
-        return HStack(alignment: .center, spacing: 6) {
-            Text(now.formatted(date: .omitted, time: .shortened))
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(.red)
-                .frame(width: timeAxisWidth, alignment: .trailing)
-
-            Circle()
-                .fill(.red)
-                .frame(width: 8, height: 8)
-
-            Rectangle()
-                .fill(.red)
-                .frame(height: 1.5)
-        }
-        .offset(y: yOffset(for: now))
-    }
-
-    private func yOffset(for date: Date) -> CGFloat {
-        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
-        let startHour = components.hour ?? 0
-        let startMinute = components.minute ?? 0
-        return CGFloat(startHour) * hourHeight + (CGFloat(startMinute) / 60.0) * hourHeight
-    }
-
-    private func scrollToFocusedHour(with proxy: ScrollViewProxy, animated: Bool = true) {
-        let calendar = Calendar.current
-        let targetHour: Int
-        if calendar.isDateInToday(selectedDate) {
-            let currentHour = calendar.component(.hour, from: Date())
-            targetHour = max(0, currentHour - 1)
-        } else {
-            if let firstTaskDate = timedTasks.first.map(taskDisplayDate) {
-                targetHour = max(0, min(23, calendar.component(.hour, from: firstTaskDate)))
-            } else {
-                targetHour = 8
-            }
-        }
-        let action = {
-            proxy.scrollTo(targetHour, anchor: .top)
-        }
-        if animated {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                action()
-            }
-        } else {
-            action()
-        }
     }
 
     private var avatarBadge: some View {

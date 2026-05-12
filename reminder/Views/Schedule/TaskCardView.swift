@@ -126,7 +126,7 @@ struct TaskCardView: View {
         if task.isAllDay {
             return date.formatted(.dateTime.month(.abbreviated).day().weekday(.abbreviated))
         }
-        return date.formatted(date: .abbreviated, time: .shortened)
+        return date.formatted(date: .omitted, time: .shortened)
     }
 
     private var locationDisplayName: String? {
