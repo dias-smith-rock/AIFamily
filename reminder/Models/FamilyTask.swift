@@ -35,6 +35,10 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     var endDatetime: Date? = nil
     var isAllDay: Bool
     var recurrenceRule: String?
+    /// `tasks.recurrence_end_date`（TIMESTAMPTZ）；无重复规则时必须为 `nil`。
+    var recurrenceEndDate: Date? = nil
+    /// `tasks.recurrence_interval`；无重复规则时必须为 `nil`；有重复且未单独配置 UI 时由写入层使用 `1`。
+    var recurrenceInterval: Int? = nil
     var reminderOffsets: [Int]?
 
     var estimatedCost: Int?

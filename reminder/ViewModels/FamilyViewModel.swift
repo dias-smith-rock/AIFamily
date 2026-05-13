@@ -445,6 +445,8 @@ final class FamilyViewModel: ObservableObject {
             let title: String
             let dueDate: Date
             let recurrenceRule: String
+            let recurrenceEndDate: Date?
+            let recurrenceInterval: Int?
             let taskType: String
             let targetProfileIds: [UUID]
             let targetSubject: String
@@ -457,6 +459,8 @@ final class FamilyViewModel: ObservableObject {
                 case title
                 case dueDate = "due_date"
                 case recurrenceRule = "recurrence_rule"
+                case recurrenceEndDate = "recurrence_end_date"
+                case recurrenceInterval = "recurrence_interval"
                 case taskType = "task_type"
                 case targetProfileIds = "target_profile_ids"
                 case targetSubject = "target_subject"
@@ -606,6 +610,8 @@ final class FamilyViewModel: ObservableObject {
                     title: template.title,
                     dueDate: dueDate,
                     recurrenceRule: "yearly",
+                    recurrenceEndDate: nil,
+                    recurrenceInterval: 1,
                     taskType: "birthday_reminder",
                     targetProfileIds: [profile.id],
                     targetSubject: profile.name,

@@ -23,6 +23,8 @@ private struct TaskRecurringSingleSupplementPatch: Encodable {
     let priority: String
     let locationData: FamilyTask.LocationData?
     let targetProfileIds: [UUID]?
+    let recurrenceEndDate: Date?
+    let recurrenceInterval: Int?
 
     enum CodingKeys: String, CodingKey {
         case endDatetime = "end_datetime"
@@ -31,6 +33,8 @@ private struct TaskRecurringSingleSupplementPatch: Encodable {
         case priority
         case locationData = "location_data"
         case targetProfileIds = "target_profile_ids"
+        case recurrenceEndDate = "recurrence_end_date"
+        case recurrenceInterval = "recurrence_interval"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -60,6 +64,16 @@ private struct TaskRecurringSingleSupplementPatch: Encodable {
             try container.encode(targetProfileIds, forKey: .targetProfileIds)
         } else {
             try container.encodeNil(forKey: .targetProfileIds)
+        }
+        if let recurrenceEndDate {
+            try container.encode(recurrenceEndDate, forKey: .recurrenceEndDate)
+        } else {
+            try container.encodeNil(forKey: .recurrenceEndDate)
+        }
+        if let recurrenceInterval {
+            try container.encode(recurrenceInterval, forKey: .recurrenceInterval)
+        } else {
+            try container.encodeNil(forKey: .recurrenceInterval)
         }
     }
 }
@@ -970,7 +984,9 @@ struct CreateTaskView: View {
                                 emergencyPhone: resolvedEmergencyPhoneForPayload(),
                                 priority: formPriority.rawValue,
                                 locationData: resolvedLocationData(),
-                                targetProfileIds: resolvedTargetProfileIds
+                                targetProfileIds: resolvedTargetProfileIds,
+                                recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
+                                recurrenceInterval: resolvedRecurrenceIntervalForPayload()
                             )
                         )
                         .eq("id", value: existing.id.uuidString)
@@ -1000,6 +1016,8 @@ struct CreateTaskView: View {
                         endDatetime: resolvedEndDatetime(for: dueDate),
                         isAllDay: isAllDay,
                         recurrenceRule: repeatOption.recurrenceRule,
+                        recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
+                        recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                         reminderOffsets: reminderOption.reminderOffsetsMinutes,
                         estimatedCost: estimatedCostMinorUnits,
                         backgroundColor: resolvedBackgroundColorHex(),
@@ -1017,6 +1035,8 @@ struct CreateTaskView: View {
                         endDatetime: resolvedEndDatetime(for: dueDate),
                         isAllDay: isAllDay,
                         recurrenceRule: repeatOption.recurrenceRule,
+                        recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
+                        recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                         reminderOffsets: reminderOption.reminderOffsetsMinutes,
                         estimatedCost: estimatedCostMinorUnits,
                         backgroundColor: resolvedBackgroundColorHex(),
@@ -1075,6 +1095,8 @@ struct CreateTaskView: View {
                     endDatetime: resolvedEndDatetime(for: dueDate),
                     isAllDay: isAllDay,
                     recurrenceRule: repeatOption.recurrenceRule,
+                    recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
+                    recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
                     estimatedCost: estimatedCostMinorUnits,
                     backgroundColor: resolvedBackgroundColorHex(),
@@ -1131,6 +1153,8 @@ struct CreateTaskView: View {
                     endDatetime: resolvedEndDatetime(for: date),
                     isAllDay: isAllDay,
                     recurrenceRule: recurrence,
+                    recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
+                    recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
                     estimatedCost: estimatedCostMinorUnits,
                     backgroundColor: resolvedBackgroundColorHex(),
@@ -1361,6 +1385,8 @@ private struct TaskInsertPayload: Encodable {
     let endDatetime: Date?
     let isAllDay: Bool
     let recurrenceRule: String?
+    let recurrenceEndDate: Date?
+    let recurrenceInterval: Int?
     let reminderOffsets: [Int]?
     let estimatedCost: Int?
     let backgroundColor: String?
@@ -1384,6 +1410,8 @@ private struct TaskInsertPayload: Encodable {
         case endDatetime = "end_datetime"
         case isAllDay = "is_all_day"
         case recurrenceRule = "recurrence_rule"
+        case recurrenceEndDate = "recurrence_end_date"
+        case recurrenceInterval = "recurrence_interval"
         case reminderOffsets = "reminder_offsets"
         case estimatedCost = "estimated_cost"
         case backgroundColor = "background_color"
@@ -1420,7 +1448,21 @@ private struct TaskInsertPayload: Encodable {
             try container.encodeNil(forKey: .endDatetime)
         }
         try container.encode(isAllDay, forKey: .isAllDay)
-        try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
+        if let recurrenceRule {
+            try container.encode(recurrenceRule, forKey: .recurrenceRule)
+        } else {
+            try container.encodeNil(forKey: .recurrenceRule)
+        }
+        if let recurrenceEndDate {
+            try container.encode(recurrenceEndDate, forKey: .recurrenceEndDate)
+        } else {
+            try container.encodeNil(forKey: .recurrenceEndDate)
+        }
+        if let recurrenceInterval {
+            try container.encode(recurrenceInterval, forKey: .recurrenceInterval)
+        } else {
+            try container.encodeNil(forKey: .recurrenceInterval)
+        }
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
         try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
         if let backgroundColor {
@@ -1452,6 +1494,8 @@ private struct TaskUpdatePayload: Encodable {
     let endDatetime: Date?
     let isAllDay: Bool
     let recurrenceRule: String?
+    let recurrenceEndDate: Date?
+    let recurrenceInterval: Int?
     let reminderOffsets: [Int]?
     let estimatedCost: Int?
     let backgroundColor: String?
@@ -1469,6 +1513,8 @@ private struct TaskUpdatePayload: Encodable {
         case endDatetime = "end_datetime"
         case isAllDay = "is_all_day"
         case recurrenceRule = "recurrence_rule"
+        case recurrenceEndDate = "recurrence_end_date"
+        case recurrenceInterval = "recurrence_interval"
         case reminderOffsets = "reminder_offsets"
         case estimatedCost = "estimated_cost"
         case backgroundColor = "background_color"
@@ -1499,7 +1545,21 @@ private struct TaskUpdatePayload: Encodable {
             try container.encodeNil(forKey: .endDatetime)
         }
         try container.encode(isAllDay, forKey: .isAllDay)
-        try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
+        if let recurrenceRule {
+            try container.encode(recurrenceRule, forKey: .recurrenceRule)
+        } else {
+            try container.encodeNil(forKey: .recurrenceRule)
+        }
+        if let recurrenceEndDate {
+            try container.encode(recurrenceEndDate, forKey: .recurrenceEndDate)
+        } else {
+            try container.encodeNil(forKey: .recurrenceEndDate)
+        }
+        if let recurrenceInterval {
+            try container.encode(recurrenceInterval, forKey: .recurrenceInterval)
+        } else {
+            try container.encodeNil(forKey: .recurrenceInterval)
+        }
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
         try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
         if let backgroundColor {
@@ -1523,6 +1583,18 @@ private struct TaskUpdatePayload: Encodable {
 }
 
 private extension CreateTaskView {
+    /// 无重复规则时强制为 `nil`；有重复而「结束日」UI 未接前为 `nil`。
+    func resolvedRecurrenceEndDateForPayload() -> Date? {
+        guard repeatOption.recurrenceRule != nil else { return nil }
+        return nil
+    }
+
+    /// 无重复规则时强制为 `nil`；有重复时默认间隔 `1`。
+    func resolvedRecurrenceIntervalForPayload() -> Int? {
+        guard repeatOption.recurrenceRule != nil else { return nil }
+        return 1
+    }
+
     /// 与当前「开始/截止时间」对齐的结束时间；未开启开关时返回 `nil` 以清空数据库列。
     func resolvedEndDatetime(for occurrenceDue: Date) -> Date? {
         guard hasEndTime else { return nil }
@@ -1652,6 +1724,8 @@ private extension CreateTaskView {
             endDatetime: payload.endDatetime,
             isAllDay: payload.isAllDay,
             recurrenceRule: payload.recurrenceRule,
+            recurrenceEndDate: payload.recurrenceEndDate,
+            recurrenceInterval: payload.recurrenceInterval,
             reminderOffsets: payload.reminderOffsets,
             estimatedCost: payload.estimatedCost,
             backgroundColor: payload.backgroundColor,
