@@ -62,7 +62,7 @@ enum HouseholdRoutingError: LocalizedError {
 struct SupabaseAuthService: AuthService {
     private let provider: SupabaseClientProviding
     /// 必须与 `supabase/config.toml` 中 `[auth].additional_redirect_urls` 完全一致。
-    private let magicLinkRedirectURL = URL(string: "aifamily://login-callback")
+    private let magicLinkRedirectURL = URL(string: "aifamily://auth-callback")
 
     init(provider: SupabaseClientProviding) {
         self.provider = provider

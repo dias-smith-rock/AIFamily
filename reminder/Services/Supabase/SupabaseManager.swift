@@ -11,7 +11,8 @@ import Supabase
 enum SupabaseEnvironment {
     static var supabaseURL: URL {
         #if DEBUG
-        return urlOrFail("http://127.0.0.1:54321")
+//        return urlOrFail("https://murkiness-gamma-sporting.ngrok-free.dev")
+        return urlOrFail("https://dirgcwziayipwvwztjbb.supabase.co")
         #else
         return urlOrFail("https://dirgcwziayipwvwztjbb.supabase.co")
         #endif
@@ -20,7 +21,8 @@ enum SupabaseEnvironment {
     static var supabaseAnonKey: String {
         #if DEBUG
         // 运行 `supabase status` 核对本地 anon key；未改动时为 CLI 默认 JWT。
-        return "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
+//        return "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
+        return "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
         #else
         return "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
         #endif

@@ -15,7 +15,7 @@ struct LoginView: View {
 
     /// 必须与 `supabase/config.toml` 中 `[auth].additional_redirect_urls` 完全一致，
     /// 同时也需要在 Info.plist 的 URL Types 中注册 `aifamily` scheme。
-    private static let oauthRedirectURL = URL(string: "aifamily://login-callback")
+    private static let oauthRedirectURL = URL(string: "aifamily://auth-callback")
 
     var body: some View {
         VStack(spacing: 0) {
