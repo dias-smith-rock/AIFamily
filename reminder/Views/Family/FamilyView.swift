@@ -3,13 +3,11 @@ import SwiftUI
 private enum AddMemberRoute: Identifiable, Equatable {
     case entry
     case invite
-    case createLocalProfile
 
     var id: String {
         switch self {
         case .entry: return "entry"
         case .invite: return "invite"
-        case .createLocalProfile: return "createLocalProfile"
         }
     }
 }
@@ -19,6 +17,7 @@ struct FamilyView: View {
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var addMemberRoute: AddMemberRoute?
+    @State private var isPresentingCreateLocalProfile = false
     @State private var isShowingLoginSheet = false
     @State private var isShowingRenameHouseholdSheet = false
     @State private var editingProfile: FamilyProfile?
@@ -28,9 +27,18 @@ struct FamilyView: View {
 
     var body: some View {
         NavigationStack {
-            familyListBody
-                .background(Color(.systemGroupedBackground))
-                .navigationBarHidden(true)
+            VStack(spacing: 0) {
+                GlobalHeaderView {
+                    Text("家庭")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                }
+
+                familyListBody
+                    .background(Color(.systemGroupedBackground))
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationBarHidden(true)
         }
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
@@ -60,7 +68,11 @@ struct FamilyView: View {
                     onChooseInvite: { addMemberRoute = .invite },
                     onChooseCreateProfile: {
                         guard canManageHousehold else { return }
-                        addMemberRoute = .createLocalProfile
+                        Task { @MainActor in
+                            addMemberRoute = nil
+                            await Task.yield()
+                            isPresentingCreateLocalProfile = true
+                        }
                     }
                 )
                 .presentationDetents([.medium, .large])
@@ -72,24 +84,23 @@ struct FamilyView: View {
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
-            case .createLocalProfile:
-                ProfileEditView(
-                    mode: .createLocalProfile,
-                    householdId: appRouter.selectedHouseholdId,
-                    canEdit: canManageHousehold,
-                    uploadAvatar: { data, profileId in
-                        #if DEBUG
-                        print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
-                        #endif
-                        return await viewModel.uploadAvatar(data: data, profileId: profileId)
-                    },
-                    onSave: { householdId, draft in
-                        await viewModel.createLocalProfile(householdId: householdId, draft: draft)
-                    }
-                )
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
             }
+        }
+        .fullScreenCover(isPresented: $isPresentingCreateLocalProfile) {
+            ProfileEditView(
+                mode: .createLocalProfile,
+                householdId: appRouter.selectedHouseholdId,
+                canEdit: canManageHousehold,
+                uploadAvatar: { data, profileId in
+                    #if DEBUG
+                    print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
+                    #endif
+                    return await viewModel.uploadAvatar(data: data, profileId: profileId)
+                },
+                onSave: { householdId, draft in
+                    await viewModel.createLocalProfile(householdId: householdId, draft: draft)
+                }
+            )
         }
         .sheet(isPresented: $isShowingLoginSheet) {
             FamilySessionLoginSheet(viewModel: authViewModel) {
@@ -99,7 +110,7 @@ struct FamilyView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .sheet(item: $editingProfile) { profile in
+        .fullScreenCover(item: $editingProfile) { profile in
             ProfileEditView(
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
@@ -114,10 +125,8 @@ struct FamilyView: View {
                     await viewModel.updateProfile(profile, draft: draft)
                 }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
-        .sheet(item: $selectedProfileForDetail) { profile in
+        .fullScreenCover(item: $selectedProfileForDetail) { profile in
             ProfileDetailView(
                 profile: profile,
                 subtitle: detailIdentitySubtitle(for: profile),
@@ -127,8 +136,6 @@ struct FamilyView: View {
                     editingProfile = profile
                 }
             )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $isShowingRenameHouseholdSheet) {
             RenameHouseholdSheet(
@@ -171,17 +178,15 @@ struct FamilyView: View {
                 Section {
                     householdSummaryRow
                     profilesEmptyState
-                } header: {
-                    myHouseholdSectionHeader
                 }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 8, trailing: 16))
                 .listRowBackground(Color.clear)
             } else {
                 Section {
                     householdSummaryRow
                         .listRowInsets(
                             EdgeInsets(
-                                top: 8,
+                                top: 2,
                                 leading: 16,
                                 bottom: creatorProfile != nil ? 2 : 8,
                                 trailing: 16
@@ -206,8 +211,6 @@ struct FamilyView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden, edges: .top)
                     }
-                } header: {
-                    myHouseholdSectionHeader
                 }
 
                 Section {
@@ -245,6 +248,7 @@ struct FamilyView: View {
         }
         .listStyle(.insetGrouped)
         .environment(\.editMode, .constant(isSortingMembers ? .active : .inactive))
+        .contentMargins(.top, 0, for: .scrollContent)
     }
 
     private var profilesEmptyState: some View {
@@ -267,29 +271,6 @@ struct FamilyView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 28)
-    }
-
-    private var myHouseholdSectionHeader: some View {
-        HStack(alignment: .center) {
-            Text("我的家庭")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 8)
-
-            Button {
-                openHouseholdSettingsFromGear()
-            } label: {
-                Image(systemName: "gearshape")
-                    .font(.body)
-                    .foregroundStyle(.blue)
-            }
-            .buttonStyle(.plain)
-            .disabled(canManageHousehold == false)
-            .opacity(canManageHousehold ? 1 : 0.35)
-            .accessibilityLabel("家庭设置")
-        }
-        .textCase(nil)
     }
 
     /// 家庭名称 + 图标：直接铺在分组背景上，**不使用**白底圆角卡片。
@@ -343,12 +324,6 @@ struct FamilyView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 6)
-    }
-
-    private func openHouseholdSettingsFromGear() {
-        guard canManageHousehold else { return }
-        renameErrorMessage = nil
-        isShowingRenameHouseholdSheet = true
     }
 
     private var otherMembersSectionHeader: some View {

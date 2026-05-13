@@ -44,8 +44,34 @@ struct FamilyMemberRowView: View {
         return String(first)
     }
 
+    /// 无头像时：按成员 `id` 稳定映射到不同底色，便于区分（均为系统语义色 + 透明度，保证白字可读）。
+    private static let avatarBackgroundPalette: [Color] = [
+        Color.blue.opacity(0.68),
+        Color.indigo.opacity(0.64),
+        Color.purple.opacity(0.62),
+        Color.pink.opacity(0.62),
+        Color.teal.opacity(0.66),
+        Color.green.opacity(0.62),
+        Color.orange.opacity(0.72),
+        Color.red.opacity(0.58),
+        Color.brown.opacity(0.62),
+        Color.cyan.opacity(0.66),
+    ]
+
+    private var avatarPaletteIndex: Int {
+        let hex = profile.id.uuidString.replacingOccurrences(of: "-", with: "")
+        let tail = String(hex.suffix(8))
+        if let parsed = Int(tail, radix: 16) {
+            return parsed % Self.avatarBackgroundPalette.count
+        }
+        let fallback = hex.reduce(0) { partial, character in
+            partial + (character.hexDigitValue.map { $0 } ?? 0)
+        }
+        return fallback % Self.avatarBackgroundPalette.count
+    }
+
     private var avatarBackground: Color {
-        Color.accentColor.opacity(0.42)
+        Self.avatarBackgroundPalette[avatarPaletteIndex]
     }
 
     private var sensitiveSummary: String? {
