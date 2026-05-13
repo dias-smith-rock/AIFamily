@@ -15,84 +15,17 @@ private enum RecurringTaskScope {
     case thisAndFuture
 }
 
-/// 循环任务「仅改此条」RPC 之后补齐 PostgREST / RPC 未覆盖的列。
-private struct TaskRecurringSingleSupplementPatch: Encodable {
-    let endDatetime: Date?
-    let backgroundColor: String?
-    let emergencyPhone: String?
-    let priority: String
-    let locationData: FamilyTask.LocationData?
-    let targetProfileIds: [UUID]?
-    let recurrenceEndDate: Date?
-    let recurrenceInterval: Int?
-
+/// 单次编辑后脱离重复链：清空 `parent_task_id` / `group_id`。
+private struct TaskClearSeriesLinksPatch: Encodable {
     enum CodingKeys: String, CodingKey {
-        case endDatetime = "end_datetime"
-        case backgroundColor = "background_color"
-        case emergencyPhone = "emergency_phone"
-        case priority
-        case locationData = "location_data"
-        case targetProfileIds = "target_profile_ids"
-        case recurrenceEndDate = "recurrence_end_date"
-        case recurrenceInterval = "recurrence_interval"
+        case parentTaskId = "parent_task_id"
+        case groupId = "group_id"
     }
 
     func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        if let endDatetime {
-            try container.encode(endDatetime, forKey: .endDatetime)
-        } else {
-            try container.encodeNil(forKey: .endDatetime)
-        }
-        if let backgroundColor {
-            try container.encode(backgroundColor, forKey: .backgroundColor)
-        } else {
-            try container.encodeNil(forKey: .backgroundColor)
-        }
-        if let emergencyPhone {
-            try container.encode(emergencyPhone, forKey: .emergencyPhone)
-        } else {
-            try container.encodeNil(forKey: .emergencyPhone)
-        }
-        try container.encode(priority, forKey: .priority)
-        if let locationData {
-            try container.encode(locationData, forKey: .locationData)
-        } else {
-            try container.encodeNil(forKey: .locationData)
-        }
-        if let targetProfileIds {
-            try container.encode(targetProfileIds, forKey: .targetProfileIds)
-        } else {
-            try container.encodeNil(forKey: .targetProfileIds)
-        }
-        if let recurrenceEndDate {
-            try container.encode(recurrenceEndDate, forKey: .recurrenceEndDate)
-        } else {
-            try container.encodeNil(forKey: .recurrenceEndDate)
-        }
-        if let recurrenceInterval {
-            try container.encode(recurrenceInterval, forKey: .recurrenceInterval)
-        } else {
-            try container.encodeNil(forKey: .recurrenceInterval)
-        }
-    }
-}
-
-private struct RecurringTaskUpdateRPCParams: Encodable {
-    let targetTaskId: UUID
-    let updateScope: String
-    let newTitle: String
-    let newDescription: String?
-    let newCost: Decimal?
-    let newTargetIds: [UUID]?
-
-    enum CodingKeys: String, CodingKey {
-        case targetTaskId = "target_task_id"
-        case updateScope = "update_scope"
-        case newTitle = "new_title"
-        case newDescription = "new_description"
-        case newCost = "new_cost"
-        case newTargetIds = "new_target_ids"
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeNil(forKey: .parentTaskId)
+        try c.encodeNil(forKey: .groupId)
     }
 }
 
@@ -321,6 +254,9 @@ struct CreateTaskView: View {
                 } else {
                     isShowingMoreOptions = true
                 }
+            }
+            .task(id: editingTask?.parentTaskId) {
+                await loadParentRecurrenceTemplateIfNeeded()
             }
             .onChange(of: dueDate) { _, newDue in
                 guard hasEndTime else { return }
@@ -957,7 +893,7 @@ struct CreateTaskView: View {
 
         #if canImport(Supabase)
         if let existing = editingTask {
-            if existing.groupId != nil {
+            if existing.needsRecurringScopeDialog {
                 pendingRecurringUpdateTask = existing
                 isShowingRecurringUpdateScopeDialog = true
             } else {
@@ -989,137 +925,16 @@ struct CreateTaskView: View {
         defer { isSaving = false }
 
         do {
+            let client = SupabaseManager.shared.client
             let updated: FamilyTask
+
             switch scope {
             case .singleOnly:
-                if existing.groupId != nil {
-                    let rpcParams = RecurringTaskUpdateRPCParams(
-                        targetTaskId: existing.id,
-                        updateScope: "only_this",
-                        newTitle: normalizedTitle,
-                        newDescription: mergedDescriptionForPayload,
-                        newCost: estimatedCostMajorUnits,
-                        newTargetIds: resolvedInvolvedMemberIds
-                    )
-                    _ = try await SupabaseManager.shared.client
-                        .rpc("update_recurring_tasks", params: rpcParams)
-                        .execute()
-                    _ = try await SupabaseManager.shared.client
-                        .from("tasks")
-                        .update(
-                            TaskRecurringSingleSupplementPatch(
-                                endDatetime: resolvedEndDatetime(for: dueDate),
-                                backgroundColor: resolvedBackgroundColorHex(),
-                                emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                                priority: formPriority.rawValue,
-                                locationData: resolvedLocationData(),
-                                targetProfileIds: resolvedTargetProfileIds,
-                                recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
-                                recurrenceInterval: resolvedRecurrenceIntervalForPayload()
-                            )
-                        )
-                        .eq("id", value: existing.id.uuidString)
-                        .execute()
-                    updated = FamilyTask(
-                        id: existing.id,
-                        householdId: existing.householdId,
-                        creatorId: existing.creatorId,
-                        parentTaskId: existing.parentTaskId,
-                        groupId: nil,
-                        originalDueDate: existing.originalDueDate,
-                        involvedMemberIds: resolvedInvolvedMemberIds,
-                        targetProfileId: existing.targetProfileId,
-                        targetProfileIds: resolvedTargetProfileIds,
-                        targetSubject: existing.targetSubject,
-                        title: normalizedTitle,
-                        description: mergedDescriptionForPayload,
-                        originalPrompt: existing.originalPrompt,
-                        attachmentUrls: existing.attachmentUrls,
-                        externalContacts: existing.externalContacts,
-                        locationData: resolvedLocationData(),
-                        externalSyncRefs: existing.externalSyncRefs,
-                        alarmSetBy: existing.alarmSetBy,
-                        status: existing.status,
-                        priority: formPriority,
-                        dueDate: dueDate,
-                        endDatetime: resolvedEndDatetime(for: dueDate),
-                        isAllDay: isAllDay,
-                        recurrenceRule: activeRecurrenceRuleString,
-                        recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
-                        recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
-                        reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                        estimatedCost: estimatedCostMinorUnits,
-                        backgroundColor: resolvedBackgroundColorHex(),
-                        emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                        createdAt: existing.createdAt,
-                        updatedAt: Date()
-                    )
-                } else {
-                    let payload = TaskUpdatePayload(
-                        title: normalizedTitle,
-                        description: mergedDescriptionForPayload,
-                        involvedMemberIds: resolvedInvolvedMemberIds,
-                        targetProfileIds: resolvedTargetProfileIds,
-                        dueDate: dueDate,
-                        endDatetime: resolvedEndDatetime(for: dueDate),
-                        isAllDay: isAllDay,
-                        recurrenceRule: activeRecurrenceRuleString,
-                        recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
-                        recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
-                        reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                        estimatedCost: estimatedCostMinorUnits,
-                        backgroundColor: resolvedBackgroundColorHex(),
-                        emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                        priority: formPriority.rawValue,
-                        locationData: resolvedLocationData(),
-                        updatedAt: Date()
-                    )
-                    updated = try await SupabaseManager.shared.client
-                        .from("tasks")
-                        .update(payload)
-                        .eq("id", value: existing.id.uuidString)
-                        .select()
-                        .single()
-                        .execute()
-                        .value
-                }
-            case .thisAndFuture:
-                guard existing.groupId != nil else {
-                    errorMessage = "循环任务标识缺失。"
-                    return
-                }
-                let rpcParams = RecurringTaskUpdateRPCParams(
-                    targetTaskId: existing.id,
-                    updateScope: "future",
-                    newTitle: normalizedTitle,
-                    newDescription: mergedDescriptionForPayload,
-                    newCost: estimatedCostMajorUnits,
-                    newTargetIds: resolvedInvolvedMemberIds
-                )
-                _ = try await SupabaseManager.shared.client
-                    .rpc("update_recurring_tasks", params: rpcParams)
-                    .execute()
-                updated = FamilyTask(
-                    id: existing.id,
-                    householdId: existing.householdId,
-                    creatorId: existing.creatorId,
-                    parentTaskId: existing.parentTaskId,
-                    groupId: existing.groupId,
-                    originalDueDate: existing.originalDueDate,
-                    involvedMemberIds: resolvedInvolvedMemberIds,
-                    targetProfileId: existing.targetProfileId,
-                    targetProfileIds: resolvedTargetProfileIds,
-                    targetSubject: existing.targetSubject,
+                let payload = TaskUpdatePayload(
                     title: normalizedTitle,
                     description: mergedDescriptionForPayload,
-                    originalPrompt: existing.originalPrompt,
-                    attachmentUrls: existing.attachmentUrls,
-                    externalContacts: existing.externalContacts,
-                    locationData: resolvedLocationData(),
-                    externalSyncRefs: existing.externalSyncRefs,
-                    alarmSetBy: existing.alarmSetBy,
-                    status: existing.status,
-                    priority: formPriority,
+                    involvedMemberIds: resolvedInvolvedMemberIds,
+                    targetProfileIds: resolvedTargetProfileIds,
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
                     isAllDay: isAllDay,
@@ -1130,9 +945,137 @@ struct CreateTaskView: View {
                     estimatedCost: estimatedCostMinorUnits,
                     backgroundColor: resolvedBackgroundColorHex(),
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                    createdAt: existing.createdAt,
+                    priority: formPriority.rawValue,
+                    locationData: resolvedLocationData(),
                     updatedAt: Date()
                 )
+                var refreshed: FamilyTask = try await client
+                    .from("tasks")
+                    .update(payload)
+                    .eq("id", value: existing.id.uuidString.lowercased())
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+                if existing.seriesGrouping != nil, shouldDetachSeriesOnSingleSave(existing) {
+                    _ = try await client
+                        .from("tasks")
+                        .update(TaskClearSeriesLinksPatch())
+                        .eq("id", value: existing.id.uuidString.lowercased())
+                        .execute()
+                    refreshed.parentTaskId = nil
+                    refreshed.groupId = nil
+                }
+                updated = refreshed
+
+            case .thisAndFuture:
+                guard let grouping = existing.seriesGrouping else {
+                    errorMessage = "无法解析重复任务分组。"
+                    return
+                }
+                let cutoff = existing.dueDate ?? .distantPast
+                let rows = try await TaskSeriesSupabaseSupport.fetchSeriesTasks(
+                    householdId: householdId,
+                    grouping: grouping,
+                    dueOnOrAfter: cutoff
+                )
+                guard rows.isEmpty == false else {
+                    errorMessage = "没有找到需要更新的任务。"
+                    return
+                }
+
+                let calendar = Calendar.current
+                let endDelta: TimeInterval? = hasEndTime ? endTime.timeIntervalSince(dueDate) : nil
+
+                func isMotherMetaOnly(row: FamilyTask) -> Bool {
+                    guard case .byParentRoot(let root) = grouping else { return false }
+                    guard row.id == root else { return false }
+                    return (row.dueDate ?? .distantPast) < cutoff && existing.id != row.id
+                }
+
+                var refreshedCurrent: FamilyTask?
+
+                for row in rows {
+                    let metaOnly = isMotherMetaOnly(row: row)
+                    let newDue: Date
+                    let newEnd: Date?
+                    if row.id == existing.id {
+                        newDue = dueDate
+                        newEnd = resolvedEndDatetime(for: dueDate)
+                    } else if metaOnly {
+                        newDue = row.dueDate ?? dueDate
+                        newEnd = row.endDatetime
+                    } else {
+                        newDue = RecurrenceEngine.mergeEditorTime(
+                            editorDue: dueDate,
+                            ontoOccurrence: row.dueDate,
+                            allDay: isAllDay,
+                            calendar: calendar
+                        )
+                        if let delta = endDelta {
+                            newEnd = newDue.addingTimeInterval(delta)
+                        } else {
+                            newEnd = nil
+                        }
+                    }
+
+                    let recurrenceRulePayload: String?
+                    let recurrenceEndPayload: Date?
+                    let recurrenceIntervalPayload: Int?
+                    switch grouping {
+                    case .byParentRoot(let root):
+                        recurrenceRulePayload = row.id == root
+                            ? (activeRecurrenceRuleString ?? row.recurrenceRule)
+                            : row.recurrenceRule
+                        recurrenceEndPayload = row.id == root
+                            ? resolvedRecurrenceEndDateForPayload()
+                            : row.recurrenceEndDate
+                        recurrenceIntervalPayload = row.id == root
+                            ? resolvedRecurrenceIntervalForPayload()
+                            : row.recurrenceInterval
+                    case .byLegacyGroup:
+                        recurrenceRulePayload = activeRecurrenceRuleString ?? row.recurrenceRule
+                        recurrenceEndPayload = resolvedRecurrenceEndDateForPayload()
+                        recurrenceIntervalPayload = resolvedRecurrenceIntervalForPayload()
+                    }
+
+                    let payload = TaskUpdatePayload(
+                        title: normalizedTitle,
+                        description: mergedDescriptionForPayload,
+                        involvedMemberIds: resolvedInvolvedMemberIds,
+                        targetProfileIds: resolvedTargetProfileIds,
+                        dueDate: newDue,
+                        endDatetime: newEnd,
+                        isAllDay: isAllDay,
+                        recurrenceRule: recurrenceRulePayload,
+                        recurrenceEndDate: recurrenceEndPayload,
+                        recurrenceInterval: recurrenceIntervalPayload,
+                        reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                        estimatedCost: estimatedCostMinorUnits,
+                        backgroundColor: resolvedBackgroundColorHex(),
+                        emergencyPhone: resolvedEmergencyPhoneForPayload(),
+                        priority: formPriority.rawValue,
+                        locationData: resolvedLocationData(),
+                        updatedAt: Date()
+                    )
+                    let rowUpdated: FamilyTask = try await client
+                        .from("tasks")
+                        .update(payload)
+                        .eq("id", value: row.id.uuidString.lowercased())
+                        .select()
+                        .single()
+                        .execute()
+                        .value
+                    if rowUpdated.id == existing.id {
+                        refreshedCurrent = rowUpdated
+                    }
+                }
+
+                guard let resolved = refreshedCurrent else {
+                    errorMessage = "批量更新后未能定位当前任务。"
+                    return
+                }
+                updated = resolved
             }
 
             onAlarmSync?(updated)
@@ -1150,6 +1093,43 @@ struct CreateTaskView: View {
         #endif
     }
 
+    private func shouldDetachSeriesOnSingleSave(_ task: FamilyTask) -> Bool {
+        if task.parentTaskId != nil {
+            return true
+        }
+        if task.groupId != nil, task.isRecurringSeriesMother == false {
+            return true
+        }
+        return false
+    }
+
+    private func loadParentRecurrenceTemplateIfNeeded() async {
+        #if canImport(Supabase)
+        guard let parentId = editingTask?.parentTaskId else { return }
+        do {
+            let parent: FamilyTask = try await SupabaseManager.shared.client
+                .from("tasks")
+                .select()
+                .eq("id", value: parentId.uuidString.lowercased())
+                .single()
+                .execute()
+                .value
+            let inferred = TaskRecurrenceRule.inferred(from: parent.recurrenceRule, recurrenceInterval: parent.recurrenceInterval)
+            selectedRecurrence = inferred
+            let customFromParent = max(2, min(365, parent.recurrenceInterval ?? 2))
+            recurrenceInterval = inferred == .custom ? customFromParent : 2
+            if let end = parent.recurrenceEndDate {
+                recurrenceEndDate = end
+                showEndDate = true
+            }
+        } catch {
+            #if DEBUG
+            print("[CreateTaskView] loadParentRecurrenceTemplateIfNeeded: \(error.localizedDescription)")
+            #endif
+        }
+        #endif
+    }
+
     private func performCreate(householdId: UUID, creatorMembershipId: UUID) async {
         #if canImport(Supabase)
         isSaving = true
@@ -1157,29 +1137,61 @@ struct CreateTaskView: View {
         defer { isSaving = false }
         do {
             let now = Date()
+            let client = SupabaseManager.shared.client
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
             let recurrence = activeRecurrenceRuleString
-            let groupId: UUID? = recurrence == nil ? nil : UUID()
-            let dates: [Date]
-            if let recurrence {
-                dates = generateFutureDates(start: dueDate, recurrenceRule: recurrence)
-            } else {
-                dates = [dueDate]
-            }
-            let payloads = dates.map { date in
-                TaskInsertPayload(
-                    id: UUID(),
+
+            if recurrence == nil {
+                let motherId = UUID()
+                let singlePayload = TaskInsertPayload(
+                    id: motherId,
                     householdId: householdId,
                     creatorId: creatorIdLowercased,
-                    groupId: groupId,
+                    parentTaskId: nil,
+                    groupId: nil,
                     involvedMemberIds: resolvedInvolvedMemberIds,
                     targetProfileIds: resolvedTargetProfileIds,
                     title: normalizedTitle,
                     description: mergedDescriptionForPayload,
                     status: TaskStatus.new.rawValue,
                     priority: formPriority.rawValue,
-                    dueDate: date,
-                    endDatetime: resolvedEndDatetime(for: date),
+                    dueDate: dueDate,
+                    endDatetime: resolvedEndDatetime(for: dueDate),
+                    isAllDay: isAllDay,
+                    recurrenceRule: nil,
+                    recurrenceEndDate: nil,
+                    recurrenceInterval: nil,
+                    reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                    estimatedCost: estimatedCostMinorUnits,
+                    backgroundColor: resolvedBackgroundColorHex(),
+                    emergencyPhone: resolvedEmergencyPhoneForPayload(),
+                    locationData: resolvedLocationData(),
+                    createdAt: now,
+                    updatedAt: now
+                )
+                _ = try await client
+                    .from("tasks")
+                    .insert(singlePayload)
+                    .execute()
+                if let synthetic = familyTaskFromInsertPayload(singlePayload) {
+                    onAlarmSync?(synthetic)
+                }
+            } else {
+                let motherId = UUID()
+                let motherPayload = TaskInsertPayload(
+                    id: motherId,
+                    householdId: householdId,
+                    creatorId: creatorIdLowercased,
+                    parentTaskId: nil,
+                    groupId: nil,
+                    involvedMemberIds: resolvedInvolvedMemberIds,
+                    targetProfileIds: resolvedTargetProfileIds,
+                    title: normalizedTitle,
+                    description: mergedDescriptionForPayload,
+                    status: TaskStatus.new.rawValue,
+                    priority: formPriority.rawValue,
+                    dueDate: dueDate,
+                    endDatetime: resolvedEndDatetime(for: dueDate),
                     isAllDay: isAllDay,
                     recurrenceRule: recurrence,
                     recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
@@ -1192,16 +1204,59 @@ struct CreateTaskView: View {
                     createdAt: now,
                     updatedAt: now
                 )
-            }
-            _ = try await SupabaseManager.shared.client
-                .from("tasks")
-                .insert(payloads)
-                .execute()
-            for payload in payloads {
-                if let synthetic = familyTaskFromInsertPayload(payload) {
-                    onAlarmSync?(synthetic)
+                let motherRow: FamilyTask = try await client
+                    .from("tasks")
+                    .insert(motherPayload)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+                if let syntheticMother = familyTaskFromInsertPayload(motherPayload) {
+                    onAlarmSync?(syntheticMother)
+                }
+
+                let children = RecurrenceEngine.generateInstances(from: motherRow)
+                if children.isEmpty == false {
+                    let childPayloads = children.map { child in
+                        TaskInsertPayload(
+                            id: child.id,
+                            householdId: householdId,
+                            creatorId: creatorIdLowercased,
+                            parentTaskId: motherRow.id,
+                            groupId: nil,
+                            involvedMemberIds: resolvedInvolvedMemberIds,
+                            targetProfileIds: resolvedTargetProfileIds,
+                            title: normalizedTitle,
+                            description: mergedDescriptionForPayload,
+                            status: TaskStatus.new.rawValue,
+                            priority: formPriority.rawValue,
+                            dueDate: child.dueDate ?? dueDate,
+                            endDatetime: child.endDatetime,
+                            isAllDay: isAllDay,
+                            recurrenceRule: nil,
+                            recurrenceEndDate: nil,
+                            recurrenceInterval: nil,
+                            reminderOffsets: reminderOption.reminderOffsetsMinutes,
+                            estimatedCost: estimatedCostMinorUnits,
+                            backgroundColor: resolvedBackgroundColorHex(),
+                            emergencyPhone: resolvedEmergencyPhoneForPayload(),
+                            locationData: resolvedLocationData(),
+                            createdAt: now,
+                            updatedAt: now
+                        )
+                    }
+                    _ = try await client
+                        .from("tasks")
+                        .insert(childPayloads)
+                        .execute()
+                    for payload in childPayloads {
+                        if let synthetic = familyTaskFromInsertPayload(payload) {
+                            onAlarmSync?(synthetic)
+                        }
+                    }
                 }
             }
+
             onSaveSuccess?(dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
@@ -1213,37 +1268,6 @@ struct CreateTaskView: View {
         _ = creatorMembershipId
         errorMessage = "当前构建环境未包含 Supabase SDK。"
         #endif
-    }
-
-    private func generateFutureDates(start: Date, recurrenceRule: String) -> [Date] {
-        let calendar = Calendar.current
-        guard
-            let sixMonthsLater = calendar.date(byAdding: .month, value: 6, to: start)
-        else {
-            return [start]
-        }
-        let normalized = recurrenceRule.uppercased()
-        let component: Calendar.Component
-        switch normalized {
-        case _ where normalized.contains("DAILY"):
-            component = .day
-        case _ where normalized.contains("WEEKLY"):
-            component = .weekOfYear
-        case _ where normalized.contains("MONTHLY"):
-            component = .month
-        default:
-            return [start]
-        }
-
-        var dates: [Date] = [start]
-        var cursor = start
-        while dates.count < 30 {
-            guard let next = calendar.date(byAdding: component, value: 1, to: cursor) else { break }
-            if next > sixMonthsLater { break }
-            dates.append(next)
-            cursor = next
-        }
-        return dates
     }
 
     private static func normalizedStoredHex(_ raw: String?) -> String? {
@@ -1360,6 +1384,7 @@ private struct TaskInsertPayload: Encodable {
     let id: UUID
     let householdId: UUID
     let creatorId: String
+    let parentTaskId: UUID?
     let groupId: UUID?
     let involvedMemberIds: [UUID]?
     let targetProfileIds: [UUID]?
@@ -1385,6 +1410,7 @@ private struct TaskInsertPayload: Encodable {
         case id
         case householdId = "household_id"
         case creatorId = "creator_id"
+        case parentTaskId = "parent_task_id"
         case groupId = "group_id"
         case involvedMemberIds = "involved_member_ids"
         case targetProfileIds = "target_profile_ids"
@@ -1412,6 +1438,11 @@ private struct TaskInsertPayload: Encodable {
         try container.encode(id, forKey: .id)
         try container.encode(householdId, forKey: .householdId)
         try container.encode(creatorId, forKey: .creatorId)
+        if let parentTaskId {
+            try container.encode(parentTaskId, forKey: .parentTaskId)
+        } else {
+            try container.encodeNil(forKey: .parentTaskId)
+        }
         try container.encodeIfPresent(groupId, forKey: .groupId)
         if let involvedMemberIds {
             try container.encode(involvedMemberIds, forKey: .involvedMemberIds)
@@ -1693,7 +1724,7 @@ private extension CreateTaskView {
             id: payload.id,
             householdId: payload.householdId,
             creatorId: creatorUUID,
-            parentTaskId: nil,
+            parentTaskId: payload.parentTaskId,
             groupId: payload.groupId,
             originalDueDate: nil,
             involvedMemberIds: payload.involvedMemberIds,

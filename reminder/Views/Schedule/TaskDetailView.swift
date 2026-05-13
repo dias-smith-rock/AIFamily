@@ -15,16 +15,6 @@ private enum RecurringDeleteScope {
     case thisAndFuture
 }
 
-private struct RecurringTaskDeleteRPCParams: Encodable {
-    let targetTaskId: UUID
-    let deleteScope: String
-
-    enum CodingKeys: String, CodingKey {
-        case targetTaskId = "target_task_id"
-        case deleteScope = "delete_scope"
-    }
-}
-
 struct TaskDetailView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @Environment(\.dismiss) private var dismiss
@@ -163,7 +153,7 @@ struct TaskDetailView: View {
             isPresented: $isShowingDeleteScopeDialog,
             titleVisibility: .visible
         ) {
-            if task.groupId == nil {
+            if task.seriesGrouping == nil {
                 Button("仅删除此任务", role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
@@ -177,7 +167,7 @@ struct TaskDetailView: View {
             }
             Button("取消", role: .cancel) { }
         } message: {
-            Text(task.groupId == nil ? "此操作不可撤销。" : "请选择删除范围。")
+            Text(task.seriesGrouping == nil ? "此操作不可撤销。" : "请选择删除范围。")
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -1012,30 +1002,23 @@ struct TaskDetailView: View {
         do {
             switch scope {
             case .singleOnly:
-                if task.groupId != nil {
-                    let params = RecurringTaskDeleteRPCParams(
-                        targetTaskId: task.id,
-                        deleteScope: "only_this"
-                    )
-                    _ = try await SupabaseManager.shared.client
-                        .rpc("delete_recurring_tasks", params: params)
-                        .execute()
-                    await scheduleViewModel.loadTasks()
-                } else {
-                    await scheduleViewModel.deleteTask(taskId: task.id)
-                }
+                await scheduleViewModel.deleteTask(taskId: task.id)
             case .thisAndFuture:
-                guard task.groupId != nil else {
-                    statusError = "循环任务标识缺失，无法批量删除。"
+                guard let grouping = task.seriesGrouping else {
+                    statusError = "无法解析重复任务分组，无法批量删除。"
                     return
                 }
-                let params = RecurringTaskDeleteRPCParams(
-                    targetTaskId: task.id,
-                    deleteScope: "future"
+                let cutoff = task.dueDate ?? .distantPast
+                let rows = try await TaskSeriesSupabaseSupport.fetchSeriesTasks(
+                    householdId: task.householdId,
+                    grouping: grouping,
+                    dueOnOrAfter: cutoff
                 )
-                _ = try await SupabaseManager.shared.client
-                    .rpc("delete_recurring_tasks", params: params)
-                    .execute()
+                let ids = rows.map(\.id)
+                for id in ids {
+                    await NotificationManager.shared.cancelAllPending(for: id)
+                }
+                try await TaskSeriesSupabaseSupport.deleteTasks(ids: ids)
                 await scheduleViewModel.loadTasks()
             }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
