@@ -107,7 +107,11 @@ struct CreateTaskView: View {
     @State private var hasEndTime = false
     @State private var endTime = Date()
     @State private var isAllDay = false
-    @State private var repeatOption: TaskRepeatOption = .never
+    @State private var selectedRecurrence: TaskRecurrenceRule = .none
+    /// 「每隔几天」步进值（仅 `custom` 使用，范围 2…365）。
+    @State private var recurrenceInterval: Int = 2
+    @State private var recurrenceEndDate: Date = Date()
+    @State private var showEndDate: Bool = false
     @State private var reminderOption: TaskReminderOption = .minutesBefore15
 
     @State private var selectedAssigneeIds: Set<UUID> = []
@@ -162,7 +166,13 @@ struct CreateTaskView: View {
                 _endTime = State(initialValue: initialDue)
             }
             _isAllDay = State(initialValue: task.isAllDay)
-            _repeatOption = State(initialValue: TaskRepeatOption(recurrenceRule: task.recurrenceRule))
+            let inferred = TaskRecurrenceRule.inferred(from: task.recurrenceRule, recurrenceInterval: task.recurrenceInterval)
+            _selectedRecurrence = State(initialValue: inferred)
+            let customFromTask = max(2, min(365, task.recurrenceInterval ?? 2))
+            _recurrenceInterval = State(initialValue: inferred == .custom ? customFromTask : 2)
+            let defaultEndIfNeeded = Calendar.current.date(byAdding: .month, value: 6, to: initialDue) ?? initialDue
+            _recurrenceEndDate = State(initialValue: task.recurrenceEndDate ?? defaultEndIfNeeded)
+            _showEndDate = State(initialValue: task.recurrenceEndDate != nil)
             _reminderOption = State(initialValue: TaskReminderOption(offsets: task.reminderOffsets))
             if task.involvesWholeHousehold {
                 _selectedAssigneeIds = State(initialValue: [])
@@ -194,7 +204,10 @@ struct CreateTaskView: View {
             _hasEndTime = State(initialValue: false)
             _endTime = State(initialValue: resolvedDue)
             _isAllDay = State(initialValue: defaultAllDayForNewTask)
-            _repeatOption = State(initialValue: .never)
+            _selectedRecurrence = State(initialValue: .none)
+            _recurrenceInterval = State(initialValue: 2)
+            _recurrenceEndDate = State(initialValue: Calendar.current.date(byAdding: .month, value: 6, to: resolvedDue) ?? resolvedDue)
+            _showEndDate = State(initialValue: false)
             _reminderOption = State(initialValue: .minutesBefore15)
             _selectedAssigneeIds = State(initialValue: [])
             _selectedTargetProfileIds = State(initialValue: [])
@@ -205,6 +218,25 @@ struct CreateTaskView: View {
             _emergencyPhone = State(initialValue: "")
             _formPriority = State(initialValue: .normal)
             _locationName = State(initialValue: "")
+        }
+    }
+
+    private var activeRecurrenceRuleString: String? {
+        selectedRecurrence.recurrenceRuleString(customDayInterval: recurrenceInterval)
+    }
+
+    private func applyDefaultRecurrenceEndDate(for rule: TaskRecurrenceRule) {
+        let cal = Calendar.current
+        let anchor = dueDate
+        if rule == .none {
+            showEndDate = false
+            return
+        }
+        showEndDate = true
+        if rule == .yearly {
+            recurrenceEndDate = cal.date(byAdding: .year, value: 6, to: anchor) ?? anchor
+        } else {
+            recurrenceEndDate = cal.date(byAdding: .month, value: 6, to: anchor) ?? anchor
         }
     }
 
@@ -225,10 +257,10 @@ struct CreateTaskView: View {
                     VStack(spacing: 14) {
                         titleEditorCard
                         timeSettingsCard
+                        recurrenceSettingsCard
                         forWhomCard
 
                         if isShowingMoreOptions {
-                            endTimeCard
                             repeatReminderPriorityCard
                             emergencyContactCard
                             assigneeWhoDoesCard
@@ -294,12 +326,6 @@ struct CreateTaskView: View {
                 guard hasEndTime else { return }
                 if endTime < newDue {
                     endTime = newDue
-                }
-            }
-            .onChange(of: hasEndTime) { _, enabled in
-                guard enabled else { return }
-                if endTime < dueDate {
-                    endTime = dueDate
                 }
             }
         }
@@ -431,6 +457,42 @@ struct CreateTaskView: View {
         }
     }
 
+    private var recurrenceSettingsCard: some View {
+        sheetCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 12) {
+                    Text("重复设置")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    Picker("重复", selection: $selectedRecurrence) {
+                        ForEach(TaskRecurrenceRule.allCases) { rule in
+                            Text(rule.displayName).tag(rule)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .accessibilityLabel("重复")
+                }
+
+                if selectedRecurrence == .custom {
+                    Stepper("每隔 \(recurrenceInterval) 天", value: $recurrenceInterval, in: 2 ... 365)
+                }
+
+                if selectedRecurrence != .none {
+                    Toggle("指定重复结束日期", isOn: $showEndDate)
+                    if showEndDate {
+                        DatePicker("结束重复", selection: $recurrenceEndDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                    }
+                }
+            }
+            .onChange(of: selectedRecurrence) { _, newValue in
+                applyDefaultRecurrenceEndDate(for: newValue)
+            }
+        }
+    }
+
     private var forWhomCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
@@ -442,42 +504,9 @@ struct CreateTaskView: View {
         }
     }
 
-    private var endTimeCard: some View {
-        sheetCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Toggle("设置结束时间", isOn: $hasEndTime)
-                if hasEndTime {
-                    DatePicker(
-                        "结束时间",
-                        selection: $endTime,
-                        in: dueDate...,
-                        displayedComponents: isAllDay ? [.date] : [.date, .hourAndMinute]
-                    )
-                    .datePickerStyle(.compact)
-                }
-            }
-        }
-    }
-
     private var repeatReminderPriorityCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 0) {
-                HStack {
-                    Text("重复")
-                        .font(.body)
-                    Spacer()
-                    Picker("", selection: $repeatOption) {
-                        ForEach(TaskRepeatOption.allCases) { option in
-                            Text(option.title).tag(option)
-                        }
-                    }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
-                }
-                .padding(.vertical, 4)
-
-                Divider().padding(.vertical, 6)
-
                 HStack {
                     Text("提醒")
                         .font(.body)
@@ -1015,7 +1044,7 @@ struct CreateTaskView: View {
                         dueDate: dueDate,
                         endDatetime: resolvedEndDatetime(for: dueDate),
                         isAllDay: isAllDay,
-                        recurrenceRule: repeatOption.recurrenceRule,
+                        recurrenceRule: activeRecurrenceRuleString,
                         recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
                         recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                         reminderOffsets: reminderOption.reminderOffsetsMinutes,
@@ -1034,7 +1063,7 @@ struct CreateTaskView: View {
                         dueDate: dueDate,
                         endDatetime: resolvedEndDatetime(for: dueDate),
                         isAllDay: isAllDay,
-                        recurrenceRule: repeatOption.recurrenceRule,
+                        recurrenceRule: activeRecurrenceRuleString,
                         recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
                         recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                         reminderOffsets: reminderOption.reminderOffsetsMinutes,
@@ -1094,7 +1123,7 @@ struct CreateTaskView: View {
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
                     isAllDay: isAllDay,
-                    recurrenceRule: repeatOption.recurrenceRule,
+                    recurrenceRule: activeRecurrenceRuleString,
                     recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
                     recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
@@ -1129,7 +1158,7 @@ struct CreateTaskView: View {
         do {
             let now = Date()
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
-            let recurrence = repeatOption.recurrenceRule
+            let recurrence = activeRecurrenceRuleString
             let groupId: UUID? = recurrence == nil ? nil : UUID()
             let dates: [Date]
             if let recurrence {
@@ -1246,50 +1275,7 @@ struct CreateTaskView: View {
     }
 }
 
-// MARK: - Repeat / Reminder
-
-private enum TaskRepeatOption: String, CaseIterable, Identifiable {
-    case never
-    case daily
-    case weekly
-    case monthly
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .never: return "从不"
-        case .daily: return "每天"
-        case .weekly: return "每周"
-        case .monthly: return "每月"
-        }
-    }
-
-    var recurrenceRule: String? {
-        switch self {
-        case .never: return nil
-        case .daily: return "FREQ=DAILY"
-        case .weekly: return "FREQ=WEEKLY"
-        case .monthly: return "FREQ=MONTHLY"
-        }
-    }
-
-    init(recurrenceRule: String?) {
-        guard let rule = recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines), rule.isEmpty == false else {
-            self = .never
-            return
-        }
-        if rule.contains("DAILY") {
-            self = .daily
-        } else if rule.contains("WEEKLY") {
-            self = .weekly
-        } else if rule.contains("MONTHLY") {
-            self = .monthly
-        } else {
-            self = .never
-        }
-    }
-}
+// MARK: - Reminder
 
 private enum TaskReminderOption: String, CaseIterable, Identifiable {
     case none
@@ -1583,15 +1569,19 @@ private struct TaskUpdatePayload: Encodable {
 }
 
 private extension CreateTaskView {
-    /// 无重复规则时强制为 `nil`；有重复而「结束日」UI 未接前为 `nil`。
+    /// 无重复规则时强制为 `nil`；未勾选「指定重复结束日期」时为 `nil`。
     func resolvedRecurrenceEndDateForPayload() -> Date? {
-        guard repeatOption.recurrenceRule != nil else { return nil }
-        return nil
+        guard selectedRecurrence != .none else { return nil }
+        guard showEndDate else { return nil }
+        return Calendar.current.startOfDay(for: recurrenceEndDate)
     }
 
-    /// 无重复规则时强制为 `nil`；有重复时默认间隔 `1`。
+    /// 无重复规则时强制为 `nil`；`custom` 写入间隔天数字，其余重复写 `1`。
     func resolvedRecurrenceIntervalForPayload() -> Int? {
-        guard repeatOption.recurrenceRule != nil else { return nil }
+        guard selectedRecurrence != .none else { return nil }
+        if selectedRecurrence == .custom {
+            return recurrenceInterval
+        }
         return 1
     }
 
