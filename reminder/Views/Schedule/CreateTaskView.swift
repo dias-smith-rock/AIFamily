@@ -4,6 +4,138 @@ import SwiftUI
 import Supabase
 #endif
 
+// MARK: - 表单卡片样式（供隔离子视图复用）
+
+private struct CreateTaskFormCardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+}
+
+private extension View {
+    func createTaskFormCardStyled() -> some View {
+        modifier(CreateTaskFormCardStyle())
+    }
+}
+
+private enum CreateTaskFocusField: Hashable {
+    case title
+    case cost
+    case emergency
+    case locationSearch
+}
+
+/// 「时间设置 + 重复设置」与标题输入解耦：仅在令牌字段变化时重绘，减轻 TextEditor 输入时的卡顿。
+private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
+    let dueDateToken: Date
+    let isAllDayToken: Bool
+    let selectedRecurrenceToken: TaskRecurrenceRule
+    let recurrenceIntervalToken: Int
+    let recurrenceEndDateToken: Date
+    let showEndDateToken: Bool
+
+    @Binding var dueDate: Date
+    @Binding var isAllDay: Bool
+    @Binding var selectedRecurrence: TaskRecurrenceRule
+    @Binding var recurrenceInterval: Int
+    @Binding var recurrenceEndDate: Date
+    @Binding var showEndDate: Bool
+
+    let onRecurrenceChanged: (TaskRecurrenceRule) -> Void
+
+    static func == (lhs: CreateTaskTimeRecurrenceBlock, rhs: CreateTaskTimeRecurrenceBlock) -> Bool {
+        lhs.dueDateToken == rhs.dueDateToken
+            && lhs.isAllDayToken == rhs.isAllDayToken
+            && lhs.selectedRecurrenceToken == rhs.selectedRecurrenceToken
+            && lhs.recurrenceIntervalToken == rhs.recurrenceIntervalToken
+            && lhs.recurrenceEndDateToken == rhs.recurrenceEndDateToken
+            && lhs.showEndDateToken == rhs.showEndDateToken
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("时间设置")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+
+                Toggle("全天", isOn: $isAllDay)
+
+                if isAllDay {
+                    DatePicker(
+                        "执行日期",
+                        selection: $dueDate,
+                        displayedComponents: [.date]
+                    )
+                    .datePickerStyle(.compact)
+                } else {
+                    HStack(alignment: .center, spacing: 12) {
+                        Text("执行时间")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 72, alignment: .leading)
+
+                        DatePicker(
+                            "",
+                            selection: $dueDate,
+                            displayedComponents: [.date]
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+
+                        DatePicker(
+                            "",
+                            selection: $dueDate,
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .labelsHidden()
+                        .datePickerStyle(.compact)
+                    }
+                }
+            }
+            .createTaskFormCardStyled()
+
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center, spacing: 12) {
+                    Text("重复设置")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 8)
+                    Picker("重复", selection: $selectedRecurrence) {
+                        ForEach(TaskRecurrenceRule.allCases) { rule in
+                            Text(rule.displayName).tag(rule)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .accessibilityLabel("重复")
+                }
+
+                if selectedRecurrence == .custom {
+                    Stepper("每隔 \(recurrenceInterval) 天", value: $recurrenceInterval, in: 2 ... 365)
+                }
+
+                if selectedRecurrence != .none {
+                    Toggle("指定重复结束日期", isOn: $showEndDate)
+                    if showEndDate {
+                        DatePicker("结束重复", selection: $recurrenceEndDate, displayedComponents: .date)
+                            .datePickerStyle(.compact)
+                    }
+                }
+            }
+            .createTaskFormCardStyled()
+            .onChange(of: selectedRecurrence) { _, newValue in
+                onRecurrenceChanged(newValue)
+            }
+        }
+    }
+}
+
 extension Notification.Name {
     static let scheduleTasksDidChange = Notification.Name("scheduleTasksDidChange")
     /// `object`：`UUID`（`households.id`）。家庭页保存成员/档案后发出，日程列表应刷新 roster 缓存。
@@ -33,7 +165,7 @@ struct CreateTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
 
-    @FocusState private var focusedField: Field?
+    @FocusState private var focusedField: CreateTaskFocusField?
 
     @State private var title = ""
     @State private var dueDate = Date()
@@ -173,13 +305,6 @@ struct CreateTaskView: View {
         }
     }
 
-    private enum Field: Hashable {
-        case title
-        case cost
-        case emergency
-        case locationSearch
-    }
-
     var body: some View {
         NavigationStack {
             ZStack {
@@ -189,8 +314,27 @@ struct CreateTaskView: View {
                 ScrollView {
                     VStack(spacing: 14) {
                         titleEditorCard
-                        timeSettingsCard
-                        recurrenceSettingsCard
+
+                        EquatableView(
+                            content: CreateTaskTimeRecurrenceBlock(
+                                dueDateToken: dueDate,
+                                isAllDayToken: isAllDay,
+                                selectedRecurrenceToken: selectedRecurrence,
+                                recurrenceIntervalToken: recurrenceInterval,
+                                recurrenceEndDateToken: recurrenceEndDate,
+                                showEndDateToken: showEndDate,
+                                dueDate: $dueDate,
+                                isAllDay: $isAllDay,
+                                selectedRecurrence: $selectedRecurrence,
+                                recurrenceInterval: $recurrenceInterval,
+                                recurrenceEndDate: $recurrenceEndDate,
+                                showEndDate: $showEndDate,
+                                onRecurrenceChanged: { rule in
+                                    applyDefaultRecurrenceEndDate(for: rule)
+                                }
+                            )
+                        )
+
                         forWhomCard
 
                         if isShowingMoreOptions {
@@ -239,7 +383,7 @@ struct CreateTaskView: View {
                         }
                     }
                     .fontWeight(.semibold)
-                    .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
+                    .disabled(isSaving)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -296,16 +440,12 @@ struct CreateTaskView: View {
     }
 
     private func sheetCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+        content().createTaskFormCardStyled()
     }
 
+    /// 标题独立成卡：输入时父视图仍会刷新，但下方「时间/重复」由 `EquatableView` 隔离，避免重复渲染重量级控件。
     private var titleEditorCard: some View {
-        sheetCard {
+        Group {
             ZStack(alignment: .bottomTrailing) {
                 ZStack(alignment: .topLeading) {
                     TextEditor(text: $title)
@@ -340,6 +480,7 @@ struct CreateTaskView: View {
                 }
             }
         }
+        .createTaskFormCardStyled()
     }
 
     private var titlePlaceholderText: String {
@@ -347,86 +488,6 @@ struct CreateTaskView: View {
             return "准备做什么？可以说：明天下午花 500 港币带老大去洗牙……"
         }
         return "准备做什么？"
-    }
-
-    private var timeSettingsCard: some View {
-        sheetCard {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("时间设置")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-
-                Toggle("全天", isOn: $isAllDay)
-
-                if isAllDay {
-                    DatePicker(
-                        "执行日期",
-                        selection: $dueDate,
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.compact)
-                } else {
-                    HStack(alignment: .center, spacing: 12) {
-                        Text("执行时间")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 72, alignment: .leading)
-
-                        DatePicker(
-                            "",
-                            selection: $dueDate,
-                            displayedComponents: [.date]
-                        )
-                        .labelsHidden()
-                        .datePickerStyle(.compact)
-
-                        DatePicker(
-                            "",
-                            selection: $dueDate,
-                            displayedComponents: [.hourAndMinute]
-                        )
-                        .labelsHidden()
-                        .datePickerStyle(.compact)
-                    }
-                }
-            }
-        }
-    }
-
-    private var recurrenceSettingsCard: some View {
-        sheetCard {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .center, spacing: 12) {
-                    Text("重复设置")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 8)
-                    Picker("重复", selection: $selectedRecurrence) {
-                        ForEach(TaskRecurrenceRule.allCases) { rule in
-                            Text(rule.displayName).tag(rule)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .accessibilityLabel("重复")
-                }
-
-                if selectedRecurrence == .custom {
-                    Stepper("每隔 \(recurrenceInterval) 天", value: $recurrenceInterval, in: 2 ... 365)
-                }
-
-                if selectedRecurrence != .none {
-                    Toggle("指定重复结束日期", isOn: $showEndDate)
-                    if showEndDate {
-                        DatePicker("结束重复", selection: $recurrenceEndDate, displayedComponents: .date)
-                            .datePickerStyle(.compact)
-                    }
-                }
-            }
-            .onChange(of: selectedRecurrence) { _, newValue in
-                applyDefaultRecurrenceEndDate(for: newValue)
-            }
-        }
     }
 
     private var forWhomCard: some View {
@@ -646,19 +707,13 @@ struct CreateTaskView: View {
                 Text(currencySymbol)
                     .font(.body)
                     .foregroundStyle(.secondary)
-                TextField("0", text: $costInput)
+                TextField("0", text: costInputBinding)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .font(.body.weight(.medium))
                     .monospacedDigit()
                     .focused($focusedField, equals: .cost)
                     .frame(minWidth: 96)
-            }
-        }
-        .onChange(of: costInput) { _, newValue in
-            let normalized = Self.normalizedDecimalInput(newValue)
-            if normalized != newValue {
-                costInput = normalized
             }
         }
 
@@ -771,6 +826,13 @@ struct CreateTaskView: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
+    private var costInputBinding: Binding<String> {
+        Binding(
+            get: { costInput },
+            set: { costInput = Self.normalizedDecimalInput($0) }
+        )
+    }
+
     private var normalizedTitle: String {
         title.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -881,7 +943,10 @@ struct CreateTaskView: View {
     }
 
     private func saveTask() async {
-        guard normalizedTitle.isEmpty == false else { return }
+        guard normalizedTitle.isEmpty == false else {
+            errorMessage = "请先填写任务标题"
+            return
+        }
         guard let householdId = appRouter.selectedHouseholdId else {
             errorMessage = "当前未选择家庭。"
             return
@@ -1215,7 +1280,9 @@ struct CreateTaskView: View {
                     onAlarmSync?(syntheticMother)
                 }
 
-                let children = RecurrenceEngine.generateInstances(from: motherRow)
+                let children = await Task.detached(priority: .userInitiated) {
+                    RecurrenceEngine.generateInstances(from: motherRow)
+                }.value
                 if children.isEmpty == false {
                     let childPayloads = children.map { child in
                         TaskInsertPayload(
