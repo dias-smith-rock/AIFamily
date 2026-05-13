@@ -121,6 +121,11 @@ private enum ScheduleTimeColumnMetrics {
     static let labelLineSpacing: CGFloat = 6
 }
 
+private enum ScheduleNowLineMetrics {
+    /// 「此刻」横向指示线高度（与任务行、间隙行共用）。
+    static let lineHeight: CGFloat = 1.5
+}
+
 private struct ScheduleAnchorGapSegment: View {
     let stableID: String
     let previousAnchor: Date
@@ -149,24 +154,28 @@ private struct ScheduleAnchorGapSegment: View {
                     .frame(width: 1)
 
                 if gapKind == .containsNowMarker, nowInThisGap {
-                    VStack(spacing: 2) {
-                        Text(now.formatted(date: .omitted, time: .shortened))
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(.red)
-                        Circle()
-                            .fill(Color.red)
-                            .frame(width: 7, height: 7)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(now.formatted(date: .omitted, time: .shortened))
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
                     Spacer(minLength: 0)
                 }
             }
             .frame(width: timeColumnWidth, alignment: .leading)
 
-            Color.clear
-                .frame(height: compactHeight)
-                .frame(maxWidth: .infinity)
+            ZStack(alignment: .center) {
+                Color.clear
+                    .frame(height: compactHeight)
+                    .frame(maxWidth: .infinity)
+
+                if gapKind == .containsNowMarker, nowInThisGap {
+                    Capsule()
+                        .fill(Color.red.opacity(0.92))
+                        .frame(height: ScheduleNowLineMetrics.lineHeight)
+                        .frame(maxWidth: .infinity)
+                }
+            }
         }
         .id(gapKind == .containsNowMarker ? ScheduleAnchorFlowScrollIDs.nowMarker : stableID)
     }
@@ -217,7 +226,7 @@ private struct ScheduleAnchorTaskRow<Card: View>: View {
                             }
                             Capsule()
                                 .fill(Color.red.opacity(0.92))
-                                .frame(height: 3)
+                                .frame(height: ScheduleNowLineMetrics.lineHeight)
                                 .frame(maxWidth: .infinity)
                         }
                         .padding(.bottom, 6)
