@@ -28,40 +28,9 @@ struct FamilyView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                GlobalHeaderView {
-                    Text("我的家庭")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
-                } trailing: {
-                    HStack(spacing: 10) {
-                        Button(isSortingMembers ? "完成" : "排序") {
-                            withAnimation(.snappy) {
-                                isSortingMembers.toggle()
-                            }
-                        }
-                        .font(.system(size: 14, weight: .semibold))
-
-                        Button {
-                            addMemberRoute = .entry
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 34, height: 34)
-                                .background(AppTheme.ColorToken.accent)
-                                .clipShape(Circle())
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("添加家庭成员")
-                }
-
-                familyListBody
+            familyListBody
                 .background(Color(.systemGroupedBackground))
-            }
-            .background(Color(.systemGroupedBackground))
-            .navigationBarHidden(true)
+                .navigationBarHidden(true)
         }
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
@@ -199,29 +168,58 @@ struct FamilyView: View {
                 .frame(maxWidth: .infinity, minHeight: 220)
                 .listRowBackground(Color.clear)
             } else if viewModel.orderedProfiles.isEmpty {
-                profilesEmptyState
-                    .listRowBackground(Color.clear)
+                Section {
+                    householdSummaryRow
+                    profilesEmptyState
+                } header: {
+                    myHouseholdSectionHeader
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
             } else {
-                if let me = viewModel.currentUserProfile {
-                    Section("我") {
-                        FamilyMemberRowView(
-                            profile: me,
-                            subtitle: memberListSubtitle(for: me),
-                            isProfileOnlyMember: me.isProfileOnly
-                        ) {
-                            selectedProfileForDetail = me
-                        }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                Section {
+                    householdSummaryRow
+                        .listRowInsets(
+                            EdgeInsets(
+                                top: 8,
+                                leading: 16,
+                                bottom: creatorProfile != nil ? 2 : 8,
+                                trailing: 16
+                            )
+                        )
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(creatorProfile == nil ? .automatic : .hidden, edges: .bottom)
+
+                    if let creator = creatorProfile {
+                        FamilyMemberRowView(
+                            profile: creator,
+                            displayTitle: displayTitleForRow(creator),
+                            subtitle: memberListSubtitle(for: creator),
+                            isLocalProfile: creator.isLocalProfile,
+                            prominentRole: prominentListRole(for: creator),
+                            maskedPhoneLine: maskedPhoneForList(for: creator),
+                            rawPhoneNumber: rawPhoneForList(for: creator)
+                        ) {
+                            selectedProfileForDetail = creator
+                        }
+                        .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 8, trailing: 16))
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden, edges: .top)
                     }
+                } header: {
+                    myHouseholdSectionHeader
                 }
 
-                Section("家庭成员") {
-                    ForEach(viewModel.otherProfiles) { profile in
+                Section {
+                    ForEach(membersExcludingCreator) { profile in
                         FamilyMemberRowView(
                             profile: profile,
+                            displayTitle: displayTitleForRow(profile),
                             subtitle: memberListSubtitle(for: profile),
-                            isProfileOnlyMember: profile.isProfileOnly
+                            isLocalProfile: profile.isLocalProfile,
+                            prominentRole: prominentListRole(for: profile),
+                            maskedPhoneLine: maskedPhoneForList(for: profile),
+                            rawPhoneNumber: rawPhoneForList(for: profile)
                         ) {
                             selectedProfileForDetail = profile
                         }
@@ -230,22 +228,10 @@ struct FamilyView: View {
                     }
                     .onMove { indexSet, destination in
                         guard isSortingMembers else { return }
-                        viewModel.moveOtherProfiles(fromOffsets: indexSet, toOffset: destination)
+                        viewModel.moveNonCreatorProfiles(fromOffsets: indexSet, toOffset: destination)
                     }
-                }
-
-                Section {
-                    addMemberDashedCard
-                }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .listRowBackground(Color.clear)
-
-                if canManageHousehold {
-                    Section("家庭资料") {
-                        householdProfileSection
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.clear)
+                } header: {
+                    otherMembersSectionHeader
                 }
 
                 if isMemberRole {
@@ -283,48 +269,187 @@ struct FamilyView: View {
         .padding(.vertical, 28)
     }
 
-    private var addMemberDashedCard: some View {
-        Button {
-            addMemberRoute = .entry
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "person.badge.plus")
-                    .font(.body.weight(.semibold))
-                Text("添加家庭成员")
-                    .font(.body.weight(.semibold))
+    private var myHouseholdSectionHeader: some View {
+        HStack(alignment: .center) {
+            Text("我的家庭")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Button {
+                openHouseholdSettingsFromGear()
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.body)
+                    .foregroundStyle(.blue)
             }
-            .foregroundStyle(Color.accentColor)
-            .frame(maxWidth: .infinity)
-            .frame(height: 60)
-            .background(Color.clear)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 1, dash: [5]))
-            )
+            .buttonStyle(.plain)
+            .disabled(canManageHousehold == false)
+            .opacity(canManageHousehold ? 1 : 0.35)
+            .accessibilityLabel("家庭设置")
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("添加家庭成员")
+        .textCase(nil)
     }
 
-    /// 列表第二行：已登录成员显示家庭内角色；仅档案成员不占用副标题（由行内「档案」标记展示）。
-    private func memberListSubtitle(for profile: FamilyProfile) -> String {
-        if profile.isProfileOnly {
-            return ""
+    /// 家庭名称 + 图标：直接铺在分组背景上，**不使用**白底圆角卡片。
+    private var householdSummaryRow: some View {
+        Group {
+            if canManageHousehold {
+                Button {
+                    renameErrorMessage = nil
+                    isShowingRenameHouseholdSheet = true
+                } label: {
+                    householdSummaryRowContent
+                }
+                .buttonStyle(.plain)
+                .disabled(appRouter.selectedHouseholdId == nil)
+            } else {
+                householdSummaryRowContent
+            }
         }
-        if let uid = profile.userId,
-           let membership = viewModel.members.first(where: { $0.userId == uid }) {
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("家庭名称 \(appRouter.selectedHouseholdName ?? "未命名家庭")，家庭资料")
+    }
+
+    private var householdSummaryRowContent: some View {
+        HStack(alignment: .center, spacing: 12) {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.orange.opacity(0.2))
+                .frame(width: 50, height: 50)
+                .overlay {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(.orange)
+                }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(appRouter.selectedHouseholdName ?? "未命名家庭")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text("家庭资料")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.vertical, 6)
+    }
+
+    private func openHouseholdSettingsFromGear() {
+        guard canManageHousehold else { return }
+        renameErrorMessage = nil
+        isShowingRenameHouseholdSheet = true
+    }
+
+    private var otherMembersSectionHeader: some View {
+        HStack(spacing: 16) {
+            Text("家庭成员")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            Button {
+                withAnimation(.snappy) {
+                    isSortingMembers.toggle()
+                }
+            } label: {
+                Image(systemName: "arrow.up.arrow.down")
+                    .font(.body)
+                    .foregroundStyle(.blue)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isSortingMembers ? "完成排序" : "排序家庭成员")
+
+            Button {
+                addMemberRoute = .entry
+            } label: {
+                Image(systemName: "plus")
+                    .font(.body.weight(.bold))
+                    .foregroundStyle(.blue)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("添加家庭成员")
+        }
+        .textCase(nil)
+    }
+
+    private var creatorProfile: FamilyProfile? {
+        viewModel.orderedProfiles.first(where: { isCreatorProfile($0) })
+    }
+
+    private var membersExcludingCreator: [FamilyProfile] {
+        viewModel.orderedProfiles.filter { isCreatorProfile($0) == false }
+    }
+
+    private func isCreatorProfile(_ profile: FamilyProfile) -> Bool {
+        resolvedMembership(for: profile)?.role == .creator
+    }
+
+    private func resolvedMembership(for profile: FamilyProfile) -> HouseholdMembership? {
+        profile.primaryMembership ?? viewModel.membership(for: profile)
+    }
+
+    /// 已绑定账号且存在邮箱时，列表主行展示邮箱（与设计稿一致）。
+    private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
+        guard profile.userId != nil else { return nil }
+        let email = resolvedMembership(for: profile)?.email?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return email.isEmpty ? nil : email
+    }
+
+    private func rawPhoneForList(for profile: FamilyProfile) -> String? {
+        let raw = resolvedMembership(for: profile)?.phoneNumber?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return raw.isEmpty ? nil : raw
+    }
+
+    /// 列表第二行：创建者/管理员已在行内胶囊展示，此处留空；普通成员显示「成员」。
+    private func memberListSubtitle(for profile: FamilyProfile) -> String {
+        let membership = resolvedMembership(for: profile)
+        guard let membership else {
+            return profile.isLocalProfile ? "" : "家庭成员"
+        }
+        switch membership.role {
+        case .creator, .admin:
+            return ""
+        case .member:
             return membership.role.displayTitle
         }
-        return "家庭成员"
+    }
+
+    /// 行内显著角色：创建者优先于管理员；普通成员不展示胶囊。
+    private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {
+        guard let role = resolvedMembership(for: profile)?.role else { return nil }
+        switch role {
+        case .creator, .admin:
+            return role
+        case .member:
+            return nil
+        }
+    }
+
+    private func maskedPhoneForList(for profile: FamilyProfile) -> String? {
+        guard let raw = rawPhoneForList(for: profile) else { return nil }
+        return FamilyMemberRowView.maskPhoneForDisplay(raw)
     }
 
     /// 详情页「角色」一行：仅档案成员展示「成员档案」标签式文案。
     private func detailIdentitySubtitle(for profile: FamilyProfile) -> String {
-        if profile.isProfileOnly {
+        if profile.isLocalProfile {
             return "成员档案"
         }
-        if let uid = profile.userId,
-           let membership = viewModel.members.first(where: { $0.userId == uid }) {
+        if let membership = resolvedMembership(for: profile) {
             return membership.role.displayTitle
         }
         return "家庭成员"
@@ -332,9 +457,6 @@ struct FamilyView: View {
 
     private var leaveHouseholdSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("成员操作")
-                .font(AppTheme.FontToken.section)
-
             Button(role: .destructive) {
                 // TODO: 调用 supabase 删除当前用户的 membership 记录，并跳转回路由选择页。
             } label: {
@@ -348,40 +470,6 @@ struct FamilyView: View {
             }
             .buttonStyle(.bordered)
             .tint(.red)
-        }
-    }
-
-    private var householdProfileSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("家庭资料")
-                .font(AppTheme.FontToken.section)
-
-            Button {
-                renameErrorMessage = nil
-                isShowingRenameHouseholdSheet = true
-            } label: {
-                HStack {
-                    Image(systemName: "square.and.pencil")
-                        .foregroundStyle(.secondary)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("修改家庭名称")
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Text(appRouter.selectedHouseholdName ?? "未命名家庭")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                }
-                .padding(14)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(.plain)
-            .disabled(appRouter.selectedHouseholdId == nil)
         }
     }
 

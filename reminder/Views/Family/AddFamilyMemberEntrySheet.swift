@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 添加家庭成员入口：邀请制 vs 仅档案（无独立账号）。
+/// 添加家庭成员入口：邀请制 vs 新建档案成员（尚无 membership）。
 struct AddFamilyMemberEntrySheet: View {
     @Environment(\.dismiss) private var dismiss
 

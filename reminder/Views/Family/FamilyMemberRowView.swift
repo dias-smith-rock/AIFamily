@@ -3,12 +3,40 @@ import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
-    /// 第二行说明：已绑定账号时展示家庭角色等；仅档案成员可为空（由 `isProfileOnlyMember` 展示「档案」标记）。
+    /// 主标题行文案；默认用 `profile.name`（有邮箱且为绑定账号时由上层传入邮箱等）。
+    var displayTitle: String? = nil
+    /// 第二行说明：与行内角色胶囊互补（创建者/管理员不再重复占一行）。
     let subtitle: String
-    /// 无独立登录账号的家庭成员，在姓名旁弱化标注。
-    var isProfileOnlyMember: Bool = false
+    /// 当前行是否为 **档案成员**（无 `household_memberships` 关联）；与手机号、`user_id` 无关。
+    var isLocalProfile: Bool = false
+    /// 列表行内显著角色：仅传 `.creator` 或 `.admin`；普通成员传 `nil`。
+    var prominentRole: MembershipRole? = nil
+    /// 与 `household_memberships.phone_number` 对应的脱敏展示；无则 `nil`。
+    var maskedPhoneLine: String? = nil
+    /// 原始手机号，用于与 `maskedPhoneLine` 配合在行内切换显示（仅在有号码时展示眼睛按钮）。
+    var rawPhoneNumber: String? = nil
     var onTap: (() -> Void)? = nil
     @State private var revealsSensitiveInfo = false
+    @State private var revealsFullPhone = false
+
+    /// 列表右侧手机号脱敏（保留末 4 位数字）。
+    static func maskPhoneForDisplay(_ phone: String) -> String {
+        let digits = phone.filter(\.isNumber)
+        guard digits.count >= 4 else {
+            return String(repeating: "•", count: min(4, max(1, digits.count)))
+        }
+        if digits.count <= 4 {
+            return String(repeating: "•", count: 2) + digits
+        }
+        return "••••" + String(digits.suffix(4))
+    }
+
+    private var mainTitle: String {
+        if let displayTitle, displayTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            return displayTitle
+        }
+        return profile.name
+    }
 
     private var initialCharacter: String {
         let trimmed = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -17,15 +45,7 @@ struct FamilyMemberRowView: View {
     }
 
     private var avatarBackground: Color {
-        let palette: [Color] = [
-            Color(red: 0.95, green: 0.79, blue: 0.84),
-            Color(red: 0.80, green: 0.88, blue: 0.98),
-            Color(red: 0.82, green: 0.95, blue: 0.84),
-            Color(red: 0.99, green: 0.90, blue: 0.75),
-            Color(red: 0.88, green: 0.83, blue: 0.96)
-        ]
-        let index = abs(profile.id.uuidString.hashValue) % palette.count
-        return palette[index]
+        Color.accentColor.opacity(0.42)
     }
 
     private var sensitiveSummary: String? {
@@ -34,6 +54,21 @@ struct FamilyMemberRowView: View {
             .filter { $0.isEmpty == false }
         guard let first = ids.first else { return nil }
         return revealsSensitiveInfo ? first : maskSensitive(first)
+    }
+
+    private var phoneLineText: String? {
+        guard let maskedPhoneLine else { return nil }
+        if revealsFullPhone, let raw = rawPhoneNumber?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false {
+            return raw
+        }
+        return maskedPhoneLine
+    }
+
+    private var canTogglePhoneReveal: Bool {
+        guard let raw = rawPhoneNumber?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false else {
+            return false
+        }
+        return maskedPhoneLine != nil
     }
 
     var body: some View {
@@ -57,22 +92,19 @@ struct FamilyMemberRowView: View {
                 .clipShape(Circle())
 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text(profile.name)
+                    HStack(alignment: .center, spacing: 6) {
+                        Text(mainTitle)
                             .font(.headline)
                             .foregroundStyle(.primary)
+                            .lineLimit(2)
                             .multilineTextAlignment(.leading)
 
-                        if isProfileOnlyMember {
-                            HStack(spacing: 3) {
-                                Image(systemName: "person.crop.circle.badge.clock")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                                Text("档案")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            .accessibilityLabel("成员档案")
+                        if let prominentRole {
+                            membershipRoleCapsule(prominentRole)
+                        }
+
+                        if isLocalProfile {
+                            localProfileBadge
                         }
                     }
 
@@ -80,6 +112,27 @@ struct FamilyMemberRowView: View {
                         Text(subtitle)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+
+                    if let phoneLineText {
+                        HStack(spacing: 6) {
+                            Text(phoneLineText)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                                .lineLimit(1)
+
+                            if canTogglePhoneReveal {
+                                Button {
+                                    revealsFullPhone.toggle()
+                                } label: {
+                                    Image(systemName: revealsFullPhone ? "eye.slash" : "eye")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
                     }
 
                     if let sensitiveSummary {
@@ -100,8 +153,7 @@ struct FamilyMemberRowView: View {
                         }
                     }
                 }
-
-                Spacer(minLength: 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
@@ -109,10 +161,45 @@ struct FamilyMemberRowView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 12)
-            .background(Color(.secondarySystemGroupedBackground))
+            .background(Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
+    }
+
+    private var localProfileBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "icloud")
+                .font(.caption2.weight(.medium))
+            Text("档案")
+                .font(.caption2.weight(.medium))
+        }
+        .foregroundStyle(.tertiary)
+        .accessibilityLabel("档案成员")
+    }
+
+    @ViewBuilder
+    private func membershipRoleCapsule(_ role: MembershipRole) -> some View {
+        switch role {
+        case .creator:
+            Text("创建者")
+                .font(.caption2.weight(.semibold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.blue.opacity(0.12))
+                .foregroundStyle(.blue)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        case .admin:
+            Text("管理员")
+                .font(.caption2.weight(.semibold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.orange.opacity(0.14))
+                .foregroundStyle(.orange)
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        case .member:
+            EmptyView()
+        }
     }
 
     private var avatarFallback: some View {

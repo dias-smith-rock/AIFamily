@@ -238,24 +238,59 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
 struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
     private let provider: SupabaseClientProviding
 
+    /// PostgREST 在 `family_profiles` 与 `household_memberships` 间存在 **两条** 可嵌入边：
+    /// - `household_memberships.profile_id` → `family_profiles.id`（档案下的身份行，嵌套用这条）
+    /// - `family_profiles.created_by` → `household_memberships.id`（反向）
+    /// 未加 `!profile_id` 时会报 *more than one relationship*。
+    private static let selectProfilesWithMemberships =
+        "*, memberships:household_memberships!profile_id(*)"
+
     init(provider: SupabaseClientProviding) {
         self.provider = provider
     }
 
     func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile] {
         #if canImport(Supabase)
-        let rawResponse = try await provider.client
-            .from(SupabaseTable.familyProfiles)
-            .select()
-            .eq("household_id", value: householdId.uuidString)
-            .order("name", ascending: true)
-            .execute()
+        #if DEBUG
+        print("🔎 [FamilyDebug] fetchProfiles start — household_id=\(householdId.uuidString)")
+        print("🔎 [FamilyDebug] fetchProfiles select=\"\(Self.selectProfilesWithMemberships)\"")
+        #endif
+        // 勿把 `execute()` 写成 `PostgrestResponse<Data>`：`execute<T: Decodable>` 会用 JSONDecoder 把 body 解成 `T`；
+        // `Data` 的 Codable 语义是 **Base64 字符串**，与 PostgREST 返回的 JSON 数组冲突 → “Expected String, found array”。
+        let rawResponse: PostgrestResponse<Void>
+        do {
+            rawResponse = try await provider.client
+                .from(SupabaseTable.familyProfiles)
+                .select(Self.selectProfilesWithMemberships)
+                .eq("household_id", value: householdId.uuidString)
+                .order("name", ascending: true)
+                .execute()
+        } catch {
+            #if DEBUG
+            print("❌ [FamilyDebug] fetchProfiles execute failed — household_id=\(householdId.uuidString)")
+            print("   errorType=\(String(describing: Swift.type(of: error)))")
+            print("   localizedDescription=\(error.localizedDescription)")
+            if error is DecodingError {
+                print("   hint: 若此处为 DecodingError，检查是否误用了 `PostgrestResponse<Data>`；应使用 `execute()` → `PostgrestResponse<Void>`，再用 `rawResponse.data` 手动解码。")
+            }
+            let ns = error as NSError
+            if ns.domain.isEmpty == false || ns.code != 0 {
+                print("   nsError domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
+            }
+            #endif
+            throw error
+        }
+        #if DEBUG
+        let http = rawResponse.response
+        print("🔎 [FamilyDebug] fetchProfiles response status=\(http.statusCode) bytes=\(rawResponse.data.count)")
+        #endif
         do {
             return try SupabaseCodec.makeDecoder().decode([FamilyProfile].self, from: rawResponse.data)
         } catch {
             #if DEBUG
             let rawJSONString = String(data: rawResponse.data, encoding: .utf8) ?? "<non-utf8>"
-            print("❌ [FamilyDebug] family_profiles decode failed - householdId=\(householdId.uuidString)")
+            print("❌ [FamilyDebug] family_profiles decode failed — household_id=\(householdId.uuidString)")
+            print("🔎 [FamilyDebug] fetchProfiles select was=\"\(Self.selectProfilesWithMemberships)\"")
             print("📦 [FamilyDebug] family_profiles raw payload: \(rawJSONString)")
             print("🧨 [FamilyDebug] decode error: \(error.localizedDescription)")
             #endif

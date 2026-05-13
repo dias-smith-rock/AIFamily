@@ -6,6 +6,8 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
     let id: UUID
     let householdId: UUID
     var userId: UUID?
+    /// 指向 `family_profiles.id`；嵌套查询与写入身份行时必填（由 RPC / 触发器 / 客户端保证）。
+    var profileId: UUID?
     var role: MembershipRole
     var nickname: String
     var avatarUrl: String?
@@ -21,6 +23,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         id: UUID,
         householdId: UUID,
         userId: UUID?,
+        profileId: UUID? = nil,
         role: MembershipRole,
         nickname: String,
         avatarUrl: String?,
@@ -35,6 +38,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         self.id = id
         self.householdId = householdId
         self.userId = userId
+        self.profileId = profileId
         self.role = role
         self.nickname = nickname
         self.avatarUrl = avatarUrl
@@ -53,6 +57,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         case id
         case householdId
         case userId
+        case profileId
         case role
         case nickname
         case avatarUrl
@@ -70,6 +75,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         id = try Self.decodeRequiredUUID(container: container, key: .id)
         householdId = try Self.decodeRequiredUUID(container: container, key: .householdId)
         userId = try Self.decodeOptionalUUID(container: container, key: .userId)
+        profileId = try Self.decodeOptionalUUID(container: container, key: .profileId)
         role = try container.decode(MembershipRole.self, forKey: .role)
         nickname = try container.decode(String.self, forKey: .nickname)
         avatarUrl = try container.decodeIfPresent(String.self, forKey: .avatarUrl)
@@ -87,6 +93,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         try container.encode(id, forKey: .id)
         try container.encode(householdId, forKey: .householdId)
         try container.encodeIfPresent(userId, forKey: .userId)
+        try container.encodeIfPresent(profileId, forKey: .profileId)
         try container.encode(role, forKey: .role)
         try container.encode(nickname, forKey: .nickname)
         try container.encodeIfPresent(avatarUrl, forKey: .avatarUrl)

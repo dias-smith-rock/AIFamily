@@ -107,8 +107,18 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
     private var profiles: [FamilyProfile] = FamilyProfile.mockProfiles
 
     func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile] {
-        profiles
+        let memberRows = HouseholdMembership.mockMembers.filter { $0.householdId == householdId }
+        return profiles
             .filter { $0.householdId == householdId }
+            .map { p in
+                let linked = memberRows.filter { m in
+                    m.householdId == p.householdId
+                        && (m.profileId == p.id || (m.userId != nil && m.userId == p.userId))
+                }
+                var copy = p
+                copy.memberships = linked.isEmpty ? nil : linked
+                return copy
+            }
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 

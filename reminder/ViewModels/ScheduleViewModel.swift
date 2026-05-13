@@ -124,10 +124,14 @@ final class ScheduleViewModel: ObservableObject {
             async let memberships = membershipService.fetchMemberships(in: householdId)
             async let profiles = familyProfileService.fetchProfiles(in: householdId)
             let (rawMembers, rawProfiles) = try await (memberships, profiles)
-            householdMembers = rawMembers
+            familyProfiles = rawProfiles
+            let embedded = FamilyProfile.uniqueMembershipsFlattened(from: rawProfiles)
+            let embeddedIds = Set(embedded.map(\.id))
+            let orphans = rawMembers.filter { embeddedIds.contains($0.id) == false }
+            let merged = embedded + orphans
+            householdMembers = merged
                 .filter { $0.status == .active }
                 .sorted { $0.createdAt < $1.createdAt }
-            familyProfiles = rawProfiles
             rosterLoadedForHouseholdId = householdId
         } catch {
             householdMembers = []

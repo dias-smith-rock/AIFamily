@@ -105,7 +105,9 @@ final class FamilyViewModel: ObservableObject {
         let cachedPayload: FamilyMembersCachePayload? = LocalCacheManager.shared.load(forKey: cacheKey)
         if let cachedPayload {
             profiles = cachedPayload.profiles
-            members = cachedPayload.members
+            let fromEmbed = FamilyProfile.uniqueMembershipsFlattened(from: profiles)
+            members = fromEmbed.isEmpty ? cachedPayload.members : fromEmbed
+            sortProfilesForDisplay()
             applyLocalOrdering()
             errorMessage = nil
             hasLoadedOnce = true
@@ -127,21 +129,44 @@ final class FamilyViewModel: ObservableObject {
         do {
             async let profileRows = profileService.fetchProfiles(in: householdId)
             async let membershipRows = membershipService.fetchMemberships(in: householdId)
-            let (p, m) = try await (profileRows, membershipRows)
+            let (rawProfiles, rawMemberships) = try await (profileRows, membershipRows)
+            let p = FamilyProfile.mergingMembershipRows(rawProfiles, memberships: rawMemberships)
             profiles = p
-            members = m
+            sortProfilesForDisplay()
+            let embedded = FamilyProfile.uniqueMembershipsFlattened(from: p)
+            var seen = Set<UUID>()
+            var combined: [HouseholdMembership] = []
+            for row in embedded + rawMemberships where seen.insert(row.id).inserted {
+                combined.append(row)
+            }
+            combined.sort { lhs, rhs in
+                let lr = membershipRoleSortIndex(lhs.role)
+                let rr = membershipRoleSortIndex(rhs.role)
+                if lr != rr {
+                    return lr < rr
+                }
+                return lhs.createdAt < rhs.createdAt
+            }
+            members = combined
             applyLocalOrdering()
-            let snapshot = FamilyMembersCachePayload(profiles: p, members: m)
+            let snapshot = FamilyMembersCachePayload(profiles: profiles, members: members)
             LocalCacheManager.shared.save(snapshot, forKey: cacheKey)
             #if DEBUG
-            print("✅ [FamilyDebug] loadMembers success - profiles=\(p.count), memberships=\(m.count)")
+            print("✅ [FamilyDebug] loadMembers success - profiles=\(p.count), memberships=\(members.count)")
             #endif
         } catch {
             if hadDiskCache == false {
                 errorMessage = error.localizedDescription
             }
             #if DEBUG
-            print("❌ [FamilyDebug] loadMembers failed - \(error.localizedDescription)")
+            print("❌ [FamilyDebug] loadMembers failed — \(error.localizedDescription)")
+            print("   phase: parallel profileService.fetchProfiles + membershipService.fetchMemberships")
+            print("   household_id=\(householdId.uuidString)")
+            print("   note: PostgREST embed 报「more than one relationship」时，说明 family_profiles↔household_memberships 存在多条外键（如 created_by 与 profile_id），需在 select 中使用 !profile_id 消歧。")
+            let ns = error as NSError
+            if ns.domain.isEmpty == false || ns.code != 0 {
+                print("   nsError domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
+            }
             #endif
         }
     }
@@ -168,8 +193,7 @@ final class FamilyViewModel: ObservableObject {
 
         do {
             let createdMember = try await membershipService.createMembership(member)
-            members.append(createdMember)
-            members.sort { $0.createdAt < $1.createdAt }
+            await loadMembers()
             postScheduleHouseholdRosterChangedIfNeeded()
             return createdMember
         } catch {
@@ -221,6 +245,7 @@ final class FamilyViewModel: ObservableObject {
         do {
             try await profileService.updateProfile(profileId: profile.id, draft: normalizedDraft)
             var updatedProfile = profile
+            updatedProfile.memberships = profile.memberships
             updatedProfile.name = normalizedDraft.name
             updatedProfile.avatarUrl = normalizedDraft.avatarURL
             updatedProfile.gender = normalizedDraft.gender
@@ -287,20 +312,51 @@ final class FamilyViewModel: ObservableObject {
 
     func canEditProfile(_ profile: FamilyProfile?) -> Bool {
         guard let profile else { return canCurrentUserManageHousehold }
-        guard let currentUserId = currentMembership?.userId else { return false }
-        if profile.userId == currentUserId { return true }
+        guard let cm = currentMembership else { return false }
+        if let uid = profile.userId, let cmUserId = cm.userId, uid == cmUserId { return true }
+        if membership(for: profile)?.id == cm.id { return true }
         if canCurrentUserManageHousehold, profile.userId == nil { return true }
         return false
     }
 
     var currentUserProfile: FamilyProfile? {
-        guard let currentUserId = currentMembership?.userId else { return nil }
-        return profiles.first(where: { $0.userId == currentUserId })
+        guard let cm = currentMembership else { return nil }
+        if let uid = cm.userId,
+           let byUserId = profiles.first(where: { $0.userId == uid }) {
+            return byUserId
+        }
+        return profiles.first { membership(for: $0)?.id == cm.id }
+    }
+
+    /// 与档案对应的 **`household_memberships`**：优先嵌套 `memberships`；否则回退到扁平 `members`（兼容旧缓存 / 未带嵌套的响应）。
+    func membership(for profile: FamilyProfile) -> HouseholdMembership? {
+        if let embedded = profile.primaryMembership {
+            return embedded
+        }
+        let pool = members.filter { $0.status == .active }
+        if let matched = pool.first(where: { $0.profileId == profile.id && $0.householdId == profile.householdId }) {
+            return matched
+        }
+        if let uid = profile.userId,
+           let matched = pool.first(where: { $0.userId == uid && $0.householdId == profile.householdId }) {
+            return matched
+        }
+        return nil
+    }
+
+    /// 列表/排序用的角色：嵌套优先，否则扁平 `members`（与 `FamilyView.resolvedMembership` 一致）。
+    private func resolvedListRole(_ profile: FamilyProfile) -> MembershipRole? {
+        profile.primaryMembership?.role ?? membership(for: profile)?.role
     }
 
     var otherProfiles: [FamilyProfile] {
         guard let me = currentUserProfile else { return orderedProfiles }
         return orderedProfiles.filter { $0.id != me.id }
+    }
+
+    /// 非「创建者」身份行在列表中的顺序（与家庭页「家庭成员」区块一致）。
+    var nonCreatorProfiles: [FamilyProfile] {
+        orderedProfiles.filter { resolvedListRole($0) != .creator }
     }
 
     func moveOtherProfiles(fromOffsets source: IndexSet, toOffset destination: Int) {
@@ -309,6 +365,17 @@ final class FamilyViewModel: ObservableObject {
         let me = currentUserProfile
         orderedProfiles = (me.map { [$0] } ?? []) + others
         persistOrder(for: others)
+    }
+
+    /// 在「创建者单独展示」布局下，对除创建者外的成员拖动排序并持久化顺序。
+    func moveNonCreatorProfiles(fromOffsets source: IndexSet, toOffset destination: Int) {
+        var list = nonCreatorProfiles
+        list.move(fromOffsets: source, toOffset: destination)
+        let creatorBlock = orderedProfiles.filter { resolvedListRole($0) == .creator }.prefix(1).map { $0 }
+        orderedProfiles = creatorBlock + list
+        let me = currentUserProfile
+        let persistOthers = orderedProfiles.filter { $0.id != me?.id }
+        persistOrder(for: persistOthers)
     }
 
     /// 影子成员的邀请链接以 `membership.id` 作为 token。
@@ -332,13 +399,8 @@ final class FamilyViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let updatedMember = try await membershipService.updateMembership(member)
-            guard let index = members.firstIndex(where: { $0.id == updatedMember.id }) else {
-                await loadMembers()
-                postScheduleHouseholdRosterChangedIfNeeded()
-                return
-            }
-            members[index] = updatedMember
+            _ = try await membershipService.updateMembership(member)
+            await loadMembers()
             postScheduleHouseholdRosterChangedIfNeeded()
         } catch {
             errorMessage = error.localizedDescription
@@ -385,22 +447,90 @@ final class FamilyViewModel: ObservableObject {
     private func applyLocalOrdering() {
         guard let householdId = currentHouseholdId else {
             orderedProfiles = profiles
+            pinCreatorFirstIfPresent()
             return
         }
         let me = currentUserProfile
         let savedOrder = loadPersistedOrder(householdId: householdId)
         let orderMap = Dictionary(uniqueKeysWithValues: savedOrder.enumerated().map { ($1, $0) })
         let meId = me?.id
+
+        func profileListSortRank(_ profile: FamilyProfile) -> Int {
+            guard let m = profile.primaryMembership else {
+                return 3
+            }
+            switch m.role {
+            case .creator:
+                return 0
+            case .admin:
+                return 1
+            case .member:
+                return 2
+            }
+        }
+
         let others = profiles
             .filter { $0.id != meId }
             .sorted { lhs, rhs in
-                let left = orderMap[lhs.id] ?? Int.max
-                let right = orderMap[rhs.id] ?? Int.max
-                if left != right { return left < right }
+                let leftRank = profileListSortRank(lhs)
+                let rightRank = profileListSortRank(rhs)
+                if leftRank != rightRank {
+                    return leftRank < rightRank
+                }
+                let leftOrder = orderMap[lhs.id] ?? Int.max
+                let rightOrder = orderMap[rhs.id] ?? Int.max
+                if leftOrder != rightOrder {
+                    return leftOrder < rightOrder
+                }
                 return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
             }
 
         orderedProfiles = (me.map { [$0] } ?? []) + others
+        pinCreatorFirstIfPresent()
+    }
+
+    /// 家庭页设计：创建者卡片置顶；其余行保持相对顺序不变。
+    private func pinCreatorFirstIfPresent() {
+        guard let idx = orderedProfiles.firstIndex(where: { resolvedListRole($0) == .creator }) else { return }
+        let creator = orderedProfiles[idx]
+        var tail = orderedProfiles
+        tail.remove(at: idx)
+        orderedProfiles = [creator] + tail
+    }
+
+    /// 强制排序：创建者 → 管理员 → 成员 → **无 membership 的档案**；同梯队内按加入时间、再按名称。
+    private func sortProfilesForDisplay() {
+        profiles.sort { lhs, rhs in
+            let lr = profileAggregatedRoleRank(lhs)
+            let rr = profileAggregatedRoleRank(rhs)
+            if lr != rr {
+                return lr < rr
+            }
+            let lJoined = lhs.primaryMembership?.joinedAt ?? lhs.primaryMembership?.createdAt
+            let rJoined = rhs.primaryMembership?.joinedAt ?? rhs.primaryMembership?.createdAt
+            if let lJoined, let rJoined, lJoined != rJoined {
+                return lJoined < rJoined
+            }
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    private func profileAggregatedRoleRank(_ profile: FamilyProfile) -> Int {
+        guard let role = profile.primaryMembership?.role else {
+            return 3
+        }
+        return membershipRoleSortIndex(role)
+    }
+
+    private func membershipRoleSortIndex(_ role: MembershipRole) -> Int {
+        switch role {
+        case .creator:
+            return 0
+        case .admin:
+            return 1
+        case .member:
+            return 2
+        }
     }
 
     private func persistOrder(for others: [FamilyProfile]) {

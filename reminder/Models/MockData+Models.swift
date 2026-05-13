@@ -44,6 +44,12 @@ extension FamilyProfile {
             householdId: MockIDs.household,
             name: "奶奶",
             userId: nil
+        ),
+        FamilyProfile(
+            id: UUID(uuidString: "E5F6A7B8-C9D0-4123-E456-78901234EF05") ?? UUID(),
+            householdId: MockIDs.household,
+            name: "保姆",
+            userId: nil
         )
     ]
 }
@@ -56,6 +62,7 @@ extension HouseholdMembership {
             id: UUID(uuidString: "8AC693C1-B0EE-4E44-A87A-EFC3A3A1A001") ?? UUID(),
             householdId: MockIDs.household,
             userId: MockIDs.creatorUserId,
+            profileId: UUID(uuidString: "A1B2C3D4-E5F6-4789-A012-34567890AB01"),
             role: .creator,
             nickname: "爸爸",
             avatarUrl: nil,
@@ -71,6 +78,7 @@ extension HouseholdMembership {
             id: UUID(uuidString: "1E4F2CE0-7F66-4B2D-8A0A-3C880D5A4002") ?? UUID(),
             householdId: MockIDs.household,
             userId: UUID(uuidString: "1E4F2CE0-7F66-4B2D-8A0A-3C880D5AAA02") ?? UUID(),
+            profileId: UUID(uuidString: "B2C3D4E5-F6A7-4890-B123-45678901BC02"),
             role: .admin,
             nickname: "妈妈",
             avatarUrl: nil,
@@ -86,6 +94,7 @@ extension HouseholdMembership {
             id: UUID(uuidString: "D9D43B14-CB56-4E4B-ABF7-6FAAA41F2003") ?? UUID(),
             householdId: MockIDs.household,
             userId: nil,
+            profileId: UUID(uuidString: "D4E5F6A7-B8C9-4012-D345-67890123DE04"),
             role: .member,
             nickname: "奶奶",
             avatarUrl: nil,
@@ -101,6 +110,7 @@ extension HouseholdMembership {
             id: UUID(uuidString: "7D8B4FA4-EE8B-41E4-BB4A-2C67BB9E3004") ?? UUID(),
             householdId: MockIDs.household,
             userId: nil,
+            profileId: UUID(uuidString: "E5F6A7B8-C9D0-4123-E456-78901234EF05"),
             role: .member,
             nickname: "保姆",
             avatarUrl: nil,

@@ -1,6 +1,7 @@
 import Foundation
 
-/// `family_profiles` 行：展示名与是否已绑定登录账号（`user_id`）。
+/// `family_profiles` 行：展示名与可选 `user_id`（与 Auth 绑定，**不**用于判定是否为档案成员）。
+/// `memberships` 可由服务端嵌套返回，或由客户端按 `profile_id` / `(user_id, household_id)` 与 `household_memberships` 合并写入。
 struct FamilyProfile: Identifiable, Codable, Equatable {
     let id: UUID
     let householdId: UUID
@@ -16,6 +17,8 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     var weight: Double? = nil
     var school: String? = nil
     var grade: String? = nil
+    /// 与 `household_memberships` 的关联行（嵌套 JSON 或客户端 `mergingMembershipRows` 合并）。
+    var memberships: [HouseholdMembership]? = nil
 
     /// 与 `SupabaseCodec` 的 snake 互转一致：标准列用驼峰枚举名；`other_id_1` 经策略映射为 `otherId1`。
     enum CodingKeys: String, CodingKey {
@@ -35,6 +38,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         case grade
         case otherId1
         case otherId2
+        case memberships
     }
 
     init(
@@ -51,7 +55,8 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         height: Double? = nil,
         weight: Double? = nil,
         school: String? = nil,
-        grade: String? = nil
+        grade: String? = nil,
+        memberships: [HouseholdMembership]? = nil
     ) {
         self.id = id
         self.householdId = householdId
@@ -67,6 +72,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         self.weight = weight
         self.school = school
         self.grade = grade
+        self.memberships = memberships
     }
 
     init(from decoder: Decoder) throws {
@@ -87,6 +93,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         weight = try Self.decodeOptionalDouble(container: container, key: .weight)
         school = try container.decodeIfPresent(String.self, forKey: .school)
         grade = try container.decodeIfPresent(String.self, forKey: .grade)
+        memberships = try container.decodeIfPresent([HouseholdMembership].self, forKey: .memberships)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -105,6 +112,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(weight, forKey: .weight)
         try container.encodeIfPresent(school, forKey: .school)
         try container.encodeIfPresent(grade, forKey: .grade)
+        try container.encodeIfPresent(memberships, forKey: .memberships)
     }
 
     private static func decodeRequiredUUID(
@@ -154,13 +162,69 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
 }
 
 extension FamilyProfile {
-    /// 无独立登录账号、仅由家人代为维护的档案（`user_id == nil`）。
-    var isProfileOnly: Bool {
-        userId == nil
+    /// 嵌套结果中优先取 **活跃** 身份，否则取第一条（如待激活邀请）。
+    var primaryMembership: HouseholdMembership? {
+        guard let memberships, memberships.isEmpty == false else { return nil }
+        return memberships.first { $0.status == .active } ?? memberships.first
+    }
+
+    /// 供 UI / 调试：`MembershipRole` 的原始字符串（如 `creator`、`admin`）；无身份时为 `nil`。
+    var role: String? {
+        primaryMembership?.role.rawValue
+    }
+
+    /// **档案成员（本地档案）** 的唯一判定：当前家庭下该档案是否关联到任意 `household_memberships`（含服务端嵌套或客户端合并结果）。
+    var isLocalProfile: Bool {
+        (memberships ?? []).isEmpty
+    }
+
+    /// 将 `household_memberships` 行并入档案：优先 **`profile_id == family_profiles.id`**，否则回退 **`(user_id, household_id)`**。
+    /// 若嵌套查询已返回非空 `memberships`，则不再覆盖。
+    static func mergingMembershipRows(
+        _ profiles: [FamilyProfile],
+        memberships: [HouseholdMembership]
+    ) -> [FamilyProfile] {
+        profiles.map { profile in
+            if let existing = profile.memberships, existing.isEmpty == false {
+                return profile
+            }
+            let byProfileId = memberships.filter { row in
+                row.householdId == profile.householdId && row.profileId == profile.id
+            }
+            if byProfileId.isEmpty == false {
+                var copy = profile
+                copy.memberships = byProfileId
+                return copy
+            }
+            guard let uid = profile.userId else {
+                var copyNil = profile
+                copyNil.memberships = nil
+                return copyNil
+            }
+            let matched = memberships.filter { row in
+                row.householdId == profile.householdId && row.userId == uid
+            }
+            var copy = profile
+            copy.memberships = matched.isEmpty ? nil : matched
+            return copy
+        }
+    }
+
+    /// 按当前 `profiles` 顺序展开并 **去重**（`id`）后的身份列表。
+    static func uniqueMembershipsFlattened(from profiles: [FamilyProfile]) -> [HouseholdMembership] {
+        var seen = Set<UUID>()
+        var ordered: [HouseholdMembership] = []
+        for profile in profiles {
+            guard let list = profile.memberships else { continue }
+            for m in list where seen.insert(m.id).inserted {
+                ordered.append(m)
+            }
+        }
+        return ordered
     }
 }
 
-/// 新建「仅档案」成员（`user_id` 保持为 nil）时的表单草稿。
+/// 新建无 membership 的档案时的表单草稿（写入后由服务端生成 `family_profiles` 行）。
 struct LocalProfileDraft: Equatable {
     var name: String
     var avatarURL: String?
