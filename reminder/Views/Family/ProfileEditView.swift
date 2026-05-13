@@ -10,10 +10,10 @@ struct ProfileEditView: View {
     let householdId: UUID?
     let canEdit: Bool
     let uploadAvatar: @MainActor (Data, UUID?) async -> URL?
-    let onSave: @MainActor (UUID, ManagedProfileDraft) async -> String?
+    let onSave: @MainActor (UUID, LocalProfileDraft) async -> String?
 
     @State private var name: String
-    @State private var gender: ManagedProfileGender
+    @State private var gender: ProfileDraftGender
     @State private var shouldSetBirthDate: Bool
     @State private var birthDate: Date
     @State private var height = ""
@@ -35,7 +35,7 @@ struct ProfileEditView: View {
         householdId: UUID?,
         canEdit: Bool,
         uploadAvatar: @escaping @MainActor (Data, UUID?) async -> URL?,
-        onSave: @escaping @MainActor (UUID, ManagedProfileDraft) async -> String?
+        onSave: @escaping @MainActor (UUID, LocalProfileDraft) async -> String?
     ) {
         self.mode = mode
         self.householdId = householdId
@@ -45,7 +45,7 @@ struct ProfileEditView: View {
 
         let profile = mode.profile
         _name = State(initialValue: profile?.name ?? "")
-        _gender = State(initialValue: ManagedProfileGender(databaseValue: profile?.gender))
+        _gender = State(initialValue: ProfileDraftGender(databaseValue: profile?.gender))
         if let rawBirthDate = profile?.birthDate,
            let date = Self.birthDateFormatter.date(from: rawBirthDate) {
             _shouldSetBirthDate = State(initialValue: true)
@@ -86,7 +86,7 @@ struct ProfileEditView: View {
                 Section("基础信息") {
                     TextField("称呼 (如：大宝、旺财) *", text: $name)
                     Picker("性别", selection: $gender) {
-                        ForEach(ManagedProfileGender.allCases) { item in
+                        ForEach(ProfileDraftGender.allCases) { item in
                             Text(item.displayName).tag(item)
                         }
                     }
@@ -256,7 +256,7 @@ struct ProfileEditView: View {
             return
         }
 
-        let draft = ManagedProfileDraft(
+        let draft = LocalProfileDraft(
             name: name.trimmingCharacters(in: .whitespacesAndNewlines),
             avatarURL: avatarURL?.absoluteString,
             gender: gender.dbValue,
@@ -310,7 +310,7 @@ struct ProfileEditView: View {
 
 extension ProfileEditView {
     enum Mode {
-        case createManaged
+        case createLocalProfile
         case edit(FamilyProfile)
 
         var profile: FamilyProfile? {
@@ -320,14 +320,14 @@ extension ProfileEditView {
 
         var navigationTitle: String {
             switch self {
-            case .createManaged: return "添加托管角色"
+            case .createLocalProfile: return "创建成员档案"
             case .edit: return "编辑资料"
             }
         }
     }
 }
 
-private enum ManagedProfileGender: String, CaseIterable, Identifiable {
+private enum ProfileDraftGender: String, CaseIterable, Identifiable {
     case unspecified
     case male
     case female

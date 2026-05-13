@@ -153,8 +153,15 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     }
 }
 
-/// 新建托管角色（`user_id` 必须保持为 nil）时的资料草稿。
-struct ManagedProfileDraft: Equatable {
+extension FamilyProfile {
+    /// 无独立登录账号、仅由家人代为维护的档案（`user_id == nil`）。
+    var isProfileOnly: Bool {
+        userId == nil
+    }
+}
+
+/// 新建「仅档案」成员（`user_id` 保持为 nil）时的表单草稿。
+struct LocalProfileDraft: Equatable {
     var name: String
     var avatarURL: String?
     var gender: String?

@@ -112,7 +112,7 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
             .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async throws {
+    func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async throws {
         let newProfile = FamilyProfile(
             id: UUID(),
             householdId: householdId,
@@ -132,7 +132,7 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
         profiles.append(newProfile)
     }
 
-    func updateProfile(profileId: UUID, draft: ManagedProfileDraft) async throws {
+    func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws {
         guard let index = profiles.firstIndex(where: { $0.id == profileId }) else {
             throw SupabaseServiceError.invalidResponse
         }

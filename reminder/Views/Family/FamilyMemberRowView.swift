@@ -3,7 +3,10 @@ import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
+    /// 第二行说明：已绑定账号时展示家庭角色等；仅档案成员可为空（由 `isProfileOnlyMember` 展示「档案」标记）。
     let subtitle: String
+    /// 无独立登录账号的家庭成员，在姓名旁弱化标注。
+    var isProfileOnlyMember: Bool = false
     var onTap: (() -> Void)? = nil
     @State private var revealsSensitiveInfo = false
 
@@ -54,14 +57,30 @@ struct FamilyMemberRowView: View {
                 .clipShape(Circle())
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(profile.name)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.leading)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(profile.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .multilineTextAlignment(.leading)
 
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        if isProfileOnlyMember {
+                            HStack(spacing: 3) {
+                                Image(systemName: "person.crop.circle.badge.clock")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                                Text("档案")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .accessibilityLabel("成员档案")
+                        }
+                    }
+
+                    if subtitle.isEmpty == false {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
                     if let sensitiveSummary {
                         HStack(spacing: 6) {

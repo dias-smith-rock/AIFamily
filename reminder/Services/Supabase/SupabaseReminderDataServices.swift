@@ -267,7 +267,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         #endif
     }
 
-    func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async throws {
+    func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async throws {
         #if canImport(Supabase)
         struct ProfileWriteRow: Encodable {
             let householdId: UUID
@@ -330,7 +330,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         #endif
     }
 
-    func updateProfile(profileId: UUID, draft: ManagedProfileDraft) async throws {
+    func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws {
         #if canImport(Supabase)
         struct ProfileUpdateRow: Encodable {
             let name: String

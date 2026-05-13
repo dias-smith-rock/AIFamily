@@ -1,14 +1,26 @@
 import SwiftUI
 
+private enum AddMemberRoute: Identifiable, Equatable {
+    case entry
+    case invite
+    case createLocalProfile
+
+    var id: String {
+        switch self {
+        case .entry: return "entry"
+        case .invite: return "invite"
+        case .createLocalProfile: return "createLocalProfile"
+        }
+    }
+}
+
 struct FamilyView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
-    @State private var isShowingInviteSheet = false
+    @State private var addMemberRoute: AddMemberRoute?
     @State private var isShowingLoginSheet = false
     @State private var isShowingRenameHouseholdSheet = false
-    @State private var isShowingAddMemberMenu = false
-    @State private var isShowingAddManagedProfile = false
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var isSortingMembers = false
@@ -31,7 +43,7 @@ struct FamilyView: View {
                         .font(.system(size: 14, weight: .semibold))
 
                         Button {
-                            isShowingAddMemberMenu = true
+                            addMemberRoute = .entry
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .bold))
@@ -71,56 +83,50 @@ struct FamilyView: View {
         .onChange(of: viewModel.requiresLogin) { _, requiresLogin in
             isShowingLoginSheet = requiresLogin
         }
-        .confirmationDialog(
-            "添加成员",
-            isPresented: $isShowingAddMemberMenu,
-            titleVisibility: .visible
-        ) {
-            Button("邀请家人加入 (发送链接或扫码)") {
-                isShowingAddMemberMenu = false
-                isShowingInviteSheet = true
+        .sheet(item: $addMemberRoute) { route in
+            switch route {
+            case .entry:
+                AddFamilyMemberEntrySheet(
+                    canCreateProfileWithoutAccount: canManageHousehold,
+                    onChooseInvite: { addMemberRoute = .invite },
+                    onChooseCreateProfile: {
+                        guard canManageHousehold else { return }
+                        addMemberRoute = .createLocalProfile
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            case .invite:
+                InviteMemberView(
+                    currentHouseholdId: appRouter.selectedHouseholdId,
+                    creatorMembershipId: appRouter.selectedMembershipId
+                )
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            case .createLocalProfile:
+                ProfileEditView(
+                    mode: .createLocalProfile,
+                    householdId: appRouter.selectedHouseholdId,
+                    canEdit: canManageHousehold,
+                    uploadAvatar: { data, profileId in
+                        #if DEBUG
+                        print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
+                        #endif
+                        return await viewModel.uploadAvatar(data: data, profileId: profileId)
+                    },
+                    onSave: { householdId, draft in
+                        await viewModel.createLocalProfile(householdId: householdId, draft: draft)
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
-            if canManageHousehold {
-                Button("添加托管角色 (小孩/宠物等)") {
-                    isShowingAddMemberMenu = false
-                    isShowingAddManagedProfile = true
-                }
-            }
-            Button("取消", role: .cancel) {
-                isShowingAddMemberMenu = false
-            }
-        }
-        .sheet(isPresented: $isShowingInviteSheet) {
-            InviteMemberView(
-                currentHouseholdId: appRouter.selectedHouseholdId,
-                creatorMembershipId: appRouter.selectedMembershipId
-            )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $isShowingLoginSheet) {
             FamilySessionLoginSheet(viewModel: authViewModel) {
                 await viewModel.didLoginSuccessfully()
                 isShowingLoginSheet = viewModel.requiresLogin
             }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $isShowingAddManagedProfile) {
-            ProfileEditView(
-                mode: .createManaged,
-                householdId: appRouter.selectedHouseholdId,
-                canEdit: canManageHousehold,
-                uploadAvatar: { data, profileId in
-                    #if DEBUG
-                    print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
-                    #endif
-                    return await viewModel.uploadAvatar(data: data, profileId: profileId)
-                },
-                onSave: { householdId, draft in
-                    await viewModel.createManagedProfile(householdId: householdId, draft: draft)
-                }
-            )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
@@ -145,7 +151,7 @@ struct FamilyView: View {
         .sheet(item: $selectedProfileForDetail) { profile in
             ProfileDetailView(
                 profile: profile,
-                subtitle: profileSubtitle(for: profile),
+                subtitle: detailIdentitySubtitle(for: profile),
                 canEdit: viewModel.canEditProfile(profile),
                 onEdit: {
                     selectedProfileForDetail = nil
@@ -198,7 +204,11 @@ struct FamilyView: View {
             } else {
                 if let me = viewModel.currentUserProfile {
                     Section("我") {
-                        FamilyMemberRowView(profile: me, subtitle: profileSubtitle(for: me)) {
+                        FamilyMemberRowView(
+                            profile: me,
+                            subtitle: memberListSubtitle(for: me),
+                            isProfileOnlyMember: me.isProfileOnly
+                        ) {
                             selectedProfileForDetail = me
                         }
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -208,7 +218,11 @@ struct FamilyView: View {
 
                 Section("家庭成员") {
                     ForEach(viewModel.otherProfiles) { profile in
-                        FamilyMemberRowView(profile: profile, subtitle: profileSubtitle(for: profile)) {
+                        FamilyMemberRowView(
+                            profile: profile,
+                            subtitle: memberListSubtitle(for: profile),
+                            isProfileOnlyMember: profile.isProfileOnly
+                        ) {
                             selectedProfileForDetail = profile
                         }
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -261,7 +275,7 @@ struct FamilyView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
             Button("添加家庭成员") {
-                isShowingAddMemberMenu = true
+                addMemberRoute = .entry
             }
             .buttonStyle(.borderedProminent)
         }
@@ -271,7 +285,7 @@ struct FamilyView: View {
 
     private var addMemberDashedCard: some View {
         Button {
-            isShowingAddMemberMenu = true
+            addMemberRoute = .entry
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "person.badge.plus")
@@ -292,9 +306,22 @@ struct FamilyView: View {
         .accessibilityLabel("添加家庭成员")
     }
 
-    private func profileSubtitle(for profile: FamilyProfile) -> String {
-        if profile.userId == nil {
-            return "托管角色"
+    /// 列表第二行：已登录成员显示家庭内角色；仅档案成员不占用副标题（由行内「档案」标记展示）。
+    private func memberListSubtitle(for profile: FamilyProfile) -> String {
+        if profile.isProfileOnly {
+            return ""
+        }
+        if let uid = profile.userId,
+           let membership = viewModel.members.first(where: { $0.userId == uid }) {
+            return membership.role.displayTitle
+        }
+        return "家庭成员"
+    }
+
+    /// 详情页「角色」一行：仅档案成员展示「成员档案」标签式文案。
+    private func detailIdentitySubtitle(for profile: FamilyProfile) -> String {
+        if profile.isProfileOnly {
+            return "成员档案"
         }
         if let uid = profile.userId,
            let membership = viewModel.members.first(where: { $0.userId == uid }) {

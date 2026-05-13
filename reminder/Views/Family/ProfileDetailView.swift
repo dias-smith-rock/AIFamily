@@ -17,7 +17,7 @@ struct ProfileDetailView: View {
             List {
                 Section("成员信息") {
                     LabeledContent("称呼", value: profile.name)
-                    LabeledContent("身份", value: subtitle)
+                    LabeledContent("角色", value: subtitle)
                     if let gender = profile.gender, gender.isEmpty == false {
                         LabeledContent("性别", value: genderDisplay(gender))
                     }

@@ -178,7 +178,7 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async -> String? {
+    func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async -> String? {
         let idsBeforeCreate = Set(profiles.map(\.id))
         var normalizedDraft = draft
         let stableName = String(draft.name)
@@ -191,7 +191,7 @@ final class FamilyViewModel: ObservableObject {
         setHouseholdContext(householdId)
 
         do {
-            try await profileService.createManagedProfile(
+            try await profileService.createLocalProfile(
                 householdId: householdId,
                 draft: normalizedDraft
             )
@@ -207,7 +207,7 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func updateProfile(_ profile: FamilyProfile, draft: ManagedProfileDraft) async -> String? {
+    func updateProfile(_ profile: FamilyProfile, draft: LocalProfileDraft) async -> String? {
         var normalizedDraft = draft
         normalizedDraft.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedDraft.name.isEmpty == false else {

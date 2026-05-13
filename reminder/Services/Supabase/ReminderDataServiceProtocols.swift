@@ -26,6 +26,6 @@ protocol HouseholdMembershipDataService {
 
 protocol FamilyProfileDataService {
     func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile]
-    func createManagedProfile(householdId: UUID, draft: ManagedProfileDraft) async throws
-    func updateProfile(profileId: UUID, draft: ManagedProfileDraft) async throws
+    func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async throws
+    func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws
 }
