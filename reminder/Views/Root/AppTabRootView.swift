@@ -9,7 +9,6 @@ struct AppTabRootView: View {
 
     enum Tab {
         case schedule
-        case feedback
         case family
         case personalSettings
     }
@@ -25,12 +24,7 @@ struct AppTabRootView: View {
                 }
                 .tag(Tab.schedule)
 
-                FeedbackFeedView()
-                    .tabItem {
-                        Label("消息", systemImage: "bubble.left.and.bubble.right")
-                    }
-                    .badge(1)
-                    .tag(Tab.feedback)
+                // 「消息」Tab 延后版本开放，当前隐藏入口（FeedbackFeedView 仍保留在工程中）。
 
                 FamilyView()
                     .tabItem {
