@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(AuthenticationServices)
+import AuthenticationServices
+#endif
 #if canImport(Supabase)
 import Supabase
 #endif
@@ -6,7 +9,8 @@ import Supabase
 struct LoginView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @State private var loadingProvider: LoginProvider?
-    @State private var errorMessage: String?
+    @State private var appleRawNonce: String?
+    @State private var loginErrorAlert: String?
 
     private enum LoginProvider {
         case apple
@@ -30,6 +34,14 @@ struct LoginView: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
+        .alert("无法完成登录", isPresented: Binding(
+            get: { loginErrorAlert != nil },
+            set: { if $0 == false { loginErrorAlert = nil } }
+        )) {
+            Button("好的", role: .cancel) {}
+        } message: {
+            Text(loginErrorAlert ?? "")
+        }
         // 保留：处理 Magic Link 邮件回跳等非 ASWebAuthenticationSession 场景
         .onOpenURL { url in
             handleAuthCallback(url)
@@ -61,24 +73,42 @@ struct LoginView: View {
                 border: .clear
             )
 
-            loginButton(
-                title: "Sign in with Apple",
-                icon: "apple.logo",
-                provider: .apple,
-                background: .clear,
-                foreground: .white,
-                border: .white.opacity(0.25)
-            )
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.red.opacity(0.9))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
-            }
+            #if canImport(Supabase) && canImport(AuthenticationServices)
+            appleSignInControl
+            #else
+            Text("当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.white.opacity(0.7))
+                .multilineTextAlignment(.center)
+            #endif
         }
     }
+
+    #if canImport(Supabase) && canImport(AuthenticationServices)
+    private var appleSignInControl: some View {
+        ZStack {
+            SignInWithAppleButton(.signIn) { request in
+                let raw = AppleSignInHelper.generateRawNonce()
+                appleRawNonce = raw
+                request.requestedScopes = [.fullName, .email]
+                request.nonce = AppleSignInHelper.sha256Hex(of: raw)
+            } onCompletion: { result in
+                handleAppleAuthorization(result)
+            }
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 50)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            if loadingProvider == .apple {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.black.opacity(0.35))
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .allowsHitTesting(loadingProvider == nil)
+    }
+    #endif
 
     private var moreEntry: some View {
         Button {
@@ -100,7 +130,7 @@ struct LoginView: View {
         border: Color
     ) -> some View {
         Button {
-            triggerLogin(provider)
+            triggerGoogleLogin()
         } label: {
             HStack(spacing: 10) {
                 if loadingProvider == provider {
@@ -129,34 +159,106 @@ struct LoginView: View {
 
     // MARK: - Actions
 
-    private func triggerLogin(_ provider: LoginProvider) {
-        errorMessage = nil
-        loadingProvider = provider
+    private func triggerGoogleLogin() {
         Task {
+            await MainActor.run {
+                loginErrorAlert = nil
+                loadingProvider = .google
+            }
             do {
-                try await signInWithOAuth(provider: provider)
+                try await signInWithGoogleOAuth()
                 try await settlePostOAuthState()
             } catch {
                 if isUserCancelled(error) == false {
-                    errorMessage = error.localizedDescription
+                    await MainActor.run {
+                        loginErrorAlert = error.localizedDescription
+                    }
                 }
             }
-            loadingProvider = nil
+            await MainActor.run {
+                loadingProvider = nil
+            }
         }
     }
 
+    #if canImport(Supabase) && canImport(AuthenticationServices)
+    private func handleAppleAuthorization(_ result: Result<ASAuthorization, Error>) {
+        Task {
+            await MainActor.run {
+                loginErrorAlert = nil
+                loadingProvider = .apple
+            }
+            await performAppleSignIn(result)
+            await MainActor.run {
+                loadingProvider = nil
+            }
+        }
+    }
+
+    private func performAppleSignIn(_ result: Result<ASAuthorization, Error>) async {
+        switch result {
+        case .failure(let error):
+            if isUserCancelled(error) == false {
+                await MainActor.run {
+                    loginErrorAlert = error.localizedDescription
+                }
+            }
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
+                await MainActor.run {
+                    loginErrorAlert = "未能读取 Apple 登录凭证。"
+                }
+                return
+            }
+            guard let tokenData = credential.identityToken,
+                  let idTokenString = String(data: tokenData, encoding: .utf8)
+            else {
+                await MainActor.run {
+                    loginErrorAlert = "未能获取 Apple identity token。"
+                }
+                return
+            }
+            guard let rawNonce = appleRawNonce else {
+                await MainActor.run {
+                    loginErrorAlert = "登录状态异常，请重试。"
+                }
+                return
+            }
+
+            let auth = SupabaseAuthService(provider: SupabaseProvider())
+            do {
+                try await auth.signInWithApple(
+                    idToken: idTokenString,
+                    rawNonce: rawNonce,
+                    appleGivenName: credential.fullName?.givenName,
+                    appleFamilyName: credential.fullName?.familyName,
+                    appleEmail: credential.email
+                )
+                try await settlePostOAuthState()
+            } catch {
+                if isUserCancelled(error) == false {
+                    await MainActor.run {
+                        loginErrorAlert = error.localizedDescription
+                    }
+                }
+            }
+        }
+    }
+    #endif
+
     /// 走 supabase-swift 的内置 `signInWithOAuth`：iOS 上会用 `ASWebAuthenticationSession`
     /// 在当前 App 内弹出 Safari View 卡片完成登录，回跳由 SDK 内部接管，不需要 `onOpenURL`。
-    private func signInWithOAuth(provider: LoginProvider) async throws {
+    private func signInWithGoogleOAuth() async throws {
         #if canImport(Supabase)
-        let oauthProvider: Provider = provider == .google ? .google : .apple
         try await SupabaseManager.shared.client.auth.signInWithOAuth(
-            provider: oauthProvider,
+            provider: .google,
             redirectTo: Self.oauthRedirectURL,
-            queryParams: oauthQueryParams(for: provider)
+            queryParams: [
+                (name: "prompt", value: "select_account"),
+                (name: "access_type", value: "offline")
+            ]
         )
         #else
-        _ = provider
         throw NSError(
             domain: "LoginView",
             code: -1,
@@ -165,26 +267,19 @@ struct LoginView: View {
         #endif
     }
 
-    /// Google OAuth 默认会复用上次账号会话，这里强制拉起账号选择器，
-    /// 让用户每次都可以切换到不同 Google 账号登录。
-    private func oauthQueryParams(for provider: LoginProvider) -> [(name: String, value: String?)] {
-        switch provider {
-        case .google:
-            return [
-                (name: "prompt", value: "select_account"),
-                (name: "access_type", value: "offline")
-            ]
-        case .apple:
-            return []
-        }
-    }
-
     /// 用户在 Safari View 卡片里点了"取消"会抛 `ASWebAuthenticationSessionError.canceledLogin`，
     /// 这是正常交互而非错误，不要把它显示成红字提示。
     private func isUserCancelled(_ error: Error) -> Bool {
         let nsError = error as NSError
-        return nsError.domain == "com.apple.AuthenticationServices.WebAuthenticationSession"
-            && nsError.code == 1
+        if nsError.domain == "com.apple.AuthenticationServices.WebAuthenticationSession", nsError.code == 1 {
+            return true
+        }
+        #if canImport(AuthenticationServices)
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            return true
+        }
+        #endif
+        return false
     }
 
     /// 兜底：处理 Magic Link 等通过 URL Scheme 直接拉起 App 的回跳。
@@ -195,7 +290,9 @@ struct LoginView: View {
                 _ = try await SupabaseManager.shared.client.auth.session(from: url)
                 try await settlePostOAuthState()
             } catch {
-                errorMessage = error.localizedDescription
+                await MainActor.run {
+                    loginErrorAlert = error.localizedDescription
+                }
             }
         }
         #else

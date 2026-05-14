@@ -179,9 +179,18 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
 // MARK: - Auth & Platform Mocks
 
 actor MockAuthService: AuthService {
-    func signInWithApple(idToken: String, nonce: String) async throws {
+    func signInWithApple(
+        idToken: String,
+        rawNonce: String,
+        appleGivenName: String?,
+        appleFamilyName: String?,
+        appleEmail: String?
+    ) async throws {
         _ = idToken
-        _ = nonce
+        _ = rawNonce
+        _ = appleGivenName
+        _ = appleFamilyName
+        _ = appleEmail
     }
 
     func sendMagicLink(email: String) async throws {

@@ -37,7 +37,13 @@ final class AuthViewModel: ObservableObject {
         do {
             switch selectedMethod {
             case .apple:
-                try await authService.signInWithApple(idToken: "mock-apple-token", nonce: UUID().uuidString)
+                try await authService.signInWithApple(
+                    idToken: "mock-apple-token",
+                    rawNonce: UUID().uuidString,
+                    appleGivenName: nil,
+                    appleFamilyName: nil,
+                    appleEmail: nil
+                )
                 isLoggedIn = await authService.hasValidSession()
                 statusText = isLoggedIn ? "Apple 登录成功" : "登录请求已发送，请完成授权后重试"
             case .magicLink:

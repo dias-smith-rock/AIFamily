@@ -7,7 +7,16 @@ import Supabase
 // MARK: - Protocols
 
 protocol AuthService {
-    func signInWithApple(idToken: String, nonce: String) async throws
+    /// - Parameters:
+    ///   - rawNonce: 与 `ASAuthorizationAppleIDRequest` 所用哈希对应的 **原始** nonce；须原样传给 Supabase 校验。
+    ///   - appleGivenName / appleFamilyName / appleEmail: 仅首次授权时 Apple 可能返回，须在回调内抓取并用于档案同步。
+    func signInWithApple(
+        idToken: String,
+        rawNonce: String,
+        appleGivenName: String?,
+        appleFamilyName: String?,
+        appleEmail: String?
+    ) async throws
     func sendMagicLink(email: String) async throws
     func sendPhoneOTP(phoneNumber: String) async throws
     func signOut() async throws
@@ -68,21 +77,106 @@ struct SupabaseAuthService: AuthService {
         self.provider = provider
     }
 
-    func signInWithApple(idToken: String, nonce: String) async throws {
+    func signInWithApple(
+        idToken: String,
+        rawNonce: String,
+        appleGivenName: String?,
+        appleFamilyName: String?,
+        appleEmail: String?
+    ) async throws {
         #if canImport(Supabase)
-        _ = try await provider.client.auth.signInWithIdToken(
-            credentials: .init(
+        let client = provider.client
+        _ = try await client.auth.signInWithIdToken(
+            credentials: OpenIDConnectCredentials(
                 provider: .apple,
                 idToken: idToken,
-                nonce: nonce
+                accessToken: nil,
+                nonce: rawNonce,
+                gotrueMetaSecurity: nil
             )
+        )
+        try await Self.syncAppleIdentityToProfilesAndMetadata(
+            client: client,
+            givenName: appleGivenName,
+            familyName: appleFamilyName,
+            email: appleEmail
         )
         #else
         _ = idToken
-        _ = nonce
+        _ = rawNonce
+        _ = appleGivenName
+        _ = appleFamilyName
+        _ = appleEmail
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    #if canImport(Supabase)
+    /// 将 Apple 首次返回的姓名/邮箱写入 `auth.users.user_metadata`，并在 RLS 允许时更新 `family_profiles`。
+    private static func syncAppleIdentityToProfilesAndMetadata(
+        client: SupabaseClient,
+        givenName: String?,
+        familyName: String?,
+        email: String?
+    ) async throws {
+        let session = try await client.auth.session
+        let userId = session.user.id
+
+        let nameParts = [givenName, familyName]
+            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { $0.isEmpty == false }
+        let fullName = nameParts.isEmpty ? nil : nameParts.joined(separator: " ")
+        let emailTrimmed = email.flatMap { raw in
+            let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+
+        var meta: [String: AnyJSON] = [:]
+        if let fullName {
+            meta["full_name"] = .string(fullName)
+        }
+        if let emailTrimmed {
+            meta["apple_signin_email"] = .string(emailTrimmed)
+        }
+        if meta.isEmpty == false {
+            _ = try await client.auth.update(user: UserAttributes(data: meta))
+        }
+
+        guard fullName != nil || emailTrimmed != nil else { return }
+
+        struct ProfileIdRow: Decodable {
+            let id: UUID
+        }
+
+        struct AppleProfileHintsPatch: Encodable {
+            let name: String?
+            let email: String?
+            enum CodingKeys: String, CodingKey { case name, email }
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.container(keyedBy: CodingKeys.self)
+                try container.encodeIfPresent(name, forKey: .name)
+                try container.encodeIfPresent(email, forKey: .email)
+            }
+        }
+
+        let patch = AppleProfileHintsPatch(name: fullName, email: emailTrimmed)
+
+        let rows: [ProfileIdRow] = try await client
+            .from("family_profiles")
+            .select("id")
+            .eq("user_id", value: userId.uuidString)
+            .execute()
+            .value
+
+        for row in rows {
+            try await client
+                .from("family_profiles")
+                .update(patch)
+                .eq("id", value: row.id.uuidString)
+                .execute()
+        }
+    }
+    #endif
 
     func sendMagicLink(email: String) async throws {
         #if canImport(Supabase)
@@ -288,26 +382,9 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw HouseholdRoutingError.invalidHouseholdName
         }
 
-        do {
-            let rows: [CreatedHouseholdByRPCRow] = try await provider.client
-                .rpc("create_household_with_creator", params: ["p_name": normalizedName])
-                .execute()
-                .value
-            guard rows.first != nil else {
-                throw SupabaseServiceError.invalidResponse
-            }
-        } catch {
-            if isUnauthenticatedError(error) {
-                throw HouseholdRoutingError.unauthenticated
-            }
-            if isHouseholdNameTakenError(error) {
-                throw HouseholdRoutingError.householdNameTaken
-            }
-            if isMissingCreateHouseholdRPCError(error) {
-                throw HouseholdRoutingError.backendMigrationRequired
-            }
-            throw error
-        }
+        /// 与最新 schema 一致：`households` → `family_profiles`（拿到 `id`）→ `household_memberships`（带 `profile_id`）→ 回写 `family_profiles.created_by`。
+        /// 失败时删除已创建的 `households` 行以级联清理脏数据（需已应用 `family_profiles_insert_as_household_creator` RLS migration）。
+        try await createHouseholdOrderedInserts(normalizedName: normalizedName)
         #else
         _ = displayName
         throw SupabaseServiceError.sdkUnavailable
@@ -340,6 +417,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
                 )
                 .execute()
         } catch {
+            print("加入家庭详细错误: \(error)")
             if isUnauthenticatedError(error) {
                 throw HouseholdRoutingError.unauthenticated
             }
@@ -352,7 +430,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             if isMissingJoinHouseholdRPCError(error) {
                 throw HouseholdRoutingError.backendMigrationRequired
             }
-            throw HouseholdRoutingError.networkFailure
+            throw error
         }
         #else
         _ = inviteCode
@@ -378,6 +456,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
                 )
                 .execute()
         } catch {
+            print("重命名家庭详细错误: \(error)")
             if isUnauthenticatedError(error) {
                 throw HouseholdRoutingError.unauthenticated
             }
@@ -403,11 +482,138 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
     }
 }
 
-// MARK: - Wire payloads
+#if canImport(Supabase)
+// MARK: - Household routing (client-ordered inserts)
 
-private struct CreatedHouseholdByRPCRow: Decodable {
-    let householdId: UUID
+extension SupabaseHouseholdRoutingService {
+    fileprivate func createHouseholdOrderedInserts(normalizedName: String) async throws {
+        let client = provider.client
+        let session: Session
+        do {
+            session = try await client.auth.session
+        } catch {
+            throw HouseholdRoutingError.unauthenticated
+        }
+
+        let userId = session.user.id
+        var householdIdForRollback: UUID?
+
+        do {
+            let householdPayload = HouseholdCreatorInsertPayload(name: normalizedName, creatorId: userId)
+            let householdRow: HouseholdIdOnlyRow = try await client
+                .from("households")
+                .insert(householdPayload)
+                .select("id")
+                .single()
+                .execute()
+                .value
+            let householdId = householdRow.id
+            householdIdForRollback = householdId
+
+            let nickname = Self.resolvedCreatorDisplayName(session: session)
+            let profilePayload = FamilyProfileCreatorInsertPayload(
+                householdId: householdId,
+                name: nickname,
+                userId: userId
+            )
+            let profileRow: HouseholdIdOnlyRow = try await client
+                .from("family_profiles")
+                .insert(profilePayload)
+                .select("id")
+                .single()
+                .execute()
+                .value
+            let profileId = profileRow.id
+
+            let membershipId = UUID()
+            let now = Date()
+            let membershipRow = HouseholdMembership(
+                id: membershipId,
+                householdId: householdId,
+                userId: userId,
+                profileId: profileId,
+                role: .creator,
+                nickname: nickname,
+                avatarUrl: nil,
+                contactMethod: .appPush,
+                phoneNumber: nil,
+                email: nil,
+                status: .active,
+                joinedAt: now,
+                createdAt: now,
+                updatedAt: now
+            )
+            let insertedMembership: HouseholdMembership = try await client
+                .from("household_memberships")
+                .insert(membershipRow)
+                .select()
+                .single()
+                .execute()
+                .value
+
+            let linkPayload = FamilyProfileMembershipLinkPayload(createdBy: insertedMembership.id)
+            try await client
+                .from("family_profiles")
+                .update(linkPayload)
+                .eq("id", value: profileId.uuidString)
+                .execute()
+        } catch {
+            print("创建家庭详细错误: \(error)")
+            if let hid = householdIdForRollback {
+                do {
+                    try await client.from("households").delete().eq("id", value: hid.uuidString).execute()
+                } catch {
+                    print("创建家庭回滚删除 households 失败: \(error)")
+                }
+            }
+            if isUnauthenticatedError(error) {
+                throw HouseholdRoutingError.unauthenticated
+            }
+            if isHouseholdNameTakenError(error) {
+                throw HouseholdRoutingError.householdNameTaken
+            }
+            throw error
+        }
+    }
+
+    fileprivate static func resolvedCreatorDisplayName(session: Session) -> String {
+        let user = session.user
+        if let metaValue = user.userMetadata["full_name"] {
+            if case let .string(value) = metaValue {
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.isEmpty == false {
+                    return trimmed
+                }
+            }
+        }
+        if let email = user.email, email.isEmpty == false {
+            return email
+        }
+        return "管理员"
+    }
 }
+
+private struct HouseholdCreatorInsertPayload: Encodable {
+    let name: String
+    let creatorId: UUID
+}
+
+private struct FamilyProfileCreatorInsertPayload: Encodable {
+    let householdId: UUID
+    let name: String
+    let userId: UUID
+}
+
+private struct FamilyProfileMembershipLinkPayload: Encodable {
+    let createdBy: UUID
+}
+
+private struct HouseholdIdOnlyRow: Decodable {
+    let id: UUID
+}
+#endif
+
+// MARK: - Wire payloads
 
 private struct JoinHouseholdByNonceParams: Encodable {
     let pNonce: String
@@ -427,12 +633,6 @@ private struct InviteLinkResponse: Decodable {
 private func isUnauthenticatedError(_ error: Error) -> Bool {
     let message = error.localizedDescription.lowercased()
     return message.contains("unauthenticated") || message.contains("jwt")
-}
-
-private func isMissingCreateHouseholdRPCError(_ error: Error) -> Bool {
-    let message = error.localizedDescription.lowercased()
-    return message.contains("create_household_with_creator")
-        && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
 }
 
 private func isMissingJoinHouseholdRPCError(_ error: Error) -> Bool {

@@ -80,9 +80,17 @@ final class OrgRoutingViewModel: ObservableObject {
 
         switch action {
         case .create:
+            #if DEBUG
+            return error.localizedDescription
+            #else
             return "创建家庭失败，请稍后重试。"
+            #endif
         case .join:
+            #if DEBUG
+            return error.localizedDescription
+            #else
             return "加入家庭失败，请稍后重试。"
+            #endif
         }
     }
 }
