@@ -137,7 +137,10 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
             height: draft.height,
             weight: draft.weight,
             school: draft.school,
-            grade: draft.grade
+            grade: draft.grade,
+            email: draft.email,
+            mainPhone: draft.mainPhone,
+            secondPhone: draft.secondPhone
         )
         profiles.append(newProfile)
     }
@@ -158,6 +161,9 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
         profiles[index].weight = draft.weight
         profiles[index].school = draft.school
         profiles[index].grade = draft.grade
+        profiles[index].email = draft.email
+        profiles[index].mainPhone = draft.mainPhone
+        profiles[index].secondPhone = draft.secondPhone
     }
 
     private static let dateFormatter: DateFormatter = {

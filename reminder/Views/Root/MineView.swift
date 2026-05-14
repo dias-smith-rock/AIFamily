@@ -392,6 +392,9 @@ struct MineView: View {
     }
 
     private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
+        if let fromProfile = profile.profileEmailForDisplay {
+            return fromProfile
+        }
         guard profile.userId != nil else { return nil }
         let email = resolvedMembership(for: profile)?.email?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

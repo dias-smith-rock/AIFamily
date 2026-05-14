@@ -26,6 +26,12 @@ struct ProfileDetailView: View {
                     }
                 }
 
+                Section("联系方式") {
+                    optionalRow("邮箱", profile.email)
+                    optionalRow("手机号", profile.mainPhone)
+                    optionalRow("备用手机号", profile.secondPhone)
+                }
+
                 Section("证件信息") {
                     sensitiveRow(
                         title: "身份证",

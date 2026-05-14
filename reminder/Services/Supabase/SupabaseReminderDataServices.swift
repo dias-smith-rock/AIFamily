@@ -317,6 +317,9 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             let weight: Double?
             let school: String?
             let grade: String?
+            let email: String?
+            let mainphone: String?
+            let secondphone: String?
 
             enum CodingKeys: String, CodingKey {
                 case householdId = "household_id"
@@ -331,6 +334,9 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
                 case weight
                 case school
                 case grade
+                case email
+                case mainphone
+                case secondphone
             }
         }
 
@@ -352,7 +358,10 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             height: draft.height,
             weight: draft.weight,
             school: draft.school,
-            grade: draft.grade
+            grade: draft.grade,
+            email: draft.email,
+            mainphone: draft.mainPhone,
+            secondphone: draft.secondPhone
         )
         _ = try await provider.client
             .from(SupabaseTable.familyProfiles)
@@ -379,6 +388,9 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             let weight: Double?
             let school: String?
             let grade: String?
+            let email: String?
+            let mainphone: String?
+            let secondphone: String?
 
             enum CodingKeys: String, CodingKey {
                 case name
@@ -392,6 +404,9 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
                 case weight
                 case school
                 case grade
+                case email
+                case mainphone
+                case secondphone
             }
         }
 
@@ -412,7 +427,10 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             height: draft.height,
             weight: draft.weight,
             school: draft.school,
-            grade: draft.grade
+            grade: draft.grade,
+            email: draft.email,
+            mainphone: draft.mainPhone,
+            secondphone: draft.secondPhone
         )
 
         _ = try await provider.client

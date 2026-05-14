@@ -20,6 +20,9 @@ struct ProfileEditView: View {
     @State private var weight = ""
     @State private var school = ""
     @State private var grade = ""
+    @State private var email = ""
+    @State private var mainPhone = ""
+    @State private var secondPhone = ""
     @State private var idCardNum = ""
     @State private var passportNum = ""
     @State private var permitNum = ""
@@ -58,6 +61,9 @@ struct ProfileEditView: View {
         _weight = State(initialValue: profile?.weight.map { "\($0)" } ?? "")
         _school = State(initialValue: profile?.school ?? "")
         _grade = State(initialValue: profile?.grade ?? "")
+        _email = State(initialValue: profile?.email ?? "")
+        _mainPhone = State(initialValue: profile?.mainPhone ?? "")
+        _secondPhone = State(initialValue: profile?.secondPhone ?? "")
         _idCardNum = State(initialValue: profile?.idCardNum ?? "")
         _passportNum = State(initialValue: profile?.passportNum ?? "")
         _permitNum = State(initialValue: profile?.permitNum ?? "")
@@ -97,6 +103,20 @@ struct ProfileEditView: View {
                         DatePicker("生日", selection: $birthDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
+                }
+
+                Section("联系方式") {
+                    TextField("邮箱", text: $email)
+                        .textContentType(.emailAddress)
+                        .keyboardType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    TextField("手机号", text: $mainPhone)
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
+                    TextField("备用手机号", text: $secondPhone)
+                        .textContentType(.telephoneNumber)
+                        .keyboardType(.phonePad)
                 }
 
                 Section("成长数据") {
@@ -267,7 +287,10 @@ struct ProfileEditView: View {
             height: parseDoubleOrNil(height),
             weight: parseDoubleOrNil(weight),
             school: trimmedOrNil(school),
-            grade: trimmedOrNil(grade)
+            grade: trimmedOrNil(grade),
+            email: trimmedOrNil(email),
+            mainPhone: trimmedOrNil(mainPhone),
+            secondPhone: trimmedOrNil(secondPhone)
         )
         guard draft.name.isEmpty == false else {
             errorMessage = "称呼不能为空。"

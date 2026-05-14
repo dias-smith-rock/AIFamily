@@ -257,6 +257,9 @@ final class FamilyViewModel: ObservableObject {
             updatedProfile.weight = normalizedDraft.weight
             updatedProfile.school = normalizedDraft.school
             updatedProfile.grade = normalizedDraft.grade
+            updatedProfile.email = normalizedDraft.email
+            updatedProfile.mainPhone = normalizedDraft.mainPhone
+            updatedProfile.secondPhone = normalizedDraft.secondPhone
 
             if let index = profiles.firstIndex(where: { $0.id == updatedProfile.id }) {
                 profiles[index] = updatedProfile

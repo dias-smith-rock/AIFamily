@@ -375,8 +375,11 @@ struct FamilyView: View {
         profile.primaryMembership ?? viewModel.membership(for: profile)
     }
 
-    /// 已绑定账号且存在邮箱时，列表主行展示邮箱（与设计稿一致）。
+    /// 已绑定账号时列表主标题：优先 `family_profiles.email`，否则 `household_memberships.email`。
     private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
+        if let fromProfile = profile.profileEmailForDisplay {
+            return fromProfile
+        }
         guard profile.userId != nil else { return nil }
         let email = resolvedMembership(for: profile)?.email?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -384,6 +387,9 @@ struct FamilyView: View {
     }
 
     private func rawPhoneForList(for profile: FamilyProfile) -> String? {
+        if let fromProfile = profile.profileMainPhoneForDisplay {
+            return fromProfile
+        }
         let raw = resolvedMembership(for: profile)?.phoneNumber?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return raw.isEmpty ? nil : raw

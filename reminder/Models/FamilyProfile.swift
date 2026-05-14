@@ -17,6 +17,12 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     var weight: Double? = nil
     var school: String? = nil
     var grade: String? = nil
+    /// `family_profiles.email`：档案级联系邮箱（可与 Auth / membership 邮箱并存）。
+    var email: String? = nil
+    /// `family_profiles.mainphone`
+    var mainPhone: String? = nil
+    /// `family_profiles.secondphone`
+    var secondPhone: String? = nil
     /// 与 `household_memberships` 的关联行（嵌套 JSON 或客户端 `mergingMembershipRows` 合并）。
     var memberships: [HouseholdMembership]? = nil
 
@@ -36,6 +42,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         case weight
         case school
         case grade
+        case email
+        case mainPhone = "mainphone"
+        case secondPhone = "secondphone"
         case otherId1
         case otherId2
         case memberships
@@ -56,6 +65,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         weight: Double? = nil,
         school: String? = nil,
         grade: String? = nil,
+        email: String? = nil,
+        mainPhone: String? = nil,
+        secondPhone: String? = nil,
         memberships: [HouseholdMembership]? = nil
     ) {
         self.id = id
@@ -72,6 +84,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         self.weight = weight
         self.school = school
         self.grade = grade
+        self.email = email
+        self.mainPhone = mainPhone
+        self.secondPhone = secondPhone
         self.memberships = memberships
     }
 
@@ -93,6 +108,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         weight = try Self.decodeOptionalDouble(container: container, key: .weight)
         school = try container.decodeIfPresent(String.self, forKey: .school)
         grade = try container.decodeIfPresent(String.self, forKey: .grade)
+        email = try container.decodeIfPresent(String.self, forKey: .email)
+        mainPhone = try container.decodeIfPresent(String.self, forKey: .mainPhone)
+        secondPhone = try container.decodeIfPresent(String.self, forKey: .secondPhone)
         memberships = try container.decodeIfPresent([HouseholdMembership].self, forKey: .memberships)
     }
 
@@ -112,6 +130,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(weight, forKey: .weight)
         try container.encodeIfPresent(school, forKey: .school)
         try container.encodeIfPresent(grade, forKey: .grade)
+        try container.encodeIfPresent(email, forKey: .email)
+        try container.encodeIfPresent(mainPhone, forKey: .mainPhone)
+        try container.encodeIfPresent(secondPhone, forKey: .secondPhone)
         try container.encodeIfPresent(memberships, forKey: .memberships)
     }
 
@@ -210,7 +231,20 @@ extension FamilyProfile {
         }
     }
 
-    /// 按当前 `profiles` 顺序展开并 **去重**（`id`）后的身份列表。
+    /// 档案上填写的邮箱（非空则优先于 membership 用于列表主标题等）。
+    var profileEmailForDisplay: String? {
+        let trimmed = email?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmed.isEmpty == false else { return nil }
+        return trimmed
+    }
+
+    /// 档案主手机号（非空时可参与列表脱敏展示）。
+    var profileMainPhoneForDisplay: String? {
+        let trimmed = mainPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmed.isEmpty == false else { return nil }
+        return trimmed
+    }
+
     static func uniqueMembershipsFlattened(from profiles: [FamilyProfile]) -> [HouseholdMembership] {
         var seen = Set<UUID>()
         var ordered: [HouseholdMembership] = []
@@ -237,4 +271,7 @@ struct LocalProfileDraft: Equatable {
     var weight: Double?
     var school: String?
     var grade: String?
+    var email: String?
+    var mainPhone: String?
+    var secondPhone: String?
 }
