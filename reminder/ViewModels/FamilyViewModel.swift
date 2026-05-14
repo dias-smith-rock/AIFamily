@@ -332,17 +332,23 @@ final class FamilyViewModel: ObservableObject {
     }
 
     /// 与档案对应的 **`household_memberships`**：优先嵌套 `memberships`；否则回退到扁平 `members`（兼容旧缓存 / 未带嵌套的响应）。
+    /// - Note: 回退时先匹配 **`active`**，再匹配同档案下其它状态（如 **`pending`** 邀请行），避免列表角色与点按分流异常。
     func membership(for profile: FamilyProfile) -> HouseholdMembership? {
         if let embedded = profile.primaryMembership {
             return embedded
         }
-        let pool = members.filter { $0.status == .active }
-        if let matched = pool.first(where: { $0.profileId == profile.id && $0.householdId == profile.householdId }) {
-            return matched
+        let sameHousehold = members.filter { $0.householdId == profile.householdId }
+        if let activeByProfile = sameHousehold.first(where: { $0.profileId == profile.id && $0.status == .active }) {
+            return activeByProfile
         }
-        if let uid = profile.userId,
-           let matched = pool.first(where: { $0.userId == uid && $0.householdId == profile.householdId }) {
-            return matched
+        if let anyByProfile = sameHousehold.first(where: { $0.profileId == profile.id }) {
+            return anyByProfile
+        }
+        if let uid = profile.userId {
+            if let activeByUser = sameHousehold.first(where: { $0.userId == uid && $0.status == .active }) {
+                return activeByUser
+            }
+            return sameHousehold.first(where: { $0.userId == uid })
         }
         return nil
     }

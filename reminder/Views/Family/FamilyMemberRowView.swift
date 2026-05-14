@@ -3,7 +3,7 @@ import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
-    /// 主标题行文案；默认用 `profile.name`（有邮箱且为绑定账号时由上层传入邮箱等）。
+    /// 主标题行覆盖文案：为 `nil` 或空时使用 `profile.name`；仅当无有效称呼时上层传入邮箱等作为主标题。
     var displayTitle: String? = nil
     /// 第二行说明：与行内角色胶囊互补（创建者/管理员不再重复占一行）。
     let subtitle: String

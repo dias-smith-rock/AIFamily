@@ -231,7 +231,7 @@ extension FamilyProfile {
         }
     }
 
-    /// 档案上填写的邮箱（非空则优先于 membership 用于列表主标题等）。
+    /// 档案上填写的联系邮箱；列表主行在无有效称呼时用作兜底展示（有称呼时由 `FamilyView.displayTitleForRow` 返回 `nil` 以使用 `name`）。
     var profileEmailForDisplay: String? {
         let trimmed = email?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard trimmed.isEmpty == false else { return nil }

@@ -205,7 +205,7 @@ struct FamilyView: View {
                             maskedPhoneLine: maskedPhoneForList(for: creator),
                             rawPhoneNumber: rawPhoneForList(for: creator)
                         ) {
-                            selectedProfileForDetail = creator
+                            presentMemberFlow(for: creator)
                         }
                         .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 8, trailing: 16))
                         .listRowBackground(Color.clear)
@@ -224,7 +224,7 @@ struct FamilyView: View {
                             maskedPhoneLine: maskedPhoneForList(for: profile),
                             rawPhoneNumber: rawPhoneForList(for: profile)
                         ) {
-                            selectedProfileForDetail = profile
+                            presentMemberFlow(for: profile)
                         }
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                         .listRowBackground(Color.clear)
@@ -367,6 +367,15 @@ struct FamilyView: View {
         viewModel.orderedProfiles.filter { isCreatorProfile($0) == false }
     }
 
+    /// 有编辑权限时直接进入编辑页，否则进入只读详情。
+    private func presentMemberFlow(for profile: FamilyProfile) {
+        if viewModel.canEditProfile(profile) {
+            editingProfile = profile
+        } else {
+            selectedProfileForDetail = profile
+        }
+    }
+
     private func isCreatorProfile(_ profile: FamilyProfile) -> Bool {
         resolvedMembership(for: profile)?.role == .creator
     }
@@ -375,8 +384,12 @@ struct FamilyView: View {
         profile.primaryMembership ?? viewModel.membership(for: profile)
     }
 
-    /// 已绑定账号时列表主标题：优先 `family_profiles.email`，否则 `household_memberships.email`。
+    /// 列表主行「覆盖标题」：仅当 **没有有效称呼** 时用邮箱作为主展示；有称呼时返回 `nil`，由 `FamilyMemberRowView` 使用 `profile.name`。
     private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
+        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedName.isEmpty == false, trimmedName != "未命名成员" {
+            return nil
+        }
         if let fromProfile = profile.profileEmailForDisplay {
             return fromProfile
         }

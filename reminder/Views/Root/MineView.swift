@@ -304,18 +304,32 @@ struct MineView: View {
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.displayName
         }
-        if let override = displayTitleForRow(profile), override.isEmpty == false {
-            return override
+        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedName.isEmpty == false, trimmedName != "未命名成员" {
+            return trimmedName
         }
-        return profile.name
+        if let fromRow = displayTitleForRow(profile), fromRow.isEmpty == false {
+            return fromRow
+        }
+        return viewModel.displayName
     }
 
     private var mineHeaderSubtitle: String {
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.email
         }
-        let second = memberListSubtitle(for: profile)
-        if second.isEmpty == false { return second }
+        let roleLine = memberListSubtitle(for: profile)
+        if roleLine.isEmpty == false {
+            return roleLine
+        }
+        if let mail = profile.profileEmailForDisplay {
+            return mail
+        }
+        let membershipMail = resolvedMembership(for: profile)?.email?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if membershipMail.isEmpty == false {
+            return membershipMail
+        }
         return viewModel.email
     }
 
@@ -392,6 +406,10 @@ struct MineView: View {
     }
 
     private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
+        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedName.isEmpty == false, trimmedName != "未命名成员" {
+            return nil
+        }
         if let fromProfile = profile.profileEmailForDisplay {
             return fromProfile
         }
@@ -404,14 +422,29 @@ struct MineView: View {
     private func memberListSubtitle(for profile: FamilyProfile) -> String {
         let membership = resolvedMembership(for: profile)
         guard let membership else {
-            return profile.isLocalProfile ? "" : "家庭成员"
+            if profile.isLocalProfile {
+                return contactSubtitleLine(for: profile)
+            }
+            return "家庭成员"
         }
         switch membership.role {
         case .creator, .admin:
-            return ""
+            return contactSubtitleLine(for: profile)
         case .member:
             return membership.role.displayTitle
         }
+    }
+
+    private func contactSubtitleLine(for profile: FamilyProfile) -> String {
+        if let mail = profile.profileEmailForDisplay {
+            return mail
+        }
+        let membershipMail = resolvedMembership(for: profile)?.email?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if membershipMail.isEmpty == false {
+            return membershipMail
+        }
+        return ""
     }
 
     private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {
