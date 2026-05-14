@@ -51,6 +51,10 @@ final class ViewModelFactory: ObservableObject {
     func makeOrgRoutingViewModel() -> OrgRoutingViewModel {
         OrgRoutingViewModel(householdRoutingService: services.householdRoutingService)
     }
+
+    func makeMineViewModel() -> MineViewModel {
+        MineViewModel()
+    }
 }
 
 @MainActor
@@ -83,6 +87,10 @@ enum AppViewModels {
 
     static func makeOrgRoutingViewModel() -> OrgRoutingViewModel {
         factory.makeOrgRoutingViewModel()
+    }
+
+    static func makeMineViewModel() -> MineViewModel {
+        factory.makeMineViewModel()
     }
 }
 

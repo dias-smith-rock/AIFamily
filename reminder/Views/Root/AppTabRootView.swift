@@ -38,7 +38,7 @@ struct AppTabRootView: View {
                     }
                     .tag(Tab.family)
 
-                PersonalSettingsView()
+                MineView()
                     .tabItem {
                         Label("我的", systemImage: "gearshape.fill")
                     }
