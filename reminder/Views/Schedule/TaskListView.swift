@@ -21,6 +21,11 @@ struct TaskListView: View {
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
 
+    @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
+    @State private var isShowingCreateOrganizationSheet = false
+    @State private var newOrganizationName = ""
+    @State private var createOrganizationError: String?
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -143,6 +148,18 @@ struct TaskListView: View {
                     await viewModel.loadTasks()
                 }
             }
+            .sheet(isPresented: $isShowingCreateOrganizationSheet) {
+                CreateOrganizationSheet(
+                    organizationName: $newOrganizationName,
+                    inputError: $createOrganizationError,
+                    isSubmitting: orgRoutingViewModel.isCreating,
+                    onSubmit: {
+                        await submitCreateOrganization()
+                    }
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
@@ -175,20 +192,26 @@ struct TaskListView: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                isShowingCalendarSheet = true
-            } label: {
-                HStack(spacing: 6) {
-                    Text(navigationMonthYearTitle)
-                        .font(.title2.bold())
-                        .foregroundStyle(.primary)
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+            VStack(spacing: 4) {
+                OrganizationSwitcherControl(
+                    isShowingCreateOrganization: $isShowingCreateOrganizationSheet
+                )
+
+                Button {
+                    isShowingCalendarSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(navigationMonthYearTitle)
+                            .font(.title2.bold())
+                            .foregroundStyle(.primary)
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 2)
                 }
-                .padding(.vertical, 6)
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Spacer(minLength: 8)
 
@@ -291,6 +314,26 @@ struct TaskListView: View {
         let role: MembershipRole
     }
     #endif
+
+    @MainActor
+    private func submitCreateOrganization() async {
+        createOrganizationError = nil
+        let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedName.isEmpty == false else {
+            createOrganizationError = "Organization name cannot be empty."
+            return
+        }
+
+        let success = await orgRoutingViewModel.createHousehold(displayName: normalizedName)
+        if success == false {
+            createOrganizationError = orgRoutingViewModel.errorMessage
+            return
+        }
+
+        newOrganizationName = ""
+        isShowingCreateOrganizationSheet = false
+        await appRouter.refreshStateFromBackend()
+    }
 
     private func refreshCurrentMembershipRole() async {
         guard let membershipId = appRouter.selectedMembershipId else {

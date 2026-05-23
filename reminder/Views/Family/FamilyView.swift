@@ -20,6 +20,10 @@ struct FamilyView: View {
     @State private var isPresentingCreateLocalProfile = false
     @State private var isShowingLoginSheet = false
     @State private var isShowingRenameHouseholdSheet = false
+    @State private var isShowingCreateOrganizationSheet = false
+    @State private var newOrganizationName = ""
+    @State private var createOrganizationError: String?
+    @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var isSortingMembers = false
@@ -138,7 +142,7 @@ struct FamilyView: View {
             )
         }
         .sheet(isPresented: $isShowingRenameHouseholdSheet) {
-            RenameHouseholdSheet(
+            OrganizationSettingsSheet(
                 initialName: appRouter.selectedHouseholdName ?? "",
                 isSubmitting: viewModel.isLoading,
                 errorMessage: renameErrorMessage,
@@ -146,7 +150,19 @@ struct FamilyView: View {
                     await renameCurrentHousehold(to: newName)
                 }
             )
-            .presentationDetents([.fraction(0.35), .medium])
+            .presentationDetents([.height(OrganizationSettingsSheet.preferredDetentHeight)])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isShowingCreateOrganizationSheet) {
+            CreateOrganizationSheet(
+                organizationName: $newOrganizationName,
+                inputError: $createOrganizationError,
+                isSubmitting: orgRoutingViewModel.isCreating,
+                onSubmit: {
+                    await submitCreateOrganization()
+                }
+            )
+            .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
     }
@@ -273,24 +289,10 @@ struct FamilyView: View {
         .padding(.vertical, 28)
     }
 
-    /// 家庭名称 + 图标：直接铺在分组背景上，**不使用**白底圆角卡片。
+    /// 组织名称 + 图标：标题区切换组织，副标题进入组织设置。
     private var householdSummaryRow: some View {
-        Group {
-            if canManageHousehold {
-                Button {
-                    renameErrorMessage = nil
-                    isShowingRenameHouseholdSheet = true
-                } label: {
-                    householdSummaryRowContent
-                }
-                .buttonStyle(.plain)
-                .disabled(appRouter.selectedHouseholdId == nil)
-            } else {
-                householdSummaryRowContent
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("家庭名称 \(appRouter.selectedHouseholdName ?? "未命名家庭")，家庭资料")
+        householdSummaryRowContent
+            .accessibilityElement(children: .contain)
     }
 
     private var householdSummaryRowContent: some View {
@@ -305,21 +307,31 @@ struct FamilyView: View {
                 }
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text(appRouter.selectedHouseholdName ?? "未命名家庭")
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
+                OrganizationSwitcherControl(
+                    isShowingCreateOrganization: $isShowingCreateOrganizationSheet,
+                    labelStyle: .prominent
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                Group {
+                    if canManageHousehold {
+                        Button {
+                            renameErrorMessage = nil
+                            isShowingRenameHouseholdSheet = true
+                        } label: {
+                            Text("Organization Profile")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(appRouter.selectedHouseholdId == nil)
+                    } else {
+                        Text("Organization Profile")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-
-                Text("家庭资料")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -511,12 +523,37 @@ struct FamilyView: View {
         isShowingRenameHouseholdSheet = false
     }
 
+    @MainActor
+    private func submitCreateOrganization() async {
+        createOrganizationError = nil
+        let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalizedName.isEmpty == false else {
+            createOrganizationError = "Organization name cannot be empty."
+            return
+        }
+
+        let success = await orgRoutingViewModel.createHousehold(displayName: normalizedName)
+        if success == false {
+            createOrganizationError = orgRoutingViewModel.errorMessage
+            return
+        }
+
+        newOrganizationName = ""
+        isShowingCreateOrganizationSheet = false
+        await appRouter.refreshStateFromBackend()
+        viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+        await viewModel.loadMembers()
+    }
+
 }
 
-private struct RenameHouseholdSheet: View {
+private struct OrganizationSettingsSheet: View {
+    static let preferredDetentHeight: CGFloat = 430
+
     @Environment(\.dismiss) private var dismiss
 
     @State private var name: String
+    private let initialName: String
     let isSubmitting: Bool
     let errorMessage: String?
     let onSubmit: @MainActor (String) async -> Void
@@ -528,62 +565,178 @@ private struct RenameHouseholdSheet: View {
         onSubmit: @escaping @MainActor (String) async -> Void
     ) {
         _name = State(initialValue: initialName)
+        self.initialName = initialName
         self.isSubmitting = isSubmitting
         self.errorMessage = errorMessage
         self.onSubmit = onSubmit
     }
 
+    private var trimmedName: String {
+        name.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var canSave: Bool {
+        let normalizedInitial = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return isSubmitting == false
+            && trimmedName.isEmpty == false
+            && trimmedName != normalizedInitial
+    }
+
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("家庭名称")
-                    .font(.system(size: 14, weight: .semibold))
-                TextField("请输入新的家庭名称", text: $name)
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+        VStack(spacing: 0) {
+            headerBar
+            Divider()
 
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.red)
-                }
+            ScrollView {
+                VStack(spacing: 18) {
+                    organizationNameField
 
-                Button {
-                    let snapshot = String(name)
-                    Task { @MainActor in
-                        await onSubmit(snapshot)
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                } label: {
-                    if isSubmitting {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                    } else {
-                        Text("保存名称")
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                    }
-                }
-                .disabled(isSubmitting || name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .buttonStyle(.borderedProminent)
 
-                Spacer()
-            }
-            .padding(16)
-            .navigationTitle("重命名家庭")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") {
-                        dismiss()
-                    }
+                    saveChangesButton
+                    transferOwnershipRow
+                    disbandOrganizationRow
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                .padding(.bottom, 28)
             }
         }
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private var headerBar: some View {
+        ZStack {
+            Text("Organization Settings")
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            HStack {
+                Spacer()
+                Button("Close") {
+                    dismiss()
+                }
+                .font(.body)
+                .foregroundStyle(Color.accentColor)
+                .disabled(isSubmitting)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 6)
+        .padding(.bottom, 14)
+    }
+
+    private var organizationNameField: some View {
+        TextField("Enter organization name...", text: $name)
+            .textInputAutocapitalization(.words)
+            .disabled(isSubmitting)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 15)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var saveChangesButton: some View {
+        Button {
+            let snapshot = trimmedName
+            Task { @MainActor in
+                await onSubmit(snapshot)
+            }
+        } label: {
+            Group {
+                if isSubmitting {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Text("Save Changes")
+                        .font(.body.weight(.semibold))
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                canSave ? Color.accentColor : Color.accentColor.opacity(0.45),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(canSave == false)
+    }
+
+    private var transferOwnershipRow: some View {
+        Button {
+            // 预留：转移所有权流程
+        } label: {
+            settingsNavigationRow(
+                title: "Transfer Ownership",
+                systemImage: "person"
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isSubmitting)
+    }
+
+    private var disbandOrganizationRow: some View {
+        Button(role: .destructive) {
+            // 预留：解散组织流程
+        } label: {
+            settingsDestructiveRow(
+                title: "Disband Organization",
+                systemImage: "trash"
+            )
+        }
+        .buttonStyle(.plain)
+        .disabled(isSubmitting)
+    }
+
+    private func settingsNavigationRow(title: String, systemImage: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.body)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 24, alignment: .center)
+
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.primary)
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 15)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private func settingsDestructiveRow(title: String, systemImage: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.body)
+                .foregroundStyle(.red)
+                .frame(width: 24, alignment: .center)
+
+            Text(title)
+                .font(.body)
+                .foregroundStyle(.red)
+
+            Spacer(minLength: 8)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 15)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

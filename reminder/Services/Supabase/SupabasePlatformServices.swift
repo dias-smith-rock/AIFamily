@@ -382,9 +382,10 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw HouseholdRoutingError.invalidHouseholdName
         }
 
-        /// 与最新 schema 一致：`households` → `family_profiles`（拿到 `id`）→ `household_memberships`（带 `profile_id`）→ 回写 `family_profiles.created_by`。
-        /// 失败时删除已创建的 `households` 行以级联清理脏数据（需已应用 `family_profiles_insert_as_household_creator` RLS migration）。
-        try await createHouseholdOrderedInserts(normalizedName: normalizedName)
+        /// 优先走 RPC `create_household_with_creator`（服务端 `auth.uid()` 写入 creator_id，且不受 households SELECT RLS 影响）。
+        /// 直连 insert 时禁止对 `households` / `family_profiles` 使用 `.select()`：首条 membership 建立前，
+        /// `get_user_household_ids()` 为空，INSERT … RETURNING 会在 SELECT 策略上触发 42501。
+        try await createHouseholdOnBackend(normalizedName: normalizedName)
         #else
         _ = displayName
         throw SupabaseServiceError.sdkUnavailable
@@ -483,11 +484,50 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
 }
 
 #if canImport(Supabase)
-// MARK: - Household routing (client-ordered inserts)
+// MARK: - Household routing (RPC + client-ordered fallback)
 
 extension SupabaseHouseholdRoutingService {
-    fileprivate func createHouseholdOrderedInserts(normalizedName: String) async throws {
+    fileprivate func createHouseholdOnBackend(normalizedName: String) async throws {
         let client = provider.client
+        do {
+            _ = try await client.auth.session
+        } catch {
+            throw HouseholdRoutingError.unauthenticated
+        }
+
+        do {
+            try await createHouseholdViaRPC(client: client, normalizedName: normalizedName)
+        } catch {
+            if isMissingCreateHouseholdRPCError(error) {
+                #if DEBUG
+                print("[HouseholdCreate] RPC 不可用，回退客户端顺序写入")
+                #endif
+                try await createHouseholdViaClientOrderedInserts(client: client, normalizedName: normalizedName)
+                return
+            }
+            throw mapCreateHouseholdFlowError(error)
+        }
+    }
+
+    fileprivate func createHouseholdViaRPC(client: SupabaseClient, normalizedName: String) async throws {
+        let params = CreateHouseholdWithCreatorParams(pName: normalizedName)
+        Self.debugLogHouseholdInsertPayload(params, label: "rpc create_household_with_creator")
+
+        let rows: [CreateHouseholdWithCreatorRow] = try await client
+            .rpc("create_household_with_creator", params: params)
+            .execute()
+            .value
+
+        guard rows.first != nil else {
+            throw HouseholdRoutingError.backendMigrationRequired
+        }
+    }
+
+    /// 仅在 RPC 未部署时使用；`households` / `family_profiles` 禁止 `.select()`（见文件头注释）。
+    fileprivate func createHouseholdViaClientOrderedInserts(
+        client: SupabaseClient,
+        normalizedName: String
+    ) async throws {
         let session: Session
         do {
             session = try await client.auth.session
@@ -495,42 +535,52 @@ extension SupabaseHouseholdRoutingService {
             throw HouseholdRoutingError.unauthenticated
         }
 
-        let userId = session.user.id
+        let currentUserId = session.user.id
+        guard currentUserId.uuidString.isEmpty == false else {
+            #if DEBUG
+            print("[HouseholdCreate] 错误：当前没有找到登录用户")
+            #endif
+            throw HouseholdRoutingError.unauthenticated
+        }
+
+        let householdId = UUID()
+        let profileId = UUID()
         var householdIdForRollback: UUID?
 
         do {
-            let householdPayload = HouseholdCreatorInsertPayload(name: normalizedName, creatorId: userId)
-            let householdRow: HouseholdIdOnlyRow = try await client
+            let householdPayload = HouseholdCreatorInsertPayload(
+                id: householdId,
+                name: normalizedName,
+                creatorId: currentUserId
+            )
+            Self.debugLogHouseholdInsertPayload(householdPayload)
+
+            try await client
                 .from("households")
                 .insert(householdPayload)
-                .select("id")
-                .single()
                 .execute()
-                .value
-            let householdId = householdRow.id
             householdIdForRollback = householdId
 
             let nickname = Self.resolvedCreatorDisplayName(session: session)
             let profilePayload = FamilyProfileCreatorInsertPayload(
+                id: profileId,
                 householdId: householdId,
                 name: nickname,
-                userId: userId
+                userId: currentUserId
             )
-            let profileRow: HouseholdIdOnlyRow = try await client
+            Self.debugLogHouseholdInsertPayload(profilePayload, label: "family_profiles")
+
+            try await client
                 .from("family_profiles")
                 .insert(profilePayload)
-                .select("id")
-                .single()
                 .execute()
-                .value
-            let profileId = profileRow.id
 
             let membershipId = UUID()
             let now = Date()
             let membershipRow = HouseholdMembership(
                 id: membershipId,
                 householdId: householdId,
-                userId: userId,
+                userId: currentUserId,
                 profileId: profileId,
                 role: .creator,
                 nickname: nickname,
@@ -552,6 +602,7 @@ extension SupabaseHouseholdRoutingService {
                 .value
 
             let linkPayload = FamilyProfileMembershipLinkPayload(createdBy: insertedMembership.id)
+            Self.debugLogHouseholdInsertPayload(linkPayload, label: "family_profiles.update")
             try await client
                 .from("family_profiles")
                 .update(linkPayload)
@@ -566,14 +617,23 @@ extension SupabaseHouseholdRoutingService {
                     print("创建家庭回滚删除 households 失败: \(error)")
                 }
             }
-            if isUnauthenticatedError(error) {
-                throw HouseholdRoutingError.unauthenticated
-            }
-            if isHouseholdNameTakenError(error) {
-                throw HouseholdRoutingError.householdNameTaken
-            }
-            throw error
+            throw mapCreateHouseholdFlowError(error)
         }
+    }
+
+    fileprivate static func debugLogHouseholdInsertPayload<T: Encodable>(
+        _ payload: T,
+        label: String = "households"
+    ) {
+        #if DEBUG
+        do {
+            let data = try SupabaseCodec.makeEncoder().encode(payload)
+            let json = String(data: data, encoding: .utf8) ?? "<invalid utf8>"
+            print("[HouseholdCreate] \(label) insert payload: \(json)")
+        } catch {
+            print("[HouseholdCreate] \(label) payload encode failed: \(error)")
+        }
+        #endif
     }
 
     fileprivate static func resolvedCreatorDisplayName(session: Session) -> String {
@@ -593,23 +653,94 @@ extension SupabaseHouseholdRoutingService {
     }
 }
 
+private struct CreateHouseholdWithCreatorParams: Encodable {
+    let pName: String
+
+    enum CodingKeys: String, CodingKey {
+        case pName = "p_name"
+    }
+}
+
+private struct CreateHouseholdWithCreatorRow: Decodable {
+    let householdId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case householdId = "household_id"
+    }
+}
+
 private struct HouseholdCreatorInsertPayload: Encodable {
+    let id: UUID
     let name: String
     let creatorId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case creatorId = "creator_id"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id.uuidString.lowercased(), forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(creatorId.uuidString.lowercased(), forKey: .creatorId)
+    }
 }
 
 private struct FamilyProfileCreatorInsertPayload: Encodable {
+    let id: UUID
     let householdId: UUID
     let name: String
     let userId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case householdId = "household_id"
+        case name
+        case userId = "user_id"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id.uuidString.lowercased(), forKey: .id)
+        try container.encode(householdId.uuidString.lowercased(), forKey: .householdId)
+        try container.encode(name, forKey: .name)
+        try container.encode(userId.uuidString.lowercased(), forKey: .userId)
+    }
 }
 
 private struct FamilyProfileMembershipLinkPayload: Encodable {
     let createdBy: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case createdBy = "created_by"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(createdBy.uuidString.lowercased(), forKey: .createdBy)
+    }
 }
 
-private struct HouseholdIdOnlyRow: Decodable {
-    let id: UUID
+private func mapCreateHouseholdFlowError(_ error: Error) -> Error {
+    let message = error.localizedDescription.lowercased()
+    if isUnauthenticatedError(error) || message.contains("unauthenticated") {
+        return HouseholdRoutingError.unauthenticated
+    }
+    if isHouseholdNameTakenError(error) || message.contains("household_name_taken") {
+        return HouseholdRoutingError.householdNameTaken
+    }
+    if message.contains("invalid_household_name") {
+        return HouseholdRoutingError.invalidHouseholdName
+    }
+    return error
+}
+
+private func isMissingCreateHouseholdRPCError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("create_household_with_creator")
+        && (message.contains("function") || message.contains("does not exist") || message.contains("42883"))
 }
 #endif
 
