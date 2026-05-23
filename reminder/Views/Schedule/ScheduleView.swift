@@ -3,7 +3,7 @@ import Kingfisher
 
 /// Day 模式：周历条 + 全天条 + 锚点时间轴（由 `TaskListView` 嵌入）。
 struct TaskModeDayView: View {
-    private let taskFlowCompactGapHeight: CGFloat = 40
+    private let taskFlowCompactGapHeight: CGFloat = ScheduleTimelineMetrics.taskFlowGapHeight
     private let taskFlowLongIdleThreshold: TimeInterval = 3600
     /// 未收到 ScrollView 宽度前占位，避免首张卡片过窄（约等于常见屏宽减去左右边距与时间列）。
     private let allDayCardFallbackWidth: CGFloat = 300

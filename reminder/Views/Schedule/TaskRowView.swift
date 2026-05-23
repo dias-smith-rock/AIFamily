@@ -11,6 +11,8 @@ enum ScheduleTimelineMetrics {
     static let nowLineHeight: CGFloat = 1
     static let nowCapsuleEstimatedHalfHeight: CGFloat = 10
     static let defaultTaskDuration: TimeInterval = 3600
+    /// 与 `ScheduleTaskAnchorFlow.compactGapHeight` / 任务间 `ScheduleAnchorGapSegment` 高度一致。
+    static let taskFlowGapHeight: CGFloat = 40
 
     static var axisLineLeadingInset: CGFloat {
         timeColumnWidth + rowSpacing + (axisColumnWidth - lineWidth) / 2
@@ -42,6 +44,8 @@ struct TaskRowView: View {
     let isCurrentActiveTask: Bool
     let startTime: Date
     let endTime: Date
+    let nextStartTime: Date?
+    let followingGapHeight: CGFloat
     let now: Date
     let onTap: () -> Void
 
@@ -51,17 +55,41 @@ struct TaskRowView: View {
         anchor.formatted(date: .omitted, time: .shortened)
     }
 
-    private var timeProgressRatio: Double {
+    /// 红线 Y 轴锚点：任务内在卡片高度内滑动；空档期在卡片下方缝隙中继续向下一任务推进。
+    private func calculateRedLineYOffset(cardHeight: CGFloat) -> CGFloat {
         guard isCurrentActiveTask else { return 0 }
 
         if now < startTime { return 0 }
-        if now >= endTime { return 1 }
 
-        let totalDuration = endTime.timeIntervalSince(startTime)
-        guard totalDuration > 0 else { return 1 }
+        if now >= startTime, now < endTime {
+            let totalDuration = endTime.timeIntervalSince(startTime)
+            guard totalDuration > 0 else { return cardHeight }
+            let elapsed = now.timeIntervalSince(startTime)
+            let ratio = max(0, min(1, elapsed / totalDuration))
+            return cardHeight * CGFloat(ratio)
+        }
 
-        let elapsed = now.timeIntervalSince(startTime)
-        return max(0, min(1, elapsed / totalDuration))
+        let gapHeight = max(0, followingGapHeight)
+        let resolvedNextStart = nextStartTime
+            ?? Calendar.current.date(byAdding: .hour, value: 2, to: endTime)
+            ?? endTime
+
+        if now >= endTime, now < resolvedNextStart, gapHeight > 0 {
+            let gapDuration = resolvedNextStart.timeIntervalSince(endTime)
+            let elapsedGap = now.timeIntervalSince(endTime)
+            let gapRatio = gapDuration > 0 ? max(0, min(1, elapsedGap / gapDuration)) : 1
+            return cardHeight + gapHeight * CGFloat(gapRatio)
+        }
+
+        if now >= endTime {
+            return cardHeight + gapHeight
+        }
+
+        return 0
+    }
+
+    private var nowIndicatorContainerHeight: CGFloat {
+        rowHeight + max(0, followingGapHeight)
     }
 
     var body: some View {
@@ -71,14 +99,20 @@ struct TaskRowView: View {
             cardColumn
         }
         .overlay(alignment: .topLeading) {
+            if isCurrentActiveTask, followingGapHeight > 0, rowHeight > 0 {
+                gapAxisConnectorLine
+            }
+        }
+        .overlay(alignment: .topLeading) {
             if isCurrentActiveTask, rowHeight > 0 {
                 TaskRowNowIndicatorOverlay(
                     now: now,
-                    progressRatio: timeProgressRatio,
-                    rowHeight: rowHeight
+                    anchorY: calculateRedLineYOffset(cardHeight: rowHeight),
+                    containerHeight: nowIndicatorContainerHeight
                 )
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .allowsHitTesting(false)
+                .zIndex(1)
             }
         }
         .onGeometryChange(for: CGFloat.self) { proxy in
@@ -90,6 +124,20 @@ struct TaskRowView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
+    }
+
+    private var gapAxisConnectorLine: some View {
+        let lineLeading = ScheduleTimelineMetrics.timeColumnWidth
+            + ScheduleTimelineMetrics.rowSpacing
+            + (ScheduleTimelineMetrics.axisColumnWidth - ScheduleTimelineMetrics.lineWidth) / 2
+        let lineTop = ScheduleTimelineMetrics.dotTopPadding + ScheduleTimelineMetrics.dotSize / 2
+        let lineHeight = max(0, nowIndicatorContainerHeight - lineTop)
+
+        return Rectangle()
+            .fill(Color.gray.opacity(0.3))
+            .frame(width: ScheduleTimelineMetrics.lineWidth, height: lineHeight)
+            .offset(x: lineLeading, y: lineTop)
+            .allowsHitTesting(false)
     }
 
     // MARK: - 左：时间
@@ -153,15 +201,14 @@ struct TaskRowView: View {
 
 private struct TaskRowNowIndicatorOverlay: View {
     let now: Date
-    let progressRatio: Double
-    let rowHeight: CGFloat
+    let anchorY: CGFloat
+    let containerHeight: CGFloat
 
     private var nowTimeText: String {
         now.formatted(date: .omitted, time: .shortened)
     }
 
     var body: some View {
-        let anchorY = rowHeight * CGFloat(progressRatio)
         let dotCenterOffset = anchorY - ScheduleTimelineMetrics.dotSize / 2
         let capsuleOffset = anchorY - ScheduleTimelineMetrics.nowCapsuleEstimatedHalfHeight
         let lineOffset = anchorY - ScheduleTimelineMetrics.nowLineHeight / 2
@@ -190,6 +237,6 @@ private struct TaskRowNowIndicatorOverlay: View {
                 .frame(maxWidth: .infinity)
                 .offset(y: lineOffset)
         }
-        .frame(height: rowHeight, alignment: .topLeading)
+        .frame(height: containerHeight, alignment: .topLeading)
     }
 }

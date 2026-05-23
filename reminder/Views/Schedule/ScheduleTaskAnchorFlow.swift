@@ -34,21 +34,24 @@ struct ScheduleTaskAnchorFlow: View {
 
             VStack(spacing: 0) {
                 ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
+                    let isCurrentActiveTask = viewingToday && activeTaskID == task.id
+                    let startTime = taskAnchor(task)
+                    let endTime = taskEnd(task)
+                    let nextStartTime = nextIntervalEnd(for: task, at: index)
+                    let followingGapHeight = index + 1 < sortedTasks.count ? compactGapHeight : 0
+
                     if index > 0 {
                         let previous = sortedTasks[index - 1]
+                        let previousIsActive = viewingToday && activeTaskID == previous.id
 
                         ScheduleAnchorGapSegment(
                             stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
                             previousAnchor: taskAnchor(previous),
                             nextAnchor: taskAnchor(task),
-                            compactHeight: compactGapHeight,
+                            compactHeight: previousIsActive ? 0 : compactGapHeight,
                             longIdleThreshold: longIdleThreshold
                         )
                     }
-
-                    let isCurrentActiveTask = viewingToday && activeTaskID == task.id
-                    let startTime = taskAnchor(task)
-                    let endTime = taskEnd(task)
 
                     TaskRowView(
                         task: task,
@@ -58,9 +61,12 @@ struct ScheduleTaskAnchorFlow: View {
                         isCurrentActiveTask: isCurrentActiveTask,
                         startTime: startTime,
                         endTime: endTime,
+                        nextStartTime: nextStartTime,
+                        followingGapHeight: followingGapHeight,
                         now: now,
                         onTap: { onTaskTap(task) }
                     )
+                    .padding(.bottom, isCurrentActiveTask ? followingGapHeight : 0)
                     .id(isCurrentActiveTask ? ScheduleAnchorFlowScrollIDs.nowMarker : "task-\(task.id.uuidString)")
                 }
             }
