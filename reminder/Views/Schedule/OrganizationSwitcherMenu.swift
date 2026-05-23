@@ -1,19 +1,9 @@
 import SwiftUI
 
-/// 任务 Tab 顶栏 / 家庭 Tab 资料行：组织切换触发器 + 下拉面板。
-struct OrganizationSwitcherControl: View {
-    enum LabelStyle {
-        case compact
-        case prominent
-    }
+// MARK: - Shared data
 
-    @EnvironmentObject private var appRouter: AppRouter
-
-    @Binding var isShowingCreateOrganization: Bool
-    var labelStyle: LabelStyle = .compact
-    @State private var isShowingSwitcher = false
-
-    private var organizations: [AppRouter.HouseholdOption] {
+private enum OrganizationSwitcherData {
+    static func organizations(for appRouter: AppRouter) -> [AppRouter.HouseholdOption] {
         let source = appRouter.recentHouseholds.isEmpty == false
             ? appRouter.recentHouseholds
             : appRouter.selectableHouseholds
@@ -39,48 +29,122 @@ struct OrganizationSwitcherControl: View {
         ]
     }
 
-    private var currentOrganizationName: String {
+    static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? "Untitled Organization" : trimmed
+    }
+}
+
+// MARK: - Task Tab：标题 + chevron 一体
+
+/// 任务 Tab 顶栏：组织切换触发器 + 下拉面板。
+struct OrganizationSwitcherControl: View {
+    enum LabelStyle {
+        case compact
+        case prominent
+    }
+
+    @EnvironmentObject private var appRouter: AppRouter
+
+    @Binding var isShowingCreateOrganization: Bool
+    var labelStyle: LabelStyle = .compact
+    @State private var isShowingSwitcher = false
+
+    private var organizations: [AppRouter.HouseholdOption] {
+        OrganizationSwitcherData.organizations(for: appRouter)
+    }
+
+    private var currentOrganizationName: String {
+        OrganizationSwitcherData.currentName(for: appRouter)
     }
 
     var body: some View {
         Button {
             isShowingSwitcher = true
         } label: {
-            titleLabel
+            HStack(spacing: 4) {
+                Text(currentOrganizationName)
+                    .font(labelStyle == .prominent ? .headline : .subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(labelStyle == .prominent ? 2 : 1)
+                    .multilineTextAlignment(.leading)
+
+                Image(systemName: "chevron.down")
+                    .font(labelStyle == .prominent ? .caption : .caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $isShowingSwitcher, arrowEdge: .top) {
-            OrganizationSwitcherPanel(
-                organizations: organizations,
-                selectedHouseholdId: appRouter.selectedHouseholdId,
-                onSelect: { option in
-                    appRouter.chooseHousehold(option)
-                    isShowingSwitcher = false
-                },
-                onCreate: {
-                    isShowingSwitcher = false
-                    isShowingCreateOrganization = true
-                }
-            )
-            .presentationCompactAdaptation(.popover)
-        }
+        .organizationSwitcherPopover(
+            isPresented: $isShowingSwitcher,
+            isShowingCreateOrganization: $isShowingCreateOrganization,
+            organizations: organizations,
+            selectedHouseholdId: appRouter.selectedHouseholdId,
+            onSelect: { appRouter.chooseHousehold($0) }
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Organization, \(currentOrganizationName), menu")
     }
+}
 
-    private var titleLabel: some View {
-        HStack(spacing: 4) {
-            Text(currentOrganizationName)
-                .font(labelStyle == .prominent ? .headline : .subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(labelStyle == .prominent ? 2 : 1)
-                .multilineTextAlignment(.leading)
+// MARK: - 家庭 Tab：右侧独立 chevron
 
+struct OrganizationSwitcherChevronButton: View {
+    @EnvironmentObject private var appRouter: AppRouter
+
+    @Binding var isShowingCreateOrganization: Bool
+    @State private var isShowingSwitcher = false
+
+    private var organizations: [AppRouter.HouseholdOption] {
+        OrganizationSwitcherData.organizations(for: appRouter)
+    }
+
+    var body: some View {
+        Button {
+            isShowingSwitcher = true
+        } label: {
             Image(systemName: "chevron.down")
-                .font(labelStyle == .prominent ? .caption : .caption2.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .organizationSwitcherPopover(
+            isPresented: $isShowingSwitcher,
+            isShowingCreateOrganization: $isShowingCreateOrganization,
+            organizations: organizations,
+            selectedHouseholdId: appRouter.selectedHouseholdId,
+            onSelect: { appRouter.chooseHousehold($0) }
+        )
+        .accessibilityLabel("Switch organization")
+    }
+}
+
+// MARK: - Popover attachment
+
+private extension View {
+    func organizationSwitcherPopover(
+        isPresented: Binding<Bool>,
+        isShowingCreateOrganization: Binding<Bool>,
+        organizations: [AppRouter.HouseholdOption],
+        selectedHouseholdId: UUID?,
+        onSelect: @escaping (AppRouter.HouseholdOption) -> Void
+    ) -> some View {
+        popover(isPresented: isPresented, arrowEdge: .top) {
+            OrganizationSwitcherPanel(
+                organizations: organizations,
+                selectedHouseholdId: selectedHouseholdId,
+                onSelect: { option in
+                    onSelect(option)
+                    isPresented.wrappedValue = false
+                },
+                onCreate: {
+                    isPresented.wrappedValue = false
+                    isShowingCreateOrganization.wrappedValue = true
+                }
+            )
+            .presentationCompactAdaptation(.popover)
         }
     }
 }

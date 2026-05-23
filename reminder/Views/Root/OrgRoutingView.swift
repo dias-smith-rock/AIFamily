@@ -247,8 +247,11 @@ struct OrgRoutingView: View {
             return
         }
         let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
-        guard success else { return }
+        guard success != nil else { return }
         showCreateSheet = false
+        if let createdId = success {
+            appRouter.preferHouseholdOnNextRefresh(createdId)
+        }
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
     }

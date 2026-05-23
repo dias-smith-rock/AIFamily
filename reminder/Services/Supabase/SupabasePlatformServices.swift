@@ -45,7 +45,7 @@ protocol InviteLinkService {
 }
 
 protocol HouseholdRoutingService {
-    func createHousehold(displayName: String) async throws
+    func createHousehold(displayName: String) async throws -> UUID
     func joinHousehold(inviteCode: String) async throws
     func renameHousehold(householdId: UUID, newName: String) async throws
 }
@@ -375,17 +375,15 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         self.provider = provider
     }
 
-    func createHousehold(displayName: String) async throws {
+    func createHousehold(displayName: String) async throws -> UUID {
         #if canImport(Supabase)
         let normalizedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
             throw HouseholdRoutingError.invalidHouseholdName
         }
 
-        /// 优先走 RPC `create_household_with_creator`（服务端 `auth.uid()` 写入 creator_id，且不受 households SELECT RLS 影响）。
-        /// 直连 insert 时禁止对 `households` / `family_profiles` 使用 `.select()`：首条 membership 建立前，
-        /// `get_user_household_ids()` 为空，INSERT … RETURNING 会在 SELECT 策略上触发 42501。
-        try await createHouseholdOnBackend(normalizedName: normalizedName)
+        /// 优先 RPC；直连 insert 禁止对 `households` / `family_profiles` 使用 `.select()`（RETURNING 会触发 SELECT RLS）。
+        return try await createHouseholdOnBackend(normalizedName: normalizedName)
         #else
         _ = displayName
         throw SupabaseServiceError.sdkUnavailable
@@ -487,7 +485,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
 // MARK: - Household routing (RPC + client-ordered fallback)
 
 extension SupabaseHouseholdRoutingService {
-    fileprivate func createHouseholdOnBackend(normalizedName: String) async throws {
+    fileprivate func createHouseholdOnBackend(normalizedName: String) async throws -> UUID {
         let client = provider.client
         do {
             _ = try await client.auth.session
@@ -496,20 +494,22 @@ extension SupabaseHouseholdRoutingService {
         }
 
         do {
-            try await createHouseholdViaRPC(client: client, normalizedName: normalizedName)
+            return try await createHouseholdViaRPC(client: client, normalizedName: normalizedName)
         } catch {
             if isMissingCreateHouseholdRPCError(error) {
                 #if DEBUG
                 print("[HouseholdCreate] RPC 不可用，回退客户端顺序写入")
                 #endif
-                try await createHouseholdViaClientOrderedInserts(client: client, normalizedName: normalizedName)
-                return
+                return try await createHouseholdViaClientOrderedInserts(
+                    client: client,
+                    normalizedName: normalizedName
+                )
             }
             throw mapCreateHouseholdFlowError(error)
         }
     }
 
-    fileprivate func createHouseholdViaRPC(client: SupabaseClient, normalizedName: String) async throws {
+    fileprivate func createHouseholdViaRPC(client: SupabaseClient, normalizedName: String) async throws -> UUID {
         let params = CreateHouseholdWithCreatorParams(pName: normalizedName)
         Self.debugLogHouseholdInsertPayload(params, label: "rpc create_household_with_creator")
 
@@ -525,13 +525,40 @@ extension SupabaseHouseholdRoutingService {
         guard (200 ... 299).contains(response.status) else {
             throw HouseholdRoutingError.backendMigrationRequired
         }
+
+        if let householdId = Self.parseCreatedHouseholdId(from: response.data) {
+            return householdId
+        }
+
+        if let latestHouseholdId = try await fetchLatestActiveHouseholdId(client: client) {
+            #if DEBUG
+            print("[HouseholdCreate] rpc body 未解析出 id，回退使用最新 membership 对应 household=\(latestHouseholdId.uuidString)")
+            #endif
+            return latestHouseholdId
+        }
+
+        throw HouseholdRoutingError.unknown
+    }
+
+    fileprivate func fetchLatestActiveHouseholdId(client: SupabaseClient) async throws -> UUID? {
+        let session = try await client.auth.session
+        let rows: [LatestMembershipHouseholdRow] = try await client
+            .from("household_memberships")
+            .select("household_id")
+            .eq("user_id", value: session.user.id.uuidString)
+            .eq("status", value: "active")
+            .order("created_at", ascending: false)
+            .limit(1)
+            .execute()
+            .value
+        return rows.first?.householdId
     }
 
     /// 仅在 RPC 未部署时使用；`households` / `family_profiles` 禁止 `.select()`（见文件头注释）。
     fileprivate func createHouseholdViaClientOrderedInserts(
         client: SupabaseClient,
         normalizedName: String
-    ) async throws {
+    ) async throws -> UUID {
         let session: Session
         do {
             session = try await client.auth.session
@@ -612,6 +639,8 @@ extension SupabaseHouseholdRoutingService {
                 .update(linkPayload)
                 .eq("id", value: profileId.uuidString)
                 .execute()
+
+            return householdId
         } catch {
             print("创建家庭详细错误: \(error)")
             if let hid = householdIdForRollback {
@@ -623,6 +652,27 @@ extension SupabaseHouseholdRoutingService {
             }
             throw mapCreateHouseholdFlowError(error)
         }
+    }
+
+    fileprivate static func parseCreatedHouseholdId(from data: Data) -> UUID? {
+        guard data.isEmpty == false else { return nil }
+        guard let json = try? JSONSerialization.jsonObject(with: data) else { return nil }
+
+        if let rows = json as? [[String: Any]] {
+            for row in rows {
+                for key in ["household_id", "v_household_id", "id"] {
+                    if let raw = row[key] as? String, let uuid = UUID(uuidString: raw) {
+                        return uuid
+                    }
+                }
+            }
+        }
+
+        if let idString = json as? String, let uuid = UUID(uuidString: idString) {
+            return uuid
+        }
+
+        return nil
     }
 
     fileprivate static func debugLogHouseholdInsertPayload<T: Encodable>(
@@ -663,6 +713,10 @@ private struct CreateHouseholdWithCreatorParams: Encodable {
     enum CodingKeys: String, CodingKey {
         case pName = "p_name"
     }
+}
+
+private struct LatestMembershipHouseholdRow: Decodable {
+    let householdId: UUID
 }
 
 private struct HouseholdCreatorInsertPayload: Encodable {

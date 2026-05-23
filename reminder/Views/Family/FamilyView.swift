@@ -296,46 +296,61 @@ struct FamilyView: View {
     }
 
     private var householdSummaryRowContent: some View {
-        HStack(alignment: .center, spacing: 12) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.orange.opacity(0.2))
-                .frame(width: 50, height: 50)
-                .overlay {
-                    Image(systemName: "person.2.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(.orange)
-                }
-
-            VStack(alignment: .leading, spacing: 2) {
-                OrganizationSwitcherControl(
-                    isShowingCreateOrganization: $isShowingCreateOrganizationSheet,
-                    labelStyle: .prominent
-                )
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Group {
-                    if canManageHousehold {
-                        Button {
-                            renameErrorMessage = nil
-                            isShowingRenameHouseholdSheet = true
-                        } label: {
-                            Text("Organization Profile")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+        HStack(alignment: .center, spacing: 0) {
+            Button {
+                openOrganizationSettings()
+            } label: {
+                HStack(alignment: .center, spacing: 12) {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.orange.opacity(0.2))
+                        .frame(width: 50, height: 50)
+                        .overlay {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundStyle(.orange)
                         }
-                        .buttonStyle(.plain)
-                        .disabled(appRouter.selectedHouseholdId == nil)
-                    } else {
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(currentOrganizationDisplayName)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+
+                            if canManageHousehold {
+                                Image(systemName: "square.and.pencil")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
                         Text("Organization Profile")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .contentShape(Rectangle())
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .buttonStyle(.plain)
+            .disabled(canManageHousehold == false || appRouter.selectedHouseholdId == nil)
+
+            OrganizationSwitcherChevronButton(
+                isShowingCreateOrganization: $isShowingCreateOrganizationSheet
+            )
         }
         .padding(.vertical, 6)
+    }
+
+    private var currentOrganizationDisplayName: String {
+        let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? "Untitled Organization" : trimmed
+    }
+
+    private func openOrganizationSettings() {
+        renameErrorMessage = nil
+        isShowingRenameHouseholdSheet = true
     }
 
     private var otherMembersSectionHeader: some View {
@@ -532,14 +547,14 @@ struct FamilyView: View {
             return
         }
 
-        let success = await orgRoutingViewModel.createHousehold(displayName: normalizedName)
-        if success == false {
+        guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(displayName: normalizedName) else {
             createOrganizationError = orgRoutingViewModel.errorMessage
             return
         }
 
         newOrganizationName = ""
         isShowingCreateOrganizationSheet = false
+        appRouter.preferHouseholdOnNextRefresh(createdHouseholdId)
         await appRouter.refreshStateFromBackend()
         viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
         await viewModel.loadMembers()

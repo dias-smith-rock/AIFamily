@@ -324,15 +324,19 @@ struct TaskListView: View {
             return
         }
 
-        let success = await orgRoutingViewModel.createHousehold(displayName: normalizedName)
-        if success == false {
+        guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(displayName: normalizedName) else {
             createOrganizationError = orgRoutingViewModel.errorMessage
             return
         }
 
         newOrganizationName = ""
         isShowingCreateOrganizationSheet = false
+        appRouter.preferHouseholdOnNextRefresh(createdHouseholdId)
         await appRouter.refreshStateFromBackend()
+        viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+        await refreshCurrentMembershipRole()
+        await viewModel.loadTasks()
+        await viewModel.setupRealtimeListener()
     }
 
     private func refreshCurrentMembershipRole() async {

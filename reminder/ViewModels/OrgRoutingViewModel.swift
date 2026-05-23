@@ -13,17 +13,16 @@ final class OrgRoutingViewModel: ObservableObject {
         self.householdRoutingService = householdRoutingService
     }
 
-    func createHousehold(displayName: String) async -> Bool {
+    func createHousehold(displayName: String) async -> UUID? {
         isCreating = true
         errorMessage = nil
         defer { isCreating = false }
 
         do {
-            try await householdRoutingService.createHousehold(displayName: displayName)
-            return true
+            return try await householdRoutingService.createHousehold(displayName: displayName)
         } catch {
             errorMessage = mapErrorMessage(error, action: .create)
-            return false
+            return nil
         }
     }
 

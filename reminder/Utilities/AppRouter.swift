@@ -22,10 +22,17 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedMembershipId: UUID?
     @Published private(set) var selectedHouseholdName: String?
 
+    /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
+    private var pendingPreferredHouseholdId: UUID?
+
     struct HouseholdOption: Identifiable, Equatable {
         let id: UUID
         let membershipId: UUID
         let name: String
+    }
+
+    func preferHouseholdOnNextRefresh(_ householdId: UUID) {
+        pendingPreferredHouseholdId = householdId
     }
 
     func refreshStateFromBackend() async {
@@ -62,6 +69,17 @@ final class AppRouter: ObservableObject {
             }
 
             selectableHouseholds = options
+
+            if let preferredId = pendingPreferredHouseholdId,
+               let preferredOption = options.first(where: { $0.id == preferredId }) {
+                pendingPreferredHouseholdId = nil
+                debugLog("route.activeMember reason=preferred_after_create household=\(preferredOption.id.uuidString)")
+                selectHouseholdAndEnter(
+                    option: preferredOption,
+                    userId: userId
+                )
+                return
+            }
 
             if options.count == 1, let onlyOption = options.first {
                 debugLog("route.activeMember reason=single_household household=\(onlyOption.id.uuidString)")
