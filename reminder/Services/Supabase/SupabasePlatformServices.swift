@@ -513,12 +513,16 @@ extension SupabaseHouseholdRoutingService {
         let params = CreateHouseholdWithCreatorParams(pName: normalizedName)
         Self.debugLogHouseholdInsertPayload(params, label: "rpc create_household_with_creator")
 
-        let rows: [CreateHouseholdWithCreatorRow] = try await client
+        let response = try await client
             .rpc("create_household_with_creator", params: params)
             .execute()
-            .value
 
-        guard rows.first != nil else {
+        #if DEBUG
+        let rawBody = String(data: response.data, encoding: .utf8) ?? "<non-utf8 body>"
+        print("[HouseholdCreate] rpc response status=\(response.status) raw=\(rawBody)")
+        #endif
+
+        guard (200 ... 299).contains(response.status) else {
             throw HouseholdRoutingError.backendMigrationRequired
         }
     }
@@ -658,14 +662,6 @@ private struct CreateHouseholdWithCreatorParams: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case pName = "p_name"
-    }
-}
-
-private struct CreateHouseholdWithCreatorRow: Decodable {
-    let householdId: UUID
-
-    enum CodingKeys: String, CodingKey {
-        case householdId = "household_id"
     }
 }
 
