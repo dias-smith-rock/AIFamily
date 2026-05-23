@@ -3,9 +3,6 @@ import SwiftUI
 struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @State private var selectedTab: Tab = .schedule
-    @State private var showsAssistant = false
-    @State private var hideScheduleAssistantFAB = false
-    @State private var scheduleSelectedDay: Date?
 
     enum Tab {
         case schedule
@@ -14,70 +11,26 @@ struct AppTabRootView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            TabView(selection: $selectedTab) {
-                TaskListView(onRequestAIInput: {
-                    showsAssistant = true
-                })
+        TabView(selection: $selectedTab) {
+            TaskListView()
                 .tabItem {
                     Label("日程表", systemImage: "calendar")
                 }
                 .tag(Tab.schedule)
 
-                // 「消息」Tab 延后版本开放，当前隐藏入口（FeedbackFeedView 仍保留在工程中）。
+            // 「消息」Tab 延后版本开放，FeedbackFeedView 仍保留在工程中。
 
-                FamilyView()
-                    .tabItem {
-                        Label("家庭", systemImage: "person.2")
-                    }
-                    .tag(Tab.family)
-
-                MineView()
-                    .tabItem {
-                        Label("我的", systemImage: "gearshape.fill")
-                    }
-                    .tag(Tab.personalSettings)
-            }
-            .onPreferenceChange(ScheduleAssistantFABVisibility.PreferenceKey.self) { shouldHide in
-                hideScheduleAssistantFAB = shouldHide
-            }
-            .onChange(of: selectedTab) { _, tab in
-                if tab != .schedule {
-                    hideScheduleAssistantFAB = false
+            FamilyView()
+                .tabItem {
+                    Label("家庭", systemImage: "person.2")
                 }
-            }
-            .onPreferenceChange(ScheduleSelectedDayPreferenceKey.self) { day in
-                scheduleSelectedDay = day
-            }
+                .tag(Tab.family)
 
-            if selectedTab == .schedule, hideScheduleAssistantFAB == false {
-                Button {
-                    showsAssistant.toggle()
-                } label: {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 66, height: 66)
-                        .background(
-                            LinearGradient(
-                                colors: [.purple, .pink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.16), radius: 8, y: 4)
+            MineView()
+                .tabItem {
+                    Label("我的", systemImage: "gearshape.fill")
                 }
-                .padding(.trailing, 20)
-                .padding(.bottom, 92)
-            }
-        }
-        .sheet(isPresented: $showsAssistant) {
-            AssistantSheetView(
-                scheduleAnchorDay: scheduleSelectedDay ?? Calendar.current.startOfDay(for: Date())
-            )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                .tag(Tab.personalSettings)
         }
     }
 }

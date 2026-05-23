@@ -1,16 +1,8 @@
 import SwiftUI
 import Kingfisher
 
-private enum AllDayCardSlotWidthPreference: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 /// Day 模式：周历条 + 全天条 + 锚点时间轴（由 `TaskListView` 嵌入）。
 struct TaskModeDayView: View {
-    private let taskFlowTimeColumnWidth: CGFloat = 50
     private let taskFlowCompactGapHeight: CGFloat = 40
     private let taskFlowLongIdleThreshold: TimeInterval = 3600
     /// 未收到 ScrollView 宽度前占位，避免首张卡片过窄（约等于常见屏宽减去左右边距与时间列）。
@@ -33,20 +25,17 @@ struct TaskModeDayView: View {
 
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
-    let onRequestAIInput: () -> Void
 
     init(
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
-        onQuickCreate: @escaping (String, Date?) -> Void,
-        onRequestAIInput: @escaping () -> Void = {}
+        onQuickCreate: @escaping (String, Date?) -> Void
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onQuickCreate = onQuickCreate
-        self.onRequestAIInput = onRequestAIInput
     }
 
     var body: some View {
@@ -199,24 +188,18 @@ struct TaskModeDayView: View {
                 ZStack {
                     ScrollViewReader { proxy in
                         ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: 12) {
+                            VStack(spacing: 0) {
                                 if timedTasks.isEmpty == false {
                                     ScheduleTaskAnchorFlow(
                                         timedTasks: timedTasks,
                                         selectedCalendarDay: selectedDay,
-                                        timeColumnWidth: taskFlowTimeColumnWidth,
                                         compactGapHeight: taskFlowCompactGapHeight,
                                         longIdleThreshold: taskFlowLongIdleThreshold,
                                         taskAnchor: { taskDisplayDate($0) },
                                         taskEnd: { taskEndDate($0) },
-                                        onTaskTap: { onTaskSelect($0) },
-                                        card: { task in
-                                            TaskRowView(
-                                                task: task,
-                                                forWhomAvatars: forWhomAvatarSources(for: task),
-                                                assigneeLabel: assigneeLabel(for: task)
-                                            )
-                                        }
+                                        forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+                                        assigneeLabel: { assigneeLabel(for: $0) },
+                                        onTaskTap: { onTaskSelect($0) }
                                     )
                                 }
                             }
@@ -245,19 +228,22 @@ struct TaskModeDayView: View {
     /// 周历下方置顶：`is_all_day` 任务专用紧凑卡片（标题 + 为了谁），横向滑动。
     /// 左侧「全天」与时间列同宽左对齐；卡片宽度与锚点行右侧任务卡一致（随 ScrollView 可视宽度）。
     private var allDayTasksPinnedStrip: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: ScheduleTimelineMetrics.rowSpacing) {
             Text("全天")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: taskFlowTimeColumnWidth, alignment: .leading)
+                .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
                 .padding(.top, 2)
+
+            Color.clear
+                .frame(width: ScheduleTimelineMetrics.axisColumnWidth)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(allDayTasks) { task in
                         AllDayTaskRowView(
                             task: task,
-                            forWhomAvatars: forWhomAvatarSources(for: task)
+                            forWhomAvatars: viewModel.forWhomAvatarSources(for: task)
                         )
                         .frame(width: resolvedAllDayCardWidth)
                         .fixedSize(horizontal: false, vertical: true)
@@ -269,23 +255,18 @@ struct TaskModeDayView: View {
                 }
                 .padding(.vertical, 2)
             }
-            .background(
-                GeometryReader { proxy in
-                    Color.clear.preference(
-                        key: AllDayCardSlotWidthPreference.self,
-                        value: proxy.size.width
-                    )
-                }
-            )
-            .onPreferenceChange(AllDayCardSlotWidthPreference.self) { width in
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                proxy.size.width
+            } action: { width in
                 if abs(width - allDayCardSlotWidth) > 0.5 {
                     allDayCardSlotWidth = width
                 }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, 16)
-        /// 与下方「08:32」首行之间的区块留白（叠加上层 `VStack` spacing 10 ≈ 22–24pt）。
-        .padding(.bottom, 14)
+        .padding(.bottom, 8)
     }
 
     private func taskEndDate(_ task: FamilyTask) -> Date {
@@ -307,7 +288,7 @@ struct TaskModeDayView: View {
 
         let action = {
             if viewingToday {
-                proxy.scrollTo(ScheduleAnchorFlowScrollIDs.nowMarker, anchor: .center)
+                proxy.scrollTo(ScheduleAnchorFlowScrollIDs.nowMarker, anchor: .top)
             } else {
                 proxy.scrollTo(firstID, anchor: .top)
             }
@@ -472,34 +453,6 @@ struct TaskModeDayView: View {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    private func orderedTargetProfileIDs(for task: FamilyTask) -> [UUID] {
-        var ordered: [UUID] = []
-        var seen = Set<UUID>()
-        if let multi = task.targetProfileIds {
-            for id in multi where seen.insert(id).inserted {
-                ordered.append(id)
-            }
-        }
-        if let single = task.targetProfileId, seen.insert(single).inserted {
-            ordered.append(single)
-        }
-        return ordered
-    }
-
-    private func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {
-        let ids = orderedTargetProfileIDs(for: task)
-        guard ids.isEmpty == false else { return [] }
-        let profileById = Dictionary(uniqueKeysWithValues: viewModel.familyProfiles.map { ($0.id, $0) })
-        return ids.compactMap { id in
-            guard let profile = profileById[id] else { return nil }
-            return TaskCardAvatarSource(
-                id: profile.id,
-                displayName: profile.name,
-                imageURL: profile.avatarUrl.flatMap { URL(string: $0) }
-            )
-        }
-    }
-
     private func statusColor(for status: TaskStatus) -> Color {
         switch status {
         case .new:
@@ -559,15 +512,6 @@ private enum TaskEmergencyDialURLs {
     }
 }
 
-private struct TaskRowView: View {
-    let task: FamilyTask
-    let forWhomAvatars: [TaskCardAvatarSource]
-    let assigneeLabel: String
-
-    var body: some View {
-        TaskCardView(task: task, forWhomAvatars: forWhomAvatars, assigneeLabel: assigneeLabel)
-    }
-}
 
 #Preview("Day mode") {
     TaskModeDayView(

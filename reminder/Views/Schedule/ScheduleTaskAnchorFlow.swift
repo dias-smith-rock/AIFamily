@@ -1,29 +1,23 @@
 import SwiftUI
 
-private enum ScheduleNowMarker: Equatable {
-    case none
-    case onTask(UUID)
-    case between(previousTaskID: UUID, nextTaskID: UUID)
-}
-
 /// 供 `ScrollViewReader.scrollTo` 定位「此刻」行。
 enum ScheduleAnchorFlowScrollIDs {
     static let nowMarker = "scheduleAnchorFlowNow"
 }
 
-/// 定时任务锚点流：左侧 ~50pt 时间（与卡片等高竖线 + 时间文案）；右侧 `TaskCardView`。任务间固定 ~40pt 间隙，间隙内竖线与任务列对齐，锚点时间差大时用虚线表示长空闲。
-struct ScheduleTaskAnchorFlow<Card: View>: View {
+/// 定时任务锚点流：三列时间轴布局 + 任务间固定间隙；锚点时间差大时用虚线表示长空闲。
+struct ScheduleTaskAnchorFlow: View {
     let timedTasks: [FamilyTask]
     let selectedCalendarDay: Date
-    let timeColumnWidth: CGFloat
     let compactGapHeight: CGFloat
     let longIdleThreshold: TimeInterval
 
     let taskAnchor: (FamilyTask) -> Date
     let taskEnd: (FamilyTask) -> Date
+    let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
+    let assigneeLabel: (FamilyTask) -> String
 
     let onTaskTap: (FamilyTask) -> Void
-    @ViewBuilder let card: (FamilyTask) -> Card
 
     private var sortedTasks: [FamilyTask] {
         timedTasks.sorted { taskAnchor($0) < taskAnchor($1) }
@@ -36,228 +30,116 @@ struct ScheduleTaskAnchorFlow<Card: View>: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { timeline in
             let now = timeline.date
-            let marker = resolveNowMarker(now: now)
+            let activeTaskID = activeTaskID(for: now)
 
             VStack(spacing: 0) {
                 ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
                     if index > 0 {
                         let previous = sortedTasks[index - 1]
-                        let gapKind: GapKind = {
-                            if case let .between(prevID, nextID) = marker,
-                               prevID == previous.id,
-                               nextID == task.id {
-                                return .containsNowMarker
-                            }
-                            return .normal
-                        }()
 
                         ScheduleAnchorGapSegment(
                             stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
                             previousAnchor: taskAnchor(previous),
                             nextAnchor: taskAnchor(task),
-                            prevEnd: taskEnd(previous),
-                            nextStart: taskAnchor(task),
                             compactHeight: compactGapHeight,
-                            longIdleThreshold: longIdleThreshold,
-                            timeColumnWidth: timeColumnWidth,
-                            viewingToday: viewingToday,
-                            now: now,
-                            gapKind: gapKind
+                            longIdleThreshold: longIdleThreshold
                         )
                     }
 
-                    let ribbon: Bool = {
-                        if case let .onTask(id) = marker { return id == task.id }
-                        return false
-                    }()
+                    let isCurrentActiveTask = viewingToday && activeTaskID == task.id
+                    let startTime = taskAnchor(task)
+                    let nextStartTime = nextIntervalEnd(for: task, at: index)
 
-                    ScheduleAnchorTaskRow(
-                        taskID: task.id,
-                        anchor: taskAnchor(task),
-                        timeColumnWidth: timeColumnWidth,
+                    TaskRowView(
+                        task: task,
+                        anchor: startTime,
+                        forWhomAvatars: forWhomAvatars(task),
+                        assigneeLabel: assigneeLabel(task),
+                        isCurrentActiveTask: isCurrentActiveTask,
+                        startTime: startTime,
+                        nextStartTime: nextStartTime,
                         now: now,
-                        showNowRibbon: ribbon,
-                        rowNowMarker: ribbon,
-                        card: card(task),
                         onTap: { onTaskTap(task) }
                     )
+                    .id(isCurrentActiveTask ? ScheduleAnchorFlowScrollIDs.nowMarker : "task-\(task.id.uuidString)")
                 }
             }
         }
     }
 
-    private func resolveNowMarker(now: Date) -> ScheduleNowMarker {
-        guard viewingToday else { return .none }
+    /// 红线仅渲染在 `now ∈ [start, nextStart)` 的唯一任务行上。
+    private func activeTaskID(for now: Date) -> UUID? {
+        guard viewingToday else { return nil }
 
-        for task in sortedTasks {
-            let a = taskAnchor(task)
-            let e = taskEnd(task)
-            if now >= a, now <= e {
-                return .onTask(task.id)
+        for (index, task) in sortedTasks.enumerated() {
+            let start = taskAnchor(task)
+            let nextStart = nextIntervalEnd(for: task, at: index)
+            if now >= start, now < nextStart {
+                return task.id
             }
         }
-
-        guard sortedTasks.count >= 2 else { return .none }
-        for index in 1..<sortedTasks.count {
-            let previous = sortedTasks[index - 1]
-            let next = sortedTasks[index]
-            let prevEnd = taskEnd(previous)
-            let nextStart = taskAnchor(next)
-            if now > prevEnd, now < nextStart {
-                return .between(previousTaskID: previous.id, nextTaskID: next.id)
-            }
-        }
-        return .none
+        return nil
     }
-}
 
-private enum GapKind {
-    case normal
-    case containsNowMarker
-}
+    /// 进度区间终点：下一任务开始时间；末项任务则用结束时间或默认 60 分钟。
+    private func nextIntervalEnd(for task: FamilyTask, at index: Int) -> Date {
+        if index + 1 < sortedTasks.count {
+            return taskAnchor(sortedTasks[index + 1])
+        }
 
-private enum ScheduleTimeColumnMetrics {
-    /// 与时间标签并排时，竖线与文字间距（须与 `ScheduleAnchorTaskRow` / `ScheduleAnchorGapSegment` 一致）。
-    static let labelLineSpacing: CGFloat = 6
-}
-
-private enum ScheduleNowLineMetrics {
-    /// 「此刻」横向指示线高度（与任务行、间隙行共用）。
-    static let lineHeight: CGFloat = 1.5
+        let start = taskAnchor(task)
+        let end = taskEnd(task)
+        if end > start {
+            return end
+        }
+        return start.addingTimeInterval(ScheduleTimelineMetrics.defaultTaskDuration)
+    }
 }
 
 private struct ScheduleAnchorGapSegment: View {
     let stableID: String
     let previousAnchor: Date
     let nextAnchor: Date
-    let prevEnd: Date
-    let nextStart: Date
     let compactHeight: CGFloat
     let longIdleThreshold: TimeInterval
-    let timeColumnWidth: CGFloat
-    let viewingToday: Bool
-    let now: Date
-    let gapKind: GapKind
 
     private var anchorGapLong: Bool {
         nextAnchor.timeIntervalSince(previousAnchor) >= longIdleThreshold
     }
 
-    private var nowInThisGap: Bool {
-        viewingToday && now > prevEnd && now < nextStart
-    }
-
     var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            HStack(alignment: .center, spacing: ScheduleTimeColumnMetrics.labelLineSpacing) {
-                ScheduleVerticalConnectorLine(height: compactHeight, dashed: anchorGapLong)
-                    .frame(width: 1)
+        HStack(alignment: .center, spacing: ScheduleTimelineMetrics.rowSpacing) {
+            Color.clear
+                .frame(width: ScheduleTimelineMetrics.timeColumnWidth)
 
-                if gapKind == .containsNowMarker, nowInThisGap {
-                    Text(now.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.red)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                if anchorGapLong {
+                    ScheduleAnchorGapDashedLine(height: compactHeight)
                 } else {
-                    Spacer(minLength: 0)
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: ScheduleTimelineMetrics.lineWidth, height: compactHeight)
                 }
             }
-            .frame(width: timeColumnWidth, alignment: .leading)
+            .frame(width: ScheduleTimelineMetrics.axisColumnWidth)
 
-            ZStack(alignment: .center) {
-                Color.clear
-                    .frame(height: compactHeight)
-                    .frame(maxWidth: .infinity)
-
-                if gapKind == .containsNowMarker, nowInThisGap {
-                    Capsule()
-                        .fill(Color.red.opacity(0.92))
-                        .frame(height: ScheduleNowLineMetrics.lineHeight)
-                        .frame(maxWidth: .infinity)
-                }
-            }
+            Color.clear
+                .frame(maxWidth: .infinity)
+                .frame(height: compactHeight)
         }
-        .id(gapKind == .containsNowMarker ? ScheduleAnchorFlowScrollIDs.nowMarker : stableID)
+        .id(stableID)
     }
 }
 
-private struct ScheduleAnchorTaskRow<Card: View>: View {
-    let taskID: UUID
-    let anchor: Date
-    let timeColumnWidth: CGFloat
-    let now: Date
-    let showNowRibbon: Bool
-    let rowNowMarker: Bool
-    let card: Card
-    let onTap: () -> Void
-
-    private var timeText: String {
-        anchor.formatted(date: .omitted, time: .shortened)
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            GeometryReader { geo in
-                HStack(alignment: .top, spacing: ScheduleTimeColumnMetrics.labelLineSpacing) {
-                    ScheduleVerticalConnectorLine(height: max(0, geo.size.height), dashed: false)
-                        .frame(width: 1)
-
-                    Text(timeText)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(width: timeColumnWidth, height: geo.size.height, alignment: .topLeading)
-            }
-            .frame(width: timeColumnWidth)
-
-            card
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .overlay(alignment: .top) {
-                    if showNowRibbon {
-                        VStack(alignment: .leading, spacing: 4) {
-                            HStack(spacing: 6) {
-                                Text(now.formatted(date: .omitted, time: .shortened))
-                                    .font(.system(size: 11, weight: .bold))
-                                    .foregroundStyle(.red)
-                                Spacer(minLength: 0)
-                            }
-                            Capsule()
-                                .fill(Color.red.opacity(0.92))
-                                .frame(height: ScheduleNowLineMetrics.lineHeight)
-                                .frame(maxWidth: .infinity)
-                        }
-                        .padding(.bottom, 6)
-                        .offset(y: -8)
-                    }
-                }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onTap)
-        .id(rowNowMarker ? ScheduleAnchorFlowScrollIDs.nowMarker : "task-\(taskID.uuidString)")
-    }
-}
-
-private struct ScheduleVerticalConnectorLine: View {
+private struct ScheduleAnchorGapDashedLine: View {
     let height: CGFloat
-    let dashed: Bool
 
     var body: some View {
         Rectangle()
-            .fill(Color.clear)
-            .frame(width: 1, height: height)
-            .overlay {
-                Rectangle()
-                    .stroke(
-                        Color.secondary.opacity(0.35),
-                        style: StrokeStyle(
-                            lineWidth: 1,
-                            lineCap: .round,
-                            dash: dashed ? [4, 4] : []
-                        )
-                    )
-            }
+            .stroke(
+                Color.gray.opacity(0.3),
+                style: StrokeStyle(lineWidth: ScheduleTimelineMetrics.lineWidth, dash: [4, 4])
+            )
+            .frame(width: ScheduleTimelineMetrics.lineWidth, height: height)
     }
 }

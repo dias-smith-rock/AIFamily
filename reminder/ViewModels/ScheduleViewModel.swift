@@ -15,6 +15,8 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
+    /// 列表滚动时当前视野内的月份（用于顶栏动态标题）。
+    @Published var currentVisibleDate: Date = Calendar.current.startOfDay(for: Date())
 
     private let taskService: TaskDataService
     private let membershipService: HouseholdMembershipDataService
@@ -291,6 +293,65 @@ final class ScheduleViewModel: ObservableObject {
             (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
         }
         return updated
+    }
+
+    func noteVisibleMonth(containing day: Date) {
+        let calendar = Calendar.current
+        guard let monthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: day)) else {
+            return
+        }
+        if calendar.isDate(monthStart, equalTo: currentVisibleDate, toGranularity: .month) == false {
+            currentVisibleDate = monthStart
+        }
+    }
+
+    /// 列表模式智能滚动：今天首个任务；若无则今天之后最近一条。
+    func getTargetTaskId() -> UUID? {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let sorted = tasks.sorted { listAnchorDate(for: $0) < listAnchorDate(for: $1) }
+
+        if let todayTask = sorted.first(where: { calendar.isDate(listAnchorDate(for: $0), inSameDayAs: today) }) {
+            return todayTask.id
+        }
+
+        if let futureTask = sorted.first(where: { calendar.startOfDay(for: listAnchorDate(for: $0)) > today }) {
+            return futureTask.id
+        }
+
+        return nil
+    }
+
+    private func listAnchorDate(for task: FamilyTask) -> Date {
+        task.dueDate ?? task.originalDueDate ?? task.createdAt
+    }
+
+    func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {
+        let ids = orderedTargetProfileIDs(for: task)
+        guard ids.isEmpty == false else { return [] }
+        let profileById = Dictionary(uniqueKeysWithValues: familyProfiles.map { ($0.id, $0) })
+        return ids.compactMap { id in
+            guard let profile = profileById[id] else { return nil }
+            return TaskCardAvatarSource(
+                id: profile.id,
+                displayName: profile.name,
+                imageURL: profile.avatarUrl.flatMap { URL(string: $0) }
+            )
+        }
+    }
+
+    private func orderedTargetProfileIDs(for task: FamilyTask) -> [UUID] {
+        var ordered: [UUID] = []
+        var seen = Set<UUID>()
+        if let multi = task.targetProfileIds {
+            for id in multi where seen.insert(id).inserted {
+                ordered.append(id)
+            }
+        }
+        if let single = task.targetProfileId, seen.insert(single).inserted {
+            ordered.append(single)
+        }
+        return ordered
     }
 
     func deleteTask(taskId: UUID) async {

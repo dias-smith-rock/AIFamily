@@ -19,12 +19,7 @@ struct TaskListView: View {
     @State private var createTaskDueDateOverride: Date?
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
-
-    let onRequestAIInput: () -> Void
-
-    init(onRequestAIInput: @escaping () -> Void = {}) {
-        self.onRequestAIInput = onRequestAIInput
-    }
+    @State private var listScrollToken = 0
 
     var body: some View {
         NavigationStack {
@@ -35,9 +30,8 @@ struct TaskListView: View {
                     switch currentViewMode {
                     case .list:
                         TaskModeListView(
-                            tasks: viewModel.tasks,
-                            isLoading: viewModel.isLoading,
-                            errorMessage: viewModel.errorMessage,
+                            viewModel: viewModel,
+                            listScrollToken: listScrollToken,
                             onTaskTap: { taskForDetailSheet = $0 }
                         )
                     case .day:
@@ -50,8 +44,7 @@ struct TaskListView: View {
                                 createTaskDueDateOverride = dueOverride
                                 createTaskFormInstanceID = UUID()
                                 isShowingCreateTaskSheet = true
-                            },
-                            onRequestAIInput: onRequestAIInput
+                            }
                         )
                     case .threeDay, .week, .month, .year:
                         Text("开发中...")
@@ -63,7 +56,6 @@ struct TaskListView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .preference(key: ScheduleSelectedDayPreferenceKey.self, value: dayID(for: selectedDate))
             .navigationBarHidden(true)
             .sheet(item: $taskForDetailSheet) { task in
                 NavigationStack {
@@ -128,6 +120,12 @@ struct TaskListView: View {
             .onChange(of: appRouter.selectedMembershipId) { _, _ in
                 Task {
                     await refreshCurrentMembershipRole()
+                }
+            }
+            .onChange(of: currentViewMode) { _, mode in
+                if mode == .list {
+                    viewModel.noteVisibleMonth(containing: Date())
+                    listScrollToken += 1
                 }
             }
             .onChange(of: selectedDate) { _, newValue in
@@ -211,13 +209,22 @@ struct TaskListView: View {
         .padding(.bottom, 8)
     }
 
+    private var navigationReferenceDate: Date {
+        switch currentViewMode {
+        case .list:
+            return viewModel.currentVisibleDate
+        default:
+            return selectedDate
+        }
+    }
+
     private var navigationMonthYearTitle: String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.timeZone = .current
         formatter.calendar = Calendar.current
         formatter.dateFormat = "MMM yyyy"
-        return formatter.string(from: selectedDate).uppercased()
+        return formatter.string(from: navigationReferenceDate).uppercased()
     }
 
     private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {

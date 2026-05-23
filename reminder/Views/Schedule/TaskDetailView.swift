@@ -175,7 +175,6 @@ struct TaskDetailView: View {
                 await loadForWhomProfiles()
             }
         }
-        .preference(key: ScheduleAssistantFABVisibility.PreferenceKey.self, value: true)
     }
 
     // MARK: - Layout

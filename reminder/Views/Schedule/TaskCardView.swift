@@ -9,34 +9,85 @@ struct TaskCardAvatarSource: Identifiable, Equatable {
     let imageURL: URL?
 }
 
+// MARK: - 为了谁（右侧展示）
+
+struct TaskCardForWhomTrailing: View {
+    enum Style {
+        case compact
+        case standard
+    }
+
+    let sources: [TaskCardAvatarSource]
+    var style: Style = .standard
+
+    private var avatarSize: CGFloat {
+        style == .compact ? 22 : 24
+    }
+
+    var body: some View {
+        Group {
+            if sources.isEmpty {
+                Text("—")
+                    .font(style == .compact ? .caption2 : .caption)
+                    .foregroundStyle(.tertiary)
+            } else if sources.count == 1, style == .compact {
+                singleLabelOrAvatar(sources[0])
+            } else {
+                HStack(spacing: style == .compact ? -6 : -8) {
+                    ForEach(Array(sources.prefix(3))) { source in
+                        TaskCardOverlappingAvatar(source: source, size: avatarSize)
+                    }
+                }
+            }
+        }
+        .frame(minWidth: style == .compact ? 28 : 32, alignment: .trailing)
+    }
+
+    @ViewBuilder
+    private func singleLabelOrAvatar(_ source: TaskCardAvatarSource) -> some View {
+        if source.imageURL != nil {
+            TaskCardOverlappingAvatar(source: source, size: avatarSize)
+        } else {
+            Text(source.displayName)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+    }
+}
+
 // MARK: - TaskCardView
 
-/// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 叠层头像）。
+/// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
     let task: FamilyTask
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
 
     var body: some View {
-        HStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 8) {
+                    headerRow
+                    metaRow
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                TaskCardForWhomTrailing(sources: forWhomAvatars)
+                    .padding(.trailing, 2)
+            }
+
+            assigneeRow
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 12)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(alignment: .leading) {
             Rectangle()
                 .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
-                .frame(width: 6)
-                .frame(maxHeight: .infinity)
-
-            VStack(alignment: .leading, spacing: 8) {
-                headerRow
-
-                metaRow
-
-                forWhomRow
-
-                assigneeRow
-            }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 12)
+                .frame(width: 4)
         }
-        .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
     }
@@ -137,30 +188,6 @@ struct TaskCardView: View {
         return nil
     }
 
-    // MARK: - 为了谁
-
-    private var forWhomRow: some View {
-        HStack(alignment: .center) {
-            Text("为了谁 (For)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 8)
-
-            if forWhomAvatars.isEmpty {
-                Text("—")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            } else {
-                HStack(spacing: -8) {
-                    ForEach(forWhomAvatars) { source in
-                        TaskCardOverlappingAvatar(source: source)
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - 谁去办
 
     private var assigneeRow: some View {
@@ -195,8 +222,9 @@ struct TaskCardView: View {
 
 // MARK: - 叠层头像
 
-private struct TaskCardOverlappingAvatar: View {
+struct TaskCardOverlappingAvatar: View {
     let source: TaskCardAvatarSource
+    var size: CGFloat = 24
 
     var body: some View {
         ZStack {
@@ -210,12 +238,12 @@ private struct TaskCardOverlappingAvatar: View {
                     .fill(Color(.secondarySystemFill))
                     .overlay {
                         Text(String(source.displayName.prefix(1)))
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: size * 0.42, weight: .bold))
                             .foregroundStyle(.primary)
                     }
             }
         }
-        .frame(width: 24, height: 24)
+        .frame(width: size, height: size)
         .clipShape(Circle())
         .overlay {
             Circle()

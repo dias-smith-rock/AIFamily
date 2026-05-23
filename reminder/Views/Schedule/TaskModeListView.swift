@@ -2,15 +2,14 @@ import SwiftUI
 
 /// 列表模式：按自然日分组的专业日历式纵向列表。
 struct TaskModeListView: View {
-    let tasks: [FamilyTask]
-    var isLoading: Bool = false
-    var errorMessage: String?
+    @ObservedObject var viewModel: ScheduleViewModel
+    var listScrollToken: Int = 0
     var onTaskTap: ((FamilyTask) -> Void)?
 
     /// 按日历日分组（忽略时分），日期升序；组内按锚点时间升序。
     private var groupedTasks: [(Date, [FamilyTask])] {
         let cal = Calendar.current
-        let buckets = Dictionary(grouping: tasks) { cal.startOfDay(for: anchorDate(for: $0)) }
+        let buckets = Dictionary(grouping: viewModel.tasks) { cal.startOfDay(for: anchorDate(for: $0)) }
         let sortedDays = buckets.keys.sorted()
         return sortedDays.map { day in
             let sorted = (buckets[day] ?? []).sorted { anchorDate(for: $0) < anchorDate(for: $1) }
@@ -24,17 +23,17 @@ struct TaskModeListView: View {
 
     var body: some View {
         Group {
-            if isLoading {
+            if viewModel.isLoading {
                 ProgressView("正在加载任务...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let message = errorMessage {
+            } else if let message = viewModel.errorMessage {
                 ContentUnavailableView {
                     Label("加载失败", systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(message)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if tasks.isEmpty {
+            } else if viewModel.tasks.isEmpty {
                 ContentUnavailableView {
                     Label("暂无任务", systemImage: "checklist")
                 } description: {
@@ -42,25 +41,37 @@ struct TaskModeListView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 20) {
-                        ForEach(daySections) { section in
-                            VStack(alignment: .leading, spacing: 12) {
-                                dateHeader(for: section.id)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 20) {
+                            ForEach(daySections) { section in
+                                VStack(alignment: .leading, spacing: 12) {
+                                    dateHeader(for: section.id)
 
-                                ForEach(section.tasks) { task in
-                                    TaskModeListMinimalRow(task: task)
+                                    ForEach(section.tasks) { task in
+                                        TaskModeListMinimalRow(
+                                            task: task,
+                                            forWhomAvatars: viewModel.forWhomAvatarSources(for: task)
+                                        )
+                                        .id(task.id)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
                                             onTaskTap?(task)
                                         }
+                                    }
                                 }
                             }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .padding(.bottom, 24)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .padding(.bottom, 24)
+                    .onChange(of: listScrollToken) { _, _ in
+                        scrollToTargetTask(using: proxy)
+                    }
+                    .onAppear {
+                        scrollToTargetTask(using: proxy)
+                    }
                 }
             }
         }
@@ -79,12 +90,25 @@ struct TaskModeListView: View {
                 .foregroundStyle(.primary)
         }
         .padding(.bottom, 4)
+        .onAppear {
+            viewModel.noteVisibleMonth(containing: day)
+        }
     }
 
     // MARK: - Helpers
 
     private func anchorDate(for task: FamilyTask) -> Date {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
+    }
+
+    private func scrollToTargetTask(using proxy: ScrollViewProxy) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(100))
+            guard let targetId = viewModel.getTargetTaskId() else { return }
+            withAnimation(.easeInOut(duration: 0.3)) {
+                proxy.scrollTo(targetId, anchor: .top)
+            }
+        }
     }
 }
 
@@ -99,6 +123,7 @@ private struct TaskModeListDaySection: Identifiable {
 
 private struct TaskModeListMinimalRow: View {
     let task: FamilyTask
+    let forWhomAvatars: [TaskCardAvatarSource]
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -115,16 +140,20 @@ private struct TaskModeListMinimalRow: View {
                 Text(timeRangeLabel)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if let trail = locationTrail {
+                    Text(trail)
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                        .lineLimit(1)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if let trail = locationTrail {
-                Text(trail)
-                    .font(.caption2)
-                    .foregroundStyle(.blue)
-                    .lineLimit(1)
-                    .layoutPriority(-1)
-            }
+            Spacer(minLength: 8)
+
+            TaskCardForWhomTrailing(sources: forWhomAvatars, style: .compact)
+                .padding(.trailing, 2)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -168,8 +197,5 @@ private struct TaskModeListMinimalRow: View {
 }
 
 #Preview("List grouped") {
-    TaskModeListView(
-        tasks: [],
-        onTaskTap: { _ in }
-    )
+    TaskModeListView(viewModel: AppViewModels.makeScheduleViewModel())
 }
