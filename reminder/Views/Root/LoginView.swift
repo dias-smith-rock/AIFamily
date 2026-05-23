@@ -21,6 +21,9 @@ struct LoginView: View {
     /// 同时也需要在 Info.plist 的 URL Types 中注册 `aifamily` scheme。
     private static let oauthRedirectURL = URL(string: "aifamily://auth-callback")
 
+    /// 是否展示底部「More」登录入口（暂时关闭）。
+    private let showsMoreLoginEntry = false
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 80)
@@ -28,7 +31,9 @@ struct LoginView: View {
             Spacer(minLength: 120)
             actionSection
             Spacer(minLength: 40)
-            moreEntry
+            if showsMoreLoginEntry {
+                moreEntry
+            }
             Spacer(minLength: 100)
         }
         .padding(.horizontal, 24)
@@ -55,7 +60,7 @@ struct LoginView: View {
                 .scaledToFit()
                 .frame(width: 82, height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
-            Text("From chaos to clarity.\nPrecision care for every family.")
+            Text("From chaos to clarity.\nTogether, perfectly synced.")
                 .font(AppTheme.FontToken.subtitle)
                 .foregroundStyle(.white.opacity(0.82))
                 .multilineTextAlignment(.center)
