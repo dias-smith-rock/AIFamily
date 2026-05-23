@@ -598,10 +598,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerBar
-            Divider()
-
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
                     organizationNameField
@@ -618,32 +615,21 @@ private struct OrganizationSettingsSheet: View {
                     disbandOrganizationRow
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.top, 8)
                 .padding(.bottom, 28)
             }
-        }
-        .background(Color(.systemGroupedBackground))
-    }
-
-    private var headerBar: some View {
-        ZStack {
-            Text("Organization Settings")
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.primary)
-
-            HStack {
-                Spacer()
-                Button("Close") {
-                    dismiss()
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle("Organization Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                    .disabled(isSubmitting)
                 }
-                .font(.body)
-                .foregroundStyle(Color.accentColor)
-                .disabled(isSubmitting)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 6)
-        .padding(.bottom, 14)
     }
 
     private var organizationNameField: some View {
