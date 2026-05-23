@@ -156,11 +156,13 @@ struct TaskCardView: View {
     // MARK: - Meta
 
     private var metaRow: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 8) {
             Label(metaTimeText, systemImage: task.isAllDay ? "calendar" : "clock")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
+
+            TaskDurationBadge(minutes: task.durationMinutes)
 
             if let place = locationDisplayName {
                 Label(place, systemImage: "mappin.and.ellipse")
@@ -169,6 +171,8 @@ struct TaskCardView: View {
                     .labelStyle(.titleAndIcon)
                     .lineLimit(1)
             }
+
+            Spacer(minLength: 0)
         }
     }
 

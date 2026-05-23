@@ -270,12 +270,7 @@ struct TaskModeDayView: View {
     }
 
     private func taskEndDate(_ task: FamilyTask) -> Date {
-        let cal = Calendar.current
-        let start = taskDisplayDate(task)
-        if let end = task.endDatetime {
-            return end
-        }
-        return cal.date(byAdding: .hour, value: 1, to: start) ?? start
+        task.resolvedEndDate ?? taskDisplayDate(task)
     }
 
     private func scrollTaskAnchorFlowToInitial(proxy: ScrollViewProxy, animated: Bool = true) {

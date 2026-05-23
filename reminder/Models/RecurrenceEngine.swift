@@ -205,6 +205,7 @@ enum RecurrenceEngine {
             priority: mother.priority,
             dueDate: newDue,
             endDatetime: newEnd,
+            durationMinutes: mother.durationMinutes,
             isAllDay: mother.isAllDay,
             recurrenceRule: nil,
             recurrenceEndDate: nil,

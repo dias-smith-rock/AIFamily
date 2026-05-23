@@ -49,4 +49,17 @@ extension FamilyTask {
         }
         return nil
     }
+
+    /// 列表 / 详情展示用的计划开始时刻。
+    var scheduleStartDate: Date {
+        dueDate ?? originalDueDate ?? createdAt
+    }
+
+    /// 计划结束时刻：优先 `end_datetime`，否则由开始时间 + `duration_minutes` 推算。
+    var resolvedEndDate: Date? {
+        if let endDatetime {
+            return endDatetime
+        }
+        return Calendar.current.date(byAdding: .minute, value: durationMinutes, to: scheduleStartDate)
+    }
 }

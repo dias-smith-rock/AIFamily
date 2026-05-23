@@ -59,6 +59,10 @@ struct TaskDetailView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
+                timePlanningCard
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
                 forWhomSection
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
@@ -199,8 +203,6 @@ struct TaskDetailView: View {
 
     private var coreInfoCard: some View {
         VStack(spacing: 0) {
-            coreRow(systemImage: "calendar", label: "时间", value: primaryScheduleText)
-            cardDivider
             coreRow(systemImage: "repeat", label: "重复", value: repeatDisplayText)
             cardDivider
             coreRow(systemImage: "bell", label: "提醒", value: reminderDisplayText)
@@ -219,6 +221,47 @@ struct TaskDetailView: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    private var timePlanningCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "clock")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text("时间规划")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                timePlanningLine(label: "开始时间", value: timePlanningStartText)
+                if let endText = timePlanningEndText {
+                    timePlanningLine(label: "结束时间", value: endText)
+                }
+                timePlanningLine(
+                    label: "总花费时间",
+                    value: TaskDurationFormatting.readableDuration(minutes: task.durationMinutes)
+                )
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    private func timePlanningLine(label: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text("\(label)：")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.body.weight(.medium))
+                .foregroundStyle(.primary)
+            Spacer(minLength: 0)
+        }
     }
 
     private var cardDivider: some View {
@@ -668,20 +711,24 @@ struct TaskDetailView: View {
 
     // MARK: - 属性格式化
 
-    private var primaryScheduleText: String {
+    private var timePlanningStartText: String {
         let start = scheduledAt
         if task.isAllDay {
-            var s = Self.dayFormatter.string(from: start)
-            if let end = task.endDatetime {
-                s += " – \(Self.dayFormatter.string(from: end))"
-            }
-            return s
+            return Self.dayFormatter.string(from: start)
         }
-        var base = Self.dateTimeFormatter.string(from: start)
-        if let end = task.endDatetime, end > start {
-            base += " – \(Self.timeFormatter.string(from: end))"
+        return Self.timeFormatter.string(from: start)
+    }
+
+    private var timePlanningEndText: String? {
+        guard let end = plannedEndDate else { return nil }
+        if task.isAllDay {
+            return Self.dayFormatter.string(from: end)
         }
-        return base
+        return Self.timeFormatter.string(from: end)
+    }
+
+    private var plannedEndDate: Date? {
+        Calendar.current.date(byAdding: .minute, value: task.durationMinutes, to: scheduledAt)
     }
 
     private var scheduledAt: Date {
@@ -692,14 +739,6 @@ struct TaskDetailView: View {
         var cal = Calendar(identifier: .gregorian)
         cal.locale = Locale(identifier: "zh_CN")
         return cal
-    }()
-
-    private static let dateTimeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.calendar = chineseCalendar
-        formatter.dateFormat = "M月d日 EEEE HH:mm"
-        return formatter
     }()
 
     private static let dayFormatter: DateFormatter = {

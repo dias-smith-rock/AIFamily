@@ -151,7 +151,7 @@ struct TaskListView: View {
     private var calendarTopBar: some View {
         HStack(spacing: 0) {
             Menu {
-                ForEach(CalendarViewMode.allCases, id: \.self) { mode in
+                ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
                     Button {
                         currentViewMode = mode
                     } label: {

@@ -41,7 +41,7 @@ struct TaskRowView: View {
     let assigneeLabel: String
     let isCurrentActiveTask: Bool
     let startTime: Date
-    let nextStartTime: Date
+    let endTime: Date
     let now: Date
     let onTap: () -> Void
 
@@ -53,9 +53,13 @@ struct TaskRowView: View {
 
     private var timeProgressRatio: Double {
         guard isCurrentActiveTask else { return 0 }
-        guard now >= startTime, now < nextStartTime else { return 0 }
-        let totalDuration = nextStartTime.timeIntervalSince(startTime)
-        guard totalDuration > 0 else { return 0 }
+
+        if now < startTime { return 0 }
+        if now >= endTime { return 1 }
+
+        let totalDuration = endTime.timeIntervalSince(startTime)
+        guard totalDuration > 0 else { return 1 }
+
         let elapsed = now.timeIntervalSince(startTime)
         return max(0, min(1, elapsed / totalDuration))
     }

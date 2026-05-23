@@ -34,6 +34,7 @@ private enum CreateTaskFocusField: Hashable {
 private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     let dueDateToken: Date
     let isAllDayToken: Bool
+    let durationPickerToken: Date
     let selectedRecurrenceToken: TaskRecurrenceRule
     let recurrenceIntervalToken: Int
     let recurrenceEndDateToken: Date
@@ -41,6 +42,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
     @Binding var dueDate: Date
     @Binding var isAllDay: Bool
+    @Binding var durationPickerDate: Date
     @Binding var selectedRecurrence: TaskRecurrenceRule
     @Binding var recurrenceInterval: Int
     @Binding var recurrenceEndDate: Date
@@ -51,6 +53,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     static func == (lhs: CreateTaskTimeRecurrenceBlock, rhs: CreateTaskTimeRecurrenceBlock) -> Bool {
         lhs.dueDateToken == rhs.dueDateToken
             && lhs.isAllDayToken == rhs.isAllDayToken
+            && lhs.durationPickerToken == rhs.durationPickerToken
             && lhs.selectedRecurrenceToken == rhs.selectedRecurrenceToken
             && lhs.recurrenceIntervalToken == rhs.recurrenceIntervalToken
             && lhs.recurrenceEndDateToken == rhs.recurrenceEndDateToken
@@ -73,6 +76,8 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                         displayedComponents: [.date]
                     )
                     .datePickerStyle(.compact)
+
+                    taskDurationRow
                 } else {
                     HStack(alignment: .center, spacing: 12) {
                         Text("执行时间")
@@ -96,6 +101,8 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                         .labelsHidden()
                         .datePickerStyle(.compact)
                     }
+
+                    taskDurationRow
                 }
             }
             .createTaskFormCardStyled()
@@ -134,6 +141,25 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             }
         }
     }
+
+    private var taskDurationRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Label("任务时长", systemImage: "hourglass")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .labelStyle(.titleAndIcon)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            DatePicker(
+                "",
+                selection: $durationPickerDate,
+                displayedComponents: [.hourAndMinute]
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+            .accessibilityLabel("任务时长")
+        }
+    }
 }
 
 extension Notification.Name {
@@ -169,8 +195,7 @@ struct CreateTaskView: View {
 
     @State private var title = ""
     @State private var dueDate = Date()
-    @State private var hasEndTime = false
-    @State private var endTime = Date()
+    @State private var durationPickerDate = CreateTaskView.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
     @State private var isAllDay = false
     @State private var selectedRecurrence: TaskRecurrenceRule = .none
     /// 「每隔几天」步进值（仅 `custom` 使用，范围 2…365）。
@@ -223,13 +248,9 @@ struct CreateTaskView: View {
             _title = State(initialValue: task.title)
             let initialDue = task.dueDate ?? task.originalDueDate ?? Date()
             _dueDate = State(initialValue: initialDue)
-            if let existingEnd = task.endDatetime {
-                _hasEndTime = State(initialValue: true)
-                _endTime = State(initialValue: existingEnd)
-            } else {
-                _hasEndTime = State(initialValue: false)
-                _endTime = State(initialValue: initialDue)
-            }
+            _durationPickerDate = State(
+                initialValue: Self.makeDurationPickerDate(minutes: max(1, task.durationMinutes))
+            )
             _isAllDay = State(initialValue: task.isAllDay)
             let inferred = TaskRecurrenceRule.inferred(from: task.recurrenceRule, recurrenceInterval: task.recurrenceInterval)
             _selectedRecurrence = State(initialValue: inferred)
@@ -266,8 +287,9 @@ struct CreateTaskView: View {
                 return calendar.startOfDay(for: Date())
             }()
             _dueDate = State(initialValue: resolvedDue)
-            _hasEndTime = State(initialValue: false)
-            _endTime = State(initialValue: resolvedDue)
+            _durationPickerDate = State(
+                initialValue: Self.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
+            )
             _isAllDay = State(initialValue: defaultAllDayForNewTask)
             _selectedRecurrence = State(initialValue: .none)
             _recurrenceInterval = State(initialValue: 2)
@@ -316,15 +338,17 @@ struct CreateTaskView: View {
                         titleEditorCard
 
                         EquatableView(
-                            content: CreateTaskTimeRecurrenceBlock(
+                            content:                             CreateTaskTimeRecurrenceBlock(
                                 dueDateToken: dueDate,
                                 isAllDayToken: isAllDay,
+                                durationPickerToken: durationPickerDate,
                                 selectedRecurrenceToken: selectedRecurrence,
                                 recurrenceIntervalToken: recurrenceInterval,
                                 recurrenceEndDateToken: recurrenceEndDate,
                                 showEndDateToken: showEndDate,
                                 dueDate: $dueDate,
                                 isAllDay: $isAllDay,
+                                durationPickerDate: $durationPickerDate,
                                 selectedRecurrence: $selectedRecurrence,
                                 recurrenceInterval: $recurrenceInterval,
                                 recurrenceEndDate: $recurrenceEndDate,
@@ -401,12 +425,6 @@ struct CreateTaskView: View {
             }
             .task(id: editingTask?.parentTaskId) {
                 await loadParentRecurrenceTemplateIfNeeded()
-            }
-            .onChange(of: dueDate) { _, newDue in
-                guard hasEndTime else { return }
-                if endTime < newDue {
-                    endTime = newDue
-                }
             }
         }
         .task(id: appRouter.selectedHouseholdId ?? editingTask?.householdId) {
@@ -1002,6 +1020,7 @@ struct CreateTaskView: View {
                     targetProfileIds: resolvedTargetProfileIds,
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
+                    durationMinutes: resolvedDurationMinutes(for: dueDate),
                     isAllDay: isAllDay,
                     recurrenceRule: activeRecurrenceRuleString,
                     recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
@@ -1050,7 +1069,7 @@ struct CreateTaskView: View {
                 }
 
                 let calendar = Calendar.current
-                let endDelta: TimeInterval? = hasEndTime ? endTime.timeIntervalSince(dueDate) : nil
+                let durationSeconds = TimeInterval(Self.durationMinutes(from: durationPickerDate) * 60)
 
                 func isMotherMetaOnly(row: FamilyTask) -> Bool {
                     guard case .byParentRoot(let root) = grouping else { return false }
@@ -1077,10 +1096,10 @@ struct CreateTaskView: View {
                             allDay: isAllDay,
                             calendar: calendar
                         )
-                        if let delta = endDelta {
-                            newEnd = newDue.addingTimeInterval(delta)
-                        } else {
+                        if isAllDay {
                             newEnd = nil
+                        } else {
+                            newEnd = newDue.addingTimeInterval(durationSeconds)
                         }
                     }
 
@@ -1111,6 +1130,9 @@ struct CreateTaskView: View {
                         targetProfileIds: resolvedTargetProfileIds,
                         dueDate: newDue,
                         endDatetime: newEnd,
+                        durationMinutes: metaOnly
+                            ? row.durationMinutes
+                            : Self.durationMinutes(from: durationPickerDate),
                         isAllDay: isAllDay,
                         recurrenceRule: recurrenceRulePayload,
                         recurrenceEndDate: recurrenceEndPayload,
@@ -1222,6 +1244,7 @@ struct CreateTaskView: View {
                     priority: formPriority.rawValue,
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
+                    durationMinutes: resolvedDurationMinutes(for: dueDate),
                     isAllDay: isAllDay,
                     recurrenceRule: nil,
                     recurrenceEndDate: nil,
@@ -1257,6 +1280,7 @@ struct CreateTaskView: View {
                     priority: formPriority.rawValue,
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
+                    durationMinutes: resolvedDurationMinutes(for: dueDate),
                     isAllDay: isAllDay,
                     recurrenceRule: recurrence,
                     recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
@@ -1299,6 +1323,7 @@ struct CreateTaskView: View {
                             priority: formPriority.rawValue,
                             dueDate: child.dueDate ?? dueDate,
                             endDatetime: child.endDatetime,
+                            durationMinutes: child.durationMinutes,
                             isAllDay: isAllDay,
                             recurrenceRule: nil,
                             recurrenceEndDate: nil,
@@ -1461,6 +1486,7 @@ private struct TaskInsertPayload: Encodable {
     let priority: String
     let dueDate: Date
     let endDatetime: Date?
+    let durationMinutes: Int
     let isAllDay: Bool
     let recurrenceRule: String?
     let recurrenceEndDate: Date?
@@ -1487,6 +1513,7 @@ private struct TaskInsertPayload: Encodable {
         case priority
         case dueDate = "due_date"
         case endDatetime = "end_datetime"
+        case durationMinutes = "duration_minutes"
         case isAllDay = "is_all_day"
         case recurrenceRule = "recurrence_rule"
         case recurrenceEndDate = "recurrence_end_date"
@@ -1531,6 +1558,7 @@ private struct TaskInsertPayload: Encodable {
         } else {
             try container.encodeNil(forKey: .endDatetime)
         }
+        try container.encode(durationMinutes, forKey: .durationMinutes)
         try container.encode(isAllDay, forKey: .isAllDay)
         if let recurrenceRule {
             try container.encode(recurrenceRule, forKey: .recurrenceRule)
@@ -1576,6 +1604,7 @@ private struct TaskUpdatePayload: Encodable {
     let targetProfileIds: [UUID]?
     let dueDate: Date
     let endDatetime: Date?
+    let durationMinutes: Int
     let isAllDay: Bool
     let recurrenceRule: String?
     let recurrenceEndDate: Date?
@@ -1595,6 +1624,7 @@ private struct TaskUpdatePayload: Encodable {
         case targetProfileIds = "target_profile_ids"
         case dueDate = "due_date"
         case endDatetime = "end_datetime"
+        case durationMinutes = "duration_minutes"
         case isAllDay = "is_all_day"
         case recurrenceRule = "recurrence_rule"
         case recurrenceEndDate = "recurrence_end_date"
@@ -1628,6 +1658,7 @@ private struct TaskUpdatePayload: Encodable {
         } else {
             try container.encodeNil(forKey: .endDatetime)
         }
+        try container.encode(durationMinutes, forKey: .durationMinutes)
         try container.encode(isAllDay, forKey: .isAllDay)
         if let recurrenceRule {
             try container.encode(recurrenceRule, forKey: .recurrenceRule)
@@ -1683,11 +1714,37 @@ private extension CreateTaskView {
         return 1
     }
 
-    /// 与当前「开始/截止时间」对齐的结束时间；未开启开关时返回 `nil` 以清空数据库列。
+    /// 由开始时间与任务时长推算 `end_datetime`；全天任务不写结束时间。
     func resolvedEndDatetime(for occurrenceDue: Date) -> Date? {
-        guard hasEndTime else { return nil }
-        let delta = max(0, endTime.timeIntervalSince(dueDate))
-        return occurrenceDue.addingTimeInterval(delta)
+        guard isAllDay == false else { return nil }
+        let minutes = Self.durationMinutes(from: durationPickerDate)
+        return occurrenceDue.addingTimeInterval(TimeInterval(minutes * 60))
+    }
+
+    /// 写入 `tasks.duration_minutes`（NOT NULL）。
+    func resolvedDurationMinutes(for occurrenceDue: Date) -> Int {
+        Self.durationMinutes(from: durationPickerDate)
+    }
+
+    static func makeDurationPickerDate(minutes: Int) -> Date {
+        let clamped = max(1, minutes)
+        let hours = clamped / 60
+        let remainder = clamped % 60
+        let calendar = Calendar.current
+        let anchor = calendar.startOfDay(for: Date())
+        return calendar.date(
+            bySettingHour: hours,
+            minute: remainder,
+            second: 0,
+            of: anchor
+        ) ?? anchor
+    }
+
+    static func durationMinutes(from pickerDate: Date) -> Int {
+        let calendar = Calendar.current
+        let hours = calendar.component(.hour, from: pickerDate)
+        let minutes = calendar.component(.minute, from: pickerDate)
+        return max(1, hours * 60 + minutes)
     }
 
     func resolvedBackgroundColorHex() -> String? {
@@ -1810,6 +1867,7 @@ private extension CreateTaskView {
             priority: priority,
             dueDate: payload.dueDate,
             endDatetime: payload.endDatetime,
+            durationMinutes: payload.durationMinutes,
             isAllDay: payload.isAllDay,
             recurrenceRule: payload.recurrenceRule,
             recurrenceEndDate: payload.recurrenceEndDate,

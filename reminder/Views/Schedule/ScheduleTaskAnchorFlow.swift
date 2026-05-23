@@ -48,7 +48,7 @@ struct ScheduleTaskAnchorFlow: View {
 
                     let isCurrentActiveTask = viewingToday && activeTaskID == task.id
                     let startTime = taskAnchor(task)
-                    let nextStartTime = nextIntervalEnd(for: task, at: index)
+                    let endTime = taskEnd(task)
 
                     TaskRowView(
                         task: task,
@@ -57,7 +57,7 @@ struct ScheduleTaskAnchorFlow: View {
                         assigneeLabel: assigneeLabel(task),
                         isCurrentActiveTask: isCurrentActiveTask,
                         startTime: startTime,
-                        nextStartTime: nextStartTime,
+                        endTime: endTime,
                         now: now,
                         onTap: { onTaskTap(task) }
                     )
