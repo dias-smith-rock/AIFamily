@@ -56,17 +56,15 @@ final class ScheduleViewModel: ObservableObject {
                 }
             }
 
-        NotificationCenter.default.publisher(for: .householdDidDisband)
+        disbandCancellable = NotificationCenter.default
+            .publisher(for: .householdDidDisband)
             .compactMap { $0.object as? UUID }
             .sink { [weak self] householdId in
                 Task { @MainActor [weak self] in
                     self?.purgeLocalDataForDisbandedHousehold(householdId)
                 }
             }
-            .store(in: &cancellables)
     }
-
-    private var cancellables = Set<AnyCancellable>()
 
     func setHouseholdContext(_ householdId: UUID?) {
         currentHouseholdId = householdId
@@ -159,6 +157,22 @@ final class ScheduleViewModel: ObservableObject {
         guard let householdId, householdId == currentHouseholdId else { return }
         rosterLoadedForHouseholdId = nil
         await loadHouseholdRoster(in: householdId)
+    }
+
+    func purgeLocalDataForDisbandedHousehold(_ householdId: UUID) {
+        tasks = []
+        householdMembers = []
+        familyProfiles = []
+        rosterLoadedForHouseholdId = nil
+        if currentHouseholdId == householdId {
+            currentHouseholdId = nil
+        }
+        LocalCacheManager.shared.remove(forKey: Self.tasksCacheKey(for: householdId))
+        #if canImport(Supabase)
+        Task {
+            await stopRealtimeListener()
+        }
+        #endif
     }
 
     #if canImport(Supabase)

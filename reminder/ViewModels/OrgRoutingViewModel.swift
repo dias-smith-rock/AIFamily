@@ -93,6 +93,10 @@ final class OrgRoutingViewModel: ObservableObject {
                 return "邀请链接已被使用，请向管理员重新获取。"
             case .networkFailure:
                 return "网络或服务异常，请稍后再试。"
+            case .householdNameMismatch:
+                return "家庭名称不匹配，请重新输入。"
+            case .disbandUnauthorized:
+                return "只有家庭创建者才能解散该家庭。"
             case .unknown:
                 return "发生未知错误，请稍后重试。"
             }

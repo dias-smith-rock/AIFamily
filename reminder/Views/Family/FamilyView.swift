@@ -144,13 +144,18 @@ struct FamilyView: View {
         .sheet(isPresented: $isShowingRenameHouseholdSheet) {
             OrganizationSettingsSheet(
                 initialName: appRouter.selectedHouseholdName ?? "",
+                familyViewModel: viewModel,
                 isSubmitting: viewModel.isLoading,
+                canDisband: viewModel.canDisbandCurrentHousehold,
                 errorMessage: renameErrorMessage,
                 onSubmit: { newName in
                     await renameCurrentHousehold(to: newName)
+                },
+                onDisband: { userInput in
+                    await submitDisbandHousehold(userInput: userInput)
                 }
             )
-            .presentationDetents([.height(OrganizationSettingsSheet.preferredDetentHeight)])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $isShowingCreateOrganizationSheet) {
@@ -533,6 +538,28 @@ struct FamilyView: View {
     }
 
     @MainActor
+    private func submitDisbandHousehold(userInput: String) async -> Bool {
+        guard let householdId = appRouter.selectedHouseholdId else { return false }
+        let currentName = appRouter.selectedHouseholdName ?? ""
+        let success = await viewModel.confirmDisband(
+            householdId: householdId,
+            currentName: currentName,
+            userInputName: userInput
+        )
+        guard success else { return false }
+
+        isShowingRenameHouseholdSheet = false
+        await orgRoutingViewModel.fetchMyHouseholds()
+        try? await Task.sleep(nanoseconds: 280_000_000)
+        withAnimation {
+            appRouter.exitToOrgHubAfterDisband()
+        }
+        await appRouter.refreshStateFromBackend()
+        await orgRoutingViewModel.fetchMyHouseholds()
+        return true
+    }
+
+    @MainActor
     private func submitCreateOrganization() async {
         createOrganizationError = nil
         let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -557,27 +584,39 @@ struct FamilyView: View {
 }
 
 private struct OrganizationSettingsSheet: View {
-    static let preferredDetentHeight: CGFloat = 430
-
     @Environment(\.dismiss) private var dismiss
 
+    @ObservedObject var familyViewModel: FamilyViewModel
     @State private var name: String
+    @State private var showDisbandConfirmation = false
     private let initialName: String
     let isSubmitting: Bool
+    let canDisband: Bool
     let errorMessage: String?
     let onSubmit: @MainActor (String) async -> Void
+    let onDisband: @MainActor (String) async -> Bool
 
     init(
         initialName: String,
+        familyViewModel: FamilyViewModel,
         isSubmitting: Bool,
+        canDisband: Bool,
         errorMessage: String?,
-        onSubmit: @escaping @MainActor (String) async -> Void
+        onSubmit: @escaping @MainActor (String) async -> Void,
+        onDisband: @escaping @MainActor (String) async -> Bool
     ) {
+        self.familyViewModel = familyViewModel
         _name = State(initialValue: initialName)
         self.initialName = initialName
         self.isSubmitting = isSubmitting
+        self.canDisband = canDisband
         self.errorMessage = errorMessage
         self.onSubmit = onSubmit
+        self.onDisband = onDisband
+    }
+
+    private var isDisbanding: Bool {
+        familyViewModel.isDisbanding
     }
 
     private var trimmedName: String {
@@ -587,6 +626,7 @@ private struct OrganizationSettingsSheet: View {
     private var canSave: Bool {
         let normalizedInitial = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
         return isSubmitting == false
+            && isDisbanding == false
             && trimmedName.isEmpty == false
             && trimmedName != normalizedInitial
     }
@@ -606,30 +646,45 @@ private struct OrganizationSettingsSheet: View {
 
                     saveChangesButton
                     transferOwnershipRow
-                    disbandOrganizationRow
+
+                    if canDisband {
+                        dangerZoneSection
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("Organization Settings")
+            .navigationTitle("组织设置")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Close") {
+                    Button("关闭") {
                         dismiss()
                     }
-                    .disabled(isSubmitting)
+                    .disabled(isSubmitting || isDisbanding)
                 }
+            }
+            .sheet(isPresented: $showDisbandConfirmation) {
+                DisbandHouseholdConfirmationSheet(
+                    familyViewModel: familyViewModel,
+                    householdName: initialName,
+                    onConfirm: { userInput in
+                        await onDisband(userInput)
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .interactiveDismissDisabled(familyViewModel.isDisbanding)
             }
         }
     }
 
     private var organizationNameField: some View {
-        TextField("Enter organization name...", text: $name)
+        TextField("输入组织名称…", text: $name)
             .textInputAutocapitalization(.words)
-            .disabled(isSubmitting)
+            .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
             .padding(.vertical, 15)
             .background(Color(.systemBackground))
@@ -648,7 +703,7 @@ private struct OrganizationSettingsSheet: View {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Text("Save Changes")
+                    Text("保存更改")
                         .font(.body.weight(.semibold))
                 }
             }
@@ -669,25 +724,44 @@ private struct OrganizationSettingsSheet: View {
             // 预留：转移所有权流程
         } label: {
             settingsNavigationRow(
-                title: "Transfer Ownership",
-                systemImage: "person"
+                title: "转移所有权",
+                systemImage: "person.2.badge.gearshape"
             )
         }
         .buttonStyle(.plain)
-        .disabled(isSubmitting)
+        .disabled(isSubmitting || isDisbanding)
     }
 
-    private var disbandOrganizationRow: some View {
-        Button(role: .destructive) {
-            // 预留：解散组织流程
-        } label: {
-            settingsDestructiveRow(
-                title: "Disband Organization",
-                systemImage: "trash"
-            )
+    private var dangerZoneSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("危险操作")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.red)
+                .textCase(.uppercase)
+
+            Button(role: .destructive) {
+                showDisbandConfirmation = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "trash.fill")
+                        .font(.body)
+                    Text("解散当前家庭")
+                        .font(.body.weight(.semibold))
+                    Spacer(minLength: 8)
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 15)
+                .background(Color.red, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(isSubmitting || isDisbanding)
+
+            Text("解散后所有成员将被移除，任务与邀请码将被永久清空。此操作不可撤销。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
-        .disabled(isSubmitting)
+        .padding(.top, 8)
     }
 
     private func settingsNavigationRow(title: String, systemImage: String) -> some View {
@@ -713,25 +787,110 @@ private struct OrganizationSettingsSheet: View {
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
+}
 
-    private func settingsDestructiveRow(title: String, systemImage: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.body)
-                .foregroundStyle(.red)
-                .frame(width: 24, alignment: .center)
+private struct DisbandHouseholdConfirmationSheet: View {
+    @Environment(\.dismiss) private var dismiss
 
-            Text(title)
-                .font(.body)
-                .foregroundStyle(.red)
+    @ObservedObject var familyViewModel: FamilyViewModel
+    let householdName: String
+    let onConfirm: @MainActor (String) async -> Bool
 
-            Spacer(minLength: 8)
+    @State private var disbandInputName = ""
+
+    private var normalizedExpectedName: String {
+        householdName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private var normalizedInputName: String {
+        disbandInputName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+
+    private var canConfirmDisband: Bool {
+        familyViewModel.isDisbanding == false
+            && normalizedInputName.isEmpty == false
+            && normalizedInputName == normalizedExpectedName
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("解散家庭操作不可逆")
+                        .font(.headline)
+
+                    Text("此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前家庭名称「\(householdName)」以确认解散。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    TextField("请输入家庭名称以确认", text: $disbandInputName)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled(true)
+                        .textFieldStyle(.roundedBorder)
+
+                    Button(role: .destructive) {
+                        let snapshot = disbandInputName
+                        Task { @MainActor in
+                            let succeeded = await onConfirm(snapshot)
+                            if succeeded {
+                                dismiss()
+                            }
+                        }
+                    } label: {
+                        Group {
+                            if familyViewModel.isDisbanding {
+                                ProgressView()
+                                    .tint(.white)
+                            } else {
+                                Text("确认解散")
+                                    .font(.body.weight(.semibold))
+                            }
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.red)
+                    .disabled(canConfirmDisband == false)
+
+                    Spacer()
+                }
+                .padding(20)
+                .disabled(familyViewModel.isDisbanding)
+
+                if familyViewModel.isDisbanding {
+                    Color.black.opacity(0.15)
+                        .ignoresSafeArea()
+                    VStack(spacing: 10) {
+                        ProgressView()
+                            .scaleEffect(1.1)
+                        Text("正在解散家庭，请稍候…")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 20)
+                    .background(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .shadow(radius: 10)
+                }
+            }
+            .navigationTitle("确认解散家庭")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("取消") { dismiss() }
+                        .disabled(familyViewModel.isDisbanding)
+                }
+            }
+            .alert("解散失败", isPresented: $familyViewModel.showDisbandErrorAlert) {
+                Button("我知道了", role: .cancel) {}
+            } message: {
+                Text(familyViewModel.disbandError ?? "未知错误，请重试")
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 15)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

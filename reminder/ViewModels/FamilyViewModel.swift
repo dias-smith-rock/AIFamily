@@ -37,6 +37,117 @@ final class FamilyViewModel: ObservableObject {
         "family.members.snapshot.\(householdId.uuidString.lowercased())"
     }
 
+    static func tasksCacheKey(for householdId: UUID) -> String {
+        "schedule.tasks.snapshot.\(householdId.uuidString.lowercased())"
+    }
+
+    var canDisbandCurrentHousehold: Bool {
+        currentMembership?.hasRole(.creator) == true
+    }
+
+    /// 解散当前家庭：调用 RPC、清洗本地缓存；成功返回 `true` 供 View 切换根路由。
+    @discardableResult
+    func confirmDisband(
+        householdId: UUID,
+        currentName: String,
+        userInputName: String
+    ) async -> Bool {
+        isDisbanding = true
+        disbandError = nil
+        showDisbandErrorAlert = false
+        defer { isDisbanding = false }
+
+        let normalizedCurrent = currentName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let normalizedInput = userInputName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard normalizedInput.isEmpty == false, normalizedInput == normalizedCurrent else {
+            #if DEBUG
+            print("🔎 [DisbandDebug] ViewModel 本地名称校验未通过。")
+            print("   ↳ 当前记录的真实家庭名称: '\(currentName)'")
+            print("   ↳ 用户输入的匹配名称: '\(userInputName)'")
+            print("   ↳ 归一化后 current='\(normalizedCurrent)' input='\(normalizedInput)'")
+            print("   ↳ ID: \(householdId.uuidString)")
+            #endif
+            disbandError = "家庭名称输入错误，与当前家庭的真实名称不匹配，请重新核对。"
+            showDisbandErrorAlert = true
+            return false
+        }
+
+        let trimmedInputForRPC = userInputName.trimmingCharacters(in: .whitespacesAndNewlines)
+        #if DEBUG
+        print("🔎 [DisbandDebug] ViewModel 准备解散。")
+        print("   ↳ 当前记录的真实家庭名称: '\(currentName)'")
+        print("   ↳ 用户输入的匹配名称: '\(userInputName)'")
+        print("   ↳ 传入 RPC 的 expectedName: '\(trimmedInputForRPC)'")
+        print("   ↳ ID: \(householdId.uuidString)")
+        #endif
+
+        do {
+            try await householdRoutingService.disbandHousehold(
+                id: householdId,
+                expectedName: trimmedInputForRPC
+            )
+            purgeLocalHouseholdData(for: householdId)
+            currentHouseholdId = nil
+            currentMembershipId = nil
+            #if DEBUG
+            print("✅ [DisbandDebug] 解散成功")
+            #endif
+            return true
+        } catch {
+            #if DEBUG
+            print("❌ [DisbandDebug] 解散失败，底层错误: \(error)")
+            print("❌ [DisbandDebug] ViewModel 捕获 Service 异常: \(error.localizedDescription)")
+            dump(error)
+            #endif
+            disbandError = mapDisbandErrorMessage(error)
+            showDisbandErrorAlert = true
+            return false
+        }
+    }
+
+    func purgeLocalHouseholdData(for householdId: UUID) {
+        profiles = []
+        orderedProfiles = []
+        members = []
+        errorMessage = nil
+        hasLoadedOnce = false
+        LocalCacheManager.shared.remove(forKey: Self.membersCacheKey(for: householdId))
+        LocalCacheManager.shared.remove(forKey: Self.tasksCacheKey(for: householdId))
+        NotificationCenter.default.post(name: .householdDidDisband, object: householdId)
+    }
+
+    private func mapDisbandErrorMessage(_ error: Error) -> String {
+        let message = error.localizedDescription.lowercased()
+        if message.contains("household_name_mismatch") {
+            return "家庭名称输入错误，与当前家庭的真实名称不匹配，请重新核对。"
+        }
+        if message.contains("unauthorized_not_creator")
+            || message.contains("unauthorized")
+            || message.contains("forbidden") {
+            return "权限不足。只有当前家庭的创建者（Creator）才有权解散该家庭。"
+        }
+        if message.contains("unauthenticated") || message.contains("jwt") || message.contains("session") {
+            return "登录状态已失效，请重新登录后再试。"
+        }
+        if let routingError = error as? HouseholdRoutingError {
+            switch routingError {
+            case .householdNameMismatch:
+                return "家庭名称输入错误，与当前家庭的真实名称不匹配，请重新核对。"
+            case .disbandUnauthorized, .forbidden:
+                return "权限不足。只有当前家庭的创建者（Creator）才有权解散该家庭。"
+            case .unauthenticated:
+                return "登录状态已失效，请重新登录后再试。"
+            case .householdNotFound:
+                return "家庭不存在或已被解散。"
+            case .backendMigrationRequired:
+                return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
+            default:
+                break
+            }
+        }
+        return "网络连接异常或服务器响应失败，请稍后重试。"
+    }
+
     private func postScheduleHouseholdRosterChangedIfNeeded() {
         guard let householdId = currentHouseholdId else { return }
         NotificationCenter.default.post(
@@ -995,6 +1106,8 @@ final class FamilyViewModel: ObservableObject {
              .joinRequestPending,
              .nonceExpired,
              .nonceConsumed,
+             .householdNameMismatch,
+             .disbandUnauthorized,
              .unknown:
             return "修改家庭名称失败，请稍后重试。"
         }

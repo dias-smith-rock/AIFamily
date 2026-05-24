@@ -513,17 +513,31 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw HouseholdRoutingError.householdNameMismatch
         }
 
+        let params = DisbandHouseholdParams(
+            pHouseholdId: id,
+            pExpectedName: trimmedExpectedName
+        )
+        #if DEBUG
+        print("🔎 [DisbandDebug] 开始发起解散请求: householdId=\(id.uuidString), expectedName='\(trimmedExpectedName)'")
+        #endif
+
         do {
             _ = try await provider.client
-                .rpc(
-                    "disband_household",
-                    params: DisbandHouseholdParams(
-                        pHouseholdId: id,
-                        pExpectedName: trimmedExpectedName
-                    )
-                )
+                .rpc("disband_household", params: params)
                 .execute()
+            #if DEBUG
+            print("✅ [DisbandDebug] RPC 执行成功！")
+            #endif
         } catch {
+            #if DEBUG
+            print("❌ [DisbandDebug] RPC 执行失败，开始解析错误...")
+            print("❌ [DisbandDebug] 常规描述: \(error.localizedDescription)")
+            if let ns = error as NSError? {
+                print("❌ [DisbandDebug] NSError domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
+            }
+            print("❌ [DisbandDebug] Dump 完整对象详情:")
+            dump(error)
+            #endif
             throw mapDisbandHouseholdError(error)
         }
         #else

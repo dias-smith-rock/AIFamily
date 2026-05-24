@@ -157,7 +157,9 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectableHouseholds = []
         appState = .orgRouting
-        debugLog("route.orgRouting reason=household_disbanded")
+        #if DEBUG
+        print("[AppRouter] route.orgRouting reason=household_disbanded")
+        #endif
     }
 
     func chooseJoinedHousehold(_ joined: JoinedHousehold) {
