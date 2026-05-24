@@ -846,7 +846,7 @@ struct TaskDetailView: View {
         do {
             let rows: [FamilyProfile] = try await SupabaseManager.shared.client
                 .from("family_profiles")
-                .select("*, memberships:household_memberships!profile_id(*)")
+                .select(SupabaseProfileSelect.profilesWithMemberships)
                 .eq("household_id", value: householdId.uuidString)
                 .order("created_at", ascending: true)
                 .execute()

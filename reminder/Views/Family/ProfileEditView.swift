@@ -341,6 +341,7 @@ struct ProfileEditView: View {
 
 extension ProfileEditView {
     enum Mode {
+        /// 编辑已有档案：`FamilyProfile.id` 即 `family_profiles` 主键，作为双表更新的 `targetProfileId`。
         case createLocalProfile
         case edit(FamilyProfile)
 

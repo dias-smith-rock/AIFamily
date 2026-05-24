@@ -16,6 +16,27 @@ private struct TasksInvolvedMemberIdsNullPatch: Encodable {
 }
 #endif
 
+// MARK: - PostgREST Select 片段
+
+/// 成员列表 Left Join：`household_memberships` 子查询必须含 `role`、`status`，否则嵌套解码失败、UI 误判为虚拟档案。
+enum SupabaseProfileSelect {
+    static let nestedMembershipFields = """
+        id,\
+        household_id,\
+        user_id,\
+        profile_id,\
+        nickname,\
+        role,\
+        status,\
+        joined_at,\
+        created_at,\
+        updated_at
+        """
+
+    static let profilesWithMemberships =
+        "*, household_memberships!profile_id(\(nestedMembershipFields))"
+}
+
 // MARK: - Table Names
 private enum SupabaseTable {
     static let tasks = "tasks"
@@ -238,12 +259,8 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
 struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
     private let provider: SupabaseClientProviding
 
-    /// PostgREST 在 `family_profiles` 与 `household_memberships` 间存在 **两条** 可嵌入边：
-    /// - `household_memberships.profile_id` → `family_profiles.id`（档案下的身份行，嵌套用这条）
-    /// - `family_profiles.created_by` → `household_memberships.id`（反向）
-    /// 未加 `!profile_id` 时会报 *more than one relationship*。
-    private static let selectProfilesWithMemberships =
-        "*, memberships:household_memberships!profile_id(*)"
+    /// PostgREST Left Join：`family_profiles` 为主表；嵌套须含 `role`、`status` 供身份 Badge 与虚拟档案判定。
+    private static let selectProfilesWithMemberships = SupabaseProfileSelect.profilesWithMemberships
 
     init(provider: SupabaseClientProviding) {
         self.provider = provider
@@ -283,6 +300,11 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         #if DEBUG
         let http = rawResponse.response
         print("🔎 [FamilyDebug] fetchProfiles response status=\(http.statusCode) bytes=\(rawResponse.data.count)")
+        if let rawJSON = String(data: rawResponse.data, encoding: .utf8) {
+            print("💡 [终极排查] Supabase 原始返回 JSON: \n\(rawJSON)")
+        } else {
+            print("💡 [终极排查] Supabase 原始返回无法转为 UTF-8，bytes=\(rawResponse.data.count)")
+        }
         #endif
         do {
             return try SupabaseCodec.makeDecoder().decode([FamilyProfile].self, from: rawResponse.data)
@@ -542,6 +564,29 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
         return response
         #else
         _ = membership
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func updateNickname(householdId: UUID, profileId: UUID, nickname: String) async throws {
+        #if canImport(Supabase)
+        let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else {
+            throw SupabaseServiceError.invalidResponse
+        }
+        struct NicknamePatch: Encodable {
+            let nickname: String
+        }
+        _ = try await provider.client
+            .from(SupabaseTable.memberships)
+            .update(NicknamePatch(nickname: trimmed))
+            .eq("household_id", value: householdId.uuidString)
+            .eq("profile_id", value: profileId.uuidString)
+            .execute()
+        #else
+        _ = householdId
+        _ = profileId
+        _ = nickname
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }

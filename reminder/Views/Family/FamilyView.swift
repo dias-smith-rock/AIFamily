@@ -214,9 +214,8 @@ struct FamilyView: View {
                     if let creator = creatorProfile {
                         FamilyMemberRowView(
                             profile: creator,
-                            membership: resolvedMembership(for: creator),
                             subtitle: memberListSubtitle(for: creator),
-                            isLocalProfile: creator.isLocalProfile,
+                            isVirtualUser: creator.isVirtualUser,
                             prominentRole: prominentListRole(for: creator),
                             maskedPhoneLine: maskedPhoneForList(for: creator),
                             rawPhoneNumber: rawPhoneForList(for: creator)
@@ -233,9 +232,8 @@ struct FamilyView: View {
                     ForEach(membersExcludingCreator) { profile in
                         FamilyMemberRowView(
                             profile: profile,
-                            membership: resolvedMembership(for: profile),
                             subtitle: memberListSubtitle(for: profile),
-                            isLocalProfile: profile.isLocalProfile,
+                            isVirtualUser: profile.isVirtualUser,
                             prominentRole: prominentListRole(for: profile),
                             maskedPhoneLine: maskedPhoneForList(for: profile),
                             rawPhoneNumber: rawPhoneForList(for: profile)
@@ -404,7 +402,8 @@ struct FamilyView: View {
     }
 
     private func isCreatorProfile(_ profile: FamilyProfile) -> Bool {
-        resolvedMembership(for: profile)?.role == .creator
+        if profile.currentRole == MembershipRole.creator.rawValue { return true }
+        return resolvedMembership(for: profile)?.hasRole(.creator) == true
     }
 
     private func resolvedMembership(for profile: FamilyProfile) -> HouseholdMembership? {
@@ -419,19 +418,21 @@ struct FamilyView: View {
     private func memberListSubtitle(for profile: FamilyProfile) -> String {
         let membership = resolvedMembership(for: profile)
         guard let membership else {
-            return profile.isLocalProfile ? contactSubtitleLine(for: profile) : "家庭成员"
+            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "家庭成员"
         }
-        switch membership.role {
+        switch membership.parsedRole {
         case .creator, .admin:
             return contactSubtitleLine(for: profile)
         case .member:
-            return membership.role.displayTitle
+            return membership.parsedRole?.displayTitle ?? "成员"
+        case .none:
+            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "家庭成员"
         }
     }
 
     private func contactSubtitleLine(for profile: FamilyProfile) -> String {
         let email = profile.profileEmailForDisplay ?? ""
-        let title = profile.displayName(resolvingMembership: resolvedMembership(for: profile))
+        let title = profile.displayName
         if email.isEmpty == false, email == title {
             return ""
         }
@@ -440,13 +441,17 @@ struct FamilyView: View {
 
     /// 行内显著角色：创建者优先于管理员；普通成员不展示胶囊。
     private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {
-        guard let role = resolvedMembership(for: profile)?.role else { return nil }
-        switch role {
-        case .creator, .admin:
-            return role
-        case .member:
-            return nil
+        if profile.currentRole == MembershipRole.creator.rawValue { return .creator }
+        if profile.currentRole == MembershipRole.admin.rawValue { return .admin }
+        if let role = resolvedMembership(for: profile)?.parsedRole {
+            switch role {
+            case .creator, .admin:
+                return role
+            case .member:
+                return nil
+            }
         }
+        return nil
     }
 
     private func maskedPhoneForList(for profile: FamilyProfile) -> String? {
@@ -456,11 +461,11 @@ struct FamilyView: View {
 
     /// 详情页「角色」一行：仅档案成员展示「成员档案」标签式文案。
     private func detailIdentitySubtitle(for profile: FamilyProfile) -> String {
-        if profile.isLocalProfile {
+        if profile.isVirtualUser {
             return "成员档案"
         }
         if let membership = resolvedMembership(for: profile) {
-            return membership.role.displayTitle
+            return membership.parsedRole?.displayTitle ?? "家庭成员"
         }
         return "家庭成员"
     }
@@ -503,7 +508,7 @@ struct FamilyView: View {
         else {
             return .member
         }
-        return currentMembership.role
+        return currentMembership.parsedRole ?? .member
     }
 
     @MainActor

@@ -132,7 +132,7 @@ final class ScheduleViewModel: ObservableObject {
             let orphans = rawMembers.filter { embeddedIds.contains($0.id) == false }
             let merged = embedded + orphans
             householdMembers = merged
-                .filter { $0.status == .active }
+                .filter { $0.isActiveMembership() }
                 .sorted { $0.createdAt < $1.createdAt }
             rosterLoadedForHouseholdId = householdId
         } catch {

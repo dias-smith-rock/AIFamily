@@ -274,7 +274,7 @@ struct MineView: View {
                                 mineRoleCapsule(role)
                             }
 
-                            if let profile = familyViewModel.currentUserProfile, profile.isLocalProfile {
+                            if let profile = familyViewModel.currentUserProfile, profile.isVirtualUser {
                                 mineLocalProfileBadge
                             }
                         }
@@ -301,11 +301,7 @@ struct MineView: View {
     }
 
     private var mineHeaderMainTitle: String {
-        guard let profile = familyViewModel.currentUserProfile else {
-            return viewModel.displayName
-        }
-        let membership = familyViewModel.membership(for: profile)
-        return profile.displayName(resolvingMembership: membership)
+        familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
     }
 
     private var mineHeaderSubtitle: String {
@@ -379,8 +375,7 @@ struct MineView: View {
     }
 
     private func mineAvatarFallback(for profile: FamilyProfile) -> some View {
-        let membership = familyViewModel.membership(for: profile)
-        let initial = profile.displayName(resolvingMembership: membership).first.map(String.init) ?? "?"
+        let initial = profile.displayName.first.map(String.init) ?? "?"
         return Text(initial)
             .font(.title3.weight(.bold))
             .foregroundStyle(.white)
@@ -395,16 +390,21 @@ struct MineView: View {
     private func memberListSubtitle(for profile: FamilyProfile) -> String {
         let membership = resolvedMembership(for: profile)
         guard let membership else {
-            if profile.isLocalProfile {
+            if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
             return "家庭成员"
         }
-        switch membership.role {
+        switch membership.parsedRole {
         case .creator, .admin:
             return contactSubtitleLine(for: profile)
         case .member:
-            return membership.role.displayTitle
+            return membership.parsedRole?.displayTitle ?? "成员"
+        case .none:
+            if profile.isVirtualUser {
+                return contactSubtitleLine(for: profile)
+            }
+            return "家庭成员"
         }
     }
 
@@ -413,13 +413,17 @@ struct MineView: View {
     }
 
     private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {
-        guard let role = resolvedMembership(for: profile)?.role else { return nil }
-        switch role {
-        case .creator, .admin:
-            return role
-        case .member:
-            return nil
+        if profile.currentRole == MembershipRole.creator.rawValue { return .creator }
+        if profile.currentRole == MembershipRole.admin.rawValue { return .admin }
+        if let role = resolvedMembership(for: profile)?.parsedRole {
+            switch role {
+            case .creator, .admin:
+                return role
+            case .member:
+                return nil
+            }
         }
+        return nil
     }
 
     @ViewBuilder

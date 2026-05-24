@@ -1,7 +1,7 @@
 import Foundation
 
 /// `family_profiles` 行：展示名与可选 `user_id`（与 Auth 绑定，**不**用于判定是否为档案成员）。
-/// `memberships` 可由服务端嵌套返回，或由客户端按 `profile_id` / `(user_id, household_id)` 与 `household_memberships` 合并写入。
+/// `householdMemberships` 由 PostgREST 嵌套 Left Join 返回；空数组 `[]` 表示虚拟成员（无账号）。
 struct FamilyProfile: Identifiable, Codable, Equatable {
     let id: UUID
     let householdId: UUID
@@ -23,8 +23,8 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     var mainPhone: String? = nil
     /// `family_profiles.secondphone`
     var secondPhone: String? = nil
-    /// 与 `household_memberships` 的关联行（嵌套 JSON 或客户端 `mergingMembershipRows` 合并）。
-    var memberships: [HouseholdMembership]? = nil
+    /// 嵌套 `household_memberships`（Left Join；虚拟成员为 `[]` 或 `nil`）。
+    var householdMemberships: [HouseholdMembership]? = nil
 
     /// 与 `SupabaseCodec` 的 snake 互转一致：标准列用驼峰枚举名；`other_id_1` 经策略映射为 `otherId1`。
     enum CodingKeys: String, CodingKey {
@@ -47,7 +47,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         case secondPhone = "secondphone"
         case otherId1
         case otherId2
-        case memberships
+        case householdMemberships = "household_memberships"
+        /// 旧缓存 / 历史 alias `memberships:household_memberships!profile_id`
+        case legacyMemberships = "memberships"
     }
 
     init(
@@ -68,7 +70,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         email: String? = nil,
         mainPhone: String? = nil,
         secondPhone: String? = nil,
-        memberships: [HouseholdMembership]? = nil
+        householdMemberships: [HouseholdMembership]? = nil
     ) {
         self.id = id
         self.householdId = householdId
@@ -87,7 +89,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         self.email = email
         self.mainPhone = mainPhone
         self.secondPhone = secondPhone
-        self.memberships = memberships
+        self.householdMemberships = householdMemberships
     }
 
     init(from decoder: Decoder) throws {
@@ -111,7 +113,15 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         email = try container.decodeIfPresent(String.self, forKey: .email)
         mainPhone = try container.decodeIfPresent(String.self, forKey: .mainPhone)
         secondPhone = try container.decodeIfPresent(String.self, forKey: .secondPhone)
-        memberships = try container.decodeIfPresent([HouseholdMembership].self, forKey: .memberships)
+        if let nested = try container.decodeIfPresent([HouseholdMembership].self, forKey: .householdMemberships) {
+            householdMemberships = nested
+        } else if let single = try container.decodeIfPresent(HouseholdMembership.self, forKey: .householdMemberships) {
+            householdMemberships = [single]
+        } else if let legacy = try container.decodeIfPresent([HouseholdMembership].self, forKey: .legacyMemberships) {
+            householdMemberships = legacy
+        } else if let legacySingle = try container.decodeIfPresent(HouseholdMembership.self, forKey: .legacyMemberships) {
+            householdMemberships = [legacySingle]
+        }
     }
 
     func encode(to encoder: Encoder) throws {
@@ -133,7 +143,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(email, forKey: .email)
         try container.encodeIfPresent(mainPhone, forKey: .mainPhone)
         try container.encodeIfPresent(secondPhone, forKey: .secondPhone)
-        try container.encodeIfPresent(memberships, forKey: .memberships)
+        try container.encodeIfPresent(householdMemberships, forKey: .householdMemberships)
     }
 
     private static func decodeRequiredUUID(
@@ -183,57 +193,136 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
 }
 
 extension FamilyProfile {
+    /// 嵌套或客户端合并后的 membership 行（读写别名，便于合并逻辑复用）。
+    var memberships: [HouseholdMembership]? {
+        get { householdMemberships }
+        set { householdMemberships = newValue }
+    }
+
     /// 嵌套结果中优先取 **活跃** 身份，否则取第一条（如待激活邀请）。
     var primaryMembership: HouseholdMembership? {
-        guard let memberships, memberships.isEmpty == false else { return nil }
-        return memberships.first { $0.status == .active } ?? memberships.first
+        guard let householdMemberships, householdMemberships.isEmpty == false else { return nil }
+        return householdMemberships.first { $0.isActiveMembership() } ?? householdMemberships.first
     }
 
-    /// 供 UI / 调试：`MembershipRole` 的原始字符串（如 `creator`、`admin`）；无身份时为 `nil`。
+    /// 供 UI / 调试：小写 `role` 字符串（如 `creator`）；无身份时为 `nil`。
     var role: String? {
-        primaryMembership?.role.rawValue
+        currentRole
     }
 
-    /// **档案成员（本地档案）** 的唯一判定：当前家庭下该档案是否关联到任意 `household_memberships`（含服务端嵌套或客户端合并结果）。
+    /// 当前组织内身份角色（全小写）；UI 判定 `== "creator"` 时使用。
+    var currentRole: String? {
+        householdMemberships?.first?.normalizedRole
+    }
+
+    /// 由 `currentRole` 解析出的枚举（大小写容错）。
+    var currentMembershipRole: MembershipRole? {
+        guard let currentRole else { return nil }
+        return MembershipRole(rawValue: currentRole)
+    }
+
+    /// **虚拟档案**：无任何 `household_memberships` 嵌套行（仅 `family_profiles`）。
+    var isVirtualUser: Bool {
+        householdMemberships == nil || householdMemberships?.isEmpty == true
+    }
+
+    /// **虚拟成员**：与 `isVirtualUser` 同义，保留旧命名以兼容既有调用。
     var isLocalProfile: Bool {
-        (memberships ?? []).isEmpty
+        isVirtualUser
     }
 
-    /// 将 `household_memberships` 行并入档案：优先 **`profile_id == family_profiles.id`**，否则回退 **`(user_id, household_id)`**。
-    /// 若嵌套查询已返回非空 `memberships`，则不再覆盖。
+    /// 将扁平 `household_memberships` 并入档案（Left Join 补全）：`profile_id == family_profiles.id` 或 `(user_id, household_id)`。
+    /// 扁平 `members` 为权威来源：嵌套为空或 `fetchProfiles` 返回 `[]` 时仍须写入 `householdMemberships`。
     static func mergingMembershipRows(
         _ profiles: [FamilyProfile],
         memberships: [HouseholdMembership]
     ) -> [FamilyProfile] {
         profiles.map { profile in
-            if let existing = profile.memberships, existing.isEmpty == false {
-                return profile
-            }
-            let byProfileId = memberships.filter { row in
-                row.householdId == profile.householdId && row.profileId == profile.id
-            }
-            if byProfileId.isEmpty == false {
-                var copy = profile
-                copy.memberships = byProfileId
-                return copy
-            }
-            guard let uid = profile.userId else {
-                var copyNil = profile
-                copyNil.memberships = nil
-                return copyNil
-            }
-            let matched = memberships.filter { row in
-                row.householdId == profile.householdId && row.userId == uid
-            }
-            var copy = profile
-            copy.memberships = matched.isEmpty ? nil : matched
-            return copy
+            profile.attachingMemberships(from: memberships)
         }
     }
 
-    /// 当前组织内的 membership 昵称（嵌套或合并后）。
+    /// 与档案匹配的扁平 membership 行（`profile_id` 优先，其次 `user_id`）。
+    static func matchingMemberships(
+        for profile: FamilyProfile,
+        in memberships: [HouseholdMembership]
+    ) -> [HouseholdMembership] {
+        let sameHousehold = memberships.filter { $0.householdId == profile.householdId }
+        let byProfileId = sameHousehold.filter { $0.profileId == profile.id }
+        if byProfileId.isEmpty == false { return byProfileId }
+        if let uid = profile.userId {
+            let byUser = sameHousehold.filter { $0.userId == uid }
+            if byUser.isEmpty == false { return byUser }
+        }
+        return []
+    }
+
+    /// 将匹配到的 membership 写入副本；`explicitFallback` 在无法匹配时强制挂载（如 creator 兜底）。
+    func attachingMemberships(
+        from memberships: [HouseholdMembership],
+        explicitFallback: [HouseholdMembership]? = nil
+    ) -> FamilyProfile {
+        let matched = Self.matchingMemberships(for: self, in: memberships)
+        let resolved = matched.isEmpty ? (explicitFallback ?? householdMemberships) : matched
+        guard let resolved, resolved.isEmpty == false else { return self }
+        var copy = self
+        copy.householdMemberships = resolved
+        return copy
+    }
+
+    /// `fetchProfiles` 不可用时的最小档案占位（必须携带 `householdMemberships`）。
+    static func syntheticPlaceholder(
+        profileId: UUID,
+        householdId: UUID,
+        userId: UUID?,
+        name: String,
+        memberships: [HouseholdMembership]
+    ) -> FamilyProfile {
+        FamilyProfile(
+            id: profileId,
+            householdId: householdId,
+            name: name,
+            userId: userId,
+            householdMemberships: memberships
+        )
+    }
+
+    static func syntheticPlaceholder(
+        from membership: HouseholdMembership,
+        profileId: UUID,
+        relatedMemberships: [HouseholdMembership]
+    ) -> FamilyProfile {
+        let trimmed = membership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let displayName = trimmed.isEmpty ? MemberDisplayName.unknownFallback : trimmed
+        return syntheticPlaceholder(
+            profileId: profileId,
+            householdId: membership.householdId,
+            userId: membership.userId,
+            name: displayName,
+            memberships: relatedMemberships
+        )
+    }
+
+    /// 千组织千面：优先 `household_memberships[0].nickname` → 回退 `family_profiles.name` → 兜底。
+    var displayName: String {
+        if let list = householdMemberships,
+           let firstMembership = list.first {
+            let nickname = firstMembership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if nickname.isEmpty == false {
+                return nickname
+            }
+        }
+        let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        if profileName.isEmpty == false, profileName != "未命名成员" {
+            return profileName
+        }
+        return MemberDisplayName.unknownFallback
+    }
+
+    /// 当前组织内嵌套 membership 的有效 nickname（若有）。
     var membershipNickname: String? {
-        let trimmed = primaryMembership?.nickname.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard let first = householdMemberships?.first else { return nil }
+        let trimmed = first.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
     }
 
@@ -242,15 +331,6 @@ extension FamilyProfile {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false, trimmed != "未命名成员" else { return nil }
         return trimmed
-    }
-
-    /// 列表 / 卡片统一展示名：有 membership → `nickname`；无 membership（档案成员）→ `name`。
-    var displayName: String {
-        MemberDisplayName.displayName(for: self, membership: primaryMembership)
-    }
-
-    func displayName(resolvingMembership membership: HouseholdMembership?) -> String {
-        MemberDisplayName.displayName(for: self, membership: membership)
     }
 
     /// 档案上填写的联系邮箱；用于副标题等，不参与主展示名。
@@ -271,7 +351,7 @@ extension FamilyProfile {
         var seen = Set<UUID>()
         var ordered: [HouseholdMembership] = []
         for profile in profiles {
-            guard let list = profile.memberships else { continue }
+            guard let list = profile.householdMemberships else { continue }
             for m in list where seen.insert(m.id).inserted {
                 ordered.append(m)
             }

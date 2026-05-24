@@ -22,6 +22,8 @@ protocol HouseholdMembershipDataService {
     func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership]
     func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
     func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
+    /// 按 `household_id` + `profile_id`（`family_profiles.id`）更新组织内昵称；虚拟成员无匹配行时不报错。
+    func updateNickname(householdId: UUID, profileId: UUID, nickname: String) async throws
 }
 
 protocol FamilyProfileDataService {

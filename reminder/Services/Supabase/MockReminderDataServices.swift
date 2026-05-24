@@ -99,6 +99,19 @@ actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
         members[index] = membership
         return membership
     }
+
+    func updateNickname(householdId: UUID, profileId: UUID, nickname: String) async throws {
+        let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else {
+            throw SupabaseServiceError.invalidResponse
+        }
+        guard let index = members.firstIndex(where: {
+            $0.householdId == householdId && $0.profileId == profileId
+        }) else {
+            return
+        }
+        members[index].nickname = trimmed
+    }
 }
 
 // MARK: - Family Profiles

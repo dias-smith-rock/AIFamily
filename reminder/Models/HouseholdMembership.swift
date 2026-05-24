@@ -3,15 +3,16 @@ import Foundation
 // MARK: - 2. 家庭成员关系 (HouseholdMembership)
 /// `userId` 为空表示影子成员（未注册账号、由管理员代建）。
 /// 组织内展示名使用 `nickname`（千组织千面）；全局档案名见关联的 `family_profiles.name`。
+/// - Note: `role` / `status` 暂用 `String?` 解码，规避枚举大小写不一致导致嵌套 JSON 整段静默丢失。
 struct HouseholdMembership: Identifiable, Codable, Equatable {
     let id: UUID
     let householdId: UUID
     var userId: UUID?
     /// 指向 `family_profiles.id`；嵌套查询与写入身份行时必填（由 RPC / 触发器 / 客户端保证）。
     var profileId: UUID?
-    var role: MembershipRole
-    var nickname: String
-    var status: MembershipStatus
+    var role: String?
+    var nickname: String?
+    var status: String?
     var joinedAt: Date?
     let createdAt: Date
     let updatedAt: Date
@@ -21,9 +22,9 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         householdId: UUID,
         userId: UUID?,
         profileId: UUID? = nil,
-        role: MembershipRole,
-        nickname: String,
-        status: MembershipStatus,
+        role: String?,
+        nickname: String?,
+        status: String?,
         joinedAt: Date?,
         createdAt: Date,
         updatedAt: Date
@@ -61,9 +62,9 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         householdId = try Self.decodeRequiredUUID(container: container, key: .householdId)
         userId = try Self.decodeOptionalUUID(container: container, key: .userId)
         profileId = try Self.decodeOptionalUUID(container: container, key: .profileId)
-        role = try container.decode(MembershipRole.self, forKey: .role)
-        nickname = try container.decode(String.self, forKey: .nickname)
-        status = try container.decode(MembershipStatus.self, forKey: .status)
+        role = try container.decodeIfPresent(String.self, forKey: .role)
+        nickname = try container.decodeIfPresent(String.self, forKey: .nickname)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
         joinedAt = try Self.decodeOptionalDate(container: container, key: .joinedAt)
         createdAt = try Self.decodeRequiredDate(container: container, key: .createdAt)
         updatedAt = try Self.decodeRequiredDate(container: container, key: .updatedAt)
@@ -75,9 +76,9 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         try container.encode(householdId, forKey: .householdId)
         try container.encodeIfPresent(userId, forKey: .userId)
         try container.encodeIfPresent(profileId, forKey: .profileId)
-        try container.encode(role, forKey: .role)
-        try container.encode(nickname, forKey: .nickname)
-        try container.encode(status, forKey: .status)
+        try container.encodeIfPresent(role, forKey: .role)
+        try container.encodeIfPresent(nickname, forKey: .nickname)
+        try container.encodeIfPresent(status, forKey: .status)
         try container.encodeIfPresent(joinedAt.map(Self.formatDateForEncoding), forKey: .joinedAt)
         try container.encode(Self.formatDateForEncoding(createdAt), forKey: .createdAt)
         try container.encode(Self.formatDateForEncoding(updatedAt), forKey: .updatedAt)
@@ -163,9 +164,70 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
 }
 
 extension HouseholdMembership {
+    /// 小写、去空白后的 `role`，供 UI 与排序容错比对。
+    var normalizedRole: String? {
+        guard let role else { return nil }
+        let trimmed = role.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return nil }
+        return trimmed.lowercased()
+    }
+
+    /// 小写、去空白后的 `status`。
+    var normalizedStatus: String? {
+        guard let status else { return nil }
+        let trimmed = status.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return nil }
+        return trimmed.lowercased()
+    }
+
+    var parsedRole: MembershipRole? {
+        guard let normalizedRole else { return nil }
+        return MembershipRole(rawValue: normalizedRole)
+    }
+
+    var parsedStatus: MembershipStatus? {
+        guard let normalizedStatus else { return nil }
+        return MembershipStatus(rawValue: normalizedStatus)
+    }
+
+    func hasRole(_ target: MembershipRole) -> Bool {
+        normalizedRole == target.rawValue
+    }
+
+    func isActiveMembership() -> Bool {
+        normalizedStatus == MembershipStatus.active.rawValue
+    }
+
+    /// Mock / 写入路径：枚举 → 字符串。
+    init(
+        id: UUID,
+        householdId: UUID,
+        userId: UUID?,
+        profileId: UUID? = nil,
+        role: MembershipRole,
+        nickname: String,
+        status: MembershipStatus,
+        joinedAt: Date?,
+        createdAt: Date,
+        updatedAt: Date
+    ) {
+        self.init(
+            id: id,
+            householdId: householdId,
+            userId: userId,
+            profileId: profileId,
+            role: role.rawValue,
+            nickname: nickname,
+            status: status.rawValue,
+            joinedAt: joinedAt,
+            createdAt: createdAt,
+            updatedAt: updatedAt
+        )
+    }
+
     /// 有 membership 时优先 `nickname`；否则回退关联档案的 `name`。
     func displayName(linkedProfile: FamilyProfile?) -> String {
-        let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if trimmedNickname.isEmpty == false {
             return trimmedNickname
         }

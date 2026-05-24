@@ -36,18 +36,18 @@ enum MemberDisplayName {
         return displayName(for: membership, profiles: profiles)
     }
 
-    /// 列表行展示名：有 membership 时优先 `nickname`（非空），否则 `family_profiles.name`。
-    static func displayName(for profile: FamilyProfile, membership: HouseholdMembership?) -> String {
-        let resolvedMembership = membership ?? profile.primaryMembership
-        if let resolvedMembership {
-            let nickname = resolvedMembership.nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// 列表行展示名：优先嵌套数组内 nickname，否则档案 `name`。
+    static func displayName(for profile: FamilyProfile, membership: HouseholdMembership? = nil) -> String {
+        if let membership {
+            let nickname = membership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if nickname.isEmpty == false {
                 return nickname
             }
+            if let profileName = profile.profileName {
+                return profileName
+            }
+            return unknownFallback
         }
-        if let profileName = profile.profileName {
-            return profileName
-        }
-        return unknownFallback
+        return profile.displayName
     }
 }

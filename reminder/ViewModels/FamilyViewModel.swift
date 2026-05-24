@@ -131,8 +131,20 @@ final class FamilyViewModel: ObservableObject {
             async let profileRows = profileService.fetchProfiles(in: householdId)
             async let membershipRows = membershipService.fetchMemberships(in: householdId)
             let (rawProfiles, rawMemberships) = try await (profileRows, membershipRows)
+            #if DEBUG
+            Self.debugLogFetchedProfiles(rawProfiles, label: "fetchProfiles 原始响应")
+            Self.debugLogFetchedMemberships(rawMemberships, label: "fetchMemberships 原始响应")
+            #endif
             var p = FamilyProfile.mergingMembershipRows(rawProfiles, memberships: rawMemberships)
+            #if DEBUG
+            Self.debugLogFetchedProfiles(p, label: "mergingMembershipRows 之后")
+            #endif
+            await hydrateMissingProfilesFromMemberships(memberships: rawMemberships, into: &p)
             await hydrateCreatorProfileIfNeeded(memberships: rawMemberships, into: &p)
+            p = FamilyProfile.mergingMembershipRows(p, memberships: rawMemberships)
+            #if DEBUG
+            Self.debugLogFetchedProfiles(p, label: "hydrate + 最终 merge 之后（即将写入 profiles）")
+            #endif
             profiles = p
             sortProfilesForDisplay()
             let embedded = FamilyProfile.uniqueMembershipsFlattened(from: p)
@@ -142,8 +154,8 @@ final class FamilyViewModel: ObservableObject {
                 combined.append(row)
             }
             combined.sort { lhs, rhs in
-                let lr = membershipRoleSortIndex(lhs.role)
-                let rr = membershipRoleSortIndex(rhs.role)
+                let lr = membershipRoleSortIndex(for: lhs)
+                let rr = membershipRoleSortIndex(for: rhs)
                 if lr != rr {
                     return lr < rr
                 }
@@ -182,33 +194,97 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
+    /// 当 `fetchProfiles` 返回 `[]` 时，按 `profile_id` 逐条 hydrate，并 **必须** 挂载扁平 membership。
+    private func hydrateMissingProfilesFromMemberships(
+        memberships: [HouseholdMembership],
+        into profiles: inout [FamilyProfile]
+    ) async {
+        let profileIds = Set(memberships.compactMap(\.profileId))
+        guard profileIds.isEmpty == false else { return }
+
+        for profileId in profileIds {
+            guard profiles.contains(where: { $0.id == profileId }) == false else { continue }
+            let related = memberships.filter { $0.profileId == profileId }
+            guard related.isEmpty == false else { continue }
+
+            do {
+                if let fetched = try await profileService.fetchProfile(id: profileId) {
+                    let merged = fetched.attachingMemberships(from: memberships, explicitFallback: related)
+                    profiles.append(merged)
+                    #if DEBUG
+                    print("✅ [FamilyDebug] hydrateMissingProfile — profile_id=\(profileId.uuidString) memberships=\(merged.householdMemberships?.count ?? 0)")
+                    #endif
+                    continue
+                }
+            } catch {
+                #if DEBUG
+                print("❌ [FamilyDebug] hydrateMissingProfile fetch failed — profile_id=\(profileId.uuidString) error=\(error.localizedDescription)")
+                #endif
+            }
+
+            if let anchor = related.first {
+                let synthetic = FamilyProfile.syntheticPlaceholder(
+                    from: anchor,
+                    profileId: profileId,
+                    relatedMemberships: related
+                )
+                profiles.append(synthetic)
+                #if DEBUG
+                print("✅ [FamilyDebug] hydrateMissingProfile synthetic — profile_id=\(profileId.uuidString) memberships=\(related.count)")
+                #endif
+            }
+        }
+    }
+
     /// 创建者行必须展示 `family_profiles` 完整档案：按 creator membership 的 `profile_id` 再拉一次单行并合并身份。
     private func hydrateCreatorProfileIfNeeded(
         memberships: [HouseholdMembership],
         into profiles: inout [FamilyProfile]
     ) async {
-        guard let creatorMembership = memberships.first(where: { $0.role == .creator && $0.status == .active }) else {
+        guard let creatorMembership = memberships.first(where: { $0.hasRole(.creator) && $0.isActiveMembership() }) else {
             return
         }
         let profileId = creatorMembership.profileId
             ?? profiles.first(where: { $0.userId == creatorMembership.userId })?.id
         guard let profileId else { return }
 
+        let relatedToCreator = memberships.filter {
+            $0.profileId == profileId
+                || ($0.userId != nil && $0.userId == creatorMembership.userId && $0.householdId == creatorMembership.householdId)
+        }
+        let creatorFallback = relatedToCreator.isEmpty ? [creatorMembership] : relatedToCreator
+
         do {
-            guard let fetched = try await profileService.fetchProfile(id: profileId) else { return }
-            let merged = FamilyProfile.mergingMembershipRows([fetched], memberships: memberships).first ?? fetched
-            if let index = profiles.firstIndex(where: { $0.id == profileId }) {
-                profiles[index] = merged
-            } else {
-                profiles.append(merged)
+            if let fetched = try await profileService.fetchProfile(id: profileId) {
+                let merged = fetched.attachingMemberships(from: memberships, explicitFallback: creatorFallback)
+                upsertProfile(merged, profileId: profileId, into: &profiles)
+                #if DEBUG
+                print("✅ [FamilyDebug] hydrateCreatorProfile — profile_id=\(profileId.uuidString) name=\"\(merged.name)\" memberships=\(merged.householdMemberships?.count ?? 0)")
+                #endif
+                return
             }
-            #if DEBUG
-            print("✅ [FamilyDebug] hydrateCreatorProfile — profile_id=\(profileId.uuidString) name=\"\(merged.name)\"")
-            #endif
         } catch {
             #if DEBUG
-            print("❌ [FamilyDebug] hydrateCreatorProfile failed — profile_id=\(profileId.uuidString) error=\(error.localizedDescription)")
+            print("❌ [FamilyDebug] hydrateCreatorProfile fetch failed — profile_id=\(profileId.uuidString) error=\(error.localizedDescription)")
             #endif
+        }
+
+        let synthetic = FamilyProfile.syntheticPlaceholder(
+            from: creatorMembership,
+            profileId: profileId,
+            relatedMemberships: creatorFallback
+        )
+        upsertProfile(synthetic, profileId: profileId, into: &profiles)
+        #if DEBUG
+        print("✅ [FamilyDebug] hydrateCreatorProfile synthetic — profile_id=\(profileId.uuidString) memberships=\(creatorFallback.count)")
+        #endif
+    }
+
+    private func upsertProfile(_ profile: FamilyProfile, profileId: UUID, into profiles: inout [FamilyProfile]) {
+        if let index = profiles.firstIndex(where: { $0.id == profileId }) {
+            profiles[index] = profile
+        } else {
+            profiles.append(profile)
         }
     }
 
@@ -282,37 +358,40 @@ final class FamilyViewModel: ObservableObject {
             return "当前没有权限修改该成员资料。"
         }
 
-        let linkedMembership = membership(for: profile)
+        let targetProfileId = profile.id
+        let householdId = currentHouseholdId ?? profile.householdId
+
         var profileDraft = draft
-        profileDraft.name = profile.name
+        profileDraft.name = trimmedDisplayName
 
         do {
-            if let linkedMembership {
-                var updatedMembership = linkedMembership
-                updatedMembership.nickname = trimmedDisplayName
-                _ = try await membershipService.updateMembership(updatedMembership)
-            } else {
-                profileDraft.name = trimmedDisplayName
+            do {
+                try await membershipService.updateNickname(
+                    householdId: householdId,
+                    profileId: targetProfileId,
+                    nickname: trimmedDisplayName
+                )
+            } catch {
+                #if DEBUG
+                print("⚠️ [FamilyDebug] 更新 membership 昵称时出错（虚拟成员可忽略）: \(error.localizedDescription)")
+                #endif
             }
 
-            try await profileService.updateProfile(profileId: profile.id, draft: profileDraft)
+            try await profileService.updateProfile(profileId: targetProfileId, draft: profileDraft)
 
             var updatedProfile = profile
-            if let linkedMembership {
+            updatedProfile.name = trimmedDisplayName
+            if let memberIndex = members.firstIndex(where: {
+                $0.householdId == householdId && $0.profileId == targetProfileId
+            }) {
+                members[memberIndex].nickname = trimmedDisplayName
                 var memberships = updatedProfile.memberships ?? []
-                if let index = memberships.firstIndex(where: { $0.id == linkedMembership.id }) {
-                    memberships[index].nickname = trimmedDisplayName
+                if let embeddedIndex = memberships.firstIndex(where: { $0.id == members[memberIndex].id }) {
+                    memberships[embeddedIndex].nickname = trimmedDisplayName
                     updatedProfile.memberships = memberships
                 } else {
-                    var copy = linkedMembership
-                    copy.nickname = trimmedDisplayName
-                    updatedProfile.memberships = [copy]
+                    updatedProfile.memberships = [members[memberIndex]]
                 }
-                if let memberIndex = members.firstIndex(where: { $0.id == linkedMembership.id }) {
-                    members[memberIndex].nickname = trimmedDisplayName
-                }
-            } else {
-                updatedProfile.name = trimmedDisplayName
             }
             updatedProfile.avatarUrl = profileDraft.avatarURL
             updatedProfile.gender = profileDraft.gender
@@ -407,14 +486,14 @@ final class FamilyViewModel: ObservableObject {
             return embedded
         }
         let sameHousehold = members.filter { $0.householdId == profile.householdId }
-        if let activeByProfile = sameHousehold.first(where: { $0.profileId == profile.id && $0.status == .active }) {
+        if let activeByProfile = sameHousehold.first(where: { $0.profileId == profile.id && $0.isActiveMembership() }) {
             return activeByProfile
         }
         if let anyByProfile = sameHousehold.first(where: { $0.profileId == profile.id }) {
             return anyByProfile
         }
         if let uid = profile.userId {
-            if let activeByUser = sameHousehold.first(where: { $0.userId == uid && $0.status == .active }) {
+            if let activeByUser = sameHousehold.first(where: { $0.userId == uid && $0.isActiveMembership() }) {
                 return activeByUser
             }
             return sameHousehold.first(where: { $0.userId == uid })
@@ -424,7 +503,7 @@ final class FamilyViewModel: ObservableObject {
 
     /// 列表/排序用的角色：嵌套优先，否则扁平 `members`（与 `FamilyView.resolvedMembership` 一致）。
     private func resolvedListRole(_ profile: FamilyProfile) -> MembershipRole? {
-        profile.primaryMembership?.role ?? membership(for: profile)?.role
+        profile.currentMembershipRole ?? membership(for: profile)?.parsedRole
     }
 
     var otherProfiles: [FamilyProfile] {
@@ -514,7 +593,7 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private var canCurrentUserManageHousehold: Bool {
-        switch currentMembership?.role {
+        switch currentMembership?.parsedRole {
         case .creator, .admin:
             return true
         case .member, .none:
@@ -534,17 +613,10 @@ final class FamilyViewModel: ObservableObject {
         let meId = me?.id
 
         func profileListSortRank(_ profile: FamilyProfile) -> Int {
-            guard let m = profile.primaryMembership else {
+            guard let role = profile.primaryMembership?.parsedRole else {
                 return 3
             }
-            switch m.role {
-            case .creator:
-                return 0
-            case .admin:
-                return 1
-            case .member:
-                return 2
-            }
+            return membershipRoleSortIndex(role)
         }
 
         let others = profiles
@@ -594,10 +666,14 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private func profileAggregatedRoleRank(_ profile: FamilyProfile) -> Int {
-        guard let role = profile.primaryMembership?.role else {
+        guard let role = profile.primaryMembership?.parsedRole else {
             return 3
         }
         return membershipRoleSortIndex(role)
+    }
+
+    private func membershipRoleSortIndex(for membership: HouseholdMembership) -> Int {
+        membershipRoleSortIndex(membership.parsedRole ?? .member)
     }
 
     private func membershipRoleSortIndex(_ role: MembershipRole) -> Int {
@@ -920,4 +996,23 @@ final class FamilyViewModel: ObservableObject {
             return "修改家庭名称失败，请稍后重试。"
         }
     }
+
+    #if DEBUG
+    private static func debugLogFetchedProfiles(_ fetchedProfiles: [FamilyProfile], label: String) {
+        print("🔍 [FamilyDebug] \(label) — count=\(fetchedProfiles.count)")
+        for profile in fetchedProfiles {
+            print("🔍 调试档案 ID: \(profile.id) | 名字: \(profile.displayName)")
+            print("   ↳ 关联Membership: \(String(describing: profile.householdMemberships))")
+            print("   ↳ 提取的Role: \(String(describing: profile.currentRole))")
+            print("   ↳ 是否被判定为虚拟: \(profile.isVirtualUser)")
+        }
+    }
+
+    private static func debugLogFetchedMemberships(_ memberships: [HouseholdMembership], label: String) {
+        print("🔍 [FamilyDebug] \(label) — count=\(memberships.count)")
+        for membership in memberships {
+            print("   ↳ membership id=\(membership.id) profile_id=\(membership.profileId?.uuidString ?? "nil") role=\(membership.role ?? "nil") status=\(membership.status ?? "nil") nickname=\(membership.nickname ?? "nil")")
+        }
+    }
+    #endif
 }

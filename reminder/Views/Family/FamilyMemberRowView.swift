@@ -3,12 +3,10 @@ import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
-    /// 扁平 `members` 解析出的身份行；嵌套 `profile.memberships` 缺失时用于展示 `nickname`。
-    var membership: HouseholdMembership? = nil
     /// 第二行说明：与行内角色胶囊互补（创建者/管理员不再重复占一行）。
     let subtitle: String
-    /// 当前行是否为 **档案成员**（无 `household_memberships` 关联）；与手机号、`user_id` 无关。
-    var isLocalProfile: Bool = false
+    /// 当前行是否为 **虚拟档案**（无 `household_memberships` 关联）。
+    var isVirtualUser: Bool = false
     /// 列表行内显著角色：仅传 `.creator` 或 `.admin`；普通成员传 `nil`。
     var prominentRole: MembershipRole? = nil
     /// 与 `household_memberships.phone_number` 对应的脱敏展示；无则 `nil`。
@@ -32,7 +30,7 @@ struct FamilyMemberRowView: View {
     }
 
     private var mainTitle: String {
-        profile.displayName(resolvingMembership: membership)
+        profile.displayName
     }
 
     private var initialCharacter: String {
@@ -126,7 +124,7 @@ struct FamilyMemberRowView: View {
                             membershipRoleCapsule(prominentRole)
                         }
 
-                        if isLocalProfile {
+                        if isVirtualUser {
                             localProfileBadge
                         }
                     }
