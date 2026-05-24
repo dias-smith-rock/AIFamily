@@ -14,6 +14,9 @@ final class FamilyViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var hasLoadedOnce = false
     @Published private(set) var requiresLogin = false
+    @Published var isDisbanding = false
+    @Published var showDisbandErrorAlert = false
+    @Published var disbandError: String?
 
     private let profileService: FamilyProfileDataService
     private let membershipService: HouseholdMembershipDataService

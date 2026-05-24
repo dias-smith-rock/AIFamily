@@ -150,6 +150,25 @@ final class AppRouter: ObservableObject {
         appState = .activeMember
     }
 
+    /// 解散家庭后清空当前组织上下文并回到入口枢纽页。
+    func exitToOrgHubAfterDisband() {
+        selectedHouseholdId = nil
+        selectedMembershipId = nil
+        selectedHouseholdName = nil
+        selectableHouseholds = []
+        appState = .orgRouting
+        debugLog("route.orgRouting reason=household_disbanded")
+    }
+
+    func chooseJoinedHousehold(_ joined: JoinedHousehold) {
+        let option = HouseholdOption(
+            id: joined.householdId,
+            membershipId: joined.id,
+            name: joined.displayHouseholdName
+        )
+        chooseHousehold(option)
+    }
+
     func chooseHousehold(_ option: HouseholdOption) {
         #if canImport(Supabase)
         Task {

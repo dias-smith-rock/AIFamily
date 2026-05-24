@@ -9,10 +9,8 @@ struct ContentView: View {
             switch appRouter.appState {
             case .unauthenticated:
                 LoginView()
-            case .orgRouting:
-                OrgRoutingView()
-            case .householdSelection:
-                HouseholdPickerView()
+            case .orgRouting, .householdSelection:
+                HouseholdSelectionView()
             case .pendingApproval:
                 PendingView()
             case .activeMember:

@@ -48,6 +48,8 @@ protocol HouseholdRoutingService {
     func createHousehold(displayName: String) async throws -> UUID
     func joinHousehold(inviteCode: String) async throws
     func renameHousehold(householdId: UUID, newName: String) async throws
+    func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold]
+    func disbandHousehold(id: UUID, expectedName: String) async throws
 }
 
 enum HouseholdRoutingError: LocalizedError {
@@ -64,6 +66,8 @@ enum HouseholdRoutingError: LocalizedError {
     case nonceConsumed
     case networkFailure
     case unknown
+    case householdNameMismatch
+    case disbandUnauthorized
 }
 
 // MARK: - Auth
@@ -479,6 +483,55 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold] {
+        #if canImport(Supabase)
+        let session = try await provider.client.auth.session
+        let userId = session.user.id
+        let rawResponse = try await provider.client
+            .from("household_memberships")
+            .select("id, household_id, role, households(id, name, status)")
+            .eq("user_id", value: userId.uuidString)
+            .eq("status", value: MembershipStatus.active.rawValue)
+            .order("created_at", ascending: false)
+            .execute()
+        #if DEBUG
+        if let rawJSON = String(data: rawResponse.data, encoding: .utf8) {
+            print("🔎 [OrgHub] fetchMyJoinedHouseholds raw JSON:\n\(rawJSON)")
+        }
+        #endif
+        return try SupabaseCodec.makeDecoder().decode([JoinedHousehold].self, from: rawResponse.data)
+        #else
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func disbandHousehold(id: UUID, expectedName: String) async throws {
+        #if canImport(Supabase)
+        let trimmedExpectedName = expectedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedExpectedName.isEmpty == false else {
+            throw HouseholdRoutingError.householdNameMismatch
+        }
+
+        do {
+            _ = try await provider.client
+                .rpc(
+                    "disband_household",
+                    params: DisbandHouseholdParams(
+                        pHouseholdId: id,
+                        pExpectedName: trimmedExpectedName
+                    )
+                )
+                .execute()
+        } catch {
+            throw mapDisbandHouseholdError(error)
+        }
+        #else
+        _ = id
+        _ = expectedName
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
 }
 
 #if canImport(Supabase)
@@ -797,6 +850,16 @@ private struct JoinHouseholdByNonceParams: Encodable {
     let pUserId: UUID
 }
 
+private struct DisbandHouseholdParams: Encodable {
+    let pHouseholdId: UUID
+    let pExpectedName: String
+
+    enum CodingKeys: String, CodingKey {
+        case pHouseholdId = "p_household_id"
+        case pExpectedName = "p_expected_name"
+    }
+}
+
 private struct InviteLinkPayload: Encodable {
     let token: String
     let channel: String
@@ -847,4 +910,30 @@ private func isForbiddenError(_ error: Error) -> Bool {
 
 private func isHouseholdNotFoundError(_ error: Error) -> Bool {
     error.localizedDescription.lowercased().contains("household_not_found")
+}
+
+private func isMissingDisbandHouseholdRPCError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("disband_household")
+        && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
+private func mapDisbandHouseholdError(_ error: Error) -> Error {
+    let message = error.localizedDescription.lowercased()
+    if isUnauthenticatedError(error) || message.contains("unauthenticated") {
+        return HouseholdRoutingError.unauthenticated
+    }
+    if message.contains("household_name_mismatch") {
+        return HouseholdRoutingError.householdNameMismatch
+    }
+    if message.contains("unauthorized") || isForbiddenError(error) {
+        return HouseholdRoutingError.disbandUnauthorized
+    }
+    if isHouseholdNotFoundError(error) {
+        return HouseholdRoutingError.householdNotFound
+    }
+    if isMissingDisbandHouseholdRPCError(error) {
+        return HouseholdRoutingError.backendMigrationRequired
+    }
+    return error
 }

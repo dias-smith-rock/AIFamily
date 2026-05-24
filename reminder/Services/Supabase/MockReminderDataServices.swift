@@ -280,4 +280,13 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
         _ = householdId
         _ = newName
     }
+
+    func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold] {
+        []
+    }
+
+    func disbandHousehold(id: UUID, expectedName: String) async throws {
+        _ = id
+        _ = expectedName
+    }
 }

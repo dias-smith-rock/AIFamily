@@ -6,11 +6,32 @@ final class OrgRoutingViewModel: ObservableObject {
     @Published private(set) var isCreating = false
     @Published private(set) var isJoining = false
     @Published private(set) var errorMessage: String?
+    @Published private(set) var joinedHouseholds: [JoinedHousehold] = []
+    @Published private(set) var isLoading = true
 
     private let householdRoutingService: HouseholdRoutingService
 
     init(householdRoutingService: HouseholdRoutingService) {
         self.householdRoutingService = householdRoutingService
+    }
+
+    func fetchMyHouseholds() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            let response = try await householdRoutingService.fetchMyJoinedHouseholds()
+            joinedHouseholds = response.filter { household in
+                household.isSelectable
+                    && household.household?.isArchivedOrDeleted == false
+            }
+            #if DEBUG
+            print("✅ [OrgHub] fetchMyHouseholds — count=\(joinedHouseholds.count)")
+            #endif
+        } catch {
+            print("拉取家庭列表失败: \(error)")
+            joinedHouseholds = []
+        }
     }
 
     func createHousehold(displayName: String) async -> UUID? {

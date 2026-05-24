@@ -47,6 +47,18 @@ final class LocalCacheManager {
         }
     }
 
+    func remove(forKey key: String) {
+        let url = Self.fileURL(forKey: key, directory: cacheDirectoryURL)
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        do {
+            try fileManager.removeItem(at: url)
+        } catch {
+            #if DEBUG
+            print("⚠️ [LocalCache] remove failed key=\(key) error=\(error.localizedDescription)")
+            #endif
+        }
+    }
+
     private static func fileURL(forKey key: String, directory: URL) -> URL {
         let safeName = key
             .addingPercentEncoding(withAllowedCharacters: .alphanumerics.union(CharacterSet(charactersIn: "-._")))

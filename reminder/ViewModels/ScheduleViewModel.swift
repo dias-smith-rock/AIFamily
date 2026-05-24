@@ -34,6 +34,7 @@ final class ScheduleViewModel: ObservableObject {
     private var realtimeRefreshTask: Task<Void, Never>?
 
     private var rosterChangeCancellable: AnyCancellable?
+    private var disbandCancellable: AnyCancellable?
 
     init(
         taskService: TaskDataService,
@@ -54,7 +55,18 @@ final class ScheduleViewModel: ObservableObject {
                     await self?.refreshHouseholdRosterIfMatchesPostedHousehold(householdId)
                 }
             }
+
+        NotificationCenter.default.publisher(for: .householdDidDisband)
+            .compactMap { $0.object as? UUID }
+            .sink { [weak self] householdId in
+                Task { @MainActor [weak self] in
+                    self?.purgeLocalDataForDisbandedHousehold(householdId)
+                }
+            }
+            .store(in: &cancellables)
     }
+
+    private var cancellables = Set<AnyCancellable>()
 
     func setHouseholdContext(_ householdId: UUID?) {
         currentHouseholdId = householdId
