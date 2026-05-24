@@ -21,14 +21,22 @@ protocol AuthService {
     func sendPhoneOTP(phoneNumber: String) async throws
     func signOut() async throws
     func hasValidSession() async -> Bool
+    /// 注销账号前清理该用户在全部 `family_profiles` 中的头像文件；失败不抛出。
+    func cleanUpCurrentUserAvatars() async
+    /// 删除托管成员档案前清理其头像；失败不抛出。
+    func cleanUpProfileAvatar(profileId: UUID) async
 }
 
 protocol VoiceStorageService {
     func uploadVoiceFeedback(data: Data, fileName: String) async throws -> URL
+    /// 按 Storage 对象路径批量删除；失败不抛出。
+    func removeVoiceFiles(atPaths paths: [String]) async
 }
 
 protocol AvatarStorageService {
     func uploadAvatarImage(data: Data, fileName: String) async throws -> URL
+    /// 按 Storage 对象路径批量删除；失败不抛出。
+    func removeAvatarFiles(atPaths paths: [String]) async
 }
 
 protocol FeedbackRealtimeService {
@@ -50,6 +58,8 @@ protocol HouseholdRoutingService {
     func renameHousehold(householdId: UUID, newName: String) async throws
     func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold]
     func disbandHousehold(id: UUID, expectedName: String) async throws
+    /// 解散家庭前清理该家庭下全部反馈语音；失败不抛出。
+    func cleanUpHouseholdFeedbackAudios(householdId: UUID) async
 }
 
 enum HouseholdRoutingError: LocalizedError {
@@ -74,11 +84,13 @@ enum HouseholdRoutingError: LocalizedError {
 
 struct SupabaseAuthService: AuthService {
     private let provider: SupabaseClientProviding
+    private let avatarStorageService: AvatarStorageService
     /// 必须与 `supabase/config.toml` 中 `[auth].additional_redirect_urls` 完全一致。
     private let magicLinkRedirectURL = URL(string: "aifamily://auth-callback")
 
-    init(provider: SupabaseClientProviding) {
+    init(provider: SupabaseClientProviding, avatarStorageService: AvatarStorageService) {
         self.provider = provider
+        self.avatarStorageService = avatarStorageService
     }
 
     func signInWithApple(
@@ -223,9 +235,114 @@ struct SupabaseAuthService: AuthService {
         return false
         #endif
     }
+
+    func cleanUpCurrentUserAvatars() async {
+        #if canImport(Supabase)
+        do {
+            let userId = try await provider.client.auth.session.user.id
+            await cleanUpUserAvatars(userId: userId)
+        } catch {
+            print("⚠️ 清理用户头像失败（无法读取会话）: \(error)")
+        }
+        #endif
+    }
+
+    func cleanUpProfileAvatar(profileId: UUID) async {
+        #if canImport(Supabase)
+        do {
+            let rows: [ProfileAvatarRow] = try await provider.client
+                .from("family_profiles")
+                .select("avatar_url")
+                .eq("id", value: profileId.uuidString)
+                .limit(1)
+                .execute()
+                .value
+
+            let paths = rows.compactMap { row in
+                SupabaseStoragePathHelper.objectPath(
+                    inBucket: SupabaseStorageBucket.avatars,
+                    fromStoredValue: row.avatarUrl
+                )
+            }
+            await avatarStorageService.removeAvatarFiles(atPaths: paths)
+        } catch {
+            print("⚠️ 清理成员档案头像失败: \(error)")
+        }
+        #else
+        _ = profileId
+        #endif
+    }
+
+    private func cleanUpUserAvatars(userId: UUID) async {
+        #if canImport(Supabase)
+        do {
+            let rows: [ProfileAvatarRow] = try await provider.client
+                .from("family_profiles")
+                .select("avatar_url")
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+                .value
+
+            let paths = rows.compactMap { row in
+                SupabaseStoragePathHelper.objectPath(
+                    inBucket: SupabaseStorageBucket.avatars,
+                    fromStoredValue: row.avatarUrl
+                )
+            }
+            guard paths.isEmpty == false else { return }
+            await avatarStorageService.removeAvatarFiles(atPaths: paths)
+            print("✅ 成功清理了 \(paths.count) 个用户头像文件")
+        } catch {
+            print("⚠️ 清理用户头像失败: \(error)")
+        }
+        #else
+        _ = userId
+        #endif
+    }
 }
 
 // MARK: - Voice Storage
+
+private enum SupabaseStorageBucket {
+    static let voiceFeedbacks = "voice-feedbacks"
+    static let avatars = "avatars"
+}
+
+enum SupabaseStoragePathHelper {
+    /// 将 DB 中存的 public URL 或相对路径解析为 Storage `remove(paths:)` 所需的对象路径。
+    static func objectPath(inBucket bucket: String, fromStoredValue value: String?) -> String? {
+        guard let raw = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              raw.isEmpty == false else {
+            return nil
+        }
+
+        if raw.contains("://") == false {
+            return raw
+        }
+
+        guard let url = URL(string: raw) else { return nil }
+        let path = url.path
+        let markers = [
+            "/object/public/\(bucket)/",
+            "/storage/v1/object/public/\(bucket)/"
+        ]
+        for marker in markers {
+            if let range = path.range(of: marker) {
+                let objectPath = String(path[range.upperBound...])
+                return objectPath.removingPercentEncoding ?? objectPath
+            }
+        }
+        return nil
+    }
+}
+
+private struct ProfileAvatarRow: Decodable {
+    let avatarUrl: String?
+}
+
+private struct FeedbackVoiceUrlRow: Decodable {
+    let voiceUrl: String?
+}
 
 struct SupabaseVoiceStorageService: VoiceStorageService {
     private let provider: SupabaseClientProviding
@@ -256,6 +373,23 @@ struct SupabaseVoiceStorageService: VoiceStorageService {
         _ = data
         _ = fileName
         throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func removeVoiceFiles(atPaths paths: [String]) async {
+        #if canImport(Supabase)
+        let uniquePaths = Array(Set(paths.filter { $0.isEmpty == false }))
+        guard uniquePaths.isEmpty == false else { return }
+        do {
+            _ = try await provider.client.storage
+                .from(bucket)
+                .remove(paths: uniquePaths)
+            print("✅ 成功清理了 \(uniquePaths.count) 条反馈语音文件")
+        } catch {
+            print("⚠️ 清理反馈语音文件失败（可忽略）: \(error)")
+        }
+        #else
+        _ = paths
         #endif
     }
 }
@@ -289,6 +423,23 @@ struct SupabaseAvatarStorageService: AvatarStorageService {
         _ = data
         _ = fileName
         throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func removeAvatarFiles(atPaths paths: [String]) async {
+        #if canImport(Supabase)
+        let uniquePaths = Array(Set(paths.filter { $0.isEmpty == false }))
+        guard uniquePaths.isEmpty == false else { return }
+        do {
+            _ = try await provider.client.storage
+                .from(bucket)
+                .remove(paths: uniquePaths)
+            print("✅ 成功清理了 \(uniquePaths.count) 个头像文件")
+        } catch {
+            print("⚠️ 清理头像文件失败（可忽略）: \(error)")
+        }
+        #else
+        _ = paths
         #endif
     }
 }
@@ -374,9 +525,11 @@ struct SupabaseInviteLinkService: InviteLinkService {
 
 struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
     private let provider: SupabaseClientProviding
+    private let voiceStorageService: VoiceStorageService
 
-    init(provider: SupabaseClientProviding) {
+    init(provider: SupabaseClientProviding, voiceStorageService: VoiceStorageService) {
         self.provider = provider
+        self.voiceStorageService = voiceStorageService
     }
 
     func createHousehold(displayName: String) async throws -> UUID {
@@ -503,6 +656,32 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         return try SupabaseCodec.makeDecoder().decode([JoinedHousehold].self, from: rawResponse.data)
         #else
         throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func cleanUpHouseholdFeedbackAudios(householdId: UUID) async {
+        #if canImport(Supabase)
+        do {
+            let records: [FeedbackVoiceUrlRow] = try await provider.client
+                .from("feedbacks")
+                .select("voice_url")
+                .eq("household_id", value: householdId.uuidString)
+                .execute()
+                .value
+
+            let paths = records.compactMap { row in
+                SupabaseStoragePathHelper.objectPath(
+                    inBucket: SupabaseStorageBucket.voiceFeedbacks,
+                    fromStoredValue: row.voiceUrl
+                )
+            }
+
+            await voiceStorageService.removeVoiceFiles(atPaths: paths)
+        } catch {
+            print("⚠️ 清理家庭语音记录失败（可忽略，不阻断后续解散流程）: \(error)")
+        }
+        #else
+        _ = householdId
         #endif
     }
 

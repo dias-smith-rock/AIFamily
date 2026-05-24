@@ -230,7 +230,11 @@ struct LoginView: View {
                 return
             }
 
-            let auth = SupabaseAuthService(provider: SupabaseProvider())
+            let provider = SupabaseProvider()
+            let auth = SupabaseAuthService(
+                provider: provider,
+                avatarStorageService: SupabaseAvatarStorageService(provider: provider)
+            )
             do {
                 try await auth.signInWithApple(
                     idToken: idTokenString,

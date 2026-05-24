@@ -82,6 +82,7 @@ final class FamilyViewModel: ObservableObject {
         #endif
 
         do {
+            await householdRoutingService.cleanUpHouseholdFeedbackAudios(householdId: householdId)
             try await householdRoutingService.disbandHousehold(
                 id: householdId,
                 expectedName: trimmedInputForRPC
@@ -573,6 +574,11 @@ final class FamilyViewModel: ObservableObject {
             #endif
             return nil
         }
+    }
+
+    /// 删除托管成员档案前清理 Storage 头像；失败不阻断后续数据库操作。
+    func cleanUpStoredAvatar(for profileId: UUID) async {
+        await authService.cleanUpProfileAvatar(profileId: profileId)
     }
 
     func canEditProfile(_ profile: FamilyProfile?) -> Bool {

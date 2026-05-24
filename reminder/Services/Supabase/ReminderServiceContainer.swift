@@ -14,17 +14,25 @@ struct ReminderServiceContainer {
 
     static func live() -> ReminderServiceContainer {
         let provider = SupabaseProvider()
+        let voiceStorageService = SupabaseVoiceStorageService(provider: provider)
+        let avatarStorageService = SupabaseAvatarStorageService(provider: provider)
         return ReminderServiceContainer(
             taskService: SupabaseTaskDataService(provider: provider),
             feedbackService: SupabaseFeedbackDataService(provider: provider),
             membershipService: SupabaseHouseholdMembershipDataService(provider: provider),
             familyProfileService: SupabaseFamilyProfileDataService(provider: provider),
-            authService: SupabaseAuthService(provider: provider),
-            voiceStorageService: SupabaseVoiceStorageService(provider: provider),
-            avatarStorageService: SupabaseAvatarStorageService(provider: provider),
+            authService: SupabaseAuthService(
+                provider: provider,
+                avatarStorageService: avatarStorageService
+            ),
+            voiceStorageService: voiceStorageService,
+            avatarStorageService: avatarStorageService,
             feedbackRealtimeService: SupabaseFeedbackRealtimeService(provider: provider),
             inviteLinkService: SupabaseInviteLinkService(),
-            householdRoutingService: SupabaseHouseholdRoutingService(provider: provider)
+            householdRoutingService: SupabaseHouseholdRoutingService(
+                provider: provider,
+                voiceStorageService: voiceStorageService
+            )
         )
     }
 

@@ -231,6 +231,12 @@ actor MockAuthService: AuthService {
     func hasValidSession() async -> Bool {
         true
     }
+
+    func cleanUpCurrentUserAvatars() async {}
+
+    func cleanUpProfileAvatar(profileId: UUID) async {
+        _ = profileId
+    }
 }
 
 actor MockVoiceStorageService: VoiceStorageService {
@@ -238,12 +244,20 @@ actor MockVoiceStorageService: VoiceStorageService {
         _ = data
         return URL(string: "https://example.com/voice/\(fileName)") ?? URL(fileURLWithPath: "/tmp/\(fileName)")
     }
+
+    func removeVoiceFiles(atPaths paths: [String]) async {
+        _ = paths
+    }
 }
 
 actor MockAvatarStorageService: AvatarStorageService {
     func uploadAvatarImage(data: Data, fileName: String) async throws -> URL {
         _ = data
         return URL(string: "https://example.com/avatar/\(fileName)") ?? URL(fileURLWithPath: "/tmp/\(fileName)")
+    }
+
+    func removeAvatarFiles(atPaths paths: [String]) async {
+        _ = paths
     }
 }
 
@@ -288,5 +302,9 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
     func disbandHousehold(id: UUID, expectedName: String) async throws {
         _ = id
         _ = expectedName
+    }
+
+    func cleanUpHouseholdFeedbackAudios(householdId: UUID) async {
+        _ = householdId
     }
 }

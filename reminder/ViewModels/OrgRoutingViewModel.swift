@@ -99,6 +99,7 @@ final class OrgRoutingViewModel: ObservableObject {
         do {
             // 预留：接入 delete-account Edge Function / RPC 后在此调用
             // try await supabase.functions.invoke("delete-account")
+            await authService.cleanUpCurrentUserAvatars()
             try await authService.signOut()
             await appRouter.refreshStateFromBackend()
             return true
