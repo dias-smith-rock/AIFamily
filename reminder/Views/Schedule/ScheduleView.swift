@@ -462,20 +462,7 @@ struct TaskModeDayView: View {
     }
 
     private func assigneeLabel(for task: FamilyTask) -> String {
-        if task.involvesWholeHousehold {
-            return "所有人"
-        }
-        guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
-            return "所有人"
-        }
-        let memberById = Dictionary(uniqueKeysWithValues: viewModel.householdMembers.map { ($0.id, $0) })
-        let names = ids.compactMap { id in memberById[id]?.nickname }
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { $0.isEmpty == false }
-        if names.isEmpty {
-            return ids.count == 1 ? "成员" : "\(ids.count) 人"
-        }
-        return names.joined(separator: "、")
+        viewModel.assigneeLabel(for: task)
     }
 }
 

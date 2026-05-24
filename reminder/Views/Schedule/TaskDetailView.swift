@@ -380,7 +380,7 @@ struct TaskDetailView: View {
                         .frame(width: 52, height: 52)
                         .clipShape(Circle())
                 } else {
-                    Text(profileInitials(profile.name))
+                    Text(profileInitials(profile.displayName))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(.primary)
                 }
@@ -399,14 +399,14 @@ struct TaskDetailView: View {
                     .frame(width: 56, height: 56)
             }
 
-            Text(profile.name)
+            Text(profile.displayName)
                 .font(.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .frame(maxWidth: 72)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(profile.name)
+        .accessibilityLabel(profile.displayName)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -831,49 +831,22 @@ struct TaskDetailView: View {
 
     @MainActor
     private func refreshAssigneeLine() async {
-        if task.involvesWholeHousehold {
-            assigneeLine = "所有人"
-            return
-        }
-        guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
-            assigneeLine = "所有人"
-            return
-        }
-        let householdId = appRouter.selectedHouseholdId ?? task.householdId
-
-        #if canImport(Supabase)
-        do {
-            let members: [HouseholdMembership] = try await SupabaseManager.shared.client
-                .from("household_memberships")
-                .select()
-                .eq("household_id", value: householdId.uuidString)
-                .eq("status", value: MembershipStatus.active.rawValue)
-                .order("created_at", ascending: true)
-                .execute()
-                .value
-
-            let names = ids.compactMap { id in members.first(where: { $0.id == id })?.nickname }
-            if names.isEmpty {
-                assigneeLine = assigneeDisplayNameFallback
-            } else {
-                assigneeLine = names.joined(separator: "、")
-            }
-        } catch {
-            assigneeLine = assigneeDisplayNameFallback
-        }
-        #else
-        assigneeLine = assigneeDisplayNameFallback
-        #endif
+        assigneeLine = scheduleViewModel.assigneeLabel(for: task)
     }
 
     @MainActor
     private func loadForWhomProfiles() async {
+        if scheduleViewModel.familyProfiles.isEmpty == false {
+            forWhomProfiles = scheduleViewModel.familyProfiles
+            return
+        }
+
         let householdId = appRouter.selectedHouseholdId ?? task.householdId
         #if canImport(Supabase)
         do {
             let rows: [FamilyProfile] = try await SupabaseManager.shared.client
                 .from("family_profiles")
-                .select("id,household_id,name,user_id,avatar_url")
+                .select("*, memberships:household_memberships!profile_id(*)")
                 .eq("household_id", value: householdId.uuidString)
                 .order("created_at", ascending: true)
                 .execute()

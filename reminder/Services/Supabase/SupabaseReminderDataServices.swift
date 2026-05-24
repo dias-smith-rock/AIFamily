@@ -302,6 +302,25 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         #endif
     }
 
+    func fetchProfile(id: UUID) async throws -> FamilyProfile? {
+        #if canImport(Supabase)
+        #if DEBUG
+        print("🔎 [FamilyDebug] fetchProfile start — profile_id=\(id.uuidString)")
+        #endif
+        let rawResponse = try await provider.client
+            .from(SupabaseTable.familyProfiles)
+            .select(Self.selectProfilesWithMemberships)
+            .eq("id", value: id.uuidString)
+            .limit(1)
+            .execute()
+        let rows = try SupabaseCodec.makeDecoder().decode([FamilyProfile].self, from: rawResponse.data)
+        return rows.first
+        #else
+        _ = id
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
     func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async throws {
         #if canImport(Supabase)
         struct ProfileWriteRow: Encodable {

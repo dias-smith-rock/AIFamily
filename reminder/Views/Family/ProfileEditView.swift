@@ -47,7 +47,7 @@ struct ProfileEditView: View {
         self.onSave = onSave
 
         let profile = mode.profile
-        _name = State(initialValue: profile?.name ?? "")
+        _name = State(initialValue: Self.initialNameFieldValue(for: profile))
         _gender = State(initialValue: ProfileDraftGender(databaseValue: profile?.gender))
         if let rawBirthDate = profile?.birthDate,
            let date = Self.birthDateFormatter.date(from: rawBirthDate) {
@@ -319,6 +319,14 @@ struct ProfileEditView: View {
         let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return nil }
         return Double(trimmed)
+    }
+
+    private static func initialNameFieldValue(for profile: FamilyProfile?) -> String {
+        guard let profile else { return "" }
+        if let nickname = profile.membershipNickname {
+            return nickname
+        }
+        return profile.name
     }
 
     private static let birthDateFormatter: DateFormatter = {

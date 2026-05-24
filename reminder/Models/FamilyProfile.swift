@@ -231,7 +231,29 @@ extension FamilyProfile {
         }
     }
 
-    /// 档案上填写的联系邮箱；列表主行在无有效称呼时用作兜底展示（有称呼时由 `FamilyView.displayTitleForRow` 返回 `nil` 以使用 `name`）。
+    /// 当前组织内的 membership 昵称（嵌套或合并后）。
+    var membershipNickname: String? {
+        let trimmed = primaryMembership?.nickname.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// `family_profiles.name` 档案全局名。
+    var profileName: String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false, trimmed != "未命名成员" else { return nil }
+        return trimmed
+    }
+
+    /// 列表 / 卡片统一展示名：有 membership → `nickname`；无 membership（档案成员）→ `name`。
+    var displayName: String {
+        MemberDisplayName.displayName(for: self, membership: primaryMembership)
+    }
+
+    func displayName(resolvingMembership membership: HouseholdMembership?) -> String {
+        MemberDisplayName.displayName(for: self, membership: membership)
+    }
+
+    /// 档案上填写的联系邮箱；用于副标题等，不参与主展示名。
     var profileEmailForDisplay: String? {
         let trimmed = email?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard trimmed.isEmpty == false else { return nil }

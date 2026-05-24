@@ -26,6 +26,8 @@ protocol HouseholdMembershipDataService {
 
 protocol FamilyProfileDataService {
     func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile]
+    /// 按 `family_profiles.id` 拉取单行（含嵌套 `household_memberships!profile_id`）。
+    func fetchProfile(id: UUID) async throws -> FamilyProfile?
     func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async throws
     func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws
 }

@@ -2,6 +2,7 @@ import Foundation
 
 // MARK: - 2. 家庭成员关系 (HouseholdMembership)
 /// `userId` 为空表示影子成员（未注册账号、由管理员代建）。
+/// 组织内展示名使用 `nickname`（千组织千面）；全局档案名见关联的 `family_profiles.name`。
 struct HouseholdMembership: Identifiable, Codable, Equatable {
     let id: UUID
     let householdId: UUID
@@ -10,10 +11,6 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
     var profileId: UUID?
     var role: MembershipRole
     var nickname: String
-    var avatarUrl: String?
-    var contactMethod: ContactMethod
-    var phoneNumber: String?
-    var email: String?
     var status: MembershipStatus
     var joinedAt: Date?
     let createdAt: Date
@@ -26,10 +23,6 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         profileId: UUID? = nil,
         role: MembershipRole,
         nickname: String,
-        avatarUrl: String?,
-        contactMethod: ContactMethod,
-        phoneNumber: String?,
-        email: String?,
         status: MembershipStatus,
         joinedAt: Date?,
         createdAt: Date,
@@ -41,10 +34,6 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         self.profileId = profileId
         self.role = role
         self.nickname = nickname
-        self.avatarUrl = avatarUrl
-        self.contactMethod = contactMethod
-        self.phoneNumber = phoneNumber
-        self.email = email
         self.status = status
         self.joinedAt = joinedAt
         self.createdAt = createdAt
@@ -60,10 +49,6 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         case profileId
         case role
         case nickname
-        case avatarUrl
-        case contactMethod
-        case phoneNumber
-        case email
         case status
         case joinedAt
         case createdAt
@@ -78,10 +63,6 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         profileId = try Self.decodeOptionalUUID(container: container, key: .profileId)
         role = try container.decode(MembershipRole.self, forKey: .role)
         nickname = try container.decode(String.self, forKey: .nickname)
-        avatarUrl = try container.decodeIfPresent(String.self, forKey: .avatarUrl)
-        contactMethod = try container.decode(ContactMethod.self, forKey: .contactMethod)
-        phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
-        email = try container.decodeIfPresent(String.self, forKey: .email)
         status = try container.decode(MembershipStatus.self, forKey: .status)
         joinedAt = try Self.decodeOptionalDate(container: container, key: .joinedAt)
         createdAt = try Self.decodeRequiredDate(container: container, key: .createdAt)
@@ -96,10 +77,6 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(profileId, forKey: .profileId)
         try container.encode(role, forKey: .role)
         try container.encode(nickname, forKey: .nickname)
-        try container.encodeIfPresent(avatarUrl, forKey: .avatarUrl)
-        try container.encode(contactMethod, forKey: .contactMethod)
-        try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
-        try container.encodeIfPresent(email, forKey: .email)
         try container.encode(status, forKey: .status)
         try container.encodeIfPresent(joinedAt.map(Self.formatDateForEncoding), forKey: .joinedAt)
         try container.encode(Self.formatDateForEncoding(createdAt), forKey: .createdAt)
@@ -183,4 +160,21 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         formatter.timeZone = TimeZone(secondsFromGMT: 0)
         return formatter
     }()
+}
+
+extension HouseholdMembership {
+    /// 有 membership 时优先 `nickname`；否则回退关联档案的 `name`。
+    func displayName(linkedProfile: FamilyProfile?) -> String {
+        let trimmedNickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedNickname.isEmpty == false {
+            return trimmedNickname
+        }
+        if let linkedProfile {
+            let profileName = linkedProfile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if profileName.isEmpty == false, profileName != "未命名成员" {
+                return profileName
+            }
+        }
+        return MemberDisplayName.unknownFallback
+    }
 }

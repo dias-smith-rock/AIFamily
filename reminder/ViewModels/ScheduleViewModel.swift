@@ -326,6 +326,26 @@ final class ScheduleViewModel: ObservableObject {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
+    func assigneeLabel(for task: FamilyTask) -> String {
+        if task.involvesWholeHousehold {
+            return "所有人"
+        }
+        guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
+            return "所有人"
+        }
+        let names = ids.compactMap { id in
+            MemberDisplayName.displayName(
+                forMembershipId: id,
+                members: householdMembers,
+                profiles: familyProfiles
+            )
+        }
+        if names.isEmpty {
+            return ids.count == 1 ? "成员" : "\(ids.count) 人"
+        }
+        return names.joined(separator: "、")
+    }
+
     func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {
         let ids = orderedTargetProfileIDs(for: task)
         guard ids.isEmpty == false else { return [] }
@@ -334,7 +354,7 @@ final class ScheduleViewModel: ObservableObject {
             guard let profile = profileById[id] else { return nil }
             return TaskCardAvatarSource(
                 id: profile.id,
-                displayName: profile.name,
+                displayName: profile.displayName,
                 imageURL: profile.avatarUrl.flatMap { URL(string: $0) }
             )
         }

@@ -214,7 +214,7 @@ struct FamilyView: View {
                     if let creator = creatorProfile {
                         FamilyMemberRowView(
                             profile: creator,
-                            displayTitle: displayTitleForRow(creator),
+                            membership: resolvedMembership(for: creator),
                             subtitle: memberListSubtitle(for: creator),
                             isLocalProfile: creator.isLocalProfile,
                             prominentRole: prominentListRole(for: creator),
@@ -233,7 +233,7 @@ struct FamilyView: View {
                     ForEach(membersExcludingCreator) { profile in
                         FamilyMemberRowView(
                             profile: profile,
-                            displayTitle: displayTitleForRow(profile),
+                            membership: resolvedMembership(for: profile),
                             subtitle: memberListSubtitle(for: profile),
                             isLocalProfile: profile.isLocalProfile,
                             prominentRole: prominentListRole(for: profile),
@@ -411,42 +411,31 @@ struct FamilyView: View {
         profile.primaryMembership ?? viewModel.membership(for: profile)
     }
 
-    /// 列表主行「覆盖标题」：仅当 **没有有效称呼** 时用邮箱作为主展示；有称呼时返回 `nil`，由 `FamilyMemberRowView` 使用 `profile.name`。
-    private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
-        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty == false, trimmedName != "未命名成员" {
-            return nil
-        }
-        if let fromProfile = profile.profileEmailForDisplay {
-            return fromProfile
-        }
-        guard profile.userId != nil else { return nil }
-        let email = resolvedMembership(for: profile)?.email?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return email.isEmpty ? nil : email
-    }
-
     private func rawPhoneForList(for profile: FamilyProfile) -> String? {
-        if let fromProfile = profile.profileMainPhoneForDisplay {
-            return fromProfile
-        }
-        let raw = resolvedMembership(for: profile)?.phoneNumber?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return raw.isEmpty ? nil : raw
+        profile.profileMainPhoneForDisplay
     }
 
-    /// 列表第二行：创建者/管理员已在行内胶囊展示，此处留空；普通成员显示「成员」。
+    /// 列表第二行：角色说明或档案联系邮箱。
     private func memberListSubtitle(for profile: FamilyProfile) -> String {
         let membership = resolvedMembership(for: profile)
         guard let membership else {
-            return profile.isLocalProfile ? "" : "家庭成员"
+            return profile.isLocalProfile ? contactSubtitleLine(for: profile) : "家庭成员"
         }
         switch membership.role {
         case .creator, .admin:
-            return ""
+            return contactSubtitleLine(for: profile)
         case .member:
             return membership.role.displayTitle
         }
+    }
+
+    private func contactSubtitleLine(for profile: FamilyProfile) -> String {
+        let email = profile.profileEmailForDisplay ?? ""
+        let title = profile.displayName(resolvingMembership: resolvedMembership(for: profile))
+        if email.isEmpty == false, email == title {
+            return ""
+        }
+        return email
     }
 
     /// 行内显著角色：创建者优先于管理员；普通成员不展示胶囊。

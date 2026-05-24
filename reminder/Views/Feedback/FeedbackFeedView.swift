@@ -211,7 +211,11 @@ private struct FeedbackCardView: View {
 
     private var senderName: String {
         guard let senderId = feedback.senderId else { return "系统" }
-        return HouseholdMembership.mockMembers.first(where: { $0.id == senderId })?.nickname ?? "系统"
+        return MemberDisplayName.displayName(
+            forMembershipId: senderId,
+            members: HouseholdMembership.mockMembers,
+            profiles: FamilyProfile.mockProfiles
+        ) ?? "系统"
     }
 
     private var taskScheduledAt: Date? {

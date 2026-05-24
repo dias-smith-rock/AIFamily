@@ -3,8 +3,8 @@ import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
-    /// 主标题行覆盖文案：为 `nil` 或空时使用 `profile.name`；仅当无有效称呼时上层传入邮箱等作为主标题。
-    var displayTitle: String? = nil
+    /// 扁平 `members` 解析出的身份行；嵌套 `profile.memberships` 缺失时用于展示 `nickname`。
+    var membership: HouseholdMembership? = nil
     /// 第二行说明：与行内角色胶囊互补（创建者/管理员不再重复占一行）。
     let subtitle: String
     /// 当前行是否为 **档案成员**（无 `household_memberships` 关联）；与手机号、`user_id` 无关。
@@ -32,14 +32,11 @@ struct FamilyMemberRowView: View {
     }
 
     private var mainTitle: String {
-        if let displayTitle, displayTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
-            return displayTitle
-        }
-        return profile.name
+        profile.displayName(resolvingMembership: membership)
     }
 
     private var initialCharacter: String {
-        let trimmed = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = mainTitle.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let first = trimmed.first else { return "?" }
         return String(first)
     }

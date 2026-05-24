@@ -304,14 +304,8 @@ struct MineView: View {
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.displayName
         }
-        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty == false, trimmedName != "未命名成员" {
-            return trimmedName
-        }
-        if let fromRow = displayTitleForRow(profile), fromRow.isEmpty == false {
-            return fromRow
-        }
-        return viewModel.displayName
+        let membership = familyViewModel.membership(for: profile)
+        return profile.displayName(resolvingMembership: membership)
     }
 
     private var mineHeaderSubtitle: String {
@@ -322,15 +316,7 @@ struct MineView: View {
         if roleLine.isEmpty == false {
             return roleLine
         }
-        if let mail = profile.profileEmailForDisplay {
-            return mail
-        }
-        let membershipMail = resolvedMembership(for: profile)?.email?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if membershipMail.isEmpty == false {
-            return membershipMail
-        }
-        return viewModel.email
+        return profile.profileEmailForDisplay ?? viewModel.email
     }
 
     private func openSelfProfileEditor() {
@@ -393,7 +379,8 @@ struct MineView: View {
     }
 
     private func mineAvatarFallback(for profile: FamilyProfile) -> some View {
-        let initial = profile.name.trimmingCharacters(in: .whitespacesAndNewlines).first.map(String.init) ?? "?"
+        let membership = familyViewModel.membership(for: profile)
+        let initial = profile.displayName(resolvingMembership: membership).first.map(String.init) ?? "?"
         return Text(initial)
             .font(.title3.weight(.bold))
             .foregroundStyle(.white)
@@ -403,20 +390,6 @@ struct MineView: View {
 
     private func resolvedMembership(for profile: FamilyProfile) -> HouseholdMembership? {
         profile.primaryMembership ?? familyViewModel.membership(for: profile)
-    }
-
-    private func displayTitleForRow(_ profile: FamilyProfile) -> String? {
-        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty == false, trimmedName != "未命名成员" {
-            return nil
-        }
-        if let fromProfile = profile.profileEmailForDisplay {
-            return fromProfile
-        }
-        guard profile.userId != nil else { return nil }
-        let email = resolvedMembership(for: profile)?.email?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return email.isEmpty ? nil : email
     }
 
     private func memberListSubtitle(for profile: FamilyProfile) -> String {
@@ -436,15 +409,7 @@ struct MineView: View {
     }
 
     private func contactSubtitleLine(for profile: FamilyProfile) -> String {
-        if let mail = profile.profileEmailForDisplay {
-            return mail
-        }
-        let membershipMail = resolvedMembership(for: profile)?.email?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if membershipMail.isEmpty == false {
-            return membershipMail
-        }
-        return ""
+        profile.profileEmailForDisplay ?? ""
     }
 
     private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {

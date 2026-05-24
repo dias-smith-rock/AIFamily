@@ -511,10 +511,10 @@ extension SupabaseHouseholdRoutingService {
 
     fileprivate func createHouseholdViaRPC(client: SupabaseClient, normalizedName: String) async throws -> UUID {
         let params = CreateHouseholdWithCreatorParams(pName: normalizedName)
-        Self.debugLogHouseholdInsertPayload(params, label: "rpc create_household_with_creator")
+        Self.debugLogHouseholdInsertPayload(params, label: "rpc create_household_with_membership")
 
         let response = try await client
-            .rpc("create_household_with_creator", params: params)
+            .rpc("create_household_with_membership", params: params)
             .execute()
 
         #if DEBUG
@@ -615,10 +615,6 @@ extension SupabaseHouseholdRoutingService {
                 profileId: profileId,
                 role: .creator,
                 nickname: nickname,
-                avatarUrl: nil,
-                contactMethod: .appPush,
-                phoneNumber: nil,
-                email: nil,
                 status: .active,
                 joinedAt: now,
                 createdAt: now,
@@ -789,7 +785,7 @@ private func mapCreateHouseholdFlowError(_ error: Error) -> Error {
 
 private func isMissingCreateHouseholdRPCError(_ error: Error) -> Bool {
     let message = error.localizedDescription.lowercased()
-    return message.contains("create_household_with_creator")
+    return message.contains("create_household_with_membership")
         && (message.contains("function") || message.contains("does not exist") || message.contains("42883"))
 }
 #endif

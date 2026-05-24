@@ -917,12 +917,12 @@ struct CreateTaskView: View {
         do {
             profiles = try await SupabaseManager.shared.client
                 .from("family_profiles")
-                .select("id,household_id,name,user_id,avatar_url")
+                .select("*, memberships:household_memberships!profile_id(*)")
                 .eq("household_id", value: householdId.uuidString)
                 .order("created_at", ascending: true)
                 .execute()
                 .value
-            let summary = profiles.map { "\($0.name)(\($0.id.uuidString.prefix(8)))" }.joined(separator: "; ")
+            let summary = profiles.map { "\($0.displayName)(\($0.id.uuidString.prefix(8)))" }.joined(separator: "; ")
             forWhomDebugLog("family_profiles OK count=\(profiles.count) rows=[\(summary)]")
         } catch {
             forWhomDebugLog(
@@ -930,17 +930,19 @@ struct CreateTaskView: View {
             )
         }
 
+        let mergedProfiles = FamilyProfile.mergingMembershipRows(profiles, memberships: members)
+
         assignees = members.map { member in
             AssigneeOption(
                 id: member.id,
-                name: member.nickname,
+                name: MemberDisplayName.displayName(for: member, profiles: mergedProfiles),
                 hasRegisteredAccount: member.userId != nil
             )
         }
-        forWhomProfileOptions = profiles.map { profile in
+        forWhomProfileOptions = mergedProfiles.map { profile in
             AssigneeOption(
                 id: profile.id,
-                name: profile.name,
+                name: profile.displayName,
                 hasRegisteredAccount: profile.userId != nil
             )
         }

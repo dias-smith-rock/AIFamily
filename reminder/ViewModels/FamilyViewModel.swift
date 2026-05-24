@@ -107,6 +107,7 @@ final class FamilyViewModel: ObservableObject {
             profiles = cachedPayload.profiles
             let fromEmbed = FamilyProfile.uniqueMembershipsFlattened(from: profiles)
             members = fromEmbed.isEmpty ? cachedPayload.members : fromEmbed
+            attachMembershipsFromFlatMembers()
             sortProfilesForDisplay()
             applyLocalOrdering()
             errorMessage = nil
@@ -130,7 +131,8 @@ final class FamilyViewModel: ObservableObject {
             async let profileRows = profileService.fetchProfiles(in: householdId)
             async let membershipRows = membershipService.fetchMemberships(in: householdId)
             let (rawProfiles, rawMemberships) = try await (profileRows, membershipRows)
-            let p = FamilyProfile.mergingMembershipRows(rawProfiles, memberships: rawMemberships)
+            var p = FamilyProfile.mergingMembershipRows(rawProfiles, memberships: rawMemberships)
+            await hydrateCreatorProfileIfNeeded(memberships: rawMemberships, into: &p)
             profiles = p
             sortProfilesForDisplay()
             let embedded = FamilyProfile.uniqueMembershipsFlattened(from: p)
@@ -148,6 +150,7 @@ final class FamilyViewModel: ObservableObject {
                 return lhs.createdAt < rhs.createdAt
             }
             members = combined
+            attachMembershipsFromFlatMembers()
             applyLocalOrdering()
             let snapshot = FamilyMembersCachePayload(profiles: profiles, members: members)
             LocalCacheManager.shared.save(snapshot, forKey: cacheKey)
@@ -167,6 +170,44 @@ final class FamilyViewModel: ObservableObject {
             if ns.domain.isEmpty == false || ns.code != 0 {
                 print("   nsError domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
             }
+            #endif
+        }
+    }
+
+    /// 将扁平 `members` 合并回档案，保证 `displayName` 能读到 `household_memberships.nickname`。
+    private func attachMembershipsFromFlatMembers() {
+        profiles = FamilyProfile.mergingMembershipRows(profiles, memberships: members)
+        if orderedProfiles.isEmpty == false {
+            orderedProfiles = FamilyProfile.mergingMembershipRows(orderedProfiles, memberships: members)
+        }
+    }
+
+    /// 创建者行必须展示 `family_profiles` 完整档案：按 creator membership 的 `profile_id` 再拉一次单行并合并身份。
+    private func hydrateCreatorProfileIfNeeded(
+        memberships: [HouseholdMembership],
+        into profiles: inout [FamilyProfile]
+    ) async {
+        guard let creatorMembership = memberships.first(where: { $0.role == .creator && $0.status == .active }) else {
+            return
+        }
+        let profileId = creatorMembership.profileId
+            ?? profiles.first(where: { $0.userId == creatorMembership.userId })?.id
+        guard let profileId else { return }
+
+        do {
+            guard let fetched = try await profileService.fetchProfile(id: profileId) else { return }
+            let merged = FamilyProfile.mergingMembershipRows([fetched], memberships: memberships).first ?? fetched
+            if let index = profiles.firstIndex(where: { $0.id == profileId }) {
+                profiles[index] = merged
+            } else {
+                profiles.append(merged)
+            }
+            #if DEBUG
+            print("✅ [FamilyDebug] hydrateCreatorProfile — profile_id=\(profileId.uuidString) name=\"\(merged.name)\"")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ [FamilyDebug] hydrateCreatorProfile failed — profile_id=\(profileId.uuidString) error=\(error.localizedDescription)")
             #endif
         }
     }
@@ -232,9 +273,8 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func updateProfile(_ profile: FamilyProfile, draft: LocalProfileDraft) async -> String? {
-        var normalizedDraft = draft
-        normalizedDraft.name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalizedDraft.name.isEmpty == false else {
+        let trimmedDisplayName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedDisplayName.isEmpty == false else {
             return "称呼不能为空。"
         }
 
@@ -242,30 +282,59 @@ final class FamilyViewModel: ObservableObject {
             return "当前没有权限修改该成员资料。"
         }
 
+        let linkedMembership = membership(for: profile)
+        var profileDraft = draft
+        profileDraft.name = profile.name
+
         do {
-            try await profileService.updateProfile(profileId: profile.id, draft: normalizedDraft)
+            if let linkedMembership {
+                var updatedMembership = linkedMembership
+                updatedMembership.nickname = trimmedDisplayName
+                _ = try await membershipService.updateMembership(updatedMembership)
+            } else {
+                profileDraft.name = trimmedDisplayName
+            }
+
+            try await profileService.updateProfile(profileId: profile.id, draft: profileDraft)
+
             var updatedProfile = profile
-            updatedProfile.memberships = profile.memberships
-            updatedProfile.name = normalizedDraft.name
-            updatedProfile.avatarUrl = normalizedDraft.avatarURL
-            updatedProfile.gender = normalizedDraft.gender
-            updatedProfile.birthDate = normalizedDraft.birthDate.map { Self.profileDateFormatter.string(from: $0) }
-            updatedProfile.idCardNum = normalizedDraft.idCardNum
-            updatedProfile.passportNum = normalizedDraft.passportNum
-            updatedProfile.permitNum = normalizedDraft.permitNum
-            updatedProfile.height = normalizedDraft.height
-            updatedProfile.weight = normalizedDraft.weight
-            updatedProfile.school = normalizedDraft.school
-            updatedProfile.grade = normalizedDraft.grade
-            updatedProfile.email = normalizedDraft.email
-            updatedProfile.mainPhone = normalizedDraft.mainPhone
-            updatedProfile.secondPhone = normalizedDraft.secondPhone
+            if let linkedMembership {
+                var memberships = updatedProfile.memberships ?? []
+                if let index = memberships.firstIndex(where: { $0.id == linkedMembership.id }) {
+                    memberships[index].nickname = trimmedDisplayName
+                    updatedProfile.memberships = memberships
+                } else {
+                    var copy = linkedMembership
+                    copy.nickname = trimmedDisplayName
+                    updatedProfile.memberships = [copy]
+                }
+                if let memberIndex = members.firstIndex(where: { $0.id == linkedMembership.id }) {
+                    members[memberIndex].nickname = trimmedDisplayName
+                }
+            } else {
+                updatedProfile.name = trimmedDisplayName
+            }
+            updatedProfile.avatarUrl = profileDraft.avatarURL
+            updatedProfile.gender = profileDraft.gender
+            updatedProfile.birthDate = profileDraft.birthDate.map { Self.profileDateFormatter.string(from: $0) }
+            updatedProfile.idCardNum = profileDraft.idCardNum
+            updatedProfile.passportNum = profileDraft.passportNum
+            updatedProfile.permitNum = profileDraft.permitNum
+            updatedProfile.height = profileDraft.height
+            updatedProfile.weight = profileDraft.weight
+            updatedProfile.school = profileDraft.school
+            updatedProfile.grade = profileDraft.grade
+            updatedProfile.email = profileDraft.email
+            updatedProfile.mainPhone = profileDraft.mainPhone
+            updatedProfile.secondPhone = profileDraft.secondPhone
 
             if let index = profiles.firstIndex(where: { $0.id == updatedProfile.id }) {
                 profiles[index] = updatedProfile
             } else {
                 profiles.append(updatedProfile)
             }
+            applyLocalOrdering()
+            attachMembershipsFromFlatMembers()
             applyLocalOrdering()
             await syncBirthdayTasks(for: updatedProfile)
             errorMessage = nil
@@ -393,7 +462,7 @@ final class FamilyViewModel: ObservableObject {
         do {
             return try await inviteLinkService.generateSignedInviteLink(
                 token: token,
-                contactMethod: member.contactMethod,
+                contactMethod: .appPush,
                 expiresInSeconds: 900
             )
         } catch {
@@ -491,7 +560,7 @@ final class FamilyViewModel: ObservableObject {
                 if leftOrder != rightOrder {
                     return leftOrder < rightOrder
                 }
-                return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+                return lhs.displayName.localizedStandardCompare(rhs.displayName) == .orderedAscending
             }
 
         orderedProfiles = (me.map { [$0] } ?? []) + others
@@ -520,7 +589,7 @@ final class FamilyViewModel: ObservableObject {
             if let lJoined, let rJoined, lJoined != rJoined {
                 return lJoined < rJoined
             }
-            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+            return lhs.displayName.localizedStandardCompare(rhs.displayName) == .orderedAscending
         }
     }
 
