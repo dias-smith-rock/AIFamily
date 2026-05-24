@@ -122,7 +122,7 @@ final class OrgRoutingViewModel: ObservableObject {
             case .invalidHouseholdName:
                 return "家庭名称不能为空，请输入后再创建。"
             case .householdNameTaken:
-                return "该家庭名称已被占用，请换一个名称。"
+                return "创建家庭失败，请稍后重试。"
             case .invalidInviteCode:
                 return "邀请码格式不正确或不存在，请检查后重试。"
             case .unauthenticated:
@@ -155,10 +155,9 @@ final class OrgRoutingViewModel: ObservableObject {
         switch action {
         case .create:
             #if DEBUG
-            return error.localizedDescription
-            #else
-            return "创建家庭失败，请稍后重试。"
+            print("创建家庭失败: \(error)")
             #endif
+            return "创建家庭失败，请稍后重试。"
         case .join:
             #if DEBUG
             return error.localizedDescription

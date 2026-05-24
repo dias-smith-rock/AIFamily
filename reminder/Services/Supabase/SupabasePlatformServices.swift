@@ -386,7 +386,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             throw HouseholdRoutingError.invalidHouseholdName
         }
 
-        /// 优先 RPC；直连 insert 禁止对 `households` / `family_profiles` 使用 `.select()`（RETURNING 会触发 SELECT RLS）。
+        /// 仅校验非空后直接写入；允许同名家庭，不做前端或客户端去重查询。
         return try await createHouseholdOnBackend(normalizedName: normalizedName)
         #else
         _ = displayName
@@ -840,9 +840,6 @@ private func mapCreateHouseholdFlowError(_ error: Error) -> Error {
     let message = error.localizedDescription.lowercased()
     if isUnauthenticatedError(error) || message.contains("unauthenticated") {
         return HouseholdRoutingError.unauthenticated
-    }
-    if isHouseholdNameTakenError(error) || message.contains("household_name_taken") {
-        return HouseholdRoutingError.householdNameTaken
     }
     if message.contains("invalid_household_name") {
         return HouseholdRoutingError.invalidHouseholdName
