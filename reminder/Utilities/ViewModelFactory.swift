@@ -49,7 +49,10 @@ final class ViewModelFactory: ObservableObject {
     }
 
     func makeOrgRoutingViewModel() -> OrgRoutingViewModel {
-        OrgRoutingViewModel(householdRoutingService: services.householdRoutingService)
+        OrgRoutingViewModel(
+            householdRoutingService: services.householdRoutingService,
+            authService: services.authService
+        )
     }
 
     func makeMineViewModel() -> MineViewModel {

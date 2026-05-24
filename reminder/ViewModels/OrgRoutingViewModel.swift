@@ -9,10 +9,20 @@ final class OrgRoutingViewModel: ObservableObject {
     @Published private(set) var joinedHouseholds: [JoinedHousehold] = []
     @Published private(set) var isLoading = true
 
-    private let householdRoutingService: HouseholdRoutingService
+    @Published var showSignOutAlert = false
+    @Published var showDeleteAccountAlert = false
+    @Published var isProcessingAuth = false
+    @Published var authErrorMessage: String?
 
-    init(householdRoutingService: HouseholdRoutingService) {
+    private let householdRoutingService: HouseholdRoutingService
+    private let authService: AuthService
+
+    init(
+        householdRoutingService: HouseholdRoutingService,
+        authService: AuthService
+    ) {
         self.householdRoutingService = householdRoutingService
+        self.authService = authService
     }
 
     func fetchMyHouseholds() async {
@@ -57,6 +67,46 @@ final class OrgRoutingViewModel: ObservableObject {
             return true
         } catch {
             errorMessage = mapErrorMessage(error, action: .join)
+            return false
+        }
+    }
+
+    func signOut(appRouter: AppRouter) async -> Bool {
+        guard isProcessingAuth == false else { return false }
+        isProcessingAuth = true
+        authErrorMessage = nil
+        defer { isProcessingAuth = false }
+
+        do {
+            try await authService.signOut()
+            await appRouter.refreshStateFromBackend()
+            return true
+        } catch {
+            #if DEBUG
+            print("退出登录失败: \(error)")
+            #endif
+            authErrorMessage = error.localizedDescription
+            return false
+        }
+    }
+
+    func deleteAccount(appRouter: AppRouter) async -> Bool {
+        guard isProcessingAuth == false else { return false }
+        isProcessingAuth = true
+        authErrorMessage = nil
+        defer { isProcessingAuth = false }
+
+        do {
+            // 预留：接入 delete-account Edge Function / RPC 后在此调用
+            // try await supabase.functions.invoke("delete-account")
+            try await authService.signOut()
+            await appRouter.refreshStateFromBackend()
+            return true
+        } catch {
+            #if DEBUG
+            print("注销账号失败: \(error)")
+            #endif
+            authErrorMessage = error.localizedDescription
             return false
         }
     }

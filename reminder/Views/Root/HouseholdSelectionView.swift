@@ -21,7 +21,7 @@ struct HouseholdSelectionView: View {
     @State private var showJoinSheet = false
     @State private var createInputError: String?
     @State private var joinInputError: String?
-    @State private var isSigningOut = false
+    @State private var showAuthErrorAlert = false
     @State private var showScanOptions = false
     @State private var showCameraScanner = false
     @State private var showPhotoPicker = false
@@ -44,18 +44,25 @@ struct HouseholdSelectionView: View {
             .navigationTitle("WeFamily")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Task { await signOut() }
-                    } label: {
-                        if isSigningOut {
-                            ProgressView()
-                        } else {
-                            Text("退出登录")
-                                .foregroundStyle(.secondary)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button {
+                            viewModel.showSignOutAlert = true
+                        } label: {
+                            Label("退出登录", systemImage: "rectangle.portrait.and.arrow.right")
                         }
+
+                        Button(role: .destructive) {
+                            viewModel.showDeleteAccountAlert = true
+                        } label: {
+                            Label("永久注销账号", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "person.crop.circle")
+                            .font(.title2)
+                            .foregroundStyle(.primary)
                     }
-                    .disabled(isSigningOut)
+                    .disabled(viewModel.isProcessingAuth)
                 }
             }
         }
@@ -78,6 +85,39 @@ struct HouseholdSelectionView: View {
             Button("知道了", role: .cancel) {}
         } message: {
             Text(localErrorMessage ?? "请稍后重试")
+        }
+        .alert("退出登录", isPresented: $viewModel.showSignOutAlert) {
+            Button("取消", role: .cancel) {}
+            Button("退出", role: .destructive) {
+                Task {
+                    let succeeded = await viewModel.signOut(appRouter: appRouter)
+                    if succeeded == false, viewModel.authErrorMessage != nil {
+                        showAuthErrorAlert = true
+                    }
+                }
+            }
+        } message: {
+            Text("确定要退出当前账号吗？")
+        }
+        .alert("永久注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
+            Button("取消", role: .cancel) {}
+            Button("确认注销", role: .destructive) {
+                Task {
+                    let succeeded = await viewModel.deleteAccount(appRouter: appRouter)
+                    if succeeded == false, viewModel.authErrorMessage != nil {
+                        showAuthErrorAlert = true
+                    }
+                }
+            }
+        } message: {
+            Text("此操作将永久删除您的账号及所有个人数据（创建的家庭会被解散，加入的家庭会被移出）。该操作不可逆，请谨慎确认。")
+        }
+        .alert("账号操作失败", isPresented: $showAuthErrorAlert) {
+            Button("知道了", role: .cancel) {
+                viewModel.authErrorMessage = nil
+            }
+        } message: {
+            Text(viewModel.authErrorMessage ?? "请稍后重试")
         }
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
@@ -138,14 +178,14 @@ struct HouseholdSelectionView: View {
             }
         }
         .overlay {
-            if isJoiningFullScreenLoading {
+            if isJoiningFullScreenLoading || viewModel.isProcessingAuth {
                 ZStack {
                     Color.black.opacity(0.18)
                         .ignoresSafeArea()
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.2)
-                        Text("正在加入家庭…")
+                        Text(viewModel.isProcessingAuth ? "正在处理账号操作…" : "正在加入家庭…")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -349,24 +389,6 @@ struct HouseholdSelectionView: View {
         showJoinSheet = false
         await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds()
-    }
-
-    private func signOut() async {
-        guard isSigningOut == false else { return }
-        isSigningOut = true
-        defer { isSigningOut = false }
-
-        #if canImport(Supabase)
-        do {
-            try await SupabaseManager.shared.client.auth.signOut()
-            appRouter.appState = .unauthenticated
-        } catch {
-            localErrorMessage = error.localizedDescription
-            showErrorAlert = true
-        }
-        #else
-        appRouter.appState = .unauthenticated
-        #endif
     }
 }
 
