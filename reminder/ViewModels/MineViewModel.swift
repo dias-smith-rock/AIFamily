@@ -1,6 +1,10 @@
 import Foundation
 import Combine
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 #if canImport(Supabase)
 import Supabase
 #endif
@@ -60,6 +64,22 @@ final class MineViewModel: ObservableObject {
 
     func tapDeleteAccount() {
         presentToast("账号注销流程即将提供，请联系支持。")
+    }
+
+    func contactSupport() async {
+        guard let url = await SupportMailHelper.makeSupportMailURL() else {
+            presentToast("无法创建支持邮件，请稍后重试。")
+            return
+        }
+        #if canImport(UIKit)
+        guard UIApplication.shared.canOpenURL(url) else {
+            presentToast("当前设备未配置邮件账户，请发送邮件至 \(SupportMailHelper.supportEmail)。")
+            return
+        }
+        await UIApplication.shared.open(url)
+        #else
+        presentToast("请发送邮件至 \(SupportMailHelper.supportEmail)。")
+        #endif
     }
 
     func tapRow(feature: String) {

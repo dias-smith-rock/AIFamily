@@ -1,5 +1,8 @@
 import SwiftUI
 import Kingfisher
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct MineView: View {
     @EnvironmentObject private var appRouter: AppRouter
@@ -8,9 +11,16 @@ struct MineView: View {
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var editingSelfProfile: FamilyProfile?
     @State private var isShowingLoginSheet = false
+    @State private var showTermsSheet = false
+    @State private var showPrivacySheet = false
 
     /// 与 `mineNavigationRow` 中「图标列 + 间距」一致，避免居中文字导致系统把分隔线对齐到屏幕中间。
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
+
+    private enum FeatureVisibility {
+        static let showsVIPBanner = false
+        static let showsIntegrationsSection = false
+    }
 
     var body: some View {
         NavigationStack {
@@ -87,6 +97,18 @@ struct MineView: View {
         } message: {
             Text(viewModel.signOutErrorMessage ?? "")
         }
+        .sheet(isPresented: $showTermsSheet) {
+            if let url = SupportLegalLinks.termsOfService {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
+        .sheet(isPresented: $showPrivacySheet) {
+            if let url = SupportLegalLinks.privacyPolicy {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
     }
 
     @ViewBuilder
@@ -97,21 +119,23 @@ struct MineView: View {
             }
             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
 
-            Section {
-                vipBannerRow
-            }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-            .listRowBackground(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.orange.opacity(0.92), .yellow.opacity(0.88)],
-                            startPoint: .leading,
-                            endPoint: .trailing
+            if FeatureVisibility.showsVIPBanner {
+                Section {
+                    vipBannerRow
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [.orange.opacity(0.92), .yellow.opacity(0.88)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
                         )
-                    )
-                    .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
-            )
+                        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
+                )
+            }
 
             Section {
                 mineNavigationRow(
@@ -151,62 +175,71 @@ struct MineView: View {
                 mineSectionHeader("APP SETTINGS")
             }
 
-            Section {
-                mineNavigationRow(
-                    title: "Integrations",
-                    systemImage: "link",
-                    iconTint: .orange,
-                    subtitle: "FaceTime, WhatsApp"
-                ) {
-                    viewModel.tapRow(feature: "集成")
+            if FeatureVisibility.showsIntegrationsSection {
+                Section {
+                    mineNavigationRow(
+                        title: "Integrations",
+                        systemImage: "link",
+                        iconTint: .orange,
+                        subtitle: "FaceTime, WhatsApp"
+                    ) {
+                        viewModel.tapRow(feature: "集成")
+                    }
+                    mineNavigationRow(
+                        title: "Import Events",
+                        systemImage: "calendar",
+                        iconTint: .green,
+                        subtitle: "Sync Calendar & Public Holidays"
+                    ) {
+                        viewModel.tapRow(feature: "导入日程")
+                    }
+                } header: {
+                    mineSectionHeader("INTEGRATIONS & DATA")
                 }
-                mineNavigationRow(
-                    title: "Import Events",
-                    systemImage: "calendar",
-                    iconTint: .green,
-                    subtitle: "Sync Calendar & Public Holidays"
-                ) {
-                    viewModel.tapRow(feature: "导入日程")
-                }
-            } header: {
-                mineSectionHeader("INTEGRATIONS & DATA")
             }
 
             Section {
-                mineNavigationRow(
-                    title: "Support",
-                    systemImage: "lifepreserver.circle.fill",
-                    iconTint: .cyan
-                ) {
-                    viewModel.tapRow(feature: "支持")
+                Button {
+                    Task { await viewModel.contactSupport() }
+                } label: {
+                    SettingsRowView(
+                        title: "Support",
+                        systemImage: "lifepreserver.circle.fill",
+                        iconTint: .cyan
+                    )
                 }
-                mineNavigationRow(
-                    title: "Help & Feedback",
-                    systemImage: "questionmark.circle.fill",
-                    iconTint: .orange
-                ) {
-                    viewModel.tapRow(feature: "帮助与反馈")
+                .buttonStyle(.plain)
+
+                Button {
+                    showTermsSheet = true
+                } label: {
+                    SettingsRowView(
+                        title: "Terms of Service",
+                        systemImage: "doc.text",
+                        iconTint: Color.primary.opacity(0.55)
+                    )
                 }
-                mineNavigationRow(
-                    title: "Terms of Service",
-                    systemImage: "doc.text",
-                    iconTint: Color.primary.opacity(0.55)
-                ) {
-                    viewModel.tapRow(feature: "服务条款")
+                .buttonStyle(.plain)
+
+                Button {
+                    showPrivacySheet = true
+                } label: {
+                    SettingsRowView(
+                        title: "Privacy Policy",
+                        systemImage: "shield",
+                        iconTint: .blue
+                    )
                 }
-                mineNavigationRow(
-                    title: "Privacy Policy",
-                    systemImage: "shield",
-                    iconTint: .blue
-                ) {
-                    viewModel.tapRow(feature: "隐私政策")
-                }
-                mineNavigationRow(
-                    title: "About AIFamily",
-                    systemImage: "info.circle",
-                    iconTint: .purple
-                ) {
-                    viewModel.tapRow(feature: "关于")
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    AboutView()
+                } label: {
+                    SettingsRowView(
+                        title: "About AIFamily",
+                        systemImage: "info.circle",
+                        iconTint: .purple
+                    )
                 }
             } header: {
                 mineSectionHeader("SUPPORT & LEGAL")
