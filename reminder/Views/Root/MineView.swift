@@ -97,6 +97,27 @@ struct MineView: View {
         } message: {
             Text(viewModel.signOutErrorMessage ?? "")
         }
+        .alert("永久注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
+            Button("取消", role: .cancel) {}
+            Button("确认注销", role: .destructive) {
+                Task { await viewModel.deleteAccount(appRouter: appRouter) }
+            }
+        } message: {
+            Text("此操作将永久删除您的账号及所有个人数据（创建的家庭会被解散，加入的家庭会被移出）。该操作不可逆，请谨慎确认。")
+        }
+        .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text(viewModel.blockAlertMessage)
+        }
+        .alert("注销失败", isPresented: Binding(
+            get: { viewModel.deleteAccountErrorMessage != nil },
+            set: { if $0 == false { viewModel.acknowledgeDeleteAccountError() } }
+        )) {
+            Button("我知道了", role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
+        } message: {
+            Text(viewModel.deleteAccountErrorMessage ?? "")
+        }
         .sheet(isPresented: $showTermsSheet) {
             if let url = SupportLegalLinks.termsOfService {
                 SafariView(url: url)
@@ -238,7 +259,8 @@ struct MineView: View {
                     SettingsRowView(
                         title: "About AIFamily",
                         systemImage: "info.circle",
-                        iconTint: .purple
+                        iconTint: .purple,
+                        showsChevron: false
                     )
                 }
             } header: {
@@ -263,17 +285,31 @@ struct MineView: View {
                     .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                 }
                 .buttonStyle(.plain)
-                .disabled(viewModel.isSigningOut)
+                .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
 
                 Button(role: .destructive) {
-                    viewModel.tapDeleteAccount()
+                    Task { await viewModel.checkCreatorStatusBeforeDeletion() }
                 } label: {
-                    Text("Delete Account")
-                        .font(AppTheme.FontToken.bodyStrong)
-                        .frame(maxWidth: .infinity)
-                        .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
+                    HStack {
+                        Spacer()
+                        if viewModel.isCheckingCreatorStatus {
+                            ProgressView()
+                                .padding(.trailing, 4)
+                            Text("Delete Account")
+                                .font(AppTheme.FontToken.bodyStrong)
+                        } else if viewModel.isDeletingAccount {
+                            ProgressView()
+                        } else {
+                            Text("Delete Account")
+                                .font(AppTheme.FontToken.bodyStrong)
+                        }
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                 }
                 .buttonStyle(.plain)
+                .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
             } header: {
                 mineSectionHeader("ACCOUNT")
             }

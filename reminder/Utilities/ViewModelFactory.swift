@@ -68,7 +68,7 @@ final class ViewModelFactory: ObservableObject {
     }
 
     func makeMineViewModel() -> MineViewModel {
-        MineViewModel()
+        MineViewModel(authService: services.authService)
     }
 }
 

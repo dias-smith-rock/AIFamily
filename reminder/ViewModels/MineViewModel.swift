@@ -17,7 +17,19 @@ final class MineViewModel: ObservableObject {
 
     @Published var toastMessage: String?
     @Published var signOutErrorMessage: String?
+    @Published var deleteAccountErrorMessage: String?
+    @Published var showDeleteAccountAlert = false
+    @Published var isCheckingCreatorStatus = false
+    @Published var showCreatorBlockAlert = false
+    @Published var blockAlertMessage = ""
     @Published var isSigningOut = false
+    @Published var isDeletingAccount = false
+
+    private let authService: AuthService
+
+    init(authService: AuthService) {
+        self.authService = authService
+    }
 
     func loadAccountSummary() async {
         #if canImport(Supabase)
@@ -45,25 +57,72 @@ final class MineViewModel: ObservableObject {
         signOutErrorMessage = nil
         defer { isSigningOut = false }
 
-        #if canImport(Supabase)
         do {
-            let supabase = SupabaseManager.shared.client
-            try await supabase.auth.signOut()
+            try await authService.signOut()
             await appRouter.refreshStateFromBackend()
         } catch {
             signOutErrorMessage = error.localizedDescription
         }
+    }
+
+    func deleteAccount(appRouter: AppRouter) async {
+        guard isDeletingAccount == false else { return }
+        isDeletingAccount = true
+        deleteAccountErrorMessage = nil
+        defer { isDeletingAccount = false }
+
+        do {
+            // 预留：接入 delete-account Edge Function / RPC 后在此调用
+            // try await supabase.functions.invoke("delete-account")
+            await authService.cleanUpCurrentUserAvatars()
+            try await authService.signOut()
+            await appRouter.refreshStateFromBackend()
+        } catch {
+            deleteAccountErrorMessage = error.localizedDescription
+        }
+    }
+
+    func checkCreatorStatusBeforeDeletion() async {
+        guard isCheckingCreatorStatus == false, isDeletingAccount == false else { return }
+
+        #if canImport(Supabase)
+        isCheckingCreatorStatus = true
+        defer { isCheckingCreatorStatus = false }
+
+        let supabase = SupabaseManager.shared.client
+        guard let userId = supabase.auth.currentUser?.id else { return }
+
+        do {
+            let records: [CreatorMembershipRecord] = try await supabase
+                .from("household_memberships")
+                .select("households!inner(name)")
+                .eq("user_id", value: userId.uuidString)
+                .eq("role", value: MembershipRole.creator.rawValue)
+                .eq("status", value: MembershipStatus.active.rawValue)
+                .eq("households.status", value: HouseholdStatus.active.rawValue)
+                .execute()
+                .value
+
+            let names = records.compactMap { $0.households?.name.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { $0.isEmpty == false }
+
+            if names.isEmpty {
+                showDeleteAccountAlert = true
+            } else {
+                let firstName = names.first ?? "未知组织"
+                let suffix = names.count > 1 ? "等 \(names.count) 个组织" : ""
+                blockAlertMessage = "您是「\(firstName)」\(suffix)的创建者，请先将权限转移给其他人，或者解散组织之后再注销账户。"
+                showCreatorBlockAlert = true
+            }
+        } catch {
+            #if DEBUG
+            print("检查创建者状态失败: \(error)")
+            #endif
+            showDeleteAccountAlert = true
+        }
         #else
-        signOutErrorMessage = "当前构建环境未包含 Supabase SDK。"
+        showDeleteAccountAlert = true
         #endif
-    }
-
-    func tapUpgradeVIP() {
-        presentToast("VIP 权益即将开放。")
-    }
-
-    func tapDeleteAccount() {
-        presentToast("账号注销流程即将提供，请联系支持。")
     }
 
     func contactSupport() async {
@@ -98,6 +157,14 @@ final class MineViewModel: ObservableObject {
         signOutErrorMessage = nil
     }
 
+    func acknowledgeDeleteAccountError() {
+        deleteAccountErrorMessage = nil
+    }
+
+    func tapUpgradeVIP() {
+        presentToast("VIP 权益即将开放。")
+    }
+
     private func presentToast(_ message: String) {
         toastMessage = message
     }
@@ -119,3 +186,13 @@ final class MineViewModel: ObservableObject {
         return local.capitalized
     }
 }
+
+#if canImport(Supabase)
+private struct CreatorMembershipRecord: Decodable {
+    let households: CreatorHouseholdName?
+
+    struct CreatorHouseholdName: Decodable {
+        let name: String
+    }
+}
+#endif
