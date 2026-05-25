@@ -6,6 +6,7 @@ import Supabase
 
 /// 任务 / 日程主页：顶栏日历风格导航 + 多视图模式路由。
 struct TaskListView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
 
@@ -173,7 +174,7 @@ struct TaskListView: View {
                         currentViewMode = mode
                     } label: {
                         HStack {
-                            Text(mode.rawValue)
+                            Text(mode.menuTitle)
                             Spacer(minLength: 8)
                             if mode == currentViewMode {
                                 Image(systemName: "checkmark")
@@ -242,12 +243,12 @@ struct TaskListView: View {
     }
 
     private var navigationMonthYearTitle: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        formatter.calendar = Calendar.current
-        formatter.dateFormat = "MMM yyyy"
-        return formatter.string(from: navigationReferenceDate).uppercased()
+        navigationReferenceDate.formatted(
+            .dateTime
+                .month(.wide)
+                .year()
+                .locale(locale)
+        )
     }
 
     private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {

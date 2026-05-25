@@ -10,17 +10,17 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
 
     var settingsTitle: String {
         switch self {
-        case .system: return "跟随系统"
-        case .light: return "浅色模式"
-        case .dark: return "深色模式"
+        case .system: return String(localized: "Follow System")
+        case .light: return String(localized: "Light Mode")
+        case .dark: return String(localized: "Dark Mode")
         }
     }
 
     var listValueTitle: String {
         switch self {
-        case .system: return "System"
-        case .light: return "Light"
-        case .dark: return "Dark"
+        case .system: return String(localized: "System")
+        case .light: return String(localized: "Light")
+        case .dark: return String(localized: "Dark")
         }
     }
 
@@ -57,6 +57,9 @@ final class AppSettingsManager: ObservableObject {
     @AppStorage("app_text_size_index")
     private var textSizeIndexStorage = AppSettingsManager.defaultTextSizeIndex
 
+    @AppStorage("app_language")
+    private var languageStorage = AppLanguage.system.rawValue
+
     var appearance: AppAppearance {
         get { AppAppearance(rawValue: appearanceStorage) ?? .system }
         set {
@@ -70,6 +73,14 @@ final class AppSettingsManager: ObservableObject {
         set {
             objectWillChange.send()
             textSizeIndexStorage = Self.clampTextSizeIndex(newValue)
+        }
+    }
+
+    var selectedLanguage: AppLanguage {
+        get { AppLanguage(rawValue: languageStorage) ?? .system }
+        set {
+            objectWillChange.send()
+            languageStorage = newValue.rawValue
         }
     }
 

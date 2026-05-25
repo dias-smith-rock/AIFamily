@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct SettingsRowView: View {
-    let title: String
+    let title: LocalizedStringKey
     let systemImage: String
     let iconTint: Color
-    var subtitle: String?
+    var subtitle: LocalizedStringKey?
     var value: String?
     var showsValue: Bool = true
     var showsSubtitle: Bool = true
@@ -23,7 +23,7 @@ struct SettingsRowView: View {
                 Text(title)
                     .font(AppTheme.FontToken.bodyStrong)
                     .foregroundStyle(.primary)
-                if showsSubtitle, let subtitle, subtitle.isEmpty == false {
+                if showsSubtitle, let subtitle {
                     Text(subtitle)
                         .font(AppTheme.FontToken.caption)
                         .foregroundStyle(.secondary)

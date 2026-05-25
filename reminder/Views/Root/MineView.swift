@@ -160,13 +160,16 @@ struct MineView: View {
             }
 
             Section {
-                mineNavigationRow(
-                    title: "Language",
-                    systemImage: "globe",
-                    iconTint: .blue,
-                    value: "English"
-                ) {
-                    viewModel.tapRow(feature: "语言设置")
+                NavigationLink {
+                    LanguageSettingsView()
+                } label: {
+                    SettingsRowView(
+                        title: "Language",
+                        systemImage: "globe",
+                        iconTint: .blue,
+                        value: appSettings.selectedLanguage.nativeName,
+                        showsChevron: false
+                    )
                 }
 
                 Button {
@@ -615,7 +618,7 @@ struct MineView: View {
 
     // MARK: - Section chrome
 
-    private func mineSectionHeader(_ title: String) -> some View {
+    private func mineSectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
@@ -624,10 +627,10 @@ struct MineView: View {
     }
 
     private func mineNavigationRow(
-        title: String,
+        title: LocalizedStringKey,
         systemImage: String,
         iconTint: Color,
-        subtitle: String? = nil,
+        subtitle: LocalizedStringKey? = nil,
         value: String? = nil,
         showsValue: Bool = true,
         showsSubtitle: Bool = true,
@@ -646,7 +649,7 @@ struct MineView: View {
                     Text(title)
                         .font(AppTheme.FontToken.bodyStrong)
                         .foregroundStyle(.primary)
-                    if showsSubtitle, let subtitle, subtitle.isEmpty == false {
+                    if showsSubtitle, let subtitle {
                         Text(subtitle)
                             .font(AppTheme.FontToken.caption)
                             .foregroundStyle(.secondary)

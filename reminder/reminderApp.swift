@@ -34,6 +34,8 @@ struct WeFamilyApp: App {
                 .environmentObject(appBootstrap)
                 .environmentObject(appBootstrap.viewModelFactory)
                 .environmentObject(appSettings)
+                .environment(\.locale, appSettings.selectedLanguage.locale)
+                .environment(\.layoutDirection, appSettings.selectedLanguage.layoutDirection)
                 .preferredColorScheme(appSettings.colorScheme)
                 .dynamicTypeSize(appSettings.dynamicTypeSize)
                 .tint(AppTheme.ColorToken.accent)

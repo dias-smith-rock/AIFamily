@@ -127,7 +127,7 @@ struct LoginView: View {
     }
 
     private func loginButton(
-        title: String,
+        title: LocalizedStringKey,
         icon: String,
         provider: LoginProvider,
         background: Color,

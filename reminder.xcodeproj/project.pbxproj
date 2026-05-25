@@ -114,13 +114,13 @@
 				en,
 				Base,
 				ar,
-				"zh-HK",
 				"zh-Hans",
+				"zh-Hant",
 				fr,
 				hi,
-				"pt-BR",
+				pt,
+				es,
 				ta,
-				"es-US",
 			);
 			mainGroup = DD17A5E62F9F4E500059AE67;
 			minimizedProjectReferenceProxies = 1;

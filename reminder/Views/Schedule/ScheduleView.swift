@@ -322,9 +322,9 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", title: "Family Dinner", dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", title: "Grocery List", dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", title: "Kids Activity", dueDateKind: .nextSaturdayFromSelected)
+                actionChip(emoji: "✨", title: String(localized: "Family Dinner"), dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", title: String(localized: "Grocery List"), dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", title: String(localized: "Kids Activity"), dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
