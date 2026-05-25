@@ -177,6 +177,37 @@ struct FamilyView: View {
         } message: {
             Text(viewModel.transferSuccessToastMessage ?? "")
         }
+        .alert(String(localized: "Are you sure you want to leave this household?"), isPresented: $viewModel.showLeaveConfirmation) {
+            Button(String(localized: "Cancel"), role: .cancel) {}
+            Button(String(localized: "Leave Household"), role: .destructive) {
+                Task { await submitLeaveHousehold() }
+            }
+        } message: {
+            Text("After leaving, you won't be able to view tasks and messages in this household.")
+        }
+        .alert(String(localized: "Notice"), isPresented: $viewModel.showCreatorBlockAlert) {
+            Button(String(localized: "Got it"), role: .cancel) {}
+        } message: {
+            Text("You are the creator of this household. Transfer ownership or disband the household before leaving.")
+        }
+        .alert(String(localized: "Could not leave household"), isPresented: leaveErrorAlertBinding) {
+            Button(String(localized: "Got it"), role: .cancel) {
+                viewModel.acknowledgeLeaveError()
+            }
+        } message: {
+            Text(viewModel.leaveErrorMessage ?? String(localized: "Please try again later."))
+        }
+    }
+
+    private var leaveErrorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.leaveErrorMessage != nil },
+            set: { isPresented in
+                if isPresented == false {
+                    viewModel.acknowledgeLeaveError()
+                }
+            }
+        )
     }
 
     private var transferSuccessToastBinding: Binding<Bool> {
@@ -496,18 +527,23 @@ struct FamilyView: View {
     private var leaveHouseholdSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button(role: .destructive) {
-                // TODO: 调用 supabase 删除当前用户的 membership 记录，并跳转回路由选择页。
+                viewModel.requestToLeave()
             } label: {
                 HStack {
                     Spacer()
-                    Text("退出该群组")
-                        .font(.system(size: 17, weight: .semibold))
+                    if viewModel.isLeaving {
+                        ProgressView()
+                    } else {
+                        Text("Leave Household")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
                     Spacer()
                 }
                 .padding(.vertical, 12)
             }
             .buttonStyle(.bordered)
             .tint(.red)
+            .disabled(viewModel.isLeaving)
         }
     }
 
@@ -575,6 +611,15 @@ struct FamilyView: View {
         await appRouter.refreshStateFromBackend()
         await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
         return true
+    }
+
+    @MainActor
+    private func submitLeaveHousehold() async {
+        guard let householdId = appRouter.selectedHouseholdId else { return }
+        let success = await viewModel.confirmLeave(householdId: householdId, appRouter: appRouter)
+        guard success else { return }
+        isShowingRenameHouseholdSheet = false
+        await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
     }
 
     @MainActor
@@ -669,7 +714,9 @@ private struct OrganizationSettingsSheet: View {
                     }
 
                     if canDisband {
-                        dangerZoneSection
+                        disbandHouseholdSection
+                    } else if familyViewModel.canLeaveCurrentHousehold {
+                        leaveHouseholdSection
                     }
                 }
                 .padding(.horizontal, 20)
@@ -755,7 +802,7 @@ private struct OrganizationSettingsSheet: View {
         .disabled(isSubmitting || isDisbanding)
     }
 
-    private var dangerZoneSection: some View {
+    private var disbandHouseholdSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("危险操作")
                 .font(.caption.weight(.semibold))
@@ -768,7 +815,7 @@ private struct OrganizationSettingsSheet: View {
                 HStack(spacing: 12) {
                     Image(systemName: "trash.fill")
                         .font(.body)
-                    Text("解散当前群组")
+                    Text("Disband Household")
                         .font(.body.weight(.semibold))
                     Spacer(minLength: 8)
                 }
@@ -778,11 +825,39 @@ private struct OrganizationSettingsSheet: View {
                 .background(Color.red, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             .buttonStyle(.plain)
-            .disabled(isSubmitting || isDisbanding)
+            .disabled(isSubmitting || isDisbanding || familyViewModel.isLeaving)
 
             Text("解散后所有成员将被移除，任务与邀请码将被永久清空。此操作不可撤销。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+        .padding(.top, 8)
+    }
+
+    private var leaveHouseholdSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(role: .destructive) {
+                familyViewModel.requestToLeave()
+            } label: {
+                HStack(spacing: 12) {
+                    if familyViewModel.isLeaving {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .font(.body)
+                        Text("Leave Household")
+                            .font(.body.weight(.semibold))
+                    }
+                    Spacer(minLength: 8)
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 15)
+                .background(Color.red, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(isSubmitting || isDisbanding || familyViewModel.isLeaving)
         }
         .padding(.top, 8)
     }

@@ -57,6 +57,7 @@ protocol HouseholdRoutingService {
     func joinHousehold(inviteCode: String) async throws
     func renameHousehold(householdId: UUID, newName: String) async throws
     func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold]
+    func leaveHousehold(householdId: UUID) async throws
     func disbandHousehold(id: UUID, expectedName: String) async throws
     /// 解散家庭前清理该家庭下全部反馈语音；失败不抛出。
     func cleanUpHouseholdFeedbackAudios(householdId: UUID) async
@@ -79,6 +80,7 @@ enum HouseholdRoutingError: LocalizedError {
     case unknown
     case householdNameMismatch
     case disbandUnauthorized
+    case creatorCannotLeave
     case transferUnauthorized
     case transferInvalidTarget
 }
@@ -687,6 +689,23 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         #endif
     }
 
+    func leaveHousehold(householdId: UUID) async throws {
+        #if canImport(Supabase)
+        let params = LeaveHouseholdParams(pHouseholdId: householdId)
+        do {
+            _ = try await provider.client
+                .rpc("leave_household", params: params)
+                .execute()
+        } catch {
+            print("退出群组详细错误: \(error)")
+            throw mapLeaveHouseholdError(error)
+        }
+        #else
+        _ = householdId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
     func disbandHousehold(id: UUID, expectedName: String) async throws {
         #if canImport(Supabase)
         let trimmedExpectedName = expectedName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -1062,6 +1081,14 @@ private struct JoinHouseholdByNonceParams: Encodable {
     let pUserId: UUID
 }
 
+private struct LeaveHouseholdParams: Encodable {
+    let pHouseholdId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case pHouseholdId = "p_household_id"
+    }
+}
+
 private struct DisbandHouseholdParams: Encodable {
     let pHouseholdId: UUID
     let pExpectedName: String
@@ -1138,6 +1165,29 @@ private func isMissingDisbandHouseholdRPCError(_ error: Error) -> Bool {
     let message = error.localizedDescription.lowercased()
     return message.contains("disband_household")
         && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
+private func isMissingLeaveHouseholdRPCError(_ error: Error) -> Bool {
+    let message = error.localizedDescription.lowercased()
+    return message.contains("leave_household")
+        && (message.contains("not found") || message.contains("does not exist") || message.contains("could not find"))
+}
+
+private func mapLeaveHouseholdError(_ error: Error) -> Error {
+    let message = error.localizedDescription.lowercased()
+    if isUnauthenticatedError(error) || message.contains("unauthenticated") {
+        return HouseholdRoutingError.unauthenticated
+    }
+    if message.contains("creator_cannot_leave") {
+        return HouseholdRoutingError.creatorCannotLeave
+    }
+    if isHouseholdNotFoundError(error) {
+        return HouseholdRoutingError.householdNotFound
+    }
+    if isMissingLeaveHouseholdRPCError(error) {
+        return HouseholdRoutingError.backendMigrationRequired
+    }
+    return error
 }
 
 private func mapDisbandHouseholdError(_ error: Error) -> Error {

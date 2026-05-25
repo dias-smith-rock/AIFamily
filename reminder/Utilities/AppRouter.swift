@@ -165,6 +165,31 @@ final class AppRouter: ObservableObject {
         #endif
     }
 
+    /// 退出群组后：若仍有其他群组则进入第一个；否则回到创建/加入入口。
+    func routeAfterLeavingHousehold(_ leftHouseholdId: UUID) async {
+        #if canImport(Supabase)
+        pendingPreferredHouseholdId = nil
+        await refreshStateFromBackend()
+
+        let remaining = selectableHouseholds.filter { $0.id != leftHouseholdId }
+        guard let first = remaining.first else {
+            goToOrgRouting()
+            #if DEBUG
+            print("[AppRouter] route.orgRouting reason=household_left_no_remaining")
+            #endif
+            return
+        }
+
+        chooseHousehold(first)
+        #if DEBUG
+        print("[AppRouter] route.activeMember reason=household_left_fallback household=\(first.id.uuidString)")
+        #endif
+        #else
+        _ = leftHouseholdId
+        goToOrgRouting()
+        #endif
+    }
+
     func chooseJoinedHousehold(_ joined: JoinedHousehold) {
         let option = HouseholdOption(
             id: joined.householdId,

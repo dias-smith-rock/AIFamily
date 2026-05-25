@@ -17,6 +17,10 @@ final class FamilyViewModel: ObservableObject {
     @Published var isDisbanding = false
     @Published var showDisbandErrorAlert = false
     @Published var disbandError: String?
+    @Published var showLeaveConfirmation = false
+    @Published var showCreatorBlockAlert = false
+    @Published var isLeaving = false
+    @Published var leaveErrorMessage: String?
     @Published var transferSuccessToastMessage: String?
 
     private let profileService: FamilyProfileDataService
@@ -44,6 +48,10 @@ final class FamilyViewModel: ObservableObject {
 
     var canDisbandCurrentHousehold: Bool {
         currentMembership?.hasRole(.creator) == true
+    }
+
+    var canLeaveCurrentHousehold: Bool {
+        canDisbandCurrentHousehold == false
     }
 
     var canTransferOwnership: Bool {
@@ -149,6 +157,90 @@ final class FamilyViewModel: ObservableObject {
             showDisbandErrorAlert = true
             return false
         }
+    }
+
+    func requestToLeave() {
+        leaveErrorMessage = nil
+        if currentMembership?.hasRole(.creator) == true {
+            showCreatorBlockAlert = true
+        } else {
+            showLeaveConfirmation = true
+        }
+    }
+
+    func acknowledgeLeaveError() {
+        leaveErrorMessage = nil
+    }
+
+    /// 退出当前群组：调用 RPC、清洗本地缓存并完成跌落路由。
+    @discardableResult
+    func confirmLeave(householdId: UUID, appRouter: AppRouter) async -> Bool {
+        isLeaving = true
+        leaveErrorMessage = nil
+        defer { isLeaving = false }
+
+        do {
+            try await householdRoutingService.leaveHousehold(householdId: householdId)
+            purgeLocalHouseholdData(for: householdId)
+            currentHouseholdId = nil
+            currentMembershipId = nil
+            showLeaveConfirmation = false
+            await appRouter.routeAfterLeavingHousehold(householdId)
+            return true
+        } catch {
+            #if DEBUG
+            print("❌ [LeaveDebug] 退出群组失败: \(error)")
+            #endif
+            leaveErrorMessage = mapLeaveErrorMessage(error)
+            if shouldBlockCreatorLeave(for: error) {
+                showCreatorBlockAlert = true
+                showLeaveConfirmation = false
+            }
+            return false
+        }
+    }
+
+    private func shouldBlockCreatorLeave(for error: Error) -> Bool {
+        if let routingError = error as? HouseholdRoutingError, case .creatorCannotLeave = routingError {
+            return true
+        }
+        return error.localizedDescription.lowercased().contains("creator_cannot_leave")
+    }
+
+    private enum LeaveCopy {
+        static let creatorCannotLeave = String(localized: "You are the creator of this household. Transfer ownership or disband the household before leaving.")
+        static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
+        static let householdNotFound = String(localized: "This household does not exist or has been deleted.")
+        static let backendMigrationRequired = String(localized: "Backend upgrade required. Please apply the latest Supabase migration and try again.")
+        static let forbidden = String(localized: "You don't have permission to perform this action.")
+        static let leaveFailed = String(localized: "Could not leave the household. Please try again later.")
+    }
+
+    private func mapLeaveErrorMessage(_ error: Error) -> String {
+        let message = error.localizedDescription.lowercased()
+        if message.contains("creator_cannot_leave") {
+            return LeaveCopy.creatorCannotLeave
+        }
+        if message.contains("unauthenticated") || message.contains("jwt") || message.contains("session") {
+            return LeaveCopy.sessionExpired
+        }
+        if let routingError = error as? HouseholdRoutingError {
+            switch routingError {
+            case .creatorCannotLeave:
+                return LeaveCopy.creatorCannotLeave
+            case .unauthenticated:
+                return LeaveCopy.sessionExpired
+            case .householdNotFound:
+                return LeaveCopy.householdNotFound
+            case .backendMigrationRequired:
+                return LeaveCopy.backendMigrationRequired
+            case .forbidden:
+                return LeaveCopy.forbidden
+            default:
+                break
+            }
+        }
+        return LeaveCopy.leaveFailed
     }
 
     func purgeLocalHouseholdData(for householdId: UUID) {
@@ -1159,6 +1251,7 @@ final class FamilyViewModel: ObservableObject {
              .nonceConsumed,
              .householdNameMismatch,
              .disbandUnauthorized,
+             .creatorCannotLeave,
              .transferUnauthorized,
              .transferInvalidTarget,
              .unknown:

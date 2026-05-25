@@ -315,6 +315,10 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
         []
     }
 
+    func leaveHousehold(householdId: UUID) async throws {
+        _ = householdId
+    }
+
     func disbandHousehold(id: UUID, expectedName: String) async throws {
         _ = id
         _ = expectedName

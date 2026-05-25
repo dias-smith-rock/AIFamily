@@ -207,6 +207,8 @@ final class OrgRoutingViewModel: ObservableObject {
             return Copy.householdNameMismatch
         case .disbandUnauthorized:
             return Copy.disbandUnauthorized
+        case .creatorCannotLeave:
+            return String(localized: "You are the creator of this household. Transfer ownership or disband the household before leaving.")
         case .transferUnauthorized, .transferInvalidTarget:
             return Copy.unknownError
         case .unknown:
