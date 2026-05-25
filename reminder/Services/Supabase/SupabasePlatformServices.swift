@@ -60,6 +60,7 @@ protocol HouseholdRoutingService {
     func disbandHousehold(id: UUID, expectedName: String) async throws
     /// 解散家庭前清理该家庭下全部反馈语音；失败不抛出。
     func cleanUpHouseholdFeedbackAudios(householdId: UUID) async
+    func transferOwnership(householdId: UUID, newCreatorUserId: UUID) async throws
 }
 
 enum HouseholdRoutingError: LocalizedError {
@@ -78,6 +79,8 @@ enum HouseholdRoutingError: LocalizedError {
     case unknown
     case householdNameMismatch
     case disbandUnauthorized
+    case transferUnauthorized
+    case transferInvalidTarget
 }
 
 // MARK: - Auth
@@ -724,6 +727,26 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    func transferOwnership(householdId: UUID, newCreatorUserId: UUID) async throws {
+        #if canImport(Supabase)
+        let params = TransferHouseholdOwnershipParams(
+            pHouseholdId: householdId,
+            pNewCreatorUserId: newCreatorUserId
+        )
+        do {
+            _ = try await provider.client
+                .rpc("transfer_household_ownership", params: params)
+                .execute()
+        } catch {
+            throw mapTransferOwnershipError(error)
+        }
+        #else
+        _ = householdId
+        _ = newCreatorUserId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
 }
 
 #if canImport(Supabase)
@@ -1049,6 +1072,16 @@ private struct DisbandHouseholdParams: Encodable {
     }
 }
 
+private struct TransferHouseholdOwnershipParams: Encodable {
+    let pHouseholdId: UUID
+    let pNewCreatorUserId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case pHouseholdId = "p_household_id"
+        case pNewCreatorUserId = "p_new_creator_user_id"
+    }
+}
+
 private struct InviteLinkPayload: Encodable {
     let token: String
     let channel: String
@@ -1122,6 +1155,34 @@ private func mapDisbandHouseholdError(_ error: Error) -> Error {
         return HouseholdRoutingError.householdNotFound
     }
     if isMissingDisbandHouseholdRPCError(error) {
+        return HouseholdRoutingError.backendMigrationRequired
+    }
+    return error
+}
+
+private func mapTransferOwnershipError(_ error: Error) -> Error {
+    let message = error.localizedDescription.lowercased()
+    if isUnauthenticatedError(error) || message.contains("unauthenticated") {
+        return HouseholdRoutingError.unauthenticated
+    }
+    if message.contains("unauthorized_not_creator")
+        || message.contains("transfer_unauthorized")
+        || (message.contains("unauthorized") && message.contains("transfer")) {
+        return HouseholdRoutingError.transferUnauthorized
+    }
+    if message.contains("invalid_transfer_target")
+        || message.contains("target_not_active")
+        || message.contains("target_not_found") {
+        return HouseholdRoutingError.transferInvalidTarget
+    }
+    if isForbiddenError(error) {
+        return HouseholdRoutingError.transferUnauthorized
+    }
+    if isHouseholdNotFoundError(error) {
+        return HouseholdRoutingError.householdNotFound
+    }
+    if message.contains("transfer_household_ownership")
+        && (message.contains("not found") || message.contains("does not exist")) {
         return HouseholdRoutingError.backendMigrationRequired
     }
     return error

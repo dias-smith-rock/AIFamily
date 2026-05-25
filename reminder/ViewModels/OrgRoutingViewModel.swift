@@ -25,7 +25,7 @@ final class OrgRoutingViewModel: ObservableObject {
         self.authService = authService
     }
 
-    func fetchMyHouseholds() async {
+    func fetchMyHouseholds(appRouter: AppRouter) async {
         isLoading = true
         defer { isLoading = false }
 
@@ -35,6 +35,7 @@ final class OrgRoutingViewModel: ObservableObject {
                 household.isSelectable
                     && household.household?.isArchivedOrDeleted == false
             }
+            await appRouter.checkForNewCreatorRoles(fetchedHouseholds: joinedHouseholds)
             #if DEBUG
             print("✅ [OrgHub] fetchMyHouseholds — count=\(joinedHouseholds.count)")
             #endif
@@ -50,7 +51,9 @@ final class OrgRoutingViewModel: ObservableObject {
         defer { isCreating = false }
 
         do {
-            return try await householdRoutingService.createHousehold(displayName: displayName)
+            let householdId = try await householdRoutingService.createHousehold(displayName: displayName)
+            await CreatorRoleSnapshotStore.markKnownCreatorHouseholdIfPossible(householdId)
+            return householdId
         } catch {
             errorMessage = mapErrorMessage(error, action: .create)
             return nil
@@ -148,6 +151,8 @@ final class OrgRoutingViewModel: ObservableObject {
                 return "家庭名称不匹配，请重新输入。"
             case .disbandUnauthorized:
                 return "只有家庭创建者才能解散该家庭。"
+            case .transferUnauthorized, .transferInvalidTarget:
+                return "发生未知错误，请稍后重试。"
             case .unknown:
                 return "发生未知错误，请稍后重试。"
             }

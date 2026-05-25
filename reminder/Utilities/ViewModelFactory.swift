@@ -37,6 +37,18 @@ final class ViewModelFactory: ObservableObject {
         )
     }
 
+    func makeTransferOwnershipViewModel(from familyViewModel: FamilyViewModel) -> TransferOwnershipViewModel {
+        TransferOwnershipViewModel(
+            householdId: familyViewModel.transferHouseholdId ?? UUID(),
+            currentUserId: familyViewModel.currentAuthUserId ?? UUID(),
+            members: familyViewModel.transferMembersSnapshot,
+            profiles: familyViewModel.transferProfilesSnapshot,
+            householdRoutingService: services.householdRoutingService,
+            feedbackService: services.feedbackService,
+            taskService: services.taskService
+        )
+    }
+
     func makeAssistantViewModel() -> AssistantViewModel {
         AssistantViewModel(
             taskService: services.taskService,
@@ -78,6 +90,10 @@ enum AppViewModels {
 
     static func makeFamilyViewModel() -> FamilyViewModel {
         factory.makeFamilyViewModel()
+    }
+
+    static func makeTransferOwnershipViewModel(from familyViewModel: FamilyViewModel) -> TransferOwnershipViewModel {
+        factory.makeTransferOwnershipViewModel(from: familyViewModel)
     }
 
     static func makeAssistantViewModel() -> AssistantViewModel {

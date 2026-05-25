@@ -16,6 +16,8 @@ protocol FeedbackDataService {
     func fetchFeedbacks(in householdId: UUID, for taskId: UUID?) async throws -> [Feedback]
     func createFeedback(_ feedback: Feedback) async throws -> Feedback
     func markFeedbackAsRead(id: UUID, readerId: UUID) async throws
+    /// 插入系统消息（`sender_id` 为空）；`taskId` 可选，无任务时省略该列。
+    func createSystemFeedback(householdId: UUID, content: String, taskId: UUID?) async throws -> Feedback
 }
 
 protocol HouseholdMembershipDataService {

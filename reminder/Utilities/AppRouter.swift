@@ -22,6 +22,9 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedMembershipId: UUID?
     @Published private(set) var selectedHouseholdName: String?
 
+    @Published var showNewCreatorAlert = false
+    @Published var newlyAssignedHousehold: JoinedHousehold?
+
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
     private var pendingPreferredHouseholdId: UUID?
 
@@ -169,6 +172,31 @@ final class AppRouter: ObservableObject {
             name: joined.displayHouseholdName
         )
         chooseHousehold(option)
+    }
+
+    func dismissNewCreatorAlert() {
+        showNewCreatorAlert = false
+        newlyAssignedHousehold = nil
+    }
+
+    func enterNewlyAssignedCreatorHousehold() {
+        guard let joined = newlyAssignedHousehold else { return }
+        showNewCreatorAlert = false
+        newlyAssignedHousehold = nil
+        chooseJoinedHousehold(joined)
+    }
+
+    /// 与 UserDefaults 快照比对，检测是否新获得某家庭的创建者权限。
+    func checkForNewCreatorRoles(fetchedHouseholds: [JoinedHousehold]) async {
+        guard let userId = await CreatorRoleSnapshotStore.currentUserId() else { return }
+
+        if let newHousehold = CreatorRoleSnapshotStore.newlyAssignedCreatorHousehold(
+            in: fetchedHouseholds,
+            userId: userId
+        ) {
+            newlyAssignedHousehold = newHousehold
+            showNewCreatorAlert = true
+        }
     }
 
     func chooseHousehold(_ option: HouseholdOption) {

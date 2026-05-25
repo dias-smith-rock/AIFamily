@@ -252,6 +252,74 @@ struct SupabaseFeedbackDataService: FeedbackDataService {
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    func createSystemFeedback(householdId: UUID, content: String, taskId: UUID?) async throws -> Feedback {
+        #if canImport(Supabase)
+        let trimmedContent = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedContent.isEmpty == false else {
+            throw SupabaseServiceError.invalidResponse
+        }
+
+        let payload = SystemFeedbackInsertPayload(
+            id: UUID(),
+            householdId: householdId,
+            taskId: taskId,
+            content: trimmedContent,
+            createdAt: Date()
+        )
+
+        let response: Feedback = try await provider.client
+            .from(SupabaseTable.feedbacks)
+            .insert(payload)
+            .select()
+            .single()
+            .execute()
+            .value
+        return response
+        #else
+        _ = householdId
+        _ = content
+        _ = taskId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+}
+
+private struct SystemFeedbackInsertPayload: Encodable {
+    let id: UUID
+    let householdId: UUID
+    let taskId: UUID?
+    let content: String
+    let senderId: UUID? = nil
+    let createdAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case householdId = "household_id"
+        case taskId = "task_id"
+        case content
+        case senderId = "sender_id"
+        case createdAt = "created_at"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id.uuidString.lowercased(), forKey: .id)
+        try container.encode(householdId.uuidString.lowercased(), forKey: .householdId)
+        try container.encodeIfPresent(taskId?.uuidString.lowercased(), forKey: .taskId)
+        try container.encode(content, forKey: .content)
+        try container.encode(senderId, forKey: .senderId)
+        try container.encode(
+            SupabaseFeedbackDataService.formatDateForInsert(createdAt),
+            forKey: .createdAt
+        )
+    }
+}
+
+extension SupabaseFeedbackDataService {
+    fileprivate static func formatDateForInsert(_ date: Date) -> String {
+        ISO8601DateFormatter().string(from: date)
+    }
 }
 
 // MARK: - Family Profiles Service

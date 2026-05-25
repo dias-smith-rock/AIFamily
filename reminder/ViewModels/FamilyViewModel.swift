@@ -17,6 +17,7 @@ final class FamilyViewModel: ObservableObject {
     @Published var isDisbanding = false
     @Published var showDisbandErrorAlert = false
     @Published var disbandError: String?
+    @Published var transferSuccessToastMessage: String?
 
     private let profileService: FamilyProfileDataService
     private let membershipService: HouseholdMembershipDataService
@@ -43,6 +44,50 @@ final class FamilyViewModel: ObservableObject {
 
     var canDisbandCurrentHousehold: Bool {
         currentMembership?.hasRole(.creator) == true
+    }
+
+    var canTransferOwnership: Bool {
+        canDisbandCurrentHousehold
+    }
+
+    var currentAuthUserId: UUID? {
+        currentMembership?.userId ?? currentUserProfile?.userId
+    }
+
+    var transferHouseholdId: UUID? {
+        currentHouseholdId
+    }
+
+    var transferMembersSnapshot: [HouseholdMembership] {
+        members
+    }
+
+    var transferProfilesSnapshot: [FamilyProfile] {
+        profiles
+    }
+
+    func showTransferSuccessToast() {
+        transferSuccessToastMessage = "权限已成功转移"
+    }
+
+    func acknowledgeTransferSuccessToast() {
+        transferSuccessToastMessage = nil
+    }
+
+    func applyLocalRoleDowngradeAfterOwnershipTransfer() async {
+        guard let membershipId = currentMembershipId,
+              let index = members.firstIndex(where: { $0.id == membershipId }) else {
+            await loadMembers()
+            return
+        }
+
+        var downgraded = members[index]
+        downgraded.role = MembershipRole.member.rawValue
+        members[index] = downgraded
+        attachMembershipsFromFlatMembers()
+        applyLocalOrdering()
+        postScheduleHouseholdRosterChangedIfNeeded()
+        await loadMembers()
     }
 
     /// 解散当前家庭：调用 RPC、清洗本地缓存；成功返回 `true` 供 View 切换根路由。
@@ -1114,6 +1159,8 @@ final class FamilyViewModel: ObservableObject {
              .nonceConsumed,
              .householdNameMismatch,
              .disbandUnauthorized,
+             .transferUnauthorized,
+             .transferInvalidTarget,
              .unknown:
             return "修改家庭名称失败，请稍后重试。"
         }

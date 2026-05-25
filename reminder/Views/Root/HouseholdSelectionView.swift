@@ -67,12 +67,12 @@ struct HouseholdSelectionView: View {
             }
         }
         .task {
-            await viewModel.fetchMyHouseholds()
+            await viewModel.fetchMyHouseholds(appRouter: appRouter)
         }
         .onChange(of: appRouter.appState) { _, newState in
             guard newState == .orgRouting || newState == .householdSelection else { return }
             Task {
-                await viewModel.fetchMyHouseholds()
+                await viewModel.fetchMyHouseholds(appRouter: appRouter)
             }
         }
         .onChange(of: viewModel.errorMessage) { _, newValue in
@@ -371,7 +371,7 @@ struct HouseholdSelectionView: View {
         appRouter.preferHouseholdOnNextRefresh(createdId)
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
-        await viewModel.fetchMyHouseholds()
+        await viewModel.fetchMyHouseholds(appRouter: appRouter)
     }
 
     private func submitJoin() async {
@@ -388,7 +388,7 @@ struct HouseholdSelectionView: View {
         guard success else { return }
         showJoinSheet = false
         await appRouter.refreshStateFromBackend()
-        await viewModel.fetchMyHouseholds()
+        await viewModel.fetchMyHouseholds(appRouter: appRouter)
     }
 }
 

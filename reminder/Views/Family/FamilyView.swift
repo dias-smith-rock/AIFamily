@@ -170,6 +170,24 @@ struct FamilyView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
+        .alert("提示", isPresented: transferSuccessToastBinding) {
+            Button("好的", role: .cancel) {
+                viewModel.acknowledgeTransferSuccessToast()
+            }
+        } message: {
+            Text(viewModel.transferSuccessToastMessage ?? "")
+        }
+    }
+
+    private var transferSuccessToastBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.transferSuccessToastMessage != nil },
+            set: { isPresented in
+                if isPresented == false {
+                    viewModel.acknowledgeTransferSuccessToast()
+                }
+            }
+        )
     }
 
     // MARK: - List Body
@@ -549,13 +567,13 @@ struct FamilyView: View {
         guard success else { return false }
 
         isShowingRenameHouseholdSheet = false
-        await orgRoutingViewModel.fetchMyHouseholds()
+        await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
         try? await Task.sleep(nanoseconds: 280_000_000)
         withAnimation {
             appRouter.exitToOrgHubAfterDisband()
         }
         await appRouter.refreshStateFromBackend()
-        await orgRoutingViewModel.fetchMyHouseholds()
+        await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
         return true
     }
 
@@ -645,7 +663,10 @@ private struct OrganizationSettingsSheet: View {
                     }
 
                     saveChangesButton
-                    transferOwnershipRow
+
+                    if familyViewModel.canTransferOwnership {
+                        transferOwnershipRow
+                    }
 
                     if canDisband {
                         dangerZoneSection
@@ -720,8 +741,10 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var transferOwnershipRow: some View {
-        Button {
-            // 预留：转移所有权流程
+        NavigationLink {
+            TransferOwnershipView(familyViewModel: familyViewModel) {
+                dismiss()
+            }
         } label: {
             settingsNavigationRow(
                 title: "转移所有权",

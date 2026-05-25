@@ -70,6 +70,26 @@ actor MockFeedbackDataService: FeedbackDataService {
         }
         feedbacks[index] = feedbacks[index].markingRead(by: readerId)
     }
+
+    func createSystemFeedback(householdId: UUID, content: String, taskId: UUID?) async throws -> Feedback {
+        let feedback = Feedback(
+            id: UUID(),
+            householdId: householdId,
+            taskId: taskId ?? UUID(),
+            senderId: nil,
+            content: content,
+            voiceUrl: nil,
+            imageUrls: nil,
+            readBy: nil,
+            isDeleted: false,
+            replyToId: nil,
+            createdAt: Date(),
+            updatedAt: nil,
+            mediaClearedAt: nil
+        )
+        feedbacks.append(feedback)
+        return feedback
+    }
 }
 
 // MARK: - Memberships
@@ -302,5 +322,10 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
 
     func cleanUpHouseholdFeedbackAudios(householdId: UUID) async {
         _ = householdId
+    }
+
+    func transferOwnership(householdId: UUID, newCreatorUserId: UUID) async throws {
+        _ = householdId
+        _ = newCreatorUserId
     }
 }
