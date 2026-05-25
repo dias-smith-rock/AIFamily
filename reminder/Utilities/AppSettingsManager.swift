@@ -17,11 +17,7 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
     }
 
     var listValueTitle: String {
-        switch self {
-        case .system: return String(localized: "System")
-        case .light: return String(localized: "Light")
-        case .dark: return String(localized: "Dark")
-        }
+        settingsTitle
     }
 
     var colorScheme: ColorScheme? {

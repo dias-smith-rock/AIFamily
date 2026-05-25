@@ -190,7 +190,7 @@ struct MineView: View {
                     AppearanceSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "Appearance",
+                        title: "Theme",
                         systemImage: "moon.fill",
                         iconTint: .purple,
                         value: appSettings.appearance.listValueTitle,

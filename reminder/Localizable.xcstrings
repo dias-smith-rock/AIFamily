@@ -2268,7 +2268,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "وضع الضوء"
+            "value": "الوضع الفاتح"
           }
         },
         "en": {
@@ -2280,13 +2280,13 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modo de luz"
+            "value": "Modo claro"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mode lumière"
+            "value": "Mode clair"
           }
         },
         "hi": {
@@ -2304,19 +2304,19 @@
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "ஒளி முறை"
+            "value": "ஒளி பயன்முறை"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "灯光模式"
+            "value": "浅色模式"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "燈光模式"
+            "value": "淺色模式"
           }
         }
       }
@@ -18731,6 +18731,122 @@
           "stringUnit": {
             "state": "translated",
             "value": "கிடைத்தது"
+          }
+        }
+      }
+    },
+    "Theme": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主题"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主題"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thème"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "السمة"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "थीम"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தீம்"
+          }
+        }
+      }
+    },
+    "After changing the theme, the app switches display mode instantly.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After changing the theme, the app switches display mode instantly."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改主题后，应用会立即切换显示模式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更改主題後，App 會立即切換顯示模式。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al cambiar el tema, la app cambia el modo de visualización al instante."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ao alterar o tema, o app muda o modo de exibição instantaneamente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Après avoir changé le thème, l’app bascule instantanément le mode d’affichage."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بعد تغيير السمة، يبدّل التطبيق وضع العرض فورًا."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "थीम बदलने के बाद, ऐप तुरंत प्रदर्शन मोड बदल देता है।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தீம் மாற்றிய பிறகு, ஆப் உடனடியாக காட்சி முறையை மாற்றும்."
           }
         }
       }
