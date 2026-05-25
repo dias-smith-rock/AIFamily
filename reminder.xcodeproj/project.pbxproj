@@ -113,6 +113,14 @@
 			knownRegions = (
 				en,
 				Base,
+				ar,
+				"zh-HK",
+				"zh-Hans",
+				fr,
+				hi,
+				"pt-BR",
+				ta,
+				"es-US",
 			);
 			mainGroup = DD17A5E62F9F4E500059AE67;
 			minimizedProjectReferenceProxies = 1;
@@ -211,6 +219,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -268,6 +277,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
