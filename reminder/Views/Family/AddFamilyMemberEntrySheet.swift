@@ -17,8 +17,8 @@ struct AddFamilyMemberEntrySheet: View {
                     } label: {
                         entryRow(
                             icon: "paperplane.fill",
-                            title: "邀请家人加入",
-                            subtitle: "发送邀请链接，家人可使用自己的手机登录并互动。"
+                            title: "邀请成员加入",
+                            subtitle: "发送邀请链接，对方可使用自己的手机登录并互动。"
                         )
                     }
                     .buttonStyle(.plain)
@@ -37,7 +37,7 @@ struct AddFamilyMemberEntrySheet: View {
                     }
                 }
             }
-            .navigationTitle("添加家庭成员")
+            .navigationTitle("添加群组成员")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

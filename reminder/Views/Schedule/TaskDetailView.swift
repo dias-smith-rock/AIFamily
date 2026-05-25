@@ -361,7 +361,7 @@ struct TaskDetailView: View {
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("为了谁：全家人")
+        .accessibilityLabel("为了谁：全体成员")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 

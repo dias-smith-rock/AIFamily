@@ -24,7 +24,7 @@ struct PendingView: View {
                 .font(.system(size: 26, weight: .bold))
                 .multilineTextAlignment(.center)
 
-            Text("批准后你会自动进入家庭主界面。")
+            Text("批准后你会自动进入群组主界面。")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
 

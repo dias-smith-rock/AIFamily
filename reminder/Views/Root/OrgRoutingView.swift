@@ -40,7 +40,7 @@ struct OrgRoutingView: View {
                     RouteActionCard(
                         icon: "house.fill",
                         title: "我是家长",
-                        subtitle: "创建一个全新的家庭空间",
+                        subtitle: "创建一个全新的群组空间",
                         backgroundColor: Color.orange.opacity(0.12)
                     ) {
                         createInputError = nil
@@ -49,7 +49,7 @@ struct OrgRoutingView: View {
 
                     RouteActionCard(
                         icon: "qrcode.viewfinder",
-                        title: "加入家人",
+                        title: "加入群组",
                         subtitle: "通过扫码或邀请码加入",
                         backgroundColor: Color.green.opacity(0.12)
                     ) {
@@ -155,7 +155,7 @@ struct OrgRoutingView: View {
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.2)
-                        Text("正在加入家庭…")
+                        Text("正在加入群组…")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -243,7 +243,7 @@ struct OrgRoutingView: View {
     private func submitCreate() async {
         createInputError = nil
         guard normalizedHouseholdName.isEmpty == false else {
-            createInputError = "请输入家庭名称。"
+            createInputError = "请输入群组名称。"
             return
         }
         let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
@@ -338,7 +338,7 @@ private struct CreateHouseholdSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                Text("请输入家庭名称")
+                Text("请输入群组名称")
                     .font(.system(size: 15, weight: .semibold))
                 TextField("例如：王家小院", text: $householdName)
                     .textFieldStyle(.plain)
@@ -373,7 +373,7 @@ private struct CreateHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle("创建家庭")
+            .navigationTitle("创建群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -466,7 +466,7 @@ private struct JoinHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle("加入家庭")
+            .navigationTitle("加入群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

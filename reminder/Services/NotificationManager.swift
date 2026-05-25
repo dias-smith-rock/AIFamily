@@ -275,7 +275,7 @@ actor NotificationManager {
     private nonisolated static func contentTitle(from raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "家庭任务"
+            return "群组任务"
         }
         let maxLen = 80
         if trimmed.count <= maxLen {

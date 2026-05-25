@@ -109,9 +109,9 @@ final class MineViewModel: ObservableObject {
             if names.isEmpty {
                 showDeleteAccountAlert = true
             } else {
-                let firstName = names.first ?? "未知组织"
-                let suffix = names.count > 1 ? "等 \(names.count) 个组织" : ""
-                blockAlertMessage = "您是「\(firstName)」\(suffix)的创建者，请先将权限转移给其他人，或者解散组织之后再注销账户。"
+                let firstName = names.first ?? "未知群组"
+                let suffix = names.count > 1 ? "等 \(names.count) 个群组" : ""
+                blockAlertMessage = "您是「\(firstName)」\(suffix)的创建者，请先转移权限或解散群组后再注销账户。"
                 showCreatorBlockAlert = true
             }
         } catch {

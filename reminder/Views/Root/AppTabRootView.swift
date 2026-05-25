@@ -22,7 +22,7 @@ struct AppTabRootView: View {
 
             FamilyView()
                 .tabItem {
-                    Label("家庭", systemImage: "person.2")
+                    Label("群组", systemImage: "person.2")
                 }
                 .tag(Tab.family)
 

@@ -73,7 +73,7 @@ struct EmptyStateView: View {
     EmptyStateView(
         systemImage: "calendar.badge.exclamationmark",
         title: "暂无任务",
-        message: "可以让 AI 帮你快速创建一条家庭任务。",
+        message: "可以让 AI 帮你快速创建一条群组任务。",
         primaryActionTitle: "让 AI 帮我创建",
         primaryAction: {},
         secondaryActionTitle: "手动新建",

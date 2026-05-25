@@ -24,10 +24,10 @@ struct InviteMemberView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 10) {
-                    Text("邀请家人加入")
+                    Text("邀请成员加入")
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
-                    Text("让家人使用 WeFamily App 扫码，或输入下方邀请码即可加入。")
+                    Text("让对方使用 WeFamily App 扫码，或输入下方邀请码即可加入。")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -64,7 +64,7 @@ struct InviteMemberView: View {
 
                 if let inviteCode {
                     ShareLink(
-                        item: "邀请你加入 WeFamily 家庭空间！请复制此邀请码：\(inviteCode)，或使用 App 扫码加入。"
+                        item: "邀请你加入 WeFamily 群组空间！请复制此邀请码：\(inviteCode)，或使用 App 扫码加入。"
                     ) {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
@@ -154,7 +154,7 @@ struct InviteMemberView: View {
         throw NSError(
             domain: "InviteMemberView",
             code: -1,
-            userInfo: [NSLocalizedDescriptionKey: "当前成员身份无效，请先重新进入该家庭后重试。"]
+            userInfo: [NSLocalizedDescriptionKey: "当前成员身份无效，请先重新进入该群组后重试。"]
         )
     }
 
@@ -164,7 +164,7 @@ struct InviteMemberView: View {
         defer { isLoading = false }
 
         guard let currentHouseholdId else {
-            errorMessage = "当前未选择家庭。"
+            errorMessage = "当前未选择群组。"
             return
         }
 
@@ -195,7 +195,7 @@ struct InviteMemberView: View {
             if isMissingGetOrCreateInviteNonceRPC(error) {
                 errorMessage = "后端尚未完成升级，请先创建 get_or_create_invite_nonce RPC 后重试。"
             } else if isForbiddenError(error) {
-                errorMessage = "仅家庭创建者或管理员可生成邀请二维码。"
+                errorMessage = "仅创建者或管理员可生成邀请二维码。"
             } else {
                 errorMessage = error.localizedDescription
             }

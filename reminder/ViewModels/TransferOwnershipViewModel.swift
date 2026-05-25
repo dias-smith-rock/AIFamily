@@ -57,7 +57,7 @@ final class TransferOwnershipViewModel: ObservableObject {
                 newCreatorUserId: targetUserId
             )
 
-            let systemMessage = "家庭创建者权限已转移给「\(targetDisplayName)」。"
+            let systemMessage = "创建者权限已转移给「\(targetDisplayName)」。"
             let anchorTaskId = await resolveSystemMessageTaskId()
             do {
                 _ = try await feedbackService.createSystemFeedback(
@@ -104,13 +104,13 @@ final class TransferOwnershipViewModel: ObservableObject {
         if let routingError = error as? HouseholdRoutingError {
             switch routingError {
             case .transferUnauthorized, .disbandUnauthorized, .forbidden:
-                return "只有当前家庭的创建者才能转移权限。"
+                return "只有当前群组的创建者才能转移权限。"
             case .transferInvalidTarget:
                 return "所选成员不符合接收权限的条件，请重新选择。"
             case .unauthenticated:
                 return "登录状态已失效，请重新登录后再试。"
             case .householdNotFound:
-                return "家庭不存在或已被删除，请刷新后重试。"
+                return "群组不存在或已被删除，请刷新后重试。"
             case .backendMigrationRequired:
                 return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
             default:

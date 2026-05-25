@@ -19,9 +19,9 @@ struct HouseholdPickerView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("选择家庭")
+            Text("选择群组")
                 .font(.system(size: 32, weight: .bold))
-            Text("检测到你加入了多个家庭，请选择本次要进入的家庭。")
+            Text("检测到你加入了多个群组，请选择本次要进入的群组。")
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
         }
@@ -30,7 +30,7 @@ struct HouseholdPickerView: View {
     @ViewBuilder
     private var optionsList: some View {
         if appRouter.selectableHouseholds.isEmpty {
-            ProgressView("正在加载家庭列表...")
+            ProgressView("正在加载群组列表...")
                 .frame(maxWidth: .infinity, minHeight: 180)
         } else {
             VStack(spacing: 10) {

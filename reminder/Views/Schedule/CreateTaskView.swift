@@ -769,7 +769,7 @@ struct CreateTaskView: View {
     }
 
     private var forWhomChipAll: some View {
-        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: "为了谁：全家人") {
+        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: "为了谁：全体成员") {
             selectedTargetProfileIds = []
         }
     }
@@ -969,11 +969,11 @@ struct CreateTaskView: View {
             return
         }
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = "当前未选择家庭。"
+            errorMessage = "当前未选择群组。"
             return
         }
         guard let creatorMembershipId = appRouter.selectedMembershipId else {
-            errorMessage = "当前成员身份无效，请重新进入家庭后再试。"
+            errorMessage = "当前成员身份无效，请重新进入群组后再试。"
             return
         }
 
@@ -998,11 +998,11 @@ struct CreateTaskView: View {
     private func performUpdate(existing: FamilyTask, scope: RecurringTaskScope) async {
         #if canImport(Supabase)
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = "当前未选择家庭。"
+            errorMessage = "当前未选择群组。"
             return
         }
         guard existing.householdId == householdId else {
-            errorMessage = "当前家庭与任务不一致，无法保存。"
+            errorMessage = "当前群组与任务不一致，无法保存。"
             return
         }
 

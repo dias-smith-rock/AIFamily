@@ -33,7 +33,7 @@ struct FamilyView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
-                    Text("家庭")
+                    Text("群组")
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 }
@@ -196,7 +196,7 @@ struct FamilyView: View {
     private var familyListBody: some View {
         List {
             if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-                ProgressView("正在加载家人档案…")
+                ProgressView("正在加载成员档案…")
                     .frame(maxWidth: .infinity, minHeight: 220)
                     .listRowBackground(Color.clear)
             } else if let errorMessage = viewModel.errorMessage {
@@ -294,14 +294,14 @@ struct FamilyView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text("还没有家人档案")
+            Text("还没有成员档案")
                 .font(.headline)
-            Text("添加第一位家人，一起分工协作、温柔提醒每一天。")
+            Text("添加第一位成员，一起分工协作、温柔提醒每一天。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
-            Button("添加家庭成员") {
+            Button("添加群组成员") {
                 addMemberRoute = .entry
             }
             .buttonStyle(.borderedProminent)
@@ -376,7 +376,7 @@ struct FamilyView: View {
 
     private var otherMembersSectionHeader: some View {
         HStack(spacing: 16) {
-            Text("家庭成员")
+            Text("群组成员")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -392,7 +392,7 @@ struct FamilyView: View {
                     .foregroundStyle(.blue)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(isSortingMembers ? "完成排序" : "排序家庭成员")
+            .accessibilityLabel(isSortingMembers ? "完成排序" : "排序群组成员")
 
             Button {
                 addMemberRoute = .entry
@@ -402,7 +402,7 @@ struct FamilyView: View {
                     .foregroundStyle(.blue)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("添加家庭成员")
+            .accessibilityLabel("添加群组成员")
         }
         .textCase(nil)
     }
@@ -441,7 +441,7 @@ struct FamilyView: View {
     private func memberListSubtitle(for profile: FamilyProfile) -> String {
         let membership = resolvedMembership(for: profile)
         guard let membership else {
-            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "家庭成员"
+            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "群组成员"
         }
         switch membership.parsedRole {
         case .creator, .admin:
@@ -449,7 +449,7 @@ struct FamilyView: View {
         case .member:
             return membership.parsedRole?.displayTitle ?? "成员"
         case .none:
-            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "家庭成员"
+            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "群组成员"
         }
     }
 
@@ -488,9 +488,9 @@ struct FamilyView: View {
             return "成员档案"
         }
         if let membership = resolvedMembership(for: profile) {
-            return membership.parsedRole?.displayTitle ?? "家庭成员"
+            return membership.parsedRole?.displayTitle ?? "群组成员"
         }
-        return "家庭成员"
+        return "群组成员"
     }
 
     private var leaveHouseholdSection: some View {
@@ -500,7 +500,7 @@ struct FamilyView: View {
             } label: {
                 HStack {
                     Spacer()
-                    Text("退出该家庭")
+                    Text("退出该群组")
                         .font(.system(size: 17, weight: .semibold))
                     Spacer()
                 }
@@ -538,7 +538,7 @@ struct FamilyView: View {
     private func renameCurrentHousehold(to newName: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
-            renameErrorMessage = "当前未选择家庭。"
+            renameErrorMessage = "当前未选择群组。"
             return
         }
 
@@ -677,7 +677,7 @@ private struct OrganizationSettingsSheet: View {
                 .padding(.bottom, 28)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("组织设置")
+            .navigationTitle("群组设置")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -703,7 +703,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var organizationNameField: some View {
-        TextField("输入组织名称…", text: $name)
+        TextField("输入群组名称…", text: $name)
             .textInputAutocapitalization(.words)
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
@@ -768,7 +768,7 @@ private struct OrganizationSettingsSheet: View {
                 HStack(spacing: 12) {
                     Image(systemName: "trash.fill")
                         .font(.body)
-                    Text("解散当前家庭")
+                    Text("解散当前群组")
                         .font(.body.weight(.semibold))
                     Spacer(minLength: 8)
                 }
@@ -839,15 +839,15 @@ private struct DisbandHouseholdConfirmationSheet: View {
         NavigationStack {
             ZStack {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("解散家庭操作不可逆")
+                    Text("解散群组操作不可逆")
                         .font(.headline)
 
-                    Text("此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前家庭名称「\(householdName)」以确认解散。")
+                    Text("此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前群组名称「\(householdName)」以确认解散。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    TextField("请输入家庭名称以确认", text: $disbandInputName)
+                    TextField("请输入群组名称以确认", text: $disbandInputName)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled(true)
                         .textFieldStyle(.roundedBorder)
@@ -889,7 +889,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.1)
-                        Text("正在解散家庭，请稍候…")
+                        Text("正在解散群组，请稍候…")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -900,7 +900,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     .shadow(radius: 10)
                 }
             }
-            .navigationTitle("确认解散家庭")
+            .navigationTitle("确认解散群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

@@ -29,7 +29,7 @@ struct NewCreatorAlertView: View {
                 Text("权限变更通知")
                     .font(.headline)
 
-                Text("您已成为「\(householdName)」的创建者，拥有该家庭的最高管理权限。")
+                Text("您已成为「\(householdName)」的创建者，拥有该群组的最高管理权限。")
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)

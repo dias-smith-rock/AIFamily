@@ -10,7 +10,7 @@ struct FamilySessionLoginSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("需要先登录")
                     .font(.system(size: 26, weight: .bold))
-                Text("检测到当前会话无效，请先登录再加载家庭成员。")
+                Text("检测到当前会话无效，请先登录再加载群组成员。")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
 

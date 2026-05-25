@@ -35,6 +35,6 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>用于扫描家人分享的邀请码二维码，帮助你快速加入家庭。</string>
+	<string>用于扫描他人分享的邀请码二维码，帮助你快速加入群组。</string>
 </dict>
 </plist>

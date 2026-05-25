@@ -169,7 +169,7 @@ struct FeedbackFeedView: View {
             systemImage: isFirstEmpty ? "bubble.left.and.bubble.right" : "line.3.horizontal.decrease.circle",
             title: isFirstEmpty ? "还没有反馈消息" : "筛选后暂无消息",
             message: isFirstEmpty
-                ? "家人提交语音反馈后会出现在这里。"
+                ? "成员提交语音反馈后会出现在这里。"
                 : "当前筛选条件下没有匹配项，试试切换到“全部”。",
             primaryActionTitle: isFirstEmpty ? "重新加载" : "查看全部消息",
             primaryAction: {

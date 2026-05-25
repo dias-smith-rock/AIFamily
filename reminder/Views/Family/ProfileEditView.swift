@@ -272,7 +272,7 @@ struct ProfileEditView: View {
             return
         }
         guard let householdId else {
-            errorMessage = "当前未选择家庭。"
+            errorMessage = "当前未选择群组。"
             return
         }
 

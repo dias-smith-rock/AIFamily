@@ -104,7 +104,7 @@ struct MineView: View {
                 Task { await viewModel.deleteAccount(appRouter: appRouter) }
             }
         } message: {
-            Text("此操作将永久删除您的账号及所有个人数据（创建的家庭会被解散，加入的家庭会被移出）。该操作不可逆，请谨慎确认。")
+            Text("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。")
         }
         .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
             Button("知道了", role: .cancel) {}
@@ -379,7 +379,7 @@ struct MineView: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint("编辑我的家庭档案")
+            .accessibilityHint("编辑我的群组档案")
         }
     }
 
@@ -400,7 +400,7 @@ struct MineView: View {
 
     private func openSelfProfileEditor() {
         guard let profile = familyViewModel.currentUserProfile else {
-            viewModel.showToast("尚未载入你在当前家庭的档案，请先在「家庭」确认已加入家庭。")
+            viewModel.showToast("尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。")
             return
         }
         editingSelfProfile = profile
@@ -476,7 +476,7 @@ struct MineView: View {
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
-            return "家庭成员"
+            return "群组成员"
         }
         switch membership.parsedRole {
         case .creator, .admin:
@@ -487,7 +487,7 @@ struct MineView: View {
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
-            return "家庭成员"
+            return "群组成员"
         }
     }
 

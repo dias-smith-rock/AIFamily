@@ -121,9 +121,9 @@ struct TransferOwnershipView: View {
 
     private var confirmationTitle: String {
         if let name = viewModel.selectedMember?.nickname {
-            return "确定要将家庭创建者权限转移给「\(name)」吗？"
+            return "确定要将创建者权限转移给「\(name)」吗？"
         }
-        return "确定要转移家庭创建者权限吗？"
+        return "确定要转移创建者权限吗？"
     }
 
     private var selectedMemberBinding: Binding<Bool> {

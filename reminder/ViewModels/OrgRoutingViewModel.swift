@@ -124,9 +124,9 @@ final class OrgRoutingViewModel: ObservableObject {
         if let routingError = error as? HouseholdRoutingError {
             switch routingError {
             case .invalidHouseholdName:
-                return "家庭名称不能为空，请输入后再创建。"
+                return "群组名称不能为空，请输入后再创建。"
             case .householdNameTaken:
-                return "创建家庭失败，请稍后重试。"
+                return "创建群组失败，请稍后重试。"
             case .invalidInviteCode:
                 return "邀请码格式不正确或不存在，请检查后重试。"
             case .unauthenticated:
@@ -134,11 +134,11 @@ final class OrgRoutingViewModel: ObservableObject {
             case .forbidden:
                 return "你没有权限执行该操作。"
             case .householdNotFound:
-                return "家庭不存在或已被删除，请刷新后重试。"
+                return "群组不存在或已被删除，请刷新后重试。"
             case .backendMigrationRequired:
                 return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
             case .alreadyActiveMember:
-                return "你已经是该家庭成员，无需重复加入。"
+                return "你已经是该群组成员，无需重复加入。"
             case .joinRequestPending:
                 return "你的加入申请已提交，请等待管理员审批。"
             case .nonceExpired:
@@ -148,9 +148,9 @@ final class OrgRoutingViewModel: ObservableObject {
             case .networkFailure:
                 return "网络或服务异常，请稍后再试。"
             case .householdNameMismatch:
-                return "家庭名称不匹配，请重新输入。"
+                return "群组名称不匹配，请重新输入。"
             case .disbandUnauthorized:
-                return "只有家庭创建者才能解散该家庭。"
+                return "只有创建者才能解散该群组。"
             case .transferUnauthorized, .transferInvalidTarget:
                 return "发生未知错误，请稍后重试。"
             case .unknown:
@@ -163,12 +163,12 @@ final class OrgRoutingViewModel: ObservableObject {
             #if DEBUG
             print("创建家庭失败: \(error)")
             #endif
-            return "创建家庭失败，请稍后重试。"
+            return "创建群组失败，请稍后重试。"
         case .join:
             #if DEBUG
             return error.localizedDescription
             #else
-            return "加入家庭失败，请稍后重试。"
+            return "加入群组失败，请稍后重试。"
             #endif
         }
     }

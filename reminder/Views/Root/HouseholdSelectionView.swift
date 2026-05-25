@@ -110,7 +110,7 @@ struct HouseholdSelectionView: View {
                 }
             }
         } message: {
-            Text("此操作将永久删除您的账号及所有个人数据（创建的家庭会被解散，加入的家庭会被移出）。该操作不可逆，请谨慎确认。")
+            Text("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。")
         }
         .alert("账号操作失败", isPresented: $showAuthErrorAlert) {
             Button("知道了", role: .cancel) {
@@ -185,7 +185,7 @@ struct HouseholdSelectionView: View {
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.2)
-                        Text(viewModel.isProcessingAuth ? "正在处理账号操作…" : "正在加入家庭…")
+                        Text(viewModel.isProcessingAuth ? "正在处理账号操作…" : "正在加入群组…")
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -219,7 +219,7 @@ struct HouseholdSelectionView: View {
         if viewModel.isLoading {
             VStack(spacing: 12) {
                 ProgressView()
-                Text("正在加载您的家庭…")
+                Text("正在加载您的群组…")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -228,7 +228,7 @@ struct HouseholdSelectionView: View {
             emptyHouseholdsPlaceholder
         } else {
             VStack(alignment: .leading, spacing: 12) {
-                Text("我的家庭")
+                Text("我的群组")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
 
@@ -247,10 +247,10 @@ struct HouseholdSelectionView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(.tertiary)
                 .symbolRenderingMode(.hierarchical)
-            Text("您还没有加入任何家庭")
+            Text("您还没有加入任何群组")
                 .font(.headline)
                 .foregroundStyle(.primary)
-            Text("创建新家庭，或通过邀请码加入家人已有的空间。")
+            Text("创建新群组，或通过邀请码加入他人已有的空间。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -265,7 +265,7 @@ struct HouseholdSelectionView: View {
                 createInputError = nil
                 showCreateSheet = true
             } label: {
-                Label("创建新家庭", systemImage: "plus.circle.fill")
+                Label("创建新群组", systemImage: "plus.circle.fill")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -362,7 +362,7 @@ struct HouseholdSelectionView: View {
     private func submitCreate() async {
         createInputError = nil
         guard normalizedHouseholdName.isEmpty == false else {
-            createInputError = "请输入家庭名称。"
+            createInputError = "请输入群组名称。"
             return
         }
         let createdId = await viewModel.createHousehold(displayName: normalizedHouseholdName)
@@ -447,7 +447,7 @@ private struct CreateHouseholdSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                Text("请输入家庭名称")
+                Text("请输入群组名称")
                     .font(.system(size: 15, weight: .semibold))
                 TextField("例如：王家小院", text: $householdName)
                     .textFieldStyle(.plain)
@@ -482,7 +482,7 @@ private struct CreateHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle("创建家庭")
+            .navigationTitle("创建群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -575,7 +575,7 @@ private struct JoinHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle("加入家庭")
+            .navigationTitle("加入群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

@@ -268,7 +268,7 @@ final class AppRouter: ObservableObject {
                 options.append(.init(id: household.id, membershipId: membership.id, name: household.name))
             } else {
                 debugLog("query.household_by_id.miss household=\(householdID.uuidString)")
-                options.append(.init(id: householdID, membershipId: membership.id, name: "家庭 \(householdID.uuidString.prefix(6))"))
+                options.append(.init(id: householdID, membershipId: membership.id, name: "群组 \(householdID.uuidString.prefix(6))"))
             }
         }
         let sorted = options.sorted { $0.name < $1.name }

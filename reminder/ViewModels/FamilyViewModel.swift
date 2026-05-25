@@ -112,7 +112,7 @@ final class FamilyViewModel: ObservableObject {
             print("   ↳ 归一化后 current='\(normalizedCurrent)' input='\(normalizedInput)'")
             print("   ↳ ID: \(householdId.uuidString)")
             #endif
-            disbandError = "家庭名称输入错误，与当前家庭的真实名称不匹配，请重新核对。"
+            disbandError = "群组名称输入错误，与当前群组的真实名称不匹配，请重新核对。"
             showDisbandErrorAlert = true
             return false
         }
@@ -165,12 +165,12 @@ final class FamilyViewModel: ObservableObject {
     private func mapDisbandErrorMessage(_ error: Error) -> String {
         let message = error.localizedDescription.lowercased()
         if message.contains("household_name_mismatch") {
-            return "家庭名称输入错误，与当前家庭的真实名称不匹配，请重新核对。"
+            return "群组名称输入错误，与当前群组的真实名称不匹配，请重新核对。"
         }
         if message.contains("unauthorized_not_creator")
             || message.contains("unauthorized")
             || message.contains("forbidden") {
-            return "权限不足。只有当前家庭的创建者（Creator）才有权解散该家庭。"
+            return "权限不足。只有当前群组的创建者才有权解散该群组。"
         }
         if message.contains("unauthenticated") || message.contains("jwt") || message.contains("session") {
             return "登录状态已失效，请重新登录后再试。"
@@ -178,13 +178,13 @@ final class FamilyViewModel: ObservableObject {
         if let routingError = error as? HouseholdRoutingError {
             switch routingError {
             case .householdNameMismatch:
-                return "家庭名称输入错误，与当前家庭的真实名称不匹配，请重新核对。"
+                return "群组名称输入错误，与当前群组的真实名称不匹配，请重新核对。"
             case .disbandUnauthorized, .forbidden:
-                return "权限不足。只有当前家庭的创建者（Creator）才有权解散该家庭。"
+                return "权限不足。只有当前群组的创建者才有权解散该群组。"
             case .unauthenticated:
                 return "登录状态已失效，请重新登录后再试。"
             case .householdNotFound:
-                return "家庭不存在或已被解散。"
+                return "群组不存在或已被解散。"
             case .backendMigrationRequired:
                 return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
             default:
@@ -248,7 +248,7 @@ final class FamilyViewModel: ObservableObject {
 
         guard let householdId = currentHouseholdId else {
             requiresLogin = false
-            errorMessage = "当前未选择家庭。"
+            errorMessage = "当前未选择群组。"
             profiles = []
             orderedProfiles = []
             members = []
@@ -456,11 +456,11 @@ final class FamilyViewModel: ObservableObject {
     @discardableResult
     func createMember(_ member: HouseholdMembership) async -> HouseholdMembership? {
         guard let householdId = currentHouseholdId else {
-            errorMessage = "当前未选择家庭。"
+            errorMessage = "当前未选择群组。"
             return nil
         }
         guard member.householdId == householdId else {
-            errorMessage = "成员创建失败：家庭上下文不一致。"
+            errorMessage = "成员创建失败：群组上下文不一致。"
             return nil
         }
 
@@ -733,7 +733,7 @@ final class FamilyViewModel: ObservableObject {
         let stableName = String(newName)
         let normalizedName = stableName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
-            return "家庭名称不能为空。"
+            return "群组名称不能为空。"
         }
 
         isLoading = true
@@ -1139,15 +1139,15 @@ final class FamilyViewModel: ObservableObject {
     private func mapHouseholdRenameError(_ error: HouseholdRoutingError) -> String {
         switch error {
         case .invalidHouseholdName:
-            return "家庭名称不能为空。"
+            return "群组名称不能为空。"
         case .householdNameTaken:
-            return "该家庭名称已被占用，请换一个名称。"
+            return "该群组名称已被占用，请换一个名称。"
         case .unauthenticated:
             return "当前登录状态已失效，请重新登录后再试。"
         case .forbidden:
-            return "只有创建者或管理员可以修改家庭名称。"
+            return "只有创建者或管理员可以修改群组名称。"
         case .householdNotFound:
-            return "家庭不存在或已被删除，请刷新后重试。"
+            return "群组不存在或已被删除，请刷新后重试。"
         case .backendMigrationRequired:
             return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
         case .networkFailure:
@@ -1162,7 +1162,7 @@ final class FamilyViewModel: ObservableObject {
              .transferUnauthorized,
              .transferInvalidTarget,
              .unknown:
-            return "修改家庭名称失败，请稍后重试。"
+            return "修改群组名称失败，请稍后重试。"
         }
     }
 

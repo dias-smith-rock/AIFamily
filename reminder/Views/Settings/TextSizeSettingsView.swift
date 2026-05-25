@@ -53,7 +53,7 @@ struct TextSizeSettingsView: View {
 
     private var previewCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("周末家庭采购")
+            Text("周末采购清单")
                 .font(.headline)
 
             Text("记得在周六上午检查冰箱库存，并同步更新本周的共享购物清单。")
