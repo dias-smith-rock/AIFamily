@@ -12,6 +12,7 @@ import SwiftData
 struct WeFamilyApp: App {
     @StateObject private var appBootstrap = AppBootstrap()
     @StateObject private var appRouter = AppRouter()
+    @StateObject private var appSettings = AppSettingsManager.shared
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -32,6 +33,9 @@ struct WeFamilyApp: App {
                 .environmentObject(appRouter)
                 .environmentObject(appBootstrap)
                 .environmentObject(appBootstrap.viewModelFactory)
+                .environmentObject(appSettings)
+                .preferredColorScheme(appSettings.colorScheme)
+                .dynamicTypeSize(appSettings.dynamicTypeSize)
                 .tint(AppTheme.ColorToken.accent)
         }
         .modelContainer(sharedModelContainer)

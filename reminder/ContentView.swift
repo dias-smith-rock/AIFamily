@@ -66,4 +66,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
 }

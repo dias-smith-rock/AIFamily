@@ -6,6 +6,7 @@ import UIKit
 
 struct MineView: View {
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
@@ -167,30 +168,43 @@ struct MineView: View {
                 ) {
                     viewModel.tapRow(feature: "语言设置")
                 }
-                mineNavigationRow(
-                    title: "Notifications",
-                    systemImage: "bell",
-                    iconTint: .red,
-                    subtitle: "Push & Sounds"
-                ) {
-                    viewModel.tapRow(feature: "通知")
+
+                Button {
+                    #if canImport(UIKit)
+                    SystemSettingsHelper.openAppSettings()
+                    #endif
+                } label: {
+                    SettingsRowView(
+                        title: "Notifications",
+                        systemImage: "bell.badge.fill",
+                        iconTint: .red,
+                        subtitle: "Push & Sounds"
+                    )
                 }
-                mineNavigationRow(
-                    title: "Appearance",
-                    systemImage: "moon.fill",
-                    iconTint: .indigo,
-                    value: "System"
-                ) {
-                    viewModel.tapRow(feature: "外观")
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    AppearanceSettingsView()
+                } label: {
+                    SettingsRowView(
+                        title: "Appearance",
+                        systemImage: "moon.fill",
+                        iconTint: .purple,
+                        value: appSettings.appearance.listValueTitle,
+                        showsChevron: false
+                    )
                 }
-                mineNavigationRow(
-                    title: "Text Size",
-                    systemImage: "textformat",
-                    iconTint: .teal,
-                    showsValue: false,
-                    showsSubtitle: false
-                ) {
-                    viewModel.tapRow(feature: "字号")
+
+                NavigationLink {
+                    TextSizeSettingsView()
+                } label: {
+                    SettingsRowView(
+                        title: "Text Size",
+                        systemImage: "textformat.size",
+                        iconTint: .blue,
+                        showsValue: false,
+                        showsChevron: false
+                    )
                 }
             } header: {
                 mineSectionHeader("APP SETTINGS")
@@ -659,4 +673,5 @@ struct MineView: View {
 #Preview {
     MineView()
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
 }
