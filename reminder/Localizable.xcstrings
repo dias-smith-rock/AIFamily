@@ -17516,6 +17516,1224 @@
           }
         }
       }
+    },
+    "Network connection error. Please check your connection and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network connection error. Please check your connection and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络连接错误。请检查您的连接并重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "網路連線錯誤。請檢查您的連線並重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de conexión de red. Por favor verifique su conexión e inténtelo nuevamente."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erro de conexão de rede. Verifique sua conexão e tente novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خطأ في الاتصال بالشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नेटवर्क कनेक्शन त्रुटि. अपने कनेक्शन की जांच करें और पुन: प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erreur de connexion réseau. Veuillez vérifier votre connexion et réessayer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பிணைய இணைப்பு பிழை. உங்கள் இணைப்பைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Failed to create household. Please try again later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to create household. Please try again later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建家庭失败。请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "創建家庭失敗。請稍後重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo crear el hogar. Inténtelo de nuevo más tarde."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falha ao criar família. Por favor, tente novamente mais tarde."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فشل إنشاء الأسرة. يرجى المحاولة مرة أخرى لاحقا."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गृहस्थी बनाने में विफल. कृपया बाद में पुन: प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec de la création du foyer. Veuillez réessayer plus tard."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குடும்பத்தை உருவாக்க முடியவில்லை. பிறகு முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Could not join the household. Please try again later or contact the creator.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not join the household. Please try again later or contact the creator."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法加入家庭。请稍后重试或联系创建者。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法加入家庭。請稍後重試或聯絡創建者。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo unir al hogar. Inténtalo de nuevo más tarde o ponte en contacto con el creador."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível ingressar na família. Tente novamente mais tarde ou entre em contato com o criador."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن الانضمام إلى الأسرة. يرجى المحاولة مرة أخرى لاحقًا أو الاتصال بالمنشئ."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गृहस्थी में शामिल नहीं हो सके. कृपया बाद में पुनः प्रयास करें या निर्माता से संपर्क करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de rejoindre le foyer. Veuillez réessayer plus tard ou contacter le créateur."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குடும்பத்தில் சேர முடியவில்லை. பிறகு முயற்சிக்கவும் அல்லது படைப்பாளரைத் தொடர்பு கொள்ளவும்."
+          }
+        }
+      }
+    },
+    "Household name cannot be empty. Please enter a name before creating.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Household name cannot be empty. Please enter a name before creating."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "家庭姓名不能为空。创建前请输入名称。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "家庭姓名不能為空。建立前請輸入名稱。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El nombre del hogar no puede estar vacío. Por favor ingrese un nombre antes de crear."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O nome da família não pode ficar vazio. Insira um nome antes de criar."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن أن يكون اسم العائلة فارغاً. الرجاء إدخال اسم قبل الإنشاء."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "घरेलू नाम खाली नहीं हो सकता. कृपया बनाने से पहले एक नाम दर्ज करें."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le nom du ménage ne peut pas être vide. Veuillez saisir un nom avant de créer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வீட்டுப் பெயர் காலியாக இருக்கக்கூடாது. உருவாக்கும் முன் பெயரை உள்ளிடவும்."
+          }
+        }
+      }
+    },
+    "Invalid invite code. Please check and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid invite code. Please check and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "邀请码无效。请检查并重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "邀請碼無效。請檢查並重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código de invitación no válido. Por favor verifique e intente nuevamente."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Código de convite inválido. Verifique e tente novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رمز الدعوة غير صالح. يرجى التحقق والمحاولة مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अमान्य आमंत्रण कोड. कृपया जाँच करें और पुनः प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code d'invitation invalide. Veuillez vérifier et réessayer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தவறான அழைப்புக் குறியீடு. சரிபார்த்து மீண்டும் முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Your sign-in session has expired. Please sign in again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your sign-in session has expired. Please sign in again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的登录会话已过期。请重新登录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的登入會話已過期。請重新登入。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su sesión de inicio de sesión ha caducado. Por favor inicia sesión nuevamente."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua sessão de login expirou. Faça login novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد انتهت صلاحية جلسة تسجيل الدخول الخاصة بك. الرجاء تسجيل الدخول مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका साइन-इन सत्र समाप्त हो गया है. कृपया पुनः साइन इन करें."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre session de connexion a expiré. Veuillez vous reconnecter."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் உள்நுழைவு அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்."
+          }
+        }
+      }
+    },
+    "You don't have permission to perform this action.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have permission to perform this action."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您无权执行此操作。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您無權執行此操作。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No tienes permiso para realizar esta acción."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você não tem permissão para realizar esta ação."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس لديك الإذن بتنفيذ هذا الإجراء."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके पास यह कार्रवाई करने की अनुमति नहीं है."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous n'êtes pas autorisé à effectuer cette action."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்தச் செயலைச் செய்ய உங்களுக்கு அனுமதி இல்லை."
+          }
+        }
+      }
+    },
+    "This household does not exist or has been deleted. Please refresh and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This household does not exist or has been deleted. Please refresh and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该家庭不存在或已被删除。请刷新并重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該家庭不存在或已被刪除。請刷新並重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este hogar no existe o ha sido eliminado. Actualice e inténtelo de nuevo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta família não existe ou foi excluída. Atualize e tente novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه الأسرة غير موجودة أو تم حذفها. يرجى التحديث والمحاولة مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This household does not exist or has been deleted. कृपया ताज़ा करें और पुनः प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce foyer n'existe pas ou a été supprimé. Veuillez actualiser et réessayer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த குடும்பம் இல்லை அல்லது நீக்கப்பட்டது. புதுப்பித்து மீண்டும் முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Backend upgrade required. Please apply the latest Supabase migration and try again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Backend upgrade required. Please apply the latest Supabase migration and try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要后端升级。请应用最新的 Supabase 迁移并重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要後端升級。請套用最新的 Supabase 遷移並重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se requiere actualización de backend. Aplique la última migración de Supabase y vuelva a intentarlo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualização de back-end necessária. Aplique a migração mais recente do Supabase e tente novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مطلوب ترقية الواجهة الخلفية. يرجى تطبيق أحدث ترحيل Supabase والمحاولة مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बैकएंड अपग्रेड की आवश्यकता है. कृपया नवीनतम सुपाबेस माइग्रेशन लागू करें और पुनः प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mise à niveau du back-end requise. Veuillez appliquer la dernière migration Supabase et réessayer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பின்தள மேம்படுத்தல் தேவை. தயவு செய்து சமீபத்திய Supabase இடமாற்றத்தைப் பயன்படுத்தி மீண்டும் முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "You are already a member of this household.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are already a member of this household."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您已经是这个家庭的成员了。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您已經是這個家庭的成員了。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya eres miembro de este hogar."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você já é membro desta família."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت بالفعل عضو في هذه الأسرة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप पहले से ही इस घर के सदस्य हैं।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous êtes déjà membre de ce foyer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நீங்கள் ஏற்கனவே இந்தக் குடும்பத்தில் உறுப்பினராக உள்ளீர்கள்."
+          }
+        }
+      }
+    },
+    "Your join request has been submitted. Please wait for admin approval.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your join request has been submitted. Please wait for admin approval."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的加入请求已提交。请等待管理员批准。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的加入請求已提交。請等待管理員批准。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su solicitud de unión ha sido enviada. Espere la aprobación del administrador."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua solicitação de adesão foi enviada. Aguarde a aprovação do administrador."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد تم تقديم طلب الانضمام الخاص بك. الرجاء الانتظار لموافقة المشرف."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका शामिल होने का अनुरोध सबमिट कर दिया गया है. कृपया व्यवस्थापक अनुमोदन की प्रतीक्षा करें."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre demande d'adhésion a été soumise. Veuillez attendre l'approbation de l'administrateur."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் சேர கோரிக்கை சமர்ப்பிக்கப்பட்டது. நிர்வாக ஒப்புதலுக்காக காத்திருக்கவும்."
+          }
+        }
+      }
+    },
+    "This invite code has expired. Please ask the creator to share a new one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invite code has expired. Please ask the creator to share a new one."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该邀请码已过期。请创建者分享一个新的。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該邀請碼已過期。請創建者分享一個新的。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este código de invitación ha caducado. Pídale al creador que comparta uno nuevo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este código de convite expirou. Por favor, peça ao criador para compartilhar um novo."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد انتهت صلاحية رمز الدعوة هذا. من فضلك اطلب من المبدع مشاركة واحدة جديدة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह आमंत्रण कोड समाप्त हो गया है. कृपया निर्माता से एक नया साझा करने के लिए कहें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce code d'invitation a expiré. Veuillez demander au créateur d'en partager un nouveau."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த அழைப்புக் குறியீடு காலாவதியானது. புதிய ஒன்றைப் பகிருமாறு படைப்பாளரிடம் கேட்கவும்."
+          }
+        }
+      }
+    },
+    "This invite link has already been used. Please ask the admin for a new one.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This invite link has already been used. Please ask the admin for a new one."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该邀请链接已被使用。请向管理员询问新的。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此邀請連結已被使用。請向管理員詢問新的。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este enlace de invitación ya se ha utilizado. Pídale al administrador uno nuevo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este link de convite já foi usado. Por favor, peça ao administrador um novo."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد تم استخدام رابط الدعوة هذا بالفعل. من فضلك اطلب من المشرف واحدة جديدة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस आमंत्रण लिंक का उपयोग पहले ही किया जा चुका है. कृपया व्यवस्थापक से नए के लिए पूछें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce lien d'invitation a déjà été utilisé. Veuillez en demander un nouveau à l'administrateur."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த அழைப்பு இணைப்பு ஏற்கனவே பயன்படுத்தப்பட்டது. நிர்வாகியிடம் புதியதைக் கேட்கவும்."
+          }
+        }
+      }
+    },
+    "Household name does not match. Please enter it again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Household name does not match. Please enter it again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "家庭姓名不匹配。请再次输入。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "家庭姓名不符。請再次輸入。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El nombre del hogar no coincide. Por favor ingréselo nuevamente."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O nome da família não corresponde. Por favor, insira-o novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسم العائلة غير متطابق. الرجاء إدخاله مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "घरेलू नाम मेल नहीं खाता. कृपया इसे दोबारा दर्ज करें."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le nom du ménage ne correspond pas. Veuillez le saisir à nouveau."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வீட்டுப் பெயர் பொருந்தவில்லை. தயவுசெய்து அதை மீண்டும் உள்ளிடவும்."
+          }
+        }
+      }
+    },
+    "Only the creator can disband this household.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only the creator can disband this household."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有创造者才能解散这个家庭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有創造者才能解散這個家庭。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sólo el creador puede disolver este hogar."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Somente o criador pode dissolver esta família."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فقط الخالق يمكنه حل هذه الأسرة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस घर को केवल विधाता ही उजाड़ सकता है।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seul le créateur peut dissoudre ce foyer."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "படைப்பாளியால் மட்டுமே இந்த வீட்டைக் கலைக்க முடியும்."
+          }
+        }
+      }
+    },
+    "Something went wrong. Please try again later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Something went wrong. Please try again later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出了点问题。请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "出了點問題。請稍後重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algo salió mal. Inténtelo de nuevo más tarde."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algo deu errado. Por favor, tente novamente mais tarde."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدث خطأ ما. يرجى المحاولة مرة أخرى لاحقا."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कुछ गलत हो गया। कृपया बाद में पुन: प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quelque chose s'est mal passé. Veuillez réessayer plus tard."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஏதோ தவறாகிவிட்டது. பிறகு முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Operation failed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operation failed"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作失敗"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operación fallida"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falha na operação"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فشلت العملية"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रचालन विफल रहा"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'opération a échoué"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஆபரேஷன் தோல்வியடைந்தது"
+          }
+        }
+      }
+    },
+    "Please try again later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please try again later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請稍後重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inténtelo de nuevo más tarde."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Por favor, tente novamente mais tarde."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرجى المحاولة مرة أخرى لاحقا."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कृपया बाद में पुन: प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veuillez réessayer plus tard."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பிறகு முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Invalid invite code format: must be 6 letters or digits.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid invite code format: must be 6 letters or digits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "邀请码格式无效：必须为 6 位字母或数字。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "邀請碼格式無效：必須為 6 位字母或數字。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formato de código de invitación no válido: debe tener 6 letras o dígitos."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formato de código de convite inválido: deve ter 6 letras ou dígitos."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنسيق رمز الدعوة غير صالح: يجب أن يتكون من 6 أحرف أو أرقام."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अमान्य आमंत्रण कोड प्रारूप: 6 अक्षर या अंक होना चाहिए।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Format du code d'invitation non valide : doit contenir 6 lettres ou chiffres."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தவறான அழைப்புக் குறியீடு வடிவம்: 6 எழுத்துகள் அல்லது இலக்கங்கள் இருக்க வேண்டும்."
+          }
+        }
+      }
+    },
+    "Could not start scanner. Please try again later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not start scanner. Please try again later."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法启动扫描仪。请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法啟動掃描器。請稍後重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo iniciar el escáner. Inténtelo de nuevo más tarde."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível iniciar o scanner. Por favor, tente novamente mais tarde."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذر بدء تشغيل الماسح الضوئي. يرجى المحاولة مرة أخرى لاحقا."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्कैनर प्रारंभ नहीं हो सका. कृपया बाद में पुन: प्रयास करें।"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de démarrer le scanner. Veuillez réessayer plus tard."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஸ்கேனரைத் தொடங்க முடியவில்லை. பிறகு முயற்சிக்கவும்."
+          }
+        }
+      }
+    },
+    "Got it": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Got it"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "知道了"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "知道了"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entiendo"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entendi"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فهمتها"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समझ गया"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "J'ai compris"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கிடைத்தது"
+          }
+        }
+      }
     }
   },
   "version": "1.1"

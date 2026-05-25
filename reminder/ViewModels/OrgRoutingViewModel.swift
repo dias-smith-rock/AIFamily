@@ -1,5 +1,8 @@
 import Foundation
 import Combine
+#if canImport(Supabase)
+import Supabase
+#endif
 
 @MainActor
 final class OrgRoutingViewModel: ObservableObject {
@@ -68,10 +71,26 @@ final class OrgRoutingViewModel: ObservableObject {
         do {
             try await householdRoutingService.joinHousehold(inviteCode: inviteCode)
             return true
+        } catch let routingError as HouseholdRoutingError {
+            errorMessage = mapHouseholdRoutingError(routingError)
+            return false
         } catch {
-            errorMessage = mapErrorMessage(error, action: .join)
+            #if canImport(Supabase)
+            if let dbError = error as? PostgrestError {
+                errorMessage = mapPostgrestJoinError(dbError)
+                return false
+            }
+            #endif
+            #if DEBUG
+            print("Unknown join error: \(error)")
+            #endif
+            errorMessage = Copy.networkError
             return false
         }
+    }
+
+    func acknowledgeError() {
+        errorMessage = nil
     }
 
     func signOut(appRouter: AppRouter) async -> Bool {
@@ -120,42 +139,28 @@ final class OrgRoutingViewModel: ObservableObject {
         case join
     }
 
+    private enum Copy {
+        static let networkError = String(localized: "Network connection error. Please check your connection and try again.")
+        static let createHouseholdFailed = String(localized: "Failed to create household. Please try again later.")
+        static let joinHouseholdFailed = String(localized: "Could not join the household. Please try again later or contact the creator.")
+        static let emptyHouseholdName = String(localized: "Household name cannot be empty. Please enter a name before creating.")
+        static let invalidInviteCode = String(localized: "Invalid invite code. Please check and try again.")
+        static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
+        static let forbidden = String(localized: "You don't have permission to perform this action.")
+        static let householdNotFound = String(localized: "This household does not exist or has been deleted. Please refresh and try again.")
+        static let backendMigrationRequired = String(localized: "Backend upgrade required. Please apply the latest Supabase migration and try again.")
+        static let alreadyMember = String(localized: "You are already a member of this household.")
+        static let joinRequestPending = String(localized: "Your join request has been submitted. Please wait for admin approval.")
+        static let inviteCodeExpired = String(localized: "This invite code has expired. Please ask the creator to share a new one.")
+        static let inviteLinkUsed = String(localized: "This invite link has already been used. Please ask the admin for a new one.")
+        static let householdNameMismatch = String(localized: "Household name does not match. Please enter it again.")
+        static let disbandUnauthorized = String(localized: "Only the creator can disband this household.")
+        static let unknownError = String(localized: "Something went wrong. Please try again later.")
+    }
+
     private func mapErrorMessage(_ error: Error, action: ActionType) -> String {
         if let routingError = error as? HouseholdRoutingError {
-            switch routingError {
-            case .invalidHouseholdName:
-                return "群组名称不能为空，请输入后再创建。"
-            case .householdNameTaken:
-                return "创建群组失败，请稍后重试。"
-            case .invalidInviteCode:
-                return "邀请码格式不正确或不存在，请检查后重试。"
-            case .unauthenticated:
-                return "当前登录状态已失效，请重新登录后再试。"
-            case .forbidden:
-                return "你没有权限执行该操作。"
-            case .householdNotFound:
-                return "群组不存在或已被删除，请刷新后重试。"
-            case .backendMigrationRequired:
-                return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
-            case .alreadyActiveMember:
-                return "你已经是该群组成员，无需重复加入。"
-            case .joinRequestPending:
-                return "你的加入申请已提交，请等待管理员审批。"
-            case .nonceExpired:
-                return "邀请链接已过期，请向管理员重新获取。"
-            case .nonceConsumed:
-                return "邀请链接已被使用，请向管理员重新获取。"
-            case .networkFailure:
-                return "网络或服务异常，请稍后再试。"
-            case .householdNameMismatch:
-                return "群组名称不匹配，请重新输入。"
-            case .disbandUnauthorized:
-                return "只有创建者才能解散该群组。"
-            case .transferUnauthorized, .transferInvalidTarget:
-                return "发生未知错误，请稍后重试。"
-            case .unknown:
-                return "发生未知错误，请稍后重试。"
-            }
+            return mapHouseholdRoutingError(routingError)
         }
 
         switch action {
@@ -163,13 +168,70 @@ final class OrgRoutingViewModel: ObservableObject {
             #if DEBUG
             print("创建家庭失败: \(error)")
             #endif
-            return "创建群组失败，请稍后重试。"
+            return Copy.createHouseholdFailed
         case .join:
             #if DEBUG
-            return error.localizedDescription
-            #else
-            return "加入群组失败，请稍后重试。"
+            print("加入家庭失败: \(error)")
             #endif
+            return Copy.joinHouseholdFailed
         }
     }
+
+    private func mapHouseholdRoutingError(_ error: HouseholdRoutingError) -> String {
+        switch error {
+        case .invalidHouseholdName:
+            return Copy.emptyHouseholdName
+        case .householdNameTaken:
+            return Copy.createHouseholdFailed
+        case .invalidInviteCode:
+            return Copy.invalidInviteCode
+        case .unauthenticated:
+            return Copy.sessionExpired
+        case .forbidden:
+            return Copy.forbidden
+        case .householdNotFound:
+            return Copy.householdNotFound
+        case .backendMigrationRequired:
+            return Copy.backendMigrationRequired
+        case .alreadyActiveMember:
+            return Copy.alreadyMember
+        case .joinRequestPending:
+            return Copy.joinRequestPending
+        case .nonceExpired:
+            return Copy.inviteCodeExpired
+        case .nonceConsumed:
+            return Copy.inviteLinkUsed
+        case .networkFailure:
+            return Copy.networkError
+        case .householdNameMismatch:
+            return Copy.householdNameMismatch
+        case .disbandUnauthorized:
+            return Copy.disbandUnauthorized
+        case .transferUnauthorized, .transferInvalidTarget:
+            return Copy.unknownError
+        case .unknown:
+            return Copy.joinHouseholdFailed
+        }
+    }
+
+    #if canImport(Supabase)
+    private func mapPostgrestJoinError(_ error: PostgrestError) -> String {
+        let loweredMessage = error.message.lowercased()
+
+        if error.code == "PGRST116" || loweredMessage.contains("not found") {
+            return Copy.invalidInviteCode
+        }
+        if loweredMessage.contains("already_member") || loweredMessage.contains("already_active_member") {
+            return Copy.alreadyMember
+        }
+        if loweredMessage.contains("expired") {
+            return Copy.inviteCodeExpired
+        }
+
+        #if DEBUG
+        print("DB Error: \(error.message)")
+        #endif
+        return Copy.joinHouseholdFailed
+    }
+    #endif
 }
