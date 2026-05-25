@@ -100,8 +100,7 @@ struct FeedbackFeedView: View {
                 await viewModel.uploadVoiceFeedback(
                     taskId: task.id,
                     senderId: sender.id,
-                    audioData: audioData,
-                    duration: 4
+                    audioData: audioData
                 )
             }
         } label: {
@@ -205,17 +204,13 @@ private struct FeedbackCardView: View {
         return (feedback.readBy ?? []).contains(me)
     }
 
-    private var borderColor: Color {
-        feedback.contentType == .system ? .red.opacity(0.4) : .gray.opacity(0.2)
-    }
-
     private var senderName: String {
         guard let senderId = feedback.senderId else { return "系统" }
         return MemberDisplayName.displayName(
             forMembershipId: senderId,
             members: HouseholdMembership.mockMembers,
             profiles: FamilyProfile.mockProfiles
-        ) ?? "系统"
+        ) ?? "成员"
     }
 
     private var taskScheduledAt: Date? {
@@ -227,6 +222,20 @@ private struct FeedbackCardView: View {
     }
 
     var body: some View {
+        Group {
+            if feedback.isSystemMessage {
+                Text(feedback.content ?? "系统消息")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                regularMessageCard
+            }
+        }
+    }
+
+    private var regularMessageCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let task {
                 VStack(alignment: .leading, spacing: 4) {
@@ -256,13 +265,20 @@ private struct FeedbackCardView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(senderName)
                         .font(.system(size: 20, weight: .semibold))
-                    Text(feedback.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text(feedback.createdAt.formatted(date: .omitted, time: .shortened))
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        if feedback.showsEditedBadge {
+                            Text("(已编辑)")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.gray.opacity(0.6))
+                        }
+                    }
                 }
             }
 
-            if feedback.contentType == .voice || feedback.duration != nil {
+            if feedback.hasVoiceAttachment {
                 HStack(spacing: 12) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .foregroundStyle(.blue)
@@ -285,7 +301,7 @@ private struct FeedbackCardView: View {
                                 .animation(.linear(duration: 0.15), value: progress)
                         }
 
-                    Text("0:\(String(format: "%02d", feedback.duration ?? 0))")
+                    Text("语音")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -295,12 +311,14 @@ private struct FeedbackCardView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
-            if let text = feedback.textContent, showTranscription || feedback.contentType != .voice {
+            if let text = feedback.content,
+               text.isEmpty == false,
+               showTranscription || feedback.hasVoiceAttachment == false {
                 Label {
                     Text(text)
                         .font(.system(size: 16, weight: .medium))
                 } icon: {
-                    Image(systemName: "sparkles")
+                    Image(systemName: feedback.hasVoiceAttachment ? "sparkles" : "text.bubble")
                         .foregroundStyle(.blue)
                 }
                 .padding(12)
@@ -314,7 +332,7 @@ private struct FeedbackCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 18))
         .overlay(
             RoundedRectangle(cornerRadius: 18)
-                .stroke(borderColor, lineWidth: 2)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 2)
         )
         .opacity(isReadByMe ? 0.56 : 1)
         .animation(.easeInOut(duration: 0.25), value: isReadByMe)
@@ -333,10 +351,12 @@ private struct FeedbackCardView: View {
             return
         }
 
+        guard feedback.absoluteVoiceURL() != nil else { return }
+
         isPlaying = true
         progress = 0
-        let duration = max(1, feedback.duration ?? 3)
-        let steps = duration * 10
+        let playbackDuration = 3
+        let steps = playbackDuration * 10
 
         for step in 1...steps {
             if isPlaying == false { break }

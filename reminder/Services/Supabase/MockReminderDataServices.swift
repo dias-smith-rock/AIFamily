@@ -68,11 +68,7 @@ actor MockFeedbackDataService: FeedbackDataService {
         guard let index = feedbacks.firstIndex(where: { $0.id == id }) else {
             throw SupabaseServiceError.invalidResponse
         }
-        var existing = feedbacks[index].readBy ?? []
-        if existing.contains(readerId) == false {
-            existing.append(readerId)
-        }
-        feedbacks[index].readBy = existing
+        feedbacks[index] = feedbacks[index].markingRead(by: readerId)
     }
 }
 

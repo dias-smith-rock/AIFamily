@@ -65,16 +65,6 @@ enum TaskPriority: String, Codable, Equatable, CaseIterable {
     case urgent
 }
 
-// MARK: - Feedback
-
-enum FeedbackContentType: String, Codable, Equatable {
-    case text
-    case voice
-    case image
-    case video
-    case system
-}
-
 // MARK: - Subscription Order
 
 enum PaymentMethod: String, Codable, Equatable {

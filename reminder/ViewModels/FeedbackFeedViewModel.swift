@@ -55,7 +55,7 @@ final class FeedbackFeedViewModel: ObservableObject {
             errorMessage = "当前未选择家庭。"
             return
         }
-        guard feedback.householdId == householdId else {
+        guard feedback.householdId == nil || feedback.householdId == householdId else {
             errorMessage = "反馈写入失败：家庭上下文不一致。"
             return
         }
@@ -78,11 +78,7 @@ final class FeedbackFeedViewModel: ObservableObject {
         do {
             try await feedbackService.markFeedbackAsRead(id: id, readerId: readerId)
             guard let index = feedbacks.firstIndex(where: { $0.id == id }) else { return }
-            var existing = feedbacks[index].readBy ?? []
-            if existing.contains(readerId) == false {
-                existing.append(readerId)
-            }
-            feedbacks[index].readBy = existing
+            feedbacks[index] = feedbacks[index].markingRead(by: readerId)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -113,8 +109,7 @@ final class FeedbackFeedViewModel: ObservableObject {
     func uploadVoiceFeedback(
         taskId: UUID,
         senderId: UUID,
-        audioData: Data,
-        duration: Int
+        audioData: Data
     ) async {
         guard let householdId = currentHouseholdId else {
             errorMessage = "当前未选择家庭。"
@@ -126,26 +121,25 @@ final class FeedbackFeedViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             let fileName = "\(taskId.uuidString)-\(UUID().uuidString).m4a"
-            let audioURL = try await voiceStorageService.uploadVoiceFeedback(data: audioData, fileName: fileName)
+            let storagePath = "feedbacks/\(fileName)"
+            _ = try await voiceStorageService.uploadVoiceFeedback(data: audioData, fileName: fileName)
             let feedback = Feedback(
                 id: UUID(),
                 householdId: householdId,
                 taskId: taskId,
                 senderId: senderId,
-                contentType: .voice,
-                textContent: nil,
-                voiceUrl: audioURL.absoluteString,
+                content: nil,
+                voiceUrl: storagePath,
                 imageUrls: nil,
-                videoUrl: nil,
-                duration: duration,
-                reactions: nil,
                 readBy: nil,
                 isDeleted: false,
-                mediaClearedAt: nil,
-                createdAt: Date()
+                replyToId: nil,
+                createdAt: Date(),
+                updatedAt: nil,
+                mediaClearedAt: nil
             )
-            _ = try await feedbackService.createFeedback(feedback)
-            feedbacks.insert(feedback, at: 0)
+            let created = try await feedbackService.createFeedback(feedback)
+            feedbacks.insert(created, at: 0)
             feedbacks.sort { $0.createdAt > $1.createdAt }
         } catch {
             errorMessage = error.localizedDescription

@@ -304,8 +304,8 @@ struct SupabaseAuthService: AuthService {
 // MARK: - Voice Storage
 
 private enum SupabaseStorageBucket {
-    static let voiceFeedbacks = "voice-feedbacks"
-    static let avatars = "avatars"
+    static let voiceFeedbacks = SupabaseStorageBuckets.voiceFeedbacks
+    static let avatars = SupabaseStorageBuckets.avatars
 }
 
 enum SupabaseStoragePathHelper {
@@ -316,23 +316,22 @@ enum SupabaseStoragePathHelper {
             return nil
         }
 
-        if raw.contains("://") == false {
-            return raw
+        if raw.contains("://"), let url = URL(string: raw) {
+            let path = url.path
+            let markers = [
+                "/object/public/\(bucket)/",
+                "/storage/v1/object/public/\(bucket)/"
+            ]
+            for marker in markers {
+                if let range = path.range(of: marker) {
+                    let objectPath = String(path[range.upperBound...])
+                    return objectPath.removingPercentEncoding ?? objectPath
+                }
+            }
+            return nil
         }
 
-        guard let url = URL(string: raw) else { return nil }
-        let path = url.path
-        let markers = [
-            "/object/public/\(bucket)/",
-            "/storage/v1/object/public/\(bucket)/"
-        ]
-        for marker in markers {
-            if let range = path.range(of: marker) {
-                let objectPath = String(path[range.upperBound...])
-                return objectPath.removingPercentEncoding ?? objectPath
-            }
-        }
-        return nil
+        return raw
     }
 }
 
