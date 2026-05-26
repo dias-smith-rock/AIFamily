@@ -398,6 +398,27 @@ extension FamilyProfile {
         return trimmed
     }
 
+    /// 档案备用手机号。
+    var profileSecondPhoneForDisplay: String? {
+        let trimmed = secondPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmed.isEmpty == false else { return nil }
+        return trimmed
+    }
+
+    /// 列表卡片第二行：主号 → 备用号 → 邮箱；均无则 `nil`。
+    var displayContact: String? {
+        if let main = profileMainPhoneForDisplay { return main }
+        if let second = profileSecondPhoneForDisplay { return second }
+        if let email = profileEmailForDisplay { return email }
+        return nil
+    }
+
+    /// 第二行展示的是否为手机号（用于脱敏与眼睛按钮）。
+    var displayContactIsPhoneNumber: Bool {
+        guard let contact = displayContact else { return false }
+        return contact == profileMainPhoneForDisplay || contact == profileSecondPhoneForDisplay
+    }
+
     /// 学校 · 年级（虚拟成员列表等）；任一侧为空则只展示有值的一侧。
     var profileSchoolGradeForDisplay: String? {
         let schoolTrimmed = school?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -457,4 +478,25 @@ struct LocalProfileDraft: Equatable {
     var email: String?
     var mainPhone: String?
     var secondPhone: String?
+
+    /// 保存前将空白选填字段统一为 `nil`，便于上层与 Supabase 更新 payload 一致处理「清空」。
+    func normalizedForProfileUpdate() -> LocalProfileDraft {
+        var copy = self
+        copy.avatarURL = Self.nilIfBlank(avatarURL)
+        copy.gender = Self.nilIfBlank(gender)
+        copy.idCardNum = Self.nilIfBlank(idCardNum)
+        copy.passportNum = Self.nilIfBlank(passportNum)
+        copy.permitNum = Self.nilIfBlank(permitNum)
+        copy.school = Self.nilIfBlank(school)
+        copy.grade = Self.nilIfBlank(grade)
+        copy.email = Self.nilIfBlank(email)
+        copy.mainPhone = Self.nilIfBlank(mainPhone)
+        copy.secondPhone = Self.nilIfBlank(secondPhone)
+        return copy
+    }
+
+    private static func nilIfBlank(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+    }
 }

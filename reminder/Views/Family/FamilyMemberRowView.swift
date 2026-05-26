@@ -3,18 +3,11 @@ import Kingfisher
 
 struct FamilyMemberRowView: View {
     let profile: FamilyProfile
-    /// 第二行说明：与行内角色胶囊互补（创建者/管理员不再重复占一行）。
-    let subtitle: String
     /// 当前行是否为 **虚拟档案**（无 `household_memberships` 关联）。
     var isVirtualUser: Bool = false
     /// 列表行内显著角色：仅传 `.creator` 或 `.admin`；普通成员传 `nil`。
     var prominentRole: MembershipRole? = nil
-    /// 与 `household_memberships.phone_number` 对应的脱敏展示；无则 `nil`。
-    var maskedPhoneLine: String? = nil
-    /// 原始手机号，用于与 `maskedPhoneLine` 配合在行内切换显示（仅在有号码时展示眼睛按钮）。
-    var rawPhoneNumber: String? = nil
     var onTap: (() -> Void)? = nil
-    @State private var revealsSensitiveInfo = false
     @State private var revealsFullPhone = false
 
     /// 列表右侧手机号脱敏（保留末 4 位数字）。
@@ -69,27 +62,21 @@ struct FamilyMemberRowView: View {
         Self.avatarBackgroundPalette[avatarPaletteIndex]
     }
 
-    private var sensitiveSummary: String? {
-        let ids = [profile.idCardNum, profile.passportNum, profile.permitNum]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { $0.isEmpty == false }
-        guard let first = ids.first else { return nil }
-        return revealsSensitiveInfo ? first : maskSensitive(first)
-    }
-
-    private var phoneLineText: String? {
-        guard let maskedPhoneLine else { return nil }
-        if revealsFullPhone, let raw = rawPhoneNumber?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false {
-            return raw
+    private var contactLineDisplayText: String {
+        guard let contact = profile.displayContact else {
+            return "暂无联系方式"
         }
-        return maskedPhoneLine
+        if profile.displayContactIsPhoneNumber {
+            if revealsFullPhone {
+                return contact
+            }
+            return Self.maskPhoneForDisplay(contact)
+        }
+        return contact
     }
 
     private var canTogglePhoneReveal: Bool {
-        guard let raw = rawPhoneNumber?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false else {
-            return false
-        }
-        return maskedPhoneLine != nil
+        profile.displayContactIsPhoneNumber && profile.displayContact != nil
     }
 
     var body: some View {
@@ -129,50 +116,18 @@ struct FamilyMemberRowView: View {
                         }
                     }
 
-                    if subtitle.isEmpty == false {
-                        Text(subtitle)
+                    HStack(spacing: 6) {
+                        Text(contactLineDisplayText)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                            .foregroundStyle(profile.displayContact == nil ? .tertiary : .secondary)
+                            .monospacedDigit()
+                            .lineLimit(1)
 
-                    if let schoolGradeLine = profile.profileSchoolGradeForDisplay {
-                        Text(schoolGradeLine)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let phoneLineText {
-                        HStack(spacing: 6) {
-                            Text(phoneLineText)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
-                                .lineLimit(1)
-
-                            if canTogglePhoneReveal {
-                                Button {
-                                    revealsFullPhone.toggle()
-                                } label: {
-                                    Image(systemName: revealsFullPhone ? "eye.slash" : "eye")
-                                        .font(.caption2)
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                    }
-
-                    if let sensitiveSummary {
-                        HStack(spacing: 6) {
-                            Text(sensitiveSummary)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-
+                        if canTogglePhoneReveal {
                             Button {
-                                revealsSensitiveInfo.toggle()
+                                revealsFullPhone.toggle()
                             } label: {
-                                Image(systemName: revealsSensitiveInfo ? "eye.slash" : "eye")
+                                Image(systemName: revealsFullPhone ? "eye.slash" : "eye")
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
                             }
@@ -235,13 +190,5 @@ struct FamilyMemberRowView: View {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(avatarBackground)
-    }
-
-    private func maskSensitive(_ source: String) -> String {
-        guard source.count > 8 else { return String(repeating: "*", count: source.count) }
-        let prefix = source.prefix(3)
-        let suffix = source.suffix(4)
-        let stars = String(repeating: "*", count: max(0, source.count - 7))
-        return "\(prefix)\(stars)\(suffix)"
     }
 }

@@ -237,20 +237,21 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
             throw SupabaseServiceError.invalidResponse
         }
 
-        profiles[index].name = draft.name
-        profiles[index].avatarUrl = draft.avatarURL
-        profiles[index].gender = draft.gender
-        profiles[index].birthDate = draft.birthDate.map { Self.dateFormatter.string(from: $0) }
-        profiles[index].idCardNum = draft.idCardNum
-        profiles[index].passportNum = draft.passportNum
-        profiles[index].permitNum = draft.permitNum
-        profiles[index].height = draft.height
-        profiles[index].weight = draft.weight
-        profiles[index].school = draft.school
-        profiles[index].grade = draft.grade
-        profiles[index].email = draft.email
-        profiles[index].mainPhone = draft.mainPhone
-        profiles[index].secondPhone = draft.secondPhone
+        let normalized = draft.normalizedForProfileUpdate()
+        profiles[index].name = normalized.name
+        profiles[index].avatarUrl = normalized.avatarURL
+        profiles[index].gender = normalized.gender
+        profiles[index].birthDate = normalized.birthDate.map { Self.dateFormatter.string(from: $0) }
+        profiles[index].idCardNum = normalized.idCardNum
+        profiles[index].passportNum = normalized.passportNum
+        profiles[index].permitNum = normalized.permitNum
+        profiles[index].height = normalized.height
+        profiles[index].weight = normalized.weight
+        profiles[index].school = normalized.school
+        profiles[index].grade = normalized.grade
+        profiles[index].email = normalized.email
+        profiles[index].mainPhone = normalized.mainPhone
+        profiles[index].secondPhone = normalized.secondPhone
     }
 
     private static let dateFormatter: DateFormatter = {

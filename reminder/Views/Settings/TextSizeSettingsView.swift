@@ -4,7 +4,7 @@ struct TextSizeSettingsView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
 
     private var sliderUpperBound: Double {
-        Double(max(AppSettingsManager.textSizeSteps.count - 1, 0))
+        Double(max(AppTextSize.allCases.count - 1, 0))
     }
 
     var body: some View {
@@ -18,29 +18,29 @@ struct TextSizeSettingsView: View {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text("较小")
+                        Text(AppTextSize.tiny.title)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(appSettings.textSizePreviewLabel)
+                        Text(appSettings.appTextSize.title)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text("最大")
+                        Text(AppTextSize.extraLarge.title)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
                     Slider(
                         value: Binding(
-                            get: { Double(appSettings.textSizeIndex) },
-                            set: { appSettings.textSizeIndex = Int($0.rounded()) }
+                            get: { Double(appSettings.appTextSize.rawValue) },
+                            set: { appSettings.appTextSize = AppTextSize.fromSliderIndex(Int($0.rounded())) }
                         ),
                         in: 0...sliderUpperBound,
                         step: 1
                     )
                     .accessibilityLabel("字体大小")
-                    .accessibilityValue(appSettings.textSizePreviewLabel)
+                    .accessibilityValue(appSettings.appTextSize.title)
                 }
                 .padding(.vertical, 4)
             } footer: {
@@ -70,7 +70,7 @@ struct TextSizeSettingsView: View {
                 .stroke(AppTheme.ColorToken.border, lineWidth: 1)
         )
         .dynamicTypeSize(appSettings.dynamicTypeSize)
-        .animation(.easeInOut(duration: 0.2), value: appSettings.textSizeIndex)
+        .animation(.easeInOut(duration: 0.2), value: appSettings.appTextSize)
     }
 }
 

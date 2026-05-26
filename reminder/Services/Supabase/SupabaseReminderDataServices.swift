@@ -667,66 +667,11 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
 
     func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws {
         #if canImport(Supabase)
-        struct ProfileUpdateRow: Encodable {
-            let name: String
-            let avatarUrl: String?
-            let gender: String?
-            let birthDate: String?
-            let idCardNum: String?
-            let passportNum: String?
-            let permitNum: String?
-            let height: Double?
-            let weight: Double?
-            let school: String?
-            let grade: String?
-            let email: String?
-            let mainphone: String?
-            let secondphone: String?
-
-            enum CodingKeys: String, CodingKey {
-                case name
-                case avatarUrl = "avatar_url"
-                case gender
-                case birthDate = "birth_date"
-                case idCardNum = "id_card_num"
-                case passportNum = "passport_num"
-                case permitNum = "permit_num"
-                case height
-                case weight
-                case school
-                case grade
-                case email
-                case mainphone
-                case secondphone
-            }
-        }
-
-        let dateFormatter = DateFormatter()
-        dateFormatter.calendar = Calendar(identifier: .gregorian)
-        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-
-        let payload = ProfileUpdateRow(
-            name: draft.name,
-            avatarUrl: draft.avatarURL,
-            gender: draft.gender,
-            birthDate: draft.birthDate.map { dateFormatter.string(from: $0) },
-            idCardNum: draft.idCardNum,
-            passportNum: draft.passportNum,
-            permitNum: draft.permitNum,
-            height: draft.height,
-            weight: draft.weight,
-            school: draft.school,
-            grade: draft.grade,
-            email: draft.email,
-            mainphone: draft.mainPhone,
-            secondphone: draft.secondPhone
-        )
+        let updatePayload = FamilyProfileUpdatePayload.build(from: draft)
 
         _ = try await provider.client
             .from(SupabaseTable.familyProfiles)
-            .update(payload)
+            .update(updatePayload)
             .eq("id", value: profileId.uuidString)
             .execute()
         #else

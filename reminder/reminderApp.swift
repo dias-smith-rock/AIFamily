@@ -37,7 +37,7 @@ struct WeFamilyApp: App {
                 .environment(\.locale, appSettings.selectedLanguage.locale)
                 .environment(\.layoutDirection, appSettings.selectedLanguage.layoutDirection)
                 .preferredColorScheme(appSettings.colorScheme)
-                .dynamicTypeSize(appSettings.dynamicTypeSize)
+                .applyAppTextSize()
                 .tint(AppTheme.ColorToken.accent)
         }
         .modelContainer(sharedModelContainer)

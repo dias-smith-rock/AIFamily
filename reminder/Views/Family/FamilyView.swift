@@ -268,11 +268,8 @@ struct FamilyView: View {
                     if let creator = creatorProfile {
                         FamilyMemberRowView(
                             profile: creator,
-                            subtitle: memberListSubtitle(for: creator),
                             isVirtualUser: creator.isVirtualUser,
-                            prominentRole: prominentListRole(for: creator),
-                            maskedPhoneLine: maskedPhoneForList(for: creator),
-                            rawPhoneNumber: rawPhoneForList(for: creator)
+                            prominentRole: prominentListRole(for: creator)
                         ) {
                             presentMemberFlow(for: creator)
                         }
@@ -283,23 +280,24 @@ struct FamilyView: View {
                 }
 
                 Section {
-                    ForEach(membersExcludingCreator) { profile in
-                        FamilyMemberRowView(
-                            profile: profile,
-                            subtitle: memberListSubtitle(for: profile),
-                            isVirtualUser: profile.isVirtualUser,
-                            prominentRole: prominentListRole(for: profile),
-                            maskedPhoneLine: maskedPhoneForList(for: profile),
-                            rawPhoneNumber: rawPhoneForList(for: profile)
-                        ) {
-                            presentMemberFlow(for: profile)
+                    if membersExcludingCreator.isEmpty {
+                        otherMembersEmptyState
+                    } else {
+                        ForEach(membersExcludingCreator) { profile in
+                            FamilyMemberRowView(
+                                profile: profile,
+                                isVirtualUser: profile.isVirtualUser,
+                                prominentRole: prominentListRole(for: profile)
+                            ) {
+                                presentMemberFlow(for: profile)
+                            }
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .listRowBackground(Color.clear)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .listRowBackground(Color.clear)
-                    }
-                    .onMove { indexSet, destination in
-                        guard isSortingMembers else { return }
-                        viewModel.moveNonCreatorProfiles(fromOffsets: indexSet, toOffset: destination)
+                        .onMove { indexSet, destination in
+                            guard isSortingMembers else { return }
+                            viewModel.moveNonCreatorProfiles(fromOffsets: indexSet, toOffset: destination)
+                        }
                     }
                 } header: {
                     otherMembersSectionHeader
@@ -319,6 +317,30 @@ struct FamilyView: View {
         .contentMargins(.top, 0, for: .scrollContent)
     }
 
+    private var otherMembersEmptyState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "person.crop.circle.badge.plus")
+                .font(.largeTitle)
+                .foregroundStyle(Color.accentColor)
+
+            Text("暂无其他成员")
+                .foregroundStyle(.secondary)
+
+            Button("添加成员") {
+                presentAddMemberFlow()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, minHeight: 200)
+        .padding()
+        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        .listRowBackground(Color.clear)
+    }
+
+    private func presentAddMemberFlow() {
+        addMemberRoute = .entry
+    }
+
     private var profilesEmptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "heart.circle.fill")
@@ -333,7 +355,7 @@ struct FamilyView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
             Button("添加群组成员") {
-                addMemberRoute = .entry
+                presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
         }
@@ -413,27 +435,31 @@ struct FamilyView: View {
 
             Spacer(minLength: 8)
 
-            Button {
-                withAnimation(.snappy) {
-                    isSortingMembers.toggle()
+            if membersExcludingCreator.count >= 2 {
+                Button {
+                    withAnimation(.snappy) {
+                        isSortingMembers.toggle()
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.body)
+                        .foregroundStyle(.blue)
                 }
-            } label: {
-                Image(systemName: "arrow.up.arrow.down")
-                    .font(.body)
-                    .foregroundStyle(.blue)
+                .buttonStyle(.plain)
+                .accessibilityLabel(isSortingMembers ? "完成排序" : "排序群组成员")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isSortingMembers ? "完成排序" : "排序群组成员")
 
-            Button {
-                addMemberRoute = .entry
-            } label: {
-                Image(systemName: "plus")
-                    .font(.body.weight(.bold))
-                    .foregroundStyle(.blue)
+            if membersExcludingCreator.isEmpty == false {
+                Button {
+                    presentAddMemberFlow()
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("添加群组成员")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("添加群组成员")
         }
         .textCase(nil)
     }
@@ -464,30 +490,6 @@ struct FamilyView: View {
         profile.primaryMembership ?? viewModel.membership(for: profile)
     }
 
-    private func rawPhoneForList(for profile: FamilyProfile) -> String? {
-        profile.profileMainPhoneForDisplay
-    }
-
-    /// 列表第二行：角色说明或档案联系邮箱。
-    private func memberListSubtitle(for profile: FamilyProfile) -> String {
-        let membership = resolvedMembership(for: profile)
-        guard let membership else {
-            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "群组成员"
-        }
-        switch membership.parsedRole {
-        case .creator, .admin:
-            return contactSubtitleLine(for: profile)
-        case .member:
-            return membership.parsedRole?.displayTitle ?? "成员"
-        case .none:
-            return profile.isVirtualUser ? contactSubtitleLine(for: profile) : "群组成员"
-        }
-    }
-
-    private func contactSubtitleLine(for profile: FamilyProfile) -> String {
-        profile.profileContactSummaryForDisplay
-    }
-
     /// 行内显著角色：创建者优先于管理员；普通成员不展示胶囊。
     private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {
         if profile.currentRole == MembershipRole.creator.rawValue { return .creator }
@@ -501,11 +503,6 @@ struct FamilyView: View {
             }
         }
         return nil
-    }
-
-    private func maskedPhoneForList(for profile: FamilyProfile) -> String? {
-        guard let raw = rawPhoneForList(for: profile) else { return nil }
-        return FamilyMemberRowView.maskPhoneForDisplay(raw)
     }
 
     /// 详情页「角色」一行：仅档案成员展示「成员档案」标签式文案。

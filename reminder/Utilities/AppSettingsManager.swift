@@ -33,25 +33,11 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
 final class AppSettingsManager: ObservableObject {
     static let shared = AppSettingsManager()
 
-    static let textSizeSteps: [DynamicTypeSize] = [
-        .small,
-        .medium,
-        .large,
-        .xLarge,
-        .xxLarge,
-        .xxxLarge,
-        .accessibility1,
-        .accessibility2,
-        .accessibility3
-    ]
-
-    static let defaultTextSizeIndex = 2
-
     @AppStorage("app_appearance")
     private var appearanceStorage = AppAppearance.system.rawValue
 
-    @AppStorage("app_text_size_index")
-    private var textSizeIndexStorage = AppSettingsManager.defaultTextSizeIndex
+    @AppStorage("app_text_size_tier")
+    private var textSizeTierStorage = AppTextSize.standard.rawValue
 
     @AppStorage("app_language")
     private var languageStorage = AppLanguage.system.rawValue
@@ -64,11 +50,11 @@ final class AppSettingsManager: ObservableObject {
         }
     }
 
-    var textSizeIndex: Int {
-        get { Self.clampTextSizeIndex(textSizeIndexStorage) }
+    var appTextSize: AppTextSize {
+        get { AppTextSize(rawValue: textSizeTierStorage) ?? .standard }
         set {
             objectWillChange.send()
-            textSizeIndexStorage = Self.clampTextSizeIndex(newValue)
+            textSizeTierStorage = newValue.rawValue
         }
     }
 
@@ -85,22 +71,10 @@ final class AppSettingsManager: ObservableObject {
     }
 
     var dynamicTypeSize: DynamicTypeSize {
-        Self.textSizeSteps[textSizeIndex]
-    }
-
-    var textSizePreviewLabel: String {
-        switch textSizeIndex {
-        case 0: return "较小"
-        case Self.textSizeSteps.count - 1: return "最大"
-        default: return "标准"
-        }
+        appTextSize.dynamicTypeSize
     }
 
     private init() {}
-
-    private static func clampTextSizeIndex(_ index: Int) -> Int {
-        min(max(index, 0), max(textSizeSteps.count - 1, 0))
-    }
 }
 
 #if canImport(UIKit)

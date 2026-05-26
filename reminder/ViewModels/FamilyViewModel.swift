@@ -637,7 +637,7 @@ final class FamilyViewModel: ObservableObject {
             return ProfileManagementCopy.noHouseholdSelected
         }
 
-        var profileDraft = draft
+        var profileDraft = draft.normalizedForProfileUpdate()
         profileDraft.name = trimmedDisplayName
 
         do {
