@@ -263,8 +263,8 @@ KEY_MIGRATIONS: dict[str, tuple[str, dict[str, str]]] = {
 
 IN_PLACE_UPDATES: dict[str, dict[str, str]] = {
     "WeFamily": {
-        "zh-Hans": "群组",
-        "zh-Hant": "群組",
+        "zh-Hans": "家音",
+        "zh-Hant": "家音",
     },
 }
 

@@ -40,7 +40,7 @@ struct AboutView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("About AIFamily")
+        .navigationTitle("About WeFamily")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

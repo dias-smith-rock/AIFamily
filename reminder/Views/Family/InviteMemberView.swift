@@ -27,7 +27,7 @@ struct InviteMemberView: View {
                     Text("邀请成员加入")
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
-                    Text("让对方使用 WeFamily App 扫码，或输入下方邀请码即可加入。")
+                    Text("Ask the other party to use the WeFamily App to scan the code, or enter the invitation code below to join.")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -64,7 +64,7 @@ struct InviteMemberView: View {
 
                 if let inviteCode {
                     ShareLink(
-                        item: "邀请你加入 WeFamily 群组空间！请复制此邀请码：\(inviteCode)，或使用 App 扫码加入。"
+                        item: inviteShareText(for: inviteCode)
                     ) {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
@@ -145,6 +145,13 @@ struct InviteMemberView: View {
 
     private func generateRandomInviteCode() -> String {
         String(format: "%06d", Int.random(in: 0...999_999))
+    }
+
+    private func inviteShareText(for inviteCode: String) -> String {
+        let format = String(
+            localized: "You're invited to join a WeFamily group! Copy this invite code: %1$@, or scan the QR code in the app."
+        )
+        return String(format: format, inviteCode)
     }
 
     private func resolveCreatorMembershipId() throws -> UUID {

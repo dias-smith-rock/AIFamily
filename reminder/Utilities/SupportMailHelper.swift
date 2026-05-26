@@ -6,7 +6,7 @@ import Supabase
 
 enum SupportMailHelper {
     static let supportEmail = "support@wefamily.ai"
-    static let subject = "AIFamily Support"
+    static let subject = "WeFamily Support"
 
     static func makeSupportMailURL() async -> URL? {
         let body = await supportEmailBody()
@@ -23,7 +23,7 @@ enum SupportMailHelper {
     private static func supportEmailBody() async -> String {
         let userId = await currentUserIDLine()
         return """
-        Hi AIFamily Team,
+        Hi WeFamily Team,
 
         Please describe your issue below:
 
