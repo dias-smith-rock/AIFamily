@@ -135,6 +135,12 @@ struct FamilyMemberRowView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    if let schoolGradeLine = profile.profileSchoolGradeForDisplay {
+                        Text(schoolGradeLine)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
                     if let phoneLineText {
                         HStack(spacing: 6) {
                             Text(phoneLineText)

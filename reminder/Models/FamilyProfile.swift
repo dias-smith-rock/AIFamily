@@ -25,6 +25,12 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     var mainPhone: String? = nil
     /// `family_profiles.secondphone`
     var secondPhone: String? = nil
+    /// 档案 `contact_method`（若库表有该列）；与 email / mainPhone 并存。
+    var contactMethod: String? = nil
+    /// 档案 `created_at` 原始字符串（连表 select 宽容解码，避免 Date 格式差异导致整表失败）。
+    var profileCreatedAt: String? = nil
+    /// 档案 `updated_at` 原始字符串。
+    var profileUpdatedAt: String? = nil
     /// 嵌套 `household_memberships`（Left Join；虚拟成员为 `[]` 或 `nil`）。
     var householdMemberships: [HouseholdMembership]? = nil
 
@@ -47,6 +53,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         case email
         case mainPhone = "mainphone"
         case secondPhone = "secondphone"
+        case contactMethod
+        case profileCreatedAt = "createdAt"
+        case profileUpdatedAt = "updatedAt"
         case otherId1
         case otherId2
         case householdMemberships
@@ -72,6 +81,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         email: String? = nil,
         mainPhone: String? = nil,
         secondPhone: String? = nil,
+        contactMethod: String? = nil,
+        profileCreatedAt: String? = nil,
+        profileUpdatedAt: String? = nil,
         householdMemberships: [HouseholdMembership]? = nil
     ) {
         self.id = id
@@ -91,6 +103,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         self.email = email
         self.mainPhone = mainPhone
         self.secondPhone = secondPhone
+        self.contactMethod = contactMethod
+        self.profileCreatedAt = profileCreatedAt
+        self.profileUpdatedAt = profileUpdatedAt
         self.householdMemberships = householdMemberships
     }
 
@@ -115,6 +130,9 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         email = try container.decodeIfPresent(String.self, forKey: .email)
         mainPhone = try container.decodeIfPresent(String.self, forKey: .mainPhone)
         secondPhone = try container.decodeIfPresent(String.self, forKey: .secondPhone)
+        contactMethod = try container.decodeIfPresent(String.self, forKey: .contactMethod)
+        profileCreatedAt = Self.decodeOptionalTimestampString(container: container, key: .profileCreatedAt)
+        profileUpdatedAt = Self.decodeOptionalTimestampString(container: container, key: .profileUpdatedAt)
         if let nested = try container.decodeIfPresent([HouseholdMembership].self, forKey: .householdMemberships) {
             householdMemberships = nested
         } else if let single = try container.decodeIfPresent(HouseholdMembership.self, forKey: .householdMemberships) {
@@ -149,7 +167,23 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(email, forKey: .email)
         try container.encodeIfPresent(mainPhone, forKey: .mainPhone)
         try container.encodeIfPresent(secondPhone, forKey: .secondPhone)
+        try container.encodeIfPresent(contactMethod, forKey: .contactMethod)
+        try container.encodeIfPresent(profileCreatedAt, forKey: .profileCreatedAt)
+        try container.encodeIfPresent(profileUpdatedAt, forKey: .profileUpdatedAt)
         try container.encodeIfPresent(householdMemberships, forKey: .householdMemberships)
+    }
+
+    private static func decodeOptionalTimestampString(
+        container: KeyedDecodingContainer<CodingKeys>,
+        key: CodingKeys
+    ) -> String? {
+        if let text = try? container.decodeIfPresent(String.self, forKey: key) {
+            return text
+        }
+        if let date = try? container.decodeIfPresent(Date.self, forKey: key) {
+            return ISO8601DateFormatter().string(from: date)
+        }
+        return nil
     }
 
     private static func decodeRequiredUUID(
@@ -362,6 +396,24 @@ extension FamilyProfile {
         let trimmed = mainPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard trimmed.isEmpty == false else { return nil }
         return trimmed
+    }
+
+    /// 学校 · 年级（虚拟成员列表等）；任一侧为空则只展示有值的一侧。
+    var profileSchoolGradeForDisplay: String? {
+        let schoolTrimmed = school?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let gradeTrimmed = grade?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let hasSchool = schoolTrimmed.isEmpty == false
+        let hasGrade = gradeTrimmed.isEmpty == false
+        switch (hasSchool, hasGrade) {
+        case (true, true):
+            return "\(schoolTrimmed) · \(gradeTrimmed)"
+        case (true, false):
+            return schoolTrimmed
+        case (false, true):
+            return gradeTrimmed
+        case (false, false):
+            return nil
+        }
     }
 
     /// 档案联系信息摘要（邮箱 + 主手机号），用于列表副标题。

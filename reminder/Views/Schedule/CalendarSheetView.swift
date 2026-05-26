@@ -66,7 +66,7 @@ struct CalendarSheetView: View {
                                     selectedDate = dayID(date)
                                 } label: {
                                     VStack(spacing: 4) {
-                                        Text(date.formatted(.dateTime.day()))
+                                        Text(String(Calendar.current.component(.day, from: date)))
                                             .font(.system(size: 14, weight: .semibold))
                                             .foregroundStyle(isSelected(date) ? .white : .primary)
 

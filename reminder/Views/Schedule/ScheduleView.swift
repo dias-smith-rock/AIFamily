@@ -112,7 +112,7 @@ struct TaskModeDayView: View {
                     .font(.caption2)
                     .fontWeight(.medium)
                     .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
-                Text(loopDate.formatted(.dateTime.day()))
+                Text(String(Calendar.current.component(.day, from: loopDate)))
                     .font(.callout)
                     .fontWeight(.semibold)
                     .foregroundStyle(selected ? .white : .primary)

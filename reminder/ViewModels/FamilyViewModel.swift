@@ -419,15 +419,13 @@ final class FamilyViewModel: ObservableObject {
             if hadDiskCache == false {
                 errorMessage = error.localizedDescription
             }
+            print("❌ [FetchMembers] loadMembers 失败: \(error)")
+            if let decodingError = error as? DecodingError {
+                print("🔍 详细解析错误: \(decodingError)")
+            }
             #if DEBUG
-            print("❌ [FamilyDebug] loadMembers failed — \(error.localizedDescription)")
             print("   phase: membershipService.fetchMemberRoster")
             print("   household_id=\(householdId.uuidString)")
-            print("   note: 全局档案 household_id 为 NULL，须从 household_memberships 连表 family_profiles!profile_id。")
-            let ns = error as NSError
-            if ns.domain.isEmpty == false || ns.code != 0 {
-                print("   nsError domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
-            }
             #endif
         }
     }

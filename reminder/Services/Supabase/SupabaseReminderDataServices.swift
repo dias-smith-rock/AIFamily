@@ -33,63 +33,56 @@ enum SupabaseProfileSelect {
         updated_at
         """
 
-    static let nestedProfileFields = """
+    /// 名册 / 连表拉取时 `family_profiles` 需返回的展示与编辑字段（有账号嵌套与虚拟单表共用）。
+    private static let rosterProfileFields = """
         id,\
         household_id,\
-        name,\
         user_id,\
+        name,\
         avatar_url,\
         gender,\
         birth_date,\
+        school,\
+        grade,\
+        email,\
+        mainphone,\
+        secondphone,\
         id_card_num,\
         passport_num,\
         permit_num,\
         height,\
         weight,\
-        school,\
-        grade,\
-        email,\
-        mainphone,\
-        secondphone
+        created_at,\
+        updated_at
         """
+
+    static let nestedProfileFieldsForJoin = rosterProfileFields
+
+    /// 无账号虚拟成员：`family_profiles.household_id` 绑定当前群组（无对应 membership 行）。
+    static let virtualProfileFields = rosterProfileFields
 
     static let profilesWithMemberships =
         "*, household_memberships!profile_id(\(nestedMembershipFields))"
 
-    /// 以 `household_memberships` 为主表，经 `profile_id` 外键嵌套档案（全局档案 `household_id` 为 NULL 亦可返回）。
-    static let membershipsWithProfiles =
-        "id, household_id, user_id, profile_id, nickname, role, status, joined_at, created_at, updated_at, family_profiles!profile_id(\(nestedProfileFields))"
+    /// 以 `household_memberships` 为主表；`profile:` 别名确保 JSON 键为 `profile`（非 `family_profiles`）。
+    static let membershipsWithProfiles = """
+        id,\
+        household_id,\
+        user_id,\
+        role,\
+        nickname,\
+        status,\
+        joined_at,\
+        profile_id,\
+        created_at,\
+        updated_at,\
+        profile:family_profiles!profile_id(\(nestedProfileFieldsForJoin))
+        """
 }
 
 #if canImport(Supabase)
-/// 共享连表拉取：供 Profile / Membership Service 与部分 View 复用。
+/// 双轨制名册拉取：有账号成员（memberships 连表）+ 无账号虚拟成员（family_profiles 单表）。
 enum SupabaseHouseholdRosterLoader {
-    private struct MembershipProfileJoinRow: Decodable {
-        let row: HouseholdMembership
-        let familyProfile: FamilyProfile?
-
-        /// 须与 `SupabaseCodec` 的 `convertFromSnakeCase` 一致：`family_profiles` → `familyProfiles`。
-        enum CodingKeys: String, CodingKey {
-            case familyProfiles
-        }
-
-        init(from decoder: Decoder) throws {
-            row = try HouseholdMembership(from: decoder)
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-            if let profile = try container.decodeIfPresent(FamilyProfile.self, forKey: .familyProfiles) {
-                familyProfile = profile
-            } else if let profiles = try container.decodeIfPresent([FamilyProfile].self, forKey: .familyProfiles),
-                      let first = profiles.first {
-                familyProfile = first
-            } else {
-                #if DEBUG
-                print("⚠️ [FamilyDebug] membership join row 未能解码 family_profiles，将回退 synthetic 占位")
-                #endif
-                familyProfile = nil
-            }
-        }
-    }
-
     static func fetch(
         in householdId: UUID,
         client: SupabaseClient,
@@ -98,6 +91,40 @@ enum SupabaseHouseholdRosterLoader {
         #if DEBUG
         print("🔎 [FamilyDebug] fetchMemberRoster start — household_id=\(householdId.uuidString) activeOnly=\(activeOnly)")
         #endif
+
+        async let realMembersData = fetchRegisteredMemberRows(
+            in: householdId,
+            client: client,
+            activeOnly: activeOnly
+        )
+        async let virtualProfilesData = fetchVirtualOnlyProfiles(
+            in: householdId,
+            client: client
+        )
+
+        let realRows: [HouseholdMembership]
+        let virtualProfiles: [FamilyProfile]
+        do {
+            (realRows, virtualProfiles) = try await (realMembersData, virtualProfilesData)
+        } catch {
+            logFetchMembersFailure(error, rawData: nil, phase: "concurrent fetch")
+            throw error
+        }
+
+        #if DEBUG
+        print("✅ [FetchMembers] 双轨合并前 — memberships=\(realRows.count) virtualProfiles=\(virtualProfiles.count)")
+        #endif
+
+        let registeredRoster = buildRoster(from: realRows)
+        return mergeVirtualOnlyProfiles(virtualProfiles, into: registeredRoster, householdId: householdId)
+    }
+
+    /// 有账号成员：`household_memberships` 为主表，嵌套全局 `family_profiles`。
+    private static func fetchRegisteredMemberRows(
+        in householdId: UUID,
+        client: SupabaseClient,
+        activeOnly: Bool
+    ) async throws -> [HouseholdMembership] {
         var query = client
             .from(SupabaseTable.memberships)
             .select(SupabaseProfileSelect.membershipsWithProfiles)
@@ -105,27 +132,106 @@ enum SupabaseHouseholdRosterLoader {
         if activeOnly {
             query = query.eq("status", value: MembershipStatus.active.rawValue)
         }
-        let rawResponse = try await query
-            .order("created_at", ascending: true)
-            .execute()
+        let rawResponse: PostgrestResponse<Void>
+        do {
+            rawResponse = try await query
+                .order("created_at", ascending: true)
+                .execute()
+        } catch {
+            logFetchMembersFailure(error, rawData: nil, phase: "memberships execute")
+            throw error
+        }
         #if DEBUG
         if let rawJSON = String(data: rawResponse.data, encoding: .utf8) {
-            print("💡 [FamilyDebug] fetchMemberRoster raw JSON:\n\(rawJSON)")
+            print("💡 [FamilyDebug] fetchMemberRoster memberships JSON:\n\(rawJSON)")
         }
         #endif
-        let rows = try SupabaseCodec.makeDecoder().decode([MembershipProfileJoinRow].self, from: rawResponse.data)
-        return Self.buildRoster(from: rows)
+        do {
+            return try SupabaseCodec.makeDecoder().decode([HouseholdMembership].self, from: rawResponse.data)
+        } catch {
+            logFetchMembersFailure(error, rawData: rawResponse.data, phase: "memberships decode")
+            throw error
+        }
     }
 
-    private static func buildRoster(from rows: [MembershipProfileJoinRow]) -> HouseholdMemberRoster {
+    /// 无账号虚拟成员：仅 `family_profiles`，`household_id` 等于当前群组。
+    private static func fetchVirtualOnlyProfiles(
+        in householdId: UUID,
+        client: SupabaseClient
+    ) async throws -> [FamilyProfile] {
+        let rawResponse: PostgrestResponse<Void>
+        do {
+            rawResponse = try await client
+                .from(SupabaseTable.familyProfiles)
+                .select(SupabaseProfileSelect.virtualProfileFields)
+                .eq("household_id", value: householdId.uuidString)
+                .order("name", ascending: true)
+                .execute()
+        } catch {
+            logFetchMembersFailure(error, rawData: nil, phase: "virtual profiles execute")
+            throw error
+        }
+        #if DEBUG
+        if let rawJSON = String(data: rawResponse.data, encoding: .utf8) {
+            print("💡 [FamilyDebug] fetchMemberRoster virtual profiles JSON:\n\(rawJSON)")
+        }
+        #endif
+        do {
+            let rows = try SupabaseCodec.makeDecoder().decode([FamilyProfile].self, from: rawResponse.data)
+            return rows.filter { $0.userId == nil }
+        } catch {
+            logFetchMembersFailure(error, rawData: rawResponse.data, phase: "virtual profiles decode")
+            throw error
+        }
+    }
+
+    private static func mergeVirtualOnlyProfiles(
+        _ virtualProfiles: [FamilyProfile],
+        into roster: HouseholdMemberRoster,
+        householdId: UUID
+    ) -> HouseholdMemberRoster {
+        var profilesById = Dictionary(uniqueKeysWithValues: roster.profiles.map { ($0.id, $0) })
+        let registeredProfileIds = Set(roster.memberships.compactMap(\.profileId))
+
+        for profile in virtualProfiles {
+            guard profile.householdId == householdId else { continue }
+            guard profile.userId == nil else { continue }
+            guard registeredProfileIds.contains(profile.id) == false else { continue }
+            guard profilesById[profile.id] == nil else { continue }
+            profilesById[profile.id] = profile
+        }
+
+        let profiles = profilesById.values.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
+        #if DEBUG
+        let virtualCount = profiles.filter(\.isVirtualUser).count
+        print("✅ [FetchMembers] 双轨合并后 — profiles=\(profiles.count) memberships=\(roster.memberships.count) virtual=\(virtualCount)")
+        #endif
+        return HouseholdMemberRoster(profiles: profiles, memberships: roster.memberships)
+    }
+
+    private static func logFetchMembersFailure(_ error: Error, rawData: Data?, phase: String) {
+        print("❌ [FetchMembers] 获取或解析成员列表失败 (\(phase)): \(error)")
+        if let decodingError = error as? DecodingError {
+            print("🔍 详细解析错误: \(decodingError)")
+        }
+        if let rawData, let rawJSON = String(data: rawData, encoding: .utf8) {
+            print("📦 [FetchMembers] raw JSON:\n\(rawJSON)")
+        }
+    }
+
+    private static func buildRoster(from rows: [HouseholdMembership]) -> HouseholdMemberRoster {
         var memberships: [HouseholdMembership] = []
         var profilesById: [UUID: FamilyProfile] = [:]
 
-        for join in rows {
-            let membership = join.row
+        for var row in rows {
+            let nestedProfile = row.profile
+            row.profile = nil
+            let membership = row
             memberships.append(membership)
 
-            if let profile = join.familyProfile {
+            if let profile = nestedProfile {
                 var enriched = profile.attachingMemberships(from: memberships, explicitFallback: [membership])
                 if let existing = profilesById[profile.id] {
                     let mergedMemberships = FamilyProfile.uniqueMembershipsFlattened(from: [existing, enriched])
@@ -144,6 +250,9 @@ enum SupabaseHouseholdRosterLoader {
                 } else {
                     profilesById[profileId] = synthetic
                 }
+                #if DEBUG
+                print("⚠️ [FetchMembers] membership id=\(membership.id) 无嵌套 profile，已使用 synthetic 占位 profile_id=\(profileId)")
+                #endif
             }
         }
 
@@ -639,10 +748,18 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
 
     func fetchMemberRoster(in householdId: UUID) async throws -> HouseholdMemberRoster {
         #if canImport(Supabase)
-        return try await SupabaseHouseholdRosterLoader.fetch(
-            in: householdId,
-            client: provider.client
-        )
+        do {
+            return try await SupabaseHouseholdRosterLoader.fetch(
+                in: householdId,
+                client: provider.client
+            )
+        } catch {
+            print("❌ [FetchMembers] fetchMemberRoster 失败 household_id=\(householdId.uuidString): \(error)")
+            if let decodingError = error as? DecodingError {
+                print("🔍 详细解析错误: \(decodingError)")
+            }
+            throw error
+        }
         #else
         _ = householdId
         throw SupabaseServiceError.sdkUnavailable

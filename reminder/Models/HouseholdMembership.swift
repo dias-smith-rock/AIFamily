@@ -16,6 +16,8 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
     var joinedAt: Date?
     let createdAt: Date
     let updatedAt: Date
+    /// 连表查询 `profile:family_profiles!profile_id(...)` 时嵌套返回；写入 membership 行时不携带。
+    var profile: FamilyProfile? = nil
 
     init(
         id: UUID,
@@ -27,7 +29,8 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         status: String?,
         joinedAt: Date?,
         createdAt: Date,
-        updatedAt: Date
+        updatedAt: Date,
+        profile: FamilyProfile? = nil
     ) {
         self.id = id
         self.householdId = householdId
@@ -39,6 +42,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         self.joinedAt = joinedAt
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.profile = profile
     }
 
     /// 与 `SupabaseCodec.makeDecoder()` 的 `convertFromSnakeCase` 一致：勿再写 `= "household_id"` 等显式 snake，
@@ -54,6 +58,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         case joinedAt
         case createdAt
         case updatedAt
+        case profile
     }
 
     init(from decoder: Decoder) throws {
@@ -66,8 +71,16 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         nickname = try container.decodeIfPresent(String.self, forKey: .nickname)
         status = try container.decodeIfPresent(String.self, forKey: .status)
         joinedAt = try Self.decodeOptionalDate(container: container, key: .joinedAt)
-        createdAt = try Self.decodeRequiredDate(container: container, key: .createdAt)
-        updatedAt = try Self.decodeRequiredDate(container: container, key: .updatedAt)
+        createdAt = try Self.decodeOptionalDate(container: container, key: .createdAt) ?? Date.distantPast
+        updatedAt = try Self.decodeOptionalDate(container: container, key: .updatedAt) ?? Date.distantPast
+        if let nestedProfile = try container.decodeIfPresent(FamilyProfile.self, forKey: .profile) {
+            profile = nestedProfile
+        } else if let nestedProfiles = try container.decodeIfPresent([FamilyProfile].self, forKey: .profile),
+                  let first = nestedProfiles.first {
+            profile = first
+        } else {
+            profile = nil
+        }
     }
 
     func encode(to encoder: Encoder) throws {
