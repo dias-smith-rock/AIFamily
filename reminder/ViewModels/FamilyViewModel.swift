@@ -208,12 +208,12 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private enum LeaveCopy {
-        static let creatorCannotLeave = String(localized: "You are the creator of this household. Transfer ownership or disband the household before leaving.")
+        static let creatorCannotLeave = String(localized: "You are the creator of this group. Transfer ownership or disband the group before leaving.")
         static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
-        static let householdNotFound = String(localized: "This household does not exist or has been deleted.")
+        static let householdNotFound = String(localized: "This group does not exist or has been deleted.")
         static let backendMigrationRequired = String(localized: "Backend upgrade required. Please apply the latest Supabase migration and try again.")
         static let forbidden = String(localized: "You don't have permission to perform this action.")
-        static let leaveFailed = String(localized: "Could not leave the household. Please try again later.")
+        static let leaveFailed = String(localized: "Could not leave the group. Please try again later.")
     }
 
     private func mapLeaveErrorMessage(_ error: Error) -> String {

@@ -41,7 +41,7 @@ struct HouseholdSelectionView: View {
                 .padding(.vertical, 24)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("WeFamily")
+            .navigationTitle("群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

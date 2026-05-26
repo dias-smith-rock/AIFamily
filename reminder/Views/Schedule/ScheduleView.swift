@@ -315,14 +315,14 @@ struct TaskModeDayView: View {
                 Text("No tasks scheduled today")
                     .font(.title3.bold())
                     .foregroundStyle(.primary)
-                Text("Enjoy your family time, or plan something new.")
+                Text("Enjoy your time together, or plan something new.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", title: String(localized: "Family Dinner"), dueDateKind: .selectedDay)
+                actionChip(emoji: "✨", title: String(localized: "Dinner Together"), dueDateKind: .selectedDay)
                 actionChip(emoji: "🛒", title: String(localized: "Grocery List"), dueDateKind: .dayAfterSelected)
                 actionChip(emoji: "🧸", title: String(localized: "Kids Activity"), dueDateKind: .nextSaturdayFromSelected)
             }

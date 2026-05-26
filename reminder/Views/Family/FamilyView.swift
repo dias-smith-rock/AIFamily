@@ -177,20 +177,20 @@ struct FamilyView: View {
         } message: {
             Text(viewModel.transferSuccessToastMessage ?? "")
         }
-        .alert(String(localized: "Are you sure you want to leave this household?"), isPresented: $viewModel.showLeaveConfirmation) {
+        .alert(String(localized: "Are you sure you want to leave this group?"), isPresented: $viewModel.showLeaveConfirmation) {
             Button(String(localized: "Cancel"), role: .cancel) {}
-            Button(String(localized: "Leave Household"), role: .destructive) {
+            Button(String(localized: "Leave Group"), role: .destructive) {
                 Task { await submitLeaveHousehold() }
             }
         } message: {
-            Text("After leaving, you won't be able to view tasks and messages in this household.")
+            Text("After leaving, you won't be able to view tasks and messages in this group.")
         }
         .alert(String(localized: "Notice"), isPresented: $viewModel.showCreatorBlockAlert) {
             Button(String(localized: "Got it"), role: .cancel) {}
         } message: {
-            Text("You are the creator of this household. Transfer ownership or disband the household before leaving.")
+            Text("You are the creator of this group. Transfer ownership or disband the group before leaving.")
         }
-        .alert(String(localized: "Could not leave household"), isPresented: leaveErrorAlertBinding) {
+        .alert(String(localized: "Could not leave group"), isPresented: leaveErrorAlertBinding) {
             Button(String(localized: "Got it"), role: .cancel) {
                 viewModel.acknowledgeLeaveError()
             }
@@ -534,7 +534,7 @@ struct FamilyView: View {
                     if viewModel.isLeaving {
                         ProgressView()
                     } else {
-                        Text("Leave Household")
+                        Text("Leave Group")
                             .font(.system(size: 17, weight: .semibold))
                     }
                     Spacer()
@@ -815,7 +815,7 @@ private struct OrganizationSettingsSheet: View {
                 HStack(spacing: 12) {
                     Image(systemName: "trash.fill")
                         .font(.body)
-                    Text("Disband Household")
+                    Text("Disband Group")
                         .font(.body.weight(.semibold))
                     Spacer(minLength: 8)
                 }
@@ -846,7 +846,7 @@ private struct OrganizationSettingsSheet: View {
                     } else {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .font(.body)
-                        Text("Leave Household")
+                        Text("Leave Group")
                             .font(.body.weight(.semibold))
                     }
                     Spacer(minLength: 8)

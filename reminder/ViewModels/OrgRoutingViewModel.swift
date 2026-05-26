@@ -141,20 +141,20 @@ final class OrgRoutingViewModel: ObservableObject {
 
     private enum Copy {
         static let networkError = String(localized: "Network connection error. Please check your connection and try again.")
-        static let createHouseholdFailed = String(localized: "Failed to create household. Please try again later.")
-        static let joinHouseholdFailed = String(localized: "Could not join the household. Please try again later or contact the creator.")
-        static let emptyHouseholdName = String(localized: "Household name cannot be empty. Please enter a name before creating.")
+        static let createHouseholdFailed = String(localized: "Failed to create group. Please try again later.")
+        static let joinHouseholdFailed = String(localized: "Could not join the group. Please try again later or contact the creator.")
+        static let emptyHouseholdName = String(localized: "Group name cannot be empty. Please enter a name before creating.")
         static let invalidInviteCode = String(localized: "Invalid invite code. Please check and try again.")
         static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
         static let forbidden = String(localized: "You don't have permission to perform this action.")
-        static let householdNotFound = String(localized: "This household does not exist or has been deleted. Please refresh and try again.")
+        static let householdNotFound = String(localized: "This group does not exist or has been deleted. Please refresh and try again.")
         static let backendMigrationRequired = String(localized: "Backend upgrade required. Please apply the latest Supabase migration and try again.")
-        static let alreadyMember = String(localized: "You are already a member of this household.")
+        static let alreadyMember = String(localized: "You are already a member of this group.")
         static let joinRequestPending = String(localized: "Your join request has been submitted. Please wait for admin approval.")
         static let inviteCodeExpired = String(localized: "This invite code has expired. Please ask the creator to share a new one.")
         static let inviteLinkUsed = String(localized: "This invite link has already been used. Please ask the admin for a new one.")
-        static let householdNameMismatch = String(localized: "Household name does not match. Please enter it again.")
-        static let disbandUnauthorized = String(localized: "Only the creator can disband this household.")
+        static let householdNameMismatch = String(localized: "Group name does not match. Please enter it again.")
+        static let disbandUnauthorized = String(localized: "Only the creator can disband this group.")
         static let unknownError = String(localized: "Something went wrong. Please try again later.")
     }
 
@@ -208,7 +208,7 @@ final class OrgRoutingViewModel: ObservableObject {
         case .disbandUnauthorized:
             return Copy.disbandUnauthorized
         case .creatorCannotLeave:
-            return String(localized: "You are the creator of this household. Transfer ownership or disband the household before leaving.")
+            return String(localized: "You are the creator of this group. Transfer ownership or disband the group before leaving.")
         case .transferUnauthorized, .transferInvalidTarget:
             return Copy.unknownError
         case .unknown:
