@@ -398,7 +398,9 @@ struct MineView: View {
         if roleLine.isEmpty == false {
             return roleLine
         }
-        return profile.profileEmailForDisplay ?? viewModel.email
+        return profile.profileContactSummaryForDisplay.isEmpty
+            ? (profile.profileEmailForDisplay ?? viewModel.email)
+            : profile.profileContactSummaryForDisplay
     }
 
     private func openSelfProfileEditor() {
@@ -495,7 +497,7 @@ struct MineView: View {
     }
 
     private func contactSubtitleLine(for profile: FamilyProfile) -> String {
-        profile.profileEmailForDisplay ?? ""
+        profile.profileContactSummaryForDisplay
     }
 
     private func prominentListRole(for profile: FamilyProfile) -> MembershipRole? {

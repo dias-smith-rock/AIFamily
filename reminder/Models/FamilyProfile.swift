@@ -1,10 +1,12 @@
 import Foundation
 
-/// `family_profiles` 行：展示名与可选 `user_id`（与 Auth 绑定，**不**用于判定是否为档案成员）。
-/// `householdMemberships` 由 PostgREST 嵌套 Left Join 返回；空数组 `[]` 表示虚拟成员（无账号）。
+/// `family_profiles` 行：展示名与可选 `user_id`（与 Auth 绑定）。
+/// 真实注册用户为**全局档案**（`household_id == nil`）；虚拟成员档案仍绑定 `household_id`。
+/// `householdMemberships` 由 PostgREST 嵌套或客户端从 `household_memberships` 合并。
 struct FamilyProfile: Identifiable, Codable, Equatable {
     let id: UUID
-    let householdId: UUID
+    /// 全局档案为 `nil`；仅虚拟/组织内档案有值。
+    let householdId: UUID?
     var name: String
     var userId: UUID?
     var avatarUrl: String? = nil
@@ -47,14 +49,14 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         case secondPhone = "secondphone"
         case otherId1
         case otherId2
-        case householdMemberships = "household_memberships"
+        case householdMemberships
         /// 旧缓存 / 历史 alias `memberships:household_memberships!profile_id`
         case legacyMemberships = "memberships"
     }
 
     init(
         id: UUID,
-        householdId: UUID,
+        householdId: UUID?,
         name: String,
         userId: UUID?,
         avatarUrl: String? = nil,
@@ -95,7 +97,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try Self.decodeRequiredUUID(container: container, key: .id)
-        householdId = try Self.decodeRequiredUUID(container: container, key: .householdId)
+        householdId = try Self.decodeOptionalUUID(container: container, key: .householdId)
         name = (try? container.decode(String.self, forKey: .name)) ?? "未命名成员"
         userId = try Self.decodeOptionalUUID(container: container, key: .userId)
         avatarUrl = try container.decodeIfPresent(String.self, forKey: .avatarUrl)
@@ -127,7 +129,11 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
-        try container.encode(householdId, forKey: .householdId)
+        if let householdId {
+            try container.encode(householdId, forKey: .householdId)
+        } else {
+            try container.encodeNil(forKey: .householdId)
+        }
         try container.encode(name, forKey: .name)
         try container.encodeIfPresent(userId, forKey: .userId)
         try container.encodeIfPresent(avatarUrl, forKey: .avatarUrl)
@@ -221,14 +227,19 @@ extension FamilyProfile {
         return MembershipRole(rawValue: currentRole)
     }
 
-    /// **虚拟档案**：无任何 `household_memberships` 嵌套行（仅 `family_profiles`）。
+    /// **虚拟档案**：组织内创建、无登录账号（`household_id` 有值且 `user_id` 为空）。
     var isVirtualUser: Bool {
-        householdMemberships == nil || householdMemberships?.isEmpty == true
+        userId == nil && householdId != nil
     }
 
     /// **虚拟成员**：与 `isVirtualUser` 同义，保留旧命名以兼容既有调用。
     var isLocalProfile: Bool {
         isVirtualUser
+    }
+
+    /// 是否为跨组织复用的全局注册用户档案。
+    var isGlobalRegisteredProfile: Bool {
+        userId != nil && householdId == nil
     }
 
     /// 将扁平 `household_memberships` 并入档案（Left Join 补全）：`profile_id == family_profiles.id` 或 `(user_id, household_id)`。
@@ -247,12 +258,18 @@ extension FamilyProfile {
         for profile: FamilyProfile,
         in memberships: [HouseholdMembership]
     ) -> [HouseholdMembership] {
-        let sameHousehold = memberships.filter { $0.householdId == profile.householdId }
-        let byProfileId = sameHousehold.filter { $0.profileId == profile.id }
+        let byProfileId = memberships.filter { $0.profileId == profile.id }
         if byProfileId.isEmpty == false { return byProfileId }
+        if let profileHouseholdId = profile.householdId {
+            let sameHousehold = memberships.filter { $0.householdId == profileHouseholdId }
+            if let uid = profile.userId {
+                let byUser = sameHousehold.filter { $0.userId == uid }
+                if byUser.isEmpty == false { return byUser }
+            }
+            return []
+        }
         if let uid = profile.userId {
-            let byUser = sameHousehold.filter { $0.userId == uid }
-            if byUser.isEmpty == false { return byUser }
+            return memberships.filter { $0.userId == uid }
         }
         return []
     }
@@ -273,7 +290,7 @@ extension FamilyProfile {
     /// `fetchProfiles` 不可用时的最小档案占位（必须携带 `householdMemberships`）。
     static func syntheticPlaceholder(
         profileId: UUID,
-        householdId: UUID,
+        householdId: UUID?,
         userId: UUID?,
         name: String,
         memberships: [HouseholdMembership]
@@ -345,6 +362,18 @@ extension FamilyProfile {
         let trimmed = mainPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard trimmed.isEmpty == false else { return nil }
         return trimmed
+    }
+
+    /// 档案联系信息摘要（邮箱 + 主手机号），用于列表副标题。
+    var profileContactSummaryForDisplay: String {
+        var parts: [String] = []
+        if let email = profileEmailForDisplay, email != displayName {
+            parts.append(email)
+        }
+        if let phone = profileMainPhoneForDisplay {
+            parts.append(phone)
+        }
+        return parts.joined(separator: " · ")
     }
 
     static func uniqueMembershipsFlattened(from profiles: [FamilyProfile]) -> [HouseholdMembership] {

@@ -94,8 +94,63 @@ actor MockFeedbackDataService: FeedbackDataService {
 
 // MARK: - Memberships
 
+enum MockHouseholdRosterBuilder {
+    static func roster(
+        for householdId: UUID,
+        profiles sourceProfiles: [FamilyProfile],
+        memberships sourceMemberships: [HouseholdMembership]
+    ) -> HouseholdMemberRoster {
+        let memberRows = sourceMemberships
+            .filter { $0.householdId == householdId }
+            .sorted { $0.createdAt < $1.createdAt }
+
+        var profilesById: [UUID: FamilyProfile] = [:]
+
+        for membership in memberRows {
+            if let profileId = membership.profileId,
+               let profile = sourceProfiles.first(where: { $0.id == profileId }) {
+                let linked = memberRows.filter {
+                    $0.profileId == profile.id || ($0.userId != nil && $0.userId == profile.userId)
+                }
+                var copy = profile
+                copy.memberships = linked.isEmpty ? [membership] : linked
+                profilesById[profile.id] = copy
+            } else if let profileId = membership.profileId {
+                profilesById[profileId] = FamilyProfile.syntheticPlaceholder(
+                    from: membership,
+                    profileId: profileId,
+                    relatedMemberships: [membership]
+                )
+            }
+        }
+
+        for profile in sourceProfiles where profile.householdId == householdId {
+            guard profilesById[profile.id] == nil else { continue }
+            let linked = memberRows.filter {
+                $0.profileId == profile.id || ($0.userId != nil && $0.userId == profile.userId)
+            }
+            var copy = profile
+            copy.memberships = linked.isEmpty ? nil : linked
+            profilesById[profile.id] = copy
+        }
+
+        let profiles = profilesById.values.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
+        return HouseholdMemberRoster(profiles: profiles, memberships: memberRows)
+    }
+}
+
 actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
     private var members: [HouseholdMembership] = HouseholdMembership.mockMembers
+
+    func fetchMemberRoster(in householdId: UUID) async throws -> HouseholdMemberRoster {
+        MockHouseholdRosterBuilder.roster(
+            for: householdId,
+            profiles: FamilyProfile.mockProfiles,
+            memberships: members
+        )
+    }
 
     func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership] {
         members
@@ -136,30 +191,20 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
     private var profiles: [FamilyProfile] = FamilyProfile.mockProfiles
 
     func fetchProfiles(in householdId: UUID) async throws -> [FamilyProfile] {
-        let memberRows = HouseholdMembership.mockMembers.filter { $0.householdId == householdId }
-        return profiles
-            .filter { $0.householdId == householdId }
-            .map { p in
-                let linked = memberRows.filter { m in
-                    m.householdId == p.householdId
-                        && (m.profileId == p.id || (m.userId != nil && m.userId == p.userId))
-                }
-                var copy = p
-                copy.memberships = linked.isEmpty ? nil : linked
-                return copy
-            }
-            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        MockHouseholdRosterBuilder.roster(
+            for: householdId,
+            profiles: profiles,
+            memberships: HouseholdMembership.mockMembers
+        ).profiles
     }
 
     func fetchProfile(id: UUID) async throws -> FamilyProfile? {
         guard let profile = profiles.first(where: { $0.id == id }) else { return nil }
-        let memberRows = HouseholdMembership.mockMembers.filter { $0.householdId == profile.householdId }
-        let linked = memberRows.filter { m in
-            m.householdId == profile.householdId
-                && (m.profileId == profile.id || (m.userId != nil && m.userId == profile.userId))
+        let memberRows = HouseholdMembership.mockMembers.filter {
+            $0.profileId == profile.id || ($0.userId != nil && $0.userId == profile.userId)
         }
         var copy = profile
-        copy.memberships = linked.isEmpty ? nil : linked
+        copy.memberships = memberRows.isEmpty ? nil : memberRows
         return copy
     }
 

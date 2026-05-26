@@ -380,22 +380,16 @@ final class FamilyViewModel: ObservableObject {
         }
 
         do {
-            async let profileRows = profileService.fetchProfiles(in: householdId)
-            async let membershipRows = membershipService.fetchMemberships(in: householdId)
-            let (rawProfiles, rawMemberships) = try await (profileRows, membershipRows)
+            let roster = try await membershipService.fetchMemberRoster(in: householdId)
+            let rawMemberships = roster.memberships
+            var p = roster.profiles
             #if DEBUG
-            Self.debugLogFetchedProfiles(rawProfiles, label: "fetchProfiles 原始响应")
-            Self.debugLogFetchedMemberships(rawMemberships, label: "fetchMemberships 原始响应")
+            Self.debugLogFetchedProfiles(p, label: "fetchMemberRoster 原始响应")
+            Self.debugLogFetchedMemberships(rawMemberships, label: "fetchMemberRoster memberships")
             #endif
-            var p = FamilyProfile.mergingMembershipRows(rawProfiles, memberships: rawMemberships)
-            #if DEBUG
-            Self.debugLogFetchedProfiles(p, label: "mergingMembershipRows 之后")
-            #endif
-            await hydrateMissingProfilesFromMemberships(memberships: rawMemberships, into: &p)
-            await hydrateCreatorProfileIfNeeded(memberships: rawMemberships, into: &p)
             p = FamilyProfile.mergingMembershipRows(p, memberships: rawMemberships)
             #if DEBUG
-            Self.debugLogFetchedProfiles(p, label: "hydrate + 最终 merge 之后（即将写入 profiles）")
+            Self.debugLogFetchedProfiles(p, label: "mergingMembershipRows 之后（即将写入 profiles）")
             #endif
             profiles = p
             sortProfilesForDisplay()
@@ -427,9 +421,9 @@ final class FamilyViewModel: ObservableObject {
             }
             #if DEBUG
             print("❌ [FamilyDebug] loadMembers failed — \(error.localizedDescription)")
-            print("   phase: parallel profileService.fetchProfiles + membershipService.fetchMemberships")
+            print("   phase: membershipService.fetchMemberRoster")
             print("   household_id=\(householdId.uuidString)")
-            print("   note: PostgREST embed 报「more than one relationship」时，说明 family_profiles↔household_memberships 存在多条外键（如 created_by 与 profile_id），需在 select 中使用 !profile_id 消歧。")
+            print("   note: 全局档案 household_id 为 NULL，须从 household_memberships 连表 family_profiles!profile_id。")
             let ns = error as NSError
             if ns.domain.isEmpty == false || ns.code != 0 {
                 print("   nsError domain=\(ns.domain) code=\(ns.code) userInfo=\(ns.userInfo)")
@@ -611,7 +605,9 @@ final class FamilyViewModel: ObservableObject {
         }
 
         let targetProfileId = profile.id
-        let householdId = currentHouseholdId ?? profile.householdId
+        guard let householdId = currentHouseholdId ?? profile.householdId else {
+            return "当前未选择群组。"
+        }
 
         var profileDraft = draft
         profileDraft.name = trimmedDisplayName
@@ -668,6 +664,7 @@ final class FamilyViewModel: ObservableObject {
             attachMembershipsFromFlatMembers()
             applyLocalOrdering()
             await syncBirthdayTasks(for: updatedProfile)
+            await loadMembers()
             errorMessage = nil
             postScheduleHouseholdRosterChangedIfNeeded()
             return nil
@@ -742,18 +739,25 @@ final class FamilyViewModel: ObservableObject {
         if let embedded = profile.primaryMembership {
             return embedded
         }
-        let sameHousehold = members.filter { $0.householdId == profile.householdId }
-        if let activeByProfile = sameHousehold.first(where: { $0.profileId == profile.id && $0.isActiveMembership() }) {
+        let scopedMembers: [HouseholdMembership]
+        if let householdId = currentHouseholdId {
+            scopedMembers = members.filter { $0.householdId == householdId }
+        } else if let profileHouseholdId = profile.householdId {
+            scopedMembers = members.filter { $0.householdId == profileHouseholdId }
+        } else {
+            scopedMembers = members
+        }
+        if let activeByProfile = scopedMembers.first(where: { $0.profileId == profile.id && $0.isActiveMembership() }) {
             return activeByProfile
         }
-        if let anyByProfile = sameHousehold.first(where: { $0.profileId == profile.id }) {
+        if let anyByProfile = scopedMembers.first(where: { $0.profileId == profile.id }) {
             return anyByProfile
         }
         if let uid = profile.userId {
-            if let activeByUser = sameHousehold.first(where: { $0.userId == uid && $0.isActiveMembership() }) {
+            if let activeByUser = scopedMembers.first(where: { $0.userId == uid && $0.isActiveMembership() }) {
                 return activeByUser
             }
-            return sameHousehold.first(where: { $0.userId == uid })
+            return scopedMembers.first(where: { $0.userId == uid })
         }
         return nil
     }
@@ -962,6 +966,8 @@ final class FamilyViewModel: ObservableObject {
 
     func syncBirthdayTasks(for profile: FamilyProfile) async {
         #if canImport(Supabase)
+        guard let householdId = currentHouseholdId ?? profile.householdId else { return }
+
         struct ExistingBirthdayTaskRow: Decodable {
             let id: UUID
             let targetProfileIds: [UUID]?
@@ -1015,14 +1021,14 @@ final class FamilyViewModel: ObservableObject {
             var deletedCount = 0
             var insertedCount = 0
             #if DEBUG
-            print("🎂 [BirthdaySync] start - profileId=\(profile.id.uuidString), householdId=\(profile.householdId.uuidString), name=\(profile.name), birthDate=\(profile.birthDate ?? "nil")")
+            print("🎂 [BirthdaySync] start - profileId=\(profile.id.uuidString), householdId=\(householdId.uuidString), name=\(profile.name), birthDate=\(profile.birthDate ?? "nil")")
             #endif
 
             // Step 1: 强制清理（Clear First）- 先查 ID，再逐条删，保证 deleted 统计准确
             let rows: [ExistingBirthdayTaskRow] = try await client
                 .from("tasks")
                 .select("id,target_profile_ids,task_type,title,target_subject,original_prompt")
-                .eq("household_id", value: profile.householdId.uuidString)
+                .eq("household_id", value: householdId.uuidString)
                 .execute()
                 .value
             #if DEBUG
@@ -1043,7 +1049,7 @@ final class FamilyViewModel: ObservableObject {
                 🎂 [BirthdaySync] clear debug - fetchedRows=\(rows.count)
                 🎂 [BirthdaySync] clear debug - hasTargetIds=\(hasTargetIdsCount), containsProfileId=\(containsProfileCount)
                 🎂 [BirthdaySync] clear debug - taskTypeDistribution=\(taskTypeDistribution)
-                🎂 [BirthdaySync] clear debug - profileId=\(profile.id.uuidString), householdId=\(profile.householdId.uuidString)
+                🎂 [BirthdaySync] clear debug - profileId=\(profile.id.uuidString), householdId=\(householdId.uuidString)
                 🎂 [BirthdaySync] clear debug - sampleRows(<=12):
                 \(sample)
                 """
@@ -1146,7 +1152,7 @@ final class FamilyViewModel: ObservableObject {
                     return nil
                 }
                 return BirthdayTaskInsertFallbackPayload(
-                    householdId: profile.householdId,
+                    householdId: householdId,
                     creatorId: creatorId,
                     title: template.title,
                     dueDate: dueDate,
@@ -1264,6 +1270,7 @@ final class FamilyViewModel: ObservableObject {
         print("🔍 [FamilyDebug] \(label) — count=\(fetchedProfiles.count)")
         for profile in fetchedProfiles {
             print("🔍 调试档案 ID: \(profile.id) | 名字: \(profile.displayName)")
+            print("   ↳ email: \(profile.email ?? "nil") | mainPhone: \(profile.mainPhone ?? "nil")")
             print("   ↳ 关联Membership: \(String(describing: profile.householdMemberships))")
             print("   ↳ 提取的Role: \(String(describing: profile.currentRole))")
             print("   ↳ 是否被判定为虚拟: \(profile.isVirtualUser)")

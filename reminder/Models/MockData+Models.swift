@@ -23,13 +23,13 @@ extension FamilyProfile {
     static let mockProfiles: [FamilyProfile] = [
         FamilyProfile(
             id: UUID(uuidString: "A1B2C3D4-E5F6-4789-A012-34567890AB01") ?? UUID(),
-            householdId: MockIDs.household,
+            householdId: nil,
             name: "爸爸",
             userId: MockIDs.creatorUserId
         ),
         FamilyProfile(
             id: UUID(uuidString: "B2C3D4E5-F6A7-4890-B123-45678901BC02") ?? UUID(),
-            householdId: MockIDs.household,
+            householdId: nil,
             name: "妈妈",
             userId: UUID(uuidString: "1E4F2CE0-7F66-4B2D-8A0A-3C880D5AAA02")
         ),

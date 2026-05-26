@@ -485,12 +485,7 @@ struct FamilyView: View {
     }
 
     private func contactSubtitleLine(for profile: FamilyProfile) -> String {
-        let email = profile.profileEmailForDisplay ?? ""
-        let title = profile.displayName
-        if email.isEmpty == false, email == title {
-            return ""
-        }
-        return email
+        profile.profileContactSummaryForDisplay
     }
 
     /// 行内显著角色：创建者优先于管理员；普通成员不展示胶囊。

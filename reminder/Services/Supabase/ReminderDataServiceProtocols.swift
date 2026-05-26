@@ -20,7 +20,15 @@ protocol FeedbackDataService {
     func createSystemFeedback(householdId: UUID, content: String, taskId: UUID?) async throws -> Feedback
 }
 
+/// 以 `household_memberships` 为主表、嵌套 `family_profiles!profile_id` 的群组名册快照。
+struct HouseholdMemberRoster: Equatable {
+    let profiles: [FamilyProfile]
+    let memberships: [HouseholdMembership]
+}
+
 protocol HouseholdMembershipDataService {
+    /// 从关系表连表拉取成员与档案（**禁止**再按 `family_profiles.household_id` 过滤全局档案）。
+    func fetchMemberRoster(in householdId: UUID) async throws -> HouseholdMemberRoster
     func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership]
     func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
     func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership

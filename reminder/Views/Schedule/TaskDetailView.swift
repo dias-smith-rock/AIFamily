@@ -844,14 +844,11 @@ struct TaskDetailView: View {
         let householdId = appRouter.selectedHouseholdId ?? task.householdId
         #if canImport(Supabase)
         do {
-            let rows: [FamilyProfile] = try await SupabaseManager.shared.client
-                .from("family_profiles")
-                .select(SupabaseProfileSelect.profilesWithMemberships)
-                .eq("household_id", value: householdId.uuidString)
-                .order("created_at", ascending: true)
-                .execute()
-                .value
-            forWhomProfiles = rows
+            let roster = try await SupabaseHouseholdRosterLoader.fetch(
+                in: householdId,
+                client: SupabaseManager.shared.client
+            )
+            forWhomProfiles = roster.profiles
         } catch {
             forWhomProfiles = []
         }

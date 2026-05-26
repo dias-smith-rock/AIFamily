@@ -894,62 +894,46 @@ struct CreateTaskView: View {
             return
         }
         #if canImport(Supabase)
-        var members: [HouseholdMembership] = []
-        var profiles: [FamilyProfile] = []
-
         do {
-            members = try await SupabaseManager.shared.client
-                .from("household_memberships")
-                .select()
-                .eq("household_id", value: householdId.uuidString)
-                .eq("status", value: MembershipStatus.active.rawValue)
-                .order("created_at", ascending: true)
-                .execute()
-                .value
+            let roster = try await SupabaseHouseholdRosterLoader.fetch(
+                in: householdId,
+                client: SupabaseManager.shared.client,
+                activeOnly: true
+            )
+            let members = roster.memberships
+            let profiles = roster.profiles
             forWhomDebugLog(
                 "household_memberships OK count=\(members.count) ids=\(members.map(\.id.uuidString).joined(separator: ","))"
             )
-        } catch {
-            forWhomDebugLog(
-                "household_memberships FAILED household=\(householdId.uuidString) error=\(error.localizedDescription) detail=\(String(describing: error))"
-            )
-        }
-
-        do {
-            profiles = try await SupabaseManager.shared.client
-                .from("family_profiles")
-                .select(SupabaseProfileSelect.profilesWithMemberships)
-                .eq("household_id", value: householdId.uuidString)
-                .order("created_at", ascending: true)
-                .execute()
-                .value
             let summary = profiles.map { "\($0.displayName)(\($0.id.uuidString.prefix(8)))" }.joined(separator: "; ")
-            forWhomDebugLog("family_profiles OK count=\(profiles.count) rows=[\(summary)]")
+            forWhomDebugLog("family_profiles (via join) OK count=\(profiles.count) rows=[\(summary)]")
+
+            let mergedProfiles = FamilyProfile.mergingMembershipRows(profiles, memberships: members)
+
+            assignees = members.map { member in
+                AssigneeOption(
+                    id: member.id,
+                    name: MemberDisplayName.displayName(for: member, profiles: mergedProfiles),
+                    hasRegisteredAccount: member.userId != nil
+                )
+            }
+            forWhomProfileOptions = mergedProfiles.map { profile in
+                AssigneeOption(
+                    id: profile.id,
+                    name: profile.displayName,
+                    hasRegisteredAccount: profile.userId != nil
+                )
+            }
+            forWhomDebugLog(
+                "load.done assignees.count=\(assignees.count) forWhomProfileOptions.count=\(forWhomProfileOptions.count)"
+            )
         } catch {
             forWhomDebugLog(
-                "family_profiles FAILED household=\(householdId.uuidString) error=\(error.localizedDescription) detail=\(String(describing: error))"
+                "fetchMemberRoster FAILED household=\(householdId.uuidString) error=\(error.localizedDescription) detail=\(String(describing: error))"
             )
+            assignees = []
+            forWhomProfileOptions = []
         }
-
-        let mergedProfiles = FamilyProfile.mergingMembershipRows(profiles, memberships: members)
-
-        assignees = members.map { member in
-            AssigneeOption(
-                id: member.id,
-                name: MemberDisplayName.displayName(for: member, profiles: mergedProfiles),
-                hasRegisteredAccount: member.userId != nil
-            )
-        }
-        forWhomProfileOptions = mergedProfiles.map { profile in
-            AssigneeOption(
-                id: profile.id,
-                name: profile.displayName,
-                hasRegisteredAccount: profile.userId != nil
-            )
-        }
-        forWhomDebugLog(
-            "load.done assignees.count=\(assignees.count) forWhomProfileOptions.count=\(forWhomProfileOptions.count)"
-        )
         #else
         assignees = []
         forWhomProfileOptions = []
