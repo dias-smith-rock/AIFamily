@@ -144,12 +144,13 @@ enum MockHouseholdRosterBuilder {
 actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
     private var members: [HouseholdMembership] = HouseholdMembership.mockMembers
 
-    func fetchMemberRoster(in householdId: UUID) async throws -> HouseholdMemberRoster {
-        MockHouseholdRosterBuilder.roster(
+    func fetchMemberRoster(in householdId: UUID, activeOnly: Bool = true) async throws -> HouseholdMemberRoster {
+        let roster = MockHouseholdRosterBuilder.roster(
             for: householdId,
             profiles: FamilyProfile.mockProfiles,
             memberships: members
         )
+        return activeOnly ? roster.filteredToActiveMembers(in: householdId) : roster
     }
 
     func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership] {

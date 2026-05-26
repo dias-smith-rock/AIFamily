@@ -133,7 +133,8 @@ final class ScheduleViewModel: ObservableObject {
 
     private func loadHouseholdRoster(in householdId: UUID) async {
         do {
-            let roster = try await membershipService.fetchMemberRoster(in: householdId)
+            let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
+                .filteredToActiveMembers(in: householdId)
             familyProfiles = roster.profiles
             let embedded = FamilyProfile.uniqueMembershipsFlattened(from: roster.profiles)
             let embeddedIds = Set(embedded.map(\.id))

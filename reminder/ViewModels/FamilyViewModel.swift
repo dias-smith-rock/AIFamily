@@ -36,6 +36,12 @@ final class FamilyViewModel: ObservableObject {
     private struct FamilyMembersCachePayload: Codable {
         let profiles: [FamilyProfile]
         let members: [HouseholdMembership]
+
+        func filteredToActiveMembers(in householdId: UUID) -> FamilyMembersCachePayload {
+            let roster = HouseholdMemberRoster(profiles: profiles, memberships: members)
+                .filteredToActiveMembers(in: householdId)
+            return FamilyMembersCachePayload(profiles: roster.profiles, members: roster.memberships)
+        }
     }
 
     private static func membersCacheKey(for householdId: UUID) -> String {
@@ -356,9 +362,10 @@ final class FamilyViewModel: ObservableObject {
         let cacheKey = Self.membersCacheKey(for: householdId)
         let cachedPayload: FamilyMembersCachePayload? = LocalCacheManager.shared.load(forKey: cacheKey)
         if let cachedPayload {
-            profiles = cachedPayload.profiles
+            let filtered = cachedPayload.filteredToActiveMembers(in: householdId)
+            profiles = filtered.profiles
             let fromEmbed = FamilyProfile.uniqueMembershipsFlattened(from: profiles)
-            members = fromEmbed.isEmpty ? cachedPayload.members : fromEmbed
+            members = fromEmbed.isEmpty ? filtered.members : fromEmbed
             attachMembershipsFromFlatMembers()
             sortProfilesForDisplay()
             applyLocalOrdering()
@@ -380,7 +387,8 @@ final class FamilyViewModel: ObservableObject {
         }
 
         do {
-            let roster = try await membershipService.fetchMemberRoster(in: householdId)
+            let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
+                .filteredToActiveMembers(in: householdId)
             let rawMemberships = roster.memberships
             var p = roster.profiles
             #if DEBUG

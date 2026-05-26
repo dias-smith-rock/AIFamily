@@ -86,7 +86,7 @@ enum SupabaseHouseholdRosterLoader {
     static func fetch(
         in householdId: UUID,
         client: SupabaseClient,
-        activeOnly: Bool = false
+        activeOnly: Bool = true
     ) async throws -> HouseholdMemberRoster {
         #if DEBUG
         print("🔎 [FamilyDebug] fetchMemberRoster start — household_id=\(householdId.uuidString) activeOnly=\(activeOnly)")
@@ -746,12 +746,13 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
         self.provider = provider
     }
 
-    func fetchMemberRoster(in householdId: UUID) async throws -> HouseholdMemberRoster {
+    func fetchMemberRoster(in householdId: UUID, activeOnly: Bool = true) async throws -> HouseholdMemberRoster {
         #if canImport(Supabase)
         do {
             return try await SupabaseHouseholdRosterLoader.fetch(
                 in: householdId,
-                client: provider.client
+                client: provider.client,
+                activeOnly: activeOnly
             )
         } catch {
             print("❌ [FetchMembers] fetchMemberRoster 失败 household_id=\(householdId.uuidString): \(error)")

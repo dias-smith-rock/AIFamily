@@ -24,11 +24,25 @@ protocol FeedbackDataService {
 struct HouseholdMemberRoster: Equatable {
     let profiles: [FamilyProfile]
     let memberships: [HouseholdMembership]
+
+    /// 仅保留 `status == active` 的身份行；虚拟档案（无 membership）仍保留。
+    func filteredToActiveMembers(in householdId: UUID) -> HouseholdMemberRoster {
+        let activeMemberships = memberships.filter { $0.isActiveMembership() }
+        let activeProfileIds = Set(activeMemberships.compactMap(\.profileId))
+        let activeProfiles = profiles.filter { profile in
+            if profile.isVirtualUser {
+                return profile.householdId == householdId
+            }
+            return activeProfileIds.contains(profile.id)
+        }
+        return HouseholdMemberRoster(profiles: activeProfiles, memberships: activeMemberships)
+    }
 }
 
 protocol HouseholdMembershipDataService {
     /// 并发拉取有账号成员（memberships 连表）与无账号虚拟成员（family_profiles 单表），合并为统一名册。
-    func fetchMemberRoster(in householdId: UUID) async throws -> HouseholdMemberRoster
+    /// - Parameter activeOnly: 为 `true` 时仅含 `household_memberships.status = active`（已退出等为 inactive/disabled 的不展示）。
+    func fetchMemberRoster(in householdId: UUID, activeOnly: Bool) async throws -> HouseholdMemberRoster
     func fetchMemberships(in householdId: UUID) async throws -> [HouseholdMembership]
     func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
     func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
