@@ -126,7 +126,7 @@ final class FamilyViewModel: ObservableObject {
             print("   ↳ 归一化后 current='\(normalizedCurrent)' input='\(normalizedInput)'")
             print("   ↳ ID: \(householdId.uuidString)")
             #endif
-            disbandError = "群组名称输入错误，与当前群组的真实名称不匹配，请重新核对。"
+            disbandError = ProfileManagementCopy.householdNameMismatch
             showDisbandErrorAlert = true
             return false
         }
@@ -260,36 +260,58 @@ final class FamilyViewModel: ObservableObject {
         NotificationCenter.default.post(name: .householdDidDisband, object: householdId)
     }
 
+    private enum ProfileManagementCopy {
+        static let noHouseholdSelected = String(localized: "No group is selected.")
+        static let displayNameRequired = String(localized: "Display name cannot be empty.")
+        static let nicknameRequired = String(localized: "Please enter a role name (cannot be empty).")
+        static let cannotEditProfile = String(localized: "You do not have permission to edit this member profile.")
+        static let householdNameMismatch = String(localized: "Group name does not match. Please enter it again.")
+        static let disbandUnauthorized = String(localized: "Only the creator can disband this group.")
+        static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
+        static let householdNotFound = String(localized: "This group does not exist or has been deleted.")
+        static let backendMigrationRequired = String(
+            localized: "Backend upgrade required. Please apply the latest Supabase migration and try again."
+        )
+        static let networkFailure = String(localized: "Network connection error. Please check your connection and try again.")
+        static let renameHouseholdEmpty = String(localized: "Group name cannot be empty.")
+        static let renameHouseholdTaken = String(localized: "This group name is already taken. Please choose another name.")
+        static let renameForbidden = String(localized: "Only the creator or an admin can change the group name.")
+        static let renameHouseholdNotFoundRefresh = String(
+            localized: "This group does not exist or has been deleted. Please refresh and try again."
+        )
+        static let renameFailed = String(localized: "Failed to rename the group. Please try again later.")
+    }
+
     private func mapDisbandErrorMessage(_ error: Error) -> String {
         let message = error.localizedDescription.lowercased()
         if message.contains("household_name_mismatch") {
-            return "群组名称输入错误，与当前群组的真实名称不匹配，请重新核对。"
+            return ProfileManagementCopy.householdNameMismatch
         }
         if message.contains("unauthorized_not_creator")
             || message.contains("unauthorized")
             || message.contains("forbidden") {
-            return "权限不足。只有当前群组的创建者才有权解散该群组。"
+            return ProfileManagementCopy.disbandUnauthorized
         }
         if message.contains("unauthenticated") || message.contains("jwt") || message.contains("session") {
-            return "登录状态已失效，请重新登录后再试。"
+            return ProfileManagementCopy.sessionExpired
         }
         if let routingError = error as? HouseholdRoutingError {
             switch routingError {
             case .householdNameMismatch:
-                return "群组名称输入错误，与当前群组的真实名称不匹配，请重新核对。"
+                return ProfileManagementCopy.householdNameMismatch
             case .disbandUnauthorized, .forbidden:
-                return "权限不足。只有当前群组的创建者才有权解散该群组。"
+                return ProfileManagementCopy.disbandUnauthorized
             case .unauthenticated:
-                return "登录状态已失效，请重新登录后再试。"
+                return ProfileManagementCopy.sessionExpired
             case .householdNotFound:
-                return "群组不存在或已被解散。"
+                return ProfileManagementCopy.householdNotFound
             case .backendMigrationRequired:
-                return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
+                return ProfileManagementCopy.backendMigrationRequired
             default:
                 break
             }
         }
-        return "网络连接异常或服务器响应失败，请稍后重试。"
+        return ProfileManagementCopy.networkFailure
     }
 
     private func postScheduleHouseholdRosterChangedIfNeeded() {
@@ -346,7 +368,7 @@ final class FamilyViewModel: ObservableObject {
 
         guard let householdId = currentHouseholdId else {
             requiresLogin = false
-            errorMessage = "当前未选择群组。"
+            errorMessage = ProfileManagementCopy.noHouseholdSelected
             profiles = []
             orderedProfiles = []
             members = []
@@ -548,7 +570,7 @@ final class FamilyViewModel: ObservableObject {
     @discardableResult
     func createMember(_ member: HouseholdMembership) async -> HouseholdMembership? {
         guard let householdId = currentHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = ProfileManagementCopy.noHouseholdSelected
             return nil
         }
         guard member.householdId == householdId else {
@@ -577,7 +599,7 @@ final class FamilyViewModel: ObservableObject {
         let stableName = String(draft.name)
         let normalizedName = stableName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
-            return "请输入角色称呼（不能为空）。"
+            return ProfileManagementCopy.nicknameRequired
         }
         normalizedDraft.name = normalizedName
 
@@ -603,16 +625,16 @@ final class FamilyViewModel: ObservableObject {
     func updateProfile(_ profile: FamilyProfile, draft: LocalProfileDraft) async -> String? {
         let trimmedDisplayName = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmedDisplayName.isEmpty == false else {
-            return "称呼不能为空。"
+            return ProfileManagementCopy.displayNameRequired
         }
 
         guard canEditProfile(profile) else {
-            return "当前没有权限修改该成员资料。"
+            return ProfileManagementCopy.cannotEditProfile
         }
 
         let targetProfileId = profile.id
         guard let householdId = currentHouseholdId ?? profile.householdId else {
-            return "当前未选择群组。"
+            return ProfileManagementCopy.noHouseholdSelected
         }
 
         var profileDraft = draft
@@ -835,7 +857,7 @@ final class FamilyViewModel: ObservableObject {
         let stableName = String(newName)
         let normalizedName = stableName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
-            return "群组名称不能为空。"
+            return ProfileManagementCopy.renameHouseholdEmpty
         }
 
         isLoading = true
@@ -1243,19 +1265,19 @@ final class FamilyViewModel: ObservableObject {
     private func mapHouseholdRenameError(_ error: HouseholdRoutingError) -> String {
         switch error {
         case .invalidHouseholdName:
-            return "群组名称不能为空。"
+            return ProfileManagementCopy.renameHouseholdEmpty
         case .householdNameTaken:
-            return "该群组名称已被占用，请换一个名称。"
+            return ProfileManagementCopy.renameHouseholdTaken
         case .unauthenticated:
-            return "当前登录状态已失效，请重新登录后再试。"
+            return ProfileManagementCopy.sessionExpired
         case .forbidden:
-            return "只有创建者或管理员可以修改群组名称。"
+            return ProfileManagementCopy.renameForbidden
         case .householdNotFound:
-            return "群组不存在或已被删除，请刷新后重试。"
+            return ProfileManagementCopy.renameHouseholdNotFoundRefresh
         case .backendMigrationRequired:
-            return "后端尚未完成升级，请先执行最新 Supabase migration 后重试。"
+            return ProfileManagementCopy.backendMigrationRequired
         case .networkFailure:
-            return "网络或服务异常，请稍后再试。"
+            return ProfileManagementCopy.networkFailure
         case .invalidInviteCode,
              .alreadyActiveMember,
              .joinRequestPending,
@@ -1267,7 +1289,7 @@ final class FamilyViewModel: ObservableObject {
              .transferUnauthorized,
              .transferInvalidTarget,
              .unknown:
-            return "修改群组名称失败，请稍后重试。"
+            return ProfileManagementCopy.renameFailed
         }
     }
 

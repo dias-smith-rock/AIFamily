@@ -51,6 +51,12 @@ struct TaskDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                if task.source.isReadOnly {
+                    externalSyncReadOnlyBanner
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+                }
+
                 titleHeader
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
@@ -128,7 +134,9 @@ struct TaskDetailView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            statusMachineFooter
+            if task.source.isReadOnly == false {
+                statusMachineFooter
+            }
         }
         .sheet(isPresented: $showingEditSheet) {
             EditTaskView(
@@ -187,8 +195,6 @@ struct TaskDetailView: View {
         120
     }
 
-    // MARK: - 大标题
-
     private var titleHeader: some View {
         Text(task.title)
             .font(.largeTitle)
@@ -197,6 +203,22 @@ struct TaskDetailView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var externalSyncReadOnlyBanner: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "calendar.badge.lock")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Text(TaskDetailCopy.externalSyncReadOnlyBanner)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     // MARK: - 核心信息卡片（始终）
@@ -669,11 +691,11 @@ struct TaskDetailView: View {
     private var priorityReadonlyText: String {
         switch task.priority {
         case .urgent, .high:
-            return "🔴 紧急"
+            return TaskDetailCopy.priorityUrgent
         case .normal, .low:
-            return "🟢 一般"
+            return TaskDetailCopy.priorityNormal
         @unknown default:
-            return "🟢 一般"
+            return TaskDetailCopy.priorityNormal
         }
     }
 
@@ -689,7 +711,7 @@ struct TaskDetailView: View {
                 .onTapGesture {
                     openURL(url)
                 }
-                .accessibilityHint("轻点以拨打或打开链接")
+                .accessibilityHint(TaskDetailCopy.tapToCallOrOpenLink)
         } else {
             Text(raw)
                 .font(.body)
@@ -760,30 +782,30 @@ struct TaskDetailView: View {
     private var repeatDisplayText: String {
         guard let rule = task.recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines),
               rule.isEmpty == false else {
-            return "永不"
+            return TaskDetailCopy.repeatNever
         }
-        if rule.uppercased().contains("DAILY") { return "每天" }
-        if rule.uppercased().contains("WEEKLY") { return "每周" }
-        if rule.uppercased().contains("MONTHLY") { return "每月" }
-        return "自定义"
+        if rule.uppercased().contains("DAILY") { return TaskDetailCopy.repeatDaily }
+        if rule.uppercased().contains("WEEKLY") { return TaskDetailCopy.repeatWeekly }
+        if rule.uppercased().contains("MONTHLY") { return TaskDetailCopy.repeatMonthly }
+        return TaskDetailCopy.repeatCustom
     }
 
     private var reminderDisplayText: String {
         guard let offsets = task.reminderOffsets, offsets.isEmpty == false else {
-            return "无"
+            return TaskDetailCopy.none
         }
-        return offsets.sorted().map(reminderLabel(forMinutes:)).joined(separator: "、")
+        return offsets.sorted().map(reminderLabel(forMinutes:)).joined(separator: TaskDetailCopy.listSeparator)
     }
 
     private func reminderLabel(forMinutes m: Int) -> String {
         switch m {
-        case 0: return "准时"
-        case 5: return "提前5分钟"
-        case 10: return "提前10分钟"
-        case 15: return "提前15分钟"
-        case 30: return "提前30分钟"
-        case 60: return "提前1小时"
-        default: return "提前 \(m) 分钟"
+        case 0: return TaskDetailCopy.reminderOnTime
+        case 5: return TaskDetailCopy.reminder5Min
+        case 10: return TaskDetailCopy.reminder10Min
+        case 15: return TaskDetailCopy.reminder15Min
+        case 30: return TaskDetailCopy.reminder30Min
+        case 60: return TaskDetailCopy.reminder1Hour
+        default: return String(format: TaskDetailCopy.reminderMinutesBeforeFormat, m)
         }
     }
 
@@ -793,8 +815,8 @@ struct TaskDetailView: View {
     }
 
     private var costDisplayText: String {
-        guard let minor = task.estimatedCost else { return "无" }
-        if minor == 0 { return "无" }
+        guard let minor = task.estimatedCost else { return TaskDetailCopy.none }
+        if minor == 0 { return TaskDetailCopy.none }
         let value = Double(minor) / 100.0
         let symbol = Locale.current.currencySymbol ?? "¥"
         if value == floor(value) {
@@ -805,14 +827,14 @@ struct TaskDetailView: View {
 
     private var statusFriendlyLabel: String {
         switch task.status {
-        case .new: return "待接受"
-        case .accepted: return "已接受"
-        case .inProgress: return "进行中"
-        case .completed: return "已完成"
-        case .issue: return "遇到问题"
-        case .failed: return "执行失败"
-        case .expired: return "已过期"
-        case .cancelled: return "已取消"
+        case .new: return TaskDetailCopy.statusPendingAcceptance
+        case .accepted: return TaskDetailCopy.statusAccepted
+        case .inProgress: return TaskDetailCopy.statusInProgress
+        case .completed: return TaskDetailCopy.statusCompleted
+        case .issue: return TaskDetailCopy.statusIssue
+        case .failed: return TaskDetailCopy.statusFailed
+        case .expired: return TaskDetailCopy.statusExpired
+        case .cancelled: return TaskDetailCopy.statusCancelled
         }
     }
 
@@ -858,6 +880,7 @@ struct TaskDetailView: View {
     }
 
     private var canEditTask: Bool {
+        guard task.source.isReadOnly == false else { return false }
         switch currentUserRole {
         case .admin, .creator: return true
         case .member: return false
@@ -1013,7 +1036,7 @@ struct TaskDetailView: View {
                 await scheduleViewModel.deleteTask(taskId: task.id)
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
-                    statusError = "无法解析重复任务分组，无法批量删除。"
+                    statusError = TaskDetailCopy.cannotResolveRecurringGroupForDelete
                     return
                 }
                 let cutoff = task.dueDate ?? .distantPast
@@ -1032,13 +1055,51 @@ struct TaskDetailView: View {
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
         } catch {
-            statusError = "删除失败：\(error.localizedDescription)"
+            statusError = String(format: TaskDetailCopy.deleteFailedFormat, error.localizedDescription)
         }
         #else
         _ = scope
-        statusError = "当前构建环境未包含 Supabase SDK。"
+        statusError = TaskDetailCopy.supabaseSDKUnavailable
         #endif
     }
+}
+
+// MARK: - Localized copy
+
+private enum TaskDetailCopy {
+    static let externalSyncReadOnlyBanner = String(
+        localized: "This event was synced from an external calendar and cannot be edited in the app."
+    )
+    static let tapToCallOrOpenLink = String(localized: "Double tap to call or open the link")
+    static let priorityUrgent = String(localized: "🔴 Urgent")
+    static let priorityNormal = String(localized: "🟢 Normal")
+    static let repeatNever = String(localized: "Never")
+    static let repeatDaily = String(localized: "Daily")
+    static let repeatWeekly = String(localized: "Weekly")
+    static let repeatMonthly = String(localized: "Monthly")
+    static let repeatCustom = String(localized: "Custom")
+    static let none = String(localized: "None")
+    static let listSeparator = String(localized: ", ")
+    static let reminderOnTime = String(localized: "On time")
+    static let reminder5Min = String(localized: "5 minutes before")
+    static let reminder10Min = String(localized: "10 minutes before")
+    static let reminder15Min = String(localized: "15 minutes before")
+    static let reminder30Min = String(localized: "30 minutes before")
+    static let reminder1Hour = String(localized: "1 hour before")
+    static let reminderMinutesBeforeFormat = String(localized: "%lld minutes before")
+    static let statusPendingAcceptance = String(localized: "Pending acceptance")
+    static let statusAccepted = String(localized: "Accepted")
+    static let statusInProgress = String(localized: "In progress")
+    static let statusCompleted = String(localized: "Completed")
+    static let statusIssue = String(localized: "Issue reported")
+    static let statusFailed = String(localized: "Failed")
+    static let statusExpired = String(localized: "Expired")
+    static let statusCancelled = String(localized: "Cancelled")
+    static let cannotResolveRecurringGroupForDelete = String(
+        localized: "Could not resolve the recurring series group; bulk delete is unavailable."
+    )
+    static let deleteFailedFormat = String(localized: "Delete failed: %@")
+    static let supabaseSDKUnavailable = String(localized: "Supabase SDK is not available in this build.")
 }
 
 #Preview("成员 · 待接受") {

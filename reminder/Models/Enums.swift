@@ -65,6 +65,25 @@ enum TaskPriority: String, Codable, Equatable, CaseIterable {
     case urgent
 }
 
+/// 任务创建来源（`tasks.source`）。
+enum TaskSource: String, Codable, Equatable {
+    case manual
+    case googleCalendar = "google_calendar"
+    case appleCalendar = "apple_calendar"
+    case publicHoliday = "public_holiday"
+    case hermesWechat = "hermes_wechat"
+
+    /// 外部同步日程：应用内不可编辑。
+    var isReadOnly: Bool {
+        switch self {
+        case .googleCalendar, .appleCalendar, .publicHoliday:
+            return true
+        case .manual, .hermesWechat:
+            return false
+        }
+    }
+}
+
 // MARK: - Subscription Order
 
 enum PaymentMethod: String, Codable, Equatable {

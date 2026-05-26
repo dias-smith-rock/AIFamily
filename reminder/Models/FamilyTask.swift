@@ -30,6 +30,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 
     var status: TaskStatus
     var priority: TaskPriority
+    /// `tasks.source`：创建来源；缺省历史数据解码为 `.manual`。
+    var source: TaskSource
     var dueDate: Date?
     /// 对应 `tasks.end_datetime`（TIMESTAMPTZ，可空）；应不早于 `due_date`。
     var endDatetime: Date? = nil
@@ -88,6 +90,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         alarmSetBy: [String: AlarmConfig]? = nil,
         status: TaskStatus,
         priority: TaskPriority,
+        source: TaskSource = .manual,
         dueDate: Date? = nil,
         endDatetime: Date? = nil,
         durationMinutes: Int = FamilyTask.defaultDurationMinutes,
@@ -122,6 +125,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         self.alarmSetBy = alarmSetBy
         self.status = status
         self.priority = priority
+        self.source = source
         self.dueDate = dueDate
         self.endDatetime = endDatetime
         self.durationMinutes = durationMinutes
@@ -158,6 +162,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         case alarmSetBy
         case status
         case priority
+        case source
         case dueDate
         case endDatetime
         case durationMinutes
@@ -199,6 +204,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         alarmSetBy = try container.decodeIfPresent([String: AlarmConfig].self, forKey: .alarmSetBy)
         status = try container.decode(TaskStatus.self, forKey: .status)
         priority = try container.decode(TaskPriority.self, forKey: .priority)
+        source = (try? container.decode(TaskSource.self, forKey: .source)) ?? .manual
         dueDate = try container.decodeIfPresent(Date.self, forKey: .dueDate)
         endDatetime = try container.decodeIfPresent(Date.self, forKey: .endDatetime)
         durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
@@ -238,6 +244,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(alarmSetBy, forKey: .alarmSetBy)
         try container.encode(status, forKey: .status)
         try container.encode(priority, forKey: .priority)
+        try container.encode(source, forKey: .source)
         try container.encodeIfPresent(dueDate, forKey: .dueDate)
         try container.encodeIfPresent(endDatetime, forKey: .endDatetime)
         try container.encode(durationMinutes, forKey: .durationMinutes)

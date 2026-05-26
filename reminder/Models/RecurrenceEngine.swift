@@ -203,6 +203,7 @@ enum RecurrenceEngine {
             alarmSetBy: mother.alarmSetBy,
             status: mother.status,
             priority: mother.priority,
+            source: mother.source,
             dueDate: newDue,
             endDatetime: newEnd,
             durationMinutes: mother.durationMinutes,
