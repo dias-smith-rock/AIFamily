@@ -3,7 +3,6 @@ import Kingfisher
 
 /// 全天任务紧凑卡片：仅两行——标题 + 「为了谁」头像区；左侧贴边色条与整卡圆角一体。
 struct AllDayTaskRowView: View {
-    @Environment(\.locale) private var locale
     let task: FamilyTask
     let forWhomAvatars: [TaskCardAvatarSource]
 
@@ -15,7 +14,7 @@ struct AllDayTaskRowView: View {
                 .lineLimit(1)
 
             HStack(spacing: 8) {
-                Text(AppLocalized.string("为了谁", locale: locale))
+                Text("为了谁")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 

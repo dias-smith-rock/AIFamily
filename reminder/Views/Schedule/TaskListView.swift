@@ -167,6 +167,7 @@ struct TaskListView: View {
                 .presentationDragIndicator(.visible)
             }
         }
+        .appLocaleEnvironment(using: appSettings)
     }
 
     // MARK: - Top bar（参考 Apple Calendar）
