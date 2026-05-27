@@ -30,6 +30,11 @@ private enum CreateTaskFocusField: Hashable {
     case locationSearch
 }
 
+private enum CreateTaskTimeFormLayout {
+    /// 左侧标签列宽：容纳英文 "Execution time" 单行显示。
+    static let labelColumnWidth: CGFloat = 116
+}
+
 /// 「时间设置 + 重复设置」与标题输入解耦：仅在令牌字段变化时重绘，减轻 TextEditor 输入时的卡顿。
 private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     @Environment(\.locale) private var locale
@@ -72,38 +77,10 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                 Toggle("全天", isOn: $isAllDay)
 
                 if isAllDay {
-                    DatePicker(
-                        "执行日期",
-                        selection: $dueDate,
-                        displayedComponents: [.date]
-                    )
-                    .datePickerStyle(.compact)
-
+                    executionDateRow
                     taskDurationRow
                 } else {
-                    HStack(alignment: .center, spacing: 12) {
-                        Text("执行时间")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 72, alignment: .leading)
-
-                        DatePicker(
-                            "",
-                            selection: $dueDate,
-                            displayedComponents: [.date]
-                        )
-                        .labelsHidden()
-                        .datePickerStyle(.compact)
-
-                        DatePicker(
-                            "",
-                            selection: $dueDate,
-                            displayedComponents: [.hourAndMinute]
-                        )
-                        .labelsHidden()
-                        .datePickerStyle(.compact)
-                    }
-
+                    executionTimeRow
                     taskDurationRow
                 }
             }
@@ -115,13 +92,25 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
-                    Picker("重复", selection: $selectedRecurrence) {
+                    Menu {
                         ForEach(TaskRecurrenceRule.allCases) { rule in
-                            Text(rule.titleKey).tag(rule)
+                            Button {
+                                selectedRecurrence = rule
+                            } label: {
+                                Text(rule.titleKey)
+                            }
                         }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(selectedRecurrence.titleKey)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .truncationMode(.tail)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .foregroundStyle(Color.accentColor)
                     }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
                     .accessibilityLabel("重复")
                 }
 
@@ -146,13 +135,71 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
         }
     }
 
+    private func timeSettingLabel(
+        _ title: LocalizedStringKey,
+        systemImage: String
+    ) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .labelStyle(.titleAndIcon)
+            .frame(width: CreateTaskTimeFormLayout.labelColumnWidth, alignment: .leading)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .layoutPriority(1)
+    }
+
+    private var executionDateRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            timeSettingLabel("执行日期", systemImage: "calendar")
+
+            Spacer(minLength: 8)
+
+            DatePicker(
+                "",
+                selection: $dueDate,
+                displayedComponents: [.date]
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+            .accessibilityLabel("执行日期")
+        }
+    }
+
+    private var executionTimeRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            timeSettingLabel("执行时间", systemImage: "calendar")
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 8) {
+                DatePicker(
+                    "",
+                    selection: $dueDate,
+                    displayedComponents: [.date]
+                )
+                .labelsHidden()
+                .datePickerStyle(.compact)
+                .accessibilityLabel("执行日期")
+
+                DatePicker(
+                    "",
+                    selection: $dueDate,
+                    displayedComponents: [.hourAndMinute]
+                )
+                .labelsHidden()
+                .datePickerStyle(.compact)
+                .accessibilityLabel("执行时间")
+            }
+            .layoutPriority(0)
+        }
+    }
+
     private var taskDurationRow: some View {
         HStack(alignment: .center, spacing: 12) {
-            Label("任务时长", systemImage: "hourglass")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .labelStyle(.titleAndIcon)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            timeSettingLabel("任务时长", systemImage: "hourglass")
+
+            Spacer(minLength: 8)
 
             DatePicker(
                 "",
@@ -164,6 +211,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             // 时长是“持续时间”而不是一天中的时间点，统一使用 24 小时制避免 AM/PM 歧义。
             .environment(\.locale, durationPickerLocale)
             .accessibilityLabel("任务时长")
+            .layoutPriority(0)
         }
     }
 
@@ -246,7 +294,7 @@ struct CreateTaskView: View {
         editingTask: FamilyTask? = nil,
         initialTitle: String? = nil,
         defaultDueDate: Date? = nil,
-        defaultAllDayForNewTask: Bool = true,
+        defaultAllDayForNewTask: Bool = false,
         onSaveSuccess: ((Date) -> Void)? = nil,
         onUpdateSuccess: ((FamilyTask) -> Void)? = nil,
         onAlarmSync: ((FamilyTask) -> Void)? = nil

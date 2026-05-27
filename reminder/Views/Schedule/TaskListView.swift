@@ -93,7 +93,7 @@ struct TaskListView: View {
                 CreateTaskView(
                     initialTitle: prefillTitle,
                     defaultDueDate: createTaskDueDateOverride ?? dayID(for: selectedDate),
-                    defaultAllDayForNewTask: true,
+                    defaultAllDayForNewTask: false,
                     onSaveSuccess: { createdDueDate in
                         selectedDate = dayID(for: createdDueDate)
                         Task {
