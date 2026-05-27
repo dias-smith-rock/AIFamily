@@ -3056,55 +3056,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "مدة المهمة"
+            "value" : "مدة"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Task duration"
+            "value" : "Duration"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duración de la tarea"
+            "value" : "Duración"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Durée de la tâche"
+            "value" : "Durée"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "कार्य की अवधि"
+            "value" : "अवधि"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Duração da tarefa"
+            "value" : "Duração"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "பணி காலம்"
+            "value" : "கால அளவு"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任务时长"
+            "value" : "时长"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "任務時長"
+            "value" : "時長"
           }
         }
       }
@@ -3868,19 +3868,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "all day"
+            "value" : "All day"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "todo el día"
+            "value" : "Todo el día"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "toute la journée"
+            "value" : "Toute la journée"
           }
         },
         "hi" : {
@@ -3892,7 +3892,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "o dia todo"
+            "value" : "O dia todo"
           }
         },
         "ta" : {
@@ -8687,43 +8687,43 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "بانتظار القبول"
+            "value" : "بانتظار"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pending acceptance"
+            "value" : "Pending"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pendiente de aceptación"
+            "value" : "Pendiente"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En attente d'acceptation"
+            "value" : "En attente"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "स्वीकृति लंबित"
+            "value" : "स्वीकृति"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aguardando aceitação"
+            "value" : "Aguardando"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ஏற்புக்காக காத்திருக்கிறது"
+            "value" : "ஏற்புக்காக"
           }
         },
         "zh-Hans" : {
@@ -10149,55 +10149,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تاريخ التنفيذ"
+            "value" : "تاريخ"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "execution date"
+            "value" : "Date"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "fecha de ejecución"
+            "value" : "Fecha"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "date d'exécution"
+            "value" : "Date"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "निष्पादन तिथि"
+            "value" : "तारीख"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "data de execução"
+            "value" : "Data"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "மரணதண்டனை தேதி"
+            "value" : "தேதி"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "执行日期"
+            "value" : "时间"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "執行日期"
+            "value" : "时间"
           }
         }
       }
@@ -10798,19 +10798,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "accept task"
+            "value" : "Accept task"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "aceptar tarea"
+            "value" : "Aceptar tarea"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "accepter la tâche"
+            "value" : "Accepter la tâche"
           }
         },
         "hi" : {
@@ -10822,7 +10822,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "aceitar tarefa"
+            "value" : "Aceitar tarefa"
           }
         },
         "ta" : {
@@ -11336,19 +11336,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "remind"
+            "value" : "Remind"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "recordar"
+            "value" : "Recordar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "rappeler"
+            "value" : "Rappeler"
           }
         },
         "hi" : {
@@ -11360,7 +11360,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "lembrar"
+            "value" : "Lembrar"
           }
         },
         "ta" : {
@@ -12625,55 +12625,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تخطيط الوقت"
+            "value" : "وقت"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "time planning"
+            "value" : "Time"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "planificación del tiempo"
+            "value" : "Tiempo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "planification du temps"
+            "value" : "Temps"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "समय नियोजन"
+            "value" : "समय"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "planejamento de tempo"
+            "value" : "Tempo"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "நேர திட்டமிடல்"
+            "value" : "நேரம்"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "时间规划"
+            "value" : "时间"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "時間規劃"
+            "value" : "時間"
           }
         }
       }
@@ -13270,19 +13270,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "more details"
+            "value" : "More details"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "más detalles"
+            "value" : "Más detalles"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "plus de détails"
+            "value" : "Plus de détails"
           }
         },
         "hi" : {
@@ -13294,7 +13294,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "mais detalhes"
+            "value" : "Mais detalhes"
           }
         },
         "ta" : {
@@ -18143,55 +18143,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "العنوان (مثل: داباو، وانغكاي) *"
+            "value" : "اللقب (مثل: أمي) *"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Title (such as: Dabao, Wangcai) *"
+            "value" : "Nickname (such as: Mum) *"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Título (por ejemplo: Dabao, Wangcai) *"
+            "value" : "Apodo (como por ejemplo: Mamá) *"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Titre (tel que : Dabao, Wangcai) *"
+            "value" : "Surnom (par exemple : Maman) *"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "शीर्षक (जैसे: दाबाओ, वांग्काई) *"
+            "value" : "उपनाम (जैसे: माँ) *"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Título (como: Dabao, Wangcai) *"
+            "value" : "Apelido (como: Mãe) *"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "தலைப்பு (அதாவது: Dabao, Wangcai) *"
+            "value" : "செல்லப்பெயர் (உதாரணமாக: அம்மா) *"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "称呼 (如：大宝、旺财) *"
+            "value" : "昵称（例如：妈妈） *"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "稱呼 (如：大寶、旺財) *"
+            "value" : "暱稱（例如：媽媽） *"
           }
         }
       }
@@ -24290,19 +24290,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "repeat"
+            "value" : "Repeat"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "repetir"
+            "value" : "Repetir"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "répéter"
+            "value" : "Répéter"
           }
         },
         "hi" : {
@@ -24314,7 +24314,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "repita"
+            "value" : "Repita"
           }
         },
         "ta" : {
@@ -24342,55 +24342,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "كرر الإعدادات"
+            "value" : "كرر"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Repeat settings"
+            "value" : "Repeat"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Repetir configuración"
+            "value" : "Repetir"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Répéter les paramètres"
+            "value" : "Répéter"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "सेटिंग्स दोहराएँ"
+            "value" : "सेटिंग्स"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Repetir configurações"
+            "value" : "Repetir"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "அமைப்புகளை மீண்டும் செய்யவும்"
+            "value" : "அமைப்புகளை"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重复设置"
+            "value" : "重复"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重複設定"
+            "value" : "重複"
           }
         }
       }
@@ -24882,55 +24882,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "النفقات المقدرة"
+            "value" : "نفقات"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Estimated expenses"
+            "value" : "Expenses"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gastos estimados"
+            "value" : "Gastos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dépenses estimées"
+            "value" : "Dépenses"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "अनुमानित व्यय"
+            "value" : "खर्च"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Despesas estimadas"
+            "value" : "Despesas"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "மதிப்பிடப்பட்ட செலவுகள்"
+            "value" : "செலவுகள்"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "预计开销"
+            "value" : "开销"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "預計開銷"
+            "value" : "開銷"
           }
         }
       }
