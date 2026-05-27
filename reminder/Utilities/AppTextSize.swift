@@ -9,18 +9,30 @@ enum AppTextSize: Int, CaseIterable, Identifiable, Codable {
 
     var id: Int { rawValue }
 
-    var localizationKey: String {
+    /// UI 展示用（键与 `Localizable.xcstrings` 一致）。
+    var title: LocalizedStringKey {
         switch self {
-        case .tiny: return "极小"
-        case .small: return "较小"
-        case .standard: return "标准"
-        case .large: return "较大"
-        case .extraLarge: return "特大"
+        case .tiny: "极小"
+        case .small: "较小"
+        case .standard: "标准"
+        case .large: "较大"
+        case .extraLarge: "特大"
         }
     }
 
-    func title(locale: Locale) -> String {
-        AppLocalized.string(localizationKey, locale: locale)
+    /// VoiceOver 等需要 `String` 的上下文。
+    func accessibilityTitle(locale: Locale) -> String {
+        String(localized: String.LocalizationValue(accessibilityCatalogKey), bundle: .main, locale: locale)
+    }
+
+    private var accessibilityCatalogKey: String {
+        switch self {
+        case .tiny: "极小"
+        case .small: "较小"
+        case .standard: "标准"
+        case .large: "较大"
+        case .extraLarge: "特大"
+        }
     }
 
     var dynamicTypeSize: DynamicTypeSize {

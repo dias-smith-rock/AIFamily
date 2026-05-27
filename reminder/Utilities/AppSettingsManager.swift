@@ -40,7 +40,7 @@ final class AppSettingsManager: ObservableObject {
     private var textSizeTierStorage = AppTextSize.standard.rawValue
 
     @AppStorage("app_language")
-    private var languageStorage = AppLanguage.system.rawValue
+    private var languageStorage = ""
 
     var appearance: AppAppearance {
         get { AppAppearance(rawValue: appearanceStorage) ?? .system }
@@ -59,16 +59,28 @@ final class AppSettingsManager: ObservableObject {
     }
 
     var selectedLanguage: AppLanguage {
-        get { AppLanguage(rawValue: languageStorage) ?? .system }
+        get { Self.resolvedLanguage(from: languageStorage) }
         set {
             objectWillChange.send()
-            languageStorage = newValue.rawValue
+            languageStorage = newValue == .system ? "" : newValue.rawValue
         }
     }
 
-    /// 与 `@AppStorage("app_language")` 同步；供 `WeFamilyApp` 注入 `\.locale`，驱动全应用 String Catalog 解析。
+    /// 用户是否在应用内手动指定了语言（非跟随系统）。
+    var overridesAppLocale: Bool {
+        selectedLanguage != .system
+    }
+
+    /// ViewModel / 无障碍等需要显式 `Locale` 时使用；跟随系统时返回 `Locale.current`。
     var appLocale: Locale {
         selectedLanguage.locale
+    }
+
+    private static func resolvedLanguage(from storage: String) -> AppLanguage {
+        if storage.isEmpty || storage == "system" {
+            return .system
+        }
+        return AppLanguage(rawValue: storage) ?? .system
     }
 
     var layoutDirection: LayoutDirection {

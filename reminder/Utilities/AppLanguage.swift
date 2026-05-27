@@ -1,7 +1,8 @@
 import SwiftUI
 
 enum AppLanguage: String, CaseIterable, Identifiable {
-    case system = "system"
+    /// 空字符串表示未手动选择语言，跟随 iOS 系统。
+    case system = ""
     case english = "en"
     case simplifiedChinese = "zh-Hans"
     case traditionalChinese = "zh-Hant"
@@ -12,7 +13,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
     case french = "fr"
     case tamil = "ta"
 
-    var id: String { rawValue }
+    var id: String { self == .system ? "system" : rawValue }
 
     var nativeName: String {
         switch self {

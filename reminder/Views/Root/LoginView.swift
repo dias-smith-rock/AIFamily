@@ -10,7 +10,7 @@ struct LoginView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @State private var loadingProvider: LoginProvider?
-    @State private var appleRawNonce: String?
+    @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
 
     private enum LoginProvider {
@@ -92,27 +92,28 @@ struct LoginView: View {
 
     #if canImport(Supabase) && canImport(AuthenticationServices)
     private var appleSignInControl: some View {
-        ZStack {
-            SignInWithAppleButton(.signIn) { request in
-                let raw = AppleSignInHelper.generateRawNonce()
-                appleRawNonce = raw
-                request.requestedScopes = [.fullName, .email]
-                request.nonce = AppleSignInHelper.sha256Hex(of: raw)
-            } onCompletion: { result in
-                handleAppleAuthorization(result)
+        Button {
+            triggerAppleSignIn()
+        } label: {
+            HStack(spacing: 10) {
+                if loadingProvider == .apple {
+                    ProgressView()
+                        .tint(.black)
+                } else {
+                    Image(systemName: "apple.logo")
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                Text("通过 Apple 登录")
+                    .font(.system(size: 16, weight: .semibold))
             }
-            .signInWithAppleButtonStyle(.white)
-            .frame(height: 50)
+            .foregroundStyle(.black)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Color.white)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-
-            if loadingProvider == .apple {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.black.opacity(0.35))
-                ProgressView()
-                    .tint(.white)
-            }
         }
-        .allowsHitTesting(loadingProvider == nil)
+        .buttonStyle(.plain)
+        .disabled(loadingProvider != nil)
     }
     #endif
 
@@ -164,6 +165,15 @@ struct LoginView: View {
     }
 
     // MARK: - Actions
+
+    #if canImport(Supabase) && canImport(AuthenticationServices)
+    private func triggerAppleSignIn() {
+        appleSignInPresenter.onComplete = { result in
+            handleAppleAuthorization(result)
+        }
+        appleSignInPresenter.performRequests()
+    }
+    #endif
 
     private func triggerGoogleLogin() {
         Task {
@@ -224,7 +234,7 @@ struct LoginView: View {
                 }
                 return
             }
-            guard let rawNonce = appleRawNonce else {
+            guard let rawNonce = appleSignInPresenter.currentRawNonce else {
                 await MainActor.run {
                     loginErrorAlert = AppLocalized.string("登录状态异常，请重试。", locale: locale)
                 }

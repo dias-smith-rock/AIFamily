@@ -522,7 +522,7 @@ struct MineView: View {
     private func mineRoleCapsule(_ role: MembershipRole) -> some View {
         switch role {
         case .creator:
-            Text(AppLocalized.string("创建者", locale: locale))
+            Text(role.localizedName)
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -530,7 +530,7 @@ struct MineView: View {
                 .foregroundStyle(.blue)
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         case .admin:
-            Text(AppLocalized.string("管理员", locale: locale))
+            Text(role.localizedName)
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)

@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct TextSizeSettingsView: View {
-    @Environment(\.locale) private var locale
     @EnvironmentObject private var appSettings: AppSettingsManager
 
     private var sliderUpperBound: Double {
@@ -19,15 +18,15 @@ struct TextSizeSettingsView: View {
             Section {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Text(AppTextSize.tiny.title(locale: locale))
+                        Text(AppTextSize.tiny.title)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(appSettings.appTextSize.title(locale: locale))
+                        Text(appSettings.appTextSize.title)
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(AppTextSize.extraLarge.title(locale: locale))
+                        Text(AppTextSize.extraLarge.title)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -41,7 +40,7 @@ struct TextSizeSettingsView: View {
                         step: 1
                     )
                     .accessibilityLabel("字体大小")
-                    .accessibilityValue(appSettings.appTextSize.title(locale: locale))
+                    .accessibilityValue(appSettings.appTextSize.accessibilityTitle(locale: appSettings.appLocale))
                 }
                 .padding(.vertical, 4)
             } footer: {
@@ -50,6 +49,7 @@ struct TextSizeSettingsView: View {
         }
         .navigationTitle("文字大小")
         .navigationBarTitleDisplayMode(.inline)
+        .environment(\.locale, appSettings.appLocale)
     }
 
     private var previewCard: some View {

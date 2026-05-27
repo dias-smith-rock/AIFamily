@@ -16,8 +16,10 @@ enum AppLocalized {
 
     /// 通知等 `nonisolated` 上下文：从 `UserDefaults` 读取 `app_language` 后解析。
     nonisolated static func localizedSync(_ key: String.LocalizationValue) -> String {
-        let raw = UserDefaults.standard.string(forKey: "app_language") ?? AppLanguage.system.rawValue
-        let language = AppLanguage(rawValue: raw) ?? .system
+        let raw = UserDefaults.standard.string(forKey: "app_language") ?? ""
+        let language: AppLanguage = raw.isEmpty || raw == "system"
+            ? .system
+            : (AppLanguage(rawValue: raw) ?? .system)
         return String(localized: key, locale: language.locale)
     }
 }

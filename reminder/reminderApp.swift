@@ -34,7 +34,7 @@ struct WeFamilyApp: App {
                 .environmentObject(appBootstrap)
                 .environmentObject(appBootstrap.viewModelFactory)
                 .environmentObject(appSettings)
-                .environment(\.locale, appSettings.appLocale)
+                .appLocaleEnvironment(using: appSettings)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
                 .preferredColorScheme(appSettings.colorScheme)
                 .applyAppTextSize()
