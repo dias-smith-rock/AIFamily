@@ -14411,7 +14411,6 @@
       }
     },
     "我的" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14422,7 +14421,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "mine"
+            "value" : "Mine"
           }
         },
         "es" : {
@@ -16345,7 +16344,6 @@
       }
     },
     "日程表" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16356,7 +16354,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "schedule"
+            "value" : "Schedule"
           }
         },
         "es" : {
@@ -21039,7 +21037,6 @@
       }
     },
     "群组" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

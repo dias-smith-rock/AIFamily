@@ -1,21 +1,36 @@
 import SwiftUI
 
 struct AppTabRootView: View {
-    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @State private var selectedTab: Tab = .schedule
 
-    enum Tab {
+    enum Tab: Hashable {
         case schedule
         case family
         case personalSettings
+
+        var titleKey: LocalizedStringKey {
+            switch self {
+            case .schedule: "日程表"
+            case .family: "群组"
+            case .personalSettings: "我的"
+            }
+        }
+
+        var systemImage: String {
+            switch self {
+            case .schedule: "calendar"
+            case .family: "person.2"
+            case .personalSettings: "gearshape.fill"
+            }
+        }
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
             TaskListView()
                 .tabItem {
-                    Label(AppLocalized.string("日程表", locale: locale), systemImage: "calendar")
+                    Label(Tab.schedule.titleKey, systemImage: Tab.schedule.systemImage)
                 }
                 .tag(Tab.schedule)
 
@@ -23,13 +38,13 @@ struct AppTabRootView: View {
 
             FamilyView()
                 .tabItem {
-                    Label(AppLocalized.string("群组", locale: locale), systemImage: "person.2")
+                    Label(Tab.family.titleKey, systemImage: Tab.family.systemImage)
                 }
                 .tag(Tab.family)
 
             MineView()
                 .tabItem {
-                    Label(AppLocalized.string("我的", locale: locale), systemImage: "gearshape.fill")
+                    Label(Tab.personalSettings.titleKey, systemImage: Tab.personalSettings.systemImage)
                 }
                 .tag(Tab.personalSettings)
         }
@@ -40,4 +55,6 @@ struct AppTabRootView: View {
     AppTabRootView()
         .environmentObject(AppBootstrap())
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
+        .environment(\.locale, Locale(identifier: "en"))
 }
