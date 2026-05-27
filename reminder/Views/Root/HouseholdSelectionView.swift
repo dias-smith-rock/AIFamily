@@ -56,7 +56,7 @@ struct HouseholdSelectionView: View {
                         Button(role: .destructive) {
                             viewModel.showDeleteAccountAlert = true
                         } label: {
-                            Label(AppLocalized.string("永久注销账号", locale: locale), systemImage: "trash")
+                            Label("注销账号", systemImage: "trash")
                         }
                     } label: {
                         Image(systemName: "person.crop.circle")
@@ -102,7 +102,7 @@ struct HouseholdSelectionView: View {
         } message: {
             Text(AppLocalized.string("确定要退出当前账号吗？", locale: locale))
         }
-        .alert(AppLocalized.string("永久注销账号", locale: locale), isPresented: $viewModel.showDeleteAccountAlert) {
+        .alert("注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
             Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
             Button(AppLocalized.string("确认注销", locale: locale), role: .destructive) {
                 Task {

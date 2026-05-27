@@ -108,7 +108,7 @@ struct MineView: View {
         } message: {
             Text(viewModel.signOutErrorMessage ?? "")
         }
-        .alert(AppLocalized.string("永久注销账号", locale: locale), isPresented: $viewModel.showDeleteAccountAlert) {
+        .alert("注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
             Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
             Button(AppLocalized.string("确认注销", locale: locale), role: .destructive) {
                 Task {
@@ -332,12 +332,12 @@ struct MineView: View {
                         if viewModel.isCheckingCreatorStatus {
                             ProgressView()
                                 .padding(.trailing, 4)
-                            Text("永久注销账号")
+                            Text("注销账号")
                                 .font(AppTheme.FontToken.bodyStrong)
                         } else if viewModel.isDeletingAccount {
                             ProgressView()
                         } else {
-                            Text("永久注销账号")
+                            Text("注销账号")
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()

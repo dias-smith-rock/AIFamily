@@ -3612,43 +3612,43 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يحفظ"
+            "value" : "حفظ"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "save"
+            "value" : "Save"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ahorrar"
+            "value" : "Guardar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "sauvegarder"
+            "value" : "Enregistrer"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "बचाना"
+            "value" : "सहेजें"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "salvar"
+            "value" : "Salvar"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "சேமிக்க"
+            "value" : "சேமி"
           }
         },
         "zh-Hans" : {
@@ -9790,19 +9790,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "my group"
+            "value" : "My groups"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "mi grupo"
+            "value" : "Mi grupo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "mon groupe"
+            "value" : "Mon groupe"
           }
         },
         "hi" : {
@@ -9814,7 +9814,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "meu grupo"
+            "value" : "Meu grupo"
           }
         },
         "ta" : {
@@ -16177,60 +16177,60 @@
         }
       }
     },
-    "永久注销账号" : {
+    "注销账号" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "إلغاء الحساب نهائيا"
+            "value" : "إلغاء الحساب"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permanently cancel account"
+            "value" : "Cancel account"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancelar cuenta permanentemente"
+            "value" : "Cancelar cuenta"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Annuler définitivement le compte"
+            "value" : "Annuler le compte"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "खाता स्थायी रूप से रद्द करें"
+            "value" : "खाता रद्द करें"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cancelar conta permanentemente"
+            "value" : "Cancelar conta"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "கணக்கை நிரந்தரமாக ரத்து செய்"
+            "value" : "கணக்கை ரத்து செய்"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "永久注销账号"
+            "value" : "注销账号"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "永久註銷帳號"
+            "value" : "註銷帳號"
           }
         }
       }
