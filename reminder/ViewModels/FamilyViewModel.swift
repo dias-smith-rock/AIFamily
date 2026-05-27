@@ -1166,13 +1166,14 @@ final class FamilyViewModel: ObservableObject {
             #if DEBUG
             print("🎂 [BirthdaySync] recreate start - creatorMembershipId=\(creatorId.uuidString)")
             #endif
+            let taskLocale = AppSettingsManager.shared.appLocale
             let templates: [(offset: Int, title: String)] = [
-                (-30, "准备 \(profile.name) 的生日愿望清单"),
-                (-15, "为 \(profile.name) 预订生日餐厅/场地"),
-                (-7, "购买 \(profile.name) 的生日礼物"),
-                (-3, "确认 \(profile.name) 的生日蛋糕预订"),
-                (-1, "布置现场并取回 \(profile.name) 的生日蛋糕"),
-                (0, "陪伴 \(profile.name)，祝生日快乐！")
+                (-30, String(localized: "准备 \(profile.name) 的生日愿望清单", locale: taskLocale)),
+                (-15, String(localized: "为 \(profile.name) 预订生日餐厅/场地", locale: taskLocale)),
+                (-7, String(localized: "购买 \(profile.name) 的生日礼物", locale: taskLocale)),
+                (-3, String(localized: "确认 \(profile.name) 的生日蛋糕预订", locale: taskLocale)),
+                (-1, String(localized: "布置现场并取回 \(profile.name) 的生日蛋糕", locale: taskLocale)),
+                (0, String(localized: "陪伴 \(profile.name)，祝生日快乐！", locale: taskLocale))
             ]
 
             let fallbackPayloads = templates.compactMap { template -> BirthdayTaskInsertFallbackPayload? in

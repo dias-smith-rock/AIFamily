@@ -1,11 +1,10 @@
 import SwiftUI
 
 struct ProfileDetailView: View {
-    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     let profile: FamilyProfile
-    let subtitle: String
+    let roleLabel: LocalizedStringKey
     let canEdit: Bool
     let onEdit: () -> Void
 
@@ -16,62 +15,68 @@ struct ProfileDetailView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(AppLocalized.string("成员信息", locale: locale)) {
-                    LabeledContent(AppLocalized.string("称呼", locale: locale), value: profile.displayName)
-                    LabeledContent(AppLocalized.string("角色", locale: locale), value: subtitle)
+                Section("成员信息") {
+                    ProfileDetailRowView(title: "称呼", value: profile.displayName)
+                    LabeledContent {
+                        Text(roleLabel)
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        Text("角色")
+                    }
                     if let gender = profile.gender, gender.isEmpty == false {
                         LabeledContent {
                             Text(ProfileDraftGender(databaseValue: gender).localizedName)
+                                .foregroundStyle(.secondary)
                         } label: {
                             Text("性别")
                         }
                     }
                     if let birthDate = profile.birthDate, birthDate.isEmpty == false {
-                        LabeledContent(AppLocalized.string("生日", locale: locale), value: birthDate)
+                        ProfileDetailRowView(title: "生日", value: birthDate)
                     }
                 }
 
-                Section(AppLocalized.string("联系方式", locale: locale)) {
-                    optionalRow(AppLocalized.string("邮箱", locale: locale), profile.email)
-                    optionalRow(AppLocalized.string("手机号", locale: locale), profile.mainPhone)
-                    optionalRow(AppLocalized.string("备用手机号", locale: locale), profile.secondPhone)
+                Section("联系方式") {
+                    ProfileDetailRowView(title: "邮箱", value: profile.email)
+                    ProfileDetailRowView(title: "手机号", value: profile.mainPhone)
+                    ProfileDetailRowView(title: "备用手机号", value: profile.secondPhone)
                 }
 
-                Section(AppLocalized.string("证件信息", locale: locale)) {
-                    sensitiveRow(
-                        title: AppLocalized.string("身份证", locale: locale),
+                Section("证件信息") {
+                    ProfileDetailSensitiveRowView(
+                        title: "身份证",
                         value: profile.idCardNum,
                         reveals: $showIdCard
                     )
-                    sensitiveRow(
-                        title: AppLocalized.string("护照号", locale: locale),
+                    ProfileDetailSensitiveRowView(
+                        title: "护照号",
                         value: profile.passportNum,
                         reveals: $showPassport
                     )
-                    sensitiveRow(
-                        title: AppLocalized.string("旅行证/回乡证号", locale: locale),
+                    ProfileDetailSensitiveRowView(
+                        title: "旅行证/回乡证号",
                         value: profile.permitNum,
                         reveals: $showPermit
                     )
                 }
 
-                Section(AppLocalized.string("补充资料", locale: locale)) {
-                    optionalRow(AppLocalized.string("身高", locale: locale), profile.height.map { "\($0) cm" })
-                    optionalRow(AppLocalized.string("体重", locale: locale), profile.weight.map { "\($0) kg" })
-                    optionalRow(AppLocalized.string("学校", locale: locale), profile.school)
-                    optionalRow(AppLocalized.string("年级", locale: locale), profile.grade)
+                Section("补充资料") {
+                    ProfileDetailRowView(title: "身高", value: profile.height.map { "\($0) cm" })
+                    ProfileDetailRowView(title: "体重", value: profile.weight.map { "\($0) kg" })
+                    ProfileDetailRowView(title: "学校", value: profile.school)
+                    ProfileDetailRowView(title: "年级", value: profile.grade)
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(AppLocalized.string("成员详情", locale: locale))
+            .navigationTitle("成员详情")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(AppLocalized.string("关闭", locale: locale)) { dismiss() }
+                    Button("关闭") { dismiss() }
                 }
                 if canEdit {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button(AppLocalized.string("编辑", locale: locale)) {
+                        Button("编辑") {
                             onEdit()
                         }
                     }
@@ -79,46 +84,4 @@ struct ProfileDetailView: View {
             }
         }
     }
-
-    @ViewBuilder
-    private func optionalRow(_ title: String, _ value: String?) -> some View {
-        let stableValue = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        LabeledContent(title, value: stableValue.isEmpty ? AppLocalized.string("未填写", locale: locale) : stableValue)
-    }
-
-    @ViewBuilder
-    private func sensitiveRow(title: String, value: String?, reveals: Binding<Bool>) -> some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text(displaySensitive(value, reveals: reveals.wrappedValue))
-                .foregroundStyle(.secondary)
-            if value?.isEmpty == false {
-                Button {
-                    reveals.wrappedValue.toggle()
-                } label: {
-                    Image(systemName: reveals.wrappedValue ? "eye.slash" : "eye")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private func displaySensitive(_ value: String?, reveals: Bool) -> String {
-        let text = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard text.isEmpty == false else { return AppLocalized.string("未填写", locale: locale) }
-        if reveals { return text }
-        return maskSensitive(text)
-    }
-
-    private func maskSensitive(_ source: String) -> String {
-        guard source.count > 8 else { return String(repeating: "*", count: source.count) }
-        let prefix = source.prefix(3)
-        let suffix = source.suffix(4)
-        let stars = String(repeating: "*", count: max(0, source.count - 7))
-        return "\(prefix)\(stars)\(suffix)"
-    }
-
 }
-
