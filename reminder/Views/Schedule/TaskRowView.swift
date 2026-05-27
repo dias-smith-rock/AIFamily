@@ -19,7 +19,7 @@ enum ScheduleTimelineMetrics {
     }
 }
 
-/// 时间轴「此刻」红底胶囊时间标签。
+/// 时间轴「此刻」红底胶囊时间标签（须置于 `ScheduleTimelineMetrics.timeColumnWidth` 固定列内右对齐）。
 struct ScheduleNowTimeCapsule: View {
     let timeText: String
 
@@ -28,10 +28,14 @@ struct ScheduleNowTimeCapsule: View {
             .font(.system(size: 14, weight: .medium))
             .foregroundStyle(.white)
             .lineLimit(1)
-            .minimumScaleFactor(0.8)
+            .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Capsule().fill(Color.red))
+            .padding(2)
+            .background(Capsule().fill(Color(.systemGroupedBackground)))
+            .compositingGroup()
+            .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
     }
 }
 
@@ -41,55 +45,10 @@ struct TaskRowView: View {
     let anchor: Date
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
-    let isCurrentActiveTask: Bool
-    let startTime: Date
-    let endTime: Date
-    let nextStartTime: Date?
-    let followingGapHeight: CGFloat
-    let now: Date
     let onTap: () -> Void
-
-    @State private var rowHeight: CGFloat = 0
 
     private var timeText: String {
         anchor.formatted(date: .omitted, time: .shortened)
-    }
-
-    /// 红线 Y 轴锚点：任务内在卡片高度内滑动；空档期在卡片下方缝隙中继续向下一任务推进。
-    private func calculateRedLineYOffset(cardHeight: CGFloat) -> CGFloat {
-        guard isCurrentActiveTask else { return 0 }
-
-        if now < startTime { return 0 }
-
-        if now >= startTime, now < endTime {
-            let totalDuration = endTime.timeIntervalSince(startTime)
-            guard totalDuration > 0 else { return cardHeight }
-            let elapsed = now.timeIntervalSince(startTime)
-            let ratio = max(0, min(1, elapsed / totalDuration))
-            return cardHeight * CGFloat(ratio)
-        }
-
-        let gapHeight = max(0, followingGapHeight)
-        let resolvedNextStart = nextStartTime
-            ?? Calendar.current.date(byAdding: .hour, value: 2, to: endTime)
-            ?? endTime
-
-        if now >= endTime, now < resolvedNextStart, gapHeight > 0 {
-            let gapDuration = resolvedNextStart.timeIntervalSince(endTime)
-            let elapsedGap = now.timeIntervalSince(endTime)
-            let gapRatio = gapDuration > 0 ? max(0, min(1, elapsedGap / gapDuration)) : 1
-            return cardHeight + gapHeight * CGFloat(gapRatio)
-        }
-
-        if now >= endTime {
-            return cardHeight + gapHeight
-        }
-
-        return 0
-    }
-
-    private var nowIndicatorContainerHeight: CGFloat {
-        rowHeight + max(0, followingGapHeight)
     }
 
     var body: some View {
@@ -98,46 +57,8 @@ struct TaskRowView: View {
             axisDotColumn
             cardColumn
         }
-        .overlay(alignment: .topLeading) {
-            if isCurrentActiveTask, followingGapHeight > 0, rowHeight > 0 {
-                gapAxisConnectorLine
-            }
-        }
-        .overlay(alignment: .topLeading) {
-            if isCurrentActiveTask, rowHeight > 0 {
-                TaskRowNowIndicatorOverlay(
-                    now: now,
-                    anchorY: calculateRedLineYOffset(cardHeight: rowHeight),
-                    containerHeight: nowIndicatorContainerHeight
-                )
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-                .allowsHitTesting(false)
-                .zIndex(1)
-            }
-        }
-        .onGeometryChange(for: CGFloat.self) { proxy in
-            proxy.size.height
-        } action: { height in
-            if abs(height - rowHeight) > 0.5 {
-                rowHeight = height
-            }
-        }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
-    }
-
-    private var gapAxisConnectorLine: some View {
-        let lineLeading = ScheduleTimelineMetrics.timeColumnWidth
-            + ScheduleTimelineMetrics.rowSpacing
-            + (ScheduleTimelineMetrics.axisColumnWidth - ScheduleTimelineMetrics.lineWidth) / 2
-        let lineTop = ScheduleTimelineMetrics.dotTopPadding + ScheduleTimelineMetrics.dotSize / 2
-        let lineHeight = max(0, nowIndicatorContainerHeight - lineTop)
-
-        return Rectangle()
-            .fill(Color.gray.opacity(0.3))
-            .frame(width: ScheduleTimelineMetrics.lineWidth, height: lineHeight)
-            .offset(x: lineLeading, y: lineTop)
-            .allowsHitTesting(false)
     }
 
     // MARK: - 左：时间
@@ -158,17 +79,7 @@ struct TaskRowView: View {
     }
 
     private func timelineDot(fill: Color) -> some View {
-        Circle()
-            .fill(fill)
-            .frame(
-                width: ScheduleTimelineMetrics.dotSize,
-                height: ScheduleTimelineMetrics.dotSize
-            )
-            .overlay {
-                Circle()
-                    .stroke(Color.white, lineWidth: ScheduleTimelineMetrics.dotStrokeWidth)
-            }
-            .padding(.top, ScheduleTimelineMetrics.dotTopPadding)
+        ScheduleTimelineAxisDot(fill: fill)
     }
 
     // MARK: - 右：卡片
@@ -197,9 +108,9 @@ struct TaskRowView: View {
     }
 }
 
-// MARK: - 此刻指示器（overlay，不参与布局）
+// MARK: - 此刻指示器（由 ScheduleTaskAnchorFlow 顶层 overlay 调用）
 
-private struct TaskRowNowIndicatorOverlay: View {
+struct TaskRowNowIndicatorOverlay: View {
     let now: Date
     let anchorY: CGFloat
     let containerHeight: CGFloat
@@ -215,19 +126,10 @@ private struct TaskRowNowIndicatorOverlay: View {
 
         HStack(alignment: .top, spacing: ScheduleTimelineMetrics.rowSpacing) {
             ScheduleNowTimeCapsule(timeText: nowTimeText)
-                .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
+                .padding(.top, 2)
                 .offset(y: capsuleOffset)
 
-            Circle()
-                .fill(Color.red)
-                .frame(
-                    width: ScheduleTimelineMetrics.dotSize,
-                    height: ScheduleTimelineMetrics.dotSize
-                )
-                .overlay {
-                    Circle()
-                        .stroke(Color.white, lineWidth: ScheduleTimelineMetrics.dotStrokeWidth)
-                }
+            ScheduleTimelineAxisDot(fill: .red)
                 .frame(width: ScheduleTimelineMetrics.axisColumnWidth)
                 .offset(y: dotCenterOffset)
 
@@ -237,6 +139,26 @@ private struct TaskRowNowIndicatorOverlay: View {
                 .frame(maxWidth: .infinity)
                 .offset(y: lineOffset)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: containerHeight, alignment: .topLeading)
+    }
+}
+
+/// 时间轴节点圆点（任务蓝点与当前时间红点共用尺寸与描边）。
+struct ScheduleTimelineAxisDot: View {
+    let fill: Color
+
+    var body: some View {
+        Circle()
+            .fill(fill)
+            .frame(
+                width: ScheduleTimelineMetrics.dotSize,
+                height: ScheduleTimelineMetrics.dotSize
+            )
+            .overlay {
+                Circle()
+                    .stroke(Color.white, lineWidth: ScheduleTimelineMetrics.dotStrokeWidth)
+            }
+            .padding(.top, ScheduleTimelineMetrics.dotTopPadding)
     }
 }

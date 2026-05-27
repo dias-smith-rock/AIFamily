@@ -18,6 +18,7 @@ struct ScheduleTaskAnchorFlow: View {
     let assigneeLabel: (FamilyTask) -> String
 
     let onTaskTap: (FamilyTask) -> Void
+    @State private var taskRowFrames: [UUID: CGRect] = [:]
 
     private var sortedTasks: [FamilyTask] {
         timedTasks.sorted { taskAnchor($0) < taskAnchor($1) }
@@ -30,61 +31,60 @@ struct ScheduleTaskAnchorFlow: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { timeline in
             let now = timeline.date
-            let activeTaskID = activeTaskID(for: now)
+            ZStack(alignment: .topLeading) {
+                VStack(spacing: 0) {
+                    ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
+                        let startTime = taskAnchor(task)
 
-            VStack(spacing: 0) {
-                ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
-                    let isCurrentActiveTask = viewingToday && activeTaskID == task.id
-                    let startTime = taskAnchor(task)
-                    let endTime = taskEnd(task)
-                    let nextStartTime = nextIntervalEnd(for: task, at: index)
-                    let followingGapHeight = index + 1 < sortedTasks.count ? compactGapHeight : 0
+                        if index > 0 {
+                            let previous = sortedTasks[index - 1]
 
-                    if index > 0 {
-                        let previous = sortedTasks[index - 1]
-                        let previousIsActive = viewingToday && activeTaskID == previous.id
+                            ScheduleAnchorGapSegment(
+                                stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
+                                previousAnchor: taskAnchor(previous),
+                                nextAnchor: taskAnchor(task),
+                                compactHeight: compactGapHeight,
+                                longIdleThreshold: longIdleThreshold
+                            )
+                        }
 
-                        ScheduleAnchorGapSegment(
-                            stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
-                            previousAnchor: taskAnchor(previous),
-                            nextAnchor: taskAnchor(task),
-                            compactHeight: previousIsActive ? 0 : compactGapHeight,
-                            longIdleThreshold: longIdleThreshold
+                        TaskRowView(
+                            task: task,
+                            anchor: startTime,
+                            forWhomAvatars: forWhomAvatars(task),
+                            assigneeLabel: assigneeLabel(task),
+                            onTap: { onTaskTap(task) }
                         )
+                        .background {
+                            GeometryReader { proxy in
+                                Color.clear.preference(
+                                    key: ScheduleTaskRowFramePreferenceKey.self,
+                                    value: [task.id: proxy.frame(in: .named(ScheduleTaskAnchorFlowCoordinateSpace.id))]
+                                )
+                            }
+                        }
+                        .id("task-\(task.id.uuidString)")
                     }
+                }
+                .onPreferenceChange(ScheduleTaskRowFramePreferenceKey.self) { taskRowFrames = $0 }
 
-                    TaskRowView(
-                        task: task,
-                        anchor: startTime,
-                        forWhomAvatars: forWhomAvatars(task),
-                        assigneeLabel: assigneeLabel(task),
-                        isCurrentActiveTask: isCurrentActiveTask,
-                        startTime: startTime,
-                        endTime: endTime,
-                        nextStartTime: nextStartTime,
-                        followingGapHeight: followingGapHeight,
+                if viewingToday,
+                   let nowY = nowIndicatorOffsetY(for: now),
+                   let contentHeight = timelineContentHeight {
+                    TaskRowNowIndicatorOverlay(
                         now: now,
-                        onTap: { onTaskTap(task) }
+                        anchorY: nowY,
+                        containerHeight: contentHeight
                     )
-                    .padding(.bottom, isCurrentActiveTask ? followingGapHeight : 0)
-                    .id(isCurrentActiveTask ? ScheduleAnchorFlowScrollIDs.nowMarker : "task-\(task.id.uuidString)")
+                    .id(ScheduleAnchorFlowScrollIDs.nowMarker)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .allowsHitTesting(false)
+                    .zIndex(1)
                 }
             }
+            .coordinateSpace(name: ScheduleTaskAnchorFlowCoordinateSpace.id)
+            .padding(.vertical, 30)
         }
-    }
-
-    /// 红线仅渲染在 `now ∈ [start, nextStart)` 的唯一任务行上。
-    private func activeTaskID(for now: Date) -> UUID? {
-        guard viewingToday else { return nil }
-
-        for (index, task) in sortedTasks.enumerated() {
-            let start = taskAnchor(task)
-            let nextStart = nextIntervalEnd(for: task, at: index)
-            if now >= start, now < nextStart {
-                return task.id
-            }
-        }
-        return nil
     }
 
     /// 进度区间终点：下一任务开始时间；末项任务则用结束时间或默认 60 分钟。
@@ -99,6 +99,59 @@ struct ScheduleTaskAnchorFlow: View {
             return end
         }
         return start.addingTimeInterval(ScheduleTimelineMetrics.defaultTaskDuration)
+    }
+
+    private var timelineContentHeight: CGFloat? {
+        let maxY = taskRowFrames.values.map(\.maxY).max()
+        return maxY.map { $0 + 12 }
+    }
+
+    private func nowIndicatorOffsetY(for now: Date) -> CGFloat? {
+        guard let firstTask = sortedTasks.first,
+              let firstFrame = taskRowFrames[firstTask.id] else {
+            return nil
+        }
+
+        if now < taskAnchor(firstTask) {
+            return firstFrame.minY
+        }
+
+        for (index, task) in sortedTasks.enumerated() {
+            guard let rowFrame = taskRowFrames[task.id] else { continue }
+            let start = taskAnchor(task)
+            let end = taskEnd(task)
+            let nextStart = nextIntervalEnd(for: task, at: index)
+
+            if now >= start, now < end {
+                let duration = max(end.timeIntervalSince(start), 1)
+                let progress = max(0, min(1, now.timeIntervalSince(start) / duration))
+                return rowFrame.minY + rowFrame.height * progress
+            }
+
+            if now >= end, now < nextStart {
+                let gapDuration = max(nextStart.timeIntervalSince(end), 1)
+                let gapProgress = max(0, min(1, now.timeIntervalSince(end) / gapDuration))
+                return rowFrame.maxY + compactGapHeight * gapProgress
+            }
+        }
+
+        if let lastTask = sortedTasks.last,
+           let lastFrame = taskRowFrames[lastTask.id] {
+            return lastFrame.maxY
+        }
+        return nil
+    }
+}
+
+private enum ScheduleTaskAnchorFlowCoordinateSpace {
+    static let id = "scheduleTaskAnchorFlow"
+}
+
+private struct ScheduleTaskRowFramePreferenceKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 
