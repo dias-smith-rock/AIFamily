@@ -81,7 +81,7 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func showTransferSuccessToast() {
-        transferSuccessToastMessage = "权限已成功转移"
+        transferSuccessToastMessage = AppLocalized.localized("权限已成功转移")
     }
 
     func acknowledgeTransferSuccessToast() {
@@ -574,7 +574,7 @@ final class FamilyViewModel: ObservableObject {
             return nil
         }
         guard member.householdId == householdId else {
-            errorMessage = "成员创建失败：群组上下文不一致。"
+            errorMessage = AppLocalized.localized("成员创建失败：群组上下文不一致。")
             return nil
         }
 
@@ -707,7 +707,7 @@ final class FamilyViewModel: ObservableObject {
         print("🔎 [FamilyDebug] uploadAvatar received bytes=\(data.count)")
         #endif
         guard data.isEmpty == false else {
-            errorMessage = "头像数据为空，请重新选择图片后再试。"
+            errorMessage = AppLocalized.localized("头像数据为空，请重新选择图片后再试。")
             #if DEBUG
             print("❌ [FamilyDebug] uploadAvatar aborted - empty data")
             #endif
@@ -1191,7 +1191,7 @@ final class FamilyViewModel: ObservableObject {
                     taskType: "birthday_reminder",
                     targetProfileIds: [profile.id],
                     targetSubject: profile.name,
-                    description: "生日自动任务（年度循环）",
+                    description: AppLocalized.localized("生日自动任务（年度循环）"),
                     originalPrompt: birthdaySyncMarker(for: profile.id)
                 )
             }

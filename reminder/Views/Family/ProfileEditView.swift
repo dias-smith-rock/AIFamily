@@ -209,14 +209,14 @@ struct ProfileEditView: View {
                 print("⏳ [FamilyDebug] 开始从相册读取图片...")
                 #endif
                 guard let rawData = try await item.loadTransferable(type: Data.self) else {
-                    errorMessage = "未能读取图片数据，请重新选择。"
+                    errorMessage = AppLocalized.localized("未能读取图片数据，请重新选择。")
                     #if DEBUG
                     print("❌ [FamilyDebug] 读取失败：无法提取原始数据")
                     #endif
                     return
                 }
                 guard rawData.isEmpty == false else {
-                    errorMessage = "读取到原始图片数据为空，请重新选择。"
+                    errorMessage = AppLocalized.localized("读取到原始图片数据为空，请重新选择。")
                     #if DEBUG
                     print("❌ [FamilyDebug] 原始数据为空（0 bytes）")
                     #endif
@@ -224,7 +224,7 @@ struct ProfileEditView: View {
                 }
 
                 guard let image = UIImage(data: rawData) else {
-                    errorMessage = "图片格式解析失败，请换一张图片重试。"
+                    errorMessage = AppLocalized.localized("图片格式解析失败，请换一张图片重试。")
                     #if DEBUG
                     print("❌ [FamilyDebug] 转换失败：原始数据无法渲染为 UIImage")
                     #endif
@@ -232,7 +232,7 @@ struct ProfileEditView: View {
                 }
 
                 guard let jpegData = image.jpegData(compressionQuality: 0.7) else {
-                    errorMessage = "图片压缩失败，请重试。"
+                    errorMessage = AppLocalized.localized("图片压缩失败，请重试。")
                     #if DEBUG
                     print("❌ [FamilyDebug] 压缩失败：无法生成 JPEG 数据")
                     #endif
@@ -240,7 +240,7 @@ struct ProfileEditView: View {
                 }
 
                 guard jpegData.isEmpty == false else {
-                    errorMessage = "压缩后图片数据为空，请重试。"
+                    errorMessage = AppLocalized.localized("压缩后图片数据为空，请重试。")
                     #if DEBUG
                     print("❌ [FamilyDebug] 校验失败：JPEG 数据为 0 字节")
                     #endif
@@ -264,7 +264,7 @@ struct ProfileEditView: View {
                 if let url {
                     avatarURL = url
                 } else {
-                    errorMessage = errorMessage ?? "头像上传失败，请稍后再试。"
+                    errorMessage = errorMessage ?? AppLocalized.localized("头像上传失败，请稍后再试。")
                 }
             } catch {
                 errorMessage = error.localizedDescription
@@ -274,11 +274,11 @@ struct ProfileEditView: View {
 
     private func submit() {
         guard canEdit else {
-            errorMessage = "当前没有权限编辑该资料。"
+            errorMessage = AppLocalized.localized("当前没有权限编辑该资料。")
             return
         }
         guard let householdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.localized("当前未选择群组。")
             return
         }
 
@@ -299,7 +299,7 @@ struct ProfileEditView: View {
             secondPhone: trimmedOrNil(secondPhone)
         )
         guard draft.name.isEmpty == false else {
-            errorMessage = "称呼不能为空。"
+            errorMessage = AppLocalized.localized("称呼不能为空。")
             return
         }
 

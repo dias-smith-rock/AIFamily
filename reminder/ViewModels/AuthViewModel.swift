@@ -15,7 +15,7 @@ final class AuthViewModel: ObservableObject {
     @Published var email = ""
     @Published var phone = ""
     @Published private(set) var isLoading = false
-    @Published private(set) var statusText = "请先登录以启用云端同步"
+    @Published private(set) var statusText = AppLocalized.localized("请先登录以启用云端同步")
     @Published private(set) var isLoggedIn = false
 
     private let authService: AuthService
@@ -27,7 +27,7 @@ final class AuthViewModel: ObservableObject {
     func refreshSessionState() async {
         isLoggedIn = await authService.hasValidSession()
         if isLoggedIn {
-            statusText = "已检测到有效登录会话"
+            statusText = AppLocalized.localized("已检测到有效登录会话")
         }
     }
 
@@ -45,15 +45,21 @@ final class AuthViewModel: ObservableObject {
                     appleEmail: nil
                 )
                 isLoggedIn = await authService.hasValidSession()
-                statusText = isLoggedIn ? "Apple 登录成功" : "登录请求已发送，请完成授权后重试"
+                statusText = isLoggedIn
+                    ? AppLocalized.localized("Apple 登录成功")
+                    : AppLocalized.localized("登录请求已发送，请完成授权后重试")
             case .magicLink:
                 try await authService.sendMagicLink(email: email)
                 isLoggedIn = await authService.hasValidSession()
-                statusText = isLoggedIn ? "登录成功" : "登录链接已发送，请检查邮箱并回到 App"
+                statusText = isLoggedIn
+                    ? AppLocalized.localized("登录成功")
+                    : AppLocalized.localized("登录链接已发送，请检查邮箱并回到 App")
             case .phoneOTP:
                 try await authService.sendPhoneOTP(phoneNumber: phone)
                 isLoggedIn = await authService.hasValidSession()
-                statusText = isLoggedIn ? "登录成功" : "验证码已发送，请完成验证后重试"
+                statusText = isLoggedIn
+                    ? AppLocalized.localized("登录成功")
+                    : AppLocalized.localized("验证码已发送，请完成验证后重试")
             }
         } catch {
             statusText = error.localizedDescription

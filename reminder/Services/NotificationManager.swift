@@ -193,7 +193,7 @@ actor NotificationManager {
         }
 
         // 不在系统通知正文中拼接用户标题，避免异常 `String` 在插值时崩溃；详情在 App 内查看。
-        let baseBody = "有一则全天任务将于约定日期到来，请在日程中查看标题。"
+        let baseBody = AppLocalized.localizedSync("有一则全天任务将于约定日期到来，请在日程中查看标题。")
 
         var scheduled = 0
         let now = Date()
@@ -202,7 +202,7 @@ actor NotificationManager {
             let id18 = Self.identifier(taskId: payload.id, suffix: "allday-18")
             let ok = await addRequest(
                 identifier: id18,
-                title: "全天任务提醒",
+                title: AppLocalized.localizedSync("全天任务提醒"),
                 body: baseBody,
                 at: fire18,
                 taskId: payload.id
@@ -219,7 +219,7 @@ actor NotificationManager {
             let id21 = Self.identifier(taskId: payload.id, suffix: "allday-21")
             let ok = await addRequest(
                 identifier: id21,
-                title: "全天任务提醒",
+                title: AppLocalized.localizedSync("全天任务提醒"),
                 body: baseBody,
                 at: fire21,
                 taskId: payload.id
@@ -266,16 +266,16 @@ actor NotificationManager {
 
     private nonisolated static func timedReminderBody(minutesBefore: Int) -> String {
         if minutesBefore == 0 {
-            return "任务即将开始"
+            return AppLocalized.localizedSync("任务即将开始")
         }
-        return "提前 \(minutesBefore) 分钟 · 任务即将开始"
+        return AppLocalized.localizedSync("提前 \(minutesBefore) 分钟 · 任务即将开始")
     }
 
     /// 将用户标题截断为通知栏安全长度；异常或空白时退回默认文案。
     private nonisolated static func contentTitle(from raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "群组任务"
+            return AppLocalized.localizedSync("群组任务")
         }
         let maxLen = 80
         if trimmed.count <= maxLen {

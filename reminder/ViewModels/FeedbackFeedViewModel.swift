@@ -31,7 +31,7 @@ final class FeedbackFeedViewModel: ObservableObject {
     func loadFeedbacks(taskId: UUID? = nil) async {
         guard let householdId = currentHouseholdId else {
             feedbacks = []
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.localized("当前未选择群组。")
             hasLoadedOnce = true
             return
         }
@@ -52,11 +52,11 @@ final class FeedbackFeedViewModel: ObservableObject {
 
     func createFeedback(_ feedback: Feedback) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.localized("当前未选择群组。")
             return
         }
         guard feedback.householdId == nil || feedback.householdId == householdId else {
-            errorMessage = "反馈写入失败：群组上下文不一致。"
+            errorMessage = AppLocalized.localized("反馈写入失败：群组上下文不一致。")
             return
         }
 
@@ -112,7 +112,7 @@ final class FeedbackFeedViewModel: ObservableObject {
         audioData: Data
     ) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.localized("当前未选择群组。")
             return
         }
 

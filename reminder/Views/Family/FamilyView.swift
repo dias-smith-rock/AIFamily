@@ -578,7 +578,7 @@ struct FamilyView: View {
     private func renameCurrentHousehold(to newName: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
-            renameErrorMessage = AppLocalized.string("当前未选择群组。", locale: locale)
+            renameErrorMessage = AppLocalized.localized("当前未选择群组。")
             return
         }
 

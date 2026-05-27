@@ -109,9 +109,11 @@ final class MineViewModel: ObservableObject {
             if names.isEmpty {
                 showDeleteAccountAlert = true
             } else {
-                let firstName = names.first ?? "未知群组"
-                let suffix = names.count > 1 ? "等 \(names.count) 个群组" : ""
-                blockAlertMessage = "您是「\(firstName)」\(suffix)的创建者，请先转移权限或解散群组后再注销账户。"
+                let firstName = names.first ?? AppLocalized.localized("未知群组")
+                let suffix = names.count > 1
+                    ? AppLocalized.localized("等 \(names.count) 个群组")
+                    : ""
+                blockAlertMessage = AppLocalized.localized("您是「\(firstName)」\(suffix)的创建者，请先转移权限或解散群组后再注销账户。")
                 showCreatorBlockAlert = true
             }
         } catch {
@@ -127,22 +129,22 @@ final class MineViewModel: ObservableObject {
 
     func contactSupport() async {
         guard let url = await SupportMailHelper.makeSupportMailURL() else {
-            presentToast("无法创建支持邮件，请稍后重试。")
+            presentToast(AppLocalized.localized("无法创建支持邮件，请稍后重试。"))
             return
         }
         #if canImport(UIKit)
         guard UIApplication.shared.canOpenURL(url) else {
-            presentToast("当前设备未配置邮件账户，请发送邮件至 \(SupportMailHelper.supportEmail)。")
+            presentToast(AppLocalized.localized("当前设备未配置邮件账户，请发送邮件至 \(SupportMailHelper.supportEmail)。"))
             return
         }
         await UIApplication.shared.open(url)
         #else
-        presentToast("请发送邮件至 \(SupportMailHelper.supportEmail)。")
+        presentToast(AppLocalized.localized("请发送邮件至 \(SupportMailHelper.supportEmail)。"))
         #endif
     }
 
     func tapRow(feature: String) {
-        presentToast("\(feature) 即将推出。")
+        presentToast(AppLocalized.localized("\(feature) 即将推出。"))
     }
 
     func showToast(_ message: String) {
@@ -162,7 +164,7 @@ final class MineViewModel: ObservableObject {
     }
 
     func tapUpgradeVIP() {
-        presentToast("VIP 权益即将开放。")
+        presentToast(AppLocalized.localized("VIP 权益即将开放。"))
     }
 
     private func presentToast(_ message: String) {

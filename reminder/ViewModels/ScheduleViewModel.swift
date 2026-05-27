@@ -85,7 +85,7 @@ final class ScheduleViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else {
             tasks = []
             if !silent {
-                errorMessage = "当前未选择群组。"
+                errorMessage = AppLocalized.localized("当前未选择群组。")
             }
             return
         }
@@ -233,11 +233,11 @@ final class ScheduleViewModel: ObservableObject {
 
     func createTask(_ task: FamilyTask) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.localized("当前未选择群组。")
             return
         }
         guard task.householdId == householdId else {
-            errorMessage = "任务写入失败：群组上下文不一致。"
+            errorMessage = AppLocalized.localized("任务写入失败：群组上下文不一致。")
             return
         }
 

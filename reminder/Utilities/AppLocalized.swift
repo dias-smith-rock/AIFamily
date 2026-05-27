@@ -7,4 +7,17 @@ enum AppLocalized {
     static func string(_ key: String, locale: Locale) -> String {
         String(localized: String.LocalizationValue(key), bundle: .main, locale: locale)
     }
+
+    /// ViewModel / Service 等非 View 上下文：跟随应用内语言设置解析 String Catalog。
+    @MainActor
+    static func localized(_ key: String.LocalizationValue) -> String {
+        String(localized: key, locale: AppSettingsManager.shared.appLocale)
+    }
+
+    /// 通知等 `nonisolated` 上下文：从 `UserDefaults` 读取 `app_language` 后解析。
+    nonisolated static func localizedSync(_ key: String.LocalizationValue) -> String {
+        let raw = UserDefaults.standard.string(forKey: "app_language") ?? AppLanguage.system.rawValue
+        let language = AppLanguage(rawValue: raw) ?? .system
+        return String(localized: key, locale: language.locale)
+    }
 }

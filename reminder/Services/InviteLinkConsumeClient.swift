@@ -18,15 +18,15 @@ enum InviteConsumeError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingSignature:
-            return "邀请链接缺少签名参数。"
+            return AppLocalized.localizedSync("邀请链接缺少签名参数。")
         case .alreadyConsumed:
-            return "该邀请链接已被使用（409）。"
+            return AppLocalized.localizedSync("该邀请链接已被使用（409）。")
         case .expired:
-            return "该邀请链接已过期（410）。"
+            return AppLocalized.localizedSync("该邀请链接已过期（410）。")
         case .invalidOrTampered:
-            return "邀请链接无效或已被篡改。"
+            return AppLocalized.localizedSync("邀请链接无效或已被篡改。")
         case .unauthorized:
-            return "客户端鉴权失败，请检查 apikey。"
+            return AppLocalized.localizedSync("客户端鉴权失败，请检查 apikey。")
         case let .serverError(message):
             return message
         }
@@ -60,7 +60,7 @@ struct InviteLinkConsumeClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw InviteConsumeError.serverError("服务响应异常")
+            throw InviteConsumeError.serverError(AppLocalized.localizedSync("服务响应异常"))
         }
 
         switch http.statusCode {
@@ -75,8 +75,10 @@ struct InviteLinkConsumeClient {
         case 410:
             throw InviteConsumeError.expired
         default:
-            let message = String(data: data, encoding: .utf8) ?? "未知错误"
-            throw InviteConsumeError.serverError("消费邀请链接失败：\(message)")
+            let message = String(data: data, encoding: .utf8) ?? AppLocalized.localizedSync("未知错误")
+            throw InviteConsumeError.serverError(
+                AppLocalized.localizedSync("消费邀请链接失败：\(message)")
+            )
         }
     }
 }
