@@ -31,7 +31,6 @@ struct TaskDetailView: View {
     @State private var isUpdatingStatus = false
     @State private var isDeletingTask = false
     @State private var statusError: String?
-    @State private var assigneeLine: String
     @State private var forWhomProfiles: [FamilyProfile] = []
     @State private var isShowingDeleteScopeDialog = false
     @State private var showCompletedReminderCleanupAlert = false
@@ -46,7 +45,6 @@ struct TaskDetailView: View {
         self.assigneeDisplayNameFallback = assigneeDisplayName
         self.scheduleViewModel = scheduleViewModel
         _task = State(initialValue: initialTask)
-        _assigneeLine = State(initialValue: assigneeDisplayName)
     }
 
     var body: some View {
@@ -102,12 +100,12 @@ struct TaskDetailView: View {
             .padding(.bottom, bottomScrollPadding)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(localized("任务详情"))
+        .navigationTitle("任务详情")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(localized("关闭")) {
+                Button("关闭") {
                     dismiss()
                 }
                 .fontWeight(.medium)
@@ -119,7 +117,7 @@ struct TaskDetailView: View {
                         Button {
                             showingEditSheet = true
                         } label: {
-                            Text(localized("编辑"))
+                            Text("编辑")
                                 .fontWeight(.semibold)
                         }
                         .disabled(isUpdatingStatus || isDeletingTask)
@@ -146,7 +144,6 @@ struct TaskDetailView: View {
                     task = updated
                     Task {
                         await scheduleViewModel.loadTasks()
-                        await refreshAssigneeLine()
                         await loadForWhomProfiles()
                     }
                 },
@@ -158,33 +155,31 @@ struct TaskDetailView: View {
             .presentationDragIndicator(.visible)
         }
         .task(id: task.id) {
-            await refreshAssigneeLine()
             await loadForWhomProfiles()
         }
         .confirmationDialog(
-            localized("删除任务"),
+            "删除任务",
             isPresented: $isShowingDeleteScopeDialog,
             titleVisibility: .visible
         ) {
             if task.seriesGrouping == nil {
-                Button(localized("仅删除此任务"), role: .destructive) {
+                Button("仅删除此任务", role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
             } else {
-                Button(localized("仅删除此任务"), role: .destructive) {
+                Button("仅删除此任务", role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
-                Button(localized("删除此任务及以后"), role: .destructive) {
+                Button("删除此任务及以后", role: .destructive) {
                     Task { await performDelete(scope: .thisAndFuture) }
                 }
             }
-            Button(localized("取消"), role: .cancel) { }
+            Button("取消", role: .cancel) { }
         } message: {
-            Text(localized(task.seriesGrouping == nil ? "此操作不可撤销。" : "请选择删除范围。"))
+            Text(task.seriesGrouping == nil ? "此操作不可撤销。" : "请选择删除范围。")
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
-                await refreshAssigneeLine()
                 await loadForWhomProfiles()
             }
         }
@@ -211,7 +206,7 @@ struct TaskDetailView: View {
             Image(systemName: "calendar.badge.lock")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Text(TaskDetailCopy.externalSyncReadOnlyBanner(locale: locale))
+            Text("This event was synced from an external calendar and cannot be edited in the app.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -226,24 +221,49 @@ struct TaskDetailView: View {
 
     private var coreInfoCard: some View {
         VStack(spacing: 0) {
-            coreRow(systemImage: "repeat", label: localized("重复"), value: repeatDisplayText)
+            TaskDetailRowView(systemImage: "repeat", label: "重复") {
+                Text(inferredRecurrenceRule.titleKey)
+            }
             cardDivider
-            coreRow(systemImage: "bell", label: localized("提醒"), value: reminderDisplayText)
+            TaskDetailRowView(systemImage: "bell", label: "提醒") {
+                TaskReminderLabel.valueView(offsets: task.reminderOffsets)
+            }
             cardDivider
-            coreRow(systemImage: "person", label: localized("谁去办 (Assignee)"), value: assigneeLine)
+            TaskDetailRowView(systemImage: "person", label: "谁去办 (Assignee)") {
+                TaskAssigneeLabelView(
+                    task: task,
+                    members: scheduleViewModel.householdMembers,
+                    profiles: scheduleViewModel.familyProfiles,
+                    fallback: assigneeDisplayNameFallback
+                )
+            }
             cardDivider
-            coreRow(systemImage: "banknote", label: localized("预计开销"), value: costDisplayText, valueIsPlaceholder: costIsEmpty)
+            TaskDetailRowView(
+                systemImage: "banknote",
+                label: "预计开销",
+                valueIsPlaceholder: costIsEmpty
+            ) {
+                costValueView
+            }
             cardDivider
-            coreRow(
+            TaskDetailRowView(
                 systemImage: "tag",
-                label: localized("当前状态"),
-                value: statusFriendlyLabel,
+                label: "当前状态",
                 valueAccent: task.status == .new
-            )
+            ) {
+                Text(task.status.localizedName)
+            }
         }
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    private var inferredRecurrenceRule: TaskRecurrenceRule {
+        TaskRecurrenceRule.inferred(
+            from: task.recurrenceRule,
+            recurrenceInterval: task.recurrenceInterval
+        )
     }
 
     private var timePlanningCard: some View {
@@ -252,20 +272,23 @@ struct TaskDetailView: View {
                 Image(systemName: "clock")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text(localized("时间规划"))
+                Text("时间规划")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                timePlanningLine(label: localized("开始时间"), value: timePlanningStartText)
-                if let endText = timePlanningEndText {
-                    timePlanningLine(label: localized("结束时间"), value: endText)
+                timePlanningLine(label: "开始时间") {
+                    Text(timePlanningStartText)
                 }
-                timePlanningLine(
-                    label: localized("总花费时间"),
-                    value: TaskDurationFormatting.readableDuration(minutes: task.durationMinutes, locale: locale)
-                )
+                if let endText = timePlanningEndText {
+                    timePlanningLine(label: "结束时间") {
+                        Text(endText)
+                    }
+                }
+                timePlanningLine(label: "总花费时间") {
+                    TaskDurationText(minutes: task.durationMinutes)
+                }
             }
         }
         .padding(14)
@@ -275,12 +298,15 @@ struct TaskDetailView: View {
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
     }
 
-    private func timePlanningLine(label: String, value: String) -> some View {
+    private func timePlanningLine<Content: View>(
+        label: LocalizedStringKey,
+        @ViewBuilder value: () -> Content
+    ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("\(label):")
+            (Text(label) + Text(verbatim: ":"))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Text(value)
+            value()
                 .font(.body.weight(.medium))
                 .foregroundStyle(.primary)
             Spacer(minLength: 0)
@@ -292,44 +318,6 @@ struct TaskDetailView: View {
             .padding(.leading, 50)
     }
 
-    private func coreRow(
-        systemImage: String,
-        label: String,
-        value: String,
-        valueIsPlaceholder: Bool = false,
-        valueAccent: Bool = false
-    ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.body.weight(.medium))
-                .foregroundStyle(.tertiary)
-                .frame(width: 22, alignment: .center)
-
-            Text(label)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 12)
-
-            Text(value)
-                .font(.body.weight(.medium))
-                .foregroundStyle(coreValueForeground(isPlaceholder: valueIsPlaceholder, accent: valueAccent))
-                .multilineTextAlignment(.trailing)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 13)
-    }
-
-    private func coreValueForeground(isPlaceholder: Bool, accent: Bool) -> Color {
-        if isPlaceholder {
-            return Color.secondary.opacity(0.75)
-        }
-        if accent {
-            return Color.accentColor
-        }
-        return Color.primary
-    }
-
     // MARK: - 为了谁（纯展示）
 
     private var forWhomSection: some View {
@@ -338,7 +326,7 @@ struct TaskDetailView: View {
                 Image(systemName: "person.3")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text(localized("为了谁"))
+                Text("为了谁")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -378,13 +366,13 @@ struct TaskDetailView: View {
                         .offset(x: 18, y: 18)
                 }
             }
-            Text(localized("所有人"))
+            Text("所有人")
                 .font(.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(localized("为了谁：全体成员"))
+        .accessibilityLabel("为了谁：全体成员")
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -467,7 +455,7 @@ struct TaskDetailView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text(localized("显示更多选项"))
+                Text("显示更多选项")
                     .font(.subheadline.weight(.semibold))
                 Text("˅")
                     .font(.subheadline.weight(.bold))
@@ -486,7 +474,7 @@ struct TaskDetailView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text(localized("收起更多选项"))
+                Text("收起更多选项")
                     .font(.subheadline.weight(.semibold))
                 Text("˄")
                     .font(.subheadline.weight(.bold))
@@ -502,45 +490,45 @@ struct TaskDetailView: View {
 
     private var expandedReadonlySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            expandedCard(title: localized("任务优先级")) {
+            expandedCard(title: "任务优先级") {
                 priorityReadonlySegmentVisual
             }
 
-            expandedCard(title: localized("紧急联系号码 / 会议链接")) {
+            expandedCard(title: "紧急联系号码 / 会议链接") {
                 emergencyReadonlyBlock
             }
 
-            expandedCard(title: localized("地理位置")) {
+            expandedCard(title: "地理位置") {
                 locationReadonlyRow
             }
 
-            expandedCard(title: localized("更多细节")) {
+            expandedCard(title: "更多细节") {
                 readonlyMultilineBlock(
                     text: descriptionMoreDetailsPart,
-                    emptyPlaceholder: localized("暂无备注")
+                    emptyPlaceholder: "暂无备注"
                 )
             }
 
-            expandedCard(title: localized("财务与备注")) {
+            expandedCard(title: "财务与备注") {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
-                        Text(localized("预计开销"))
+                        Text("预计开销")
                             .font(.body)
                             .foregroundStyle(.primary)
                         Spacer(minLength: 12)
-                        Text(financeCostLineText)
+                        costValueView
                             .font(.body.weight(.medium))
                             .foregroundStyle(financeCostIsPlaceholder ? .tertiary : .primary)
                             .multilineTextAlignment(.trailing)
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text(localized("详细说明"))
+                        Text("详细说明")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         readonlyMultilineBlock(
                             text: descriptionFinancePart,
-                            emptyPlaceholder: localized("可填写开支明细、支付方式等…"),
+                            emptyPlaceholder: "可填写开支明细、支付方式等…",
                             emptyAsCaptionHint: true
                         )
                     }
@@ -574,22 +562,18 @@ struct TaskDetailView: View {
         costIsEmpty
     }
 
-    private var financeCostLineText: String {
-        costDisplayText
-    }
-
     /// 只读分段外观（非 `Picker`）：展示当前优先级对应选中态。
     private var priorityReadonlySegmentVisual: some View {
         let isUrgent = (task.priority == .urgent || task.priority == .high)
         return HStack(spacing: 0) {
-            Text(localized("紧急"))
+            Text("紧急")
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
                 .foregroundStyle(isUrgent ? Color.accentColor : Color.secondary)
                 .background(isUrgent ? Color.accentColor.opacity(0.18) : Color.clear)
 
-            Text(localized("一般"))
+            Text("一般")
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
@@ -599,7 +583,8 @@ struct TaskDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(localized("任务优先级")): \(priorityReadonlyText)")
+        .accessibilityLabel("任务优先级")
+        .accessibilityValue(task.priority.localizedName)
     }
 
     private var emergencyReadonlyBlock: some View {
@@ -607,7 +592,7 @@ struct TaskDetailView: View {
         return HStack(alignment: .center, spacing: 10) {
             Group {
                 if trimmed.isEmpty {
-                    Text(localized("无"))
+                    Text("无")
                         .font(.body)
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -632,7 +617,13 @@ struct TaskDetailView: View {
             Image(systemName: "mappin.and.ellipse")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text(has ? (locationLine ?? "") : localized("尚未添加位置"))
+            Group {
+                if has, let line = locationLine {
+                    Text(verbatim: line)
+                } else {
+                    Text("尚未添加位置")
+                }
+            }
                 .font(.body)
                 .foregroundStyle(has ? .primary : .tertiary)
             Spacer(minLength: 8)
@@ -649,7 +640,7 @@ struct TaskDetailView: View {
     @ViewBuilder
     private func readonlyMultilineBlock(
         text: String?,
-        emptyPlaceholder: String,
+        emptyPlaceholder: LocalizedStringKey,
         emptyAsCaptionHint: Bool = false
     ) -> some View {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -675,7 +666,7 @@ struct TaskDetailView: View {
         }
     }
 
-    private func expandedCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func expandedCard<Content: View>(title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -687,17 +678,6 @@ struct TaskDetailView: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
-    }
-
-    private var priorityReadonlyText: String {
-        switch task.priority {
-        case .urgent, .high:
-            return TaskDetailCopy.priorityUrgent(locale: locale)
-        case .normal, .low:
-            return TaskDetailCopy.priorityNormal(locale: locale)
-        @unknown default:
-            return TaskDetailCopy.priorityNormal(locale: locale)
-        }
     }
 
     @ViewBuilder
@@ -712,7 +692,7 @@ struct TaskDetailView: View {
                 .onTapGesture {
                     openURL(url)
                 }
-                .accessibilityHint(TaskDetailCopy.tapToCallOrOpenLink(locale: locale))
+                .accessibilityHint("Double tap to call or open the link")
         } else {
             Text(raw)
                 .font(.body)
@@ -780,63 +760,29 @@ struct TaskDetailView: View {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    private var repeatDisplayText: String {
-        guard let rule = task.recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines),
-              rule.isEmpty == false else {
-            return TaskDetailCopy.repeatNever(locale: locale)
-        }
-        if rule.uppercased().contains("DAILY") { return TaskDetailCopy.repeatDaily(locale: locale) }
-        if rule.uppercased().contains("WEEKLY") { return TaskDetailCopy.repeatWeekly(locale: locale) }
-        if rule.uppercased().contains("MONTHLY") { return TaskDetailCopy.repeatMonthly(locale: locale) }
-        return TaskDetailCopy.repeatCustom(locale: locale)
-    }
-
-    private var reminderDisplayText: String {
-        guard let offsets = task.reminderOffsets, offsets.isEmpty == false else {
-            return TaskDetailCopy.none(locale: locale)
-        }
-        return offsets.sorted().map(reminderLabel(forMinutes:)).joined(separator: TaskDetailCopy.listSeparator(locale: locale))
-    }
-
-    private func reminderLabel(forMinutes m: Int) -> String {
-        switch m {
-        case 0: return TaskDetailCopy.reminderOnTime(locale: locale)
-        case 5: return TaskDetailCopy.reminder5Min(locale: locale)
-        case 10: return TaskDetailCopy.reminder10Min(locale: locale)
-        case 15: return TaskDetailCopy.reminder15Min(locale: locale)
-        case 30: return TaskDetailCopy.reminder30Min(locale: locale)
-        case 60: return TaskDetailCopy.reminder1Hour(locale: locale)
-        default: return String(format: TaskDetailCopy.reminderMinutesBeforeFormat(locale: locale), m)
-        }
-    }
-
     private var costIsEmpty: Bool {
         guard let minor = task.estimatedCost else { return true }
         return minor == 0
     }
 
-    private var costDisplayText: String {
-        guard let minor = task.estimatedCost else { return TaskDetailCopy.none(locale: locale) }
-        if minor == 0 { return TaskDetailCopy.none(locale: locale) }
-        let value = Double(minor) / 100.0
-        let symbol = Locale.current.currencySymbol ?? "¥"
+    @ViewBuilder
+    private var costValueView: some View {
+        if costIsEmpty {
+            Text("None")
+        } else if let minor = task.estimatedCost {
+            Text(verbatim: formattedCostAmount(minorUnits: minor))
+        } else {
+            Text("None")
+        }
+    }
+
+    private func formattedCostAmount(minorUnits: Int) -> String {
+        let value = Double(minorUnits) / 100.0
+        let symbol = locale.currencySymbol ?? Locale.current.currencySymbol ?? "¥"
         if value == floor(value) {
             return String(format: "%@%.0f", symbol, value)
         }
         return String(format: "%@%.1f", symbol, value)
-    }
-
-    private var statusFriendlyLabel: String {
-        switch task.status {
-        case .new: return TaskDetailCopy.statusPendingAcceptance(locale: locale)
-        case .accepted: return TaskDetailCopy.statusAccepted(locale: locale)
-        case .inProgress: return TaskDetailCopy.statusInProgress(locale: locale)
-        case .completed: return TaskDetailCopy.statusCompleted(locale: locale)
-        case .issue: return TaskDetailCopy.statusIssue(locale: locale)
-        case .failed: return TaskDetailCopy.statusFailed(locale: locale)
-        case .expired: return TaskDetailCopy.statusExpired(locale: locale)
-        case .cancelled: return TaskDetailCopy.statusCancelled(locale: locale)
-        }
     }
 
     private var locationLine: String? {
@@ -851,11 +797,6 @@ struct TaskDetailView: View {
     }
 
     // MARK: - 数据加载
-
-    @MainActor
-    private func refreshAssigneeLine() async {
-        assigneeLine = scheduleViewModel.assigneeLabel(for: task, locale: locale)
-    }
 
     @MainActor
     private func loadForWhomProfiles() async {
@@ -898,7 +839,7 @@ struct TaskDetailView: View {
                     Button {
                         Task { await updateTaskStatus(to: .accepted) }
                     } label: {
-                        Text(localized("接受任务"))
+                        Text("接受任务")
                             .font(.body.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -913,7 +854,7 @@ struct TaskDetailView: View {
                         Button {
                             Task { await updateTaskStatus(to: .completed) }
                         } label: {
-                            Text(localized("完成任务"))
+                            Text("完成任务")
                                 .font(.body.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
@@ -926,7 +867,7 @@ struct TaskDetailView: View {
                         Button {
                             Task { await updateTaskStatus(to: .issue) }
                         } label: {
-                            Text(localized("遇到问题"))
+                            Text("遇到问题")
                                 .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                         }
@@ -939,7 +880,7 @@ struct TaskDetailView: View {
                     Button {
                         Task { await updateTaskStatus(to: .completed) }
                     } label: {
-                        Text(localized("标记为完成"))
+                        Text("标记为完成")
                             .font(.body.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -950,7 +891,7 @@ struct TaskDetailView: View {
                     .disabled(isUpdatingStatus)
 
                 default:
-                    Text(localized("✅ 该任务已完结"))
+                    Text("✅ 该任务已完结")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -990,20 +931,16 @@ struct TaskDetailView: View {
                 .allowsHitTesting(true)
             }
         }
-        .alert(localized("任务已完成"), isPresented: $showCompletedReminderCleanupAlert) {
-            Button(localized("是")) {
+        .alert("任务已完成", isPresented: $showCompletedReminderCleanupAlert) {
+            Button("是") {
                 Task {
                     await NotificationManager.shared.cancelAllPending(for: task.id)
                 }
             }
-            Button(localized("否"), role: .cancel) {}
+            Button("否", role: .cancel) {}
         } message: {
-            Text(localized("是否需要为您删除对应的闹钟提醒？"))
+            Text("是否需要为您删除对应的闹钟提醒？")
         }
-    }
-
-    private func localized(_ key: String) -> String {
-        AppLocalized.string(key, locale: locale)
     }
 
     private func updateTaskStatus(to newStatus: TaskStatus) async {
@@ -1019,7 +956,6 @@ struct TaskDetailView: View {
         do {
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
-            await refreshAssigneeLine()
             await loadForWhomProfiles()
             if newStatus == .completed, updated.isRecurring == false {
                 showCompletedReminderCleanupAlert = true
@@ -1041,7 +977,10 @@ struct TaskDetailView: View {
                 await scheduleViewModel.deleteTask(taskId: task.id)
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
-                    statusError = TaskDetailCopy.cannotResolveRecurringGroupForDelete(locale: locale)
+                    statusError = String(
+                        localized: "Could not resolve the recurring series group; bulk delete is unavailable.",
+                        locale: locale
+                    )
                     return
                 }
                 let cutoff = task.dueDate ?? .distantPast
@@ -1061,49 +1000,15 @@ struct TaskDetailView: View {
             dismiss()
         } catch {
             statusError = String(
-                format: TaskDetailCopy.deleteFailedFormat(locale: locale),
+                format: String(localized: "Delete failed: %@", locale: locale),
                 error.localizedDescription
             )
         }
         #else
         _ = scope
-        statusError = TaskDetailCopy.supabaseSDKUnavailable(locale: locale)
+        statusError = String(localized: "Supabase SDK is not available in this build.", locale: locale)
         #endif
     }
-}
-
-// MARK: - Localized copy
-
-private enum TaskDetailCopy {
-    static func externalSyncReadOnlyBanner(locale: Locale) -> String { AppLocalized.string("This event was synced from an external calendar and cannot be edited in the app.", locale: locale) }
-    static func tapToCallOrOpenLink(locale: Locale) -> String { AppLocalized.string("Double tap to call or open the link", locale: locale) }
-    static func priorityUrgent(locale: Locale) -> String { AppLocalized.string("🔴 Urgent", locale: locale) }
-    static func priorityNormal(locale: Locale) -> String { AppLocalized.string("🟢 Normal", locale: locale) }
-    static func repeatNever(locale: Locale) -> String { AppLocalized.string("Never", locale: locale) }
-    static func repeatDaily(locale: Locale) -> String { AppLocalized.string("Daily", locale: locale) }
-    static func repeatWeekly(locale: Locale) -> String { AppLocalized.string("Weekly", locale: locale) }
-    static func repeatMonthly(locale: Locale) -> String { AppLocalized.string("Monthly", locale: locale) }
-    static func repeatCustom(locale: Locale) -> String { AppLocalized.string("Custom", locale: locale) }
-    static func none(locale: Locale) -> String { AppLocalized.string("None", locale: locale) }
-    static func listSeparator(locale: Locale) -> String { AppLocalized.string(", ", locale: locale) }
-    static func reminderOnTime(locale: Locale) -> String { AppLocalized.string("On time", locale: locale) }
-    static func reminder5Min(locale: Locale) -> String { AppLocalized.string("5 minutes before", locale: locale) }
-    static func reminder10Min(locale: Locale) -> String { AppLocalized.string("10 minutes before", locale: locale) }
-    static func reminder15Min(locale: Locale) -> String { AppLocalized.string("15 minutes before", locale: locale) }
-    static func reminder30Min(locale: Locale) -> String { AppLocalized.string("30 minutes before", locale: locale) }
-    static func reminder1Hour(locale: Locale) -> String { AppLocalized.string("1 hour before", locale: locale) }
-    static func reminderMinutesBeforeFormat(locale: Locale) -> String { AppLocalized.string("%lld minutes before", locale: locale) }
-    static func statusPendingAcceptance(locale: Locale) -> String { AppLocalized.string("Pending acceptance", locale: locale) }
-    static func statusAccepted(locale: Locale) -> String { AppLocalized.string("Accepted", locale: locale) }
-    static func statusInProgress(locale: Locale) -> String { AppLocalized.string("In progress", locale: locale) }
-    static func statusCompleted(locale: Locale) -> String { AppLocalized.string("Completed", locale: locale) }
-    static func statusIssue(locale: Locale) -> String { AppLocalized.string("Issue reported", locale: locale) }
-    static func statusFailed(locale: Locale) -> String { AppLocalized.string("Failed", locale: locale) }
-    static func statusExpired(locale: Locale) -> String { AppLocalized.string("Expired", locale: locale) }
-    static func statusCancelled(locale: Locale) -> String { AppLocalized.string("Cancelled", locale: locale) }
-    static func cannotResolveRecurringGroupForDelete(locale: Locale) -> String { AppLocalized.string("Could not resolve the recurring series group; bulk delete is unavailable.", locale: locale) }
-    static func deleteFailedFormat(locale: Locale) -> String { AppLocalized.string("Delete failed: %@", locale: locale) }
-    static func supabaseSDKUnavailable(locale: Locale) -> String { AppLocalized.string("Supabase SDK is not available in this build.", locale: locale) }
 }
 
 #Preview("成员 · 待接受") {
@@ -1115,6 +1020,8 @@ private enum TaskDetailCopy {
             scheduleViewModel: AppViewModels.makeScheduleViewModel()
         )
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
+        .environment(\.locale, Locale(identifier: "en"))
     }
 }
 
@@ -1127,5 +1034,7 @@ private enum TaskDetailCopy {
             scheduleViewModel: AppViewModels.makeScheduleViewModel()
         )
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
+        .environment(\.locale, Locale(identifier: "en"))
     }
 }

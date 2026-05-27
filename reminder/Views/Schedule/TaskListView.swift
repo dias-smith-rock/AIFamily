@@ -8,6 +8,7 @@ import Supabase
 struct TaskListView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
 
     @State private var currentViewMode: CalendarViewMode = .day
@@ -75,6 +76,8 @@ struct TaskListView: View {
                     )
                     .environmentObject(appRouter)
                 }
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }

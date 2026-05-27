@@ -60,7 +60,6 @@ struct TaskCardForWhomTrailing: View {
 
 /// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
-    @Environment(\.locale) private var locale
     let task: FamilyTask
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
@@ -107,26 +106,13 @@ struct TaskCardView: View {
 
             Spacer(minLength: 8)
 
-            Text(statusTitle)
+            Text(task.status.localizedName)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(statusCapsuleForeground)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
                 .background(statusCapsuleBackground)
                 .clipShape(Capsule())
-        }
-    }
-
-    private var statusTitle: String {
-        switch task.status {
-        case .new: return AppLocalized.string("待接受", locale: locale)
-        case .accepted: return AppLocalized.string("已接受", locale: locale)
-        case .inProgress: return AppLocalized.string("进行中", locale: locale)
-        case .completed: return AppLocalized.string("已完成", locale: locale)
-        case .issue: return AppLocalized.string("有问题", locale: locale)
-        case .expired: return AppLocalized.string("已过期", locale: locale)
-        case .failed: return AppLocalized.string("失败", locale: locale)
-        case .cancelled: return AppLocalized.string("已取消", locale: locale)
         }
     }
 
@@ -252,4 +238,5 @@ struct TaskCardOverlappingAvatar: View {
     )
     .padding()
     .background(Color(.systemGroupedBackground))
+    .environment(\.locale, Locale(identifier: "en"))
 }

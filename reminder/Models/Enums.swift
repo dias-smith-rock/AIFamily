@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 // MARK: - Household
 
@@ -56,6 +57,20 @@ enum TaskStatus: String, Codable, Equatable, Sendable {
     case failed
     case expired
     case cancelled
+
+    /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
+    var localizedName: LocalizedStringKey {
+        switch self {
+        case .new: "Pending acceptance"
+        case .accepted: "Accepted"
+        case .inProgress: "In progress"
+        case .completed: "Completed"
+        case .issue: "Issue reported"
+        case .failed: "Failed"
+        case .expired: "Expired"
+        case .cancelled: "Cancelled"
+        }
+    }
 }
 
 enum TaskPriority: String, Codable, Equatable, CaseIterable {
@@ -63,6 +78,13 @@ enum TaskPriority: String, Codable, Equatable, CaseIterable {
     case normal
     case high
     case urgent
+
+    var localizedName: LocalizedStringKey {
+        switch self {
+        case .urgent, .high: "🔴 Urgent"
+        case .normal, .low: "🟢 Normal"
+        }
+    }
 }
 
 /// 任务创建来源（`tasks.source`）。

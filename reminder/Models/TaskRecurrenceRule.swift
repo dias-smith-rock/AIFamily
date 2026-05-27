@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// 任务重复规则（与 `tasks.recurrence_rule` / `recurrence_interval` 映射）。
 enum TaskRecurrenceRule: String, CaseIterable, Identifiable, Sendable, Equatable {
@@ -13,21 +14,17 @@ enum TaskRecurrenceRule: String, CaseIterable, Identifiable, Sendable, Equatable
 
     var id: String { rawValue }
 
-    var localizationKey: String {
+    var titleKey: LocalizedStringKey {
         switch self {
-        case .none: return "Does not repeat"
-        case .daily: return "Daily"
-        case .weekdays: return "Weekdays"
-        case .weekends: return "Weekends"
-        case .weekly: return "Weekly"
-        case .monthly: return "Monthly"
-        case .yearly: return "Yearly"
-        case .custom: return "Every few days"
+        case .none: "Does not repeat"
+        case .daily: "Daily"
+        case .weekdays: "Weekdays"
+        case .weekends: "Weekends"
+        case .weekly: "Weekly"
+        case .monthly: "Monthly"
+        case .yearly: "Yearly"
+        case .custom: "Every few days"
         }
-    }
-
-    func displayName(locale: Locale) -> String {
-        AppLocalized.string(localizationKey, locale: locale)
     }
 
     /// 写入 `tasks.recurrence_rule` 的 iCalendar 片段；`none` 为 `nil`。

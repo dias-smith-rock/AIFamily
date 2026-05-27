@@ -74,6 +74,15 @@ final class AppSettingsManager: ObservableObject {
         }
     }
 
+    /// 与 `@AppStorage("app_language")` 同步；供 `WeFamilyApp` 注入 `\.locale`，驱动全应用 String Catalog 解析。
+    var appLocale: Locale {
+        selectedLanguage.locale
+    }
+
+    var layoutDirection: LayoutDirection {
+        selectedLanguage.layoutDirection
+    }
+
     var colorScheme: ColorScheme? {
         appearance.colorScheme
     }
