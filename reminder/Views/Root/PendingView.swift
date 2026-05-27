@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct PendingView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @State private var breathing = false
     @State private var showToast = false
@@ -20,11 +21,11 @@ struct PendingView: View {
                 .scaleEffect(breathing ? 1.06 : 0.94)
                 .animation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true), value: breathing)
 
-            Text("已敲门，等待管理员批准...")
+            Text(AppLocalized.string("已敲门，等待管理员批准...", locale: locale))
                 .font(.system(size: 26, weight: .bold))
                 .multilineTextAlignment(.center)
 
-            Text("批准后你会自动进入群组主界面。")
+            Text(AppLocalized.string("批准后你会自动进入群组主界面。", locale: locale))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
 
@@ -35,7 +36,7 @@ struct PendingView: View {
                     showToast = false
                 }
             } label: {
-                Text("提醒他快一点")
+                Text(AppLocalized.string("提醒他快一点", locale: locale))
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -51,7 +52,7 @@ struct PendingView: View {
             Button {
                 appRouter.goToOrgRouting()
             } label: {
-                Text("这不是我家？重新输入")
+                Text(AppLocalized.string("这不是我家？重新输入", locale: locale))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 10)
@@ -62,7 +63,7 @@ struct PendingView: View {
         .background(Color(.systemGroupedBackground))
         .overlay(alignment: .top) {
             if showToast {
-                Text("已催办，管理员会收到提醒")
+                Text(AppLocalized.string("已催办，管理员会收到提醒", locale: locale))
                     .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)

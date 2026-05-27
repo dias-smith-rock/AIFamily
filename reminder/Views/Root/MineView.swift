@@ -28,7 +28,7 @@ struct MineView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
-                    Text("我的")
+                    Text(AppLocalized.string("我的", locale: locale))
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 }
@@ -83,40 +83,40 @@ struct MineView: View {
                 }
             )
         }
-        .alert("提示", isPresented: Binding(
+        .alert(AppLocalized.string("提示", locale: locale), isPresented: Binding(
             get: { viewModel.toastMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeToast() } }
         )) {
-            Button("好的", role: .cancel) { viewModel.acknowledgeToast() }
+            Button(AppLocalized.string("好的", locale: locale), role: .cancel) { viewModel.acknowledgeToast() }
         } message: {
             Text(viewModel.toastMessage ?? "")
         }
-        .alert("退出失败", isPresented: Binding(
+        .alert(AppLocalized.string("退出失败", locale: locale), isPresented: Binding(
             get: { viewModel.signOutErrorMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeSignOutError() } }
         )) {
-            Button("我知道了", role: .cancel) { viewModel.acknowledgeSignOutError() }
+            Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) { viewModel.acknowledgeSignOutError() }
         } message: {
             Text(viewModel.signOutErrorMessage ?? "")
         }
-        .alert("永久注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
-            Button("取消", role: .cancel) {}
-            Button("确认注销", role: .destructive) {
+        .alert(AppLocalized.string("永久注销账号", locale: locale), isPresented: $viewModel.showDeleteAccountAlert) {
+            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
+            Button(AppLocalized.string("确认注销", locale: locale), role: .destructive) {
                 Task { await viewModel.deleteAccount(appRouter: appRouter) }
             }
         } message: {
-            Text("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。")
+            Text(AppLocalized.string("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。", locale: locale))
         }
-        .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
-            Button("知道了", role: .cancel) {}
+        .alert(AppLocalized.string("无法直接注销", locale: locale), isPresented: $viewModel.showCreatorBlockAlert) {
+            Button(AppLocalized.string("知道了", locale: locale), role: .cancel) {}
         } message: {
             Text(viewModel.blockAlertMessage)
         }
-        .alert("注销失败", isPresented: Binding(
+        .alert(AppLocalized.string("注销失败", locale: locale), isPresented: Binding(
             get: { viewModel.deleteAccountErrorMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeDeleteAccountError() } }
         )) {
-            Button("我知道了", role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
+            Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
         } message: {
             Text(viewModel.deleteAccountErrorMessage ?? "")
         }
@@ -222,7 +222,7 @@ struct MineView: View {
                         iconTint: .orange,
                         subtitle: "FaceTime, WhatsApp"
                     ) {
-                        viewModel.tapRow(feature: "集成")
+                        viewModel.tapRow(feature: AppLocalized.string("集成", locale: locale))
                     }
                     mineNavigationRow(
                         title: "Import Events",
@@ -230,7 +230,7 @@ struct MineView: View {
                         iconTint: .green,
                         subtitle: "Sync Calendar & Public Holidays"
                     ) {
-                        viewModel.tapRow(feature: "导入日程")
+                        viewModel.tapRow(feature: AppLocalized.string("导入日程", locale: locale))
                     }
                 } header: {
                     mineSectionHeader("INTEGRATIONS & DATA")
@@ -383,7 +383,7 @@ struct MineView: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint("编辑我的群组档案")
+            .accessibilityHint(AppLocalized.string("编辑我的群组档案", locale: locale))
         }
     }
 
@@ -406,7 +406,7 @@ struct MineView: View {
 
     private func openSelfProfileEditor() {
         guard let profile = familyViewModel.currentUserProfile else {
-            viewModel.showToast("尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。")
+            viewModel.showToast(AppLocalized.string("尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。", locale: locale))
             return
         }
         editingSelfProfile = profile
@@ -429,7 +429,7 @@ struct MineView: View {
             }
             .buttonStyle(.plain)
             .offset(x: 4, y: 4)
-            .accessibilityLabel("编辑头像")
+            .accessibilityLabel(AppLocalized.string("编辑头像", locale: locale))
         }
     }
 
@@ -482,18 +482,18 @@ struct MineView: View {
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
-            return "群组成员"
+            return AppLocalized.string("群组成员", locale: locale)
         }
         switch membership.parsedRole {
         case .creator, .admin:
             return contactSubtitleLine(for: profile)
         case .member:
-            return membership.parsedRole?.displayTitle ?? "成员"
+            return membership.parsedRole?.displayTitle ?? AppLocalized.string("成员", locale: locale)
         case .none:
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
-            return "群组成员"
+            return AppLocalized.string("群组成员", locale: locale)
         }
     }
 
@@ -519,7 +519,7 @@ struct MineView: View {
     private func mineRoleCapsule(_ role: MembershipRole) -> some View {
         switch role {
         case .creator:
-            Text("创建者")
+            Text(AppLocalized.string("创建者", locale: locale))
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -527,7 +527,7 @@ struct MineView: View {
                 .foregroundStyle(.blue)
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         case .admin:
-            Text("管理员")
+            Text(AppLocalized.string("管理员", locale: locale))
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -543,11 +543,11 @@ struct MineView: View {
         HStack(spacing: 4) {
             Image(systemName: "icloud")
                 .font(.caption2.weight(.medium))
-            Text("档案")
+            Text(AppLocalized.string("档案", locale: locale))
                 .font(.caption2.weight(.medium))
         }
         .foregroundStyle(.tertiary)
-        .accessibilityLabel("档案成员")
+        .accessibilityLabel(AppLocalized.string("档案成员", locale: locale))
     }
 
     private enum MineAvatarPalette {

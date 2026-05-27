@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct NewCreatorAlertView: View {
+    @Environment(\.locale) private var locale
     let householdName: String
     let onViewTapped: () -> Void
     let onClose: () -> Void
@@ -26,17 +27,22 @@ struct NewCreatorAlertView: View {
                     .font(.system(size: 48))
                     .foregroundStyle(.blue)
 
-                Text("权限变更通知")
+                Text(AppLocalized.string("权限变更通知", locale: locale))
                     .font(.headline)
 
-                Text("您已成为「\(householdName)」的创建者，拥有该群组的最高管理权限。")
+                Text(
+                    String(
+                        format: AppLocalized.string("您已成为「%@」的创建者，拥有该群组的最高管理权限。", locale: locale),
+                        householdName
+                    )
+                )
                     .font(.subheadline)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
 
                 Button(action: onViewTapped) {
-                    Text("立即查看")
+                    Text(AppLocalized.string("立即查看", locale: locale))
                         .font(.headline)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)

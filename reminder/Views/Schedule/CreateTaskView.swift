@@ -65,15 +65,15 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     var body: some View {
         VStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("时间设置")
+                Text(localized("时间设置"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                Toggle("全天", isOn: $isAllDay)
+                Toggle(localized("全天"), isOn: $isAllDay)
 
                 if isAllDay {
                     DatePicker(
-                        "执行日期",
+                        localized("执行日期"),
                         selection: $dueDate,
                         displayedComponents: [.date]
                     )
@@ -82,7 +82,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                     taskDurationRow
                 } else {
                     HStack(alignment: .center, spacing: 12) {
-                        Text("执行时间")
+                        Text(localized("执行时间"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(width: 72, alignment: .leading)
@@ -111,28 +111,32 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .center, spacing: 12) {
-                    Text("重复设置")
+                    Text(localized("重复设置"))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
-                    Picker("重复", selection: $selectedRecurrence) {
+                    Picker(localized("重复"), selection: $selectedRecurrence) {
                         ForEach(TaskRecurrenceRule.allCases) { rule in
                             Text(rule.displayName(locale: locale)).tag(rule)
                         }
                     }
                     .pickerStyle(.menu)
                     .labelsHidden()
-                    .accessibilityLabel("重复")
+                    .accessibilityLabel(localized("重复"))
                 }
 
                 if selectedRecurrence == .custom {
-                    Stepper("每隔 \(recurrenceInterval) 天", value: $recurrenceInterval, in: 2 ... 365)
+                    Stepper(
+                        String(format: localized("每隔 %lld 天"), recurrenceInterval),
+                        value: $recurrenceInterval,
+                        in: 2 ... 365
+                    )
                 }
 
                 if selectedRecurrence != .none {
-                    Toggle("指定重复结束日期", isOn: $showEndDate)
+                    Toggle(localized("指定重复结束日期"), isOn: $showEndDate)
                     if showEndDate {
-                        DatePicker("结束重复", selection: $recurrenceEndDate, displayedComponents: .date)
+                        DatePicker(localized("结束重复"), selection: $recurrenceEndDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
                 }
@@ -146,7 +150,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
     private var taskDurationRow: some View {
         HStack(alignment: .center, spacing: 12) {
-            Label("任务时长", systemImage: "hourglass")
+            Label(localized("任务时长"), systemImage: "hourglass")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
@@ -159,8 +163,19 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             )
             .labelsHidden()
             .datePickerStyle(.compact)
-            .accessibilityLabel("任务时长")
+            // 时长是“持续时间”而不是一天中的时间点，统一使用 24 小时制避免 AM/PM 歧义。
+            .environment(\.locale, durationPickerLocale)
+            .accessibilityLabel(localized("任务时长"))
         }
+    }
+
+    private var durationPickerLocale: Locale {
+        let normalizedIdentifier = locale.identifier.replacingOccurrences(of: "_", with: "-")
+        return Locale(identifier: "\(normalizedIdentifier)-u-hc-h23")
+    }
+
+    private func localized(_ key: String) -> String {
+        AppLocalized.string(key, locale: locale)
     }
 }
 
@@ -395,17 +410,17 @@ struct CreateTaskView: View {
                         .scaleEffect(1.1)
                 }
             }
-            .navigationTitle(editingTask == nil ? "新建任务 ✨" : "编辑任务")
+            .navigationTitle(editingTask == nil ? AppLocalized.string("新建任务 ✨", locale: locale) : AppLocalized.string("编辑任务", locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") {
+                    Button(AppLocalized.string("取消", locale: locale)) {
                         dismiss()
                     }
                     .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
+                    Button(AppLocalized.string("保存", locale: locale)) {
                         Task {
                             await saveTask()
                         }
@@ -415,7 +430,7 @@ struct CreateTaskView: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("完成") {
+                    Button(AppLocalized.string("完成", locale: locale)) {
                         focusedField = nil
                     }
                 }
@@ -435,29 +450,29 @@ struct CreateTaskView: View {
             await loadAssignees()
         }
         .confirmationDialog(
-            "这是循环任务",
+            AppLocalized.string("这是循环任务", locale: locale),
             isPresented: $isShowingRecurringUpdateScopeDialog,
             titleVisibility: .visible
         ) {
-            Button("仅修改此任务") {
+            Button(AppLocalized.string("仅修改此任务", locale: locale)) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
                     await performUpdate(existing: existing, scope: .singleOnly)
                 }
             }
-            Button("修改此任务及以后", role: .destructive) {
+            Button(AppLocalized.string("修改此任务及以后", locale: locale), role: .destructive) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
                     await performUpdate(existing: existing, scope: .thisAndFuture)
                 }
             }
-            Button("取消", role: .cancel) {
+            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {
                 pendingRecurringUpdateTask = nil
             }
         } message: {
-            Text("请选择修改范围。")
+            Text(AppLocalized.string("请选择修改范围。", locale: locale))
         }
     }
 
@@ -497,8 +512,8 @@ struct CreateTaskView: View {
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("语音输入")
-                    .accessibilityHint("功能即将推出")
+                    .accessibilityLabel(AppLocalized.string("语音输入", locale: locale))
+                    .accessibilityHint(AppLocalized.string("功能即将推出", locale: locale))
                 }
             }
         }
@@ -518,7 +533,7 @@ struct CreateTaskView: View {
     private var forWhomCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("为了谁 (FOR)")
+                Text(AppLocalized.string("为了谁 (FOR)", locale: locale))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 forWhomChipsRow
@@ -530,7 +545,7 @@ struct CreateTaskView: View {
         sheetCard {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("提醒")
+                    Text(AppLocalized.string("提醒", locale: locale))
                         .font(.body)
                     Spacer()
                     Picker("", selection: $reminderOption) {
@@ -546,12 +561,12 @@ struct CreateTaskView: View {
                 Divider().padding(.vertical, 6)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("任务优先级")
+                    Text(AppLocalized.string("任务优先级", locale: locale))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Picker("", selection: $formPriority) {
-                        Text("紧急").tag(TaskPriority.urgent)
-                        Text("一般").tag(TaskPriority.normal)
+                        Text(AppLocalized.string("紧急", locale: locale)).tag(TaskPriority.urgent)
+                        Text(AppLocalized.string("一般", locale: locale)).tag(TaskPriority.normal)
                     }
                     .pickerStyle(.segmented)
                 }
@@ -563,12 +578,12 @@ struct CreateTaskView: View {
     private var emergencyContactCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("紧急联系号码 / 会议链接")
+                Text(AppLocalized.string("紧急联系号码 / 会议链接", locale: locale))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
                 HStack(alignment: .center, spacing: 10) {
-                    TextField("输入号码或链接", text: $emergencyPhone)
+                    TextField(AppLocalized.string("输入号码或链接", locale: locale), text: $emergencyPhone)
                         .font(.body)
                         .keyboardType(.phonePad)
                         .textContentType(.telephoneNumber)
@@ -582,8 +597,8 @@ struct CreateTaskView: View {
                             .foregroundStyle(.tint)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("从通讯录选择")
-                    .accessibilityHint("功能即将推出")
+                    .accessibilityLabel(AppLocalized.string("从通讯录选择", locale: locale))
+                    .accessibilityHint(AppLocalized.string("功能即将推出", locale: locale))
                 }
             }
         }
@@ -592,7 +607,7 @@ struct CreateTaskView: View {
     private var assigneeWhoDoesCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("谁去办 (Assignee)")
+                Text(AppLocalized.string("谁去办 (Assignee)", locale: locale))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -613,7 +628,7 @@ struct CreateTaskView: View {
                 Image(systemName: "mappin.and.ellipse")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.secondary)
-                TextField("搜索或添加位置", text: $locationName)
+                TextField(AppLocalized.string("搜索或添加位置", locale: locale), text: $locationName)
                     .font(.body)
                     .focused($focusedField, equals: .locationSearch)
                 Image(systemName: "chevron.right")
@@ -626,7 +641,7 @@ struct CreateTaskView: View {
     private var moreDetailsCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("更多细节")
+                Text(AppLocalized.string("更多细节", locale: locale))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 moreDetailNoteEditor
@@ -637,7 +652,7 @@ struct CreateTaskView: View {
     private var financeCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("财务与备注")
+                Text(AppLocalized.string("财务与备注", locale: locale))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 financeAndNotesSectionContent
@@ -652,7 +667,11 @@ struct CreateTaskView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text(isShowingMoreOptions ? "收起更多选项" : "显示更多选项")
+                Text(
+                    isShowingMoreOptions
+                        ? AppLocalized.string("收起更多选项", locale: locale)
+                        : AppLocalized.string("显示更多选项", locale: locale)
+                )
                     .font(.subheadline.weight(.semibold))
                 Image(systemName: isShowingMoreOptions ? "chevron.up" : "chevron.down")
                     .font(.footnote.weight(.bold))
@@ -708,7 +727,7 @@ struct CreateTaskView: View {
                 .scrollContentBackground(.hidden)
 
             if note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text("添加备注...")
+                Text(AppLocalized.string("添加备注...", locale: locale))
                     .font(AppTheme.FontToken.body)
                     .foregroundStyle(.tertiary)
                     .padding(.top, 8)
@@ -725,7 +744,7 @@ struct CreateTaskView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            Text("预计开销")
+            Text(AppLocalized.string("预计开销", locale: locale))
                 .font(.body)
             Spacer(minLength: 12)
             HStack(spacing: 6) {
@@ -747,7 +766,7 @@ struct CreateTaskView: View {
 
     private var financeDetailNoteEditor: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("详细说明")
+            Text(AppLocalized.string("详细说明", locale: locale))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             ZStack(alignment: .topLeading) {
@@ -757,7 +776,7 @@ struct CreateTaskView: View {
                     .scrollContentBackground(.hidden)
 
                 if financeDetailNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("可填写开支明细、支付方式等…")
+                    Text(AppLocalized.string("可填写开支明细、支付方式等…", locale: locale))
                         .font(AppTheme.FontToken.body)
                         .foregroundStyle(.tertiary)
                         .padding(.top, 8)
@@ -769,13 +788,13 @@ struct CreateTaskView: View {
     }
 
     private var assigneeChipAll: some View {
-        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: "指派给所有人") {
+        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: AppLocalized.string("指派给所有人", locale: locale)) {
             selectedAssigneeIds = []
         }
     }
 
     private var forWhomChipAll: some View {
-        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: "为了谁：全体成员") {
+        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: AppLocalized.string("为了谁：全体成员", locale: locale)) {
             selectedTargetProfileIds = []
         }
     }
@@ -798,7 +817,7 @@ struct CreateTaskView: View {
                             .offset(x: 18, y: 18)
                     }
                 }
-                Text("所有人")
+                Text(AppLocalized.string("所有人", locale: locale))
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -955,15 +974,15 @@ struct CreateTaskView: View {
 
     private func saveTask() async {
         guard normalizedTitle.isEmpty == false else {
-            errorMessage = "请先填写任务标题"
+            errorMessage = AppLocalized.string("请先填写任务标题", locale: locale)
             return
         }
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.string("当前未选择群组。", locale: locale)
             return
         }
         guard let creatorMembershipId = appRouter.selectedMembershipId else {
-            errorMessage = "当前成员身份无效，请重新进入群组后再试。"
+            errorMessage = AppLocalized.string("当前成员身份无效，请重新进入群组后再试。", locale: locale)
             return
         }
 
@@ -981,18 +1000,18 @@ struct CreateTaskView: View {
         _ = creatorMembershipId
         await performCreate(householdId: householdId, creatorMembershipId: creatorMembershipId)
         #else
-        errorMessage = "当前构建环境未包含 Supabase SDK。"
+        errorMessage = AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)
         #endif
     }
 
     private func performUpdate(existing: FamilyTask, scope: RecurringTaskScope) async {
         #if canImport(Supabase)
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.string("当前未选择群组。", locale: locale)
             return
         }
         guard existing.householdId == householdId else {
-            errorMessage = "当前群组与任务不一致，无法保存。"
+            errorMessage = AppLocalized.string("当前群组与任务不一致，无法保存。", locale: locale)
             return
         }
 
@@ -1047,7 +1066,7 @@ struct CreateTaskView: View {
 
             case .thisAndFuture:
                 guard let grouping = existing.seriesGrouping else {
-                    errorMessage = "无法解析重复任务分组。"
+                    errorMessage = AppLocalized.string("无法解析重复任务分组。", locale: locale)
                     return
                 }
                 let cutoff = existing.dueDate ?? .distantPast
@@ -1057,7 +1076,7 @@ struct CreateTaskView: View {
                     dueOnOrAfter: cutoff
                 )
                 guard rows.isEmpty == false else {
-                    errorMessage = "没有找到需要更新的任务。"
+                    errorMessage = AppLocalized.string("没有找到需要更新的任务。", locale: locale)
                     return
                 }
 
@@ -1152,7 +1171,7 @@ struct CreateTaskView: View {
                 }
 
                 guard let resolved = refreshedCurrent else {
-                    errorMessage = "批量更新后未能定位当前任务。"
+                    errorMessage = AppLocalized.string("批量更新后未能定位当前任务。", locale: locale)
                     return
                 }
                 updated = resolved
@@ -1166,10 +1185,13 @@ struct CreateTaskView: View {
             #if DEBUG
             print("[CreateTaskView] performUpdate failed: \(error.localizedDescription)")
             #endif
-            errorMessage = "任务更新失败：\(error.localizedDescription)"
+            errorMessage = String(
+                format: AppLocalized.string("任务更新失败：%@", locale: locale),
+                error.localizedDescription
+            )
         }
         #else
-        errorMessage = "当前构建环境未包含 Supabase SDK。"
+        errorMessage = AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)
         #endif
     }
 
@@ -1346,12 +1368,15 @@ struct CreateTaskView: View {
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
         } catch {
-            errorMessage = "任务保存失败：\(error.localizedDescription)"
+            errorMessage = String(
+                format: AppLocalized.string("任务保存失败：%@", locale: locale),
+                error.localizedDescription
+            )
         }
         #else
         _ = householdId
         _ = creatorMembershipId
-        errorMessage = "当前构建环境未包含 Supabase SDK。"
+        errorMessage = AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)
         #endif
     }
 

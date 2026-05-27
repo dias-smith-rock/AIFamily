@@ -7,6 +7,7 @@ import Supabase
 #endif
 
 struct LoginView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @State private var loadingProvider: LoginProvider?
     @State private var appleRawNonce: String?
@@ -39,11 +40,11 @@ struct LoginView: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
-        .alert("无法完成登录", isPresented: Binding(
+        .alert(AppLocalized.string("无法完成登录", locale: locale), isPresented: Binding(
             get: { loginErrorAlert != nil },
             set: { if $0 == false { loginErrorAlert = nil } }
         )) {
-            Button("好的", role: .cancel) {}
+            Button(AppLocalized.string("好的", locale: locale), role: .cancel) {}
         } message: {
             Text(loginErrorAlert ?? "")
         }
@@ -81,7 +82,7 @@ struct LoginView: View {
             #if canImport(Supabase) && canImport(AuthenticationServices)
             appleSignInControl
             #else
-            Text("当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。")
+            Text(AppLocalized.string("当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。", locale: locale))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
@@ -211,7 +212,7 @@ struct LoginView: View {
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
                 await MainActor.run {
-                    loginErrorAlert = "未能读取 Apple 登录凭证。"
+                    loginErrorAlert = AppLocalized.string("未能读取 Apple 登录凭证。", locale: locale)
                 }
                 return
             }
@@ -219,13 +220,13 @@ struct LoginView: View {
                   let idTokenString = String(data: tokenData, encoding: .utf8)
             else {
                 await MainActor.run {
-                    loginErrorAlert = "未能获取 Apple identity token。"
+                    loginErrorAlert = AppLocalized.string("未能获取 Apple identity token。", locale: locale)
                 }
                 return
             }
             guard let rawNonce = appleRawNonce else {
                 await MainActor.run {
-                    loginErrorAlert = "登录状态异常，请重试。"
+                    loginErrorAlert = AppLocalized.string("登录状态异常，请重试。", locale: locale)
                 }
                 return
             }
@@ -271,7 +272,7 @@ struct LoginView: View {
         throw NSError(
             domain: "LoginView",
             code: -1,
-            userInfo: [NSLocalizedDescriptionKey: "当前构建环境未包含 Supabase SDK。"]
+            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)]
         )
         #endif
     }
@@ -345,7 +346,7 @@ struct LoginView: View {
         throw NSError(
             domain: "LoginView",
             code: -2,
-            userInfo: [NSLocalizedDescriptionKey: "登录会话尚未就绪，请稍后重试。"]
+            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("登录会话尚未就绪，请稍后重试。", locale: locale)]
         )
         #endif
     }

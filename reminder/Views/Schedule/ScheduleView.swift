@@ -176,18 +176,18 @@ struct TaskModeDayView: View {
         Group {
             if viewModel.isLoading {
                 pullToRefreshScrollContainer(minHeight: 360) {
-                    ProgressView("正在加载任务...")
+                    ProgressView(AppLocalized.string("正在加载任务...", locale: locale))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 120)
                 }
             } else if let errorMessage = viewModel.errorMessage {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                        Label(AppLocalized.string("加载失败", locale: locale), systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(errorMessage)
                     } actions: {
-                        Button("重新加载") {
+                        Button(AppLocalized.string("重新加载", locale: locale)) {
                             Task {
                                 await refreshTasks()
                             }
@@ -498,7 +498,7 @@ struct TaskModeDayView: View {
     }
 
     private func assigneeLabel(for task: FamilyTask) -> String {
-        viewModel.assigneeLabel(for: task)
+        viewModel.assigneeLabel(for: task, locale: locale)
     }
 }
 

@@ -60,6 +60,7 @@ struct TaskCardForWhomTrailing: View {
 
 /// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
+    @Environment(\.locale) private var locale
     let task: FamilyTask
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
@@ -77,7 +78,9 @@ struct TaskCardView: View {
                     .padding(.trailing, 2)
             }
 
-            assigneeRow
+            if let place = locationDisplayName {
+                locationRow(place: place)
+            }
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
@@ -116,14 +119,14 @@ struct TaskCardView: View {
 
     private var statusTitle: String {
         switch task.status {
-        case .new: return "待接受"
-        case .accepted: return "已接受"
-        case .inProgress: return "进行中"
-        case .completed: return "已完成"
-        case .issue: return "有问题"
-        case .expired: return "已过期"
-        case .failed: return "失败"
-        case .cancelled: return "已取消"
+        case .new: return AppLocalized.string("待接受", locale: locale)
+        case .accepted: return AppLocalized.string("已接受", locale: locale)
+        case .inProgress: return AppLocalized.string("进行中", locale: locale)
+        case .completed: return AppLocalized.string("已完成", locale: locale)
+        case .issue: return AppLocalized.string("有问题", locale: locale)
+        case .expired: return AppLocalized.string("已过期", locale: locale)
+        case .failed: return AppLocalized.string("失败", locale: locale)
+        case .cancelled: return AppLocalized.string("已取消", locale: locale)
         }
     }
 
@@ -164,14 +167,6 @@ struct TaskCardView: View {
 
             TaskDurationBadge(minutes: task.durationMinutes)
 
-            if let place = locationDisplayName {
-                Label(place, systemImage: "mappin.and.ellipse")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .labelStyle(.titleAndIcon)
-                    .lineLimit(1)
-            }
-
             Spacer(minLength: 0)
         }
     }
@@ -192,35 +187,17 @@ struct TaskCardView: View {
         return nil
     }
 
-    // MARK: - 谁去办
+    // MARK: - 地点
 
-    private var assigneeRow: some View {
+    private func locationRow(place: String) -> some View {
         HStack(alignment: .center) {
-            Text("谁去办 (Assignee)")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Spacer(minLength: 8)
-
-            Label(assigneeDisplayText, systemImage: "person")
+            Label(place, systemImage: "mappin.and.ellipse")
                 .font(.footnote)
-                .foregroundStyle(assigneeForeground)
+                .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
                 .lineLimit(1)
+            Spacer(minLength: 0)
         }
-    }
-
-    private var assigneeDisplayText: String {
-        let trimmed = assigneeLabel.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "未分配" : trimmed
-    }
-
-    private var assigneeForeground: Color {
-        let t = assigneeDisplayText
-        if t == "未分配" || t == "所有人" {
-            return Color.secondary
-        }
-        return Color.accentColor
     }
 }
 

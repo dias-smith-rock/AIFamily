@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct HouseholdPickerView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
 
     var body: some View {
@@ -19,9 +20,9 @@ struct HouseholdPickerView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("选择群组")
+            Text(AppLocalized.string("选择群组", locale: locale))
                 .font(.system(size: 32, weight: .bold))
-            Text("检测到你加入了多个群组，请选择本次要进入的群组。")
+            Text(AppLocalized.string("检测到你加入了多个群组，请选择本次要进入的群组。", locale: locale))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
         }
@@ -30,7 +31,7 @@ struct HouseholdPickerView: View {
     @ViewBuilder
     private var optionsList: some View {
         if appRouter.selectableHouseholds.isEmpty {
-            ProgressView("正在加载群组列表...")
+            ProgressView(AppLocalized.string("正在加载群组列表...", locale: locale))
                 .frame(maxWidth: .infinity, minHeight: 180)
         } else {
             VStack(spacing: 10) {

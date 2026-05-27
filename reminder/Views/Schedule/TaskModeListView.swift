@@ -2,6 +2,7 @@ import SwiftUI
 
 /// 列表模式：按自然日分组的专业日历式纵向列表。
 struct TaskModeListView: View {
+    @Environment(\.locale) private var locale
     @ObservedObject var viewModel: ScheduleViewModel
     var listScrollToken: Int = 0
     var onTaskTap: ((FamilyTask) -> Void)?
@@ -26,14 +27,14 @@ struct TaskModeListView: View {
         Group {
             if viewModel.isLoading {
                 pullToRefreshScrollContainer(minHeight: 360) {
-                    ProgressView("正在加载任务...")
+                    ProgressView(AppLocalized.string("正在加载任务...", locale: locale))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 120)
                 }
             } else if let message = viewModel.errorMessage {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                        Label(AppLocalized.string("加载失败", locale: locale), systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                     }
@@ -41,9 +42,9 @@ struct TaskModeListView: View {
             } else if viewModel.tasks.isEmpty {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label("暂无任务", systemImage: "checklist")
+                        Label(AppLocalized.string("暂无任务", locale: locale), systemImage: "checklist")
                     } description: {
-                        Text("创建任务后将显示在此列表。")
+                        Text(AppLocalized.string("创建任务后将显示在此列表。", locale: locale))
                     }
                 }
             } else {

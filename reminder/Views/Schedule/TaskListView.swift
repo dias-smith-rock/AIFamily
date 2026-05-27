@@ -55,7 +55,7 @@ struct TaskListView: View {
                             onRefresh: refreshTasks
                         )
                     case .threeDay, .week, .month, .year:
-                        Text("开发中...")
+                        Text(AppLocalized.string("开发中...", locale: locale))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -296,7 +296,7 @@ struct TaskListView: View {
     }
 
     private func assigneeLabel(for task: FamilyTask) -> String {
-        viewModel.assigneeLabel(for: task)
+        viewModel.assigneeLabel(for: task, locale: locale)
     }
 
     #if canImport(Supabase)

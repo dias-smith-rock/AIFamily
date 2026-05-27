@@ -19,6 +19,7 @@ struct TaskDetailView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.locale) private var locale
     @ObservedObject private var scheduleViewModel: ScheduleViewModel
 
     private let currentUserRole: MembershipRole
@@ -101,12 +102,12 @@ struct TaskDetailView: View {
             .padding(.bottom, bottomScrollPadding)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("任务详情")
+        .navigationTitle(localized("任务详情"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("关闭") {
+                Button(localized("关闭")) {
                     dismiss()
                 }
                 .fontWeight(.medium)
@@ -118,7 +119,7 @@ struct TaskDetailView: View {
                         Button {
                             showingEditSheet = true
                         } label: {
-                            Text("编辑")
+                            Text(localized("编辑"))
                                 .fontWeight(.semibold)
                         }
                         .disabled(isUpdatingStatus || isDeletingTask)
@@ -161,25 +162,25 @@ struct TaskDetailView: View {
             await loadForWhomProfiles()
         }
         .confirmationDialog(
-            "删除任务",
+            localized("删除任务"),
             isPresented: $isShowingDeleteScopeDialog,
             titleVisibility: .visible
         ) {
             if task.seriesGrouping == nil {
-                Button("仅删除此任务", role: .destructive) {
+                Button(localized("仅删除此任务"), role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
             } else {
-                Button("仅删除此任务", role: .destructive) {
+                Button(localized("仅删除此任务"), role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
-                Button("删除此任务及以后", role: .destructive) {
+                Button(localized("删除此任务及以后"), role: .destructive) {
                     Task { await performDelete(scope: .thisAndFuture) }
                 }
             }
-            Button("取消", role: .cancel) { }
+            Button(localized("取消"), role: .cancel) { }
         } message: {
-            Text(task.seriesGrouping == nil ? "此操作不可撤销。" : "请选择删除范围。")
+            Text(localized(task.seriesGrouping == nil ? "此操作不可撤销。" : "请选择删除范围。"))
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -210,7 +211,7 @@ struct TaskDetailView: View {
             Image(systemName: "calendar.badge.lock")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Text(TaskDetailCopy.externalSyncReadOnlyBanner)
+            Text(TaskDetailCopy.externalSyncReadOnlyBanner(locale: locale))
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -225,17 +226,17 @@ struct TaskDetailView: View {
 
     private var coreInfoCard: some View {
         VStack(spacing: 0) {
-            coreRow(systemImage: "repeat", label: "重复", value: repeatDisplayText)
+            coreRow(systemImage: "repeat", label: localized("重复"), value: repeatDisplayText)
             cardDivider
-            coreRow(systemImage: "bell", label: "提醒", value: reminderDisplayText)
+            coreRow(systemImage: "bell", label: localized("提醒"), value: reminderDisplayText)
             cardDivider
-            coreRow(systemImage: "person", label: "谁去办", value: assigneeLine)
+            coreRow(systemImage: "person", label: localized("谁去办 (Assignee)"), value: assigneeLine)
             cardDivider
-            coreRow(systemImage: "banknote", label: "预计开销", value: costDisplayText, valueIsPlaceholder: costIsEmpty)
+            coreRow(systemImage: "banknote", label: localized("预计开销"), value: costDisplayText, valueIsPlaceholder: costIsEmpty)
             cardDivider
             coreRow(
                 systemImage: "tag",
-                label: "当前状态",
+                label: localized("当前状态"),
                 value: statusFriendlyLabel,
                 valueAccent: task.status == .new
             )
@@ -251,19 +252,19 @@ struct TaskDetailView: View {
                 Image(systemName: "clock")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("时间规划")
+                Text(localized("时间规划"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                timePlanningLine(label: "开始时间", value: timePlanningStartText)
+                timePlanningLine(label: localized("开始时间"), value: timePlanningStartText)
                 if let endText = timePlanningEndText {
-                    timePlanningLine(label: "结束时间", value: endText)
+                    timePlanningLine(label: localized("结束时间"), value: endText)
                 }
                 timePlanningLine(
-                    label: "总花费时间",
-                    value: TaskDurationFormatting.readableDuration(minutes: task.durationMinutes)
+                    label: localized("总花费时间"),
+                    value: TaskDurationFormatting.readableDuration(minutes: task.durationMinutes, locale: locale)
                 )
             }
         }
@@ -276,7 +277,7 @@ struct TaskDetailView: View {
 
     private func timePlanningLine(label: String, value: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("\(label)：")
+            Text("\(label):")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Text(value)
@@ -337,7 +338,7 @@ struct TaskDetailView: View {
                 Image(systemName: "person.3")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("为了谁")
+                Text(localized("为了谁"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -377,13 +378,13 @@ struct TaskDetailView: View {
                         .offset(x: 18, y: 18)
                 }
             }
-            Text("所有人")
+            Text(localized("所有人"))
                 .font(.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("为了谁：全体成员")
+        .accessibilityLabel(localized("为了谁：全体成员"))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -466,7 +467,7 @@ struct TaskDetailView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text("显示更多选项")
+                Text(localized("显示更多选项"))
                     .font(.subheadline.weight(.semibold))
                 Text("˅")
                     .font(.subheadline.weight(.bold))
@@ -485,7 +486,7 @@ struct TaskDetailView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text("收起更多选项")
+                Text(localized("收起更多选项"))
                     .font(.subheadline.weight(.semibold))
                 Text("˄")
                     .font(.subheadline.weight(.bold))
@@ -501,29 +502,29 @@ struct TaskDetailView: View {
 
     private var expandedReadonlySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            expandedCard(title: "任务优先级") {
+            expandedCard(title: localized("任务优先级")) {
                 priorityReadonlySegmentVisual
             }
 
-            expandedCard(title: "紧急联系号码 / 会议链接") {
+            expandedCard(title: localized("紧急联系号码 / 会议链接")) {
                 emergencyReadonlyBlock
             }
 
-            expandedCard(title: "地理位置") {
+            expandedCard(title: localized("地理位置")) {
                 locationReadonlyRow
             }
 
-            expandedCard(title: "更多细节") {
+            expandedCard(title: localized("更多细节")) {
                 readonlyMultilineBlock(
                     text: descriptionMoreDetailsPart,
-                    emptyPlaceholder: "暂无备注"
+                    emptyPlaceholder: localized("暂无备注")
                 )
             }
 
-            expandedCard(title: "财务与备注") {
+            expandedCard(title: localized("财务与备注")) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
-                        Text("预计开销")
+                        Text(localized("预计开销"))
                             .font(.body)
                             .foregroundStyle(.primary)
                         Spacer(minLength: 12)
@@ -534,12 +535,12 @@ struct TaskDetailView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("详细说明")
+                        Text(localized("详细说明"))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         readonlyMultilineBlock(
                             text: descriptionFinancePart,
-                            emptyPlaceholder: "可填写开支明细、支付方式等…",
+                            emptyPlaceholder: localized("可填写开支明细、支付方式等…"),
                             emptyAsCaptionHint: true
                         )
                     }
@@ -581,14 +582,14 @@ struct TaskDetailView: View {
     private var priorityReadonlySegmentVisual: some View {
         let isUrgent = (task.priority == .urgent || task.priority == .high)
         return HStack(spacing: 0) {
-            Text("紧急")
+            Text(localized("紧急"))
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
                 .foregroundStyle(isUrgent ? Color.accentColor : Color.secondary)
                 .background(isUrgent ? Color.accentColor.opacity(0.18) : Color.clear)
 
-            Text("一般")
+            Text(localized("一般"))
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
@@ -598,7 +599,7 @@ struct TaskDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("任务优先级：\(priorityReadonlyText)")
+        .accessibilityLabel("\(localized("任务优先级")): \(priorityReadonlyText)")
     }
 
     private var emergencyReadonlyBlock: some View {
@@ -606,7 +607,7 @@ struct TaskDetailView: View {
         return HStack(alignment: .center, spacing: 10) {
             Group {
                 if trimmed.isEmpty {
-                    Text("无")
+                    Text(localized("无"))
                         .font(.body)
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -631,7 +632,7 @@ struct TaskDetailView: View {
             Image(systemName: "mappin.and.ellipse")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text(has ? (locationLine ?? "") : "尚未添加位置")
+            Text(has ? (locationLine ?? "") : localized("尚未添加位置"))
                 .font(.body)
                 .foregroundStyle(has ? .primary : .tertiary)
             Spacer(minLength: 8)
@@ -691,11 +692,11 @@ struct TaskDetailView: View {
     private var priorityReadonlyText: String {
         switch task.priority {
         case .urgent, .high:
-            return TaskDetailCopy.priorityUrgent
+            return TaskDetailCopy.priorityUrgent(locale: locale)
         case .normal, .low:
-            return TaskDetailCopy.priorityNormal
+            return TaskDetailCopy.priorityNormal(locale: locale)
         @unknown default:
-            return TaskDetailCopy.priorityNormal
+            return TaskDetailCopy.priorityNormal(locale: locale)
         }
     }
 
@@ -711,7 +712,7 @@ struct TaskDetailView: View {
                 .onTapGesture {
                     openURL(url)
                 }
-                .accessibilityHint(TaskDetailCopy.tapToCallOrOpenLink)
+                .accessibilityHint(TaskDetailCopy.tapToCallOrOpenLink(locale: locale))
         } else {
             Text(raw)
                 .font(.body)
@@ -736,17 +737,39 @@ struct TaskDetailView: View {
     private var timePlanningStartText: String {
         let start = scheduledAt
         if task.isAllDay {
-            return Self.dayFormatter.string(from: start)
+            return start.formatted(
+                .dateTime
+                    .month(.defaultDigits)
+                    .day(.defaultDigits)
+                    .weekday(.wide)
+                    .locale(locale)
+            )
         }
-        return Self.timeFormatter.string(from: start)
+        return start.formatted(
+            .dateTime
+                .hour(.twoDigits(amPM: .omitted))
+                .minute(.twoDigits)
+                .locale(locale)
+        )
     }
 
     private var timePlanningEndText: String? {
         guard let end = plannedEndDate else { return nil }
         if task.isAllDay {
-            return Self.dayFormatter.string(from: end)
+            return end.formatted(
+                .dateTime
+                    .month(.defaultDigits)
+                    .day(.defaultDigits)
+                    .weekday(.wide)
+                    .locale(locale)
+            )
         }
-        return Self.timeFormatter.string(from: end)
+        return end.formatted(
+            .dateTime
+                .hour(.twoDigits(amPM: .omitted))
+                .minute(.twoDigits)
+                .locale(locale)
+        )
     }
 
     private var plannedEndDate: Date? {
@@ -757,55 +780,33 @@ struct TaskDetailView: View {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    private static let chineseCalendar: Calendar = {
-        var cal = Calendar(identifier: .gregorian)
-        cal.locale = Locale(identifier: "zh_CN")
-        return cal
-    }()
-
-    private static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.calendar = chineseCalendar
-        formatter.dateFormat = "M月d日 EEEE"
-        return formatter
-    }()
-
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatter.calendar = chineseCalendar
-        formatter.dateFormat = "HH:mm"
-        return formatter
-    }()
-
     private var repeatDisplayText: String {
         guard let rule = task.recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines),
               rule.isEmpty == false else {
-            return TaskDetailCopy.repeatNever
+            return TaskDetailCopy.repeatNever(locale: locale)
         }
-        if rule.uppercased().contains("DAILY") { return TaskDetailCopy.repeatDaily }
-        if rule.uppercased().contains("WEEKLY") { return TaskDetailCopy.repeatWeekly }
-        if rule.uppercased().contains("MONTHLY") { return TaskDetailCopy.repeatMonthly }
-        return TaskDetailCopy.repeatCustom
+        if rule.uppercased().contains("DAILY") { return TaskDetailCopy.repeatDaily(locale: locale) }
+        if rule.uppercased().contains("WEEKLY") { return TaskDetailCopy.repeatWeekly(locale: locale) }
+        if rule.uppercased().contains("MONTHLY") { return TaskDetailCopy.repeatMonthly(locale: locale) }
+        return TaskDetailCopy.repeatCustom(locale: locale)
     }
 
     private var reminderDisplayText: String {
         guard let offsets = task.reminderOffsets, offsets.isEmpty == false else {
-            return TaskDetailCopy.none
+            return TaskDetailCopy.none(locale: locale)
         }
-        return offsets.sorted().map(reminderLabel(forMinutes:)).joined(separator: TaskDetailCopy.listSeparator)
+        return offsets.sorted().map(reminderLabel(forMinutes:)).joined(separator: TaskDetailCopy.listSeparator(locale: locale))
     }
 
     private func reminderLabel(forMinutes m: Int) -> String {
         switch m {
-        case 0: return TaskDetailCopy.reminderOnTime
-        case 5: return TaskDetailCopy.reminder5Min
-        case 10: return TaskDetailCopy.reminder10Min
-        case 15: return TaskDetailCopy.reminder15Min
-        case 30: return TaskDetailCopy.reminder30Min
-        case 60: return TaskDetailCopy.reminder1Hour
-        default: return String(format: TaskDetailCopy.reminderMinutesBeforeFormat, m)
+        case 0: return TaskDetailCopy.reminderOnTime(locale: locale)
+        case 5: return TaskDetailCopy.reminder5Min(locale: locale)
+        case 10: return TaskDetailCopy.reminder10Min(locale: locale)
+        case 15: return TaskDetailCopy.reminder15Min(locale: locale)
+        case 30: return TaskDetailCopy.reminder30Min(locale: locale)
+        case 60: return TaskDetailCopy.reminder1Hour(locale: locale)
+        default: return String(format: TaskDetailCopy.reminderMinutesBeforeFormat(locale: locale), m)
         }
     }
 
@@ -815,8 +816,8 @@ struct TaskDetailView: View {
     }
 
     private var costDisplayText: String {
-        guard let minor = task.estimatedCost else { return TaskDetailCopy.none }
-        if minor == 0 { return TaskDetailCopy.none }
+        guard let minor = task.estimatedCost else { return TaskDetailCopy.none(locale: locale) }
+        if minor == 0 { return TaskDetailCopy.none(locale: locale) }
         let value = Double(minor) / 100.0
         let symbol = Locale.current.currencySymbol ?? "¥"
         if value == floor(value) {
@@ -827,14 +828,14 @@ struct TaskDetailView: View {
 
     private var statusFriendlyLabel: String {
         switch task.status {
-        case .new: return TaskDetailCopy.statusPendingAcceptance
-        case .accepted: return TaskDetailCopy.statusAccepted
-        case .inProgress: return TaskDetailCopy.statusInProgress
-        case .completed: return TaskDetailCopy.statusCompleted
-        case .issue: return TaskDetailCopy.statusIssue
-        case .failed: return TaskDetailCopy.statusFailed
-        case .expired: return TaskDetailCopy.statusExpired
-        case .cancelled: return TaskDetailCopy.statusCancelled
+        case .new: return TaskDetailCopy.statusPendingAcceptance(locale: locale)
+        case .accepted: return TaskDetailCopy.statusAccepted(locale: locale)
+        case .inProgress: return TaskDetailCopy.statusInProgress(locale: locale)
+        case .completed: return TaskDetailCopy.statusCompleted(locale: locale)
+        case .issue: return TaskDetailCopy.statusIssue(locale: locale)
+        case .failed: return TaskDetailCopy.statusFailed(locale: locale)
+        case .expired: return TaskDetailCopy.statusExpired(locale: locale)
+        case .cancelled: return TaskDetailCopy.statusCancelled(locale: locale)
         }
     }
 
@@ -853,7 +854,7 @@ struct TaskDetailView: View {
 
     @MainActor
     private func refreshAssigneeLine() async {
-        assigneeLine = scheduleViewModel.assigneeLabel(for: task)
+        assigneeLine = scheduleViewModel.assigneeLabel(for: task, locale: locale)
     }
 
     @MainActor
@@ -897,7 +898,7 @@ struct TaskDetailView: View {
                     Button {
                         Task { await updateTaskStatus(to: .accepted) }
                     } label: {
-                        Text("接受任务")
+                        Text(localized("接受任务"))
                             .font(.body.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -912,7 +913,7 @@ struct TaskDetailView: View {
                         Button {
                             Task { await updateTaskStatus(to: .completed) }
                         } label: {
-                            Text("完成任务")
+                            Text(localized("完成任务"))
                                 .font(.body.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 16)
@@ -925,7 +926,7 @@ struct TaskDetailView: View {
                         Button {
                             Task { await updateTaskStatus(to: .issue) }
                         } label: {
-                            Text("遇到问题")
+                            Text(localized("遇到问题"))
                                 .font(.subheadline.weight(.medium))
                                 .frame(maxWidth: .infinity)
                         }
@@ -938,7 +939,7 @@ struct TaskDetailView: View {
                     Button {
                         Task { await updateTaskStatus(to: .completed) }
                     } label: {
-                        Text("标记为完成")
+                        Text(localized("标记为完成"))
                             .font(.body.weight(.semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -949,7 +950,7 @@ struct TaskDetailView: View {
                     .disabled(isUpdatingStatus)
 
                 default:
-                    Text("✅ 该任务已完结")
+                    Text(localized("✅ 该任务已完结"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -989,16 +990,20 @@ struct TaskDetailView: View {
                 .allowsHitTesting(true)
             }
         }
-        .alert("任务已完成", isPresented: $showCompletedReminderCleanupAlert) {
-            Button("是") {
+        .alert(localized("任务已完成"), isPresented: $showCompletedReminderCleanupAlert) {
+            Button(localized("是")) {
                 Task {
                     await NotificationManager.shared.cancelAllPending(for: task.id)
                 }
             }
-            Button("否", role: .cancel) {}
+            Button(localized("否"), role: .cancel) {}
         } message: {
-            Text("是否需要为您删除对应的闹钟提醒？")
+            Text(localized("是否需要为您删除对应的闹钟提醒？"))
         }
+    }
+
+    private func localized(_ key: String) -> String {
+        AppLocalized.string(key, locale: locale)
     }
 
     private func updateTaskStatus(to newStatus: TaskStatus) async {
@@ -1036,7 +1041,7 @@ struct TaskDetailView: View {
                 await scheduleViewModel.deleteTask(taskId: task.id)
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
-                    statusError = TaskDetailCopy.cannotResolveRecurringGroupForDelete
+                    statusError = TaskDetailCopy.cannotResolveRecurringGroupForDelete(locale: locale)
                     return
                 }
                 let cutoff = task.dueDate ?? .distantPast
@@ -1055,11 +1060,14 @@ struct TaskDetailView: View {
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
         } catch {
-            statusError = String(format: TaskDetailCopy.deleteFailedFormat, error.localizedDescription)
+            statusError = String(
+                format: TaskDetailCopy.deleteFailedFormat(locale: locale),
+                error.localizedDescription
+            )
         }
         #else
         _ = scope
-        statusError = TaskDetailCopy.supabaseSDKUnavailable
+        statusError = TaskDetailCopy.supabaseSDKUnavailable(locale: locale)
         #endif
     }
 }
@@ -1067,39 +1075,35 @@ struct TaskDetailView: View {
 // MARK: - Localized copy
 
 private enum TaskDetailCopy {
-    static let externalSyncReadOnlyBanner = String(
-        localized: "This event was synced from an external calendar and cannot be edited in the app."
-    )
-    static let tapToCallOrOpenLink = String(localized: "Double tap to call or open the link")
-    static let priorityUrgent = String(localized: "🔴 Urgent")
-    static let priorityNormal = String(localized: "🟢 Normal")
-    static let repeatNever = String(localized: "Never")
-    static let repeatDaily = String(localized: "Daily")
-    static let repeatWeekly = String(localized: "Weekly")
-    static let repeatMonthly = String(localized: "Monthly")
-    static let repeatCustom = String(localized: "Custom")
-    static let none = String(localized: "None")
-    static let listSeparator = String(localized: ", ")
-    static let reminderOnTime = String(localized: "On time")
-    static let reminder5Min = String(localized: "5 minutes before")
-    static let reminder10Min = String(localized: "10 minutes before")
-    static let reminder15Min = String(localized: "15 minutes before")
-    static let reminder30Min = String(localized: "30 minutes before")
-    static let reminder1Hour = String(localized: "1 hour before")
-    static let reminderMinutesBeforeFormat = String(localized: "%lld minutes before")
-    static let statusPendingAcceptance = String(localized: "Pending acceptance")
-    static let statusAccepted = String(localized: "Accepted")
-    static let statusInProgress = String(localized: "In progress")
-    static let statusCompleted = String(localized: "Completed")
-    static let statusIssue = String(localized: "Issue reported")
-    static let statusFailed = String(localized: "Failed")
-    static let statusExpired = String(localized: "Expired")
-    static let statusCancelled = String(localized: "Cancelled")
-    static let cannotResolveRecurringGroupForDelete = String(
-        localized: "Could not resolve the recurring series group; bulk delete is unavailable."
-    )
-    static let deleteFailedFormat = String(localized: "Delete failed: %@")
-    static let supabaseSDKUnavailable = String(localized: "Supabase SDK is not available in this build.")
+    static func externalSyncReadOnlyBanner(locale: Locale) -> String { AppLocalized.string("This event was synced from an external calendar and cannot be edited in the app.", locale: locale) }
+    static func tapToCallOrOpenLink(locale: Locale) -> String { AppLocalized.string("Double tap to call or open the link", locale: locale) }
+    static func priorityUrgent(locale: Locale) -> String { AppLocalized.string("🔴 Urgent", locale: locale) }
+    static func priorityNormal(locale: Locale) -> String { AppLocalized.string("🟢 Normal", locale: locale) }
+    static func repeatNever(locale: Locale) -> String { AppLocalized.string("Never", locale: locale) }
+    static func repeatDaily(locale: Locale) -> String { AppLocalized.string("Daily", locale: locale) }
+    static func repeatWeekly(locale: Locale) -> String { AppLocalized.string("Weekly", locale: locale) }
+    static func repeatMonthly(locale: Locale) -> String { AppLocalized.string("Monthly", locale: locale) }
+    static func repeatCustom(locale: Locale) -> String { AppLocalized.string("Custom", locale: locale) }
+    static func none(locale: Locale) -> String { AppLocalized.string("None", locale: locale) }
+    static func listSeparator(locale: Locale) -> String { AppLocalized.string(", ", locale: locale) }
+    static func reminderOnTime(locale: Locale) -> String { AppLocalized.string("On time", locale: locale) }
+    static func reminder5Min(locale: Locale) -> String { AppLocalized.string("5 minutes before", locale: locale) }
+    static func reminder10Min(locale: Locale) -> String { AppLocalized.string("10 minutes before", locale: locale) }
+    static func reminder15Min(locale: Locale) -> String { AppLocalized.string("15 minutes before", locale: locale) }
+    static func reminder30Min(locale: Locale) -> String { AppLocalized.string("30 minutes before", locale: locale) }
+    static func reminder1Hour(locale: Locale) -> String { AppLocalized.string("1 hour before", locale: locale) }
+    static func reminderMinutesBeforeFormat(locale: Locale) -> String { AppLocalized.string("%lld minutes before", locale: locale) }
+    static func statusPendingAcceptance(locale: Locale) -> String { AppLocalized.string("Pending acceptance", locale: locale) }
+    static func statusAccepted(locale: Locale) -> String { AppLocalized.string("Accepted", locale: locale) }
+    static func statusInProgress(locale: Locale) -> String { AppLocalized.string("In progress", locale: locale) }
+    static func statusCompleted(locale: Locale) -> String { AppLocalized.string("Completed", locale: locale) }
+    static func statusIssue(locale: Locale) -> String { AppLocalized.string("Issue reported", locale: locale) }
+    static func statusFailed(locale: Locale) -> String { AppLocalized.string("Failed", locale: locale) }
+    static func statusExpired(locale: Locale) -> String { AppLocalized.string("Expired", locale: locale) }
+    static func statusCancelled(locale: Locale) -> String { AppLocalized.string("Cancelled", locale: locale) }
+    static func cannotResolveRecurringGroupForDelete(locale: Locale) -> String { AppLocalized.string("Could not resolve the recurring series group; bulk delete is unavailable.", locale: locale) }
+    static func deleteFailedFormat(locale: Locale) -> String { AppLocalized.string("Delete failed: %@", locale: locale) }
+    static func supabaseSDKUnavailable(locale: Locale) -> String { AppLocalized.string("Supabase SDK is not available in this build.", locale: locale) }
 }
 
 #Preview("成员 · 待接受") {

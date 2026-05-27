@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AuthGateView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @StateObject private var viewModel = AppViewModels.makeAuthViewModel()
 
@@ -17,13 +18,13 @@ struct AuthGateView: View {
     private var loginView: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("登录 家音")
+                Text(AppLocalized.string("登录 家音", locale: locale))
                     .font(.system(size: 32, weight: .bold))
-                Text("支持 Apple、Magic Link、Phone OTP")
+                Text(AppLocalized.string("支持 Apple、Magic Link、Phone OTP", locale: locale))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.secondary)
 
-                Picker("登录方式", selection: $viewModel.selectedMethod) {
+                Picker(AppLocalized.string("登录方式", locale: locale), selection: $viewModel.selectedMethod) {
                     ForEach(AuthViewModel.LoginMethod.allCases) { method in
                         Text(method.rawValue).tag(method)
                     }
@@ -31,12 +32,12 @@ struct AuthGateView: View {
                 .pickerStyle(.segmented)
 
                 if viewModel.selectedMethod == .magicLink {
-                    TextField("邮箱地址", text: $viewModel.email)
+                    TextField(AppLocalized.string("邮箱地址", locale: locale), text: $viewModel.email)
                         .textFieldStyle(.roundedBorder)
                 }
 
                 if viewModel.selectedMethod == .phoneOTP {
-                    TextField("手机号", text: $viewModel.phone)
+                    TextField(AppLocalized.string("手机号", locale: locale), text: $viewModel.phone)
                         .keyboardType(.phonePad)
                         .textFieldStyle(.roundedBorder)
                 }
@@ -50,7 +51,7 @@ struct AuthGateView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text("继续")
+                        Text(AppLocalized.string("继续", locale: locale))
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
                     }
