@@ -6659,7 +6659,6 @@
       }
     },
     "好的" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8635,6 +8634,7 @@
       }
     },
     "当前设备未配置邮件账户，请发送邮件至 %@。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -8646,6 +8646,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "当前设备未配置邮件账户，请发送邮件至 %@。"
+          }
+        }
+      }
+    },
+    "当前设备未配置邮件账户，请发送邮件至 support@wefamily.ai。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No mail account is configured on this device. Please send an email to support@wefamily.ai."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前设备未配置邮件账户，请发送邮件至 support@wefamily.ai。"
           }
         }
       }
@@ -8999,18 +9015,18 @@
         }
       }
     },
-    "您是「%@」%@的创建者，请先转移权限或解散群组后再注销账户。" : {
+    "您是「%@」等 %lld 个群组的创建者，请先转移权限或解散群组后再注销账户。" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You are the creator of \"%1$@\"%2$@. Transfer ownership or dismiss the group before deleting your account."
+            "value" : "You are the creator of %2$lld group(s) including '%1$@'. Please transfer ownership or dismiss the groups before deleting your account."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "您是「%@」%@的创建者，请先转移权限或解散群组后再注销账户。"
+            "value" : "您是「%@」等 %lld 个群组的创建者，请先转移权限或解散群组后再注销账户。"
           }
         }
       }
@@ -11246,7 +11262,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "hint"
+            "value" : "Notice"
           }
         },
         "es" : {
@@ -12241,7 +12257,6 @@
       }
     },
     "无法直接注销" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12252,7 +12267,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to log out directly"
+            "value" : "Cannot Delete Account"
           }
         },
         "es" : {
@@ -17347,7 +17362,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "knew"
+            "value" : "Got it"
           }
         },
         "es" : {
@@ -18302,6 +18317,7 @@
       }
     },
     "等 %lld 个群组" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -21919,7 +21935,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Follow System"
+            "value" : "System"
           }
         },
         "es" : {

@@ -28,7 +28,7 @@ struct MineView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
-                    Text(AppLocalized.string("我的", locale: locale))
+                    Text("我的")
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 }
@@ -85,13 +85,13 @@ struct MineView: View {
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
         }
-        .alert(AppLocalized.string("提示", locale: locale), isPresented: Binding(
+        .alert("提示", isPresented: Binding(
             get: { viewModel.toastMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeToast() } }
         )) {
-            Button(AppLocalized.string("好的", locale: locale), role: .cancel) { viewModel.acknowledgeToast() }
+            Button("好的", role: .cancel) { viewModel.acknowledgeToast() }
         } message: {
-            Text(viewModel.toastMessage ?? "")
+            Text(verbatim: viewModel.toastMessage ?? "")
         }
         .alert(AppLocalized.string("退出失败", locale: locale), isPresented: Binding(
             get: { viewModel.signOutErrorMessage != nil },
@@ -109,10 +109,10 @@ struct MineView: View {
         } message: {
             Text(AppLocalized.string("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。", locale: locale))
         }
-        .alert(AppLocalized.string("无法直接注销", locale: locale), isPresented: $viewModel.showCreatorBlockAlert) {
-            Button(AppLocalized.string("知道了", locale: locale), role: .cancel) {}
+        .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
+            Button("知道了", role: .cancel) {}
         } message: {
-            Text(viewModel.blockAlertMessage)
+            Text(verbatim: viewModel.blockAlertMessage)
         }
         .alert(AppLocalized.string("注销失败", locale: locale), isPresented: Binding(
             get: { viewModel.deleteAccountErrorMessage != nil },
@@ -196,7 +196,7 @@ struct MineView: View {
                         title: "主题",
                         systemImage: "moon.fill",
                         iconTint: .purple,
-                        value: appSettings.appearance.valueTitle(locale: locale),
+                        valueKey: appSettings.appearance.localizedName,
                         showsChevron: false
                     )
                 }

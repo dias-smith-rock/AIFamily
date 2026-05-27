@@ -109,11 +109,11 @@ final class MineViewModel: ObservableObject {
             if names.isEmpty {
                 showDeleteAccountAlert = true
             } else {
-                let firstName = names.first ?? AppLocalized.localized("未知群组")
-                let suffix = names.count > 1
-                    ? AppLocalized.localized("等 \(names.count) 个群组")
-                    : ""
-                blockAlertMessage = AppLocalized.localized("您是「\(firstName)」\(suffix)的创建者，请先转移权限或解散群组后再注销账户。")
+                let groupName = names.first ?? AppLocalized.localized("未知群组")
+                let groupCount = names.count
+                blockAlertMessage = AppLocalized.localized(
+                    "您是「\(groupName)」等 \(groupCount) 个群组的创建者，请先转移权限或解散群组后再注销账户。"
+                )
                 showCreatorBlockAlert = true
             }
         } catch {
@@ -134,7 +134,7 @@ final class MineViewModel: ObservableObject {
         }
         #if canImport(UIKit)
         guard UIApplication.shared.canOpenURL(url) else {
-            presentToast(AppLocalized.localized("当前设备未配置邮件账户，请发送邮件至 \(SupportMailHelper.supportEmail)。"))
+            presentToast(AppLocalized.localized("当前设备未配置邮件账户，请发送邮件至 support@wefamily.ai。"))
             return
         }
         await UIApplication.shared.open(url)

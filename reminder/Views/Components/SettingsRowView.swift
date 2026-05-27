@@ -6,6 +6,7 @@ struct SettingsRowView: View {
     let iconTint: Color
     var subtitle: LocalizedStringKey?
     var value: String?
+    var valueKey: LocalizedStringKey?
     var showsValue: Bool = true
     var showsSubtitle: Bool = true
     var showsChevron: Bool = true
@@ -31,10 +32,16 @@ struct SettingsRowView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            if showsValue, let value, value.isEmpty == false {
-                Text(value)
-                    .font(AppTheme.FontToken.caption)
-                    .foregroundStyle(.secondary)
+            if showsValue {
+                if let valueKey {
+                    Text(valueKey)
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.secondary)
+                } else if let value, value.isEmpty == false {
+                    Text(value)
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             if showsChevron {

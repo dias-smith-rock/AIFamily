@@ -8,25 +8,17 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    var settingsTitleKey: LocalizedStringKey {
+    /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
+    var localizedName: LocalizedStringKey {
         switch self {
-        case .system: return "跟随系统"
-        case .light: return "浅色模式"
-        case .dark: return "深色模式"
+        case .system: "跟随系统"
+        case .light: "浅色模式"
+        case .dark: "深色模式"
         }
     }
 
-    var settingsLocalizationKey: String {
-        switch self {
-        case .system: return "跟随系统"
-        case .light: return "浅色模式"
-        case .dark: return "深色模式"
-        }
-    }
-
-    func valueTitle(locale: Locale) -> String {
-        AppLocalized.string(settingsLocalizationKey, locale: locale)
-    }
+    /// 与 `localizedName` 相同；设置页列表等沿用此命名。
+    var settingsTitleKey: LocalizedStringKey { localizedName }
 
     var colorScheme: ColorScheme? {
         switch self {
