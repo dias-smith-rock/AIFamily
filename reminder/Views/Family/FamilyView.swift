@@ -32,11 +32,35 @@ struct FamilyView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                GlobalHeaderView {
-                    Text("群组")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.primary)
-                }
+                GlobalHeaderView(
+                    leading: {
+                        Text("群组")
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(.primary)
+                    },
+                    trailing: {
+                        if viewModel.canLeaveCurrentHousehold && isMemberRole {
+                            Button {
+                                viewModel.requestToLeave()
+                            } label: {
+                                if viewModel.isLeaving {
+                                    ProgressView()
+                                        .tint(.blue)
+                                        .scaleEffect(0.85)
+                                        .frame(width: 24, height: 24)
+                                } else {
+                                    Image(systemName: "rectangle.portrait.and.arrow.right")
+                                        .font(.body.weight(.semibold))
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(viewModel.isLeaving)
+                            .accessibilityLabel("退出群组")
+                        } else {
+                            EmptyView()
+                        }
+                    }
+                )
 
                 familyListBody
                     .background(Color(.systemGroupedBackground))
@@ -303,18 +327,14 @@ struct FamilyView: View {
                     otherMembersSectionHeader
                 }
 
-                if isMemberRole {
-                    Section("成员操作") {
-                        leaveHouseholdSection
-                    }
-                    .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.clear)
-                }
             }
         }
         .listStyle(.insetGrouped)
         .environment(\.editMode, .constant(isSortingMembers ? .active : .inactive))
         .contentMargins(.top, 0, for: .scrollContent)
+        .refreshable {
+            await viewModel.loadMembers()
+        }
     }
 
     private var otherMembersEmptyState: some View {
@@ -514,29 +534,6 @@ struct FamilyView: View {
             return membership.parsedRole?.displayTitle ?? "群组成员"
         }
         return "群组成员"
-    }
-
-    private var leaveHouseholdSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Button(role: .destructive) {
-                viewModel.requestToLeave()
-            } label: {
-                HStack {
-                    Spacer()
-                    if viewModel.isLeaving {
-                        ProgressView()
-                    } else {
-                        Text("Leave Group")
-                            .font(.system(size: 17, weight: .semibold))
-                    }
-                    Spacer()
-                }
-                .padding(.vertical, 12)
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .disabled(viewModel.isLeaving)
-        }
     }
 
     private var canManageHousehold: Bool {
@@ -786,7 +783,7 @@ private struct OrganizationSettingsSheet: View {
             }
         } label: {
             settingsNavigationRow(
-                title: "转移所有权",
+                title: "Transfer ownership",
                 systemImage: "person.2.badge.gearshape"
             )
         }
@@ -854,7 +851,7 @@ private struct OrganizationSettingsSheet: View {
         .padding(.top, 8)
     }
 
-    private func settingsNavigationRow(title: String, systemImage: String) -> some View {
+    private func settingsNavigationRow(title: LocalizedStringKey, systemImage: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .font(.body)

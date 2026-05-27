@@ -58,7 +58,7 @@ struct TransferOwnershipView: View {
                 .listStyle(.insetGrouped)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("转移所有权")
+            .navigationTitle("Transfer ownership")
             .navigationBarTitleDisplayMode(.inline)
             .disabled(viewModel.isTransferring)
             .confirmationDialog(

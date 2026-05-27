@@ -13,7 +13,7 @@ struct AppearanceSettingsView: View {
                         }
                     } label: {
                         HStack {
-                            Text(option.settingsTitle)
+                            Text(option.settingsTitleKey)
                                 .foregroundStyle(.primary)
                             Spacer()
                             if appSettings.appearance == option {

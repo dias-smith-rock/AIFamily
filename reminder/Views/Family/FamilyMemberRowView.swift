@@ -2,6 +2,8 @@ import SwiftUI
 import Kingfisher
 
 struct FamilyMemberRowView: View {
+    @Environment(\.locale) private var locale
+
     let profile: FamilyProfile
     /// 当前行是否为 **虚拟档案**（无 `household_memberships` 关联）。
     var isVirtualUser: Bool = false
@@ -64,7 +66,7 @@ struct FamilyMemberRowView: View {
 
     private var contactLineDisplayText: String {
         guard let contact = profile.displayContact else {
-            return "暂无联系方式"
+            return AppLocalized.string("No contact info", locale: locale)
         }
         if profile.displayContactIsPhoneNumber {
             if revealsFullPhone {

@@ -13,17 +13,21 @@ enum TaskRecurrenceRule: String, CaseIterable, Identifiable, Sendable, Equatable
 
     var id: String { rawValue }
 
-    var displayName: String {
+    var localizationKey: String {
         switch self {
-        case .none: return "不重复"
-        case .daily: return "每天"
-        case .weekdays: return "工作日"
-        case .weekends: return "周末"
-        case .weekly: return "每周"
-        case .monthly: return "每月"
-        case .yearly: return "每年"
-        case .custom: return "每隔几天"
+        case .none: return "Does not repeat"
+        case .daily: return "Daily"
+        case .weekdays: return "Weekdays"
+        case .weekends: return "Weekends"
+        case .weekly: return "Weekly"
+        case .monthly: return "Monthly"
+        case .yearly: return "Yearly"
+        case .custom: return "Every few days"
         }
+    }
+
+    func displayName(locale: Locale) -> String {
+        AppLocalized.string(localizationKey, locale: locale)
     }
 
     /// 写入 `tasks.recurrence_rule` 的 iCalendar 片段；`none` 为 `nil`。

@@ -5,6 +5,7 @@ import UIKit
 #endif
 
 struct MineView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
@@ -193,7 +194,7 @@ struct MineView: View {
                         title: "Theme",
                         systemImage: "moon.fill",
                         iconTint: .purple,
-                        value: appSettings.appearance.listValueTitle,
+                        value: appSettings.appearance.valueTitle(locale: locale),
                         showsChevron: false
                     )
                 }

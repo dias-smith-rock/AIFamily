@@ -3,6 +3,8 @@ import Kingfisher
 
 /// Day 模式：周历条 + 全天条 + 锚点时间轴（由 `TaskListView` 嵌入）。
 struct TaskModeDayView: View {
+    @Environment(\.locale) private var locale
+
     private let taskFlowCompactGapHeight: CGFloat = ScheduleTimelineMetrics.taskFlowGapHeight
     private let taskFlowLongIdleThreshold: TimeInterval = 3600
     /// 未收到 ScrollView 宽度前占位，避免首张卡片过窄（约等于常见屏宽减去左右边距与时间列）。
@@ -25,17 +27,20 @@ struct TaskModeDayView: View {
 
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
+    let onRefresh: (() async -> Void)?
 
     init(
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
-        onQuickCreate: @escaping (String, Date?) -> Void
+        onQuickCreate: @escaping (String, Date?) -> Void,
+        onRefresh: (() async -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onQuickCreate = onQuickCreate
+        self.onRefresh = onRefresh
     }
 
     var body: some View {
@@ -108,7 +113,7 @@ struct TaskModeDayView: View {
             }
         } label: {
             VStack(spacing: 4) {
-                Text(loopDate.formatted(.dateTime.weekday(.abbreviated)))
+                Text(loopDate.formatted(.dateTime.weekday(.abbreviated).locale(locale)))
                     .font(.caption2)
                     .fontWeight(.medium)
                     .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
@@ -166,24 +171,29 @@ struct TaskModeDayView: View {
         return cal.date(byAdding: .day, value: -delta, to: day) ?? day
     }
 
+    /// 日视图时间轴：有任务时内容高度随任务自然撑开；勿对内容层加 `minHeight`，否则会在周条与首条任务之间出现大块空白。
     private var timelineSection: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("正在加载任务...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ProgressView("正在加载任务...")
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 120)
+                }
             } else if let errorMessage = viewModel.errorMessage {
-                ContentUnavailableView {
-                    Label("加载失败", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(errorMessage)
-                } actions: {
-                    Button("重新加载") {
-                        Task {
-                            await viewModel.loadTasks()
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ContentUnavailableView {
+                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button("重新加载") {
+                            Task {
+                                await refreshTasks()
+                            }
                         }
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ZStack {
                     ScrollViewReader { proxy in
@@ -203,8 +213,12 @@ struct TaskModeDayView: View {
                                     )
                                 }
                             }
+                            .frame(maxWidth: .infinity, alignment: .top)
                             .padding(.horizontal, 16)
                             .padding(.bottom, 24)
+                        }
+                        .refreshable {
+                            await refreshTasks()
                         }
                         .onAppear {
                             scrollTaskAnchorFlowToInitial(proxy: proxy, animated: false)
@@ -218,6 +232,7 @@ struct TaskModeDayView: View {
                         emptyStateView()
                             .padding(.horizontal, 16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .allowsHitTesting(false)
                     }
                 }
             }
@@ -225,11 +240,32 @@ struct TaskModeDayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
+    private func pullToRefreshScrollContainer<Content: View>(
+        minHeight: CGFloat,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: .infinity, minHeight: minHeight)
+        }
+        .refreshable {
+            await refreshTasks()
+        }
+    }
+
+    private func refreshTasks() async {
+        if let onRefresh {
+            await onRefresh()
+        } else {
+            await viewModel.loadTasks()
+        }
+    }
+
     /// 周历下方置顶：`is_all_day` 任务专用紧凑卡片（标题 + 为了谁），横向滑动。
     /// 左侧「全天」与时间列同宽左对齐；卡片宽度与锚点行右侧任务卡一致（随 ScrollView 可视宽度）。
     private var allDayTasksPinnedStrip: some View {
         HStack(alignment: .top, spacing: ScheduleTimelineMetrics.rowSpacing) {
-            Text("全天")
+            Text("All day")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
@@ -322,9 +358,9 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", title: String(localized: "Dinner Together"), dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", title: String(localized: "Grocery List"), dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", title: String(localized: "Kids Activity"), dueDateKind: .nextSaturdayFromSelected)
+                actionChip(emoji: "✨", titleKey: "Dinner Together", dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", titleKey: "Grocery List", dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", titleKey: "Kids Activity", dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -332,15 +368,15 @@ struct TaskModeDayView: View {
     }
 
     /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
-    private func actionChip(emoji: String, title: String, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
+    private func actionChip(emoji: String, titleKey: String, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
         Button {
-            onQuickCreate(title, defaultDueDate(for: dueDateKind))
+            onQuickCreate(AppLocalized.string(titleKey, locale: locale), defaultDueDate(for: dueDateKind))
         } label: {
             HStack(spacing: 10) {
                 Text(emoji)
                     .font(.system(size: 22))
                     .fixedSize()
-                Text(title)
+                Text(LocalizedStringKey(titleKey))
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
             }

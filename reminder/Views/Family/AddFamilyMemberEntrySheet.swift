@@ -17,8 +17,8 @@ struct AddFamilyMemberEntrySheet: View {
                     } label: {
                         entryRow(
                             icon: "paperplane.fill",
-                            title: "邀请成员加入",
-                            subtitle: "发送邀请链接，对方可使用自己的手机登录并互动。"
+                            title: "Invite member to join",
+                            subtitle: "Send an invite link so they can sign in on their phone and participate."
                         )
                     }
                     .buttonStyle(.plain)
@@ -29,19 +29,19 @@ struct AddFamilyMemberEntrySheet: View {
                         } label: {
                             entryRow(
                                 icon: "person.text.rectangle",
-                                title: "创建成员档案",
-                                subtitle: "无需手机号，由您直接替 Ta 记录任务（适合小孩子或长辈）。"
+                                title: "Create member profile",
+                                subtitle: "No phone number needed—you can record tasks on their behalf (great for kids or elders)."
                             )
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
-            .navigationTitle("添加群组成员")
+            .navigationTitle("Add group members")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("关闭") {
+                    Button("Close") {
                         dismiss()
                     }
                 }
@@ -49,7 +49,7 @@ struct AddFamilyMemberEntrySheet: View {
         }
     }
 
-    private func entryRow(icon: String, title: String, subtitle: String) -> some View {
+    private func entryRow(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
                 .font(.title2)

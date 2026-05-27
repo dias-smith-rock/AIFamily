@@ -5,6 +5,7 @@ struct TaskModeListView: View {
     @ObservedObject var viewModel: ScheduleViewModel
     var listScrollToken: Int = 0
     var onTaskTap: ((FamilyTask) -> Void)?
+    var onRefresh: (() async -> Void)?
 
     /// 按日历日分组（忽略时分），日期升序；组内按锚点时间升序。
     private var groupedTasks: [(Date, [FamilyTask])] {
@@ -24,22 +25,27 @@ struct TaskModeListView: View {
     var body: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("正在加载任务...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ProgressView("正在加载任务...")
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 120)
+                }
             } else if let message = viewModel.errorMessage {
-                ContentUnavailableView {
-                    Label("加载失败", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(message)
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ContentUnavailableView {
+                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(message)
+                    }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.tasks.isEmpty {
-                ContentUnavailableView {
-                    Label("暂无任务", systemImage: "checklist")
-                } description: {
-                    Text("创建任务后将显示在此列表。")
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ContentUnavailableView {
+                        Label("暂无任务", systemImage: "checklist")
+                    } description: {
+                        Text("创建任务后将显示在此列表。")
+                    }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -66,6 +72,9 @@ struct TaskModeListView: View {
                         .padding(.vertical, 12)
                         .padding(.bottom, 24)
                     }
+                    .refreshable {
+                        await onRefresh?()
+                    }
                     .onChange(of: listScrollToken) { _, _ in
                         scrollToTargetTask(using: proxy)
                     }
@@ -74,6 +83,19 @@ struct TaskModeListView: View {
                     }
                 }
             }
+        }
+    }
+
+    private func pullToRefreshScrollContainer<Content: View>(
+        minHeight: CGFloat,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: .infinity, minHeight: minHeight)
+        }
+        .refreshable {
+            await onRefresh?()
         }
     }
 
@@ -122,6 +144,8 @@ private struct TaskModeListDaySection: Identifiable {
 // MARK: - Minimal row
 
 private struct TaskModeListMinimalRow: View {
+    @Environment(\.locale) private var locale
+
     let task: FamilyTask
     let forWhomAvatars: [TaskCardAvatarSource]
 
@@ -171,7 +195,7 @@ private struct TaskModeListMinimalRow: View {
 
     private var timeRangeLabel: String {
         if task.isAllDay {
-            return "全天"
+            return AppLocalized.string("All day", locale: locale)
         }
         let cal = Calendar.current
         let start = task.dueDate ?? task.originalDueDate ?? task.createdAt

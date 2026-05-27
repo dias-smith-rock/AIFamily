@@ -38,7 +38,8 @@ struct TaskListView: View {
                         TaskModeListView(
                             viewModel: viewModel,
                             listScrollToken: listScrollToken,
-                            onTaskTap: { taskForDetailSheet = $0 }
+                            onTaskTap: { taskForDetailSheet = $0 },
+                            onRefresh: refreshTasks
                         )
                     case .day:
                         TaskModeDayView(
@@ -50,7 +51,8 @@ struct TaskListView: View {
                                 createTaskDueDateOverride = dueOverride
                                 createTaskFormInstanceID = UUID()
                                 isShowingCreateTaskSheet = true
-                            }
+                            },
+                            onRefresh: refreshTasks
                         )
                     case .threeDay, .week, .month, .year:
                         Text("开发中...")
@@ -174,7 +176,7 @@ struct TaskListView: View {
                         currentViewMode = mode
                     } label: {
                         HStack {
-                            Text(mode.menuTitle)
+                            Text(mode.menuTitleKey)
                             Spacer(minLength: 8)
                             if mode == currentViewMode {
                                 Image(systemName: "checkmark")
@@ -325,6 +327,12 @@ struct TaskListView: View {
         await refreshCurrentMembershipRole()
         await viewModel.loadTasks()
         await viewModel.setupRealtimeListener()
+    }
+
+    @MainActor
+    private func refreshTasks() async {
+        await refreshCurrentMembershipRole()
+        await viewModel.loadTasks()
     }
 
     private func refreshCurrentMembershipRole() async {

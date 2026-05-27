@@ -8,16 +8,24 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    var settingsTitle: String {
+    var settingsTitleKey: LocalizedStringKey {
         switch self {
-        case .system: return String(localized: "Follow System")
-        case .light: return String(localized: "Light Mode")
-        case .dark: return String(localized: "Dark Mode")
+        case .system: return "Follow System"
+        case .light: return "Light Mode"
+        case .dark: return "Dark Mode"
         }
     }
 
-    var listValueTitle: String {
-        settingsTitle
+    var settingsLocalizationKey: String {
+        switch self {
+        case .system: return "Follow System"
+        case .light: return "Light Mode"
+        case .dark: return "Dark Mode"
+        }
+    }
+
+    func valueTitle(locale: Locale) -> String {
+        AppLocalized.string(settingsLocalizationKey, locale: locale)
     }
 
     var colorScheme: ColorScheme? {

@@ -32,6 +32,8 @@ private enum CreateTaskFocusField: Hashable {
 
 /// 「时间设置 + 重复设置」与标题输入解耦：仅在令牌字段变化时重绘，减轻 TextEditor 输入时的卡顿。
 private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
+    @Environment(\.locale) private var locale
+
     let dueDateToken: Date
     let isAllDayToken: Bool
     let durationPickerToken: Date
@@ -115,7 +117,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                     Spacer(minLength: 8)
                     Picker("重复", selection: $selectedRecurrence) {
                         ForEach(TaskRecurrenceRule.allCases) { rule in
-                            Text(rule.displayName).tag(rule)
+                            Text(rule.displayName(locale: locale)).tag(rule)
                         }
                     }
                     .pickerStyle(.menu)
@@ -190,6 +192,7 @@ private struct TaskClearSeriesLinksPatch: Encodable {
 
 struct CreateTaskView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
 
     @FocusState private var focusedField: CreateTaskFocusField?
@@ -504,9 +507,12 @@ struct CreateTaskView: View {
 
     private var titlePlaceholderText: String {
         if isShowingMoreOptions {
-            return "准备做什么？可以说：明天下午花 500 港币带老大去洗牙……"
+            return AppLocalized.string(
+                "What would you like to do? For example: tomorrow afternoon take the kids to the dentist…",
+                locale: locale
+            )
         }
-        return "准备做什么？"
+        return AppLocalized.string("What would you like to do?", locale: locale)
     }
 
     private var forWhomCard: some View {
@@ -529,7 +535,7 @@ struct CreateTaskView: View {
                     Spacer()
                     Picker("", selection: $reminderOption) {
                         ForEach(TaskReminderOption.allCases) { option in
-                            Text(option.title).tag(option)
+                            Text(option.title(locale: locale)).tag(option)
                         }
                     }
                     .labelsHidden()
@@ -1390,15 +1396,19 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String {
+    var localizationKey: String {
         switch self {
-        case .none: return "无"
-        case .atTimeOfEvent: return "准时"
-        case .minutesBefore5: return "提前5分钟"
-        case .minutesBefore15: return "提前15分钟"
-        case .minutesBefore30: return "提前30分钟"
-        case .hourBefore1: return "提前1小时"
+        case .none: return "None"
+        case .atTimeOfEvent: return "On time"
+        case .minutesBefore5: return "5 minutes before"
+        case .minutesBefore15: return "15 minutes before"
+        case .minutesBefore30: return "30 minutes before"
+        case .hourBefore1: return "1 hour before"
         }
+    }
+
+    func title(locale: Locale) -> String {
+        AppLocalized.string(localizationKey, locale: locale)
     }
 
     var reminderOffsetsMinutes: [Int]? {

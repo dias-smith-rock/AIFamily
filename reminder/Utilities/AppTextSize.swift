@@ -9,14 +9,18 @@ enum AppTextSize: Int, CaseIterable, Identifiable, Codable {
 
     var id: Int { rawValue }
 
-    var title: String {
+    var localizationKey: String {
         switch self {
-        case .tiny: return String(localized: "极小")
-        case .small: return String(localized: "较小")
-        case .standard: return String(localized: "标准")
-        case .large: return String(localized: "较大")
-        case .extraLarge: return String(localized: "特大")
+        case .tiny: return "Extra Small"
+        case .small: return "Small"
+        case .standard: return "Standard"
+        case .large: return "Large"
+        case .extraLarge: return "Extra Large"
         }
+    }
+
+    func title(locale: Locale) -> String {
+        AppLocalized.string(localizationKey, locale: locale)
     }
 
     var dynamicTypeSize: DynamicTypeSize {

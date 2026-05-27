@@ -4,6 +4,7 @@ import SwiftUI
 struct CalendarSheetView: View {
     @Binding var selectedDate: Date
     let monthTaskDots: [Date: [Color]]
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @State private var monthOffset = 0
     @State private var headerMonth: Date
@@ -47,7 +48,7 @@ struct CalendarSheetView: View {
             }
 
             HStack {
-                ForEach(Calendar.current.shortWeekdaySymbols, id: \.self) { symbol in
+                ForEach(localizedShortWeekdaySymbols, id: \.self) { symbol in
                     Text(symbol)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
@@ -110,7 +111,13 @@ struct CalendarSheetView: View {
     }
 
     private var headerText: String {
-        headerMonth.formatted(.dateTime.month(.wide).year())
+        headerMonth.formatted(.dateTime.month(.wide).year().locale(locale))
+    }
+
+    private var localizedShortWeekdaySymbols: [String] {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = locale
+        return calendar.shortWeekdaySymbols
     }
 
     private func monthGridCells(for monthBaseDate: Date) -> [Date?] {

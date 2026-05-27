@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// 日程 / 任务主页的全局视图模式（与 Apple Calendar 类似的分栏）。
 enum CalendarViewMode: String, CaseIterable {
@@ -12,14 +13,14 @@ enum CalendarViewMode: String, CaseIterable {
     /// 顶栏视图切换菜单中当前可用的模式（未实现的选项暂不展示）。
     static let menuCases: [CalendarViewMode] = [.list, .day]
 
-    var menuTitle: String {
+    var menuTitleKey: LocalizedStringKey {
         switch self {
-        case .list: return String(localized: "List")
-        case .day: return String(localized: "Day")
-        case .threeDay: return String(localized: "3 Day")
-        case .week: return String(localized: "Week")
-        case .month: return String(localized: "Month")
-        case .year: return String(localized: "Year")
+        case .list: return "List"
+        case .day: return "Day"
+        case .threeDay: return "3 Day"
+        case .week: return "Week"
+        case .month: return "Month"
+        case .year: return "Year"
         }
     }
 }
