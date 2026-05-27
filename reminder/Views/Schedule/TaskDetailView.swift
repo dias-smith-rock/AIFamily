@@ -278,16 +278,22 @@ struct TaskDetailView: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                timePlanningLine(label: "开始时间") {
-                    Text(timePlanningStartText)
-                }
-                if let endText = timePlanningEndText {
-                    timePlanningLine(label: "结束时间") {
-                        Text(endText)
+                if task.isAllDay {
+                    timePlanningLine(label: "时间") {
+                        Text("全天")
                     }
-                }
-                timePlanningLine(label: "总花费时间") {
-                    TaskDurationText(minutes: task.durationMinutes)
+                } else {
+                    timePlanningLine(label: "开始时间") {
+                        Text(timePlanningStartText)
+                    }
+                    if let endText = timePlanningEndText {
+                        timePlanningLine(label: "结束时间") {
+                            Text(endText)
+                        }
+                    }
+                    timePlanningLine(label: "总花费时间") {
+                        TaskDurationText(minutes: task.durationMinutes)
+                    }
                 }
             }
         }
@@ -831,38 +837,36 @@ struct TaskDetailView: View {
 
     // MARK: - 底部状态机
 
+    private func statusFooterPrimaryButton(
+        _ title: LocalizedStringKey,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(tint)
+        .disabled(isUpdatingStatus)
+    }
+
     private var statusMachineFooter: some View {
         VStack(spacing: 0) {
             Group {
                 switch task.status {
                 case .new:
-                    Button {
+                    statusFooterPrimaryButton("接受任务", tint: .orange) {
                         Task { await updateTaskStatus(to: .accepted) }
-                    } label: {
-                        Text("接受任务")
-                            .font(.body.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.orange)
-                    .controlSize(.large)
-                    .disabled(isUpdatingStatus)
 
                 case .accepted:
                     VStack(spacing: 12) {
-                        Button {
+                        statusFooterPrimaryButton("完成任务", tint: .green) {
                             Task { await updateTaskStatus(to: .completed) }
-                        } label: {
-                            Text("完成任务")
-                                .font(.body.weight(.semibold))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 16)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
-                        .controlSize(.large)
-                        .disabled(isUpdatingStatus)
 
                         Button {
                             Task { await updateTaskStatus(to: .issue) }
@@ -877,18 +881,9 @@ struct TaskDetailView: View {
                     }
 
                 case .inProgress:
-                    Button {
+                    statusFooterPrimaryButton("标记为完成", tint: .green) {
                         Task { await updateTaskStatus(to: .completed) }
-                    } label: {
-                        Text("标记为完成")
-                            .font(.body.weight(.semibold))
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
-                    .controlSize(.large)
-                    .disabled(isUpdatingStatus)
 
                 default:
                     Text("✅ 该任务已完结")
