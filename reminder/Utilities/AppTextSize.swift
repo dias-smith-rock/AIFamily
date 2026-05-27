@@ -11,11 +11,11 @@ enum AppTextSize: Int, CaseIterable, Identifiable, Codable {
 
     var localizationKey: String {
         switch self {
-        case .tiny: return "Extra Small"
-        case .small: return "Small"
-        case .standard: return "Standard"
-        case .large: return "Large"
-        case .extraLarge: return "Extra Large"
+        case .tiny: return "极小"
+        case .small: return "较小"
+        case .standard: return "标准"
+        case .large: return "较大"
+        case .extraLarge: return "特大"
         }
     }
 

@@ -207,25 +207,25 @@ struct FamilyView: View {
         } message: {
             Text(viewModel.transferSuccessToastMessage ?? "")
         }
-        .alert(String(localized: "Are you sure you want to leave this group?"), isPresented: $viewModel.showLeaveConfirmation) {
-            Button(String(localized: "Cancel"), role: .cancel) {}
-            Button(String(localized: "Leave Group"), role: .destructive) {
+        .alert(String(localized: "确定要退出该群组吗？"), isPresented: $viewModel.showLeaveConfirmation) {
+            Button(String(localized: "取消"), role: .cancel) {}
+            Button(String(localized: "退出群组"), role: .destructive) {
                 Task { await submitLeaveHousehold() }
             }
         } message: {
-            Text("After leaving, you won't be able to view tasks and messages in this group.")
+            Text("退出后您将无法查看群内的任务和消息。")
         }
-        .alert(String(localized: "Notice"), isPresented: $viewModel.showCreatorBlockAlert) {
-            Button(String(localized: "Got it"), role: .cancel) {}
+        .alert(String(localized: "提示"), isPresented: $viewModel.showCreatorBlockAlert) {
+            Button(String(localized: "知道了"), role: .cancel) {}
         } message: {
-            Text("You are the creator of this group. Transfer ownership or disband the group before leaving.")
+            Text("您是此群组的创建者。退出前请先转移所有权或解散群组。")
         }
-        .alert(String(localized: "Could not leave group"), isPresented: leaveErrorAlertBinding) {
-            Button(String(localized: "Got it"), role: .cancel) {
+        .alert(String(localized: "退出群组失败"), isPresented: leaveErrorAlertBinding) {
+            Button(String(localized: "知道了"), role: .cancel) {
                 viewModel.acknowledgeLeaveError()
             }
         } message: {
-            Text(viewModel.leaveErrorMessage ?? String(localized: "Please try again later."))
+            Text(viewModel.leaveErrorMessage ?? String(localized: "请稍后重试。"))
         }
     }
 
@@ -425,7 +425,7 @@ struct FamilyView: View {
                             }
                         }
 
-                        Text("Organization Profile")
+                        Text("组织资料")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -445,7 +445,7 @@ struct FamilyView: View {
 
     private var currentOrganizationDisplayName: String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? "Untitled Organization" : trimmed
+        return trimmed.isEmpty ? String(localized: "未命名组织") : trimmed
     }
 
     private func openOrganizationSettings() {
@@ -794,7 +794,7 @@ private struct OrganizationSettingsSheet: View {
             }
         } label: {
             settingsNavigationRow(
-                title: "Transfer ownership",
+                title: "转移所有权",
                 systemImage: "person.2.badge.gearshape"
             )
         }
@@ -815,7 +815,7 @@ private struct OrganizationSettingsSheet: View {
                 HStack(spacing: 12) {
                     Image(systemName: "trash.fill")
                         .font(.body)
-                    Text("Disband Group")
+                    Text("解散群组")
                         .font(.body.weight(.semibold))
                     Spacer(minLength: 8)
                 }
@@ -846,7 +846,7 @@ private struct OrganizationSettingsSheet: View {
                     } else {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .font(.body)
-                        Text("Leave Group")
+                        Text("退出群组")
                             .font(.body.weight(.semibold))
                     }
                     Spacer(minLength: 8)

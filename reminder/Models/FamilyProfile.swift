@@ -113,7 +113,7 @@ struct FamilyProfile: Identifiable, Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try Self.decodeRequiredUUID(container: container, key: .id)
         householdId = try Self.decodeOptionalUUID(container: container, key: .householdId)
-        name = (try? container.decode(String.self, forKey: .name)) ?? String(localized: "Unnamed member")
+        name = (try? container.decode(String.self, forKey: .name)) ?? String(localized: "未命名成员")
         userId = try Self.decodeOptionalUUID(container: container, key: .userId)
         avatarUrl = try container.decodeIfPresent(String.self, forKey: .avatarUrl)
         gender = try container.decodeIfPresent(String.self, forKey: .gender)
@@ -364,7 +364,7 @@ extension FamilyProfile {
             }
         }
         let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if profileName.isEmpty == false, profileName != String(localized: "Unnamed member") {
+        if profileName.isEmpty == false, profileName != String(localized: "未命名成员") {
             return profileName
         }
         return MemberDisplayName.unknownFallback
@@ -380,7 +380,7 @@ extension FamilyProfile {
     /// `family_profiles.name` 档案全局名。
     var profileName: String? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false, trimmed != String(localized: "Unnamed member") else { return nil }
+        guard trimmed.isEmpty == false, trimmed != String(localized: "未命名成员") else { return nil }
         return trimmed
     }
 

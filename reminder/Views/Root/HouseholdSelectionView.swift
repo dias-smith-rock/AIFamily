@@ -82,12 +82,12 @@ struct HouseholdSelectionView: View {
                 showErrorAlert = true
             }
         }
-        .alert(String(localized: "Operation failed"), isPresented: $showErrorAlert) {
-            Button(String(localized: "Got it"), role: .cancel) {
+        .alert(String(localized: "操作失败"), isPresented: $showErrorAlert) {
+            Button(String(localized: "知道了"), role: .cancel) {
                 viewModel.acknowledgeError()
             }
         } message: {
-            Text(localErrorMessage ?? String(localized: "Please try again later."))
+            Text(localErrorMessage ?? String(localized: "请稍后重试。"))
         }
         .alert(AppLocalized.string("退出登录", locale: locale), isPresented: $viewModel.showSignOutAlert) {
             Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
@@ -210,10 +210,10 @@ struct HouseholdSelectionView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("From chaos to clarity.")
+            Text("从混乱到清晰。")
                 .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(.primary)
-            Text("Together, perfectly synced.")
+            Text("一起，完美同步。")
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .foregroundStyle(.secondary)
         }
@@ -384,7 +384,7 @@ struct HouseholdSelectionView: View {
     private func submitJoin() async {
         joinInputError = nil
         guard isInviteCodeValid else {
-            joinInputError = String(localized: "Invalid invite code format: must be 6 letters or digits.")
+            joinInputError = String(localized: "邀请码格式无效：必须为 6 位字母或数字。")
             return
         }
         guard isJoiningFullScreenLoading == false else { return }
@@ -622,7 +622,7 @@ private struct QRScannerSheet: UIViewControllerRepresentable {
         do {
             try scanner.startScanning()
         } catch {
-            onError(String(localized: "Could not start scanner. Please try again later."))
+            onError(String(localized: "无法启动扫描仪。请稍后重试。"))
         }
         return scanner
     }

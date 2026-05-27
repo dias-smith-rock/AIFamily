@@ -61,7 +61,7 @@ struct LoginView: View {
                 .scaledToFit()
                 .frame(width: 82, height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
-            Text("From chaos to clarity.\nTogether, perfectly synced.")
+            Text("从混乱到清晰。\n一起，完美同步。")
                 .font(AppTheme.FontToken.subtitle)
                 .foregroundStyle(.white.opacity(0.82))
                 .multilineTextAlignment(.center)
@@ -71,7 +71,7 @@ struct LoginView: View {
     private var actionSection: some View {
         VStack(spacing: 12) {
             loginButton(
-                title: "Continue with Google",
+                title: "使用 Google 继续",
                 icon: "g.circle.fill",
                 provider: .google,
                 background: Color.blue,
@@ -120,7 +120,7 @@ struct LoginView: View {
         Button {
             // 预留更多登录方式入口
         } label: {
-            Text("More")
+            Text("更多")
                 .font(.system(size: 31 / 2, weight: .medium))
                 .foregroundStyle(.white.opacity(0.8))
         }

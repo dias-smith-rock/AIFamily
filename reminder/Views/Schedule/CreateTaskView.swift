@@ -517,9 +517,9 @@ struct CreateTaskView: View {
     @ViewBuilder
     private var titlePlaceholder: some View {
         if isShowingMoreOptions {
-            Text("What would you like to do? For example: tomorrow afternoon take the kids to the dentist…")
+            Text("准备做什么？可以说：明天下午花 500 港币带老大去洗牙……")
         } else {
-            Text("What would you like to do?")
+            Text("准备做什么？")
         }
     }
 
@@ -1412,12 +1412,12 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
 
     var titleKey: LocalizedStringKey {
         switch self {
-        case .none: "None"
-        case .atTimeOfEvent: "On time"
-        case .minutesBefore5: "5 minutes before"
-        case .minutesBefore15: "15 minutes before"
-        case .minutesBefore30: "30 minutes before"
-        case .hourBefore1: "1 hour before"
+        case .none: "无"
+        case .atTimeOfEvent: "准时"
+        case .minutesBefore5: "提前5分钟"
+        case .minutesBefore15: "提前15分钟"
+        case .minutesBefore30: "提前30分钟"
+        case .hourBefore1: "提前1小时"
         }
     }
 

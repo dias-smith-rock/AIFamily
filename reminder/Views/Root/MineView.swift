@@ -167,7 +167,7 @@ struct MineView: View {
                     LanguageSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "Language",
+                        title: "语言",
                         systemImage: "globe",
                         iconTint: .blue,
                         value: appSettings.selectedLanguage.nativeName,
@@ -181,10 +181,10 @@ struct MineView: View {
                     #endif
                 } label: {
                     SettingsRowView(
-                        title: "Notifications",
+                        title: "通知",
                         systemImage: "bell.badge.fill",
                         iconTint: .red,
-                        subtitle: "Push & Sounds"
+                        subtitle: "推动和声音"
                     )
                 }
                 .buttonStyle(.plain)
@@ -193,7 +193,7 @@ struct MineView: View {
                     AppearanceSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "Theme",
+                        title: "主题",
                         systemImage: "moon.fill",
                         iconTint: .purple,
                         value: appSettings.appearance.valueTitle(locale: locale),
@@ -205,7 +205,7 @@ struct MineView: View {
                     TextSizeSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "Text Size",
+                        title: "文字大小",
                         systemImage: "textformat.size",
                         iconTint: .blue,
                         showsValue: false,
@@ -213,29 +213,29 @@ struct MineView: View {
                     )
                 }
             } header: {
-                mineSectionHeader("APP SETTINGS")
+                mineSectionHeader("应用设置")
             }
 
             if FeatureVisibility.showsIntegrationsSection {
                 Section {
                     mineNavigationRow(
-                        title: "Integrations",
+                        title: "集成",
                         systemImage: "link",
                         iconTint: .orange,
-                        subtitle: "FaceTime, WhatsApp"
+                        subtitle: "FaceTime、WhatsApp"
                     ) {
                         viewModel.tapRow(feature: AppLocalized.string("集成", locale: locale))
                     }
                     mineNavigationRow(
-                        title: "Import Events",
+                        title: "导入日程",
                         systemImage: "calendar",
                         iconTint: .green,
-                        subtitle: "Sync Calendar & Public Holidays"
+                        subtitle: "同步日历和公共假期"
                     ) {
                         viewModel.tapRow(feature: AppLocalized.string("导入日程", locale: locale))
                     }
                 } header: {
-                    mineSectionHeader("INTEGRATIONS & DATA")
+                    mineSectionHeader("集成和数据")
                 }
             }
 
@@ -244,7 +244,7 @@ struct MineView: View {
                     Task { await viewModel.contactSupport() }
                 } label: {
                     SettingsRowView(
-                        title: "Support",
+                        title: "支持",
                         systemImage: "lifepreserver.circle.fill",
                         iconTint: .cyan
                     )
@@ -255,7 +255,7 @@ struct MineView: View {
                     showTermsSheet = true
                 } label: {
                     SettingsRowView(
-                        title: "Terms of Service",
+                        title: "服务条款",
                         systemImage: "doc.text",
                         iconTint: Color.primary.opacity(0.55)
                     )
@@ -266,7 +266,7 @@ struct MineView: View {
                     showPrivacySheet = true
                 } label: {
                     SettingsRowView(
-                        title: "Privacy Policy",
+                        title: "隐私政策",
                         systemImage: "shield",
                         iconTint: .blue
                     )
@@ -277,14 +277,14 @@ struct MineView: View {
                     AboutView()
                 } label: {
                     SettingsRowView(
-                        title: "About WeFamily",
+                        title: "关于 WeFamily",
                         systemImage: "info.circle",
                         iconTint: .purple,
                         showsChevron: false
                     )
                 }
             } header: {
-                mineSectionHeader("SUPPORT & LEGAL")
+                mineSectionHeader("支持与法律")
             }
 
             Section {
@@ -296,7 +296,7 @@ struct MineView: View {
                         if viewModel.isSigningOut {
                             ProgressView()
                         } else {
-                            Text("Log Out")
+                            Text("退出登录")
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()
@@ -315,12 +315,12 @@ struct MineView: View {
                         if viewModel.isCheckingCreatorStatus {
                             ProgressView()
                                 .padding(.trailing, 4)
-                            Text("Delete Account")
+                            Text("永久注销账号")
                                 .font(AppTheme.FontToken.bodyStrong)
                         } else if viewModel.isDeletingAccount {
                             ProgressView()
                         } else {
-                            Text("Delete Account")
+                            Text("永久注销账号")
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()
@@ -331,7 +331,7 @@ struct MineView: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
             } header: {
-                mineSectionHeader("ACCOUNT")
+                mineSectionHeader("账户")
             }
         }
         .listStyle(.insetGrouped)
@@ -602,10 +602,10 @@ struct MineView: View {
                 .frame(width: 40, height: 40)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Upgrade to VIP")
+                    Text("升级 VIP")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text("Unlock premium features")
+                    Text("解锁高级功能")
                         .font(AppTheme.FontToken.caption)
                         .foregroundStyle(.secondary)
                 }

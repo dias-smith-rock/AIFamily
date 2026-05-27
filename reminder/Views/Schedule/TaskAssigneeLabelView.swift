@@ -9,11 +9,11 @@ struct TaskAssigneeLabelView: View {
 
     var body: some View {
         if task.involvesWholeHousehold {
-            Text("Everyone")
+            Text("所有人")
         } else if let ids = task.involvedMemberIds, ids.isEmpty == false {
             assigneeText(for: ids)
         } else {
-            Text("Everyone")
+            Text("所有人")
         }
     }
 
@@ -29,7 +29,7 @@ struct TaskAssigneeLabelView: View {
 
         if names.isEmpty {
             if ids.count == 1 {
-                Text("Member")
+                Text("成员")
             } else {
                 Text("\(ids.count) people")
             }

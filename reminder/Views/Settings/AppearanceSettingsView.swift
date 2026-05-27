@@ -28,10 +28,10 @@ struct AppearanceSettingsView: View {
                     .buttonStyle(.plain)
                 }
             } footer: {
-                Text("After changing the theme, the app switches display mode instantly.")
+                Text("更改主题后，应用会立即切换显示模式。")
             }
         }
-        .navigationTitle("Theme")
+        .navigationTitle("主题")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

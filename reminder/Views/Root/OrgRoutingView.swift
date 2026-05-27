@@ -85,12 +85,12 @@ struct OrgRoutingView: View {
                 showErrorAlert = true
             }
         }
-        .alert(String(localized: "Operation failed"), isPresented: $showErrorAlert) {
-            Button(String(localized: "Got it"), role: .cancel) {
+        .alert(String(localized: "操作失败"), isPresented: $showErrorAlert) {
+            Button(String(localized: "知道了"), role: .cancel) {
                 viewModel.acknowledgeError()
             }
         } message: {
-            Text(localErrorMessage ?? String(localized: "Please try again later."))
+            Text(localErrorMessage ?? String(localized: "请稍后重试。"))
         }
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
@@ -262,7 +262,7 @@ struct OrgRoutingView: View {
     private func submitJoin() async {
         joinInputError = nil
         guard isInviteCodeValid else {
-            joinInputError = String(localized: "Invalid invite code format: must be 6 letters or digits.")
+            joinInputError = String(localized: "邀请码格式无效：必须为 6 位字母或数字。")
             return
         }
         guard isJoiningFullScreenLoading == false else { return }
@@ -509,7 +509,7 @@ private struct QRScannerSheet: UIViewControllerRepresentable {
         do {
             try scanner.startScanning()
         } catch {
-            onError(String(localized: "Could not start scanner. Please try again later."))
+            onError(String(localized: "无法启动扫描仪。请稍后重试。"))
         }
         return scanner
     }

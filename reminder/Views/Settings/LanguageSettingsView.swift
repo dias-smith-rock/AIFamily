@@ -28,10 +28,10 @@ struct LanguageSettingsView: View {
                     .buttonStyle(.plain)
                 }
             } footer: {
-                Text("Language changes apply instantly across the app.")
+                Text("更改语言后，应用会立即切换显示语言。")
             }
         }
-        .navigationTitle("Language")
+        .navigationTitle("语言")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

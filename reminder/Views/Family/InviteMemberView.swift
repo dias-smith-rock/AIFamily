@@ -28,7 +28,7 @@ struct InviteMemberView: View {
                     Text(AppLocalized.string("邀请成员加入", locale: locale))
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
-                    Text("Ask the other party to use the WeFamily App to scan the code, or enter the invitation code below to join.")
+                    Text("让对方使用家音 App 扫码，或输入下方邀请码即可加入。")
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -150,7 +150,7 @@ struct InviteMemberView: View {
 
     private func inviteShareText(for inviteCode: String) -> String {
         let format = String(
-            localized: "You're invited to join a WeFamily group! Copy this invite code: %1$@, or scan the QR code in the app."
+            localized: "邀请你加入家音群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。"
         )
         return String(format: format, inviteCode)
     }

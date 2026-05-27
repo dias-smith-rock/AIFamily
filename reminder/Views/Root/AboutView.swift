@@ -14,10 +14,10 @@ struct AboutView: View {
                     .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
 
                 VStack(spacing: 8) {
-                    Text("From chaos to clarity.")
+                    Text("从混乱到清晰。")
                         .font(.title3.weight(.semibold))
                         .multilineTextAlignment(.center)
-                    Text("Together, perfectly synced.")
+                    Text("一起，完美同步。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -40,7 +40,7 @@ struct AboutView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("About WeFamily")
+        .navigationTitle("关于 WeFamily")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

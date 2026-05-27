@@ -265,7 +265,7 @@ struct TaskModeDayView: View {
     /// 左侧「全天」与时间列同宽左对齐；卡片宽度与锚点行右侧任务卡一致（随 ScrollView 可视宽度）。
     private var allDayTasksPinnedStrip: some View {
         HStack(alignment: .top, spacing: ScheduleTimelineMetrics.rowSpacing) {
-            Text("All day")
+            Text("全天")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
@@ -348,19 +348,19 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 8) {
-                Text("No tasks scheduled today")
+                Text("今天没有安排任务")
                     .font(.title3.bold())
                     .foregroundStyle(.primary)
-                Text("Enjoy your time together, or plan something new.")
+                Text("享受共同时光，或者计划一些新的事情。")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", titleKey: "Dinner Together", dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", titleKey: "Grocery List", dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", titleKey: "Kids Activity", dueDateKind: .nextSaturdayFromSelected)
+                actionChip(emoji: "✨", titleKey: "一起晚餐", dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", titleKey: "杂货清单", dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", titleKey: "儿童活动", dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -17,8 +17,8 @@ struct AddFamilyMemberEntrySheet: View {
                     } label: {
                         entryRow(
                             icon: "paperplane.fill",
-                            title: "Invite member to join",
-                            subtitle: "Send an invite link so they can sign in on their phone and participate."
+                            title: "邀请成员加入",
+                            subtitle: "发送邀请链接，对方可使用自己的手机登录并互动。"
                         )
                     }
                     .buttonStyle(.plain)
@@ -29,19 +29,19 @@ struct AddFamilyMemberEntrySheet: View {
                         } label: {
                             entryRow(
                                 icon: "person.text.rectangle",
-                                title: "Create member profile",
-                                subtitle: "No phone number needed—you can record tasks on their behalf (great for kids or elders)."
+                                title: "创建成员档案",
+                                subtitle: "无需手机号，由您直接替 Ta 记录任务（适合小孩子或长辈）。"
                             )
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
-            .navigationTitle("Add group members")
+            .navigationTitle("添加群组成员")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
+                    Button("关闭") {
                         dismiss()
                     }
                 }

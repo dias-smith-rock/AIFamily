@@ -24,14 +24,14 @@ private enum OrganizationSwitcherData {
             AppRouter.HouseholdOption(
                 id: householdId,
                 membershipId: membershipId,
-                name: name.isEmpty ? "Untitled Organization" : name
+                name: name.isEmpty ? String(localized: "未命名组织") : name
             )
         ]
     }
 
     static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? "Untitled Organization" : trimmed
+        return trimmed.isEmpty ? String(localized: "未命名组织") : trimmed
     }
 }
 
@@ -117,7 +117,7 @@ struct OrganizationSwitcherChevronButton: View {
             selectedHouseholdId: appRouter.selectedHouseholdId,
             onSelect: { appRouter.chooseHousehold($0) }
         )
-        .accessibilityLabel("Switch organization")
+        .accessibilityLabel("切换组织")
     }
 }
 
@@ -184,7 +184,7 @@ private struct OrganizationSwitcherPanel: View {
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 36, alignment: .center)
 
-                    Text("Create New Organization")
+                    Text("创建新组织")
                         .font(.body)
                         .foregroundStyle(Color.accentColor)
 
@@ -260,7 +260,7 @@ struct CreateOrganizationSheet: View {
         NavigationStack {
             List {
                 Section {
-                    TextField("Enter organization name...", text: $organizationName)
+                    TextField("输入组织名称…", text: $organizationName)
                         .textInputAutocapitalization(.words)
                         .disabled(isSubmitting)
                 } footer: {
@@ -271,11 +271,11 @@ struct CreateOrganizationSheet: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("Create Organization")
+            .navigationTitle("创建组织")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button("取消") {
                         dismiss()
                     }
                     .disabled(isSubmitting)
@@ -284,7 +284,7 @@ struct CreateOrganizationSheet: View {
                     if isSubmitting {
                         ProgressView()
                     } else {
-                        Button("Create") {
+                        Button("创建") {
                             Task { await onSubmit() }
                         }
                         .disabled(

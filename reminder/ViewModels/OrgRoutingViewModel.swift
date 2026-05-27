@@ -140,22 +140,22 @@ final class OrgRoutingViewModel: ObservableObject {
     }
 
     private enum Copy {
-        static let networkError = String(localized: "Network connection error. Please check your connection and try again.")
-        static let createHouseholdFailed = String(localized: "Failed to create group. Please try again later.")
-        static let joinHouseholdFailed = String(localized: "Could not join the group. Please try again later or contact the creator.")
-        static let emptyHouseholdName = String(localized: "Group name cannot be empty. Please enter a name before creating.")
-        static let invalidInviteCode = String(localized: "Invalid invite code. Please check and try again.")
-        static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
-        static let forbidden = String(localized: "You don't have permission to perform this action.")
-        static let householdNotFound = String(localized: "This group does not exist or has been deleted. Please refresh and try again.")
-        static let backendMigrationRequired = String(localized: "Backend upgrade required. Please apply the latest Supabase migration and try again.")
-        static let alreadyMember = String(localized: "You are already a member of this group.")
-        static let joinRequestPending = String(localized: "Your join request has been submitted. Please wait for admin approval.")
-        static let inviteCodeExpired = String(localized: "This invite code has expired. Please ask the creator to share a new one.")
-        static let inviteLinkUsed = String(localized: "This invite link has already been used. Please ask the admin for a new one.")
-        static let householdNameMismatch = String(localized: "Group name does not match. Please enter it again.")
-        static let disbandUnauthorized = String(localized: "Only the creator can disband this group.")
-        static let unknownError = String(localized: "Something went wrong. Please try again later.")
+        static let networkError = String(localized: "网络连接错误。请检查您的连接并重试。")
+        static let createHouseholdFailed = String(localized: "创建群组失败，请稍后重试。")
+        static let joinHouseholdFailed = String(localized: "加入群组失败，请稍后重试或联系群组创建者。")
+        static let emptyHouseholdName = String(localized: "群组名称不能为空，请输入后再创建。")
+        static let invalidInviteCode = String(localized: "邀请码无效。请检查并重试。")
+        static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
+        static let forbidden = String(localized: "您无权执行此操作。")
+        static let householdNotFound = String(localized: "群组不存在或已被删除，请刷新后重试。")
+        static let backendMigrationRequired = String(localized: "需要后端升级。请应用最新的 Supabase 迁移并重试。")
+        static let alreadyMember = String(localized: "您已经加入了该群组，无需重复添加。")
+        static let joinRequestPending = String(localized: "您的加入请求已提交。请等待管理员批准。")
+        static let inviteCodeExpired = String(localized: "该邀请码已过期。请创建者分享一个新的。")
+        static let inviteLinkUsed = String(localized: "该邀请链接已被使用。请向管理员询问新的。")
+        static let householdNameMismatch = String(localized: "群组名称不匹配，请重新输入。")
+        static let disbandUnauthorized = String(localized: "只有创建者才能解散该群组。")
+        static let unknownError = String(localized: "出了点问题。请稍后重试。")
     }
 
     private func mapErrorMessage(_ error: Error, action: ActionType) -> String {
@@ -208,7 +208,7 @@ final class OrgRoutingViewModel: ObservableObject {
         case .disbandUnauthorized:
             return Copy.disbandUnauthorized
         case .creatorCannotLeave:
-            return String(localized: "You are the creator of this group. Transfer ownership or disband the group before leaving.")
+            return String(localized: "您是此群组的创建者。退出前请先转移所有权或解散群组。")
         case .transferUnauthorized, .transferInvalidTarget:
             return Copy.unknownError
         case .unknown:

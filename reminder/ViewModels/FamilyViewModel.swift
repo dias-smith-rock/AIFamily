@@ -214,12 +214,12 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private enum LeaveCopy {
-        static let creatorCannotLeave = String(localized: "You are the creator of this group. Transfer ownership or disband the group before leaving.")
-        static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
-        static let householdNotFound = String(localized: "This group does not exist or has been deleted.")
-        static let backendMigrationRequired = String(localized: "Backend upgrade required. Please apply the latest Supabase migration and try again.")
-        static let forbidden = String(localized: "You don't have permission to perform this action.")
-        static let leaveFailed = String(localized: "Could not leave the group. Please try again later.")
+        static let creatorCannotLeave = String(localized: "您是此群组的创建者。退出前请先转移所有权或解散群组。")
+        static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
+        static let householdNotFound = String(localized: "该群组不存在或已被删除。")
+        static let backendMigrationRequired = String(localized: "需要后端升级。请应用最新的 Supabase 迁移并重试。")
+        static let forbidden = String(localized: "您无权执行此操作。")
+        static let leaveFailed = String(localized: "退出群组失败，请稍后重试。")
     }
 
     private func mapLeaveErrorMessage(_ error: Error) -> String {
@@ -261,25 +261,25 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private enum ProfileManagementCopy {
-        static let noHouseholdSelected = String(localized: "No group is selected.")
-        static let displayNameRequired = String(localized: "Display name cannot be empty.")
-        static let nicknameRequired = String(localized: "Please enter a role name (cannot be empty).")
-        static let cannotEditProfile = String(localized: "You do not have permission to edit this member profile.")
-        static let householdNameMismatch = String(localized: "Group name does not match. Please enter it again.")
-        static let disbandUnauthorized = String(localized: "Only the creator can disband this group.")
-        static let sessionExpired = String(localized: "Your sign-in session has expired. Please sign in again.")
-        static let householdNotFound = String(localized: "This group does not exist or has been deleted.")
+        static let noHouseholdSelected = String(localized: "当前未选择群组。")
+        static let displayNameRequired = String(localized: "称呼不能为空。")
+        static let nicknameRequired = String(localized: "请输入角色称呼（不能为空）。")
+        static let cannotEditProfile = String(localized: "当前没有权限修改该成员资料。")
+        static let householdNameMismatch = String(localized: "群组名称不匹配，请重新输入。")
+        static let disbandUnauthorized = String(localized: "只有创建者才能解散该群组。")
+        static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
+        static let householdNotFound = String(localized: "该群组不存在或已被删除。")
         static let backendMigrationRequired = String(
-            localized: "Backend upgrade required. Please apply the latest Supabase migration and try again."
+            localized: "需要后端升级。请应用最新的 Supabase 迁移并重试。"
         )
-        static let networkFailure = String(localized: "Network connection error. Please check your connection and try again.")
-        static let renameHouseholdEmpty = String(localized: "Group name cannot be empty.")
-        static let renameHouseholdTaken = String(localized: "This group name is already taken. Please choose another name.")
-        static let renameForbidden = String(localized: "Only the creator or an admin can change the group name.")
+        static let networkFailure = String(localized: "网络连接错误。请检查您的连接并重试。")
+        static let renameHouseholdEmpty = String(localized: "群组名称不能为空。")
+        static let renameHouseholdTaken = String(localized: "该群组名称已被占用，请换一个名称。")
+        static let renameForbidden = String(localized: "仅创建者或管理员可以修改群组名称。")
         static let renameHouseholdNotFoundRefresh = String(
-            localized: "This group does not exist or has been deleted. Please refresh and try again."
+            localized: "群组不存在或已被删除，请刷新后重试。"
         )
-        static let renameFailed = String(localized: "Failed to rename the group. Please try again later.")
+        static let renameFailed = String(localized: "重命名群组失败，请稍后重试。")
     }
 
     private func mapDisbandErrorMessage(_ error: Error) -> String {

@@ -29,7 +29,7 @@ enum MembershipRole: String, Codable, Equatable {
         switch self {
         case .creator: return String(localized: "创建者")
         case .admin: return String(localized: "管理员")
-        case .member: return String(localized: "Member")
+        case .member: return String(localized: "成员")
         }
     }
 
@@ -38,7 +38,7 @@ enum MembershipRole: String, Codable, Equatable {
         switch self {
         case .creator: "创建者"
         case .admin: "管理员"
-        case .member: "Member"
+        case .member: "成员"
         }
     }
 }
@@ -70,14 +70,14 @@ enum TaskStatus: String, Codable, Equatable, Sendable {
     /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
     var localizedName: LocalizedStringKey {
         switch self {
-        case .new: "Pending acceptance"
-        case .accepted: "Accepted"
-        case .inProgress: "In progress"
-        case .completed: "Completed"
-        case .issue: "Issue reported"
-        case .failed: "Failed"
-        case .expired: "Expired"
-        case .cancelled: "Cancelled"
+        case .new: "待接受"
+        case .accepted: "已接受"
+        case .inProgress: "进行中"
+        case .completed: "已完成"
+        case .issue: "遇到问题"
+        case .failed: "执行失败"
+        case .expired: "已过期"
+        case .cancelled: "已取消"
         }
     }
 }
@@ -90,8 +90,8 @@ enum TaskPriority: String, Codable, Equatable, CaseIterable {
 
     var localizedName: LocalizedStringKey {
         switch self {
-        case .urgent, .high: "🔴 Urgent"
-        case .normal, .low: "🟢 Normal"
+        case .urgent, .high: "🔴 紧急"
+        case .normal, .low: "🟢 一般"
         }
     }
 }

@@ -48,7 +48,7 @@ struct TextSizeSettingsView: View {
                 Text("调整字体大小后，应用内文字会同步放大或缩小。")
             }
         }
-        .navigationTitle("Text Size")
+        .navigationTitle("文字大小")
         .navigationBarTitleDisplayMode(.inline)
     }
 

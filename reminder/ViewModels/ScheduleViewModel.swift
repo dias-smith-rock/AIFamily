@@ -353,10 +353,10 @@ final class ScheduleViewModel: ObservableObject {
 
     func assigneeLabel(for task: FamilyTask, locale: Locale) -> String {
         if task.involvesWholeHousehold {
-            return AppLocalized.string("Everyone", locale: locale)
+            return AppLocalized.string("所有人", locale: locale)
         }
         guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
-            return AppLocalized.string("Everyone", locale: locale)
+            return AppLocalized.string("所有人", locale: locale)
         }
         let names = ids.compactMap { id in
             MemberDisplayName.displayName(
@@ -367,10 +367,10 @@ final class ScheduleViewModel: ObservableObject {
         }
         if names.isEmpty {
             if ids.count == 1 {
-                return AppLocalized.string("Member", locale: locale)
+                return AppLocalized.string("成员", locale: locale)
             }
             return String(
-                format: AppLocalized.string("%lld people", locale: locale),
+                format: AppLocalized.string("%lld 人", locale: locale),
                 ids.count
             )
         }

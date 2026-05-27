@@ -196,7 +196,7 @@ private struct TaskModeListMinimalRow: View {
 
     private var timeRangeLabel: String {
         if task.isAllDay {
-            return AppLocalized.string("All day", locale: locale)
+            return AppLocalized.string("全天", locale: locale)
         }
         let cal = Calendar.current
         let start = task.dueDate ?? task.originalDueDate ?? task.createdAt

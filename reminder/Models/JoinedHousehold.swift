@@ -79,7 +79,7 @@ struct HouseholdBasicInfo: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try Self.decodeUUID(from: container, key: .id)
-        name = (try? container.decode(String.self, forKey: .name)) ?? String(localized: "Unnamed group")
+        name = (try? container.decode(String.self, forKey: .name)) ?? String(localized: "未命名群组")
         status = try container.decodeIfPresent(String.self, forKey: .status)
     }
 
@@ -125,7 +125,7 @@ struct HouseholdBasicInfo: Codable, Equatable {
 extension JoinedHousehold {
     var displayHouseholdName: String {
         let trimmed = household?.name.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? String(localized: "Unnamed group") : trimmed
+        return trimmed.isEmpty ? String(localized: "未命名群组") : trimmed
     }
 
     var normalizedRole: String? {

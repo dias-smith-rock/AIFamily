@@ -4,13 +4,13 @@ import SwiftUI
 enum TaskReminderLabel {
     static func titleKey(forMinutes minutes: Int) -> LocalizedStringKey {
         switch minutes {
-        case 0: "On time"
-        case 5: "5 minutes before"
-        case 10: "10 minutes before"
-        case 15: "15 minutes before"
-        case 30: "30 minutes before"
-        case 60: "1 hour before"
-        default: "%lld minutes before"
+        case 0: "准时"
+        case 5: "提前5分钟"
+        case 10: "提前10分钟"
+        case 15: "提前15分钟"
+        case 30: "提前30分钟"
+        case 60: "提前1小时"
+        default: "提前%lld分钟"
         }
     }
 
@@ -27,12 +27,12 @@ enum TaskReminderLabel {
                     case 0, 5, 10, 15, 30, 60:
                         Text(titleKey(forMinutes: minutes))
                     default:
-                        Text("\(minutes) minutes before")
+                        Text("提前\(minutes)分钟")
                     }
                 }
             }
         } else {
-            Text("None")
+            Text("无")
         }
     }
 }

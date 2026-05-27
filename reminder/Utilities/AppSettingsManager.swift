@@ -10,17 +10,17 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
 
     var settingsTitleKey: LocalizedStringKey {
         switch self {
-        case .system: return "Follow System"
-        case .light: return "Light Mode"
-        case .dark: return "Dark Mode"
+        case .system: return "跟随系统"
+        case .light: return "浅色模式"
+        case .dark: return "深色模式"
         }
     }
 
     var settingsLocalizationKey: String {
         switch self {
-        case .system: return "Follow System"
-        case .light: return "Light Mode"
-        case .dark: return "Dark Mode"
+        case .system: return "跟随系统"
+        case .light: return "浅色模式"
+        case .dark: return "深色模式"
         }
     }
 

@@ -206,7 +206,7 @@ struct TaskDetailView: View {
             Image(systemName: "calendar.badge.lock")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Text("This event was synced from an external calendar and cannot be edited in the app.")
+            Text("此日程由外部同步，暂不支持在应用内修改")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -692,7 +692,7 @@ struct TaskDetailView: View {
                 .onTapGesture {
                     openURL(url)
                 }
-                .accessibilityHint("Double tap to call or open the link")
+                .accessibilityHint("轻点两下以拨打或打开链接")
         } else {
             Text(raw)
                 .font(.body)
@@ -768,11 +768,11 @@ struct TaskDetailView: View {
     @ViewBuilder
     private var costValueView: some View {
         if costIsEmpty {
-            Text("None")
+            Text("无")
         } else if let minor = task.estimatedCost {
             Text(verbatim: formattedCostAmount(minorUnits: minor))
         } else {
-            Text("None")
+            Text("无")
         }
     }
 
@@ -978,7 +978,7 @@ struct TaskDetailView: View {
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
                     statusError = String(
-                        localized: "Could not resolve the recurring series group; bulk delete is unavailable.",
+                        localized: "无法解析重复任务分组，无法批量删除。",
                         locale: locale
                     )
                     return
@@ -1000,13 +1000,13 @@ struct TaskDetailView: View {
             dismiss()
         } catch {
             statusError = String(
-                format: String(localized: "Delete failed: %@", locale: locale),
+                format: String(localized: "删除失败：%@", locale: locale),
                 error.localizedDescription
             )
         }
         #else
         _ = scope
-        statusError = String(localized: "Supabase SDK is not available in this build.", locale: locale)
+        statusError = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
         #endif
     }
 }

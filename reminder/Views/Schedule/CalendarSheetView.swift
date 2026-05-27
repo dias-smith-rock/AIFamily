@@ -24,7 +24,7 @@ struct CalendarSheetView: View {
                 Text(headerText)
                     .font(.title2.bold())
                 Spacer()
-                Button("Today") {
+                Button("今天") {
                     selectedDate = dayID(Date())
                     withAnimation(.easeInOut(duration: 0.25)) {
                         monthOffset = 0
