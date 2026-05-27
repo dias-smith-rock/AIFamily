@@ -1687,9 +1687,6 @@
         }
       }
     },
-    "Admin" : {
-
-    },
     "After changing the theme, the app switches display mode instantly." : {
       "localizations" : {
         "ar" : {
@@ -3027,9 +3024,6 @@
           }
         }
       }
-    },
-    "Creator" : {
-
     },
     "Custom" : {
       "extractionState" : "stale",
@@ -9788,7 +9782,6 @@
       }
     },
     "上传中..." : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -10836,7 +10829,6 @@
       }
     },
     "体重 (kg)" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11537,6 +11529,9 @@
         }
       }
     },
+    "创建成员档案" : {
+
+    },
     "创建新群组" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -11715,7 +11710,6 @@
       }
     },
     "创建者" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12473,7 +12467,6 @@
       }
     },
     "基础信息" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12484,7 +12477,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Basic information"
+            "value" : "Basic Info"
           }
         },
         "es" : {
@@ -12532,7 +12525,6 @@
       }
     },
     "备用手机号" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12543,7 +12535,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alternate mobile phone number"
+            "value" : "Alternate Phone"
           }
         },
         "es" : {
@@ -12586,6 +12578,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "備用手機號"
+          }
+        }
+      }
+    },
+    "女" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Female"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "女"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "女"
           }
         }
       }
@@ -12941,7 +12955,6 @@
       }
     },
     "就读学校" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -13468,7 +13481,6 @@
       }
     },
     "当前年级" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -13822,7 +13834,6 @@
       }
     },
     "性别" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14175,7 +14186,6 @@
       }
     },
     "成员头像" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14186,7 +14196,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Member avatar"
+            "value" : "Profile Photo"
           }
         },
         "es" : {
@@ -14352,7 +14362,6 @@
       }
     },
     "成长数据" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14363,7 +14372,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "growth data"
+            "value" : "Growth Data"
           }
         },
         "es" : {
@@ -14704,7 +14713,6 @@
       }
     },
     "手机号" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -14715,7 +14723,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Phone number"
+            "value" : "Phone Number"
           }
         },
         "es" : {
@@ -15173,7 +15181,6 @@
       }
     },
     "护照号" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15875,7 +15882,6 @@
       }
     },
     "教育与证件" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -15992,7 +15998,6 @@
       }
     },
     "旅行证 / 回乡证号" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -16925,6 +16930,64 @@
         }
       }
     },
+    "暂无联系方式" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا توجد معلومات اتصال"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No contact info"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin información de contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune coordonnée"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कोई संपर्क जानकारी नहीं"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem informações de contato"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "தொடர்பு தகவல் இல்லை"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无联系方式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無聯絡方式"
+          }
+        }
+      }
+    },
     "更多细节" : {
       "localizations" : {
         "ar" : {
@@ -17160,6 +17223,28 @@
         }
       }
     },
+    "未设置" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not Set"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未设置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未設定"
+          }
+        }
+      }
+    },
     "权限变更通知" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -17278,7 +17363,6 @@
       }
     },
     "档案" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -17289,7 +17373,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "file"
+            "value" : "Profile"
           }
         },
         "es" : {
@@ -17337,7 +17421,6 @@
       }
     },
     "档案成员" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19157,7 +19240,6 @@
       }
     },
     "生日" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -19211,6 +19293,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "生日"
+          }
+        }
+      }
+    },
+    "男" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Male"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "男"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "男"
           }
         }
       }
@@ -20218,7 +20322,6 @@
       }
     },
     "称呼 (如：大宝、旺财) *" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -20336,7 +20439,6 @@
       }
     },
     "管理员" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -20347,7 +20449,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "administrator"
+            "value" : "Admin"
           }
         },
         "es" : {
@@ -21036,6 +21138,28 @@
         }
       }
     },
+    "编辑资料" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit Profile"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑资料"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯資料"
+          }
+        }
+      }
+    },
     "群组" : {
       "localizations" : {
         "ar" : {
@@ -21095,7 +21219,6 @@
       }
     },
     "群组成员" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -21106,7 +21229,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Group members"
+            "value" : "Members"
           }
         },
         "es" : {
@@ -21213,7 +21336,6 @@
       }
     },
     "联系方式" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -21859,7 +21981,6 @@
       }
     },
     "设置生日" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -21870,7 +21991,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "set birthday"
+            "value" : "Set Birthday"
           }
         },
         "es" : {
@@ -22794,7 +22915,6 @@
       }
     },
     "身份证件号码" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -22853,7 +22973,6 @@
       }
     },
     "身高 (cm)" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -23972,7 +24091,6 @@
       }
     },
     "选择头像" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -23983,7 +24101,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select avatar"
+            "value" : "Choose Photo"
           }
         },
         "es" : {
@@ -24325,7 +24443,6 @@
       }
     },
     "邮箱" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

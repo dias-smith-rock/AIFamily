@@ -15,6 +15,7 @@ private enum AddMemberRoute: Identifiable, Equatable {
 struct FamilyView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var addMemberRoute: AddMemberRoute?
@@ -35,7 +36,7 @@ struct FamilyView: View {
             VStack(spacing: 0) {
                 GlobalHeaderView(
                     leading: {
-                        Text(AppLocalized.string("群组", locale: locale))
+                        Text("群组")
                             .font(.title2.weight(.bold))
                             .foregroundStyle(.primary)
                     },
@@ -130,6 +131,8 @@ struct FamilyView: View {
                     await viewModel.createLocalProfile(householdId: householdId, draft: draft)
                 }
             )
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
         }
         .sheet(isPresented: $isShowingLoginSheet) {
             FamilySessionLoginSheet(viewModel: authViewModel) {
@@ -154,6 +157,8 @@ struct FamilyView: View {
                     await viewModel.updateProfile(profile, draft: draft)
                 }
             )
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
         }
         .fullScreenCover(item: $selectedProfileForDetail) { profile in
             ProfileDetailView(
@@ -450,7 +455,7 @@ struct FamilyView: View {
 
     private var otherMembersSectionHeader: some View {
         HStack(spacing: 16) {
-            Text(AppLocalized.string("群组成员", locale: locale))
+            Text("群组成员")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 

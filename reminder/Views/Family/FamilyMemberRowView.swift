@@ -2,8 +2,6 @@ import SwiftUI
 import Kingfisher
 
 struct FamilyMemberRowView: View {
-    @Environment(\.locale) private var locale
-
     let profile: FamilyProfile
     /// 当前行是否为 **虚拟档案**（无 `household_memberships` 关联）。
     var isVirtualUser: Bool = false
@@ -64,19 +62,6 @@ struct FamilyMemberRowView: View {
         Self.avatarBackgroundPalette[avatarPaletteIndex]
     }
 
-    private var contactLineDisplayText: String {
-        guard let contact = profile.displayContact else {
-            return AppLocalized.string("No contact info", locale: locale)
-        }
-        if profile.displayContactIsPhoneNumber {
-            if revealsFullPhone {
-                return contact
-            }
-            return Self.maskPhoneForDisplay(contact)
-        }
-        return contact
-    }
-
     private var canTogglePhoneReveal: Bool {
         profile.displayContactIsPhoneNumber && profile.displayContact != nil
     }
@@ -119,11 +104,7 @@ struct FamilyMemberRowView: View {
                     }
 
                     HStack(spacing: 6) {
-                        Text(contactLineDisplayText)
-                            .font(.caption)
-                            .foregroundStyle(profile.displayContact == nil ? .tertiary : .secondary)
-                            .monospacedDigit()
-                            .lineLimit(1)
+                        contactLineView
 
                         if canTogglePhoneReveal {
                             Button {
@@ -151,22 +132,45 @@ struct FamilyMemberRowView: View {
         .buttonStyle(.plain)
     }
 
+    @ViewBuilder
+    private var contactLineView: some View {
+        if let contact = profile.displayContact {
+            if profile.displayContactIsPhoneNumber {
+                Text(verbatim: revealsFullPhone ? contact : Self.maskPhoneForDisplay(contact))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+            } else {
+                Text(verbatim: contact)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        } else {
+            Text("暂无联系方式")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+    }
+
     private var localProfileBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "icloud")
                 .font(.caption2.weight(.medium))
-            Text(AppLocalized.string("档案", locale: locale))
+            Text("档案")
                 .font(.caption2.weight(.medium))
         }
         .foregroundStyle(.tertiary)
-        .accessibilityLabel(AppLocalized.string("档案成员", locale: locale))
+        .accessibilityLabel("档案成员")
     }
 
     @ViewBuilder
     private func membershipRoleCapsule(_ role: MembershipRole) -> some View {
         switch role {
         case .creator:
-            Text(AppLocalized.string("创建者", locale: locale))
+            Text(role.localizedName)
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -174,7 +178,7 @@ struct FamilyMemberRowView: View {
                 .foregroundStyle(.blue)
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         case .admin:
-            Text(AppLocalized.string("管理员", locale: locale))
+            Text(role.localizedName)
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)

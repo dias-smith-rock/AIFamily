@@ -20,7 +20,11 @@ struct ProfileDetailView: View {
                     LabeledContent(AppLocalized.string("称呼", locale: locale), value: profile.displayName)
                     LabeledContent(AppLocalized.string("角色", locale: locale), value: subtitle)
                     if let gender = profile.gender, gender.isEmpty == false {
-                        LabeledContent(AppLocalized.string("性别", locale: locale), value: genderDisplay(gender))
+                        LabeledContent {
+                            Text(ProfileDraftGender(databaseValue: gender).localizedName)
+                        } label: {
+                            Text("性别")
+                        }
                     }
                     if let birthDate = profile.birthDate, birthDate.isEmpty == false {
                         LabeledContent(AppLocalized.string("生日", locale: locale), value: birthDate)
@@ -116,12 +120,5 @@ struct ProfileDetailView: View {
         return "\(prefix)\(stars)\(suffix)"
     }
 
-    private func genderDisplay(_ value: String) -> String {
-        switch value.lowercased() {
-        case "male": return AppLocalized.string("男", locale: locale)
-        case "female": return AppLocalized.string("女", locale: locale)
-        default: return AppLocalized.string("未设置", locale: locale)
-        }
-    }
 }
 

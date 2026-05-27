@@ -82,6 +82,8 @@ struct MineView: View {
                     await familyViewModel.updateProfile(profile, draft: draft)
                 }
             )
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
         }
         .alert(AppLocalized.string("提示", locale: locale), isPresented: Binding(
             get: { viewModel.toastMessage != nil },

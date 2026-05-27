@@ -24,12 +24,21 @@ enum MembershipRole: String, Codable, Equatable {
     case admin
     case member
 
-    /// 列表副标题、详情等用的简短中文标签。
+    /// 列表副标题、详情等用的简短中文标签（非 SwiftUI 上下文可用）。
     var displayTitle: String {
         switch self {
-        case .creator: return String(localized: "Creator")
-        case .admin: return String(localized: "Admin")
+        case .creator: return String(localized: "创建者")
+        case .admin: return String(localized: "管理员")
         case .member: return String(localized: "Member")
+        }
+    }
+
+    /// UI 展示用（键与 `Localizable.xcstrings` 一致）。
+    var localizedName: LocalizedStringKey {
+        switch self {
+        case .creator: "创建者"
+        case .admin: "管理员"
+        case .member: "Member"
         }
     }
 }
