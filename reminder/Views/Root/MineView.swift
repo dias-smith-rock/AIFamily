@@ -38,6 +38,7 @@ struct MineView: View {
             .background(AppTheme.ColorToken.background)
             .navigationBarHidden(true)
         }
+        .environment(\.locale, appSettings.appLocale)
         .task {
             await viewModel.loadAccountSummary()
             familyViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
@@ -110,9 +111,9 @@ struct MineView: View {
             Text(AppLocalized.string("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。", locale: locale))
         }
         .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
-            Button("知道了", role: .cancel) {}
+            Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) {}
         } message: {
-            Text(verbatim: viewModel.blockAlertMessage)
+            Text("您是「\(viewModel.creatorBlockGroupName)」等 \(viewModel.creatorBlockGroupCount) 个群组的创建者，请先转移权限或解散群组后再注销账户。")
         }
         .alert(AppLocalized.string("注销失败", locale: locale), isPresented: Binding(
             get: { viewModel.deleteAccountErrorMessage != nil },

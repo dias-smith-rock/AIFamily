@@ -21,7 +21,8 @@ final class MineViewModel: ObservableObject {
     @Published var showDeleteAccountAlert = false
     @Published var isCheckingCreatorStatus = false
     @Published var showCreatorBlockAlert = false
-    @Published var blockAlertMessage = ""
+    @Published var creatorBlockGroupName = ""
+    @Published var creatorBlockGroupCount = 0
     @Published var isSigningOut = false
     @Published var isDeletingAccount = false
 
@@ -109,11 +110,14 @@ final class MineViewModel: ObservableObject {
             if names.isEmpty {
                 showDeleteAccountAlert = true
             } else {
-                let groupName = names.first ?? AppLocalized.localized("未知群组")
-                let groupCount = names.count
-                blockAlertMessage = AppLocalized.localized(
-                    "您是「\(groupName)」等 \(groupCount) 个群组的创建者，请先转移权限或解散群组后再注销账户。"
-                )
+                let groupName: String = {
+                    guard let first = names.first, first.isEmpty == false else {
+                        return String(localized: "未知群组", locale: AppSettingsManager.shared.appLocale)
+                    }
+                    return first
+                }()
+                creatorBlockGroupName = groupName
+                creatorBlockGroupCount = names.count
                 showCreatorBlockAlert = true
             }
         } catch {
