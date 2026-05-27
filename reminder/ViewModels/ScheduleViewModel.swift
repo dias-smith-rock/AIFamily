@@ -252,6 +252,7 @@ final class ScheduleViewModel: ObservableObject {
                 (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
             }
             syncAlarms(for: createdTask)
+            syncUpcomingLocalNotifications()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -266,6 +267,7 @@ final class ScheduleViewModel: ObservableObject {
             let updatedTask = try await taskService.updateTask(task)
             guard let index = tasks.firstIndex(where: { $0.id == updatedTask.id }) else {
                 await loadTasks()
+                syncUpcomingLocalNotifications()
                 return
             }
             tasks[index] = updatedTask
@@ -273,6 +275,7 @@ final class ScheduleViewModel: ObservableObject {
                 (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
             }
             syncAlarms(for: updatedTask)
+            syncUpcomingLocalNotifications()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -317,6 +320,7 @@ final class ScheduleViewModel: ObservableObject {
         tasks.sort { lhs, rhs in
             (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
         }
+        syncUpcomingLocalNotifications()
         return updated
     }
 
@@ -413,8 +417,33 @@ final class ScheduleViewModel: ObservableObject {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
                 tasks.removeAll { $0.id == taskId }
             }
+            syncUpcomingLocalNotifications()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// 预调度本地通知：取未来未完成任务，按时间升序后交给通知管理器（内部会截前 10 条）。
+    private func syncUpcomingLocalNotifications() {
+        let now = Date()
+        let upcoming = tasks
+            .filter { task in
+                guard let due = task.dueDate else { return false }
+                guard due > now else { return false }
+                switch task.status {
+                case .completed, .cancelled, .failed, .expired:
+                    return false
+                default:
+                    return true
+                }
+            }
+            .sorted { lhs, rhs in
+                (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
+            }
+            .map(TaskAlarmPayload.init(schedulingFrom:))
+
+        Task {
+            await NotificationManager.shared.syncLocalNotifications(upcomingTasks: upcoming)
         }
     }
 }

@@ -5,6 +5,8 @@ import Foundation
 struct TaskAlarmPayload: Sendable {
     let id: UUID
     let title: String
+    let groupName: String?
+    let priority: TaskPriority
     let status: TaskStatus
     let isAllDay: Bool
     let dueDate: Date?
@@ -18,6 +20,8 @@ extension TaskAlarmPayload {
         self.init(
             id: task.id,
             title: task.title,
+            groupName: task.targetSubject,
+            priority: task.priority,
             status: task.status,
             isAllDay: task.isAllDay,
             dueDate: task.dueDate,
@@ -31,6 +35,8 @@ extension TaskAlarmPayload {
         return TaskAlarmPayload(
             id: id,
             title: String(title),
+            groupName: groupName.map { String($0) },
+            priority: priority,
             status: status,
             isAllDay: isAllDay,
             dueDate: dueDate,

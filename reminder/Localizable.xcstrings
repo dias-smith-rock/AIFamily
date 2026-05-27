@@ -19492,6 +19492,38 @@
         }
       }
     },
+    "群组：%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "群组：%@"
+          }
+        }
+      }
+    },
+    "您有一个待办任务" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You have a pending task"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "您有一个待办任务"
+          }
+        }
+      }
+    },
     "群组名称不匹配，请重新输入。" : {
       "localizations" : {
         "ar" : {

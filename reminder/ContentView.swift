@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appBootstrap: AppBootstrap
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -51,6 +52,10 @@ struct ContentView: View {
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
                 }
+            } else if newPhase == .inactive || newPhase == .background {
+                Task {
+                    await preScheduleLocalNotifications()
+                }
             }
         }
     }
@@ -60,6 +65,36 @@ struct ContentView: View {
         guard appRouter.appState != .unauthenticated else { return }
         let orgViewModel = AppViewModels.makeOrgRoutingViewModel()
         await orgViewModel.fetchMyHouseholds(appRouter: appRouter)
+    }
+
+    @MainActor
+    private func preScheduleLocalNotifications() async {
+        guard appRouter.appState == .activeMember else { return }
+        guard let householdId = appRouter.selectedHouseholdId else { return }
+        do {
+            let tasks = try await appBootstrap.services.taskService.fetchTasks(in: householdId)
+            let now = Date()
+            let upcoming = tasks
+                .filter { task in
+                    guard let due = task.dueDate else { return false }
+                    guard due > now else { return false }
+                    switch task.status {
+                    case .completed, .cancelled, .failed, .expired:
+                        return false
+                    default:
+                        return true
+                    }
+                }
+                .sorted { lhs, rhs in
+                    (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
+                }
+                .map(TaskAlarmPayload.init(schedulingFrom:))
+            await NotificationManager.shared.syncLocalNotifications(upcomingTasks: upcoming)
+        } catch {
+            #if DEBUG
+            print("[ContentView] preScheduleLocalNotifications failed: \(error.localizedDescription)")
+            #endif
+        }
     }
 }
 
