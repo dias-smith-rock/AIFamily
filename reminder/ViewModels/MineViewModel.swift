@@ -58,12 +58,14 @@ final class MineViewModel: ObservableObject {
         signOutErrorMessage = nil
         defer { isSigningOut = false }
 
+        AuthSessionGuard.shared.beginLoggingOut()
         do {
             try await authService.signOut()
             await appRouter.refreshStateFromBackend()
         } catch {
             signOutErrorMessage = error.localizedDescription
         }
+        await AuthSessionGuard.shared.endLoggingOut()
     }
 
     func deleteAccount(appRouter: AppRouter) async {
@@ -72,6 +74,7 @@ final class MineViewModel: ObservableObject {
         deleteAccountErrorMessage = nil
         defer { isDeletingAccount = false }
 
+        AuthSessionGuard.shared.beginLoggingOut()
         do {
             // 预留：接入 delete-account Edge Function / RPC 后在此调用
             // try await supabase.functions.invoke("delete-account")
@@ -81,6 +84,7 @@ final class MineViewModel: ObservableObject {
         } catch {
             deleteAccountErrorMessage = error.localizedDescription
         }
+        await AuthSessionGuard.shared.endLoggingOut()
     }
 
     func checkCreatorStatusBeforeDeletion() async {

@@ -16,6 +16,7 @@ struct FamilyView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var addMemberRoute: AddMemberRoute?
@@ -74,21 +75,26 @@ struct FamilyView: View {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             viewModel.setMembershipContext(appRouter.selectedMembershipId)
             await viewModel.loadMembers()
-            isShowingLoginSheet = viewModel.requiresLogin
+            updateLoginSheetPresentation()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             viewModel.setHouseholdContext(newValue)
             Task {
                 await viewModel.loadMembers()
-                isShowingLoginSheet = viewModel.requiresLogin
+                updateLoginSheetPresentation()
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, newValue in
             viewModel.setMembershipContext(newValue)
             Task { await viewModel.loadMembers() }
         }
-        .onChange(of: viewModel.requiresLogin) { _, requiresLogin in
-            isShowingLoginSheet = requiresLogin
+        .onChange(of: viewModel.requiresLogin) { _, _ in
+            updateLoginSheetPresentation()
+        }
+        .onChange(of: authSessionGuard.isLoggingOut) { _, isLoggingOut in
+            if isLoggingOut {
+                isShowingLoginSheet = false
+            }
         }
         .sheet(item: $addMemberRoute) { route in
             switch route {
@@ -646,6 +652,14 @@ struct FamilyView: View {
         await appRouter.refreshStateFromBackend()
         viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
         await viewModel.loadMembers()
+    }
+
+    private func updateLoginSheetPresentation() {
+        guard authSessionGuard.isLoggingOut == false else {
+            isShowingLoginSheet = false
+            return
+        }
+        isShowingLoginSheet = viewModel.requiresLogin
     }
 
 }

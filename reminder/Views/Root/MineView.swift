@@ -8,6 +8,7 @@ struct MineView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
@@ -44,21 +45,26 @@ struct MineView: View {
             familyViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             familyViewModel.setMembershipContext(appRouter.selectedMembershipId)
             await familyViewModel.loadMembers()
-            isShowingLoginSheet = familyViewModel.requiresLogin
+            updateLoginSheetPresentation()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             familyViewModel.setHouseholdContext(newValue)
             Task {
                 await familyViewModel.loadMembers()
-                isShowingLoginSheet = familyViewModel.requiresLogin
+                updateLoginSheetPresentation()
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, newValue in
             familyViewModel.setMembershipContext(newValue)
             Task { await familyViewModel.loadMembers() }
         }
-        .onChange(of: familyViewModel.requiresLogin) { _, requiresLogin in
-            isShowingLoginSheet = requiresLogin
+        .onChange(of: familyViewModel.requiresLogin) { _, _ in
+            updateLoginSheetPresentation()
+        }
+        .onChange(of: authSessionGuard.isLoggingOut) { _, isLoggingOut in
+            if isLoggingOut {
+                isShowingLoginSheet = false
+            }
         }
         .sheet(isPresented: $isShowingLoginSheet) {
             FamilySessionLoginSheet(viewModel: authViewModel) {
@@ -105,7 +111,12 @@ struct MineView: View {
         .alert(AppLocalized.string("永久注销账号", locale: locale), isPresented: $viewModel.showDeleteAccountAlert) {
             Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
             Button(AppLocalized.string("确认注销", locale: locale), role: .destructive) {
-                Task { await viewModel.deleteAccount(appRouter: appRouter) }
+                Task {
+                    authSessionGuard.beginLoggingOut()
+                    familyViewModel.prepareForSignOut()
+                    isShowingLoginSheet = false
+                    await viewModel.deleteAccount(appRouter: appRouter)
+                }
             }
         } message: {
             Text(AppLocalized.string("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。", locale: locale))
@@ -290,7 +301,12 @@ struct MineView: View {
 
             Section {
                 Button {
-                    Task { await viewModel.signOut(appRouter: appRouter) }
+                    Task {
+                        authSessionGuard.beginLoggingOut()
+                        familyViewModel.prepareForSignOut()
+                        isShowingLoginSheet = false
+                        await viewModel.signOut(appRouter: appRouter)
+                    }
                 } label: {
                     HStack {
                         Spacer()
@@ -676,6 +692,14 @@ struct MineView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func updateLoginSheetPresentation() {
+        guard authSessionGuard.isLoggingOut == false else {
+            isShowingLoginSheet = false
+            return
+        }
+        isShowingLoginSheet = familyViewModel.requiresLogin
     }
 }
 

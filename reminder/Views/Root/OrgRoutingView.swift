@@ -280,10 +280,11 @@ struct OrgRoutingView: View {
         isSigningOut = true
         defer { isSigningOut = false }
 
+        AuthSessionGuard.shared.beginLoggingOut()
         #if canImport(Supabase)
         do {
             try await SupabaseManager.shared.client.auth.signOut()
-            appRouter.appState = .unauthenticated
+            await appRouter.refreshStateFromBackend()
         } catch {
             localErrorMessage = error.localizedDescription
             showErrorAlert = true
@@ -291,6 +292,7 @@ struct OrgRoutingView: View {
         #else
         appRouter.appState = .unauthenticated
         #endif
+        await AuthSessionGuard.shared.endLoggingOut()
     }
 }
 

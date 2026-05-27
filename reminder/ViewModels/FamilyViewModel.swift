@@ -348,12 +348,22 @@ final class FamilyViewModel: ObservableObject {
         currentMembershipId = membershipId
     }
 
+    func prepareForSignOut() {
+        requiresLogin = false
+    }
+
     func loadMembers() async {
+        if AuthSessionGuard.shared.isLoggingOut {
+            return
+        }
         #if DEBUG
         print("🔎 [FamilyDebug] loadMembers start - householdId=\(currentHouseholdId?.uuidString ?? "nil"), membershipId=\(currentMembershipId?.uuidString ?? "nil")")
         #endif
         let hasSession = await authService.hasValidSession()
         guard hasSession else {
+            if AuthSessionGuard.shared.isLoggingOut {
+                return
+            }
             requiresLogin = true
             errorMessage = nil
             profiles = []

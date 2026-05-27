@@ -99,15 +99,18 @@ final class OrgRoutingViewModel: ObservableObject {
         authErrorMessage = nil
         defer { isProcessingAuth = false }
 
+        AuthSessionGuard.shared.beginLoggingOut()
         do {
             try await authService.signOut()
             await appRouter.refreshStateFromBackend()
+            await AuthSessionGuard.shared.endLoggingOut()
             return true
         } catch {
             #if DEBUG
             print("退出登录失败: \(error)")
             #endif
             authErrorMessage = error.localizedDescription
+            await AuthSessionGuard.shared.endLoggingOut()
             return false
         }
     }
@@ -118,18 +121,21 @@ final class OrgRoutingViewModel: ObservableObject {
         authErrorMessage = nil
         defer { isProcessingAuth = false }
 
+        AuthSessionGuard.shared.beginLoggingOut()
         do {
             // 预留：接入 delete-account Edge Function / RPC 后在此调用
             // try await supabase.functions.invoke("delete-account")
             await authService.cleanUpCurrentUserAvatars()
             try await authService.signOut()
             await appRouter.refreshStateFromBackend()
+            await AuthSessionGuard.shared.endLoggingOut()
             return true
         } catch {
             #if DEBUG
             print("注销账号失败: \(error)")
             #endif
             authErrorMessage = error.localizedDescription
+            await AuthSessionGuard.shared.endLoggingOut()
             return false
         }
     }
