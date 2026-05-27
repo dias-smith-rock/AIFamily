@@ -26,9 +26,9 @@ enum MembershipRole: String, Codable, Equatable {
     /// 列表副标题、详情等用的简短中文标签。
     var displayTitle: String {
         switch self {
-        case .creator: return "创建者"
-        case .admin: return "管理员"
-        case .member: return "成员"
+        case .creator: return String(localized: "Creator")
+        case .admin: return String(localized: "Admin")
+        case .member: return String(localized: "Member")
         }
     }
 }

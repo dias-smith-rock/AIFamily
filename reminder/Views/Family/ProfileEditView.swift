@@ -4,6 +4,7 @@ import UIKit
 import Kingfisher
 
 struct ProfileEditView: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     let mode: Mode
@@ -77,10 +78,14 @@ struct ProfileEditView: View {
                     HStack(spacing: 14) {
                         avatarView
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("成员头像")
+                            Text(AppLocalized.string("成员头像", locale: locale))
                                 .font(.headline)
                             PhotosPicker(selection: $avatarPickerItem, matching: .images) {
-                                Text(isUploadingAvatar ? "上传中..." : "选择头像")
+                                Text(
+                                    isUploadingAvatar
+                                        ? AppLocalized.string("上传中...", locale: locale)
+                                        : AppLocalized.string("选择头像", locale: locale)
+                                )
                                     .font(.subheadline.weight(.semibold))
                             }
                             .disabled(canEdit == false || isUploadingAvatar)
@@ -89,49 +94,49 @@ struct ProfileEditView: View {
                     .padding(.vertical, 4)
                 }
 
-                Section("基础信息") {
-                    TextField("称呼 (如：大宝、旺财) *", text: $name)
-                    Picker("性别", selection: $gender) {
+                Section(AppLocalized.string("基础信息", locale: locale)) {
+                    TextField(AppLocalized.string("称呼 (如：大宝、旺财) *", locale: locale), text: $name)
+                    Picker(AppLocalized.string("性别", locale: locale), selection: $gender) {
                         ForEach(ProfileDraftGender.allCases) { item in
                             Text(item.displayName).tag(item)
                         }
                     }
                     .pickerStyle(.segmented)
 
-                    Toggle("设置生日", isOn: $shouldSetBirthDate)
+                    Toggle(AppLocalized.string("设置生日", locale: locale), isOn: $shouldSetBirthDate)
                     if shouldSetBirthDate {
-                        DatePicker("生日", selection: $birthDate, displayedComponents: .date)
+                        DatePicker(AppLocalized.string("生日", locale: locale), selection: $birthDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
                 }
 
-                Section("联系方式") {
-                    TextField("邮箱", text: $email)
+                Section(AppLocalized.string("联系方式", locale: locale)) {
+                    TextField(AppLocalized.string("邮箱", locale: locale), text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    TextField("手机号", text: $mainPhone)
+                    TextField(AppLocalized.string("手机号", locale: locale), text: $mainPhone)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
-                    TextField("备用手机号", text: $secondPhone)
+                    TextField(AppLocalized.string("备用手机号", locale: locale), text: $secondPhone)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
                 }
 
-                Section("成长数据") {
-                    TextField("身高 (cm)", text: $height)
+                Section(AppLocalized.string("成长数据", locale: locale)) {
+                    TextField(AppLocalized.string("身高 (cm)", locale: locale), text: $height)
                         .keyboardType(.decimalPad)
-                    TextField("体重 (kg)", text: $weight)
+                    TextField(AppLocalized.string("体重 (kg)", locale: locale), text: $weight)
                         .keyboardType(.decimalPad)
                 }
 
-                Section("教育与证件") {
-                    TextField("就读学校", text: $school)
-                    TextField("当前年级", text: $grade)
-                    TextField("身份证件号码", text: $idCardNum)
-                    TextField("护照号", text: $passportNum)
-                    TextField("旅行证 / 回乡证号", text: $permitNum)
+                Section(AppLocalized.string("教育与证件", locale: locale)) {
+                    TextField(AppLocalized.string("就读学校", locale: locale), text: $school)
+                    TextField(AppLocalized.string("当前年级", locale: locale), text: $grade)
+                    TextField(AppLocalized.string("身份证件号码", locale: locale), text: $idCardNum)
+                    TextField(AppLocalized.string("护照号", locale: locale), text: $passportNum)
+                    TextField(AppLocalized.string("旅行证 / 回乡证号", locale: locale), text: $permitNum)
                 }
 
                 if let errorMessage {
@@ -146,13 +151,13 @@ struct ProfileEditView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") { dismiss() }
+                    Button(AppLocalized.string("取消", locale: locale)) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         submit()
                     } label: {
-                        if isSaving { ProgressView() } else { Text("保存") }
+                        if isSaving { ProgressView() } else { Text(AppLocalized.string("保存", locale: locale)) }
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || canEdit == false || isSaving || isUploadingAvatar)
                 }

@@ -155,18 +155,18 @@ struct FamilyMemberRowView: View {
         HStack(spacing: 4) {
             Image(systemName: "icloud")
                 .font(.caption2.weight(.medium))
-            Text("档案")
+            Text(AppLocalized.string("档案", locale: locale))
                 .font(.caption2.weight(.medium))
         }
         .foregroundStyle(.tertiary)
-        .accessibilityLabel("档案成员")
+        .accessibilityLabel(AppLocalized.string("档案成员", locale: locale))
     }
 
     @ViewBuilder
     private func membershipRoleCapsule(_ role: MembershipRole) -> some View {
         switch role {
         case .creator:
-            Text("创建者")
+            Text(AppLocalized.string("创建者", locale: locale))
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -174,7 +174,7 @@ struct FamilyMemberRowView: View {
                 .foregroundStyle(.blue)
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
         case .admin:
-            Text("管理员")
+            Text(AppLocalized.string("管理员", locale: locale))
                 .font(.caption2.weight(.semibold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)

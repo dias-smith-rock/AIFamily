@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct InviteConsumeDemoView: View {
+    @Environment(\.locale) private var locale
     @StateObject private var viewModel = InviteConsumeViewModel()
 
     var body: some View {
@@ -18,15 +19,15 @@ struct InviteConsumeDemoView: View {
             .padding(16)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("消费邀请链接")
+        .navigationTitle(AppLocalized.string("消费邀请链接", locale: locale))
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("执行端调试入口")
+            Text(AppLocalized.string("执行端调试入口", locale: locale))
                 .font(.system(size: 22, weight: .bold))
-            Text("粘贴 sig 后调用 consume-invite-link，快速验证 200/409/410 状态。")
+            Text(AppLocalized.string("粘贴 sig 后调用 consume-invite-link，快速验证 200/409/410 状态。", locale: locale))
                 .font(.system(size: 14, weight: .medium))
                 .foregroundStyle(.secondary)
         }
@@ -57,7 +58,7 @@ struct InviteConsumeDemoView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                 } else {
-                    Text("开始消费")
+                    Text(AppLocalized.string("开始消费", locale: locale))
                         .font(.system(size: 15, weight: .semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
@@ -66,7 +67,7 @@ struct InviteConsumeDemoView: View {
             .buttonStyle(.borderedProminent)
             .disabled(viewModel.isSubmitting)
 
-            Button("重置") {
+            Button(AppLocalized.string("重置", locale: locale)) {
                 viewModel.reset()
             }
             .buttonStyle(.bordered)
@@ -75,7 +76,7 @@ struct InviteConsumeDemoView: View {
 
     private var statusCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("调用状态")
+            Text(AppLocalized.string("调用状态", locale: locale))
                 .font(.system(size: 14, weight: .semibold))
             Text(viewModel.statusMessage)
                 .font(.system(size: 14, weight: .medium))
@@ -89,7 +90,7 @@ struct InviteConsumeDemoView: View {
 
     private func resultCard(_ result: ConsumeInviteResult) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("返回结果")
+            Text(AppLocalized.string("返回结果", locale: locale))
                 .font(.system(size: 14, weight: .semibold))
             Label("valid: \(result.valid ? "true" : "false")", systemImage: "checkmark.shield")
             Label("channel: \(result.channel)", systemImage: "dot.radiowaves.left.and.right")

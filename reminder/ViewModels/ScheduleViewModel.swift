@@ -351,12 +351,12 @@ final class ScheduleViewModel: ObservableObject {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    func assigneeLabel(for task: FamilyTask) -> String {
+    func assigneeLabel(for task: FamilyTask, locale: Locale) -> String {
         if task.involvesWholeHousehold {
-            return "所有人"
+            return AppLocalized.string("Everyone", locale: locale)
         }
         guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
-            return "所有人"
+            return AppLocalized.string("Everyone", locale: locale)
         }
         let names = ids.compactMap { id in
             MemberDisplayName.displayName(
@@ -366,9 +366,15 @@ final class ScheduleViewModel: ObservableObject {
             )
         }
         if names.isEmpty {
-            return ids.count == 1 ? "成员" : "\(ids.count) 人"
+            if ids.count == 1 {
+                return AppLocalized.string("Member", locale: locale)
+            }
+            return String(
+                format: AppLocalized.string("%lld people", locale: locale),
+                ids.count
+            )
         }
-        return names.joined(separator: "、")
+        return names.joined(separator: AppLocalized.string(", ", locale: locale))
     }
 
     func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {

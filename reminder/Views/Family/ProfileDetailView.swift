@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ProfileDetailView: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     let profile: FamilyProfile
@@ -15,58 +16,58 @@ struct ProfileDetailView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("成员信息") {
-                    LabeledContent("称呼", value: profile.displayName)
-                    LabeledContent("角色", value: subtitle)
+                Section(AppLocalized.string("成员信息", locale: locale)) {
+                    LabeledContent(AppLocalized.string("称呼", locale: locale), value: profile.displayName)
+                    LabeledContent(AppLocalized.string("角色", locale: locale), value: subtitle)
                     if let gender = profile.gender, gender.isEmpty == false {
-                        LabeledContent("性别", value: genderDisplay(gender))
+                        LabeledContent(AppLocalized.string("性别", locale: locale), value: genderDisplay(gender))
                     }
                     if let birthDate = profile.birthDate, birthDate.isEmpty == false {
-                        LabeledContent("生日", value: birthDate)
+                        LabeledContent(AppLocalized.string("生日", locale: locale), value: birthDate)
                     }
                 }
 
-                Section("联系方式") {
-                    optionalRow("邮箱", profile.email)
-                    optionalRow("手机号", profile.mainPhone)
-                    optionalRow("备用手机号", profile.secondPhone)
+                Section(AppLocalized.string("联系方式", locale: locale)) {
+                    optionalRow(AppLocalized.string("邮箱", locale: locale), profile.email)
+                    optionalRow(AppLocalized.string("手机号", locale: locale), profile.mainPhone)
+                    optionalRow(AppLocalized.string("备用手机号", locale: locale), profile.secondPhone)
                 }
 
-                Section("证件信息") {
+                Section(AppLocalized.string("证件信息", locale: locale)) {
                     sensitiveRow(
-                        title: "身份证",
+                        title: AppLocalized.string("身份证", locale: locale),
                         value: profile.idCardNum,
                         reveals: $showIdCard
                     )
                     sensitiveRow(
-                        title: "护照号",
+                        title: AppLocalized.string("护照号", locale: locale),
                         value: profile.passportNum,
                         reveals: $showPassport
                     )
                     sensitiveRow(
-                        title: "旅行证/回乡证号",
+                        title: AppLocalized.string("旅行证/回乡证号", locale: locale),
                         value: profile.permitNum,
                         reveals: $showPermit
                     )
                 }
 
-                Section("补充资料") {
-                    optionalRow("身高", profile.height.map { "\($0) cm" })
-                    optionalRow("体重", profile.weight.map { "\($0) kg" })
-                    optionalRow("学校", profile.school)
-                    optionalRow("年级", profile.grade)
+                Section(AppLocalized.string("补充资料", locale: locale)) {
+                    optionalRow(AppLocalized.string("身高", locale: locale), profile.height.map { "\($0) cm" })
+                    optionalRow(AppLocalized.string("体重", locale: locale), profile.weight.map { "\($0) kg" })
+                    optionalRow(AppLocalized.string("学校", locale: locale), profile.school)
+                    optionalRow(AppLocalized.string("年级", locale: locale), profile.grade)
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("成员详情")
+            .navigationTitle(AppLocalized.string("成员详情", locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("关闭") { dismiss() }
+                    Button(AppLocalized.string("关闭", locale: locale)) { dismiss() }
                 }
                 if canEdit {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("编辑") {
+                        Button(AppLocalized.string("编辑", locale: locale)) {
                             onEdit()
                         }
                     }
@@ -78,7 +79,7 @@ struct ProfileDetailView: View {
     @ViewBuilder
     private func optionalRow(_ title: String, _ value: String?) -> some View {
         let stableValue = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        LabeledContent(title, value: stableValue.isEmpty ? "未填写" : stableValue)
+        LabeledContent(title, value: stableValue.isEmpty ? AppLocalized.string("未填写", locale: locale) : stableValue)
     }
 
     @ViewBuilder
@@ -102,7 +103,7 @@ struct ProfileDetailView: View {
 
     private func displaySensitive(_ value: String?, reveals: Bool) -> String {
         let text = value?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        guard text.isEmpty == false else { return "未填写" }
+        guard text.isEmpty == false else { return AppLocalized.string("未填写", locale: locale) }
         if reveals { return text }
         return maskSensitive(text)
     }
@@ -117,9 +118,9 @@ struct ProfileDetailView: View {
 
     private func genderDisplay(_ value: String) -> String {
         switch value.lowercased() {
-        case "male": return "男"
-        case "female": return "女"
-        default: return "未设置"
+        case "male": return AppLocalized.string("男", locale: locale)
+        case "female": return AppLocalized.string("女", locale: locale)
+        default: return AppLocalized.string("未设置", locale: locale)
         }
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FamilySessionLoginSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var viewModel: AuthViewModel
     let onLoginSuccess: () async -> Void
@@ -8,13 +9,13 @@ struct FamilySessionLoginSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("需要先登录")
+                Text(AppLocalized.string("需要先登录", locale: locale))
                     .font(.system(size: 26, weight: .bold))
-                Text("检测到当前会话无效，请先登录再加载群组成员。")
+                Text(AppLocalized.string("检测到当前会话无效，请先登录再加载群组成员。", locale: locale))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
 
-                Picker("登录方式", selection: $viewModel.selectedMethod) {
+                Picker(AppLocalized.string("登录方式", locale: locale), selection: $viewModel.selectedMethod) {
                     ForEach(AuthViewModel.LoginMethod.allCases) { method in
                         Text(method.rawValue).tag(method)
                     }
@@ -22,12 +23,12 @@ struct FamilySessionLoginSheet: View {
                 .pickerStyle(.segmented)
 
                 if viewModel.selectedMethod == .magicLink {
-                    TextField("邮箱地址", text: $viewModel.email)
+                    TextField(AppLocalized.string("邮箱地址", locale: locale), text: $viewModel.email)
                         .textFieldStyle(.roundedBorder)
                 }
 
                 if viewModel.selectedMethod == .phoneOTP {
-                    TextField("手机号", text: $viewModel.phone)
+                    TextField(AppLocalized.string("手机号", locale: locale), text: $viewModel.phone)
                         .keyboardType(.phonePad)
                         .textFieldStyle(.roundedBorder)
                 }
@@ -45,14 +46,14 @@ struct FamilySessionLoginSheet: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text("登录并继续")
+                        Text(AppLocalized.string("登录并继续", locale: locale))
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
                     }
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button("刷新会话状态") {
+                Button(AppLocalized.string("刷新会话状态", locale: locale)) {
                     Task {
                         await viewModel.refreshSessionState()
                         if viewModel.isLoggedIn {
@@ -71,7 +72,7 @@ struct FamilySessionLoginSheet: View {
             }
             .padding(16)
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("会话校验")
+            .navigationTitle(AppLocalized.string("会话校验", locale: locale))
             .navigationBarTitleDisplayMode(.inline)
         }
     }

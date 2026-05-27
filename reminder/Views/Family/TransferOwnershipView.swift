@@ -2,6 +2,7 @@ import SwiftUI
 import Kingfisher
 
 struct TransferOwnershipView: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var familyViewModel: FamilyViewModel
     @StateObject private var viewModel: TransferOwnershipViewModel
@@ -27,15 +28,15 @@ struct TransferOwnershipView: View {
                     if viewModel.eligibleMembers.isEmpty {
                         Section {
                             ContentUnavailableView {
-                                Label("暂无可选成员", systemImage: "person.crop.circle.badge.questionmark")
+                                Label(AppLocalized.string("暂无可选成员", locale: locale), systemImage: "person.crop.circle.badge.questionmark")
                             } description: {
-                                Text("当前没有其他可接收权限的有效账号成员。")
+                                Text(AppLocalized.string("当前没有其他可接收权限的有效账号成员。", locale: locale))
                             }
                             .frame(maxWidth: .infinity, minHeight: 180)
                             .listRowBackground(Color.clear)
                         }
                     } else {
-                        Section("选择接收者") {
+                        Section(AppLocalized.string("选择接收者", locale: locale)) {
                             ForEach(viewModel.eligibleMembers) { member in
                                 Button {
                                     viewModel.selectedMember = member
@@ -66,7 +67,7 @@ struct TransferOwnershipView: View {
                 isPresented: selectedMemberBinding,
                 titleVisibility: .visible
             ) {
-                Button("确认转移", role: .destructive) {
+                Button(AppLocalized.string("确认转移", locale: locale), role: .destructive) {
                     guard let member = viewModel.selectedMember else { return }
                     Task {
                         let succeeded = await viewModel.confirmTransfer(
@@ -80,11 +81,11 @@ struct TransferOwnershipView: View {
                         onCompleted?()
                     }
                 }
-                Button("取消", role: .cancel) {
+                Button(AppLocalized.string("取消", locale: locale), role: .cancel) {
                     viewModel.selectedMember = nil
                 }
             } message: {
-                Text("此操作不可撤销。确认后您将立即失去创建者权限。")
+                Text(AppLocalized.string("此操作不可撤销。确认后您将立即失去创建者权限。", locale: locale))
             }
 
             if viewModel.isTransferring {
@@ -93,7 +94,7 @@ struct TransferOwnershipView: View {
                 VStack(spacing: 10) {
                     ProgressView()
                         .scaleEffect(1.1)
-                    Text("正在转移权限…")
+                    Text(AppLocalized.string("正在转移权限…", locale: locale))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -107,7 +108,7 @@ struct TransferOwnershipView: View {
     }
 
     private var hintBanner: some View {
-        Text("转移后，您将降级为普通成员。被转移方会自动成为创建者，无需确认。请谨慎选择。")
+        Text(AppLocalized.string("转移后，您将降级为普通成员。被转移方会自动成为创建者，无需确认。请谨慎选择。", locale: locale))
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.leading)
@@ -121,9 +122,12 @@ struct TransferOwnershipView: View {
 
     private var confirmationTitle: String {
         if let name = viewModel.selectedMember?.nickname {
-            return "确定要将创建者权限转移给「\(name)」吗？"
+            return String(
+                format: AppLocalized.string("确定要将创建者权限转移给「%@」吗？", locale: locale),
+                name
+            )
         }
-        return "确定要转移创建者权限吗？"
+        return AppLocalized.string("确定要转移创建者权限吗？", locale: locale)
     }
 
     private var selectedMemberBinding: Binding<Bool> {

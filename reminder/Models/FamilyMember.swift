@@ -16,7 +16,7 @@ struct FamilyMember: Identifiable, Equatable {
         } else if let profile {
             nickname = profile.displayName
         } else {
-            nickname = "成员"
+            nickname = String(localized: "Member")
         }
         return FamilyMember(
             id: membership.id,

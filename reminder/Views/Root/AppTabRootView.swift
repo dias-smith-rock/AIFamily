@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AppTabRootView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @State private var selectedTab: Tab = .schedule
 
@@ -14,7 +15,7 @@ struct AppTabRootView: View {
         TabView(selection: $selectedTab) {
             TaskListView()
                 .tabItem {
-                    Label("日程表", systemImage: "calendar")
+                    Label(AppLocalized.string("日程表", locale: locale), systemImage: "calendar")
                 }
                 .tag(Tab.schedule)
 
@@ -22,13 +23,13 @@ struct AppTabRootView: View {
 
             FamilyView()
                 .tabItem {
-                    Label("群组", systemImage: "person.2")
+                    Label(AppLocalized.string("群组", locale: locale), systemImage: "person.2")
                 }
                 .tag(Tab.family)
 
             MineView()
                 .tabItem {
-                    Label("我的", systemImage: "gearshape.fill")
+                    Label(AppLocalized.string("我的", locale: locale), systemImage: "gearshape.fill")
                 }
                 .tag(Tab.personalSettings)
         }

@@ -13,6 +13,7 @@ private enum AddMemberRoute: Identifiable, Equatable {
 }
 
 struct FamilyView: View {
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
@@ -34,7 +35,7 @@ struct FamilyView: View {
             VStack(spacing: 0) {
                 GlobalHeaderView(
                     leading: {
-                        Text("群组")
+                        Text(AppLocalized.string("群组", locale: locale))
                             .font(.title2.weight(.bold))
                             .foregroundStyle(.primary)
                     },
@@ -55,7 +56,7 @@ struct FamilyView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(viewModel.isLeaving)
-                            .accessibilityLabel("退出群组")
+                            .accessibilityLabel(AppLocalized.string("退出群组", locale: locale))
                         } else {
                             EmptyView()
                         }
@@ -194,8 +195,8 @@ struct FamilyView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .alert("提示", isPresented: transferSuccessToastBinding) {
-            Button("好的", role: .cancel) {
+        .alert(AppLocalized.string("提示", locale: locale), isPresented: transferSuccessToastBinding) {
+            Button(AppLocalized.string("好的", locale: locale), role: .cancel) {
                 viewModel.acknowledgeTransferSuccessToast()
             }
         } message: {
@@ -251,16 +252,16 @@ struct FamilyView: View {
     private var familyListBody: some View {
         List {
             if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-                ProgressView("正在加载成员档案…")
+                ProgressView(AppLocalized.string("正在加载成员档案…", locale: locale))
                     .frame(maxWidth: .infinity, minHeight: 220)
                     .listRowBackground(Color.clear)
             } else if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView {
-                    Label("加载失败", systemImage: "exclamationmark.triangle")
+                    Label(AppLocalized.string("加载失败", locale: locale), systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(errorMessage)
                 } actions: {
-                    Button("重新加载") {
+                    Button(AppLocalized.string("重新加载", locale: locale)) {
                         Task {
                             await viewModel.loadMembers()
                         }
@@ -343,10 +344,10 @@ struct FamilyView: View {
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
 
-            Text("暂无其他成员")
+            Text(AppLocalized.string("暂无其他成员", locale: locale))
                 .foregroundStyle(.secondary)
 
-            Button("添加成员") {
+            Button(AppLocalized.string("添加成员", locale: locale)) {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -367,14 +368,14 @@ struct FamilyView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text("还没有成员档案")
+            Text(AppLocalized.string("还没有成员档案", locale: locale))
                 .font(.headline)
-            Text("添加第一位成员，一起分工协作、温柔提醒每一天。")
+            Text(AppLocalized.string("添加第一位成员，一起分工协作、温柔提醒每一天。", locale: locale))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
-            Button("添加群组成员") {
+            Button(AppLocalized.string("添加群组成员", locale: locale)) {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -449,7 +450,7 @@ struct FamilyView: View {
 
     private var otherMembersSectionHeader: some View {
         HStack(spacing: 16) {
-            Text("群组成员")
+            Text(AppLocalized.string("群组成员", locale: locale))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -466,7 +467,11 @@ struct FamilyView: View {
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isSortingMembers ? "完成排序" : "排序群组成员")
+                .accessibilityLabel(
+                    isSortingMembers
+                        ? AppLocalized.string("完成排序", locale: locale)
+                        : AppLocalized.string("排序群组成员", locale: locale)
+                )
             }
 
             if membersExcludingCreator.isEmpty == false {
@@ -478,7 +483,7 @@ struct FamilyView: View {
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("添加群组成员")
+                .accessibilityLabel(AppLocalized.string("添加群组成员", locale: locale))
             }
         }
         .textCase(nil)
@@ -528,12 +533,12 @@ struct FamilyView: View {
     /// 详情页「角色」一行：仅档案成员展示「成员档案」标签式文案。
     private func detailIdentitySubtitle(for profile: FamilyProfile) -> String {
         if profile.isVirtualUser {
-            return "成员档案"
+            return AppLocalized.string("成员档案", locale: locale)
         }
         if let membership = resolvedMembership(for: profile) {
-            return membership.parsedRole?.displayTitle ?? "群组成员"
+            return membership.parsedRole?.displayTitle ?? AppLocalized.string("群组成员", locale: locale)
         }
-        return "群组成员"
+        return AppLocalized.string("群组成员", locale: locale)
     }
 
     private var canManageHousehold: Bool {
@@ -563,7 +568,7 @@ struct FamilyView: View {
     private func renameCurrentHousehold(to newName: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
-            renameErrorMessage = "当前未选择群组。"
+            renameErrorMessage = AppLocalized.string("当前未选择群组。", locale: locale)
             return
         }
 
@@ -636,6 +641,7 @@ struct FamilyView: View {
 }
 
 private struct OrganizationSettingsSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     @ObservedObject var familyViewModel: FamilyViewModel
@@ -713,11 +719,11 @@ private struct OrganizationSettingsSheet: View {
                 .padding(.bottom, 28)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("群组设置")
+            .navigationTitle(AppLocalized.string("群组设置", locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") {
+                    Button(AppLocalized.string("关闭", locale: locale)) {
                         dismiss()
                     }
                     .disabled(isSubmitting || isDisbanding)
@@ -739,7 +745,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var organizationNameField: some View {
-        TextField("输入群组名称…", text: $name)
+        TextField(AppLocalized.string("输入群组名称…", locale: locale), text: $name)
             .textInputAutocapitalization(.words)
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
@@ -760,7 +766,7 @@ private struct OrganizationSettingsSheet: View {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Text("保存更改")
+                    Text(AppLocalized.string("保存更改", locale: locale))
                         .font(.body.weight(.semibold))
                 }
             }
@@ -793,7 +799,7 @@ private struct OrganizationSettingsSheet: View {
 
     private var disbandHouseholdSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("危险操作")
+            Text(AppLocalized.string("危险操作", locale: locale))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.red)
                 .textCase(.uppercase)
@@ -816,7 +822,7 @@ private struct OrganizationSettingsSheet: View {
             .buttonStyle(.plain)
             .disabled(isSubmitting || isDisbanding || familyViewModel.isLeaving)
 
-            Text("解散后所有成员将被移除，任务与邀请码将被永久清空。此操作不可撤销。")
+            Text(AppLocalized.string("解散后所有成员将被移除，任务与邀请码将被永久清空。此操作不可撤销。", locale: locale))
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -877,6 +883,7 @@ private struct OrganizationSettingsSheet: View {
 }
 
 private struct DisbandHouseholdConfirmationSheet: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     @ObservedObject var familyViewModel: FamilyViewModel
@@ -903,15 +910,20 @@ private struct DisbandHouseholdConfirmationSheet: View {
         NavigationStack {
             ZStack {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("解散群组操作不可逆")
+                    Text(AppLocalized.string("解散群组操作不可逆", locale: locale))
                         .font(.headline)
 
-                    Text("此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前群组名称「\(householdName)」以确认解散。")
+                    Text(
+                        String(
+                            format: AppLocalized.string("此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前群组名称「%@」以确认解散。", locale: locale),
+                            householdName
+                        )
+                    )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    TextField("请输入群组名称以确认", text: $disbandInputName)
+                    TextField(AppLocalized.string("请输入群组名称以确认", locale: locale), text: $disbandInputName)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled(true)
                         .textFieldStyle(.roundedBorder)
@@ -930,7 +942,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                                 ProgressView()
                                     .tint(.white)
                             } else {
-                                Text("确认解散")
+                                Text(AppLocalized.string("确认解散", locale: locale))
                                     .font(.body.weight(.semibold))
                             }
                         }
@@ -953,7 +965,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.1)
-                        Text("正在解散群组，请稍候…")
+                        Text(AppLocalized.string("正在解散群组，请稍候…", locale: locale))
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -964,18 +976,18 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     .shadow(radius: 10)
                 }
             }
-            .navigationTitle("确认解散群组")
+            .navigationTitle(AppLocalized.string("确认解散群组", locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("取消") { dismiss() }
+                    Button(AppLocalized.string("取消", locale: locale)) { dismiss() }
                         .disabled(familyViewModel.isDisbanding)
                 }
             }
-            .alert("解散失败", isPresented: $familyViewModel.showDisbandErrorAlert) {
-                Button("我知道了", role: .cancel) {}
+            .alert(AppLocalized.string("解散失败", locale: locale), isPresented: $familyViewModel.showDisbandErrorAlert) {
+                Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) {}
             } message: {
-                Text(familyViewModel.disbandError ?? "未知错误，请重试")
+                Text(familyViewModel.disbandError ?? AppLocalized.string("未知错误，请重试", locale: locale))
             }
         }
     }

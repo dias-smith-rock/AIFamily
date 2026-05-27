@@ -8,6 +8,7 @@ import Supabase
 #endif
 
 struct InviteMemberView: View {
+    @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
 
     let currentHouseholdId: UUID?
@@ -24,7 +25,7 @@ struct InviteMemberView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 10) {
-                    Text("邀请成员加入")
+                    Text(AppLocalized.string("邀请成员加入", locale: locale))
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
                     Text("Ask the other party to use the WeFamily App to scan the code, or enter the invitation code below to join.")
@@ -38,7 +39,7 @@ struct InviteMemberView: View {
                 Spacer()
 
                 if isLoading {
-                    ProgressView("正在生成专属邀请码...")
+                    ProgressView(AppLocalized.string("正在生成专属邀请码...", locale: locale))
                         .font(.system(size: 15, weight: .medium))
                 } else if let inviteCode {
                     VStack(spacing: 16) {
@@ -52,7 +53,7 @@ struct InviteMemberView: View {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 28, weight: .semibold))
                             .foregroundStyle(.orange)
-                        Text(errorMessage ?? "邀请码生成失败，请稍后重试。")
+                        Text(errorMessage ?? AppLocalized.string("邀请码生成失败，请稍后重试。", locale: locale))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -69,7 +70,7 @@ struct InviteMemberView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 17, weight: .semibold))
-                            Text("分享邀请链接")
+                            Text(AppLocalized.string("分享邀请链接", locale: locale))
                                 .font(.system(size: 17, weight: .semibold))
                         }
                         .foregroundStyle(.white)
@@ -87,7 +88,7 @@ struct InviteMemberView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("完成") {
+                    Button(AppLocalized.string("完成", locale: locale)) {
                         dismiss()
                     }
                 }
@@ -161,7 +162,7 @@ struct InviteMemberView: View {
         throw NSError(
             domain: "InviteMemberView",
             code: -1,
-            userInfo: [NSLocalizedDescriptionKey: "当前成员身份无效，请先重新进入该群组后重试。"]
+            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("当前成员身份无效，请先重新进入该群组后重试。", locale: locale)]
         )
     }
 
@@ -171,7 +172,7 @@ struct InviteMemberView: View {
         defer { isLoading = false }
 
         guard let currentHouseholdId else {
-            errorMessage = "当前未选择群组。"
+            errorMessage = AppLocalized.string("当前未选择群组。", locale: locale)
             return
         }
 
@@ -194,21 +195,21 @@ struct InviteMemberView: View {
                 throw NSError(
                     domain: "InviteMemberView",
                     code: -3,
-                    userInfo: [NSLocalizedDescriptionKey: "邀请码生成失败，请稍后重试。"]
+                    userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("邀请码生成失败，请稍后重试。", locale: locale)]
                 )
             }
             inviteCode = code
         } catch {
             if isMissingGetOrCreateInviteNonceRPC(error) {
-                errorMessage = "后端尚未完成升级，请先创建 get_or_create_invite_nonce RPC 后重试。"
+                errorMessage = AppLocalized.string("后端尚未完成升级，请先创建 get_or_create_invite_nonce RPC 后重试。", locale: locale)
             } else if isForbiddenError(error) {
-                errorMessage = "仅创建者或管理员可生成邀请二维码。"
+                errorMessage = AppLocalized.string("仅创建者或管理员可生成邀请二维码。", locale: locale)
             } else {
                 errorMessage = error.localizedDescription
             }
         }
         #else
-        errorMessage = "当前构建环境未包含 Supabase SDK。"
+        errorMessage = AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)
         #endif
     }
 

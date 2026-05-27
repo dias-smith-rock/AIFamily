@@ -1,22 +1,26 @@
 import Foundation
 
-/// 任务时长（分钟）→ 中文可读文案。
+/// 任务时长（分钟）→ 可读文案。
 enum TaskDurationFormatting {
-    static func readableDuration(minutes: Int) -> String {
+    static func readableDuration(minutes: Int, locale: Locale) -> String {
         let total = max(0, minutes)
         if total == 0 {
-            return "0分钟"
+            return AppLocalized.string("0 min", locale: locale)
         }
 
         let hours = total / 60
         let remainder = total % 60
 
         if hours == 0 {
-            return "\(remainder)分钟"
+            return String(format: AppLocalized.string("%lld min", locale: locale), remainder)
         }
         if remainder == 0 {
-            return "\(hours)小时"
+            return String(format: AppLocalized.string("%lld hr", locale: locale), hours)
         }
-        return "\(hours)小时\(remainder)分"
+        return String(
+            format: AppLocalized.string("%lld hr %lld min", locale: locale),
+            hours,
+            remainder
+        )
     }
 }

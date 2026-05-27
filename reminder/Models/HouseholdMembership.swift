@@ -246,7 +246,7 @@ extension HouseholdMembership {
         }
         if let linkedProfile {
             let profileName = linkedProfile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            if profileName.isEmpty == false, profileName != "未命名成员" {
+            if profileName.isEmpty == false, profileName != String(localized: "Unnamed member") {
                 return profileName
             }
         }
