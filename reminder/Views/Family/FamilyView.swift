@@ -16,6 +16,7 @@ struct FamilyView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
     @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
@@ -23,9 +24,6 @@ struct FamilyView: View {
     @State private var isPresentingCreateLocalProfile = false
     @State private var isShowingLoginSheet = false
     @State private var isShowingRenameHouseholdSheet = false
-    @State private var isShowingCreateOrganizationSheet = false
-    @State private var newOrganizationName = ""
-    @State private var createOrganizationError: String?
     @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
@@ -196,18 +194,6 @@ struct FamilyView: View {
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
             .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $isShowingCreateOrganizationSheet) {
-            CreateOrganizationSheet(
-                organizationName: $newOrganizationName,
-                inputError: $createOrganizationError,
-                isSubmitting: orgRoutingViewModel.isCreating,
-                onSubmit: {
-                    await submitCreateOrganization()
-                }
-            )
-            .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
         .alert("提示", isPresented: transferSuccessToastBinding) {
@@ -446,16 +432,24 @@ struct FamilyView: View {
             .buttonStyle(.plain)
             .disabled(canManageHousehold == false || appRouter.selectedHouseholdId == nil)
 
-            OrganizationSwitcherChevronButton(
-                isShowingCreateOrganization: $isShowingCreateOrganizationSheet
-            )
+            Button {
+                groupSwitcher.showSwitchGroupDialog = true
+            } label: {
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("切换群组")
         }
         .padding(.vertical, 6)
     }
 
     private var currentOrganizationDisplayName: String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? String(localized: "未命名组织") : trimmed
+        return trimmed.isEmpty ? String(localized: "未命名群组") : trimmed
     }
 
     private func openOrganizationSettings() {
@@ -637,28 +631,6 @@ struct FamilyView: View {
         guard success else { return }
         isShowingRenameHouseholdSheet = false
         await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
-    }
-
-    @MainActor
-    private func submitCreateOrganization() async {
-        createOrganizationError = nil
-        let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalizedName.isEmpty == false else {
-            createOrganizationError = "Organization name cannot be empty."
-            return
-        }
-
-        guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(displayName: normalizedName) else {
-            createOrganizationError = orgRoutingViewModel.errorMessage
-            return
-        }
-
-        newOrganizationName = ""
-        isShowingCreateOrganizationSheet = false
-        appRouter.preferHouseholdOnNextRefresh(createdHouseholdId)
-        await appRouter.refreshStateFromBackend()
-        viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-        await viewModel.loadMembers()
     }
 
     private func updateLoginSheetPresentation() {
@@ -1025,4 +997,6 @@ private struct DisbandHouseholdConfirmationSheet: View {
 #Preview {
     FamilyView()
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
+        .environmentObject(GroupSwitcherCoordinator())
 }

@@ -56,5 +56,6 @@ struct AppTabRootView: View {
         .environmentObject(AppBootstrap())
         .environmentObject(AppRouter())
         .environmentObject(AppSettingsManager.shared)
+        .environmentObject(GroupSwitcherCoordinator())
         .environment(\.locale, Locale(identifier: "en"))
 }

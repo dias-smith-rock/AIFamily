@@ -3,7 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appBootstrap: AppBootstrap
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
 
     var body: some View {
         Group {
@@ -18,6 +20,7 @@ struct ContentView: View {
                 AppTabRootView()
             }
         }
+        .environmentObject(groupSwitcher)
         .animation(.easeInOut, value: appRouter.appState)
         .alert("权限变更通知", isPresented: newCreatorAlertBinding) {
             Button("立即查看") {
@@ -34,6 +37,62 @@ struct ContentView: View {
                         household.displayHouseholdName
                     )
                 )
+            }
+        }
+        .sheet(isPresented: $groupSwitcher.showSwitchGroupDialog) {
+            SwitchGroupSheetView(coordinator: groupSwitcher)
+                .environmentObject(appRouter)
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+                .presentationDetents([.height(350), .medium])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $groupSwitcher.isShowingCreateOrganizationSheet) {
+            CreateOrganizationSheet(
+                organizationName: $groupSwitcher.newOrganizationName,
+                inputError: $groupSwitcher.createOrganizationError,
+                isSubmitting: groupSwitcher.orgRoutingViewModel.isCreating,
+                onSubmit: {
+                    await groupSwitcher.submitCreateOrganization(appRouter: appRouter)
+                }
+            )
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $groupSwitcher.showJoinGroupSheet) {
+            JoinExistingGroupSheet(
+                inviteCode: $groupSwitcher.joinCode,
+                inputError: $groupSwitcher.joinInputError,
+                isSubmitting: groupSwitcher.orgRoutingViewModel.isJoining,
+                onScan: {
+                    groupSwitcher.showJoinScanner = true
+                },
+                onSubmit: {
+                    await groupSwitcher.submitJoinGroup(appRouter: appRouter, locale: appSettings.appLocale)
+                }
+            )
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $groupSwitcher.showJoinScanner) {
+            OrganizationJoinQRScannerSheet { raw in
+                if let code = groupSwitcher.firstInviteCode(from: raw.uppercased()) {
+                    groupSwitcher.joinCode = code
+                    groupSwitcher.joinInputError = nil
+                } else {
+                    groupSwitcher.joinInputError = AppLocalized.string(
+                        "未识别到有效邀请码，请重试。",
+                        locale: appSettings.appLocale
+                    )
+                }
+                groupSwitcher.showJoinScanner = false
+            } onError: { message in
+                groupSwitcher.joinInputError = message
+                groupSwitcher.showJoinScanner = false
             }
         }
         .task {
@@ -112,4 +171,5 @@ struct ContentView: View {
     ContentView()
         .environmentObject(AppRouter())
         .environmentObject(AppSettingsManager.shared)
+        .environmentObject(AppBootstrap())
 }

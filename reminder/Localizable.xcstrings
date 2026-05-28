@@ -1389,9 +1389,6 @@
         }
       }
     },
-    "Organization, %@, menu" : {
-
-    },
     "SIG" : {
       "localizations" : {
         "ar" : {
@@ -4410,6 +4407,7 @@
       }
     },
     "切换组织" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4463,6 +4461,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "切換組織"
+          }
+        }
+      }
+    },
+    "切换群组" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Switch group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切换群组"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "切換群組"
           }
         }
       }
@@ -4701,6 +4721,7 @@
       }
     },
     "创建新组织" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4877,6 +4898,7 @@
       }
     },
     "创建组织" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -4935,7 +4957,6 @@
       }
     },
     "创建群组" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -11984,6 +12005,28 @@
         }
       }
     },
+    "新建群组" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create new group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建群组"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新建群組"
+          }
+        }
+      }
+    },
     "旅行证 / 回乡证号" : {
       "localizations" : {
         "ar" : {
@@ -13793,6 +13836,7 @@
       }
     },
     "未命名组织" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -19529,6 +19573,9 @@
         }
       }
     },
+    "群组，%@" : {
+
+    },
     "群组：%@" : {
       "localizations" : {
         "en" : {
@@ -21741,6 +21788,29 @@
         }
       }
     },
+    "请选择您要进入的群组" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a group to open"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请选择您要进入的群组"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請選擇您要進入的群組"
+          }
+        }
+      }
+    },
     "读取到原始图片数据为空，请重新选择。" : {
       "localizations" : {
         "en" : {
@@ -22525,6 +22595,9 @@
         }
       }
     },
+    "轻点以切换群组" : {
+
+    },
     "轻点以拨打或打开链接" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -22818,6 +22891,7 @@
       }
     },
     "输入组织名称…" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -22877,46 +22951,10 @@
     },
     "输入群组名称…" : {
       "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "أدخل اسم المجموعة..."
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Enter group name…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introduzca el nombre del grupo..."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entrez le nom du groupe…"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "समूह का नाम दर्ज करें..."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Digite o nome do grupo…"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "குழுவின் பெயரை உள்ளிடவும்…"
           }
         },
         "zh-Hans" : {

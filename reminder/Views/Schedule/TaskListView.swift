@@ -9,6 +9,7 @@ struct TaskListView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
 
     @State private var currentViewMode: CalendarViewMode = .day
@@ -22,11 +23,6 @@ struct TaskListView: View {
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
-
-    @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
-    @State private var isShowingCreateOrganizationSheet = false
-    @State private var newOrganizationName = ""
-    @State private var createOrganizationError: String?
 
     var body: some View {
         NavigationStack {
@@ -154,18 +150,6 @@ struct TaskListView: View {
                     await viewModel.loadTasks()
                 }
             }
-            .sheet(isPresented: $isShowingCreateOrganizationSheet) {
-                CreateOrganizationSheet(
-                    organizationName: $newOrganizationName,
-                    inputError: $createOrganizationError,
-                    isSubmitting: orgRoutingViewModel.isCreating,
-                    onSubmit: {
-                        await submitCreateOrganization()
-                    }
-                )
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-            }
         }
         .appLocaleEnvironment(using: appSettings)
     }
@@ -200,9 +184,25 @@ struct TaskListView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 4) {
-                OrganizationSwitcherControl(
-                    isShowingCreateOrganization: $isShowingCreateOrganizationSheet
-                )
+                Button {
+                    groupSwitcher.showSwitchGroupDialog = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(GroupSwitcherData.currentName(for: appRouter))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .multilineTextAlignment(.leading)
+
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
+                .accessibilityHint("轻点以切换群组")
 
                 Button {
                     isShowingCalendarSheet = true
@@ -310,30 +310,6 @@ struct TaskListView: View {
     #endif
 
     @MainActor
-    private func submitCreateOrganization() async {
-        createOrganizationError = nil
-        let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard normalizedName.isEmpty == false else {
-            createOrganizationError = "Organization name cannot be empty."
-            return
-        }
-
-        guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(displayName: normalizedName) else {
-            createOrganizationError = orgRoutingViewModel.errorMessage
-            return
-        }
-
-        newOrganizationName = ""
-        isShowingCreateOrganizationSheet = false
-        appRouter.preferHouseholdOnNextRefresh(createdHouseholdId)
-        await appRouter.refreshStateFromBackend()
-        viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-        await refreshCurrentMembershipRole()
-        await viewModel.loadTasks()
-        await viewModel.setupRealtimeListener()
-    }
-
-    @MainActor
     private func refreshTasks() async {
         await refreshCurrentMembershipRole()
         await viewModel.loadTasks()
@@ -366,4 +342,6 @@ struct TaskListView: View {
 #Preview {
     TaskListView()
         .environmentObject(AppRouter())
+        .environmentObject(AppSettingsManager.shared)
+        .environmentObject(GroupSwitcherCoordinator())
 }
