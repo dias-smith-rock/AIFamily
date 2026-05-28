@@ -585,17 +585,35 @@ struct CreateTaskView: View {
     private var repeatReminderPriorityCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 0) {
-                HStack {
+                HStack(alignment: .center, spacing: 12) {
                     Text("提醒")
                         .font(.body)
-                    Spacer()
-                    Picker("", selection: $reminderOption) {
+                        .layoutPriority(1)
+
+                    Spacer(minLength: 8)
+
+                    Menu {
                         ForEach(TaskReminderOption.allCases) { option in
-                            Text(option.titleKey).tag(option)
+                            Button {
+                                reminderOption = option
+                            } label: {
+                                Text(option.titleKey)
+                            }
                         }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(reminderOption.titleKey)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                                .fixedSize(horizontal: true, vertical: false)
+                                .truncationMode(.tail)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.caption.weight(.semibold))
+                        }
+                        .foregroundStyle(Color.accentColor)
                     }
-                    .labelsHidden()
-                    .pickerStyle(.menu)
+                    .accessibilityLabel("提醒")
+                    .layoutPriority(0)
                 }
                 .padding(.vertical, 4)
 

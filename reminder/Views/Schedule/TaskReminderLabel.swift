@@ -26,11 +26,18 @@ enum TaskReminderLabel {
                     switch minutes {
                     case 0, 5, 10, 15, 30, 60:
                         Text(titleKey(forMinutes: minutes))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     default:
                         Text("提前\(minutes)分钟")
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+            .fixedSize(horizontal: true, vertical: false)
         } else {
             Text("无")
         }
