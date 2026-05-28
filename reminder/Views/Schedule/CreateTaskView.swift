@@ -579,6 +579,21 @@ struct CreateTaskView: View {
         )
     }
 
+    private func clearAttachmentSelection() {
+        selectedImages = []
+        selectedItems = []
+    }
+
+    @MainActor
+    private func uploadSelectedAttachmentURLs(householdId: UUID) async throws -> [String] {
+        try await TaskAttachmentSupabaseSupport.uploadImages(selectedImages, householdId: householdId)
+    }
+
+    @MainActor
+    private func persistAttachmentRecords(taskId: UUID, fileURLs: [String]) async throws {
+        try await TaskAttachmentSupabaseSupport.insertRecords(taskId: taskId, fileURLs: fileURLs)
+    }
+
     private func sheetCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content().createTaskFormCardStyled()
     }
@@ -1219,6 +1234,7 @@ struct CreateTaskView: View {
         defer { isSaving = false }
 
         do {
+            let attachmentURLs = try await uploadSelectedAttachmentURLs(householdId: householdId)
             let client = SupabaseManager.shared.client
             let updated: FamilyTask
 
@@ -1376,8 +1392,15 @@ struct CreateTaskView: View {
                 updated = resolved
             }
 
+            if attachmentURLs.isEmpty == false {
+                try await persistAttachmentRecords(taskId: updated.id, fileURLs: attachmentURLs)
+            }
+
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
+            if attachmentURLs.isEmpty == false {
+                clearAttachmentSelection()
+            }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
         } catch {
@@ -1437,15 +1460,17 @@ struct CreateTaskView: View {
         errorMessage = nil
         defer { isSaving = false }
         do {
+            let newTaskId = UUID()
             let now = Date()
             let client = SupabaseManager.shared.client
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
             let recurrence = activeRecurrenceRuleString
 
+            async let attachmentURLs = uploadSelectedAttachmentURLs(householdId: householdId)
+
             if recurrence == nil {
-                let motherId = UUID()
                 let singlePayload = TaskInsertPayload(
-                    id: motherId,
+                    id: newTaskId,
                     householdId: householdId,
                     creatorId: creatorIdLowercased,
                     parentTaskId: nil,
@@ -1479,9 +1504,8 @@ struct CreateTaskView: View {
                     onAlarmSync?(synthetic)
                 }
             } else {
-                let motherId = UUID()
                 let motherPayload = TaskInsertPayload(
-                    id: motherId,
+                    id: newTaskId,
                     householdId: householdId,
                     creatorId: creatorIdLowercased,
                     parentTaskId: nil,
@@ -1507,19 +1531,18 @@ struct CreateTaskView: View {
                     createdAt: now,
                     updatedAt: now
                 )
-                let motherRow: FamilyTask = try await client
+                _ = try await client
                     .from("tasks")
                     .insert(motherPayload)
-                    .select()
-                    .single()
                     .execute()
-                    .value
-                if let syntheticMother = familyTaskFromInsertPayload(motherPayload) {
-                    onAlarmSync?(syntheticMother)
+
+                guard let syntheticMother = familyTaskFromInsertPayload(motherPayload) else {
+                    throw TaskAttachmentSupabaseError.taskPayloadAssemblyFailed
                 }
+                onAlarmSync?(syntheticMother)
 
                 let children = await Task.detached(priority: .userInitiated) {
-                    RecurrenceEngine.generateInstances(from: motherRow)
+                    RecurrenceEngine.generateInstances(from: syntheticMother)
                 }.value
                 if children.isEmpty == false {
                     let childPayloads = children.map { child in
@@ -1527,7 +1550,7 @@ struct CreateTaskView: View {
                             id: child.id,
                             householdId: householdId,
                             creatorId: creatorIdLowercased,
-                            parentTaskId: motherRow.id,
+                            parentTaskId: newTaskId,
                             groupId: nil,
                             involvedMemberIds: resolvedInvolvedMemberIds,
                             targetProfileIds: resolvedTargetProfileIds,
@@ -1563,6 +1586,15 @@ struct CreateTaskView: View {
                 }
             }
 
+            let resolvedAttachmentURLs = try await attachmentURLs
+            if resolvedAttachmentURLs.isEmpty == false {
+                try await persistAttachmentRecords(
+                    taskId: newTaskId,
+                    fileURLs: resolvedAttachmentURLs
+                )
+            }
+
+            clearAttachmentSelection()
             onSaveSuccess?(dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()

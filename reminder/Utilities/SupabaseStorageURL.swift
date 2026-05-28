@@ -3,6 +3,7 @@ import Foundation
 enum SupabaseStorageBuckets {
     static let voiceFeedbacks = "voice-feedbacks"
     static let avatars = "avatars"
+    static let taskAttachments = "task_attachments"
 }
 
 enum SupabasePublicStorageURL {
