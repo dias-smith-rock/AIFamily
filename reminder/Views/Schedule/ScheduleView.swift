@@ -313,7 +313,7 @@ struct TaskModeDayView: View {
         guard timedTasks.isEmpty == false else { return }
         let cal = Calendar.current
         let viewingToday = cal.isDateInToday(selectedDay)
-        let sorted = timedTasks.sorted { taskDisplayDate($0) < taskDisplayDate($1) }
+        let sorted = ScheduleTimelineMetrics.sortedForTimeline(timedTasks, anchor: taskDisplayDate)
         guard let first = sorted.first else { return }
         let firstID = "task-\(first.id.uuidString)"
 
@@ -394,7 +394,7 @@ struct TaskModeDayView: View {
                 Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: selectedDate)
             }
             .sorted { lhs, rhs in
-                taskDisplayDate(lhs) < taskDisplayDate(rhs)
+                ScheduleTimelineMetrics.timelineSortsBefore(lhs, rhs, anchor: taskDisplayDate)
             }
     }
 

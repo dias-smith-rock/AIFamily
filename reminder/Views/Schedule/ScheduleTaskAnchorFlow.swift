@@ -21,7 +21,7 @@ struct ScheduleTaskAnchorFlow: View {
     @State private var taskRowFrames: [UUID: CGRect] = [:]
 
     private var sortedTasks: [FamilyTask] {
-        timedTasks.sorted { taskAnchor($0) < taskAnchor($1) }
+        ScheduleTimelineMetrics.sortedForTimeline(timedTasks, anchor: taskAnchor)
     }
 
     private var viewingToday: Bool {
@@ -35,22 +35,31 @@ struct ScheduleTaskAnchorFlow: View {
                 VStack(spacing: 0) {
                     ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
                         let startTime = taskAnchor(task)
+                        let showTimeIndicator = index == 0
+                            || ScheduleTimelineMetrics.anchorsShareTimelineLabel(
+                                startTime,
+                                taskAnchor(sortedTasks[index - 1])
+                            ) == false
 
                         if index > 0 {
                             let previous = sortedTasks[index - 1]
+                            let previousAnchor = taskAnchor(previous)
 
-                            ScheduleAnchorGapSegment(
-                                stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
-                                previousAnchor: taskAnchor(previous),
-                                nextAnchor: taskAnchor(task),
-                                compactHeight: compactGapHeight,
-                                longIdleThreshold: longIdleThreshold
-                            )
+                            if ScheduleTimelineMetrics.anchorsShareTimelineLabel(previousAnchor, startTime) == false {
+                                ScheduleAnchorGapSegment(
+                                    stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
+                                    previousAnchor: previousAnchor,
+                                    nextAnchor: startTime,
+                                    compactHeight: compactGapHeight,
+                                    longIdleThreshold: longIdleThreshold
+                                )
+                            }
                         }
 
                         TaskRowView(
                             task: task,
                             anchor: startTime,
+                            showTimeIndicator: showTimeIndicator,
                             forWhomAvatars: forWhomAvatars(task),
                             assigneeLabel: assigneeLabel(task),
                             onTap: { onTaskTap(task) }

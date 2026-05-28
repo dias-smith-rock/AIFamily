@@ -350,13 +350,10 @@ struct CreateTaskView: View {
             _locationName = State(initialValue: task.locationData?.name ?? "")
         } else {
             _title = State(initialValue: initialTitle ?? "")
-            let calendar = Calendar.current
-            let resolvedDue: Date = {
-                if let d = defaultDueDate {
-                    return calendar.startOfDay(for: d)
-                }
-                return calendar.startOfDay(for: Date())
-            }()
+            let resolvedDue = Self.initialDueDateForNewTask(
+                calendarDay: defaultDueDate,
+                allDay: defaultAllDayForNewTask
+            )
             _dueDate = State(initialValue: resolvedDue)
             _durationPickerDate = State(
                 initialValue: Self.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
@@ -1976,6 +1973,33 @@ private extension CreateTaskView {
     /// 写入 `tasks.duration_minutes`（NOT NULL）。
     func resolvedDurationMinutes(for occurrenceDue: Date) -> Int {
         Self.durationMinutes(from: durationPickerDate)
+    }
+
+    /// 新建任务默认执行时间：非全天时在选中日（或今天）上保留**当前时刻**；全天仍为当日 0 点。
+    static func initialDueDateForNewTask(
+        calendarDay: Date?,
+        allDay: Bool,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Date {
+        if allDay {
+            if let calendarDay {
+                return calendar.startOfDay(for: calendarDay)
+            }
+            return calendar.startOfDay(for: now)
+        }
+
+        guard let calendarDay else {
+            return now
+        }
+
+        let dayStart = calendar.startOfDay(for: calendarDay)
+        let timeParts = calendar.dateComponents([.hour, .minute, .second], from: now)
+        var merged = calendar.dateComponents([.year, .month, .day], from: dayStart)
+        merged.hour = timeParts.hour
+        merged.minute = timeParts.minute
+        merged.second = timeParts.second ?? 0
+        return calendar.date(from: merged) ?? now
     }
 
     static func makeDurationPickerDate(minutes: Int) -> Date {

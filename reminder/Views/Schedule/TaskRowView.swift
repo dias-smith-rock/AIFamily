@@ -13,9 +13,37 @@ enum ScheduleTimelineMetrics {
     static let defaultTaskDuration: TimeInterval = 3600
     /// 与 `ScheduleTaskAnchorFlow.compactGapHeight` / 任务间 `ScheduleAnchorGapSegment` 高度一致。
     static let taskFlowGapHeight: CGFloat = 40
+    /// 同时间组内卡片之间的额外垂直间距（与 `TaskRowView` 底部 padding 一致）。
+    static let stackedRowBottomSpacing: CGFloat = 8
 
     static var axisLineLeadingInset: CGFloat {
         timeColumnWidth + rowSpacing + (axisColumnWidth - lineWidth) / 2
+    }
+
+    /// 时间轴左侧标签是否视为「同一时刻」（精确到分钟）。
+    static func anchorsShareTimelineLabel(_ lhs: Date, _ rhs: Date, calendar: Calendar = .current) -> Bool {
+        calendar.isDate(lhs, equalTo: rhs, toGranularity: .minute)
+    }
+
+    /// 计划时间优先；同一分钟锚点内按 `createdAt` 升序（先创建的在上）。
+    static func timelineSortsBefore(
+        _ lhs: FamilyTask,
+        _ rhs: FamilyTask,
+        anchor: (FamilyTask) -> Date
+    ) -> Bool {
+        let lhsAnchor = anchor(lhs)
+        let rhsAnchor = anchor(rhs)
+        if anchorsShareTimelineLabel(lhsAnchor, rhsAnchor) {
+            return lhs.createdAt < rhs.createdAt
+        }
+        return lhsAnchor < rhsAnchor
+    }
+
+    static func sortedForTimeline(
+        _ tasks: [FamilyTask],
+        anchor: (FamilyTask) -> Date
+    ) -> [FamilyTask] {
+        tasks.sorted { timelineSortsBefore($0, $1, anchor: anchor) }
     }
 }
 
@@ -43,6 +71,8 @@ struct ScheduleNowTimeCapsule: View {
 struct TaskRowView: View {
     let task: FamilyTask
     let anchor: Date
+    /// 同开始时间连续组的首项为 `true`；后续项用透明度占位，避免左列错位。
+    let showTimeIndicator: Bool
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
     let onTap: () -> Void
@@ -69,6 +99,8 @@ struct TaskRowView: View {
             .foregroundStyle(.secondary)
             .padding(.top, 2)
             .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
+            .opacity(showTimeIndicator ? 1 : 0)
+            .accessibilityHidden(showTimeIndicator == false)
     }
 
     // MARK: - 中：状态圆点
@@ -76,6 +108,8 @@ struct TaskRowView: View {
     private var axisDotColumn: some View {
         timelineDot(fill: statusDotColor)
             .frame(width: ScheduleTimelineMetrics.axisColumnWidth)
+            .opacity(showTimeIndicator ? 1 : 0)
+            .accessibilityHidden(showTimeIndicator == false)
     }
 
     private func timelineDot(fill: Color) -> some View {
@@ -92,6 +126,7 @@ struct TaskRowView: View {
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
+        .padding(.bottom, ScheduleTimelineMetrics.stackedRowBottomSpacing)
     }
 
     private var statusDotColor: Color {
