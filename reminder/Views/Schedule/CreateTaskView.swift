@@ -405,6 +405,8 @@ struct CreateTaskView: View {
                     VStack(spacing: 14) {
                         titleEditorCard
 
+                        taskAttachmentCard
+
                         EquatableView(
                             content:                             CreateTaskTimeRecurrenceBlock(
                                 dueDateToken: dueDate,
@@ -773,6 +775,12 @@ struct CreateTaskView: View {
         }
     }
 
+    private var taskAttachmentCard: some View {
+        sheetCard {
+            taskAttachmentSection
+        }
+    }
+
     private var moreDetailsCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 8) {
@@ -780,7 +788,6 @@ struct CreateTaskView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 moreDetailNoteEditor
-                taskAttachmentSection
             }
         }
     }
