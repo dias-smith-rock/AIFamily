@@ -9,9 +9,25 @@ enum TaskAttachmentSupabaseSupport {
     static let bucket = "task_attachments"
     static let mimeType = "image/jpeg"
 
-    /// 并发上传 JPEG 至 `task_attachments` 桶，返回公共 URL 列表（顺序不保证与输入一致）。
+    private static let tableSelectColumns = """
+        id,\
+        task_id,\
+        file_url,\
+        file_type,\
+        file_size_bytes,\
+        created_by,\
+        created_at
+        """
+
+    struct UploadedFile: Sendable, Equatable {
+        var fileUrl: String
+        var fileSizeBytes: Int64
+        var fileType: String
+    }
+
+    /// 并发上传 JPEG 至 `task_attachments` 桶。
     @MainActor
-    static func uploadImages(_ images: [UIImage], householdId: UUID) async throws -> [String] {
+    static func uploadImages(_ images: [UIImage], householdId: UUID) async throws -> [UploadedFile] {
         guard images.isEmpty == false else { return [] }
 
         #if canImport(Supabase)
@@ -20,7 +36,7 @@ enum TaskAttachmentSupabaseSupport {
         let userFolder = session.user.id.uuidString.lowercased()
         let householdFolder = householdId.uuidString.lowercased()
 
-        return try await withThrowingTaskGroup(of: String.self) { group in
+        return try await withThrowingTaskGroup(of: UploadedFile.self) { group in
             for image in images {
                 group.addTask {
                     guard let data = image.jpegData(compressionQuality: 0.7) else {
@@ -43,10 +59,15 @@ enum TaskAttachmentSupabaseSupport {
                                     data: data,
                                     options: FileOptions(contentType: mimeType, upsert: false)
                                 )
-                            return try client.storage
+                            let url = try client.storage
                                 .from(bucket)
                                 .getPublicURL(path: path)
                                 .absoluteString
+                            return UploadedFile(
+                                fileUrl: url,
+                                fileSizeBytes: Int64(data.count),
+                                fileType: mimeType
+                            )
                         } catch {
                             lastError = error
                             #if DEBUG
@@ -59,12 +80,12 @@ enum TaskAttachmentSupabaseSupport {
                 }
             }
 
-            var urls: [String] = []
-            urls.reserveCapacity(images.count)
-            for try await url in group {
-                urls.append(url)
+            var uploads: [UploadedFile] = []
+            uploads.reserveCapacity(images.count)
+            for try await upload in group {
+                uploads.append(upload)
             }
-            return urls
+            return uploads
         }
         #else
         _ = images
@@ -74,15 +95,37 @@ enum TaskAttachmentSupabaseSupport {
     }
 
     @MainActor
-    static func insertRecords(taskId: UUID, fileURLs: [String]) async throws {
-        guard fileURLs.isEmpty == false else { return }
+    static func fetchRecords(taskId: UUID) async throws -> [TaskAttachment] {
+        #if canImport(Supabase)
+        let rows: [TaskAttachment] = try await SupabaseManager.shared.client
+            .from("task_attachments")
+            .select(tableSelectColumns)
+            .eq("task_id", value: taskId.uuidString)
+            .order("created_at", ascending: true)
+            .execute()
+            .value
+        return rows
+        #else
+        _ = taskId
+        throw TaskAttachmentSupabaseError.sdkUnavailable
+        #endif
+    }
+
+    @MainActor
+    static func insertRecords(taskId: UUID, uploads: [UploadedFile]) async throws {
+        guard uploads.isEmpty == false else { return }
 
         #if canImport(Supabase)
-        let rows = fileURLs.map {
-            TaskAttachment(taskId: taskId, fileUrl: $0, fileType: mimeType)
+        let rows = uploads.map {
+            TaskAttachmentInsertRow(
+                taskId: taskId,
+                fileUrl: $0.fileUrl,
+                fileType: $0.fileType,
+                fileSizeBytes: $0.fileSizeBytes
+            )
         }
         print("👉 准备向 task_attachments 插入 \(rows.count) 条数据...")
-        print("👉 关联的 Task ID 为: \(rows.first?.taskId.uuidString ?? "空")")
+        print("👉 关联的 Task ID 为: \(taskId.uuidString)")
 
         do {
             _ = try await SupabaseManager.shared.client
@@ -97,9 +140,24 @@ enum TaskAttachmentSupabaseSupport {
         }
         #else
         _ = taskId
-        _ = fileURLs
+        _ = uploads
         throw TaskAttachmentSupabaseError.sdkUnavailable
         #endif
+    }
+
+    /// 兼容仅 URL 列表的写入（无 `file_size_bytes`）。
+    @MainActor
+    static func insertRecords(taskId: UUID, fileURLs: [String]) async throws {
+        let uploads = fileURLs.map {
+            UploadedFile(fileUrl: $0, fileSizeBytes: 0, fileType: mimeType)
+        }
+        try await insertRecords(taskId: taskId, uploads: uploads)
+    }
+
+    /// 仅上传并返回公共 URL（不写表）。
+    @MainActor
+    static func uploadImageURLs(_ images: [UIImage], householdId: UUID) async throws -> [String] {
+        try await uploadImages(images, householdId: householdId).map(\.fileUrl)
     }
 }
 

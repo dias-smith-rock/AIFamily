@@ -257,6 +257,16 @@
         }
       }
     },
+    "%lld / %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
     "%lld people" : {
 
     },
@@ -6280,6 +6290,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "週末採購清單"
+          }
+        }
+      }
+    },
+    "图片加载失败" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn't load image"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "图片加载失败"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "圖片載入失敗"
           }
         }
       }
@@ -14215,6 +14247,28 @@
         }
       }
     },
+    "查看附件" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "View attachment"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看附件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "查看附件"
+          }
+        }
+      }
+    },
     "标准" : {
       "localizations" : {
         "ar" : {
@@ -18413,6 +18467,16 @@
         }
       }
     },
+    "第 %lld 张，共 %lld 张" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "第 %1$lld 张，共 %2$lld 张"
+          }
+        }
+      }
+    },
     "等 %lld 个群组" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -22418,6 +22482,28 @@
         }
       }
     },
+    "轻点以全屏查看，可左右滑动切换" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Double tap for full screen. Swipe left or right to switch."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点以全屏查看，可左右滑动切换"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "輕點以全螢幕查看，可左右滑動切換"
+          }
+        }
+      }
+    },
     "轻点以拨打或打开链接" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -24621,6 +24707,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重置"
+          }
+        }
+      }
+    },
+    "附件" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المرفقات"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attachments"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjuntos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pièces jointes"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "संलग्नक"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anexos"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இணைப்புகள்"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "附件"
           }
         }
       }

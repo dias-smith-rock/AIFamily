@@ -21,6 +21,7 @@ struct TaskDetailView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
     @ObservedObject private var scheduleViewModel: ScheduleViewModel
+    @StateObject private var taskDetailViewModel = TaskDetailViewModel()
 
     private let currentUserRole: MembershipRole
     private let assigneeDisplayNameFallback: String
@@ -33,6 +34,7 @@ struct TaskDetailView: View {
     @State private var statusError: String?
     @State private var forWhomProfiles: [FamilyProfile] = []
     @State private var isShowingDeleteAlert = false
+    @State private var attachmentGalleryPresentation: AttachmentGalleryPresentation?
     init(
         initialTask: FamilyTask,
         currentUserRole: MembershipRole,
@@ -58,15 +60,21 @@ struct TaskDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
 
-                coreInfoCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-
                 timePlanningCard
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
                 forWhomSection
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+
+                if taskDetailViewModel.attachments.isEmpty == false {
+                    attachmentsSection
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                }
+
+                coreInfoCard
                     .padding(.horizontal, 16)
                     .padding(.top, 16)
 
@@ -137,6 +145,12 @@ struct TaskDetailView: View {
                 statusMachineFooter
             }
         }
+        .fullScreenCover(item: $attachmentGalleryPresentation) { presentation in
+            TaskAttachmentImageGallery(
+                attachments: taskDetailViewModel.attachments,
+                startIndex: presentation.startIndex
+            )
+        }
         .sheet(isPresented: $showingEditSheet) {
             EditTaskView(
                 task: task,
@@ -145,6 +159,7 @@ struct TaskDetailView: View {
                     Task {
                         await scheduleViewModel.loadTasks()
                         await loadForWhomProfiles()
+                        await taskDetailViewModel.loadAttachments(taskId: updated.id)
                     }
                 },
                 onAlarmSync: { updated in
@@ -156,6 +171,7 @@ struct TaskDetailView: View {
         }
         .task(id: task.id) {
             await loadForWhomProfiles()
+            await taskDetailViewModel.loadAttachments(taskId: task.id)
         }
         .alert("删除任务", isPresented: $isShowingDeleteAlert) {
             if task.seriesGrouping == nil {
@@ -318,6 +334,80 @@ struct TaskDetailView: View {
     private var cardDivider: some View {
         Divider()
             .padding(.leading, 50)
+    }
+
+    // MARK: - 附件
+
+    private var attachmentsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 6) {
+                Image(systemName: "paperclip")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text("附件")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(Array(taskDetailViewModel.attachments.enumerated()), id: \.element.id) { index, attachment in
+                        Button {
+                            attachmentGalleryPresentation = AttachmentGalleryPresentation(startIndex: index)
+                        } label: {
+                            attachmentThumbnail(attachment)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(attachment.displayImageURL == nil)
+                        .accessibilityLabel("查看附件")
+                        .accessibilityHint("轻点以全屏查看，可左右滑动切换")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+    }
+
+    @ViewBuilder
+    private func attachmentThumbnail(_ attachment: TaskAttachment) -> some View {
+        if let url = attachment.displayImageURL {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color(.tertiarySystemFill))
+                        .frame(width: 80, height: 80)
+                        .overlay { ProgressView() }
+                case .success(let image):
+                    image
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 80, height: 80)
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                case .failure:
+                    attachmentThumbnailPlaceholder(systemName: "photo.badge.exclamationmark")
+                @unknown default:
+                    EmptyView()
+                }
+            }
+        } else {
+            attachmentThumbnailPlaceholder(systemName: "photo")
+        }
+    }
+
+    private func attachmentThumbnailPlaceholder(systemName: String) -> some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color(.tertiarySystemFill))
+            .frame(width: 80, height: 80)
+            .overlay {
+                Image(systemName: systemName)
+                    .foregroundStyle(.secondary)
+            }
     }
 
     // MARK: - 为了谁（纯展示）
@@ -975,6 +1065,11 @@ struct TaskDetailView: View {
         statusError = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
         #endif
     }
+}
+
+private struct AttachmentGalleryPresentation: Identifiable {
+    let id = UUID()
+    let startIndex: Int
 }
 
 #Preview("成员 · 待接受") {

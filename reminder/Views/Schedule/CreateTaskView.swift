@@ -585,13 +585,16 @@ struct CreateTaskView: View {
     }
 
     @MainActor
-    private func uploadSelectedAttachmentURLs(householdId: UUID) async throws -> [String] {
+    private func uploadSelectedAttachments(householdId: UUID) async throws -> [TaskAttachmentSupabaseSupport.UploadedFile] {
         try await TaskAttachmentSupabaseSupport.uploadImages(selectedImages, householdId: householdId)
     }
 
     @MainActor
-    private func persistAttachmentRecords(taskId: UUID, fileURLs: [String]) async throws {
-        try await TaskAttachmentSupabaseSupport.insertRecords(taskId: taskId, fileURLs: fileURLs)
+    private func persistAttachmentRecords(
+        taskId: UUID,
+        uploads: [TaskAttachmentSupabaseSupport.UploadedFile]
+    ) async throws {
+        try await TaskAttachmentSupabaseSupport.insertRecords(taskId: taskId, uploads: uploads)
     }
 
     private func sheetCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -1234,7 +1237,7 @@ struct CreateTaskView: View {
         defer { isSaving = false }
 
         do {
-            let attachmentURLs = try await uploadSelectedAttachmentURLs(householdId: householdId)
+            let attachmentUploads = try await uploadSelectedAttachments(householdId: householdId)
             let client = SupabaseManager.shared.client
             let updated: FamilyTask
 
@@ -1392,13 +1395,13 @@ struct CreateTaskView: View {
                 updated = resolved
             }
 
-            if attachmentURLs.isEmpty == false {
-                try await persistAttachmentRecords(taskId: updated.id, fileURLs: attachmentURLs)
+            if attachmentUploads.isEmpty == false {
+                try await persistAttachmentRecords(taskId: updated.id, uploads: attachmentUploads)
             }
 
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
-            if attachmentURLs.isEmpty == false {
+            if attachmentUploads.isEmpty == false {
                 clearAttachmentSelection()
             }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
@@ -1466,7 +1469,7 @@ struct CreateTaskView: View {
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
             let recurrence = activeRecurrenceRuleString
 
-            async let attachmentURLs = uploadSelectedAttachmentURLs(householdId: householdId)
+            async let attachmentUploads = uploadSelectedAttachments(householdId: householdId)
 
             if recurrence == nil {
                 let singlePayload = TaskInsertPayload(
@@ -1586,11 +1589,11 @@ struct CreateTaskView: View {
                 }
             }
 
-            let resolvedAttachmentURLs = try await attachmentURLs
-            if resolvedAttachmentURLs.isEmpty == false {
+            let resolvedAttachmentUploads = try await attachmentUploads
+            if resolvedAttachmentUploads.isEmpty == false {
                 try await persistAttachmentRecords(
                     taskId: newTaskId,
-                    fileURLs: resolvedAttachmentURLs
+                    uploads: resolvedAttachmentUploads
                 )
             }
 

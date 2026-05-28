@@ -76,6 +76,18 @@ create index if not exists idx_family_members_household_id on public.family_memb
 create index if not exists idx_tasks_household_id on public.tasks(household_id);
 create index if not exists idx_feedbacks_household_id on public.feedbacks(household_id);
 
+create table if not exists public.task_attachments (
+    id uuid primary key default gen_random_uuid(),
+    task_id uuid not null references public.tasks(id) on delete cascade,
+    file_url text not null,
+    file_type text not null,
+    file_size_bytes bigint,
+    created_by uuid default auth.uid(),
+    created_at timestamptz not null default now()
+);
+
+create index if not exists idx_task_attachments_task_id on public.task_attachments(task_id);
+
 create table if not exists public.invite_link_nonces (
     nonce uuid primary key,
     invite_token text not null,
