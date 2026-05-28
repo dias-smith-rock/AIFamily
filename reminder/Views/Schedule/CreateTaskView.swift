@@ -1,4 +1,6 @@
 import SwiftUI
+import PhotosUI
+import UIKit
 
 #if canImport(Supabase)
 import Supabase
@@ -25,6 +27,8 @@ private extension View {
 
 private enum CreateTaskFocusField: Hashable {
     case title
+    case note
+    case financeDetailNote
     case cost
     case emergency
     case locationSearch
@@ -283,6 +287,12 @@ struct CreateTaskView: View {
     @State private var pendingRecurringUpdateTask: FamilyTask?
     @State private var isShowingRecurringUpdateScopeDialog = false
 
+    @State private var selectedItems: [PhotosPickerItem] = []
+    @State private var selectedImages: [UIImage] = []
+    @State private var showAttachmentOptions = false
+    @State private var isPresentingPhotoLibrary = false
+    @State private var isPresentingCamera = false
+
     private let editingTask: FamilyTask?
     private let initialTitle: String?
     private let onSaveSuccess: ((Date) -> Void)?
@@ -443,7 +453,13 @@ struct CreateTaskView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        dismissKeyboard()
+                    }
                 }
+                .scrollDismissesKeyboard(.interactively)
 
                 if isSaving {
                     Color.black.opacity(0.12)
@@ -473,7 +489,7 @@ struct CreateTaskView: View {
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("完成") {
-                        focusedField = nil
+                        dismissKeyboard()
                     }
                 }
             }
@@ -516,6 +532,51 @@ struct CreateTaskView: View {
         } message: {
             Text("请选择修改范围。")
         }
+        .confirmationDialog("添加附件", isPresented: $showAttachmentOptions, titleVisibility: .visible) {
+            Button("照片图库") {
+                isPresentingPhotoLibrary = true
+            }
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("拍照") {
+                    isPresentingCamera = true
+                }
+            }
+            Button("取消", role: .cancel) {}
+        }
+        .photosPicker(
+            isPresented: $isPresentingPhotoLibrary,
+            selection: $selectedItems,
+            maxSelectionCount: 10,
+            matching: .images,
+            photoLibrary: .shared()
+        )
+        .onChange(of: selectedItems) { _, newItems in
+            Task {
+                await importPhotosPickerItems(newItems)
+            }
+        }
+        .fullScreenCover(isPresented: $isPresentingCamera) {
+            TaskFormCameraImagePicker(
+                onImagePicked: { image in
+                    selectedImages.append(image)
+                    isPresentingCamera = false
+                },
+                onCancel: {
+                    isPresentingCamera = false
+                }
+            )
+            .ignoresSafeArea()
+        }
+    }
+
+    private func dismissKeyboard() {
+        focusedField = nil
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 
     private func sheetCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -704,6 +765,7 @@ struct CreateTaskView: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 moreDetailNoteEditor
+                taskAttachmentSection
             }
         }
     }
@@ -721,6 +783,7 @@ struct CreateTaskView: View {
 
     private var expandCollapseButton: some View {
         Button {
+            dismissKeyboard()
             withAnimation(.easeInOut(duration: 0.22)) {
                 isShowingMoreOptions.toggle()
             }
@@ -773,6 +836,85 @@ struct CreateTaskView: View {
         Locale.current.currencySymbol ?? "¥"
     }
 
+    private var taskAttachmentSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                dismissKeyboard()
+                showAttachmentOptions = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "paperclip")
+                        .font(.body.weight(.semibold))
+                    Text("添加附件")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .foregroundStyle(.tint)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("添加附件")
+
+            if selectedImages.isEmpty == false {
+                attachmentThumbnailStrip
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private var attachmentThumbnailStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(selectedImages.indices, id: \.self) { index in
+                    attachmentThumbnail(image: selectedImages[index], index: index)
+                }
+            }
+            .padding(.vertical, 8)
+            .padding(.horizontal, 4)
+        }
+    }
+
+    private func attachmentThumbnail(image: UIImage, index: Int) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 80, height: 80)
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+            Button {
+                removeAttachment(at: index)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color.red)
+                    .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
+            }
+            .buttonStyle(.plain)
+            .padding(2)
+            .accessibilityLabel("移除附件")
+        }
+        .frame(width: 80, height: 80)
+    }
+
+    @MainActor
+    private func importPhotosPickerItems(_ items: [PhotosPickerItem]) async {
+        var images: [UIImage] = []
+        for item in items {
+            guard let data = try? await item.loadTransferable(type: Data.self) else { continue }
+            guard let image = UIImage(data: data) else { continue }
+            images.append(image)
+        }
+        selectedImages = images
+    }
+
+    private func removeAttachment(at index: Int) {
+        guard selectedImages.indices.contains(index) else { return }
+        selectedImages.remove(at: index)
+        if selectedItems.indices.contains(index) {
+            selectedItems.remove(at: index)
+        }
+    }
+
     @ViewBuilder
     private var moreDetailNoteEditor: some View {
         ZStack(alignment: .topLeading) {
@@ -780,6 +922,7 @@ struct CreateTaskView: View {
                 .font(AppTheme.FontToken.body)
                 .frame(minHeight: 80)
                 .scrollContentBackground(.hidden)
+                .focused($focusedField, equals: .note)
 
             if note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text("添加备注...")
@@ -829,6 +972,7 @@ struct CreateTaskView: View {
                     .font(AppTheme.FontToken.body)
                     .frame(minHeight: 80)
                     .scrollContentBackground(.hidden)
+                    .focused($focusedField, equals: .financeDetailNote)
 
                 if financeDetailNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Text("可填写开支明细、支付方式等…")
