@@ -307,11 +307,10 @@ final class ScheduleViewModel: ObservableObject {
     func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
         errorMessage = nil
 
+        let updated = try await taskService.patchTaskStatus(taskId: taskId, to: status)
         if status == .completed {
             await NotificationManager.shared.cancelAllPending(for: taskId)
         }
-
-        let updated = try await taskService.patchTaskStatus(taskId: taskId, to: status)
         if let index = tasks.firstIndex(where: { $0.id == updated.id }) {
             tasks[index] = updated
         } else {

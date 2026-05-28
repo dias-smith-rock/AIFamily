@@ -33,8 +33,6 @@ struct TaskDetailView: View {
     @State private var statusError: String?
     @State private var forWhomProfiles: [FamilyProfile] = []
     @State private var isShowingDeleteAlert = false
-    @State private var showCompletedReminderCleanupAlert = false
-
     init(
         initialTask: FamilyTask,
         currentUserRole: MembershipRole,
@@ -909,16 +907,6 @@ struct TaskDetailView: View {
                 .allowsHitTesting(true)
             }
         }
-        .alert("任务已完成", isPresented: $showCompletedReminderCleanupAlert) {
-            Button("是") {
-                Task {
-                    await NotificationManager.shared.cancelAllPending(for: task.id)
-                }
-            }
-            Button("否", role: .cancel) {}
-        } message: {
-            Text("是否需要为您删除对应的闹钟提醒？")
-        }
     }
 
     private func updateTaskStatus(to newStatus: TaskStatus) async {
@@ -927,17 +915,10 @@ struct TaskDetailView: View {
         statusError = nil
         defer { isUpdatingStatus = false }
 
-        if newStatus == .completed {
-            await NotificationManager.shared.cancelAllPending(for: task.id)
-        }
-
         do {
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
             await loadForWhomProfiles()
-            if newStatus == .completed, updated.isRecurring == false {
-                showCompletedReminderCleanupAlert = true
-            }
         } catch {
             statusError = error.localizedDescription
         }

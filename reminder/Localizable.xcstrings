@@ -2992,64 +2992,6 @@
         }
       }
     },
-    "任务已完成" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اكتملت المهمة"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Task completed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tarea completada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tâche terminée"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "कार्य पूरा हो गया"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tarefa concluída"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "பணி முடிந்தது"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任务已完成"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "任務已完成"
-          }
-        }
-      }
-    },
     "任务时长" : {
       "localizations" : {
         "ar" : {
@@ -12845,64 +12787,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "是"
-          }
-        }
-      }
-    },
-    "是否需要为您删除对应的闹钟提醒？" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "هل تحتاج إلى حذف تذكير التنبيه المقابل لك؟"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Do you need to delete the corresponding alarm reminder for you?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Necesita eliminar el recordatorio de alarma correspondiente?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Devez-vous supprimer le rappel d'alarme correspondant pour vous ?"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "क्या आपको अपने लिए संबंधित अलार्म अनुस्मारक को हटाने की आवश्यकता है?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Você precisa excluir o lembrete de alarme correspondente para você?"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உங்களுக்கான தொடர்புடைய அலாரம் நினைவூட்டலை நீக்க வேண்டுமா?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否需要为您删除对应的闹钟提醒？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "是否需要為您刪除對應的鬧鐘提醒？"
           }
         }
       }
