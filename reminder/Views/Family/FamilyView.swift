@@ -100,10 +100,10 @@ struct FamilyView: View {
             switch route {
             case .entry:
                 AddFamilyMemberEntrySheet(
-                    canCreateProfileWithoutAccount: canManageHousehold,
+                    canCreateProfileWithoutAccount: canCreateVirtualProfile,
                     onChooseInvite: { addMemberRoute = .invite },
                     onChooseCreateProfile: {
-                        guard canManageHousehold else { return }
+                        guard canCreateVirtualProfile else { return }
                         Task { @MainActor in
                             addMemberRoute = nil
                             await Task.yield()
@@ -126,7 +126,7 @@ struct FamilyView: View {
             ProfileEditView(
                 mode: .createLocalProfile,
                 householdId: appRouter.selectedHouseholdId,
-                canEdit: canManageHousehold,
+                canEdit: canCreateVirtualProfile,
                 uploadAvatar: { data, profileId in
                     #if DEBUG
                     print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
@@ -362,7 +362,7 @@ struct FamilyView: View {
             Text(AppLocalized.string("暂无其他成员", locale: locale))
                 .foregroundStyle(.secondary)
 
-            Button(AppLocalized.string("添加成员", locale: locale)) {
+            Button(AppLocalized.string("添加群组成员", locale: locale)) {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -564,6 +564,13 @@ struct FamilyView: View {
         case .member:
             return false
         }
+    }
+
+    /// 只要是当前群组下「有账号」的正式成员（含 member/admin/creator）即可新建无账号成员档案。
+    private var canCreateVirtualProfile: Bool {
+        guard let selectedMembershipId = appRouter.selectedMembershipId else { return false }
+        guard let currentMembership = viewModel.members.first(where: { $0.id == selectedMembershipId }) else { return false }
+        return currentMembership.userId != nil
     }
 
     private var isMemberRole: Bool {

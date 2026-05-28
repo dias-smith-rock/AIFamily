@@ -597,6 +597,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         #if canImport(Supabase)
         struct ProfileWriteRow: Encodable {
             let householdId: UUID
+            let userId: UUID?
             let name: String
             let avatarUrl: String?
             let gender: String?
@@ -614,6 +615,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
 
             enum CodingKeys: String, CodingKey {
                 case householdId = "household_id"
+                case userId = "user_id"
                 case name
                 case avatarUrl = "avatar_url"
                 case gender
@@ -639,6 +641,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
 
         let payload = ProfileWriteRow(
             householdId: householdId,
+            userId: nil,
             name: draft.name,
             avatarUrl: draft.avatarURL,
             gender: draft.gender,
@@ -654,6 +657,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             mainphone: draft.mainPhone,
             secondphone: draft.secondPhone
         )
+        // 无账号成员仅写 `family_profiles`，绝不插入 `household_memberships`。
         _ = try await provider.client
             .from(SupabaseTable.familyProfiles)
             .insert(payload)
