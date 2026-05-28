@@ -100,17 +100,17 @@ struct MineView: View {
         } message: {
             Text(verbatim: viewModel.toastMessage ?? "")
         }
-        .alert(AppLocalized.string("退出失败", locale: locale), isPresented: Binding(
+        .alert("退出失败", isPresented: Binding(
             get: { viewModel.signOutErrorMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeSignOutError() } }
         )) {
-            Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) { viewModel.acknowledgeSignOutError() }
+            Button("我知道了", role: .cancel) { viewModel.acknowledgeSignOutError() }
         } message: {
             Text(viewModel.signOutErrorMessage ?? "")
         }
         .alert("注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
-            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
-            Button(AppLocalized.string("确认注销", locale: locale), role: .destructive) {
+            Button("取消", role: .cancel) {}
+            Button("确认注销", role: .destructive) {
                 Task {
                     authSessionGuard.beginLoggingOut()
                     familyViewModel.prepareForSignOut()
@@ -119,18 +119,18 @@ struct MineView: View {
                 }
             }
         } message: {
-            Text(AppLocalized.string("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。", locale: locale))
+            Text("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。")
         }
         .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
-            Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) {}
+            Button("我知道了", role: .cancel) {}
         } message: {
             Text("您是「\(viewModel.creatorBlockGroupName)」等 \(viewModel.creatorBlockGroupCount) 个群组的创建者，请先转移权限或解散群组后再注销账户。")
         }
-        .alert(AppLocalized.string("注销失败", locale: locale), isPresented: Binding(
+        .alert("注销失败", isPresented: Binding(
             get: { viewModel.deleteAccountErrorMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeDeleteAccountError() } }
         )) {
-            Button(AppLocalized.string("我知道了", locale: locale), role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
+            Button("我知道了", role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
         } message: {
             Text(viewModel.deleteAccountErrorMessage ?? "")
         }

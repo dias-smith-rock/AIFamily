@@ -6,37 +6,36 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
-        ZStack {
-            Group {
-                switch appRouter.appState {
-                case .unauthenticated:
-                    LoginView()
-                case .orgRouting, .householdSelection:
-                    HouseholdSelectionView()
-                case .pendingApproval:
-                    PendingView()
-                case .activeMember:
-                    AppTabRootView()
-                }
-            }
-            .animation(.easeInOut, value: appRouter.appState)
-
-            if appRouter.showNewCreatorAlert,
-               let household = appRouter.newlyAssignedHousehold {
-                NewCreatorAlertView(
-                    householdName: household.displayHouseholdName,
-                    onViewTapped: {
-                        appRouter.enterNewlyAssignedCreatorHousehold()
-                    },
-                    onClose: {
-                        appRouter.dismissNewCreatorAlert()
-                    }
-                )
-                .transition(.opacity.combined(with: .scale))
-                .zIndex(100)
+        Group {
+            switch appRouter.appState {
+            case .unauthenticated:
+                LoginView()
+            case .orgRouting, .householdSelection:
+                HouseholdSelectionView()
+            case .pendingApproval:
+                PendingView()
+            case .activeMember:
+                AppTabRootView()
             }
         }
-        .animation(.spring(response: 0.32, dampingFraction: 0.86), value: appRouter.showNewCreatorAlert)
+        .animation(.easeInOut, value: appRouter.appState)
+        .alert("权限变更通知", isPresented: newCreatorAlertBinding) {
+            Button("立即查看") {
+                appRouter.enterNewlyAssignedCreatorHousehold()
+            }
+            Button("关闭", role: .cancel) {
+                appRouter.dismissNewCreatorAlert()
+            }
+        } message: {
+            if let household = appRouter.newlyAssignedHousehold {
+                Text(
+                    String(
+                        format: String(localized: "您已成为「%@」的创建者，拥有该群组的最高管理权限。"),
+                        household.displayHouseholdName
+                    )
+                )
+            }
+        }
         .task {
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
@@ -58,6 +57,17 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private var newCreatorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { appRouter.showNewCreatorAlert },
+            set: { isPresented in
+                if isPresented == false {
+                    appRouter.dismissNewCreatorAlert()
+                }
+            }
+        )
     }
 
     @MainActor

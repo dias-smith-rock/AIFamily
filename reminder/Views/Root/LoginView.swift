@@ -40,11 +40,11 @@ struct LoginView: View {
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
-        .alert(AppLocalized.string("无法完成登录", locale: locale), isPresented: Binding(
+        .alert("无法完成登录", isPresented: Binding(
             get: { loginErrorAlert != nil },
             set: { if $0 == false { loginErrorAlert = nil } }
         )) {
-            Button(AppLocalized.string("好的", locale: locale), role: .cancel) {}
+            Button("好的", role: .cancel) {}
         } message: {
             Text(loginErrorAlert ?? "")
         }

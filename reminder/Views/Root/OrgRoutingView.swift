@@ -85,12 +85,12 @@ struct OrgRoutingView: View {
                 showErrorAlert = true
             }
         }
-        .alert(String(localized: "操作失败"), isPresented: $showErrorAlert) {
-            Button(String(localized: "知道了"), role: .cancel) {
+        .alert("操作失败", isPresented: $showErrorAlert) {
+            Button("知道了", role: .cancel) {
                 viewModel.acknowledgeError()
             }
         } message: {
-            Text(localErrorMessage ?? String(localized: "请稍后重试。"))
+            Text(localErrorMessage ?? "请稍后重试。")
         }
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
@@ -120,14 +120,14 @@ struct OrgRoutingView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .confirmationDialog(AppLocalized.string("选择识别方式", locale: locale), isPresented: $showScanOptions, titleVisibility: .visible) {
-            Button(AppLocalized.string("相机扫码", locale: locale)) {
+        .confirmationDialog("选择识别方式", isPresented: $showScanOptions, titleVisibility: .visible) {
+            Button("相机扫码") {
                 showCameraScanner = true
             }
-            Button(AppLocalized.string("从相册识别", locale: locale)) {
+            Button("从相册识别") {
                 showPhotoPicker = true
             }
-            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
+            Button("取消", role: .cancel) {}
         }
         .sheet(isPresented: $showCameraScanner) {
             QRScannerSheet { raw in

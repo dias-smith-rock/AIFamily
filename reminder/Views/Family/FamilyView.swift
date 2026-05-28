@@ -210,32 +210,32 @@ struct FamilyView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .alert(AppLocalized.string("提示", locale: locale), isPresented: transferSuccessToastBinding) {
-            Button(AppLocalized.string("好的", locale: locale), role: .cancel) {
+        .alert("提示", isPresented: transferSuccessToastBinding) {
+            Button("好的", role: .cancel) {
                 viewModel.acknowledgeTransferSuccessToast()
             }
         } message: {
             Text(viewModel.transferSuccessToastMessage ?? "")
         }
-        .alert(String(localized: "确定要退出该群组吗？"), isPresented: $viewModel.showLeaveConfirmation) {
-            Button(String(localized: "取消"), role: .cancel) {}
-            Button(String(localized: "退出群组"), role: .destructive) {
+        .alert("确定要退出该群组吗？", isPresented: $viewModel.showLeaveConfirmation) {
+            Button("取消", role: .cancel) {}
+            Button("退出群组", role: .destructive) {
                 Task { await submitLeaveHousehold() }
             }
         } message: {
             Text("退出后您将无法查看群内的任务和消息。")
         }
-        .alert(String(localized: "提示"), isPresented: $viewModel.showCreatorBlockAlert) {
-            Button(String(localized: "知道了"), role: .cancel) {}
+        .alert("提示", isPresented: $viewModel.showCreatorBlockAlert) {
+            Button("知道了", role: .cancel) {}
         } message: {
             Text("您是此群组的创建者。退出前请先转移所有权或解散群组。")
         }
-        .alert(String(localized: "退出群组失败"), isPresented: leaveErrorAlertBinding) {
-            Button(String(localized: "知道了"), role: .cancel) {
+        .alert("退出群组失败", isPresented: leaveErrorAlertBinding) {
+            Button("知道了", role: .cancel) {
                 viewModel.acknowledgeLeaveError()
             }
         } message: {
-            Text(viewModel.leaveErrorMessage ?? String(localized: "请稍后重试。"))
+            Text(viewModel.leaveErrorMessage ?? "请稍后重试。")
         }
     }
 
@@ -1009,7 +1009,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
             .alert("解散失败", isPresented: $familyViewModel.showDisbandErrorAlert) {
                 Button("我知道了", role: .cancel) {}
             } message: {
-                Text(familyViewModel.disbandError ?? String(localized: "未知错误，请重试"))
+                Text(familyViewModel.disbandError ?? "未知错误，请重试")
             }
         }
     }

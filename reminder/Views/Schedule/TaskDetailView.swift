@@ -32,7 +32,7 @@ struct TaskDetailView: View {
     @State private var isDeletingTask = false
     @State private var statusError: String?
     @State private var forWhomProfiles: [FamilyProfile] = []
-    @State private var isShowingDeleteScopeDialog = false
+    @State private var isShowingDeleteAlert = false
     @State private var showCompletedReminderCleanupAlert = false
 
     init(
@@ -123,7 +123,7 @@ struct TaskDetailView: View {
                         .disabled(isUpdatingStatus || isDeletingTask)
 
                         Button(role: .destructive) {
-                            isShowingDeleteScopeDialog = true
+                            isShowingDeleteAlert = true
                         } label: {
                             Image(systemName: "trash")
                         }
@@ -157,11 +157,7 @@ struct TaskDetailView: View {
         .task(id: task.id) {
             await loadForWhomProfiles()
         }
-        .confirmationDialog(
-            "删除任务",
-            isPresented: $isShowingDeleteScopeDialog,
-            titleVisibility: .visible
-        ) {
+        .alert("删除任务", isPresented: $isShowingDeleteAlert) {
             if task.seriesGrouping == nil {
                 Button("仅删除此任务", role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
@@ -176,7 +172,7 @@ struct TaskDetailView: View {
             }
             Button("取消", role: .cancel) { }
         } message: {
-            Text(task.seriesGrouping == nil ? "此操作不可撤销。" : "请选择删除范围。")
+            Text(task.seriesGrouping == nil ? "此操作无法撤销。" : "请选择删除范围。")
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -863,21 +859,8 @@ struct TaskDetailView: View {
                     }
 
                 case .accepted:
-                    VStack(spacing: 12) {
-                        statusFooterPrimaryButton("完成任务", tint: .green) {
-                            Task { await updateTaskStatus(to: .completed) }
-                        }
-
-                        Button {
-                            Task { await updateTaskStatus(to: .issue) }
-                        } label: {
-                            Text("遇到问题")
-                                .font(.subheadline.weight(.medium))
-                                .frame(maxWidth: .infinity)
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                        .disabled(isUpdatingStatus)
+                    statusFooterPrimaryButton("完成任务", tint: .green) {
+                        Task { await updateTaskStatus(to: .completed) }
                     }
 
                 case .inProgress:

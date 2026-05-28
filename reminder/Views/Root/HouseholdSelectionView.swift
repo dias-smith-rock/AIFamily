@@ -82,16 +82,16 @@ struct HouseholdSelectionView: View {
                 showErrorAlert = true
             }
         }
-        .alert(String(localized: "操作失败"), isPresented: $showErrorAlert) {
-            Button(String(localized: "知道了"), role: .cancel) {
+        .alert("操作失败", isPresented: $showErrorAlert) {
+            Button("知道了", role: .cancel) {
                 viewModel.acknowledgeError()
             }
         } message: {
-            Text(localErrorMessage ?? String(localized: "请稍后重试。"))
+            Text(localErrorMessage ?? "请稍后重试。")
         }
-        .alert(AppLocalized.string("退出登录", locale: locale), isPresented: $viewModel.showSignOutAlert) {
-            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
-            Button(AppLocalized.string("退出", locale: locale), role: .destructive) {
+        .alert("退出登录", isPresented: $viewModel.showSignOutAlert) {
+            Button("取消", role: .cancel) {}
+            Button("退出", role: .destructive) {
                 Task {
                     let succeeded = await viewModel.signOut(appRouter: appRouter)
                     if succeeded == false, viewModel.authErrorMessage != nil {
@@ -100,11 +100,11 @@ struct HouseholdSelectionView: View {
                 }
             }
         } message: {
-            Text(AppLocalized.string("确定要退出当前账号吗？", locale: locale))
+            Text("确定要退出当前账号吗？")
         }
         .alert("注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
-            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
-            Button(AppLocalized.string("确认注销", locale: locale), role: .destructive) {
+            Button("取消", role: .cancel) {}
+            Button("确认注销", role: .destructive) {
                 Task {
                     let succeeded = await viewModel.deleteAccount(appRouter: appRouter)
                     if succeeded == false, viewModel.authErrorMessage != nil {
@@ -113,14 +113,14 @@ struct HouseholdSelectionView: View {
                 }
             }
         } message: {
-            Text(AppLocalized.string("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。", locale: locale))
+            Text("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。")
         }
-        .alert(AppLocalized.string("账号操作失败", locale: locale), isPresented: $showAuthErrorAlert) {
-            Button(AppLocalized.string("知道了", locale: locale), role: .cancel) {
+        .alert("账号操作失败", isPresented: $showAuthErrorAlert) {
+            Button("知道了", role: .cancel) {
                 viewModel.authErrorMessage = nil
             }
         } message: {
-            Text(viewModel.authErrorMessage ?? AppLocalized.string("请稍后重试", locale: locale))
+            Text(viewModel.authErrorMessage ?? "请稍后重试。")
         }
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
@@ -150,14 +150,14 @@ struct HouseholdSelectionView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .confirmationDialog(AppLocalized.string("选择识别方式", locale: locale), isPresented: $showScanOptions, titleVisibility: .visible) {
-            Button(AppLocalized.string("相机扫码", locale: locale)) {
+        .confirmationDialog("选择识别方式", isPresented: $showScanOptions, titleVisibility: .visible) {
+            Button("相机扫码") {
                 showCameraScanner = true
             }
-            Button(AppLocalized.string("从相册识别", locale: locale)) {
+            Button("从相册识别") {
                 showPhotoPicker = true
             }
-            Button(AppLocalized.string("取消", locale: locale), role: .cancel) {}
+            Button("取消", role: .cancel) {}
         }
         .sheet(isPresented: $showCameraScanner) {
             QRScannerSheet { raw in

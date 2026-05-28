@@ -99,6 +99,10 @@ View 层优先 `Text("…")` + 根节点 `.environment(\.locale, appSettings.app
 - 语言选择器中的语言自称（如 `English`、`Español`）
 - 调试日志、通知内部 `skipReason` 等非 UI 标识
 
+## 弹窗文案
+
+Alert / `confirmationDialog` 的 Title、Message、Button 同样遵守中文 Key，类型选择与禁止 `.popover` 等见 [native-dialogs](native-dialogs/SKILL.md)。
+
 ## 自检清单
 
 - [ ] 无新增 `snake_case` / 英文句子类 UI Key

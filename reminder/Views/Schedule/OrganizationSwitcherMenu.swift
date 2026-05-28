@@ -24,20 +24,20 @@ private enum OrganizationSwitcherData {
             AppRouter.HouseholdOption(
                 id: householdId,
                 membershipId: membershipId,
-                name: name.isEmpty ? String(localized: "未命名组织") : name
+                name: name.isEmpty ? "未命名组织" : name
             )
         ]
     }
 
     static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? String(localized: "未命名组织") : trimmed
+        return trimmed.isEmpty ? "未命名组织" : trimmed
     }
 }
 
 // MARK: - Task Tab：标题 + chevron 一体
 
-/// 任务 Tab 顶栏：组织切换触发器 + 下拉面板。
+/// 任务 Tab 顶栏：组织切换触发器 + 系统操作表。
 struct OrganizationSwitcherControl: View {
     enum LabelStyle {
         case compact
@@ -75,7 +75,7 @@ struct OrganizationSwitcherControl: View {
             }
         }
         .buttonStyle(.plain)
-        .organizationSwitcherPopover(
+        .organizationSwitcherDialog(
             isPresented: $isShowingSwitcher,
             isShowingCreateOrganization: $isShowingCreateOrganization,
             organizations: organizations,
@@ -110,7 +110,7 @@ struct OrganizationSwitcherChevronButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .organizationSwitcherPopover(
+        .organizationSwitcherDialog(
             isPresented: $isShowingSwitcher,
             isShowingCreateOrganization: $isShowingCreateOrganization,
             organizations: organizations,
@@ -121,129 +121,33 @@ struct OrganizationSwitcherChevronButton: View {
     }
 }
 
-// MARK: - Popover attachment
+// MARK: - 组织切换操作表
 
 private extension View {
-    func organizationSwitcherPopover(
+    func organizationSwitcherDialog(
         isPresented: Binding<Bool>,
         isShowingCreateOrganization: Binding<Bool>,
         organizations: [AppRouter.HouseholdOption],
         selectedHouseholdId: UUID?,
         onSelect: @escaping (AppRouter.HouseholdOption) -> Void
     ) -> some View {
-        popover(isPresented: isPresented, arrowEdge: .top) {
-            OrganizationSwitcherPanel(
-                organizations: organizations,
-                selectedHouseholdId: selectedHouseholdId,
-                onSelect: { option in
-                    onSelect(option)
-                    isPresented.wrappedValue = false
-                },
-                onCreate: {
-                    isPresented.wrappedValue = false
-                    isShowingCreateOrganization.wrappedValue = true
+        confirmationDialog("切换组织", isPresented: isPresented, titleVisibility: .visible) {
+            ForEach(organizations) { organization in
+                Button(organizationSwitcherOptionTitle(organization, isSelected: organization.id == selectedHouseholdId)) {
+                    onSelect(organization)
                 }
-            )
-            .presentationCompactAdaptation(.popover)
+            }
+            Button("创建新组织") {
+                isShowingCreateOrganization.wrappedValue = true
+            }
+            Button("取消", role: .cancel) { }
         }
     }
 }
 
-// MARK: - Popover Panel
-
-private struct OrganizationSwitcherPanel: View {
-    let organizations: [AppRouter.HouseholdOption]
-    let selectedHouseholdId: UUID?
-    let onSelect: (AppRouter.HouseholdOption) -> Void
-    let onCreate: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            if organizations.isEmpty == false {
-                ScrollView {
-                    VStack(spacing: 0) {
-                        ForEach(organizations) { organization in
-                            Button {
-                                onSelect(organization)
-                            } label: {
-                                organizationRow(for: organization)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .frame(maxHeight: 320)
-            }
-
-            Divider()
-
-            Button(action: onCreate) {
-                HStack(spacing: 10) {
-                    Image(systemName: "plus")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(Color.accentColor)
-                        .frame(width: 36, alignment: .center)
-
-                    Text("创建新组织")
-                        .font(.body)
-                        .foregroundStyle(Color.accentColor)
-
-                    Spacer(minLength: 0)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.vertical, 8)
-        .frame(minWidth: 300)
-    }
-
-    private func organizationRow(for organization: AppRouter.HouseholdOption) -> some View {
-        HStack(spacing: 12) {
-            OrganizationAvatarView(name: organization.name)
-
-            Text(organization.name)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-
-            Spacer(minLength: 8)
-
-            if organization.id == selectedHouseholdId {
-                Image(systemName: "checkmark")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.accentColor)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .contentShape(Rectangle())
-    }
-}
-
-// MARK: - Avatar
-
-private struct OrganizationAvatarView: View {
-    let name: String
-
-    private var initials: String {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else { return "O" }
-        return String(trimmed.prefix(1)).uppercased()
-    }
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.accentColor.opacity(0.14))
-            Text(initials)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-        }
-        .frame(width: 36, height: 36)
-    }
+private func organizationSwitcherOptionTitle(_ organization: AppRouter.HouseholdOption, isSelected: Bool) -> String {
+    guard isSelected else { return organization.name }
+    return "\(organization.name) ✓"
 }
 
 // MARK: - Create Organization Sheet
