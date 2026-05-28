@@ -6049,6 +6049,7 @@
       }
     },
     "否" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -12734,6 +12735,7 @@
       }
     },
     "是" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

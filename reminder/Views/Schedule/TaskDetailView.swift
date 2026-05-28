@@ -112,13 +112,15 @@ struct TaskDetailView: View {
             if canEditTask {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 14) {
-                        Button {
-                            showingEditSheet = true
-                        } label: {
-                            Text("编辑")
-                                .fontWeight(.semibold)
+                        if canShowEditButton {
+                            Button {
+                                showingEditSheet = true
+                            } label: {
+                                Text("编辑")
+                                    .fontWeight(.semibold)
+                            }
+                            .disabled(isUpdatingStatus || isDeletingTask)
                         }
-                        .disabled(isUpdatingStatus || isDeletingTask)
 
                         Button(role: .destructive) {
                             isShowingDeleteAlert = true
@@ -827,6 +829,11 @@ struct TaskDetailView: View {
         case .admin, .creator: return true
         case .member: return false
         }
+    }
+
+    /// 已完成任务按历史只读处理，不展示编辑入口（删除仍可由管理员操作）。
+    private var canShowEditButton: Bool {
+        canEditTask && task.status != .completed
     }
 
     // MARK: - 底部状态机
