@@ -289,6 +289,8 @@ struct CreateTaskView: View {
 
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
+    @State private var existingAttachments: [TaskAttachment] = []
+    @State private var attachmentsToDelete: [TaskAttachment] = []
     @State private var showAttachmentOptions = false
     @State private var isPresentingPhotoLibrary = false
     @State private var isPresentingCamera = false
@@ -502,6 +504,9 @@ struct CreateTaskView: View {
             .task(id: editingTask?.parentTaskId) {
                 await loadParentRecurrenceTemplateIfNeeded()
             }
+            .task(id: editingTask?.id) {
+                await loadExistingAttachmentsIfNeeded()
+            }
         }
         .task(id: appRouter.selectedHouseholdId ?? editingTask?.householdId) {
             await loadAssignees()
@@ -581,6 +586,23 @@ struct CreateTaskView: View {
     private func clearAttachmentSelection() {
         selectedImages = []
         selectedItems = []
+    }
+
+    @MainActor
+    private func loadExistingAttachmentsIfNeeded() async {
+        guard let taskId = editingTask?.id else {
+            existingAttachments = []
+            attachmentsToDelete = []
+            return
+        }
+        do {
+            existingAttachments = try await TaskAttachmentSupabaseSupport.fetchRecords(taskId: taskId)
+            attachmentsToDelete = []
+        } catch {
+            #if DEBUG
+            print("[CreateTaskView] loadExistingAttachmentsIfNeeded failed: \(error.localizedDescription)")
+            #endif
+        }
     }
 
     @MainActor
@@ -875,7 +897,7 @@ struct CreateTaskView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("添加附件")
 
-            if selectedImages.isEmpty == false {
+            if existingAttachments.isEmpty == false || selectedImages.isEmpty == false {
                 attachmentThumbnailStrip
             }
         }
@@ -885,6 +907,9 @@ struct CreateTaskView: View {
     private var attachmentThumbnailStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
+                ForEach(existingAttachments) { attachment in
+                    existingAttachmentThumbnail(attachment)
+                }
                 ForEach(selectedImages.indices, id: \.self) { index in
                     attachmentThumbnail(image: selectedImages[index], index: index)
                 }
@@ -892,6 +917,65 @@ struct CreateTaskView: View {
             .padding(.vertical, 8)
             .padding(.horizontal, 4)
         }
+    }
+
+    private func existingAttachmentThumbnail(_ attachment: TaskAttachment) -> some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let url = attachment.displayImageURL {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color(.tertiarySystemFill))
+                                .frame(width: 80, height: 80)
+                                .overlay { ProgressView() }
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 80, height: 80)
+                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        case .failure:
+                            existingAttachmentPlaceholder(systemName: "photo.badge.exclamationmark")
+                        @unknown default:
+                            EmptyView()
+                        }
+                    }
+                } else {
+                    existingAttachmentPlaceholder(systemName: "photo")
+                }
+            }
+
+            Button {
+                removeExistingAttachment(attachment)
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.body)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color.red)
+                    .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
+            }
+            .buttonStyle(.plain)
+            .padding(2)
+            .accessibilityLabel("移除附件")
+        }
+        .frame(width: 80, height: 80)
+    }
+
+    private func existingAttachmentPlaceholder(systemName: String) -> some View {
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .fill(Color(.tertiarySystemFill))
+            .frame(width: 80, height: 80)
+            .overlay {
+                Image(systemName: systemName)
+                    .foregroundStyle(.secondary)
+            }
+    }
+
+    private func removeExistingAttachment(_ attachment: TaskAttachment) {
+        guard let index = existingAttachments.firstIndex(where: { $0.id == attachment.id }) else { return }
+        attachmentsToDelete.append(existingAttachments.remove(at: index))
     }
 
     private func attachmentThumbnail(image: UIImage, index: Int) -> some View {
@@ -1399,12 +1483,21 @@ struct CreateTaskView: View {
                 updated = resolved
             }
 
+            if attachmentsToDelete.isEmpty == false {
+                try await TaskAttachmentSupabaseSupport.deleteRecords(
+                    ids: attachmentsToDelete.map(\.id)
+                )
+            }
+
             if attachmentUploads.isEmpty == false {
                 try await persistAttachmentRecords(taskId: updated.id, uploads: attachmentUploads)
             }
 
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
+            if attachmentsToDelete.isEmpty == false {
+                attachmentsToDelete = []
+            }
             if attachmentUploads.isEmpty == false {
                 clearAttachmentSelection()
             }

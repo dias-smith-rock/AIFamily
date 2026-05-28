@@ -112,6 +112,23 @@ enum TaskAttachmentSupabaseSupport {
     }
 
     @MainActor
+    static func deleteRecords(ids: [UUID]) async throws {
+        guard ids.isEmpty == false else { return }
+
+        #if canImport(Supabase)
+        let idStrings = ids.map { $0.uuidString.lowercased() }
+        try await SupabaseManager.shared.client
+            .from("task_attachments")
+            .delete()
+            .in("id", values: idStrings)
+            .execute()
+        #else
+        _ = ids
+        throw TaskAttachmentSupabaseError.sdkUnavailable
+        #endif
+    }
+
+    @MainActor
     static func insertRecords(taskId: UUID, uploads: [UploadedFile]) async throws {
         guard uploads.isEmpty == false else { return }
 
