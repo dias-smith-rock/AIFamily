@@ -754,11 +754,17 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func canEditProfile(_ profile: FamilyProfile?) -> Bool {
+        guard let cm = currentMembership, cm.userId != nil else { return false }
+
         guard let profile else { return canCurrentUserManageHousehold }
-        guard let cm = currentMembership else { return false }
+
+        if canCurrentUserManageHousehold { return true }
+
         if let uid = profile.userId, let cmUserId = cm.userId, uid == cmUserId { return true }
         if membership(for: profile)?.id == cm.id { return true }
-        if canCurrentUserManageHousehold, profile.userId == nil { return true }
+
+        if profile.isVirtualUser { return true }
+
         return false
     }
 
