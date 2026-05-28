@@ -89,6 +89,11 @@ final class OrgRoutingViewModel: ObservableObject {
         }
     }
 
+    /// 邀请码加入群组：供组织切换菜单复用。
+    func joinGroup(code: String) async -> Bool {
+        await joinHousehold(inviteCode: code)
+    }
+
     func acknowledgeError() {
         errorMessage = nil
     }

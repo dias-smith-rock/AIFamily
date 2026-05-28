@@ -5416,6 +5416,28 @@
         }
       }
     },
+    "加入已有群组" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Join a Group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入已有群组"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "加入已有群組"
+          }
+        }
+      }
+    },
     "加入群组" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -17849,7 +17871,6 @@
       }
     },
     "确认加入" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
