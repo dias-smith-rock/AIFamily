@@ -21,7 +21,6 @@ struct MineView: View {
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
 
     private enum FeatureVisibility {
-        static let showsVIPBanner = false
         static let showsIntegrationsSection = false
     }
 
@@ -156,22 +155,12 @@ struct MineView: View {
             }
             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
 
-            if FeatureVisibility.showsVIPBanner {
-                Section {
-                    vipBannerRow
+            Section {
+                NavigationLink {
+                    VIPSubscriptionView()
+                } label: {
+                    vipUpgradeRowLabel
                 }
-                .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                .listRowBackground(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [.orange.opacity(0.92), .yellow.opacity(0.88)],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
-                )
             }
 
             Section {
@@ -601,41 +590,33 @@ struct MineView: View {
 
     // MARK: - VIP
 
-    private var vipBannerRow: some View {
-        Button {
-            viewModel.tapUpgradeVIP()
-        } label: {
-            HStack(spacing: 12) {
-                ZStack {
-                    Image(systemName: "sparkle")
-                        .font(.title3)
-                        .foregroundStyle(.white.opacity(0.45))
-                        .offset(x: -10, y: -8)
-                    Image(systemName: "crown.fill")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-                }
-                .frame(width: 40, height: 40)
+    private var vipUpgradeRowLabel: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "crown.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.orange)
+                .frame(width: 30, height: 30)
+                .background(Color.orange.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("升级 VIP")
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    Text("解锁高级功能")
-                        .font(AppTheme.FontToken.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("升级 VIP")
+                    .font(AppTheme.FontToken.bodyStrong)
+                    .foregroundStyle(.primary)
+                Text("解锁高级功能")
+                    .font(AppTheme.FontToken.caption)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text("Pro")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.orange, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     // MARK: - Section chrome

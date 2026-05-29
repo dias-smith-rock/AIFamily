@@ -171,10 +171,6 @@ final class MineViewModel: ObservableObject {
         deleteAccountErrorMessage = nil
     }
 
-    func tapUpgradeVIP() {
-        presentToast(AppLocalized.localized("VIP 权益即将开放。"))
-    }
-
     private func presentToast(_ message: String) {
         toastMessage = message
     }
