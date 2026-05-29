@@ -259,7 +259,7 @@ struct CreateTaskView: View {
     @FocusState private var focusedField: CreateTaskFocusField?
 
     @State private var title = ""
-    @State private var dueDate = Date()
+    @State private var dueDate = CreateTaskView.getDefaultTaskTime()
     @State private var durationPickerDate = CreateTaskView.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
     @State private var isAllDay = false
     @State private var selectedRecurrence: TaskRecurrenceRule = .none
@@ -485,7 +485,7 @@ struct CreateTaskView: View {
                         }
                     }
                     .fontWeight(.semibold)
-                    .disabled(isSaving)
+                    .disabled(isSaving || normalizedTitle.isEmpty)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -2109,7 +2109,15 @@ private extension CreateTaskView {
         Self.durationMinutes(from: durationPickerDate)
     }
 
-    /// 新建任务默认执行时间：非全天时在选中日（或今天）上保留**当前时刻**；全天仍为当日 0 点。
+    /// 新建任务默认执行时间：当前时刻 +30 分钟，四舍五入到最近的整点或半点。
+    static func getDefaultTaskTime(now: Date = Date()) -> Date {
+        let interval: TimeInterval = 1800
+        let targetTime = now.timeIntervalSince1970 + interval
+        let roundedTime = round(targetTime / interval) * interval
+        return Date(timeIntervalSince1970: roundedTime)
+    }
+
+    /// 新建任务默认执行时间：非全天时在选中日（或今天）上保留 `getDefaultTaskTime()` 的时刻；全天仍为当日 0 点。
     static func initialDueDateForNewTask(
         calendarDay: Date?,
         allDay: Bool,
@@ -2123,17 +2131,19 @@ private extension CreateTaskView {
             return calendar.startOfDay(for: now)
         }
 
+        let defaultTime = getDefaultTaskTime(now: now)
+
         guard let calendarDay else {
-            return now
+            return defaultTime
         }
 
         let dayStart = calendar.startOfDay(for: calendarDay)
-        let timeParts = calendar.dateComponents([.hour, .minute, .second], from: now)
+        let timeParts = calendar.dateComponents([.hour, .minute, .second], from: defaultTime)
         var merged = calendar.dateComponents([.year, .month, .day], from: dayStart)
         merged.hour = timeParts.hour
         merged.minute = timeParts.minute
         merged.second = timeParts.second ?? 0
-        return calendar.date(from: merged) ?? now
+        return calendar.date(from: merged) ?? defaultTime
     }
 
     static func makeDurationPickerDate(minutes: Int) -> Date {
