@@ -21,6 +21,8 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedHouseholdId: UUID?
     @Published private(set) var selectedMembershipId: UUID?
     @Published private(set) var selectedHouseholdName: String?
+    @Published private(set) var userEntitlement: UserEntitlement?
+    @Published private(set) var selectedHouseholdIsPremium = false
 
     @Published var showNewCreatorAlert = false
     @Published var newlyAssignedHousehold: JoinedHousehold?
@@ -32,6 +34,15 @@ final class AppRouter: ObservableObject {
         let id: UUID
         let membershipId: UUID
         let name: String
+        var isPremium: Bool
+    }
+
+    /// 当前上下文是否享有 Pro / Premium 能力（个人权益或群组继承）。
+    var hasPremiumAccess: Bool {
+        PremiumAccess.hasPremiumAccess(
+            userEntitlement: userEntitlement,
+            householdIsPremium: selectedHouseholdIsPremium
+        )
     }
 
     func preferHouseholdOnNextRefresh(_ householdId: UUID) {
@@ -53,6 +64,7 @@ final class AppRouter: ObservableObject {
                 client: client,
                 memberships: activeMemberships
             )
+            await loadUserEntitlement(userId: userId)
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
@@ -68,6 +80,7 @@ final class AppRouter: ObservableObject {
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
                 selectedHouseholdName = nil
+                selectedHouseholdIsPremium = false
                 return
             }
 
@@ -106,6 +119,7 @@ final class AppRouter: ObservableObject {
             selectedHouseholdId = nil
             selectedMembershipId = nil
             selectedHouseholdName = nil
+            selectedHouseholdIsPremium = false
             appState = .householdSelection
             debugLog("route.householdSelection reason=multiple_households options=\(options.count)")
         } catch {
@@ -119,6 +133,7 @@ final class AppRouter: ObservableObject {
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
                 selectedHouseholdName = nil
+                selectedHouseholdIsPremium = false
                 debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
                 // 已有会话但拉取组织状态失败时，至少进入组织路由页，避免卡在登录页死循环。
@@ -136,6 +151,8 @@ final class AppRouter: ObservableObject {
         selectedHouseholdId = nil
         selectedMembershipId = nil
         selectedHouseholdName = nil
+        selectedHouseholdIsPremium = false
+        userEntitlement = nil
         selectableHouseholds = []
         recentHouseholds = []
     }
@@ -194,9 +211,26 @@ final class AppRouter: ObservableObject {
         let option = HouseholdOption(
             id: joined.householdId,
             membershipId: joined.id,
-            name: joined.displayHouseholdName
+            name: joined.displayHouseholdName,
+            isPremium: joined.household?.isPremium == true
         )
         chooseHousehold(option)
+    }
+
+    /// 领取 Pro 后刷新个人权益、群组 Premium 标记与组织列表。
+    func refreshPremiumStateAfterClaim() async {
+        #if canImport(Supabase)
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            await loadUserEntitlement(userId: userId)
+            if let householdId = selectedHouseholdId {
+                await refreshHouseholdPremiumFlag(householdId: householdId)
+            }
+            await refreshStateFromBackend()
+        } catch {
+            debugLog("refreshPremiumStateAfterClaim.error \(error.localizedDescription)")
+        }
+        #endif
     }
 
     func dismissNewCreatorAlert() {
@@ -256,6 +290,32 @@ final class AppRouter: ObservableObject {
     private struct HouseholdRow: Decodable {
         let id: UUID
         let name: String
+        let isPremium: Bool?
+    }
+
+    private func loadUserEntitlement(userId: UUID) async {
+        do {
+            userEntitlement = try await SubscriptionSupabaseSupport.fetchUserEntitlement(userId: userId)
+        } catch {
+            debugLog("loadUserEntitlement.error \(error.localizedDescription)")
+        }
+    }
+
+    private func refreshHouseholdPremiumFlag(householdId: UUID) async {
+        #if canImport(Supabase)
+        do {
+            let rows: [HouseholdRow] = try await SupabaseManager.shared.client
+                .from("households")
+                .select("id,name,is_premium")
+                .eq("id", value: householdId.uuidString.lowercased())
+                .limit(1)
+                .execute()
+                .value
+            selectedHouseholdIsPremium = rows.first?.isPremium == true
+        } catch {
+            debugLog("refreshHouseholdPremiumFlag.error \(error.localizedDescription)")
+        }
+        #endif
     }
 
     private func fetchMemberships(client: SupabaseClient, userId: UUID) async throws -> [MembershipRow] {
@@ -282,7 +342,7 @@ final class AppRouter: ObservableObject {
             debugLog("query.household_by_id.start household=\(householdID.uuidString)")
             let rows: [HouseholdRow] = try await client
                 .from("households")
-                .select("id,name")
+                .select("id,name,is_premium")
                 .eq("id", value: householdID.uuidString)
                 .limit(1)
                 .execute()
@@ -290,10 +350,24 @@ final class AppRouter: ObservableObject {
 
             if let household = rows.first {
                 debugLog("query.household_by_id.hit household=\(household.id.uuidString) name=\(household.name)")
-                options.append(.init(id: household.id, membershipId: membership.id, name: household.name))
+                options.append(
+                    .init(
+                        id: household.id,
+                        membershipId: membership.id,
+                        name: household.name,
+                        isPremium: household.isPremium == true
+                    )
+                )
             } else {
                 debugLog("query.household_by_id.miss household=\(householdID.uuidString)")
-                options.append(.init(id: householdID, membershipId: membership.id, name: "群组 \(householdID.uuidString.prefix(6))"))
+                options.append(
+                    .init(
+                        id: householdID,
+                        membershipId: membership.id,
+                        name: "群组 \(householdID.uuidString.prefix(6))",
+                        isPremium: false
+                    )
+                )
             }
         }
         let sorted = options.sorted { $0.name < $1.name }
@@ -309,6 +383,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdId = option.id
         selectedMembershipId = option.membershipId
         selectedHouseholdName = option.name
+        selectedHouseholdIsPremium = option.isPremium
         saveLastHouseholdId(option.id, for: userId)
         saveRecentHouseholdId(option.id, for: userId)
         appState = .activeMember

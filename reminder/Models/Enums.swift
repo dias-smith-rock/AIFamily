@@ -15,6 +15,7 @@ enum SubscriptionPlan: String, Codable, Equatable {
     case proMonthly = "pro_monthly"
     case proYearly = "pro_yearly"
     case proLifetime = "pro_lifetime"
+    case proOneYearFree = "pro_1_year_free"
 }
 
 // MARK: - Membership
@@ -126,6 +127,7 @@ enum PaymentMethod: String, Codable, Equatable {
 enum OrderStatus: String, Codable, Equatable {
     case pending
     case success
+    case completed
     case failed
     case refunded
 }

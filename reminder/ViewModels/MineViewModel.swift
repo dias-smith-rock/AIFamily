@@ -142,7 +142,7 @@ final class MineViewModel: ObservableObject {
         }
         #if canImport(UIKit)
         guard UIApplication.shared.canOpenURL(url) else {
-            presentToast(AppLocalized.localized("当前设备未配置邮件账户，请发送邮件至 support@wefamily.ai。"))
+            presentToast(AppLocalized.localized("当前设备未配置邮件账户，请发送邮件至 music.player.250617@gmail.com。"))
             return
         }
         await UIApplication.shared.open(url)

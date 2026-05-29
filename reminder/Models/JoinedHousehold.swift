@@ -69,11 +69,13 @@ struct HouseholdBasicInfo: Codable, Equatable {
     let id: UUID
     let name: String
     let status: String?
+    let isPremium: Bool?
 
-    init(id: UUID, name: String, status: String?) {
+    init(id: UUID, name: String, status: String?, isPremium: Bool? = nil) {
         self.id = id
         self.name = name
         self.status = status
+        self.isPremium = isPremium
     }
 
     init(from decoder: Decoder) throws {
@@ -81,12 +83,14 @@ struct HouseholdBasicInfo: Codable, Equatable {
         id = try Self.decodeUUID(from: container, key: .id)
         name = (try? container.decode(String.self, forKey: .name)) ?? String(localized: "未命名群组")
         status = try container.decodeIfPresent(String.self, forKey: .status)
+        isPremium = try container.decodeIfPresent(Bool.self, forKey: .isPremium)
     }
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case status
+        case isPremium
     }
 
     private static func decodeUUID(

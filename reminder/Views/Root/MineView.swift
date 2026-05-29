@@ -21,6 +21,7 @@ struct MineView: View {
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
 
     private enum FeatureVisibility {
+        static let showsVIPEntry = false
         static let showsIntegrationsSection = false
     }
 
@@ -155,11 +156,13 @@ struct MineView: View {
             }
             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
 
-            Section {
-                NavigationLink {
-                    VIPSubscriptionView()
-                } label: {
-                    vipUpgradeRowLabel
+            if FeatureVisibility.showsVIPEntry {
+                Section {
+                    NavigationLink {
+                        VIPSubscriptionView()
+                    } label: {
+                        vipUpgradeRowLabel
+                    }
                 }
             }
 

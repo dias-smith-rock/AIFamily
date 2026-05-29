@@ -10,6 +10,7 @@ struct Household: Identifiable, Codable, Equatable {
     var status: HouseholdStatus
     var subscriptionPlan: SubscriptionPlan
     var subscriptionExpiresAt: Date?
+    var isPremium: Bool?
     var storageUsedBytes: Int64?
     var aiQuotaUsed: Int?
     let createdAt: Date

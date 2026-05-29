@@ -550,7 +550,7 @@ struct CreateTaskView: View {
         .photosPicker(
             isPresented: $isPresentingPhotoLibrary,
             selection: $selectedItems,
-            maxSelectionCount: 10,
+            maxSelectionCount: hasPremiumAccess ? 10 : 1,
             matching: .images,
             photoLibrary: .shared()
         )
@@ -562,6 +562,7 @@ struct CreateTaskView: View {
         .fullScreenCover(isPresented: $isPresentingCamera) {
             TaskFormCameraImagePicker(
                 onImagePicked: { image in
+                    guard canAddMoreAttachments else { return }
                     selectedImages.append(image)
                     isPresentingCamera = false
                 },
@@ -607,7 +608,10 @@ struct CreateTaskView: View {
 
     @MainActor
     private func uploadSelectedAttachments(householdId: UUID) async throws -> [TaskAttachmentSupabaseSupport.UploadedFile] {
-        try await TaskAttachmentSupabaseSupport.uploadImages(selectedImages, householdId: householdId)
+        let capped = hasPremiumAccess
+            ? selectedImages
+            : Array(selectedImages.prefix(max(0, maxTaskAttachments - existingAttachments.count)))
+        return try await TaskAttachmentSupabaseSupport.uploadImages(capped, householdId: householdId)
     }
 
     @MainActor
@@ -880,10 +884,32 @@ struct CreateTaskView: View {
         Locale.current.currencySymbol ?? "¥"
     }
 
+    private var hasPremiumAccess: Bool {
+        appRouter.hasPremiumAccess
+    }
+
+    private var maxTaskAttachments: Int {
+        hasPremiumAccess ? 10 : 1
+    }
+
+    private var totalAttachmentCount: Int {
+        existingAttachments.count + selectedImages.count
+    }
+
+    private var canAddMoreAttachments: Bool {
+        totalAttachmentCount < maxTaskAttachments
+    }
+
     private var taskAttachmentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 dismissKeyboard()
+                guard canAddMoreAttachments else {
+                    errorMessage = hasPremiumAccess
+                        ? String(localized: "附件数量已达上限。", locale: locale)
+                        : String(localized: "免费版每任务仅支持 1 张图片，升级 Pro 可上传更多附件。", locale: locale)
+                    return
+                }
                 showAttachmentOptions = true
             } label: {
                 HStack(spacing: 8) {
@@ -1010,7 +1036,12 @@ struct CreateTaskView: View {
             guard let image = UIImage(data: data) else { continue }
             images.append(image)
         }
-        selectedImages = images
+        let remainingSlots = max(0, maxTaskAttachments - existingAttachments.count)
+        if hasPremiumAccess {
+            selectedImages = Array(images.prefix(remainingSlots))
+        } else {
+            selectedImages = Array(images.prefix(min(1, remainingSlots)))
+        }
     }
 
     private func removeAttachment(at index: Int) {

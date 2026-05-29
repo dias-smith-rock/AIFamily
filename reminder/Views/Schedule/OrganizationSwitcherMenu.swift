@@ -26,7 +26,8 @@ enum GroupSwitcherData {
             AppRouter.HouseholdOption(
                 id: householdId,
                 membershipId: membershipId,
-                name: name.isEmpty ? "未命名群组" : name
+                name: name.isEmpty ? "未命名群组" : name,
+                isPremium: false
             )
         ]
     }

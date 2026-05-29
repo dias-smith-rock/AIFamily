@@ -70,6 +70,10 @@ final class ViewModelFactory: ObservableObject {
     func makeMineViewModel() -> MineViewModel {
         MineViewModel(authService: services.authService)
     }
+
+    func makeVIPSubscriptionViewModel() -> VIPSubscriptionViewModel {
+        VIPSubscriptionViewModel()
+    }
 }
 
 @MainActor
@@ -110,6 +114,10 @@ enum AppViewModels {
 
     static func makeMineViewModel() -> MineViewModel {
         factory.makeMineViewModel()
+    }
+
+    static func makeVIPSubscriptionViewModel() -> VIPSubscriptionViewModel {
+        factory.makeVIPSubscriptionViewModel()
     }
 }
 

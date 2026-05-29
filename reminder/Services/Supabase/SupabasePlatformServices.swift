@@ -647,7 +647,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         let userId = session.user.id
         let rawResponse = try await provider.client
             .from("household_memberships")
-            .select("id, household_id, role, households(id, name, status)")
+            .select("id, household_id, role, households(id, name, status, is_premium)")
             .eq("user_id", value: userId.uuidString)
             .eq("status", value: MembershipStatus.active.rawValue)
             .order("created_at", ascending: false)

@@ -5,7 +5,7 @@ import Supabase
 #endif
 
 enum SupportMailHelper {
-    static let supportEmail = "support@wefamily.ai"
+    static let supportEmail = "music.player.250617@gmail.com"
     static let subject = "WeFamily Support"
 
     static func makeSupportMailURL() async -> URL? {
