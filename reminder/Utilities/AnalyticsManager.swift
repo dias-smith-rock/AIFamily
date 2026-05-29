@@ -1,0 +1,151 @@
+import Foundation
+
+#if canImport(FirebaseAnalytics)
+import FirebaseAnalytics
+#endif
+
+#if canImport(Supabase)
+import Supabase
+#endif
+
+/// 集中管理 Firebase Analytics 埋点；事件命名遵循「群组 (Group)」产品线规范。
+enum AnalyticsManager {
+    /// 核心转化漏斗事件（snake_case 与 Firebase 控制台一致）。
+    enum AppEvent {
+        case appOpened
+        case signUpCompleted
+        case loginCompleted
+        case groupCreated(groupId: UUID, isPremium: Bool)
+        case groupJoined(groupId: UUID?)
+        case virtualMemberAdded(profileId: UUID, groupId: UUID)
+        case taskCreated(hasAttachment: Bool)
+        case taskCompleted(taskId: UUID)
+        case vipPageViewed
+        case vipClaimed
+    }
+
+    /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
+    private static let newRegistrationWindow: TimeInterval = 120
+
+    static func log(event: AppEvent) {
+        #if canImport(FirebaseAnalytics)
+        let (name, parameters) = firebasePayload(for: event)
+        Analytics.logEvent(name, parameters: parameters)
+        #endif
+        #if DEBUG
+        print("[Analytics] \(debugDescription(for: event))")
+        #endif
+    }
+
+    /// 在 OAuth / 登录会话建立成功后调用：依据 `auth.users.created_at` 区分注册与登录。
+    static func logAuthSessionSucceeded() {
+        #if canImport(Supabase)
+        Task { @MainActor in
+            await logAuthSessionSucceededFromCurrentSession()
+        }
+        #endif
+    }
+
+    @MainActor
+    private static func logAuthSessionSucceededFromCurrentSession() async {
+        #if canImport(Supabase)
+        do {
+            let user = try await SupabaseManager.shared.client.auth.session.user
+            if isLikelyNewRegistration(createdAt: user.createdAt) {
+                log(event: .signUpCompleted)
+            } else {
+                log(event: .loginCompleted)
+            }
+        } catch {
+            log(event: .loginCompleted)
+        }
+        #endif
+    }
+
+    private static func isLikelyNewRegistration(createdAt: Date) -> Bool {
+        Date().timeIntervalSince(createdAt) < newRegistrationWindow
+    }
+
+    #if canImport(FirebaseAnalytics)
+    private static func firebasePayload(for event: AppEvent) -> (String, [String: Any]?) {
+        switch event {
+        case .appOpened:
+            return ("app_opened", nil)
+
+        case .signUpCompleted:
+            return ("sign_up_completed", nil)
+
+        case .loginCompleted:
+            return ("login_completed", nil)
+
+        case .groupCreated(let groupId, let isPremium):
+            return (
+                "group_created",
+                [
+                    "group_id": groupId.uuidString.lowercased(),
+                    "is_premium": isPremium ? 1 : 0,
+                ]
+            )
+
+        case .groupJoined(let groupId):
+            var params: [String: Any] = [:]
+            if let groupId {
+                params["group_id"] = groupId.uuidString.lowercased()
+            }
+            return ("group_joined", params.isEmpty ? nil : params)
+
+        case .virtualMemberAdded(let profileId, let groupId):
+            return (
+                "virtual_member_added",
+                [
+                    "profile_id": profileId.uuidString.lowercased(),
+                    "group_id": groupId.uuidString.lowercased(),
+                ]
+            )
+
+        case .taskCreated(let hasAttachment):
+            return (
+                "task_created",
+                ["has_attachment": hasAttachment ? 1 : 0]
+            )
+
+        case .taskCompleted(let taskId):
+            return (
+                "task_completed",
+                ["task_id": taskId.uuidString.lowercased()]
+            )
+
+        case .vipPageViewed:
+            return ("vip_page_viewed", nil)
+
+        case .vipClaimed:
+            return ("vip_claimed", nil)
+        }
+    }
+    #endif
+
+    private static func debugDescription(for event: AppEvent) -> String {
+        switch event {
+        case .appOpened:
+            return "app_opened"
+        case .signUpCompleted:
+            return "sign_up_completed"
+        case .loginCompleted:
+            return "login_completed"
+        case .groupCreated(let groupId, let isPremium):
+            return "group_created group_id=\(groupId.uuidString) is_premium=\(isPremium)"
+        case .groupJoined(let groupId):
+            return "group_joined group_id=\(groupId?.uuidString ?? "nil")"
+        case .virtualMemberAdded(let profileId, let groupId):
+            return "virtual_member_added profile_id=\(profileId.uuidString) group_id=\(groupId.uuidString)"
+        case .taskCreated(let hasAttachment):
+            return "task_created has_attachment=\(hasAttachment)"
+        case .taskCompleted(let taskId):
+            return "task_completed task_id=\(taskId.uuidString)"
+        case .vipPageViewed:
+            return "vip_page_viewed"
+        case .vipClaimed:
+            return "vip_claimed"
+        }
+    }
+}

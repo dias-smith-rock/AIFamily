@@ -48,7 +48,7 @@ final class OrgRoutingViewModel: ObservableObject {
         }
     }
 
-    func createHousehold(displayName: String) async -> UUID? {
+    func createHousehold(displayName: String, isPremium: Bool = false) async -> UUID? {
         isCreating = true
         errorMessage = nil
         defer { isCreating = false }
@@ -56,6 +56,7 @@ final class OrgRoutingViewModel: ObservableObject {
         do {
             let householdId = try await householdRoutingService.createHousehold(displayName: displayName)
             await CreatorRoleSnapshotStore.markKnownCreatorHouseholdIfPossible(householdId)
+            AnalyticsManager.log(event: .groupCreated(groupId: householdId, isPremium: isPremium))
             return householdId
         } catch {
             errorMessage = mapErrorMessage(error, action: .create)

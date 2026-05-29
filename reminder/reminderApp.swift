@@ -8,11 +8,23 @@
 import SwiftUI
 import SwiftData
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 @main
 struct WeFamilyApp: App {
+    #if canImport(UIKit)
+    @UIApplicationDelegateAdaptor(FirebaseAppDelegate.self) private var firebaseAppDelegate
+    #endif
+
     @StateObject private var appBootstrap = AppBootstrap()
     @StateObject private var appRouter = AppRouter()
     @StateObject private var appSettings = AppSettingsManager.shared
+
+    init() {
+        FirebaseAppDelegate.configureFirebaseIfNeeded()
+    }
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([

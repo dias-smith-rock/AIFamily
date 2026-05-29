@@ -249,12 +249,13 @@ struct OrgRoutingView: View {
             createInputError = AppLocalized.string("请输入群组名称。", locale: locale)
             return
         }
-        let success = await viewModel.createHousehold(displayName: normalizedHouseholdName)
-        guard success != nil else { return }
+        let createdId = await viewModel.createHousehold(
+            displayName: normalizedHouseholdName,
+            isPremium: appRouter.hasPremiumAccess
+        )
+        guard let createdId else { return }
         showCreateSheet = false
-        if let createdId = success {
-            appRouter.preferHouseholdOnNextRefresh(createdId)
-        }
+        appRouter.preferHouseholdOnNextRefresh(createdId)
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
     }
@@ -273,6 +274,9 @@ struct OrgRoutingView: View {
         guard success else { return }
         showJoinSheet = false
         await appRouter.refreshStateFromBackend()
+        if let groupId = appRouter.selectedHouseholdId {
+            AnalyticsManager.log(event: .groupJoined(groupId: groupId))
+        }
     }
 
     private func signOut() async {

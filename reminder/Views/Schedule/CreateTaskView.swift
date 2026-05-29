@@ -1725,6 +1725,9 @@ struct CreateTaskView: View {
                 )
             }
 
+            let hasAttachment = resolvedAttachmentUploads.isEmpty == false
+            AnalyticsManager.log(event: .taskCreated(hasAttachment: hasAttachment))
+
             clearAttachmentSelection()
             onSaveSuccess?(dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)

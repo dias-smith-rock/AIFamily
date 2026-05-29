@@ -332,6 +332,7 @@ struct LoginView: View {
                 hasValidSession = true
                 await appRouter.refreshStateFromBackend()
                 if appRouter.appState != .unauthenticated {
+                    AnalyticsManager.logAuthSessionSucceeded()
                     return
                 }
             } catch {
@@ -348,6 +349,7 @@ struct LoginView: View {
         if hasValidSession {
             // OAuth 已成功，但组织状态读取出现瞬时失败时，先放行到组织路由页，避免卡死登录。
             await MainActor.run {
+                AnalyticsManager.logAuthSessionSucceeded()
                 appRouter.goToOrgRouting()
             }
             return

@@ -1015,6 +1015,9 @@ struct TaskDetailView: View {
         do {
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
+            if newStatus == .completed {
+                AnalyticsManager.log(event: .taskCompleted(taskId: task.id))
+            }
             await loadForWhomProfiles()
         } catch {
             statusError = error.localizedDescription

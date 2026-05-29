@@ -622,6 +622,12 @@ final class FamilyViewModel: ObservableObject {
             )
             await loadMembers()
             if let createdProfile = profiles.first(where: { idsBeforeCreate.contains($0.id) == false }) {
+                AnalyticsManager.log(
+                    event: .virtualMemberAdded(
+                        profileId: createdProfile.id,
+                        groupId: householdId
+                    )
+                )
                 await syncBirthdayTasks(for: createdProfile)
             }
             postScheduleHouseholdRosterChangedIfNeeded()

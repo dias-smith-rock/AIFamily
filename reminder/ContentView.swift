@@ -106,6 +106,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
+                Self.logAppOpenedIfNeeded()
                 Task {
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
@@ -116,6 +117,14 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private static var hasLoggedAppOpenThisSession = false
+
+    private static func logAppOpenedIfNeeded() {
+        guard hasLoggedAppOpenThisSession == false else { return }
+        hasLoggedAppOpenThisSession = true
+        AnalyticsManager.log(event: .appOpened)
     }
 
     private var newCreatorAlertBinding: Binding<Bool> {

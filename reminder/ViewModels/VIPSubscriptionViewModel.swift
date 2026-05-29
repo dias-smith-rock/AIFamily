@@ -17,6 +17,7 @@ final class VIPSubscriptionViewModel: ObservableObject {
         do {
             let expiry = try await SubscriptionSupabaseSupport.claimFreeProTrialForCurrentUser()
             claimedExpiryDate = expiry
+            AnalyticsManager.log(event: .vipClaimed)
             await appRouter.refreshPremiumStateAfterClaim()
             return true
         } catch {

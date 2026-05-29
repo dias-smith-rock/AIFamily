@@ -40,7 +40,10 @@ final class GroupSwitcherCoordinator: ObservableObject {
             return
         }
 
-        guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(displayName: normalizedName) else {
+        guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(
+            displayName: normalizedName,
+            isPremium: appRouter.hasPremiumAccess
+        ) else {
             createOrganizationError = orgRoutingViewModel.errorMessage
             return
         }
@@ -65,6 +68,9 @@ final class GroupSwitcherCoordinator: ObservableObject {
         showJoinGroupSheet = false
         showSwitchGroupDialog = false
         await appRouter.refreshStateFromBackend()
+        if let groupId = appRouter.selectedHouseholdId {
+            AnalyticsManager.log(event: .groupJoined(groupId: groupId))
+        }
     }
 
     func firstInviteCode(from text: String) -> String? {

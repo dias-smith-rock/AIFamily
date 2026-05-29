@@ -34,6 +34,9 @@ struct VIPSubscriptionView: View {
         .safeAreaInset(edge: .bottom, spacing: 0) {
             claimButtonBar
         }
+        .onAppear {
+            AnalyticsManager.log(event: .vipPageViewed)
+        }
         .alert("提示", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if $0 == false { viewModel.errorMessage = nil } }
