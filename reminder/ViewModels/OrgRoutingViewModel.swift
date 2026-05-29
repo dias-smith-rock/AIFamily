@@ -48,13 +48,20 @@ final class OrgRoutingViewModel: ObservableObject {
         }
     }
 
-    func createHousehold(displayName: String, isPremium: Bool = false) async -> UUID? {
+    func createHousehold(
+        displayName: String,
+        description: String? = nil,
+        isPremium: Bool = false
+    ) async -> UUID? {
         isCreating = true
         errorMessage = nil
         defer { isCreating = false }
 
         do {
-            let householdId = try await householdRoutingService.createHousehold(displayName: displayName)
+            let householdId = try await householdRoutingService.createHousehold(
+                displayName: displayName,
+                description: description
+            )
             await CreatorRoleSnapshotStore.markKnownCreatorHouseholdIfPossible(householdId)
             AnalyticsManager.log(event: .groupCreated(groupId: householdId, isPremium: isPremium))
             return householdId

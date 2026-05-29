@@ -15,6 +15,7 @@ struct HouseholdSelectionView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var householdName = ""
+    @State private var householdDescription = ""
     @State private var inviteCode = ""
     @State private var showErrorAlert = false
     @State private var localErrorMessage: String?
@@ -125,6 +126,7 @@ struct HouseholdSelectionView: View {
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
                 householdName: $householdName,
+                householdDescription: $householdDescription,
                 inputError: $createInputError,
                 isSubmitting: viewModel.isCreating,
                 onSubmit: {
@@ -372,8 +374,11 @@ struct HouseholdSelectionView: View {
             createInputError = AppLocalized.string("请输入群组名称。", locale: locale)
             return
         }
+        let trimmedDescription = householdDescription
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let createdId = await viewModel.createHousehold(
             displayName: normalizedHouseholdName,
+            description: trimmedDescription.isEmpty ? nil : trimmedDescription,
             isPremium: appRouter.hasPremiumAccess
         )
         guard let createdId else { return }
@@ -456,6 +461,7 @@ private struct CreateHouseholdSheet: View {
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
     @Binding var householdName: String
+    @Binding var householdDescription: String
     @Binding var inputError: String?
     let isSubmitting: Bool
     let onSubmit: () async -> Void
@@ -471,6 +477,20 @@ private struct CreateHouseholdSheet: View {
                     .padding(.vertical, 11)
                     .background(Color(.secondarySystemGroupedBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                Text(AppLocalized.string("输入群组描述（选填）", locale: locale))
+                    .font(.system(size: 15, weight: .semibold))
+                TextField(
+                    AppLocalized.string("输入群组描述（选填）…", locale: locale),
+                    text: $householdDescription,
+                    axis: .vertical
+                )
+                .lineLimit(3 ... 6)
+                .textFieldStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 11)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 if let inputError {
                     Text(inputError)

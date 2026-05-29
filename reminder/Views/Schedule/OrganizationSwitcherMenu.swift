@@ -27,7 +27,8 @@ enum GroupSwitcherData {
                 id: householdId,
                 membershipId: membershipId,
                 name: name.isEmpty ? "未命名群组" : name,
-                isPremium: false
+                isPremium: appRouter.selectedHouseholdIsPremium,
+                description: appRouter.selectedHouseholdDescription
             )
         ]
     }
@@ -127,25 +128,35 @@ struct CreateOrganizationSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @Binding var organizationName: String
+    @Binding var organizationDescription: String
     @Binding var inputError: String?
     let isSubmitting: Bool
     let onSubmit: () async -> Void
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(spacing: 16) {
                     TextField("输入群组名称…", text: $organizationName)
                         .textInputAutocapitalization(.words)
                         .disabled(isSubmitting)
-                } footer: {
+                        .createGroupFieldStyle()
+
+                    TextField("输入群组描述（选填）…", text: $organizationDescription, axis: .vertical)
+                        .lineLimit(3 ... 6)
+                        .disabled(isSubmitting)
+                        .createGroupFieldStyle()
+
                     if let inputError {
                         Text(inputError)
+                            .font(.footnote)
                             .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
             }
-            .listStyle(.insetGrouped)
             .navigationTitle("创建群组")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -171,6 +182,16 @@ struct CreateOrganizationSheet: View {
                 }
             }
         }
+    }
+}
+
+private extension View {
+    func createGroupFieldStyle() -> some View {
+        textFieldStyle(.plain)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

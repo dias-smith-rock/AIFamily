@@ -53,9 +53,9 @@ protocol InviteLinkService {
 }
 
 protocol HouseholdRoutingService {
-    func createHousehold(displayName: String) async throws -> UUID
+    func createHousehold(displayName: String, description: String?) async throws -> UUID
     func joinHousehold(inviteCode: String) async throws
-    func renameHousehold(householdId: UUID, newName: String) async throws
+    func renameHousehold(householdId: UUID, newName: String, description: String) async throws
     func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold]
     func leaveHousehold(householdId: UUID) async throws
     func disbandHousehold(id: UUID, expectedName: String) async throws
@@ -536,17 +536,22 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         self.voiceStorageService = voiceStorageService
     }
 
-    func createHousehold(displayName: String) async throws -> UUID {
+    func createHousehold(displayName: String, description: String?) async throws -> UUID {
         #if canImport(Supabase)
         let normalizedName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
             throw HouseholdRoutingError.invalidHouseholdName
         }
+        let normalizedDescription = Self.normalizedOptionalDescription(description)
 
         /// 仅校验非空后直接写入；允许同名家庭，不做前端或客户端去重查询。
-        return try await createHouseholdOnBackend(normalizedName: normalizedName)
+        return try await createHouseholdOnBackend(
+            normalizedName: normalizedName,
+            normalizedDescription: normalizedDescription
+        )
         #else
         _ = displayName
+        _ = description
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -598,25 +603,26 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         #endif
     }
 
-    func renameHousehold(householdId: UUID, newName: String) async throws {
+    func renameHousehold(householdId: UUID, newName: String, description: String) async throws {
         #if canImport(Supabase)
         let normalizedName = newName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
             throw HouseholdRoutingError.invalidHouseholdName
         }
+        let trimmedDescription = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        let payload = HouseholdSettingsUpdatePayload(
+            name: normalizedName,
+            description: trimmedDescription
+        )
 
         do {
-            _ = try await provider.client
-                .rpc(
-                    "rename_household",
-                    params: [
-                        "p_household_id": householdId.uuidString,
-                        "p_name": normalizedName
-                    ]
-                )
+            try await provider.client
+                .from("households")
+                .update(payload)
+                .eq("id", value: householdId.uuidString.lowercased())
                 .execute()
         } catch {
-            print("重命名家庭详细错误: \(error)")
+            print("更新群组设置详细错误: \(error)")
             if isUnauthenticatedError(error) {
                 throw HouseholdRoutingError.unauthenticated
             }
@@ -629,14 +635,45 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
             if isHouseholdNotFoundError(error) {
                 throw HouseholdRoutingError.householdNotFound
             }
-            if isMissingRenameHouseholdRPCError(error) {
-                throw HouseholdRoutingError.backendMigrationRequired
+            do {
+                _ = try await provider.client
+                    .rpc(
+                        "rename_household",
+                        params: [
+                            "p_household_id": householdId.uuidString,
+                            "p_name": normalizedName
+                        ]
+                    )
+                    .execute()
+                try await provider.client
+                    .from("households")
+                    .update(HouseholdDescriptionPatch(description: trimmedDescription))
+                    .eq("id", value: householdId.uuidString.lowercased())
+                    .execute()
+            } catch {
+                print("重命名家庭详细错误: \(error)")
+                if isUnauthenticatedError(error) {
+                    throw HouseholdRoutingError.unauthenticated
+                }
+                if isHouseholdNameTakenError(error) {
+                    throw HouseholdRoutingError.householdNameTaken
+                }
+                if isForbiddenError(error) {
+                    throw HouseholdRoutingError.forbidden
+                }
+                if isHouseholdNotFoundError(error) {
+                    throw HouseholdRoutingError.householdNotFound
+                }
+                if isMissingRenameHouseholdRPCError(error) {
+                    throw HouseholdRoutingError.backendMigrationRequired
+                }
+                throw error
             }
-            throw error
         }
         #else
         _ = householdId
         _ = newName
+        _ = description
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -772,7 +809,16 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
 // MARK: - Household routing (RPC + client-ordered fallback)
 
 extension SupabaseHouseholdRoutingService {
-    fileprivate func createHouseholdOnBackend(normalizedName: String) async throws -> UUID {
+    fileprivate static func normalizedOptionalDescription(_ description: String?) -> String? {
+        guard let description else { return nil }
+        let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    fileprivate func createHouseholdOnBackend(
+        normalizedName: String,
+        normalizedDescription: String?
+    ) async throws -> UUID {
         let client = provider.client
         do {
             _ = try await client.auth.session
@@ -781,22 +827,28 @@ extension SupabaseHouseholdRoutingService {
         }
 
         do {
-            return try await createHouseholdViaRPC(client: client, normalizedName: normalizedName)
+            return try await createHouseholdViaRPC(
+                client: client,
+                normalizedName: normalizedName,
+                normalizedDescription: normalizedDescription
+            )
         } catch {
             if isMissingCreateHouseholdRPCError(error) {
                 #if DEBUG
-                print("[HouseholdCreate] RPC 不可用，回退客户端顺序写入")
+                print("[HouseholdCreate] RPC 未部署；客户端顺序写入在 RLS 下不可用")
                 #endif
-                return try await createHouseholdViaClientOrderedInserts(
-                    client: client,
-                    normalizedName: normalizedName
-                )
+                throw HouseholdRoutingError.backendMigrationRequired
             }
             throw mapCreateHouseholdFlowError(error)
         }
     }
 
-    fileprivate func createHouseholdViaRPC(client: SupabaseClient, normalizedName: String) async throws -> UUID {
+    fileprivate func createHouseholdViaRPC(
+        client: SupabaseClient,
+        normalizedName: String,
+        normalizedDescription: String?
+    ) async throws -> UUID {
+        // 仅传 p_name：线上 RPC 多为单参数签名；传 p_description 会使 PostgREST 报「找不到函数」并误触发旧回退逻辑。
         let params = CreateHouseholdWithCreatorParams(pName: normalizedName)
         Self.debugLogHouseholdInsertPayload(params, label: "rpc create_household_with_membership")
 
@@ -813,18 +865,38 @@ extension SupabaseHouseholdRoutingService {
             throw HouseholdRoutingError.backendMigrationRequired
         }
 
-        if let householdId = Self.parseCreatedHouseholdId(from: response.data) {
-            return householdId
-        }
-
-        if let latestHouseholdId = try await fetchLatestActiveHouseholdId(client: client) {
+        let householdId: UUID
+        if let parsedId = Self.parseCreatedHouseholdId(from: response.data) {
+            householdId = parsedId
+        } else if let latestHouseholdId = try await fetchLatestActiveHouseholdId(client: client) {
             #if DEBUG
             print("[HouseholdCreate] rpc body 未解析出 id，回退使用最新 membership 对应 household=\(latestHouseholdId.uuidString)")
             #endif
-            return latestHouseholdId
+            householdId = latestHouseholdId
+        } else {
+            throw HouseholdRoutingError.unknown
         }
 
-        throw HouseholdRoutingError.unknown
+        try await patchHouseholdDescriptionIfNeeded(
+            client: client,
+            householdId: householdId,
+            normalizedDescription: normalizedDescription
+        )
+        return householdId
+    }
+
+    fileprivate func patchHouseholdDescriptionIfNeeded(
+        client: SupabaseClient,
+        householdId: UUID,
+        normalizedDescription: String?
+    ) async throws {
+        guard let normalizedDescription else { return }
+        let payload = HouseholdDescriptionPatch(description: normalizedDescription)
+        try await client
+            .from("households")
+            .update(payload)
+            .eq("id", value: householdId.uuidString.lowercased())
+            .execute()
     }
 
     fileprivate func fetchLatestActiveHouseholdId(client: SupabaseClient) async throws -> UUID? {
@@ -844,7 +916,8 @@ extension SupabaseHouseholdRoutingService {
     /// 仅在 RPC 未部署时使用；`households` / `family_profiles` 禁止 `.select()`（见文件头注释）。
     fileprivate func createHouseholdViaClientOrderedInserts(
         client: SupabaseClient,
-        normalizedName: String
+        normalizedName: String,
+        normalizedDescription: String?
     ) async throws -> UUID {
         let session: Session
         do {
@@ -869,7 +942,8 @@ extension SupabaseHouseholdRoutingService {
             let householdPayload = HouseholdCreatorInsertPayload(
                 id: householdId,
                 name: normalizedName,
-                creatorId: currentUserId
+                creatorId: currentUserId,
+                description: normalizedDescription
             )
             Self.debugLogHouseholdInsertPayload(householdPayload)
 
@@ -990,12 +1064,22 @@ extension SupabaseHouseholdRoutingService {
     }
 }
 
+/// RPC `create_household_with_membership` 当前仅接受 `p_name`；描述在 RPC 成功后由客户端 patch。
 private struct CreateHouseholdWithCreatorParams: Encodable {
     let pName: String
 
     enum CodingKeys: String, CodingKey {
         case pName = "p_name"
     }
+}
+
+private struct HouseholdDescriptionPatch: Encodable {
+    let description: String
+}
+
+private struct HouseholdSettingsUpdatePayload: Encodable {
+    let name: String
+    let description: String
 }
 
 private struct LatestMembershipHouseholdRow: Decodable {
@@ -1006,11 +1090,13 @@ private struct HouseholdCreatorInsertPayload: Encodable {
     let id: UUID
     let name: String
     let creatorId: UUID
+    let description: String?
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
         case creatorId = "creator_id"
+        case description
     }
 
     func encode(to encoder: Encoder) throws {
@@ -1018,6 +1104,7 @@ private struct HouseholdCreatorInsertPayload: Encodable {
         try container.encode(id.uuidString.lowercased(), forKey: .id)
         try container.encode(name, forKey: .name)
         try container.encode(creatorId.uuidString.lowercased(), forKey: .creatorId)
+        try container.encodeIfPresent(description, forKey: .description)
     }
 }
 
@@ -1064,13 +1151,22 @@ private func mapCreateHouseholdFlowError(_ error: Error) -> Error {
     if message.contains("invalid_household_name") {
         return HouseholdRoutingError.invalidHouseholdName
     }
+    if message.contains("42501")
+        || message.contains("row-level security")
+        || (message.contains("family_profiles") && message.contains("violates")) {
+        return HouseholdRoutingError.backendMigrationRequired
+    }
     return error
 }
 
 private func isMissingCreateHouseholdRPCError(_ error: Error) -> Bool {
     let message = error.localizedDescription.lowercased()
-    return message.contains("create_household_with_membership")
-        && (message.contains("function") || message.contains("does not exist") || message.contains("42883"))
+    guard message.contains("create_household_with_membership") else { return false }
+    // PostgREST：多传未知参数时会报 schema cache / could not find function(..., p_description)，并非 RPC 未部署。
+    if message.contains("schema cache") || message.contains("p_description") {
+        return false
+    }
+    return message.contains("does not exist") || message.contains("42883")
 }
 #endif
 

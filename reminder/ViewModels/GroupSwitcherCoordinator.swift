@@ -7,6 +7,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
     @Published var showSwitchGroupDialog = false
     @Published var isShowingCreateOrganizationSheet = false
     @Published var newOrganizationName = ""
+    @Published var newOrganizationDescription = ""
     @Published var createOrganizationError: String?
 
     @Published var showJoinGroupSheet = false
@@ -36,12 +37,16 @@ final class GroupSwitcherCoordinator: ObservableObject {
         createOrganizationError = nil
         let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
-            createOrganizationError = "Organization name cannot be empty."
+            createOrganizationError = String(localized: "请输入群组名称。")
             return
         }
+        let trimmedDescription = newOrganizationDescription
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let description = trimmedDescription.isEmpty ? nil : trimmedDescription
 
         guard let createdHouseholdId = await orgRoutingViewModel.createHousehold(
             displayName: normalizedName,
+            description: description,
             isPremium: appRouter.hasPremiumAccess
         ) else {
             createOrganizationError = orgRoutingViewModel.errorMessage
@@ -49,6 +54,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
         }
 
         newOrganizationName = ""
+        newOrganizationDescription = ""
         isShowingCreateOrganizationSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdHouseholdId)
         await appRouter.refreshStateFromBackend()

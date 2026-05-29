@@ -875,7 +875,7 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func renameHousehold(householdId: UUID, newName: String) async -> String? {
+    func renameHousehold(householdId: UUID, newName: String, description: String) async -> String? {
         let stableName = String(newName)
         let normalizedName = stableName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
@@ -888,7 +888,8 @@ final class FamilyViewModel: ObservableObject {
         do {
             try await householdRoutingService.renameHousehold(
                 householdId: householdId,
-                newName: normalizedName
+                newName: normalizedName,
+                description: description
             )
             return nil
         } catch let error as HouseholdRoutingError {

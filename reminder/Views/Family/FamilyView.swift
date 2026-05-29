@@ -72,12 +72,14 @@ struct FamilyView: View {
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             viewModel.setMembershipContext(appRouter.selectedMembershipId)
+            await appRouter.refreshSelectedHouseholdSnapshot()
             await viewModel.loadMembers()
             updateLoginSheetPresentation()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             viewModel.setHouseholdContext(newValue)
             Task {
+                await appRouter.refreshSelectedHouseholdSnapshot()
                 await viewModel.loadMembers()
                 updateLoginSheetPresentation()
             }
@@ -180,12 +182,13 @@ struct FamilyView: View {
         .sheet(isPresented: $isShowingRenameHouseholdSheet) {
             OrganizationSettingsSheet(
                 initialName: appRouter.selectedHouseholdName ?? "",
+                initialDescription: appRouter.selectedHouseholdDescription,
                 familyViewModel: viewModel,
                 isSubmitting: viewModel.isLoading,
                 canDisband: viewModel.canDisbandCurrentHousehold,
                 errorMessage: renameErrorMessage,
-                onSubmit: { newName in
-                    await renameCurrentHousehold(to: newName)
+                onSubmit: { newName, description in
+                    await renameCurrentHousehold(to: newName, description: description)
                 },
                 onDisband: { userInput in
                     await submitDisbandHousehold(userInput: userInput)
@@ -421,9 +424,7 @@ struct FamilyView: View {
                             }
                         }
 
-                        Text("组织资料")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                        organizationDescriptionSubtitle
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -452,9 +453,25 @@ struct FamilyView: View {
         return trimmed.isEmpty ? String(localized: "未命名群组") : trimmed
     }
 
+    @ViewBuilder
+    private var organizationDescriptionSubtitle: some View {
+        let trimmed = appRouter.selectedHouseholdDescription
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty == false {
+            Text(trimmed)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+        }
+    }
+
     private func openOrganizationSettings() {
         renameErrorMessage = nil
-        isShowingRenameHouseholdSheet = true
+        Task {
+            await appRouter.refreshSelectedHouseholdSnapshot()
+            isShowingRenameHouseholdSheet = true
+        }
     }
 
     private var otherMembersSectionHeader: some View {
@@ -582,7 +599,7 @@ struct FamilyView: View {
     }
 
     @MainActor
-    private func renameCurrentHousehold(to newName: String) async {
+    private func renameCurrentHousehold(to newName: String, description: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
             renameErrorMessage = AppLocalized.localized("当前未选择群组。")
@@ -591,7 +608,8 @@ struct FamilyView: View {
 
         let renameFailureMessage = await viewModel.renameHousehold(
             householdId: householdId,
-            newName: newName
+            newName: newName,
+            description: description
         )
         if let renameFailureMessage {
             renameErrorMessage = renameFailureMessage
@@ -599,6 +617,7 @@ struct FamilyView: View {
         }
 
         await appRouter.refreshStateFromBackend()
+        await appRouter.refreshSelectedHouseholdSnapshot()
         isShowingRenameHouseholdSheet = false
     }
 
@@ -649,26 +668,30 @@ private struct OrganizationSettingsSheet: View {
 
     @ObservedObject var familyViewModel: FamilyViewModel
     @State private var name: String
+    @State private var groupDescription: String = ""
     @State private var showDisbandConfirmation = false
     private let initialName: String
+    private let initialDescription: String
     let isSubmitting: Bool
     let canDisband: Bool
     let errorMessage: String?
-    let onSubmit: @MainActor (String) async -> Void
+    let onSubmit: @MainActor (String, String) async -> Void
     let onDisband: @MainActor (String) async -> Bool
 
     init(
         initialName: String,
+        initialDescription: String,
         familyViewModel: FamilyViewModel,
         isSubmitting: Bool,
         canDisband: Bool,
         errorMessage: String?,
-        onSubmit: @escaping @MainActor (String) async -> Void,
+        onSubmit: @escaping @MainActor (String, String) async -> Void,
         onDisband: @escaping @MainActor (String) async -> Bool
     ) {
         self.familyViewModel = familyViewModel
         _name = State(initialValue: initialName)
         self.initialName = initialName
+        self.initialDescription = initialDescription
         self.isSubmitting = isSubmitting
         self.canDisband = canDisband
         self.errorMessage = errorMessage
@@ -684,19 +707,31 @@ private struct OrganizationSettingsSheet: View {
         name.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var trimmedDescription: String {
+        groupDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var normalizedInitialName: String {
+        initialName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var normalizedInitialDescription: String {
+        initialDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     private var canSave: Bool {
-        let normalizedInitial = initialName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return isSubmitting == false
+        isSubmitting == false
             && isDisbanding == false
             && trimmedName.isEmpty == false
-            && trimmedName != normalizedInitial
+            && (trimmedName != normalizedInitialName || trimmedDescription != normalizedInitialDescription)
     }
 
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VStack(spacing: 0) {
                 VStack(spacing: 18) {
                     organizationNameField
+                    organizationDescriptionField
 
                     if let errorMessage {
                         Text(errorMessage)
@@ -706,7 +741,13 @@ private struct OrganizationSettingsSheet: View {
                     }
 
                     saveChangesButton
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
 
+                Spacer(minLength: 0)
+
+                VStack(spacing: 18) {
                     if familyViewModel.canTransferOwnership {
                         transferOwnershipRow
                     }
@@ -718,10 +759,13 @@ private struct OrganizationSettingsSheet: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 8)
                 .padding(.bottom, 28)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color(.systemGroupedBackground))
+            .onAppear {
+                groupDescription = initialDescription
+            }
             .navigationTitle("群组设置")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -759,11 +803,22 @@ private struct OrganizationSettingsSheet: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
+    private var organizationDescriptionField: some View {
+        TextField("输入群组描述（选填）…", text: $groupDescription, axis: .vertical)
+            .lineLimit(3 ... 6)
+            .disabled(isSubmitting || isDisbanding)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 15)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
     private var saveChangesButton: some View {
         Button {
-            let snapshot = trimmedName
+            let nameSnapshot = trimmedName
+            let descriptionSnapshot = trimmedDescription
             Task { @MainActor in
-                await onSubmit(snapshot)
+                await onSubmit(nameSnapshot, descriptionSnapshot)
             }
         } label: {
             Group {

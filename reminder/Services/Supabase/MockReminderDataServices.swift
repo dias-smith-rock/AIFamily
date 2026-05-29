@@ -344,8 +344,9 @@ actor MockInviteLinkService: InviteLinkService {
 }
 
 actor MockHouseholdRoutingService: HouseholdRoutingService {
-    func createHousehold(displayName: String) async throws -> UUID {
+    func createHousehold(displayName: String, description: String?) async throws -> UUID {
         _ = displayName
+        _ = description
         return UUID()
     }
 
@@ -353,9 +354,10 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
         _ = inviteCode
     }
 
-    func renameHousehold(householdId: UUID, newName: String) async throws {
+    func renameHousehold(householdId: UUID, newName: String, description: String) async throws {
         _ = householdId
         _ = newName
+        _ = description
     }
 
     func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold] {

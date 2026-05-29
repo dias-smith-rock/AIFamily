@@ -50,6 +50,7 @@ struct ContentView: View {
         .sheet(isPresented: $groupSwitcher.isShowingCreateOrganizationSheet) {
             CreateOrganizationSheet(
                 organizationName: $groupSwitcher.newOrganizationName,
+                organizationDescription: $groupSwitcher.newOrganizationDescription,
                 inputError: $groupSwitcher.createOrganizationError,
                 isSubmitting: groupSwitcher.orgRoutingViewModel.isCreating,
                 onSubmit: {

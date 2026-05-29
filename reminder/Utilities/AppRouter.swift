@@ -21,6 +21,7 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedHouseholdId: UUID?
     @Published private(set) var selectedMembershipId: UUID?
     @Published private(set) var selectedHouseholdName: String?
+    @Published private(set) var selectedHouseholdDescription: String = ""
     @Published private(set) var userEntitlement: UserEntitlement?
     @Published private(set) var selectedHouseholdIsPremium = false
 
@@ -35,6 +36,7 @@ final class AppRouter: ObservableObject {
         let membershipId: UUID
         let name: String
         var isPremium: Bool
+        var description: String
     }
 
     /// 当前上下文是否享有 Pro / Premium 能力（个人权益或群组继承）。
@@ -80,6 +82,7 @@ final class AppRouter: ObservableObject {
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
                 selectedHouseholdName = nil
+                selectedHouseholdDescription = ""
                 selectedHouseholdIsPremium = false
                 return
             }
@@ -119,6 +122,7 @@ final class AppRouter: ObservableObject {
             selectedHouseholdId = nil
             selectedMembershipId = nil
             selectedHouseholdName = nil
+            selectedHouseholdDescription = ""
             selectedHouseholdIsPremium = false
             appState = .householdSelection
             debugLog("route.householdSelection reason=multiple_households options=\(options.count)")
@@ -133,6 +137,7 @@ final class AppRouter: ObservableObject {
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
                 selectedHouseholdName = nil
+                selectedHouseholdDescription = ""
                 selectedHouseholdIsPremium = false
                 debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
@@ -151,6 +156,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdId = nil
         selectedMembershipId = nil
         selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
         selectedHouseholdIsPremium = false
         userEntitlement = nil
         selectableHouseholds = []
@@ -162,6 +168,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdId = nil
         selectedMembershipId = nil
         selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
         selectableHouseholds = []
         recentHouseholds = []
     }
@@ -175,6 +182,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdId = nil
         selectedMembershipId = nil
         selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
         selectableHouseholds = []
         appState = .orgRouting
         #if DEBUG
@@ -212,7 +220,8 @@ final class AppRouter: ObservableObject {
             id: joined.householdId,
             membershipId: joined.id,
             name: joined.displayHouseholdName,
-            isPremium: joined.household?.isPremium == true
+            isPremium: joined.household?.isPremium == true,
+            description: ""
         )
         chooseHousehold(option)
     }
@@ -290,6 +299,7 @@ final class AppRouter: ObservableObject {
     private struct HouseholdRow: Decodable {
         let id: UUID
         let name: String
+        let description: String?
         let isPremium: Bool?
     }
 
@@ -301,21 +311,29 @@ final class AppRouter: ObservableObject {
         }
     }
 
-    private func refreshHouseholdPremiumFlag(householdId: UUID) async {
+    func refreshSelectedHouseholdSnapshot() async {
         #if canImport(Supabase)
+        guard let householdId = selectedHouseholdId else { return }
         do {
             let rows: [HouseholdRow] = try await SupabaseManager.shared.client
                 .from("households")
-                .select("id,name,is_premium")
+                .select("id,name,description,is_premium")
                 .eq("id", value: householdId.uuidString.lowercased())
                 .limit(1)
                 .execute()
                 .value
-            selectedHouseholdIsPremium = rows.first?.isPremium == true
+            guard let household = rows.first else { return }
+            selectedHouseholdName = household.name
+            selectedHouseholdDescription = household.description ?? ""
+            selectedHouseholdIsPremium = household.isPremium == true
         } catch {
-            debugLog("refreshHouseholdPremiumFlag.error \(error.localizedDescription)")
+            debugLog("refreshSelectedHouseholdSnapshot.error \(error.localizedDescription)")
         }
         #endif
+    }
+
+    private func refreshHouseholdPremiumFlag(householdId: UUID) async {
+        await refreshSelectedHouseholdSnapshot()
     }
 
     private func fetchMemberships(client: SupabaseClient, userId: UUID) async throws -> [MembershipRow] {
@@ -342,7 +360,7 @@ final class AppRouter: ObservableObject {
             debugLog("query.household_by_id.start household=\(householdID.uuidString)")
             let rows: [HouseholdRow] = try await client
                 .from("households")
-                .select("id,name,is_premium")
+                .select("id,name,description,is_premium")
                 .eq("id", value: householdID.uuidString)
                 .limit(1)
                 .execute()
@@ -355,7 +373,8 @@ final class AppRouter: ObservableObject {
                         id: household.id,
                         membershipId: membership.id,
                         name: household.name,
-                        isPremium: household.isPremium == true
+                        isPremium: household.isPremium == true,
+                        description: household.description ?? ""
                     )
                 )
             } else {
@@ -365,7 +384,8 @@ final class AppRouter: ObservableObject {
                         id: householdID,
                         membershipId: membership.id,
                         name: "群组 \(householdID.uuidString.prefix(6))",
-                        isPremium: false
+                        isPremium: false,
+                        description: ""
                     )
                 )
             }
@@ -383,6 +403,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdId = option.id
         selectedMembershipId = option.membershipId
         selectedHouseholdName = option.name
+        selectedHouseholdDescription = option.description
         selectedHouseholdIsPremium = option.isPremium
         saveLastHouseholdId(option.id, for: userId)
         saveRecentHouseholdId(option.id, for: userId)
