@@ -9,9 +9,12 @@ struct ProfileEditView: View {
     let mode: Mode
     let householdId: UUID?
     let canEdit: Bool
+    let memberRemoval: MemberRemovalAction?
     let uploadAvatar: @MainActor (Data, UUID?) async -> URL?
     let onSave: @MainActor (UUID, LocalProfileDraft) async -> String?
 
+    @State private var showDeleteAlert = false
+    @State private var isDeleting = false
     @State private var name: String
     @State private var gender: ProfileDraftGender
     @State private var shouldSetBirthDate: Bool
@@ -37,12 +40,14 @@ struct ProfileEditView: View {
         mode: Mode,
         householdId: UUID?,
         canEdit: Bool,
+        memberRemoval: MemberRemovalAction? = nil,
         uploadAvatar: @escaping @MainActor (Data, UUID?) async -> URL?,
         onSave: @escaping @MainActor (UUID, LocalProfileDraft) async -> String?
     ) {
         self.mode = mode
         self.householdId = householdId
         self.canEdit = canEdit
+        self.memberRemoval = memberRemoval
         self.uploadAvatar = uploadAvatar
         self.onSave = onSave
 
@@ -140,6 +145,26 @@ struct ProfileEditView: View {
                     TextField("旅行证 / 回乡证号", text: $permitNum)
                 }
 
+                if let memberRemoval {
+                    Section {
+                        Button(role: .destructive) {
+                            showDeleteAlert = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                if isDeleting {
+                                    ProgressView()
+                                } else {
+                                    Text(memberRemoval.buttonTitle)
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .disabled(isDeleting || isSaving || isUploadingAvatar)
+                    }
+                }
+
                 if let errorMessage {
                     Section {
                         Text(errorMessage)
@@ -167,6 +192,35 @@ struct ProfileEditView: View {
                 guard let newItem else { return }
                 avatarSelectionNonce += 1
                 uploadSelectedAvatar(newItem, nonce: avatarSelectionNonce)
+            }
+            .alert("确定要执行此操作吗？", isPresented: $showDeleteAlert) {
+                Button("取消", role: .cancel) {}
+                Button("确定", role: .destructive) {
+                    performMemberRemoval()
+                }
+            } message: {
+                if let memberRemoval {
+                    Text(
+                        memberRemoval.isVirtualMember
+                            ? "删除后该虚拟成员的所有信息将不可恢复。"
+                            : "移出后，该成员将无法再访问本群组的任务与信息。"
+                    )
+                }
+            }
+        }
+    }
+
+    private func performMemberRemoval() {
+        guard let memberRemoval else { return }
+        isDeleting = true
+        errorMessage = nil
+        Task { @MainActor in
+            defer { isDeleting = false }
+            let failure = await memberRemoval.onDelete()
+            if let failure {
+                errorMessage = failure
+            } else {
+                dismiss()
             }
         }
     }
@@ -346,6 +400,12 @@ struct ProfileEditView: View {
 }
 
 extension ProfileEditView {
+    struct MemberRemovalAction {
+        let buttonTitle: LocalizedStringKey
+        let isVirtualMember: Bool
+        let onDelete: @MainActor () async -> String?
+    }
+
     enum Mode {
         /// 编辑已有档案：`FamilyProfile.id` 即 `family_profiles` 主键，作为双表更新的 `targetProfileId`。
         case createLocalProfile

@@ -5428,6 +5428,28 @@
         }
       }
     },
+    "删除后该虚拟成员的所有信息将不可恢复。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This virtual member profile cannot be recovered after deletion."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除后该虚拟成员的所有信息将不可恢复。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除後該虛擬成員的所有資訊將不可恢復。"
+          }
+        }
+      }
+    },
     "删除失败：%@" : {
       "localizations" : {
         "ar" : {
@@ -5540,6 +5562,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除此任務及以後"
+          }
+        }
+      }
+    },
+    "删除该成员档案" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete member profile"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除该成员档案"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除該成員檔案"
           }
         }
       }
@@ -7305,6 +7349,28 @@
         }
       }
     },
+    "将该成员移出群组" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from group"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将该成员移出群组"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "將該成員移出群組"
+          }
+        }
+      }
+    },
     "尚未添加位置" : {
       "localizations" : {
         "ar" : {
@@ -8762,6 +8828,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目前沒有權限修改該成員資料。"
+          }
+        }
+      }
+    },
+    "当前没有权限移出或删除该成员。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You don't have permission to remove or delete this member."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前没有权限移出或删除该成员。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前沒有權限移出或刪除該成員。"
           }
         }
       }
@@ -11840,6 +11928,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "操作失敗"
+          }
+        }
+      }
+    },
+    "操作失败，请稍后重试。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Action failed. Please try again later."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作失败，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "操作失敗，請稍後重試。"
           }
         }
       }
@@ -17897,6 +18007,9 @@
         }
       }
     },
+    "确定" : {
+
+    },
     "确定要将创建者权限转移给「%@」吗？" : {
       "localizations" : {
         "ar" : {
@@ -17951,6 +18064,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "確定要將建立者權限轉移給「%@」嗎？"
+          }
+        }
+      }
+    },
+    "确定要执行此操作吗？" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Are you sure you want to continue?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "确定要执行此操作吗？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "確定要執行此操作嗎？"
           }
         }
       }
@@ -18738,6 +18873,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "移交群主"
+          }
+        }
+      }
+    },
+    "移出后，该成员将无法再访问本群组的任务与信息。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "After removal, they can no longer access this group's tasks or messages."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移出后，该成员将无法再访问本群组的任务与信息。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移出後，該成員將無法再存取本群組的任務與資訊。"
           }
         }
       }

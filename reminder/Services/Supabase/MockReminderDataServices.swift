@@ -184,6 +184,10 @@ actor MockHouseholdMembershipDataService: HouseholdMembershipDataService {
         }
         members[index].nickname = trimmed
     }
+
+    func removeMember(householdId: UUID, userId: UUID) async throws {
+        members.removeAll { $0.householdId == householdId && $0.userId == userId }
+    }
 }
 
 // MARK: - Family Profiles
@@ -252,6 +256,10 @@ actor MockFamilyProfileDataService: FamilyProfileDataService {
         profiles[index].email = normalized.email
         profiles[index].mainPhone = normalized.mainPhone
         profiles[index].secondPhone = normalized.secondPhone
+    }
+
+    func deleteProfile(profileId: UUID) async throws {
+        profiles.removeAll { $0.id == profileId }
     }
 
     private static let dateFormatter: DateFormatter = {

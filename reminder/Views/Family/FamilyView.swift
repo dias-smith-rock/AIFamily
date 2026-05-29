@@ -153,6 +153,7 @@ struct FamilyView: View {
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: viewModel.canEditProfile(profile),
+                memberRemoval: memberRemovalAction(for: profile),
                 uploadAvatar: { data, profileId in
                     #if DEBUG
                     print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
@@ -472,6 +473,15 @@ struct FamilyView: View {
             await appRouter.refreshSelectedHouseholdSnapshot()
             isShowingRenameHouseholdSheet = true
         }
+    }
+
+    private func memberRemovalAction(for profile: FamilyProfile) -> ProfileEditView.MemberRemovalAction? {
+        guard viewModel.shouldShowDeleteButton(for: profile) else { return nil }
+        return ProfileEditView.MemberRemovalAction(
+            buttonTitle: viewModel.deleteButtonTitle(for: profile),
+            isVirtualMember: viewModel.isVirtualMember(profile),
+            onDelete: { await viewModel.deleteOrRemoveMember(profile: profile) }
+        )
     }
 
     private var otherMembersSectionHeader: some View {

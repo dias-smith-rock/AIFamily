@@ -684,6 +684,19 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
+
+    func deleteProfile(profileId: UUID) async throws {
+        #if canImport(Supabase)
+        try await provider.client
+            .from(SupabaseTable.familyProfiles)
+            .delete()
+            .eq("id", value: profileId.uuidString.lowercased())
+            .execute()
+        #else
+        _ = profileId
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
 }
 
 // MARK: - Household Membership Service
@@ -807,6 +820,21 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
         _ = householdId
         _ = profileId
         _ = nickname
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    func removeMember(householdId: UUID, userId: UUID) async throws {
+        #if canImport(Supabase)
+        try await provider.client
+            .from(SupabaseTable.memberships)
+            .delete()
+            .eq("household_id", value: householdId.uuidString.lowercased())
+            .eq("user_id", value: userId.uuidString.lowercased())
+            .execute()
+        #else
+        _ = householdId
+        _ = userId
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }

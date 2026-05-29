@@ -265,6 +265,8 @@ final class FamilyViewModel: ObservableObject {
         static let displayNameRequired = String(localized: "称呼不能为空。")
         static let nicknameRequired = String(localized: "请输入角色称呼（不能为空）。")
         static let cannotEditProfile = String(localized: "当前没有权限修改该成员资料。")
+        static let cannotRemoveMember = String(localized: "当前没有权限移出或删除该成员。")
+        static let removeMemberFailed = String(localized: "操作失败，请稍后重试。")
         static let householdNameMismatch = String(localized: "群组名称不匹配，请重新输入。")
         static let disbandUnauthorized = String(localized: "只有创建者才能解散该群组。")
         static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
@@ -772,6 +774,68 @@ final class FamilyViewModel: ObservableObject {
         if profile.isVirtualUser { return true }
 
         return false
+    }
+
+    func isVirtualMember(_ profile: FamilyProfile) -> Bool {
+        profile.isVirtualUser
+    }
+
+    func isEditingSelf(_ profile: FamilyProfile) -> Bool {
+        guard let cm = currentMembership else { return false }
+        if let profileUserId = profile.userId, let currentUserId = cm.userId, profileUserId == currentUserId {
+            return true
+        }
+        if membership(for: profile)?.id == cm.id {
+            return true
+        }
+        return false
+    }
+
+    func shouldShowDeleteButton(for profile: FamilyProfile) -> Bool {
+        guard let cm = currentMembership, cm.userId != nil else { return false }
+        if isEditingSelf(profile) { return false }
+        if isVirtualMember(profile) { return true }
+        return canCurrentUserManageHousehold
+    }
+
+    func deleteButtonTitle(for profile: FamilyProfile) -> LocalizedStringKey {
+        isVirtualMember(profile) ? "删除该成员档案" : "将该成员移出群组"
+    }
+
+    func deleteOrRemoveMember(profile: FamilyProfile) async -> String? {
+        guard let householdId = currentHouseholdId else {
+            return AppLocalized.localized("当前未选择群组。")
+        }
+        guard shouldShowDeleteButton(for: profile) else {
+            return ProfileManagementCopy.cannotRemoveMember
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            if isVirtualMember(profile) {
+                await cleanUpStoredAvatar(for: profile.id)
+                try await profileService.deleteProfile(profileId: profile.id)
+            } else {
+                guard let targetUserId = profile.userId else {
+                    return ProfileManagementCopy.removeMemberFailed
+                }
+                try await membershipService.removeMember(
+                    householdId: householdId,
+                    userId: targetUserId
+                )
+            }
+            LocalCacheManager.shared.remove(forKey: Self.membersCacheKey(for: householdId))
+            await loadMembers()
+            postScheduleHouseholdRosterChangedIfNeeded()
+            return nil
+        } catch {
+            #if DEBUG
+            print("❌ [FamilyDebug] deleteOrRemoveMember failed: \(error.localizedDescription)")
+            #endif
+            return error.localizedDescription
+        }
     }
 
     var currentUserProfile: FamilyProfile? {

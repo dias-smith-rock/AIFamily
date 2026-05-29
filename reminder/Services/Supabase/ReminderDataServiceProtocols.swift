@@ -48,6 +48,8 @@ protocol HouseholdMembershipDataService {
     func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership
     /// 按 `household_id` + `profile_id`（`family_profiles.id`）更新组织内昵称；虚拟成员无匹配行时不报错。
     func updateNickname(householdId: UUID, profileId: UUID, nickname: String) async throws
+    /// 将真实成员移出群组：删除其在当前 `household_memberships` 中的身份行（不删除全局 `family_profiles`）。
+    func removeMember(householdId: UUID, userId: UUID) async throws
 }
 
 protocol FamilyProfileDataService {
@@ -56,4 +58,6 @@ protocol FamilyProfileDataService {
     func fetchProfile(id: UUID) async throws -> FamilyProfile?
     func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async throws
     func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws
+    /// 删除无账号虚拟成员档案（`family_profiles` 单行）。
+    func deleteProfile(profileId: UUID) async throws
 }
