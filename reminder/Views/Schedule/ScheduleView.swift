@@ -238,6 +238,39 @@ struct TaskModeDayView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .simultaneousGesture(dayChangeDragGesture)
+    }
+
+    private var dayChangeDragGesture: some Gesture {
+        DragGesture(minimumDistance: 30, coordinateSpace: .local)
+            .onEnded { value in
+                let horizontalTranslation = value.translation.width
+                let verticalTranslation = value.translation.height
+                guard abs(horizontalTranslation) > abs(verticalTranslation) else { return }
+                if horizontalTranslation > 50 {
+                    goToPreviousDay()
+                } else if horizontalTranslation < -50 {
+                    goToNextDay()
+                }
+            }
+    }
+
+    private func goToPreviousDay() {
+        let calendar = Calendar.current
+        let base = dayID(for: selectedDate)
+        guard let newDate = calendar.date(byAdding: .day, value: -1, to: base) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedDate = calendar.startOfDay(for: newDate)
+        }
+    }
+
+    private func goToNextDay() {
+        let calendar = Calendar.current
+        let base = dayID(for: selectedDate)
+        guard let newDate = calendar.date(byAdding: .day, value: 1, to: base) else { return }
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectedDate = calendar.startOfDay(for: newDate)
+        }
     }
 
     private func pullToRefreshScrollContainer<Content: View>(
