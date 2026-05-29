@@ -44,7 +44,7 @@ struct ContentView: View {
                 .environmentObject(appRouter)
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
-                .presentationDetents([.height(350), .medium])
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $groupSwitcher.isShowingCreateOrganizationSheet) {

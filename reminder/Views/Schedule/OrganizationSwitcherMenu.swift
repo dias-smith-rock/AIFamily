@@ -50,14 +50,16 @@ struct SwitchGroupSheetView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 0) {
             Text("切换群组")
                 .font(.headline)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 20)
+
+            Divider()
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(spacing: 0) {
                     ForEach(organizations) { organization in
                         Button {
                             appRouter.chooseHousehold(organization)
@@ -72,18 +74,20 @@ struct SwitchGroupSheetView: View {
                                         .foregroundStyle(.blue)
                                 }
                             }
-                            .padding()
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
 
                         if organization.id != organizations.last?.id {
                             Divider()
-                                .padding(.horizontal)
+                                .padding(.horizontal, 20)
                         }
                     }
                 }
             }
+            .frame(maxHeight: .infinity)
 
             Divider()
 
@@ -96,7 +100,8 @@ struct SwitchGroupSheetView: View {
                         Text("新建群组")
                     }
                     .foregroundStyle(.blue)
-                    .padding()
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                 }
@@ -110,14 +115,17 @@ struct SwitchGroupSheetView: View {
                         Text("加入已有群组")
                     }
                     .foregroundStyle(.blue)
-                    .padding()
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.bottom, 20)
+            .background(Color(.systemBackground))
+            .padding(.bottom, 10)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemGroupedBackground))
     }
 }
