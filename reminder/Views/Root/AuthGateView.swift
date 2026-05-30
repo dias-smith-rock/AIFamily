@@ -18,7 +18,7 @@ struct AuthGateView: View {
     private var loginView: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text(AppLocalized.string("登录 家音", locale: locale))
+                Text(AppLocalized.string("登录同圈", locale: locale))
                     .font(.system(size: 32, weight: .bold))
                 Text(AppLocalized.string("支持 Apple、Magic Link、Phone OTP", locale: locale))
                     .font(.system(size: 15, weight: .medium))

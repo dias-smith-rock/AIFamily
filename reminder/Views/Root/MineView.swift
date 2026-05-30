@@ -281,7 +281,7 @@ struct MineView: View {
                     AboutView()
                 } label: {
                     SettingsRowView(
-                        title: "关于 WeFamily",
+                        title: "关于同圈",
                         systemImage: "info.circle",
                         iconTint: .purple,
                         showsChevron: false

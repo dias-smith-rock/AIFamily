@@ -5377,61 +5377,61 @@
         }
       }
     },
-    "WeFamily" : {
+    "WeSync" : {
       "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily"
+            "value" : "WeSync"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "家音"
+            "value" : "同圈"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "家音"
+            "value" : "同圈"
           }
         }
       }
@@ -8247,60 +8247,60 @@
         }
       }
     },
-    "关于 WeFamily" : {
+    "关于同圈" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "حول WeFamily"
+            "value" : "حول WeSync"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About WeFamily"
+            "value" : "About WeSync"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Acerca de WeFamily"
+            "value" : "Acerca de WeSync"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "À propos de WeFamily"
+            "value" : "À propos de WeSync"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily के बारे में"
+            "value" : "WeSync के बारे में"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sobre WeFamily"
+            "value" : "Sobre WeSync"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily பற்றி"
+            "value" : "WeSync பற்றி"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于家音"
+            "value" : "关于同圈"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關於家音"
+            "value" : "關於同圈"
           }
         }
       }
@@ -20354,61 +20354,61 @@
         }
       }
     },
-    "欢迎来到 WeFamily" : {
+    "欢迎来到同圈" : {
       "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "مرحبًا بك في WeFamily"
+            "value" : "مرحبًا بك في WeSync"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welcome to WeFamily"
+            "value" : "Welcome to WeSync"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bienvenido a WeFamily"
+            "value" : "Bienvenido a WeSync"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bienvenue sur WeFamily"
+            "value" : "Bienvenue sur WeSync"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily में आपका स्वागत है"
+            "value" : "WeSync में आपका स्वागत है"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bem-vindo à WeFamily"
+            "value" : "Bem-vindo ao WeSync"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamilyக்கு வரவேற்கிறோம்"
+            "value" : "WeSyncக்கு வரவேற்கிறோம்"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "欢迎来到家音"
+            "value" : "欢迎来到同圈"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "歡迎來到家音"
+            "value" : "歡迎來到同圈"
           }
         }
       }
@@ -23058,61 +23058,61 @@
         }
       }
     },
-    "登录 家音" : {
+    "登录同圈" : {
       "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تسجيل الدخول جيايين"
+            "value" : "تسجيل الدخول إلى WeSync"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Login Jiayin"
+            "value" : "Sign in to WeSync"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Iniciar sesión"
+            "value" : "Iniciar sesión en WeSync"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ConnexionJiayin"
+            "value" : "Connexion à WeSync"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "लॉग इन जियिन"
+            "value" : "WeSync में साइन इन करें"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Entrar Jiayin"
+            "value" : "Entrar no WeSync"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "உள்நுழைக ஜியாயின்"
+            "value" : "WeSync இல் உள்நுழைக"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "登录 家音"
+            "value" : "登录同圈"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "登入 家音"
+            "value" : "登入同圈"
           }
         }
       }
@@ -26596,60 +26596,60 @@
         }
       }
     },
-    "让对方使用家音 App 扫码，或输入下方邀请码即可加入。" : {
+    "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اطلب من الطرف الآخر استخدام تطبيق WeFamily لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام."
+            "value" : "اطلب من الطرف الآخر استخدام تطبيق WeSync لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ask the other party to use the WeFamily App to scan the code, or enter the invitation code below to join."
+            "value" : "Ask the other party to use the WeSync app to scan the code, or enter the invitation code below to join."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pídale a la otra parte que use la aplicación WeFamily para escanear el código o ingrese el código de invitación a continuación para unirse."
+            "value" : "Pídale a la otra parte que use la aplicación WeSync para escanear el código o ingrese el código de invitación a continuación para unirse."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Demandez à l'autre partie d'utiliser l'application WeFamily pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre."
+            "value" : "Demandez à l'autre partie d'utiliser l'application WeSync pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre."
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "दूसरे पक्ष से कोड स्कैन करने के लिए WeFamily ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।"
+            "value" : "दूसरे पक्ष से कोड स्कैन करने के लिए WeSync ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Peça à outra parte para usar o aplicativo WeFamily para escanear o código ou insira o código de convite abaixo para participar."
+            "value" : "Peça à outra parte para usar o aplicativo WeSync para escanear o código ou insira o código de convite abaixo para participar."
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "குறியீட்டை ஸ்கேன் செய்ய WeFamily ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்."
+            "value" : "குறியீட்டை ஸ்கேன் செய்ய WeSync ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "让对方使用家音 App 扫码，或输入下方邀请码即可加入。"
+            "value" : "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "請對方使用家音 App 掃碼，或輸入下方邀請碼即可加入。"
+            "value" : "請對方使用同圈 App 掃碼，或輸入下方邀請碼即可加入。"
           }
         }
       }
@@ -30198,60 +30198,60 @@
         }
       }
     },
-    "邀请你加入家音群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。" : {
+    "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أنت مدعو للانضمام إلى مجموعة WeFamily! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق."
+            "value" : "أنت مدعو للانضمام إلى مجموعة WeSync! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're invited to join a WeFamily group! Copy this invite code: %1$@, or scan the QR code in the app."
+            "value" : "You're invited to join a WeSync group! Copy this invite code: %1$@, or scan the QR code in the app."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¡Te invitan a unirte a un grupo de WeFamily! Copia este código de invitación: %1$@, o escanea el código QR en la app."
+            "value" : "¡Te invitan a unirte a un grupo de WeSync! Copia este código de invitación: %1$@, o escanea el código QR en la app."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous êtes invité à rejoindre un groupe WeFamily ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app."
+            "value" : "Vous êtes invité à rejoindre un groupe WeSync ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app."
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "आपको WeFamily समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।"
+            "value" : "आपको WeSync समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Você foi convidado a entrar em um grupo WeFamily! Copie este código de convite: %1$@, ou escaneie o QR code no app."
+            "value" : "Você foi convidado a entrar em um grupo WeSync! Copie este código de convite: %1$@, ou escaneie o QR code no app."
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WeFamily குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்."
+            "value" : "WeSync குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "邀请你加入家音群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。"
+            "value" : "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "邀請你加入家音群組空間！請複製此邀請碼：%1$@，或使用 App 掃碼加入。"
+            "value" : "邀請你加入同圈群組空間！請複製此邀請碼：%1$@，或使用 App 掃碼加入。"
           }
         }
       }

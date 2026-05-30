@@ -62,7 +62,7 @@ struct OrgRoutingView: View {
                 .padding(20)
             }
             .background(AppTheme.ColorToken.background)
-            .navigationTitle(AppLocalized.string("欢迎来到 WeFamily", locale: locale))
+            .navigationTitle(AppLocalized.string("欢迎来到同圈", locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

@@ -17,7 +17,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		DD17A5EF2F9F4E500059AE67 /* WeFamily.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeFamily.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD17A5EF2F9F4E500059AE67 /* WeSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -70,7 +70,7 @@
 		DD17A5F02F9F4E500059AE67 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DD17A5EF2F9F4E500059AE67 /* WeFamily.app */,
+				DD17A5EF2F9F4E500059AE67 /* WeSync.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -103,8 +103,8 @@
 				DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */,
 				DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */,
 			);
-			productName = WeFamily;
-			productReference = DD17A5EF2F9F4E500059AE67 /* WeFamily.app */;
+			productName = WeSync;
+			productReference = DD17A5EF2F9F4E500059AE67 /* WeSync.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -321,7 +321,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = WeFamily;
+				PRODUCT_NAME = WeSync;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -355,7 +355,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = WeFamily;
+				PRODUCT_NAME = WeSync;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

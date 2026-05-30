@@ -40,7 +40,7 @@ struct AboutView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("关于 WeFamily")
+        .navigationTitle("关于同圈")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
