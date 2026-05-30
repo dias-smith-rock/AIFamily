@@ -24,6 +24,11 @@ struct TaskModeDayView: View {
 
     /// 横向全天列表可视区域宽度，用于单卡宽度与下方 `TaskCardView` 一致。
     @State private var allDayCardSlotWidth: CGFloat = 0
+    @State private var daySlideInsertionEdge: Edge = .trailing
+    @State private var interactiveDayDragOffset: CGFloat = 0
+
+    private let daySwipeSpring = Animation.spring(response: 0.34, dampingFraction: 0.88)
+    private let dayDragMaxOffset: CGFloat = 96
 
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
@@ -47,19 +52,46 @@ struct TaskModeDayView: View {
         VStack(alignment: .leading, spacing: 10) {
             weekSection
                 .padding(.horizontal, 16)
+
+            ZStack(alignment: .top) {
+                dayScheduleContent
+                    .id(selectedDay)
+                    .transition(dayContentTransition)
+            }
+            .animation(daySwipeSpring, value: selectedDay)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .offset(x: interactiveDayDragOffset)
+            .clipped()
+            .simultaneousGesture(dayChangeDragGesture)
+        }
+        .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        .onChange(of: selectedDate) { oldValue, newValue in
+            updateDaySlideDirection(from: oldValue, to: newValue)
+            let normalized = dayID(for: newValue)
+            let targetWeekPage = weekOffsetForDate(normalized)
+            if weekOffset != targetWeekPage {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    weekOffset = targetWeekPage
+                }
+            }
+        }
+    }
+
+    private var dayScheduleContent: some View {
+        VStack(alignment: .leading, spacing: 10) {
             if allDayTasks.isEmpty == false {
                 allDayTasksPinnedStrip
             }
             timelineSection
         }
-        .background(AppTheme.ColorToken.background.ignoresSafeArea())
-        .onChange(of: selectedDate) { _, newValue in
-            let normalized = dayID(for: newValue)
-            let targetWeekPage = weekOffsetForDate(normalized)
-            if weekOffset != targetWeekPage {
-                weekOffset = targetWeekPage
-            }
-        }
+    }
+
+    private var dayContentTransition: AnyTransition {
+        let removalEdge: Edge = daySlideInsertionEdge == .trailing ? .leading : .trailing
+        return .asymmetric(
+            insertion: .move(edge: daySlideInsertionEdge).combined(with: .opacity),
+            removal: .move(edge: removalEdge).combined(with: .opacity)
+        )
     }
 
     private var weekSection: some View {
@@ -108,9 +140,8 @@ struct TaskModeDayView: View {
         let isToday = loopDay == dayID(for: Date())
         let count = taskCount(for: loopDate)
         return Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                selectedDate = loopDay
-            }
+            let forward = loopDay > selectedDay
+            applySelectedDate(loopDay, insertionEdge: forward ? .trailing : .leading)
         } label: {
             VStack(spacing: 4) {
                 Text(loopDate.formatted(.dateTime.weekday(.abbreviated).locale(locale)))
@@ -239,39 +270,72 @@ struct TaskModeDayView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .simultaneousGesture(dayChangeDragGesture)
     }
 
     private var dayChangeDragGesture: some Gesture {
-        DragGesture(minimumDistance: 30, coordinateSpace: .local)
-            .onEnded { value in
+        DragGesture(minimumDistance: 24, coordinateSpace: .local)
+            .onChanged { value in
                 let horizontalTranslation = value.translation.width
                 let verticalTranslation = value.translation.height
                 guard abs(horizontalTranslation) > abs(verticalTranslation) else { return }
-                if horizontalTranslation > 50 {
+                let damped = horizontalTranslation * 0.55
+                interactiveDayDragOffset = max(-dayDragMaxOffset, min(dayDragMaxOffset, damped))
+            }
+            .onEnded { value in
+                let horizontalTranslation = value.translation.width
+                let verticalTranslation = value.translation.height
+                guard abs(horizontalTranslation) > abs(verticalTranslation) else {
+                    resetInteractiveDayDrag()
+                    return
+                }
+                let predicted = value.predictedEndTranslation.width
+                let effective = abs(predicted) > abs(horizontalTranslation) ? predicted : horizontalTranslation
+                if effective > 50 {
                     goToPreviousDay()
-                } else if horizontalTranslation < -50 {
+                } else if effective < -50 {
                     goToNextDay()
+                } else {
+                    resetInteractiveDayDrag()
                 }
             }
     }
 
+    private func resetInteractiveDayDrag() {
+        withAnimation(daySwipeSpring) {
+            interactiveDayDragOffset = 0
+        }
+    }
+
     private func goToPreviousDay() {
         let calendar = Calendar.current
-        let base = dayID(for: selectedDate)
-        guard let newDate = calendar.date(byAdding: .day, value: -1, to: base) else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
-            selectedDate = calendar.startOfDay(for: newDate)
-        }
+        guard let newDate = calendar.date(byAdding: .day, value: -1, to: selectedDay) else { return }
+        applySelectedDate(calendar.startOfDay(for: newDate), insertionEdge: .leading)
     }
 
     private func goToNextDay() {
         let calendar = Calendar.current
-        let base = dayID(for: selectedDate)
-        guard let newDate = calendar.date(byAdding: .day, value: 1, to: base) else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
-            selectedDate = calendar.startOfDay(for: newDate)
+        guard let newDate = calendar.date(byAdding: .day, value: 1, to: selectedDay) else { return }
+        applySelectedDate(calendar.startOfDay(for: newDate), insertionEdge: .trailing)
+    }
+
+    private func applySelectedDate(_ day: Date, insertionEdge: Edge) {
+        let normalized = dayID(for: day)
+        guard normalized != selectedDay else {
+            resetInteractiveDayDrag()
+            return
         }
+        daySlideInsertionEdge = insertionEdge
+        withAnimation(daySwipeSpring) {
+            interactiveDayDragOffset = 0
+            selectedDate = normalized
+        }
+    }
+
+    private func updateDaySlideDirection(from oldValue: Date, to newValue: Date) {
+        let oldDay = dayID(for: oldValue)
+        let newDay = dayID(for: newValue)
+        guard oldDay != newDay else { return }
+        daySlideInsertionEdge = newDay > oldDay ? .trailing : .leading
     }
 
     private func pullToRefreshScrollContainer<Content: View>(
