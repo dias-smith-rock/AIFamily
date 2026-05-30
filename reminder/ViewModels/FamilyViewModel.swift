@@ -1111,7 +1111,7 @@ final class FamilyViewModel: ObservableObject {
             let recurrenceInterval: Int?
             let taskType: String
             let targetProfileIds: [UUID]
-            let targetSubject: String
+            let targetSubject: String?
             let description: String
             let originalPrompt: String
 
@@ -1179,8 +1179,15 @@ final class FamilyViewModel: ObservableObject {
                 guard hasNoStructuredTag else { return false }
                 let title = row.title ?? ""
                 let hitMarker = row.originalPrompt == syncMarker
-                let hitSubjectAndBirthday = (row.targetSubject == profile.name) && title.contains("生日")
-                let hitLegacyTitleOnly = title.contains("生日") && title.contains(profile.name)
+                let legacyNames = Set(
+                    [profile.displayName, profile.name]
+                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                        .filter { $0.isEmpty == false }
+                )
+                let hitSubjectAndBirthday = legacyNames.contains(row.targetSubject ?? "")
+                    && title.contains("生日")
+                let hitLegacyTitleOnly = title.contains("生日")
+                    && legacyNames.contains(where: { title.contains($0) })
                 return hitMarker || hitSubjectAndBirthday || hitLegacyTitleOnly
             }
             let deleteRows = Array(Dictionary(uniqueKeysWithValues: (tasksToDelete + legacyTasksToDelete).map { ($0.id, $0) }).values)
@@ -1253,15 +1260,9 @@ final class FamilyViewModel: ObservableObject {
             #if DEBUG
             print("🎂 [BirthdaySync] recreate start - creatorMembershipId=\(creatorId.uuidString)")
             #endif
-            let taskLocale = AppSettingsManager.shared.appLocale
-            let templates: [(offset: Int, title: String)] = [
-                (-30, String(localized: "准备 \(profile.name) 的生日愿望清单", locale: taskLocale)),
-                (-15, String(localized: "为 \(profile.name) 预订生日餐厅/场地", locale: taskLocale)),
-                (-7, String(localized: "购买 \(profile.name) 的生日礼物", locale: taskLocale)),
-                (-3, String(localized: "确认 \(profile.name) 的生日蛋糕预订", locale: taskLocale)),
-                (-1, String(localized: "布置现场并取回 \(profile.name) 的生日蛋糕", locale: taskLocale)),
-                (0, String(localized: "陪伴 \(profile.name)，祝生日快乐！", locale: taskLocale))
-            ]
+            let templates: [(offset: Int, formatKey: String)] = BirthdayTaskDisplay.Template.allCases.map {
+                (offset: $0.dayOffset, formatKey: $0.titleFormatKey)
+            }
 
             let fallbackPayloads = templates.compactMap { template -> BirthdayTaskInsertFallbackPayload? in
                 guard let dueDate = Calendar.current.date(byAdding: .day, value: template.offset, to: nextBirthday) else {
@@ -1270,14 +1271,14 @@ final class FamilyViewModel: ObservableObject {
                 return BirthdayTaskInsertFallbackPayload(
                     householdId: householdId,
                     creatorId: creatorId,
-                    title: template.title,
+                    title: template.formatKey,
                     dueDate: dueDate,
                     recurrenceRule: "yearly",
                     recurrenceEndDate: nil,
                     recurrenceInterval: 1,
                     taskType: "birthday_reminder",
                     targetProfileIds: [profile.id],
-                    targetSubject: profile.name,
+                    targetSubject: nil,
                     description: AppLocalized.localized("生日自动任务（年度循环）"),
                     originalPrompt: birthdaySyncMarker(for: profile.id)
                 )

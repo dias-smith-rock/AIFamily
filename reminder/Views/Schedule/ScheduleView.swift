@@ -209,6 +209,7 @@ struct TaskModeDayView: View {
                                         taskEnd: { taskEndDate($0) },
                                         forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
                                         assigneeLabel: { assigneeLabel(for: $0) },
+                                        displayTitle: { viewModel.displayTitle(for: $0) },
                                         onTaskTap: { onTaskSelect($0) }
                                     )
                                 }
@@ -312,6 +313,7 @@ struct TaskModeDayView: View {
                     ForEach(allDayTasks) { task in
                         AllDayTaskRowView(
                             task: task,
+                            displayTitle: viewModel.displayTitle(for: task),
                             forWhomAvatars: viewModel.forWhomAvatarSources(for: task)
                         )
                         .frame(width: resolvedAllDayCardWidth)

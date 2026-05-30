@@ -4,11 +4,22 @@ import Kingfisher
 /// 全天任务紧凑卡片：仅两行——标题 + 「为了谁」头像区；左侧贴边色条与整卡圆角一体。
 struct AllDayTaskRowView: View {
     let task: FamilyTask
+    let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
+
+    init(
+        task: FamilyTask,
+        displayTitle: String? = nil,
+        forWhomAvatars: [TaskCardAvatarSource]
+    ) {
+        self.task = task
+        self.displayTitle = displayTitle ?? task.title
+        self.forWhomAvatars = forWhomAvatars
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(task.title)
+            Text(displayTitle)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)

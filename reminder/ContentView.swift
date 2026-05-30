@@ -152,6 +152,26 @@ struct ContentView: View {
         guard let householdId = appRouter.selectedHouseholdId else { return }
         do {
             let tasks = try await appBootstrap.services.taskService.fetchTasks(in: householdId)
+            #if canImport(Supabase)
+            var profiles: [FamilyProfile] = []
+            do {
+                let roster = try await SupabaseHouseholdRosterLoader.fetch(
+                    in: householdId,
+                    client: SupabaseManager.shared.client,
+                    activeOnly: true
+                )
+                profiles = FamilyProfile.mergingMembershipRows(
+                    roster.profiles,
+                    memberships: roster.memberships
+                )
+            } catch {
+                #if DEBUG
+                print("[ContentView] preScheduleLocalNotifications roster failed: \(error.localizedDescription)")
+                #endif
+            }
+            #else
+            let profiles: [FamilyProfile] = []
+            #endif
             let now = Date()
             let upcoming = tasks
                 .filter { task in
@@ -167,7 +187,13 @@ struct ContentView: View {
                 .sorted { lhs, rhs in
                     (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
                 }
-                .map(TaskAlarmPayload.init(schedulingFrom:))
+                .map {
+                    TaskAlarmPayload(
+                        schedulingFrom: $0,
+                        profiles: profiles,
+                        locale: appSettings.appLocale
+                    )
+                }
             await NotificationManager.shared.syncLocalNotifications(upcomingTasks: upcoming)
         } catch {
             #if DEBUG

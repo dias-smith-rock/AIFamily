@@ -296,6 +296,7 @@ struct CreateTaskView: View {
     @State private var isPresentingCamera = false
 
     private let editingTask: FamilyTask?
+    private let familyProfiles: [FamilyProfile]
     private let initialTitle: String?
     private let onSaveSuccess: ((Date) -> Void)?
     private let onUpdateSuccess: ((FamilyTask) -> Void)?
@@ -304,6 +305,7 @@ struct CreateTaskView: View {
 
     init(
         editingTask: FamilyTask? = nil,
+        familyProfiles: [FamilyProfile] = [],
         initialTitle: String? = nil,
         defaultDueDate: Date? = nil,
         defaultAllDayForNewTask: Bool = false,
@@ -312,13 +314,21 @@ struct CreateTaskView: View {
         onAlarmSync: ((FamilyTask) -> Void)? = nil
     ) {
         self.editingTask = editingTask
+        self.familyProfiles = familyProfiles
         self.initialTitle = initialTitle
         self.onSaveSuccess = onSaveSuccess
         self.onUpdateSuccess = onUpdateSuccess
         self.onAlarmSync = onAlarmSync
 
         if let task = editingTask {
-            _title = State(initialValue: task.title)
+            let resolvedTitle = BirthdayTaskDisplay.isBirthdaySyncTask(task)
+                ? BirthdayTaskDisplay.resolvedTitle(
+                    for: task,
+                    profiles: familyProfiles,
+                    locale: AppSettingsManager.shared.appLocale
+                )
+                : task.title
+            _title = State(initialValue: resolvedTitle)
             let initialDue = task.dueDate ?? task.originalDueDate ?? Date()
             _dueDate = State(initialValue: initialDue)
             _durationPickerDate = State(

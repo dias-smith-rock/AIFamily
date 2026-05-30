@@ -156,6 +156,7 @@ struct TaskDetailView: View {
         .sheet(isPresented: $showingEditSheet) {
             EditTaskView(
                 task: task,
+                familyProfiles: scheduleViewModel.familyProfiles,
                 onUpdateSuccess: { updated in
                     task = updated
                     displayRecurrenceRule = nil
@@ -210,7 +211,7 @@ struct TaskDetailView: View {
     }
 
     private var titleHeader: some View {
-        Text(task.title)
+        Text(scheduleViewModel.displayTitle(for: task))
             .font(.largeTitle)
             .fontWeight(.bold)
             .foregroundStyle(.primary)

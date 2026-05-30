@@ -58,6 +58,7 @@ struct TaskModeListView: View {
                                     ForEach(section.tasks) { task in
                                         TaskModeListMinimalRow(
                                             task: task,
+                                            displayTitle: viewModel.displayTitle(for: task),
                                             forWhomAvatars: viewModel.forWhomAvatarSources(for: task)
                                         )
                                         .id(task.id)
@@ -148,6 +149,7 @@ private struct TaskModeListMinimalRow: View {
     @Environment(\.locale) private var locale
 
     let task: FamilyTask
+    let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
 
     var body: some View {
@@ -157,7 +159,7 @@ private struct TaskModeListMinimalRow: View {
                 .frame(width: 10, height: 10)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(task.title)
+                Text(displayTitle)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)

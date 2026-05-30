@@ -70,6 +70,7 @@ struct ScheduleNowTimeCapsule: View {
 /// 日程时间轴单行：左时间列 + 中轴线列 + 右任务卡片。
 struct TaskRowView: View {
     let task: FamilyTask
+    let displayTitle: String
     let anchor: Date
     /// 同开始时间连续组的首项为 `true`；后续项用透明度占位，避免左列错位。
     let showTimeIndicator: Bool
@@ -121,6 +122,7 @@ struct TaskRowView: View {
     private var cardColumn: some View {
         TaskCardView(
             task: task,
+            displayTitle: displayTitle,
             forWhomAvatars: forWhomAvatars,
             assigneeLabel: assigneeLabel
         )

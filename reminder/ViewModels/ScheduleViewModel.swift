@@ -281,11 +281,23 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
+    func displayTitle(for task: FamilyTask) -> String {
+        BirthdayTaskDisplay.resolvedTitle(
+            for: task,
+            profiles: familyProfiles,
+            locale: AppSettingsManager.shared.appLocale
+        )
+    }
+
     /// 将本地通知与任务提醒规则对齐（保存 / 导入后可调用）。
     /// 必须为**同步**方法：在首行从 `FamilyTask` 拆出 `TaskAlarmPayload`，再 `Task` 派发到通知 actor。
     /// 若把大体积 `FamilyTask` 作为 `async` 函数入参，挂起恢复后帧内副本可能损坏（更新任务时 `memcpy`/LLDB parent NULL）。
     func syncAlarms(for task: FamilyTask) {
-        let payload = TaskAlarmPayload(schedulingFrom: task)
+        let payload = TaskAlarmPayload(
+            schedulingFrom: task,
+            profiles: familyProfiles,
+            locale: AppSettingsManager.shared.appLocale
+        )
         #if DEBUG
         print(
             "[ScheduleViewModel] syncAlarms 从 FamilyTask 已抽出 DTO taskId=\(task.id) payloadTaskId=\(payload.id) isAllDay=\(payload.isAllDay)"
@@ -439,7 +451,13 @@ final class ScheduleViewModel: ObservableObject {
             .sorted { lhs, rhs in
                 (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
             }
-            .map(TaskAlarmPayload.init(schedulingFrom:))
+            .map {
+                TaskAlarmPayload(
+                    schedulingFrom: $0,
+                    profiles: familyProfiles,
+                    locale: AppSettingsManager.shared.appLocale
+                )
+            }
 
         Task {
             await NotificationManager.shared.syncLocalNotifications(upcomingTasks: upcoming)

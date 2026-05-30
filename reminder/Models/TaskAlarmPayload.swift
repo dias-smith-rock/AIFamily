@@ -16,11 +16,11 @@ struct TaskAlarmPayload: Sendable {
 
 extension TaskAlarmPayload {
     /// 在同步阶段（首个 `await` 之前）从完整任务模型抽取字段。
-    init(schedulingFrom task: FamilyTask) {
+    init(schedulingFrom task: FamilyTask, profiles: [FamilyProfile] = [], locale: Locale) {
         self.init(
             id: task.id,
-            title: task.title,
-            groupName: task.targetSubject,
+            title: BirthdayTaskDisplay.resolvedTitle(for: task, profiles: profiles, locale: locale),
+            groupName: BirthdayTaskDisplay.resolvedTargetDisplayName(for: task, profiles: profiles),
             priority: task.priority,
             status: task.status,
             isAllDay: task.isAllDay,

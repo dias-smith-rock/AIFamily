@@ -61,8 +61,21 @@ struct TaskCardForWhomTrailing: View {
 /// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
     let task: FamilyTask
+    let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
+
+    init(
+        task: FamilyTask,
+        displayTitle: String? = nil,
+        forWhomAvatars: [TaskCardAvatarSource],
+        assigneeLabel: String
+    ) {
+        self.task = task
+        self.displayTitle = displayTitle ?? task.title
+        self.forWhomAvatars = forWhomAvatars
+        self.assigneeLabel = assigneeLabel
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -98,7 +111,7 @@ struct TaskCardView: View {
 
     private var headerRow: some View {
         HStack(alignment: .center) {
-            Text(task.title)
+            Text(displayTitle)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.leading)
