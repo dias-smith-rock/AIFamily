@@ -4,6 +4,7 @@ import SwiftUI
 struct TaskAttachmentImageGallery: View {
     let attachments: [TaskAttachment]
     @State private var currentIndex: Int
+    @State private var isCurrentImageZoomed = false
     @Environment(\.dismiss) private var dismiss
 
     init(attachments: [TaskAttachment], startIndex: Int) {
@@ -19,13 +20,17 @@ struct TaskAttachmentImageGallery: View {
 
             TabView(selection: $currentIndex) {
                 ForEach(Array(attachments.enumerated()), id: \.element.id) { index, attachment in
-                    galleryPage(attachment)
+                    galleryPage(attachment, isActive: index == currentIndex)
                         .tag(index)
                 }
             }
             .tabViewStyle(
                 .page(indexDisplayMode: attachments.count > 1 ? .automatic : .never)
             )
+            .scrollDisabled(isCurrentImageZoomed)
+            .onChange(of: currentIndex) { _, _ in
+                isCurrentImageZoomed = false
+            }
 
             overlayChrome
         }
@@ -66,11 +71,14 @@ struct TaskAttachmentImageGallery: View {
     }
 
     @ViewBuilder
-    private func galleryPage(_ attachment: TaskAttachment) -> some View {
+    private func galleryPage(_ attachment: TaskAttachment, isActive: Bool) -> some View {
         if let url = attachment.displayImageURL {
-            TaskAttachmentFullImageView(url: url)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 48)
+            TaskAttachmentFullImageView(
+                url: url,
+                isZoomed: isActive ? $isCurrentImageZoomed : .constant(false)
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 48)
         } else {
             galleryFailurePlaceholder
         }
