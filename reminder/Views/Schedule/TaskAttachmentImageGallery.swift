@@ -5,6 +5,10 @@ struct TaskAttachmentImageGallery: View {
     let attachments: [TaskAttachment]
     @State private var currentIndex: Int
     @State private var isCurrentImageZoomed = false
+    @State private var isSavingToAlbum = false
+    @State private var isShowingSaveSuccessAlert = false
+    @State private var isShowingSaveErrorAlert = false
+    @State private var saveErrorMessage = ""
     @Environment(\.dismiss) private var dismiss
 
     init(attachments: [TaskAttachment], startIndex: Int) {
@@ -34,6 +38,19 @@ struct TaskAttachmentImageGallery: View {
 
             overlayChrome
         }
+        .alert("已保存到相册", isPresented: $isShowingSaveSuccessAlert) {
+            Button("好的", role: .cancel) {}
+        }
+        .alert("保存失败", isPresented: $isShowingSaveErrorAlert) {
+            Button("好的", role: .cancel) {}
+        } message: {
+            Text(saveErrorMessage)
+        }
+    }
+
+    private var currentImageURL: URL? {
+        guard attachments.indices.contains(currentIndex) else { return nil }
+        return attachments[currentIndex].displayImageURL
     }
 
     private var overlayChrome: some View {
@@ -55,6 +72,19 @@ struct TaskAttachmentImageGallery: View {
 
             Spacer()
 
+            bottomBar
+        }
+    }
+
+    private var bottomBar: some View {
+        ZStack {
+            if currentImageURL != nil {
+                HStack {
+                    saveToAlbumButton
+                    Spacer()
+                }
+            }
+
             if attachments.count > 1 {
                 Text("\(currentIndex + 1) / \(attachments.count)")
                     .font(.subheadline.weight(.medium))
@@ -62,10 +92,49 @@ struct TaskAttachmentImageGallery: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
                     .background(.white.opacity(0.12), in: Capsule())
-                    .padding(.bottom, 28)
                     .accessibilityLabel(
                         "第 \(currentIndex + 1) 张，共 \(attachments.count) 张"
                     )
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 28)
+    }
+
+    private var saveToAlbumButton: some View {
+        Button {
+            saveCurrentImageToAlbum()
+        } label: {
+            Group {
+                if isSavingToAlbum {
+                    ProgressView()
+                        .tint(.white)
+                } else {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.system(size: 22, weight: .semibold))
+                }
+            }
+            .frame(width: 44, height: 44)
+            .background(.white.opacity(0.12), in: Circle())
+            .foregroundStyle(.white)
+        }
+        .disabled(isSavingToAlbum)
+        .accessibilityLabel("保存到相册")
+    }
+
+    private func saveCurrentImageToAlbum() {
+        guard let url = currentImageURL else { return }
+        guard isSavingToAlbum == false else { return }
+
+        isSavingToAlbum = true
+        Task {
+            defer { isSavingToAlbum = false }
+            do {
+                try await PhotoLibrarySaving.saveImage(from: url)
+                isShowingSaveSuccessAlert = true
+            } catch {
+                saveErrorMessage = error.localizedDescription
+                isShowingSaveErrorAlert = true
             }
         }
     }

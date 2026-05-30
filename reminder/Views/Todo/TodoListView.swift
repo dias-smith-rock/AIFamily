@@ -32,7 +32,7 @@ struct TodoListView: View {
                         Text(message)
                     } actions: {
                         Button(AppLocalized.string("重新加载", locale: locale)) {
-                            Task { await reload() }
+                            Task { await viewModel.loadTasks(force: true) }
                         }
                     }
                 } else if viewModel.flexibleTasks.isEmpty {
@@ -46,7 +46,7 @@ struct TodoListView: View {
                         }
                     }
                 } else {
-                    todoMainContent
+                    todoListScrollView
                 }
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
@@ -103,8 +103,8 @@ struct TodoListView: View {
                     formMode: .flexible,
                     onSaveSuccess: { _ in
                         Task {
-                            await reload()
-                            await scheduleViewModel.loadTasks()
+                            await viewModel.loadTasks(silent: true, force: true)
+                            await scheduleViewModel.loadTasks(silent: true)
                         }
                     },
                     onAlarmSync: { task in
@@ -116,21 +116,13 @@ struct TodoListView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
             }
-            .task {
+            .task(id: appRouter.selectedHouseholdId) {
                 bindHouseholdContext()
                 await refreshCurrentMembershipRole()
-                await reload()
-            }
-            .onChange(of: appRouter.selectedHouseholdId) { _, _ in
-                bindHouseholdContext()
-                Task {
-                    await refreshCurrentMembershipRole()
-                    await reload()
-                }
+                await viewModel.loadTasksIfNeeded()
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
-                    await reload()
                     await scheduleViewModel.loadTasks(silent: true)
                 }
             }
@@ -138,18 +130,57 @@ struct TodoListView: View {
         .appLocaleEnvironment(using: appSettings)
     }
 
-    private var todoMainContent: some View {
-        VStack(spacing: 0) {
-            if viewModel.overdueTasks.isEmpty == false {
-                overdueWarningBanner
-            }
+    private var todoListScrollView: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 20) {
+                if viewModel.overdueTasks.isEmpty == false {
+                    overdueWarningBanner
+                }
 
-            if viewModel.mainSectionedTasks().isEmpty {
-                overdueOnlyPlaceholder
-            } else {
-                todoListContent
+                if viewModel.mainSectionedTasks().isEmpty {
+                    overdueOnlyPlaceholderContent
+                } else {
+                    ForEach(viewModel.mainSectionedTasks(), id: \.0.id) { section, tasks in
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text(section.titleKey)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+
+                            ForEach(tasks) { task in
+                                TodoFlexibleRow(
+                                    task: task,
+                                    displayTitle: viewModel.displayTitle(for: task),
+                                    forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
+                                    deadlineLabel: deadlineLabel(for: task),
+                                    isOverdue: false
+                                )
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    taskForDetailSheet = task
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
         }
+        .refreshable {
+            await viewModel.loadTasks(silent: true, force: true)
+        }
+    }
+
+    private var overdueOnlyPlaceholderContent: some View {
+        ContentUnavailableView {
+            Label(AppLocalized.string("暂无即将到期", locale: locale), systemImage: "checklist")
+        } description: {
+            Text(AppLocalized.string("当前待办均已逾期，请点击上方横幅查看。", locale: locale))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 32)
+        .padding(.bottom, 24)
     }
 
     private var overdueWarningBanner: some View {
@@ -181,56 +212,7 @@ struct TodoListView: View {
             .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 20)
-        .padding(.top, 4)
-        .padding(.bottom, 12)
         .accessibilityLabel("查看已逾期任务")
-    }
-
-    private var todoListContent: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 20) {
-                ForEach(viewModel.mainSectionedTasks(), id: \.0.id) { section, tasks in
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text(section.titleKey)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
-
-                        ForEach(tasks) { task in
-                            TodoFlexibleRow(
-                                task: task,
-                                displayTitle: viewModel.displayTitle(for: task),
-                                forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
-                                deadlineLabel: deadlineLabel(for: task),
-                                isOverdue: false
-                            )
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                taskForDetailSheet = task
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .padding(.bottom, 24)
-        }
-        .refreshable {
-            await reload()
-        }
-    }
-
-    private var overdueOnlyPlaceholder: some View {
-        ContentUnavailableView {
-            Label(AppLocalized.string("暂无即将到期", locale: locale), systemImage: "checklist")
-        } description: {
-            Text(AppLocalized.string("当前待办均已逾期，请点击上方横幅查看。", locale: locale))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .refreshable {
-            await reload()
-        }
     }
 
     private var groupSwitcherMenuButton: some View {
@@ -256,10 +238,6 @@ struct TodoListView: View {
     private func bindHouseholdContext() {
         viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
         scheduleViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-    }
-
-    private func reload() async {
-        await viewModel.loadTasks()
     }
 
     #if canImport(Supabase)

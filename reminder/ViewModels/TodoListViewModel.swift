@@ -19,6 +19,8 @@ final class TodoListViewModel: ObservableObject {
     private let familyProfileService: FamilyProfileDataService
     private var currentHouseholdId: UUID?
     private var rosterLoadedForHouseholdId: UUID?
+    /// 当前群组是否已有内存数据；切 Tab 回来时不重复拉网。
+    private var loadedHouseholdId: UUID?
     private var reloadCancellable: AnyCancellable?
 
     init(
@@ -34,26 +36,51 @@ final class TodoListViewModel: ObservableObject {
             .publisher(for: .scheduleTasksDidChange)
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    await self?.loadTasks(silent: true)
+                    await self?.loadTasks(silent: true, force: true)
                 }
             }
     }
 
     func setHouseholdContext(_ householdId: UUID?) {
+        let householdChanged = currentHouseholdId != householdId
         currentHouseholdId = householdId
         if householdId == nil {
             flexibleTasks = []
             householdMembers = []
             familyProfiles = []
             rosterLoadedForHouseholdId = nil
-        } else if rosterLoadedForHouseholdId != householdId {
-            rosterLoadedForHouseholdId = nil
+            loadedHouseholdId = nil
+        } else if householdChanged {
+            loadedHouseholdId = nil
+            if rosterLoadedForHouseholdId != householdId {
+                rosterLoadedForHouseholdId = nil
+            }
         }
     }
 
-    func loadTasks(silent: Bool = false) async {
+    private static func tasksCacheKey(for householdId: UUID) -> String {
+        "schedule.tasks.snapshot.\(householdId.uuidString.lowercased())"
+    }
+
+    /// 首次进入或切换群组时加载；已有内存缓存则跳过网络请求。
+    func loadTasksIfNeeded() async {
         guard let householdId = currentHouseholdId else {
             flexibleTasks = []
+            errorMessage = AppLocalized.localized("当前未选择群组。")
+            return
+        }
+
+        if loadedHouseholdId == householdId {
+            return
+        }
+
+        await loadTasks(silent: false)
+    }
+
+    func loadTasks(silent: Bool = false, force: Bool = false) async {
+        guard let householdId = currentHouseholdId else {
+            flexibleTasks = []
+            loadedHouseholdId = nil
             if !silent {
                 errorMessage = AppLocalized.localized("当前未选择群组。")
             }
@@ -64,7 +91,18 @@ final class TodoListViewModel: ObservableObject {
             await loadHouseholdRoster(in: householdId)
         }
 
-        let showLoading = !silent
+        let cacheKey = Self.tasksCacheKey(for: householdId)
+
+        var restoredFromDisk = false
+        if force == false, silent == false,
+           let cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: cacheKey) {
+            applyFlexibleTasks(from: cached)
+            errorMessage = nil
+            restoredFromDisk = true
+            loadedHouseholdId = householdId
+        }
+
+        let showLoading = !silent && !restoredFromDisk && flexibleTasks.isEmpty
         if showLoading {
             isLoading = true
             errorMessage = nil
@@ -77,18 +115,26 @@ final class TodoListViewModel: ObservableObject {
 
         do {
             let fresh = try await taskService.fetchTasks(in: householdId)
-            flexibleTasks = fresh
-                .filter(\.isFlexibleTodo)
-                .filter { isOpenTodo($0) }
-                .sorted { lhs, rhs in
-                    deadlineSortKey(for: lhs) < deadlineSortKey(for: rhs)
-                }
-            errorMessage = nil
-        } catch {
+            applyFlexibleTasks(from: fresh)
+            LocalCacheManager.shared.save(fresh, forKey: cacheKey)
+            loadedHouseholdId = householdId
             if !silent {
+                errorMessage = nil
+            }
+        } catch {
+            if !silent, restoredFromDisk == false {
                 errorMessage = error.localizedDescription
             }
         }
+    }
+
+    private func applyFlexibleTasks(from allTasks: [FamilyTask]) {
+        flexibleTasks = allTasks
+            .filter(\.isFlexibleTodo)
+            .filter { isOpenTodo($0) }
+            .sorted { lhs, rhs in
+                deadlineSortKey(for: lhs) < deadlineSortKey(for: rhs)
+            }
     }
 
     func displayTitle(for task: FamilyTask) -> String {
