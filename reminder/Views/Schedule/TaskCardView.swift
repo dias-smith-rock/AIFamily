@@ -110,49 +110,12 @@ struct TaskCardView: View {
     // MARK: - Header
 
     private var headerRow: some View {
-        HStack(alignment: .center) {
-            Text(displayTitle)
-                .font(.headline)
-                .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
-
-            Spacer(minLength: 8)
-
-            Text(task.status.localizedName)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(statusCapsuleForeground)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(statusCapsuleBackground)
-                .clipShape(Capsule())
-        }
-    }
-
-    private var statusCapsuleBackground: Color {
-        switch task.status {
-        case .new:
-            return Color.accentColor.opacity(0.15)
-        case .accepted, .inProgress:
-            return Color.orange.opacity(0.15)
-        case .completed:
-            return Color.green.opacity(0.15)
-        case .issue, .expired, .failed, .cancelled:
-            return Color.red.opacity(0.12)
-        }
-    }
-
-    private var statusCapsuleForeground: Color {
-        switch task.status {
-        case .new:
-            return Color.accentColor
-        case .accepted, .inProgress:
-            return Color.orange
-        case .completed:
-            return Color.green
-        case .issue, .expired, .failed, .cancelled:
-            return Color.red
-        }
+        Text(displayTitle)
+            .font(.headline)
+            .foregroundStyle(.primary)
+            .multilineTextAlignment(.leading)
+            .lineLimit(2)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: - Meta
