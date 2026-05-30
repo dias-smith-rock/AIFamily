@@ -709,6 +709,12 @@ final class FamilyViewModel: ObservableObject {
             applyLocalOrdering()
             attachMembershipsFromFlatMembers()
             applyLocalOrdering()
+            #if canImport(Supabase)
+            try? await TaskTargetSubjectMaintenance.clearPersistedTargetSubject(
+                for: targetProfileId,
+                householdId: householdId
+            )
+            #endif
             await syncBirthdayTasks(for: updatedProfile)
             await loadMembers()
             errorMessage = nil

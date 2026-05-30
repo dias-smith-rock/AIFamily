@@ -19,8 +19,8 @@ extension TaskAlarmPayload {
     init(schedulingFrom task: FamilyTask, profiles: [FamilyProfile] = [], locale: Locale) {
         self.init(
             id: task.id,
-            title: BirthdayTaskDisplay.resolvedTitle(for: task, profiles: profiles, locale: locale),
-            groupName: BirthdayTaskDisplay.resolvedTargetDisplayName(for: task, profiles: profiles),
+            title: TaskDisplayResolver.resolvedTitle(for: task, profiles: profiles, locale: locale),
+            groupName: TaskDisplayResolver.resolvedTargetDisplayName(for: task, profiles: profiles),
             priority: task.priority,
             status: task.status,
             isAllDay: task.isAllDay,

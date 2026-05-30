@@ -112,6 +112,8 @@ extension HouseholdMembership {
 // MARK: - FamilyTask Mock
 
 extension FamilyTask {
+    static let mockChildProfileId = UUID(uuidString: "C3D4E5F6-A7B8-4901-C234-56789012CD03") ?? UUID()
+
     static let mockTasks: [FamilyTask] = [
         FamilyTask(
             id: UUID(uuidString: "A4795A12-72C1-49B6-88A2-2A6B47A51001") ?? UUID(),
@@ -120,7 +122,8 @@ extension FamilyTask {
             parentTaskId: nil,
             originalDueDate: .mockISO("2026-04-27T09:00:00.000Z"),
             involvedMemberIds: [HouseholdMembership.mockMembers[2].id],
-            targetSubject: "小明",
+            targetProfileIds: [mockChildProfileId],
+            targetSubject: nil,
             title: "接补习班",
             description: "下课后先确认作业本是否带齐。",
             originalPrompt: "记得 17:00 接小明下补习班",
@@ -153,7 +156,8 @@ extension FamilyTask {
             parentTaskId: nil,
             originalDueDate: .mockISO("2026-04-27T10:30:00.000Z"),
             involvedMemberIds: [HouseholdMembership.mockMembers[3].id],
-            targetSubject: "小明",
+            targetProfileIds: [mockChildProfileId],
+            targetSubject: nil,
             title: "接放学",
             description: "17:20 前到校门口，避免晚高峰拥堵。",
             originalPrompt: nil,
@@ -187,7 +191,8 @@ extension FamilyTask {
             parentTaskId: nil,
             originalDueDate: .mockISO("2026-04-27T06:00:00.000Z"),
             involvedMemberIds: [HouseholdMembership.mockMembers[0].id],
-            targetSubject: "小明",
+            targetProfileIds: [mockChildProfileId],
+            targetSubject: nil,
             title: "体检复查",
             description: "带医保卡、上次检查报告。",
             originalPrompt: "周一上午带小明去社区医院做体检复查",

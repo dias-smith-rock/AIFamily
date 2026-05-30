@@ -303,9 +303,10 @@ struct SupabaseTaskDataService: TaskDataService {
 
     func createTask(_ task: FamilyTask) async throws -> FamilyTask {
         #if canImport(Supabase)
+        let payload = task.sanitizedForPersistence()
         let response: FamilyTask = try await provider.client
             .from(SupabaseTable.tasks)
-            .insert(task)
+            .insert(payload)
             .select()
             .single()
             .execute()
@@ -328,7 +329,7 @@ struct SupabaseTaskDataService: TaskDataService {
                 .execute()
         }
 
-        var normalized = task
+        var normalized = task.sanitizedForPersistence()
         if normalized.involvedMemberIds?.isEmpty == true {
             normalized.involvedMemberIds = nil
         }

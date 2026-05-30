@@ -16,6 +16,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     var targetProfileId: UUID?
     /// 旧版多目标档案字段：`target_profile_ids`。
     var targetProfileIds: [UUID]?
+    /// 旧版「为了谁」文本快照（已废弃写入）。有关联 `target_profile_ids` 时展示层应解析当前 nickname，勿再持久化称呼。
     var targetSubject: String?
     var title: String
     var description: String?

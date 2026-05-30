@@ -205,8 +205,8 @@ private struct TaskPreviewCard: View {
             if let location = draft.locationName {
                 Label(location, systemImage: "location")
             }
-            if let subject = draft.targetSubject {
-                Label(subject, systemImage: "person")
+            if let profileIds = draft.targetProfileIds, profileIds.isEmpty == false {
+                Label("\(profileIds.count)", systemImage: "person")
             }
             TextField("自然语言修正：例如“时间改成明天下午”", text: $correction)
                 .textFieldStyle(.roundedBorder)

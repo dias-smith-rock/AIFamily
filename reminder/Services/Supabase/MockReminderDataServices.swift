@@ -15,16 +15,18 @@ actor MockTaskDataService: TaskDataService {
     }
 
     func createTask(_ task: FamilyTask) async throws -> FamilyTask {
-        tasks.append(task)
-        return task
+        let stored = task.sanitizedForPersistence()
+        tasks.append(stored)
+        return stored
     }
 
     func updateTask(_ task: FamilyTask) async throws -> FamilyTask {
-        guard let index = tasks.firstIndex(where: { $0.id == task.id }) else {
+        let stored = task.sanitizedForPersistence()
+        guard let index = tasks.firstIndex(where: { $0.id == stored.id }) else {
             throw SupabaseServiceError.invalidResponse
         }
-        tasks[index] = task
-        return task
+        tasks[index] = stored
+        return stored
     }
 
     func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {

@@ -199,7 +199,7 @@ enum RecurrenceEngine {
             involvedMemberIds: mother.involvedMemberIds,
             targetProfileId: mother.targetProfileId,
             targetProfileIds: mother.targetProfileIds,
-            targetSubject: mother.targetSubject,
+            targetSubject: nil,
             title: mother.title,
             description: mother.description,
             originalPrompt: mother.originalPrompt,

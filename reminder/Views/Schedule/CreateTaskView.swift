@@ -321,13 +321,17 @@ struct CreateTaskView: View {
         self.onAlarmSync = onAlarmSync
 
         if let task = editingTask {
-            let resolvedTitle = BirthdayTaskDisplay.isBirthdaySyncTask(task)
-                ? BirthdayTaskDisplay.resolvedTitle(
+            let resolvedTitle: String
+            if task.hasTargetProfileReference,
+               BirthdayTaskDisplay.isBirthdaySyncTask(task) || task.title.contains("%@") {
+                resolvedTitle = TaskDisplayResolver.resolvedTitle(
                     for: task,
                     profiles: familyProfiles,
                     locale: AppSettingsManager.shared.appLocale
                 )
-                : task.title
+            } else {
+                resolvedTitle = task.title
+            }
             _title = State(initialValue: resolvedTitle)
             let initialDue = task.dueDate ?? task.originalDueDate ?? Date()
             _dueDate = State(initialValue: initialDue)

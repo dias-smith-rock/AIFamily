@@ -282,7 +282,7 @@ final class ScheduleViewModel: ObservableObject {
     }
 
     func displayTitle(for task: FamilyTask) -> String {
-        BirthdayTaskDisplay.resolvedTitle(
+        TaskDisplayResolver.resolvedTitle(
             for: task,
             profiles: familyProfiles,
             locale: AppSettingsManager.shared.appLocale

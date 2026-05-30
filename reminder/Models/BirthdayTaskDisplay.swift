@@ -96,12 +96,6 @@ enum BirthdayTaskDisplay {
         profiles: [FamilyProfile],
         locale: Locale
     ) -> String {
-        guard let template = inferredTemplate(for: task) else {
-            return task.title
-        }
-        let name = resolvedTargetDisplayName(for: task, profiles: profiles)
-            ?? MemberDisplayName.unknownFallback
-        let format = AppLocalized.string(template.titleFormatKey, locale: locale)
-        return String(format: format, locale: locale, arguments: [name])
+        TaskDisplayResolver.resolvedTitle(for: task, profiles: profiles, locale: locale)
     }
 }
