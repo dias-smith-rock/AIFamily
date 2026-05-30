@@ -188,13 +188,13 @@ struct TodoListView: View {
             showOverdueSheet = true
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .foregroundStyle(.red)
-                    .font(.title3)
+                Image(systemName: "clock.arrow.circlepath")
+                    .foregroundStyle(.secondary)
+                    .font(.body)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(viewModel.overdueTasks.count) 个待办已过期")
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
                     Text("点击查看并调整时间")
                         .font(.caption)
@@ -204,12 +204,17 @@ struct TodoListView: View {
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel("查看已逾期任务")
