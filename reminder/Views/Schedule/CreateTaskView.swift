@@ -1464,7 +1464,7 @@ struct CreateTaskView: View {
                     switch grouping {
                     case .byParentRoot(let root):
                         recurrenceRulePayload = row.id == root
-                            ? (activeRecurrenceRuleString ?? row.recurrenceRule)
+                            ? activeRecurrenceRuleString
                             : row.recurrenceRule
                         recurrenceEndPayload = row.id == root
                             ? resolvedRecurrenceEndDateForPayload()
@@ -1473,7 +1473,7 @@ struct CreateTaskView: View {
                             ? resolvedRecurrenceIntervalForPayload()
                             : row.recurrenceInterval
                     case .byLegacyGroup:
-                        recurrenceRulePayload = activeRecurrenceRuleString ?? row.recurrenceRule
+                        recurrenceRulePayload = activeRecurrenceRuleString
                         recurrenceEndPayload = resolvedRecurrenceEndDateForPayload()
                         recurrenceIntervalPayload = resolvedRecurrenceIntervalForPayload()
                     }
@@ -1618,9 +1618,9 @@ struct CreateTaskView: View {
         guard shouldSync else { return }
 
         let newSnapshot = TaskSeriesSupabaseSupport.RecurrenceFieldSnapshot.normalized(
-            rule: activeRecurrenceRuleString ?? updated.recurrenceRule,
-            interval: resolvedRecurrenceIntervalForPayload() ?? updated.recurrenceInterval,
-            endDate: resolvedRecurrenceEndDateForPayload() ?? updated.recurrenceEndDate
+            rule: activeRecurrenceRuleString,
+            interval: resolvedRecurrenceIntervalForPayload(),
+            endDate: resolvedRecurrenceEndDateForPayload()
         )
 
         let motherForGenerate: FamilyTask

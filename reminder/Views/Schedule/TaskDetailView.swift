@@ -33,6 +33,8 @@ struct TaskDetailView: View {
     @State private var isDeletingTask = false
     @State private var statusError: String?
     @State private var forWhomProfiles: [FamilyProfile] = []
+    @State private var displayRecurrenceRule: String?
+    @State private var displayRecurrenceInterval: Int?
     @State private var isShowingDeleteAlert = false
     @State private var attachmentGalleryPresentation: AttachmentGalleryPresentation?
     init(
@@ -156,9 +158,12 @@ struct TaskDetailView: View {
                 task: task,
                 onUpdateSuccess: { updated in
                     task = updated
+                    displayRecurrenceRule = nil
+                    displayRecurrenceInterval = nil
                     Task {
                         await scheduleViewModel.loadTasks()
                         await loadForWhomProfiles()
+                        await loadSeriesRecurrenceIfNeeded()
                         await taskDetailViewModel.loadAttachments(taskId: updated.id)
                     }
                 },
@@ -171,6 +176,7 @@ struct TaskDetailView: View {
         }
         .task(id: task.id) {
             await loadForWhomProfiles()
+            await loadSeriesRecurrenceIfNeeded()
             await taskDetailViewModel.loadAttachments(taskId: task.id)
         }
         .alert("删除任务", isPresented: $isShowingDeleteAlert) {
@@ -273,9 +279,62 @@ struct TaskDetailView: View {
 
     private var inferredRecurrenceRule: TaskRecurrenceRule {
         TaskRecurrenceRule.inferred(
-            from: task.recurrenceRule,
-            recurrenceInterval: task.recurrenceInterval
+            from: displayRecurrenceRule ?? task.recurrenceRule,
+            recurrenceInterval: displayRecurrenceInterval ?? task.recurrenceInterval
         )
+    }
+
+    /// 子任务行上 `recurrence_*` 为空；展示时继承仍有效的母任务规则。
+    private func loadSeriesRecurrenceIfNeeded() async {
+        displayRecurrenceRule = nil
+        displayRecurrenceInterval = nil
+
+        #if canImport(Supabase)
+        let householdId = appRouter.selectedHouseholdId ?? task.householdId
+        let resolvedTask: FamilyTask
+        if let fetched = try? await TaskSeriesSupabaseSupport.fetchTask(
+            id: task.id,
+            householdId: householdId
+        ) {
+            resolvedTask = fetched
+            if fetched.recurrenceRule != task.recurrenceRule
+                || fetched.recurrenceInterval != task.recurrenceInterval
+                || fetched.parentTaskId != task.parentTaskId {
+                task = fetched
+            }
+        } else {
+            resolvedTask = task
+        }
+
+        if let rule = resolvedTask.recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines),
+           rule.isEmpty == false {
+            displayRecurrenceRule = resolvedTask.recurrenceRule
+            displayRecurrenceInterval = resolvedTask.recurrenceInterval
+            return
+        }
+
+        guard let parentId = resolvedTask.parentTaskId else {
+            return
+        }
+
+        do {
+            let parent = try await TaskSeriesSupabaseSupport.fetchTask(
+                id: parentId,
+                householdId: householdId
+            )
+            guard parent.isRecurringSeriesMother else { return }
+            displayRecurrenceRule = parent.recurrenceRule
+            displayRecurrenceInterval = parent.recurrenceInterval
+        } catch {
+            return
+        }
+        #else
+        if let rule = task.recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines),
+           rule.isEmpty == false {
+            displayRecurrenceRule = task.recurrenceRule
+            displayRecurrenceInterval = task.recurrenceInterval
+        }
+        #endif
     }
 
     private var timePlanningCard: some View {

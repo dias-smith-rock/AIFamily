@@ -127,6 +127,10 @@ enum TaskSeriesSupabaseSupport {
                 householdId: householdId,
                 fromDate: fromDate
             )
+            try await clearSeriesRecurrenceOnRoot(
+                rootTaskId: rootTaskId,
+                householdId: householdId
+            )
             return
         }
 
@@ -220,6 +224,21 @@ enum TaskSeriesSupabaseSupport {
             .execute()
     }
 
+    /// 周期序列改为「不重复」时，确保母任务行上的 `recurrence_*` 被清空。
+    static func clearSeriesRecurrenceOnRoot(
+        rootTaskId: UUID,
+        householdId: UUID
+    ) async throws {
+        let client = SupabaseManager.shared.client
+        let payload = SeriesRecurrenceClearPatch()
+        try await client
+            .from("tasks")
+            .update(payload)
+            .eq("household_id", value: householdId.uuidString.lowercased())
+            .eq("id", value: rootTaskId.uuidString.lowercased())
+            .execute()
+    }
+
     static func fetchTask(id: UUID, householdId: UUID) async throws -> FamilyTask {
         let client = SupabaseManager.shared.client
         return try await client
@@ -230,6 +249,21 @@ enum TaskSeriesSupabaseSupport {
             .single()
             .execute()
             .value
+    }
+}
+
+private struct SeriesRecurrenceClearPatch: Encodable {
+    enum CodingKeys: String, CodingKey {
+        case recurrenceRule = "recurrence_rule"
+        case recurrenceEndDate = "recurrence_end_date"
+        case recurrenceInterval = "recurrence_interval"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeNil(forKey: .recurrenceRule)
+        try container.encodeNil(forKey: .recurrenceEndDate)
+        try container.encodeNil(forKey: .recurrenceInterval)
     }
 }
 
