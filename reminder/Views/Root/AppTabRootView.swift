@@ -6,12 +6,14 @@ struct AppTabRootView: View {
 
     enum Tab: Hashable {
         case schedule
+        case todos
         case family
         case personalSettings
 
         var titleKey: LocalizedStringKey {
             switch self {
             case .schedule: "日程表"
+            case .todos: "待办"
             case .family: "群组"
             case .personalSettings: "我的"
             }
@@ -20,6 +22,7 @@ struct AppTabRootView: View {
         var systemImage: String {
             switch self {
             case .schedule: "calendar"
+            case .todos: "checklist"
             case .family: "person.2"
             case .personalSettings: "gearshape.fill"
             }
@@ -33,6 +36,12 @@ struct AppTabRootView: View {
                     Label(Tab.schedule.titleKey, systemImage: Tab.schedule.systemImage)
                 }
                 .tag(Tab.schedule)
+
+            TodoListView()
+                .tabItem {
+                    Label(Tab.todos.titleKey, systemImage: Tab.todos.systemImage)
+                }
+                .tag(Tab.todos)
 
             // 「消息」Tab 延后版本开放，FeedbackFeedView 仍保留在工程中。
 

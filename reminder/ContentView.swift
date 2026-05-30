@@ -175,7 +175,7 @@ struct ContentView: View {
             let now = Date()
             let upcoming = tasks
                 .filter { task in
-                    guard let due = task.dueDate else { return false }
+                    guard let due = task.alarmAnchorDate else { return false }
                     guard due > now else { return false }
                     switch task.status {
                     case .completed, .cancelled, .failed, .expired:
@@ -185,7 +185,7 @@ struct ContentView: View {
                     }
                 }
                 .sorted { lhs, rhs in
-                    (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
+                    (lhs.alarmAnchorDate ?? .distantFuture) < (rhs.alarmAnchorDate ?? .distantFuture)
                 }
                 .map {
                     TaskAlarmPayload(

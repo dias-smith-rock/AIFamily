@@ -488,7 +488,7 @@ struct TaskModeDayView: View {
     }
 
     private var selectedDateTasks: [FamilyTask] {
-        viewModel.tasks
+        viewModel.scheduledTasks
             .filter { task in
                 Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: selectedDate)
             }
@@ -554,7 +554,7 @@ struct TaskModeDayView: View {
     }
 
     private func taskCount(for date: Date) -> Int {
-        viewModel.tasks.reduce(into: 0) { result, task in
+        viewModel.scheduledTasks.reduce(into: 0) { result, task in
             if Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: date) {
                 result += 1
             }
@@ -563,7 +563,7 @@ struct TaskModeDayView: View {
 
     private var monthTaskDots: [Date: [Color]] {
         var result: [Date: [Color]] = [:]
-        for task in viewModel.tasks {
+        for task in viewModel.scheduledTasks {
             let day = Calendar.current.startOfDay(for: taskDisplayDate(task))
             let color = statusColor(for: task.status)
             var colors = result[day, default: []]

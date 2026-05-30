@@ -50,9 +50,12 @@ extension FamilyTask {
         return nil
     }
 
-    /// 列表 / 详情展示用的计划开始时刻。
+    /// 列表 / 详情展示用的计划开始时刻（灵活待办用截止日锚定分组）。
     var scheduleStartDate: Date {
-        dueDate ?? originalDueDate ?? createdAt
+        if isFlexibleTodo, let day = flexibleDeadlineDay {
+            return day
+        }
+        return dueDate ?? originalDueDate ?? createdAt
     }
 
     /// 计划结束时刻：优先 `end_datetime`，但不短于 `scheduleStartDate + duration_minutes`。

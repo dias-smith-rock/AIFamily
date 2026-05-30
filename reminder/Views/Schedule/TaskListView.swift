@@ -86,7 +86,8 @@ struct TaskListView: View {
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $isShowingCreateTaskSheet) {
-                CreateTaskView(
+                EditTaskView(
+                    formMode: .scheduled,
                     initialTitle: prefillTitle,
                     defaultDueDate: createTaskDueDateOverride ?? dayID(for: selectedDate),
                     defaultAllDayForNewTask: false,
@@ -270,7 +271,7 @@ struct TaskListView: View {
 
     private var monthTaskDots: [Date: [Color]] {
         var result: [Date: [Color]] = [:]
-        for task in viewModel.tasks {
+        for task in viewModel.scheduledTasks {
             let day = Calendar.current.startOfDay(for: taskDisplayDate(task))
             let color = statusColor(for: task.status)
             var colors = result[day, default: []]

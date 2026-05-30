@@ -24,7 +24,7 @@ extension TaskAlarmPayload {
             priority: task.priority,
             status: task.status,
             isAllDay: task.isAllDay,
-            dueDate: task.dueDate,
+            dueDate: task.alarmAnchorDate,
             reminderOffsets: task.reminderOffsets
         )
     }

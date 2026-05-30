@@ -262,6 +262,7 @@ struct CreateTaskView: View {
     @State private var dueDate = CreateTaskView.getDefaultTaskTime()
     @State private var durationPickerDate = CreateTaskView.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
     @State private var isAllDay = false
+    @State private var flexibleDeadlineDate = EditTaskViewModel.defaultFlexibleDeadlineDate()
     @State private var selectedRecurrence: TaskRecurrenceRule = .none
     /// 「每隔几天」步进值（仅 `custom` 使用，范围 2…365）。
     @State private var recurrenceInterval: Int = 2
@@ -296,6 +297,7 @@ struct CreateTaskView: View {
     @State private var isPresentingCamera = false
 
     private let editingTask: FamilyTask?
+    private let formMode: EditTaskViewModel.TaskMode
     private let familyProfiles: [FamilyProfile]
     private let initialTitle: String?
     private let onSaveSuccess: ((Date) -> Void)?
@@ -303,8 +305,13 @@ struct CreateTaskView: View {
     /// 保存成功后同步本地通知（由外层注入 `ScheduleViewModel.syncAlarms`）。须为同步闭包，避免再经 `async` 传递 `FamilyTask`。
     private let onAlarmSync: ((FamilyTask) -> Void)?
 
+    private var isFlexibleMode: Bool {
+        formMode == .flexible
+    }
+
     init(
         editingTask: FamilyTask? = nil,
+        formMode: EditTaskViewModel.TaskMode = .scheduled,
         familyProfiles: [FamilyProfile] = [],
         initialTitle: String? = nil,
         defaultDueDate: Date? = nil,
@@ -314,6 +321,7 @@ struct CreateTaskView: View {
         onAlarmSync: ((FamilyTask) -> Void)? = nil
     ) {
         self.editingTask = editingTask
+        self.formMode = editingTask.map { EditTaskViewModel.mode(forEditing: $0) } ?? formMode
         self.familyProfiles = familyProfiles
         self.initialTitle = initialTitle
         self.onSaveSuccess = onSaveSuccess
@@ -339,6 +347,10 @@ struct CreateTaskView: View {
                 initialValue: Self.makeDurationPickerDate(minutes: max(1, task.durationMinutes))
             )
             _isAllDay = State(initialValue: task.isAllDay)
+            _flexibleDeadlineDate = State(
+                initialValue: task.endDatetime
+                    ?? EditTaskViewModel.defaultFlexibleDeadlineDate()
+            )
             let inferred = TaskRecurrenceRule.inferred(from: task.recurrenceRule, recurrenceInterval: task.recurrenceInterval)
             _selectedRecurrence = State(initialValue: inferred)
             let customFromTask = max(2, min(365, task.recurrenceInterval ?? 2))
@@ -375,6 +387,7 @@ struct CreateTaskView: View {
                 initialValue: Self.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
             )
             _isAllDay = State(initialValue: defaultAllDayForNewTask)
+            _flexibleDeadlineDate = State(initialValue: EditTaskViewModel.defaultFlexibleDeadlineDate())
             _selectedRecurrence = State(initialValue: .none)
             _recurrenceInterval = State(initialValue: 2)
             _recurrenceEndDate = State(initialValue: Calendar.current.date(byAdding: .month, value: 6, to: resolvedDue) ?? resolvedDue)
@@ -398,7 +411,7 @@ struct CreateTaskView: View {
 
     private func applyDefaultRecurrenceEndDate(for rule: TaskRecurrenceRule) {
         let cal = Calendar.current
-        let anchor = dueDate
+        let anchor = isFlexibleMode ? flexibleDeadlineDate : dueDate
         if rule == .none {
             showEndDate = false
             return
@@ -409,6 +422,75 @@ struct CreateTaskView: View {
         } else {
             recurrenceEndDate = cal.date(byAdding: .month, value: 6, to: anchor) ?? anchor
         }
+    }
+
+    private var taskTimeSettingsSection: some View {
+        Group {
+            if isFlexibleMode {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text("在这之前完成")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    flexibleDueByDateRow
+                }
+                .createTaskFormCardStyled()
+            } else {
+                EquatableView(
+                    content: CreateTaskTimeRecurrenceBlock(
+                        dueDateToken: dueDate,
+                        isAllDayToken: isAllDay,
+                        durationPickerToken: durationPickerDate,
+                        selectedRecurrenceToken: selectedRecurrence,
+                        recurrenceIntervalToken: recurrenceInterval,
+                        recurrenceEndDateToken: recurrenceEndDate,
+                        showEndDateToken: showEndDate,
+                        dueDate: $dueDate,
+                        isAllDay: $isAllDay,
+                        durationPickerDate: $durationPickerDate,
+                        selectedRecurrence: $selectedRecurrence,
+                        recurrenceInterval: $recurrenceInterval,
+                        recurrenceEndDate: $recurrenceEndDate,
+                        showEndDate: $showEndDate,
+                        onRecurrenceChanged: { rule in
+                            applyDefaultRecurrenceEndDate(for: rule)
+                        }
+                    )
+                )
+            }
+        }
+    }
+
+    private var flexibleDueByDateRow: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Label("截止期限", systemImage: "flag")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .labelStyle(.titleAndIcon)
+                .frame(width: CreateTaskTimeFormLayout.labelColumnWidth, alignment: .leading)
+
+            Spacer(minLength: 8)
+
+            DatePicker(
+                "",
+                selection: $flexibleDeadlineDate,
+                displayedComponents: [.date]
+            )
+            .labelsHidden()
+            .datePickerStyle(.compact)
+            .accessibilityLabel("截止期限")
+        }
+    }
+
+    private var formNavigationTitle: LocalizedStringKey {
+        if editingTask != nil {
+            return isFlexibleMode ? "编辑待办" : "编辑日程"
+        }
+        return isFlexibleMode ? "新建待办" : "新建日程"
+    }
+
+    private var formAccentTint: Color {
+        isFlexibleMode ? Color.orange : AppTheme.ColorToken.accent
     }
 
     var body: some View {
@@ -423,27 +505,7 @@ struct CreateTaskView: View {
 
                         taskAttachmentCard
 
-                        EquatableView(
-                            content:                             CreateTaskTimeRecurrenceBlock(
-                                dueDateToken: dueDate,
-                                isAllDayToken: isAllDay,
-                                durationPickerToken: durationPickerDate,
-                                selectedRecurrenceToken: selectedRecurrence,
-                                recurrenceIntervalToken: recurrenceInterval,
-                                recurrenceEndDateToken: recurrenceEndDate,
-                                showEndDateToken: showEndDate,
-                                dueDate: $dueDate,
-                                isAllDay: $isAllDay,
-                                durationPickerDate: $durationPickerDate,
-                                selectedRecurrence: $selectedRecurrence,
-                                recurrenceInterval: $recurrenceInterval,
-                                recurrenceEndDate: $recurrenceEndDate,
-                                showEndDate: $showEndDate,
-                                onRecurrenceChanged: { rule in
-                                    applyDefaultRecurrenceEndDate(for: rule)
-                                }
-                            )
-                        )
+                        taskTimeSettingsSection
 
                         forWhomCard
 
@@ -483,8 +545,9 @@ struct CreateTaskView: View {
                         .scaleEffect(1.1)
                 }
             }
-            .navigationTitle(editingTask == nil ? "新建任务 ✨" : "编辑任务")
+            .navigationTitle(formNavigationTitle)
             .navigationBarTitleDisplayMode(.inline)
+            .tint(formAccentTint)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("取消") {
@@ -1380,6 +1443,14 @@ struct CreateTaskView: View {
             errorMessage = String(localized: "当前群组与任务不一致，无法保存。", locale: locale)
             return
         }
+        if isFlexibleMode, scope == .thisAndFuture {
+            errorMessage = String(localized: "灵活待办不支持批量更新重复任务。", locale: locale)
+            return
+        }
+        if isFlexibleMode, resolvedRecurrenceRuleForPayload() != nil {
+            errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+            return
+        }
 
         isSaving = true
         errorMessage = nil
@@ -1403,13 +1474,14 @@ struct CreateTaskView: View {
                     description: mergedDescriptionForPayload,
                     involvedMemberIds: resolvedInvolvedMemberIds,
                     targetProfileIds: resolvedTargetProfileIds,
-                    dueDate: dueDate,
-                    endDatetime: resolvedEndDatetime(for: dueDate),
-                    durationMinutes: resolvedDurationMinutes(for: dueDate),
-                    isAllDay: isAllDay,
-                    recurrenceRule: activeRecurrenceRuleString,
-                    recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
-                    recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
+                    taskType: resolvedTaskTypeForPayload(),
+                    dueDate: resolvedDueDateForPayload(),
+                    endDatetime: resolvedEndDatetimeForPayload(),
+                    durationMinutes: resolvedDurationMinutesForPayload(),
+                    isAllDay: resolvedIsAllDayForPayload(),
+                    recurrenceRule: resolvedRecurrenceRuleForPayload(),
+                    recurrenceEndDate: resolvedRecurrenceEndDateForPayloadStrict(),
+                    recurrenceInterval: resolvedRecurrenceIntervalForPayloadStrict(),
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
                     estimatedCost: estimatedCostMinorUnits,
                     backgroundColor: resolvedBackgroundColorHex(),
@@ -1513,6 +1585,7 @@ struct CreateTaskView: View {
                         description: mergedDescriptionForPayload,
                         involvedMemberIds: resolvedInvolvedMemberIds,
                         targetProfileIds: resolvedTargetProfileIds,
+                        taskType: TaskTypeKind.scheduled.rawValue,
                         dueDate: newDue,
                         endDatetime: newEnd,
                         durationMinutes: metaOnly
@@ -1720,7 +1793,11 @@ struct CreateTaskView: View {
             let now = Date()
             let client = SupabaseManager.shared.client
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
-            let recurrence = activeRecurrenceRuleString
+            let recurrence = resolvedRecurrenceRuleForPayload()
+            if isFlexibleMode, recurrence != nil {
+                errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+                return
+            }
 
             async let attachmentUploads = uploadSelectedAttachments(householdId: householdId)
 
@@ -1737,10 +1814,11 @@ struct CreateTaskView: View {
                     description: mergedDescriptionForPayload,
                     status: TaskStatus.new.rawValue,
                     priority: formPriority.rawValue,
-                    dueDate: dueDate,
-                    endDatetime: resolvedEndDatetime(for: dueDate),
-                    durationMinutes: resolvedDurationMinutes(for: dueDate),
-                    isAllDay: isAllDay,
+                    taskType: resolvedTaskTypeForPayload(),
+                    dueDate: resolvedDueDateForPayload(),
+                    endDatetime: resolvedEndDatetimeForPayload(),
+                    durationMinutes: resolvedDurationMinutesForPayload(),
+                    isAllDay: resolvedIsAllDayForPayload(),
                     recurrenceRule: nil,
                     recurrenceEndDate: nil,
                     recurrenceInterval: nil,
@@ -1772,6 +1850,7 @@ struct CreateTaskView: View {
                     description: mergedDescriptionForPayload,
                     status: TaskStatus.new.rawValue,
                     priority: formPriority.rawValue,
+                    taskType: TaskTypeKind.scheduled.rawValue,
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
                     durationMinutes: resolvedDurationMinutes(for: dueDate),
@@ -1814,6 +1893,7 @@ struct CreateTaskView: View {
                             description: mergedDescriptionForPayload,
                             status: TaskStatus.new.rawValue,
                             priority: formPriority.rawValue,
+                            taskType: TaskTypeKind.scheduled.rawValue,
                             dueDate: child.dueDate ?? dueDate,
                             endDatetime: child.endDatetime,
                             durationMinutes: child.durationMinutes,
@@ -1854,7 +1934,7 @@ struct CreateTaskView: View {
             AnalyticsManager.log(event: .taskCreated(hasAttachment: hasAttachment))
 
             clearAttachmentSelection()
-            onSaveSuccess?(dueDate)
+            onSaveSuccess?(isFlexibleMode ? flexibleDeadlineDate : dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             dismiss()
         } catch {
@@ -1992,7 +2072,8 @@ private struct TaskInsertPayload: Encodable {
     let description: String?
     let status: String
     let priority: String
-    let dueDate: Date
+    let taskType: String
+    let dueDate: Date?
     let endDatetime: Date?
     let durationMinutes: Int
     let isAllDay: Bool
@@ -2019,6 +2100,7 @@ private struct TaskInsertPayload: Encodable {
         case description
         case status
         case priority
+        case taskType = "task_type"
         case dueDate = "due_date"
         case endDatetime = "end_datetime"
         case durationMinutes = "duration_minutes"
@@ -2060,7 +2142,12 @@ private struct TaskInsertPayload: Encodable {
         try container.encodeIfPresent(description, forKey: .description)
         try container.encode(status, forKey: .status)
         try container.encode(priority, forKey: .priority)
-        try container.encode(dueDate, forKey: .dueDate)
+        try container.encode(taskType, forKey: .taskType)
+        if let dueDate {
+            try container.encode(dueDate, forKey: .dueDate)
+        } else {
+            try container.encodeNil(forKey: .dueDate)
+        }
         if let endDatetime {
             try container.encode(endDatetime, forKey: .endDatetime)
         } else {
@@ -2110,7 +2197,8 @@ private struct TaskUpdatePayload: Encodable {
     let description: String?
     let involvedMemberIds: [UUID]?
     let targetProfileIds: [UUID]?
-    let dueDate: Date
+    let taskType: String
+    let dueDate: Date?
     let endDatetime: Date?
     let durationMinutes: Int
     let isAllDay: Bool
@@ -2130,6 +2218,7 @@ private struct TaskUpdatePayload: Encodable {
         case description
         case involvedMemberIds = "involved_member_ids"
         case targetProfileIds = "target_profile_ids"
+        case taskType = "task_type"
         case dueDate = "due_date"
         case endDatetime = "end_datetime"
         case durationMinutes = "duration_minutes"
@@ -2160,7 +2249,12 @@ private struct TaskUpdatePayload: Encodable {
         } else {
             try container.encodeNil(forKey: .targetProfileIds)
         }
-        try container.encode(dueDate, forKey: .dueDate)
+        try container.encode(taskType, forKey: .taskType)
+        if let dueDate {
+            try container.encode(dueDate, forKey: .dueDate)
+        } else {
+            try container.encodeNil(forKey: .dueDate)
+        }
         if let endDatetime {
             try container.encode(endDatetime, forKey: .endDatetime)
         } else {
@@ -2232,6 +2326,42 @@ private extension CreateTaskView {
     /// 写入 `tasks.duration_minutes`（NOT NULL）。
     func resolvedDurationMinutes(for occurrenceDue: Date) -> Int {
         Self.durationMinutes(from: durationPickerDate)
+    }
+
+    func resolvedTaskTypeForPayload() -> String {
+        EditTaskViewModel.taskType(for: formMode)
+    }
+
+    func resolvedDueDateForPayload() -> Date? {
+        isFlexibleMode ? nil : dueDate
+    }
+
+    func resolvedEndDatetimeForPayload() -> Date? {
+        if isFlexibleMode {
+            return EditTaskViewModel.normalizedFlexibleEndDatetime(from: flexibleDeadlineDate)
+        }
+        return resolvedEndDatetime(for: dueDate)
+    }
+
+    func resolvedDurationMinutesForPayload() -> Int {
+        if isFlexibleMode { return 0 }
+        return resolvedDurationMinutes(for: dueDate)
+    }
+
+    func resolvedIsAllDayForPayload() -> Bool {
+        isFlexibleMode ? false : isAllDay
+    }
+
+    func resolvedRecurrenceRuleForPayload() -> String? {
+        isFlexibleMode ? nil : activeRecurrenceRuleString
+    }
+
+    func resolvedRecurrenceEndDateForPayloadStrict() -> Date? {
+        isFlexibleMode ? nil : resolvedRecurrenceEndDateForPayload()
+    }
+
+    func resolvedRecurrenceIntervalForPayloadStrict() -> Int? {
+        isFlexibleMode ? nil : resolvedRecurrenceIntervalForPayload()
     }
 
     /// 新建任务默认执行时间：当前时刻 +30 分钟，四舍五入到最近的整点或半点。
@@ -2410,6 +2540,7 @@ private extension CreateTaskView {
             alarmSetBy: nil,
             status: status,
             priority: priority,
+            taskType: payload.taskType,
             dueDate: payload.dueDate,
             endDatetime: payload.endDatetime,
             durationMinutes: payload.durationMinutes,
@@ -2428,6 +2559,6 @@ private extension CreateTaskView {
 }
 
 #Preview {
-    CreateTaskView()
+    EditTaskView(formMode: .scheduled)
         .environmentObject(AppRouter())
 }

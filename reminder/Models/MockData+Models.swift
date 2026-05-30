@@ -217,6 +217,37 @@ extension FamilyTask {
             estimatedCost: 200,
             createdAt: .mockISO("2026-04-26T14:10:00.000Z"),
             updatedAt: .mockISO("2026-04-27T06:30:00.000Z")
+        ),
+        FamilyTask(
+            id: UUID(uuidString: "D1E2F3A4-B5C6-4789-AD01-23456789ABCD") ?? UUID(),
+            householdId: MockIDs.household,
+            creatorId: HouseholdMembership.mockMembers[0].id,
+            parentTaskId: nil,
+            involvedMemberIds: nil,
+            targetProfileIds: [mockChildProfileId],
+            targetSubject: nil,
+            title: "交美术课材料费",
+            description: "本周五前完成缴费即可。",
+            originalPrompt: nil,
+            attachmentUrls: nil,
+            externalContacts: nil,
+            locationData: nil,
+            externalSyncRefs: nil,
+            alarmSetBy: nil,
+            status: .new,
+            priority: .normal,
+            taskType: TaskTypeKind.flexible.rawValue,
+            dueDate: nil,
+            endDatetime: .mockISO("2026-05-30T00:00:00.000Z"),
+            durationMinutes: 0,
+            isAllDay: false,
+            recurrenceRule: nil,
+            recurrenceEndDate: nil,
+            recurrenceInterval: nil,
+            reminderOffsets: nil,
+            estimatedCost: 0,
+            createdAt: .mockISO("2026-05-25T08:00:00.000Z"),
+            updatedAt: .mockISO("2026-05-25T08:00:00.000Z")
         )
     ]
 }

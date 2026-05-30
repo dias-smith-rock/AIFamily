@@ -11,7 +11,7 @@ struct TaskModeListView: View {
     /// 按日历日分组（忽略时分），日期升序；组内按锚点时间升序。
     private var groupedTasks: [(Date, [FamilyTask])] {
         let cal = Calendar.current
-        let buckets = Dictionary(grouping: viewModel.tasks) { cal.startOfDay(for: anchorDate(for: $0)) }
+        let buckets = Dictionary(grouping: viewModel.scheduledTasks) { cal.startOfDay(for: anchorDate(for: $0)) }
         let sortedDays = buckets.keys.sorted()
         return sortedDays.map { day in
             let sorted = (buckets[day] ?? []).sorted { anchorDate(for: $0) < anchorDate(for: $1) }
@@ -39,7 +39,7 @@ struct TaskModeListView: View {
                         Text(message)
                     }
                 }
-            } else if viewModel.tasks.isEmpty {
+            } else if viewModel.scheduledTasks.isEmpty {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
                         Label(AppLocalized.string("暂无任务", locale: locale), systemImage: "checklist")

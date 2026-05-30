@@ -350,7 +350,14 @@ struct TaskDetailView: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                if task.isAllDay {
+                if task.isFlexibleTodo {
+                    timePlanningLine(label: "截止日期") {
+                        Text(flexibleDeadlineDetailText)
+                    }
+                    Text("在此之前任意时间完成即可")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if task.isAllDay {
                     timePlanningLine(label: "时间") {
                         Text("全天")
                     }
@@ -903,7 +910,21 @@ struct TaskDetailView: View {
     }
 
     private var plannedEndDate: Date? {
-        Calendar.current.date(byAdding: .minute, value: task.durationMinutes, to: scheduledAt)
+        if task.isFlexibleTodo {
+            return task.endDatetime
+        }
+        return Calendar.current.date(byAdding: .minute, value: task.durationMinutes, to: scheduledAt)
+    }
+
+    private var flexibleDeadlineDetailText: String {
+        let day = task.flexibleDeadlineDay ?? task.endDatetime ?? task.createdAt
+        return day.formatted(
+            .dateTime
+                .month(.defaultDigits)
+                .day(.defaultDigits)
+                .weekday(.wide)
+                .locale(locale)
+        )
     }
 
     private var scheduledAt: Date {

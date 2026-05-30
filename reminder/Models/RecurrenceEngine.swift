@@ -211,6 +211,7 @@ enum RecurrenceEngine {
             status: mother.status,
             priority: mother.priority,
             source: mother.source,
+            taskType: mother.taskType ?? TaskTypeKind.scheduled.rawValue,
             dueDate: newDue,
             endDatetime: newEnd,
             durationMinutes: mother.durationMinutes,

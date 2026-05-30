@@ -77,6 +77,7 @@ final class AssistantViewModel: ObservableObject {
             alarmSetBy: nil,
             status: .new,
             priority: .normal,
+            taskType: TaskTypeKind.scheduled.rawValue,
             dueDate: draft.dueDate,
             isAllDay: false,
             recurrenceRule: nil,

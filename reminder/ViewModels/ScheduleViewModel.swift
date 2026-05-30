@@ -9,6 +9,16 @@ import Supabase
 @MainActor
 final class ScheduleViewModel: ObservableObject {
     @Published private(set) var tasks: [FamilyTask] = []
+
+    /// 日程 Tab：仅 `task_type == scheduled`（历史 `nil` 视为 scheduled），排除生日等系统任务。
+    var scheduledTasks: [FamilyTask] {
+        tasks.filter(\.isScheduledCalendarTask)
+    }
+
+    /// 待办 Tab：`task_type == flexible`。
+    var flexibleTasks: [FamilyTask] {
+        tasks.filter(\.isFlexibleTodo)
+    }
     /// 当前家庭下活跃成员（`household_memberships`），用于列表「谁去办」解析。
     @Published private(set) var householdMembers: [HouseholdMembership] = []
     /// 当前家庭档案（`family_profiles`），用于列表「为了谁」头像。
@@ -345,11 +355,11 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
-    /// 列表模式智能滚动：今天首个任务；若无则今天之后最近一条。
+    /// 列表模式智能滚动：今天首个定时日程；若无则今天之后最近一条（不含灵活待办）。
     func getTargetTaskId() -> UUID? {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let sorted = tasks.sorted { listAnchorDate(for: $0) < listAnchorDate(for: $1) }
+        let sorted = scheduledTasks.sorted { listAnchorDate(for: $0) < listAnchorDate(for: $1) }
 
         if let todayTask = sorted.first(where: { calendar.isDate(listAnchorDate(for: $0), inSameDayAs: today) }) {
             return todayTask.id
@@ -439,7 +449,7 @@ final class ScheduleViewModel: ObservableObject {
         let now = Date()
         let upcoming = tasks
             .filter { task in
-                guard let due = task.dueDate else { return false }
+                guard let due = task.alarmAnchorDate else { return false }
                 guard due > now else { return false }
                 switch task.status {
                 case .completed, .cancelled, .failed, .expired:
@@ -449,7 +459,7 @@ final class ScheduleViewModel: ObservableObject {
                 }
             }
             .sorted { lhs, rhs in
-                (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
+                (lhs.alarmAnchorDate ?? .distantFuture) < (rhs.alarmAnchorDate ?? .distantFuture)
             }
             .map {
                 TaskAlarmPayload(
