@@ -133,21 +133,42 @@ final class TodoListViewModel: ObservableObject {
         }
     }
 
-    func sectionedTasks(calendar: Calendar = .current) -> [(TodoSection, [FamilyTask])] {
-        let today = calendar.startOfDay(for: Date())
+    var overdueTasks: [FamilyTask] {
+        let now = Date()
+        return flexibleTasks.filter { task in
+            guard let end = task.endDatetime else { return false }
+            return end < now
+        }
+    }
+
+    /// 主列表分区（不含已过期；过期任务从标题下横幅入口查看）。
+    func mainSectionedTasks(calendar: Calendar = .current) -> [(TodoSection, [FamilyTask])] {
+        sectionedTasks(calendar: calendar, includeOverdue: false)
+    }
+
+    func sectionedTasks(calendar: Calendar = .current, includeOverdue: Bool = true) -> [(TodoSection, [FamilyTask])] {
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
         guard let weekEnd = calendar.date(byAdding: .day, value: 7, to: today) else {
-            return [(TodoSection.later, flexibleTasks)]
+            let items = includeOverdue
+                ? flexibleTasks
+                : flexibleTasks.filter { !isOverdue($0, now: now) }
+            return items.isEmpty ? [] : [(TodoSection.later, items)]
         }
 
         var buckets: [TodoSection: [FamilyTask]] = [:]
         for task in flexibleTasks {
+            if isOverdue(task, now: now) {
+                if includeOverdue {
+                    buckets[.overdue, default: []].append(task)
+                }
+                continue
+            }
             guard let day = task.flexibleDeadlineDay else {
                 buckets[.later, default: []].append(task)
                 continue
             }
-            if day < today {
-                buckets[.overdue, default: []].append(task)
-            } else if calendar.isDate(day, inSameDayAs: today) {
+            if calendar.isDate(day, inSameDayAs: today) {
                 buckets[.today, default: []].append(task)
             } else if day < weekEnd {
                 buckets[.thisWeek, default: []].append(task)
@@ -156,10 +177,19 @@ final class TodoListViewModel: ObservableObject {
             }
         }
 
-        return TodoSection.allCases.compactMap { section in
+        let sections = includeOverdue
+            ? TodoSection.allCases
+            : TodoSection.allCases.filter { $0 != .overdue }
+
+        return sections.compactMap { section in
             guard let items = buckets[section], items.isEmpty == false else { return nil }
             return (section, items)
         }
+    }
+
+    private func isOverdue(_ task: FamilyTask, now: Date) -> Bool {
+        guard let end = task.endDatetime else { return false }
+        return end < now
     }
 
     // MARK: - Private

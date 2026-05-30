@@ -14,6 +14,7 @@ struct TodoListView: View {
     @StateObject private var scheduleViewModel = AppViewModels.makeScheduleViewModel()
 
     @State private var taskForDetailSheet: FamilyTask?
+    @State private var showOverdueSheet = false
     @State private var isShowingCreateFlexibleSheet = false
     @State private var createTaskFormInstanceID = UUID()
     @State private var currentMembershipRole: MembershipRole = .member
@@ -45,7 +46,7 @@ struct TodoListView: View {
                         }
                     }
                 } else {
-                    todoListContent
+                    todoMainContent
                 }
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
@@ -65,6 +66,22 @@ struct TodoListView: View {
                     }
                     .accessibilityLabel("新建待办")
                 }
+            }
+            .sheet(isPresented: $showOverdueSheet) {
+                OverdueTasksListView(
+                    tasks: viewModel.overdueTasks,
+                    displayTitle: { viewModel.displayTitle(for: $0) },
+                    forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+                    deadlineLabel: { deadlineLabel(for: $0) },
+                    onSelectTask: { task in
+                        showOverdueSheet = false
+                        taskForDetailSheet = task
+                    }
+                )
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
             .sheet(item: $taskForDetailSheet) { task in
                 NavigationStack {
@@ -121,14 +138,63 @@ struct TodoListView: View {
         .appLocaleEnvironment(using: appSettings)
     }
 
+    private var todoMainContent: some View {
+        VStack(spacing: 0) {
+            if viewModel.overdueTasks.isEmpty == false {
+                overdueWarningBanner
+            }
+
+            if viewModel.mainSectionedTasks().isEmpty {
+                overdueOnlyPlaceholder
+            } else {
+                todoListContent
+            }
+        }
+    }
+
+    private var overdueWarningBanner: some View {
+        Button {
+            showOverdueSheet = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .foregroundStyle(.red)
+                    .font(.title3)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(viewModel.overdueTasks.count) 个待办已过期")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text("点击查看并调整时间")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(Color.red.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
+        .padding(.top, 4)
+        .padding(.bottom, 12)
+        .accessibilityLabel("查看已逾期任务")
+    }
+
     private var todoListContent: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
-                ForEach(viewModel.sectionedTasks(), id: \.0.id) { section, tasks in
+                ForEach(viewModel.mainSectionedTasks(), id: \.0.id) { section, tasks in
                     VStack(alignment: .leading, spacing: 10) {
                         Text(section.titleKey)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(section == TodoListViewModel.TodoSection.overdue ? .red : .secondary)
+                            .foregroundStyle(.secondary)
 
                         ForEach(tasks) { task in
                             TodoFlexibleRow(
@@ -136,7 +202,7 @@ struct TodoListView: View {
                                 displayTitle: viewModel.displayTitle(for: task),
                                 forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
                                 deadlineLabel: deadlineLabel(for: task),
-                                isOverdue: section == .overdue
+                                isOverdue: false
                             )
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -150,6 +216,18 @@ struct TodoListView: View {
             .padding(.vertical, 12)
             .padding(.bottom, 24)
         }
+        .refreshable {
+            await reload()
+        }
+    }
+
+    private var overdueOnlyPlaceholder: some View {
+        ContentUnavailableView {
+            Label(AppLocalized.string("暂无即将到期", locale: locale), systemImage: "checklist")
+        } description: {
+            Text(AppLocalized.string("当前待办均已逾期，请点击上方横幅查看。", locale: locale))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .refreshable {
             await reload()
         }
@@ -232,6 +310,54 @@ struct TodoListView: View {
             format: AppLocalized.string("%@前", locale: locale),
             fmt
         )
+    }
+}
+
+// MARK: - Overdue sheet
+
+private struct OverdueTasksListView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let tasks: [FamilyTask]
+    let displayTitle: (FamilyTask) -> String
+    let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
+    let deadlineLabel: (FamilyTask) -> String
+    let onSelectTask: (FamilyTask) -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(tasks) { task in
+                    Button {
+                        onSelectTask(task)
+                    } label: {
+                        TodoFlexibleRow(
+                            task: task,
+                            displayTitle: displayTitle(task),
+                            forWhomAvatars: forWhomAvatars(task),
+                            deadlineLabel: deadlineLabel(task),
+                            isOverdue: true
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+            }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .navigationTitle("已逾期")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
