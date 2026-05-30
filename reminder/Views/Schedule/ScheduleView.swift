@@ -341,7 +341,7 @@ struct TaskModeDayView: View {
     }
 
     private func taskEndDate(_ task: FamilyTask) -> Date {
-        task.resolvedEndDate ?? taskDisplayDate(task)
+        task.timelineEndDate
     }
 
     private func scrollTaskAnchorFlowToInitial(proxy: ScrollViewProxy, animated: Bool = true) {

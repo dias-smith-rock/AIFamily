@@ -55,11 +55,29 @@ extension FamilyTask {
         dueDate ?? originalDueDate ?? createdAt
     }
 
-    /// 计划结束时刻：优先 `end_datetime`，否则由开始时间 + `duration_minutes` 推算。
+    /// 计划结束时刻：优先 `end_datetime`，但不短于 `scheduleStartDate + duration_minutes`。
     var resolvedEndDate: Date? {
-        if let endDatetime {
-            return endDatetime
+        let start = scheduleStartDate
+        let durationEnd = Calendar.current.date(
+            byAdding: .minute,
+            value: max(1, durationMinutes),
+            to: start
+        )
+        guard let endDatetime, endDatetime > start else {
+            return durationEnd
         }
-        return Calendar.current.date(byAdding: .minute, value: durationMinutes, to: scheduleStartDate)
+        if let durationEnd {
+            return max(endDatetime, durationEnd)
+        }
+        return endDatetime
+    }
+
+    /// 时间轴「此刻」指示器与区间计算用的结束时刻（非可选，保证晚于开始时刻）。
+    var timelineEndDate: Date {
+        resolvedEndDate ?? Calendar.current.date(
+            byAdding: .minute,
+            value: max(1, durationMinutes),
+            to: scheduleStartDate
+        ) ?? scheduleStartDate
     }
 }

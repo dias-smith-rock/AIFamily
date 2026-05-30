@@ -132,16 +132,17 @@ struct ScheduleTaskAnchorFlow: View {
             let start = taskAnchor(task)
             let end = taskEnd(task)
             let nextStart = nextIntervalEnd(for: task, at: index)
+            let effectiveEnd = end > start ? end : start.addingTimeInterval(1)
 
-            if now >= start, now < end {
-                let duration = max(end.timeIntervalSince(start), 1)
+            if now >= start, now < effectiveEnd {
+                let duration = effectiveEnd.timeIntervalSince(start)
                 let progress = max(0, min(1, now.timeIntervalSince(start) / duration))
                 return rowFrame.minY + rowFrame.height * progress
             }
 
-            if now >= end, now < nextStart {
-                let gapDuration = max(nextStart.timeIntervalSince(end), 1)
-                let gapProgress = max(0, min(1, now.timeIntervalSince(end) / gapDuration))
+            if now >= effectiveEnd, now < nextStart {
+                let gapDuration = max(nextStart.timeIntervalSince(effectiveEnd), 1)
+                let gapProgress = max(0, min(1, now.timeIntervalSince(effectiveEnd) / gapDuration))
                 return rowFrame.maxY + compactGapHeight * gapProgress
             }
         }
