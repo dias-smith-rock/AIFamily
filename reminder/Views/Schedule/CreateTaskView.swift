@@ -886,12 +886,39 @@ struct CreateTaskView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 14) {
                 forWhomChipAll
-                ForEach(forWhomProfileOptions) { person in
+                ForEach(orderedForWhomProfileOptions) { person in
                     forWhomProfileChip(for: person)
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 6)
         }
+    }
+
+    /// 已勾选档案紧挨「所有人」之后，未勾选保持原列表顺序。
+    private var orderedForWhomProfileOptions: [AssigneeOption] {
+        guard selectedTargetProfileIds.isEmpty == false else {
+            return forWhomProfileOptions
+        }
+        let selectedSet = selectedTargetProfileIds
+        let optionById = Dictionary(uniqueKeysWithValues: forWhomProfileOptions.map { ($0.id, $0) })
+
+        var selectedPeople: [AssigneeOption] = []
+        if let orderedIds = editingTask?.targetProfileIds, orderedIds.isEmpty == false {
+            for id in orderedIds where selectedSet.contains(id) {
+                if let person = optionById[id] {
+                    selectedPeople.append(person)
+                }
+            }
+        }
+        for person in forWhomProfileOptions where selectedSet.contains(person.id) {
+            if selectedPeople.contains(where: { $0.id == person.id }) == false {
+                selectedPeople.append(person)
+            }
+        }
+
+        let unselectedPeople = forWhomProfileOptions.filter { selectedSet.contains($0.id) == false }
+        return selectedPeople + unselectedPeople
     }
 
     private var currencySymbol: String {
@@ -1149,6 +1176,7 @@ struct CreateTaskView: View {
                             .offset(x: 18, y: 18)
                     }
                 }
+                .frame(width: 60, height: 60)
                 Text("所有人")
                     .font(.caption)
                     .foregroundStyle(.primary)
@@ -1189,6 +1217,12 @@ struct CreateTaskView: View {
                             .foregroundStyle(.white, Color.accentColor)
                             .offset(x: 18, y: 18)
                     }
+                }
+                .frame(width: 60, height: 60)
+                .overlay {
+                    Circle()
+                        .strokeBorder(selected ? Color.accentColor : Color.clear, lineWidth: 2.5)
+                        .frame(width: 56, height: 56)
                 }
                 Text(person.name)
                     .font(.caption)

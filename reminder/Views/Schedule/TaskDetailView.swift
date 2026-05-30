@@ -467,12 +467,16 @@ struct TaskDetailView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
-                    forWhomEveryoneChip
-                    ForEach(forWhomProfiles) { profile in
-                        forWhomProfileChip(profile: profile, selected: isProfileHighlighted(profile.id))
+                    if isForWhomEveryone {
+                        forWhomEveryoneChip
+                    } else {
+                        ForEach(selectedForWhomProfiles) { profile in
+                            forWhomProfileChip(profile: profile, selected: true)
+                        }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 6)
             }
         }
         .padding(14)
@@ -500,6 +504,7 @@ struct TaskDetailView: View {
                         .offset(x: 18, y: 18)
                 }
             }
+            .frame(width: 60, height: 60)
             Text("所有人")
                 .font(.caption)
                 .foregroundStyle(.primary)
@@ -538,6 +543,7 @@ struct TaskDetailView: View {
                         .offset(x: 18, y: 18)
                 }
             }
+            .frame(width: 60, height: 60)
             .overlay {
                 Circle()
                     .strokeBorder(selected ? Color.accentColor : Color.clear, lineWidth: 2.5)
@@ -576,8 +582,18 @@ struct TaskDetailView: View {
         highlightedProfileIds.isEmpty
     }
 
-    private func isProfileHighlighted(_ id: UUID) -> Bool {
-        highlightedProfileIds.contains(id)
+    private var selectedForWhomProfiles: [FamilyProfile] {
+        guard isForWhomEveryone == false else { return [] }
+        let profileById = Dictionary(uniqueKeysWithValues: forWhomProfiles.map { ($0.id, $0) })
+        let orderedIds: [UUID]
+        if let multi = task.targetProfileIds, multi.isEmpty == false {
+            orderedIds = multi
+        } else if let single = task.targetProfileId {
+            orderedIds = [single]
+        } else {
+            orderedIds = []
+        }
+        return orderedIds.compactMap { profileById[$0] }
     }
 
     // MARK: - 渐进展开

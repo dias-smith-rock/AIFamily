@@ -10997,55 +10997,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تحديد تاريخ انتهاء التكرار"
+            "value" : "حدد تاريخ الانتهاء"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Specify recurrence end date"
+            "value" : "Specify end date"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Especificar la fecha de finalización de la recurrencia"
+            "value" : "Especifique la fecha de finalización"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spécifier la date de fin de récurrence"
+            "value" : "Précisez la date de fin"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "पुनरावृत्ति समाप्ति तिथि निर्दिष्ट करें"
+            "value" : "समाप्ति तिथि निर्दिष्ट करें"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Especifique a data de término da recorrência"
+            "value" : "Especifique a data de término"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "மறுநிகழ்வு முடிவுத் தேதியைக் குறிப்பிடவும்"
+            "value" : "முடிவுத் தேதியைக் குறிப்பிடவும்"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "指定重复结束日期"
+            "value" : "指定结束日期"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "指定重複結束日期"
+            "value" : "指定結束日期"
           }
         }
       }
@@ -19544,55 +19544,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تكرار النهاية"
+            "value" : "تكرار"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "end repeat"
+            "value" : "End"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "finalizar repetir"
+            "value" : "Finalizar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "fin de la répétition"
+            "value" : "Fin"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "अंत दोहराएँ"
+            "value" : "अंत"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "fim repetir"
+            "value" : "Fim"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "முடிவு மீண்டும்"
+            "value" : "முடிவு"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "结束重复"
+            "value" : "结束"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "結束重複"
+            "value" : "結束"
           }
         }
       }
