@@ -963,25 +963,7 @@ struct CreateTaskView: View {
         ZStack(alignment: .topTrailing) {
             Group {
                 if let url = attachment.displayImageURL {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .empty:
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color(.tertiarySystemFill))
-                                .frame(width: 80, height: 80)
-                                .overlay { ProgressView() }
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 80, height: 80)
-                                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        case .failure:
-                            existingAttachmentPlaceholder(systemName: "photo.badge.exclamationmark")
-                        @unknown default:
-                            EmptyView()
-                        }
-                    }
+                    TaskAttachmentThumbnailView(url: url)
                 } else {
                     existingAttachmentPlaceholder(systemName: "photo")
                 }

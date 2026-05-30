@@ -1,4 +1,3 @@
-import Kingfisher
 import SwiftUI
 
 /// 任务附件全屏预览：横向分页滑动切换。
@@ -69,17 +68,7 @@ struct TaskAttachmentImageGallery: View {
     @ViewBuilder
     private func galleryPage(_ attachment: TaskAttachment) -> some View {
         if let url = attachment.displayImageURL {
-            KFImage.url(url)
-                .placeholder {
-                    ProgressView()
-                        .tint(.white)
-                }
-                .onFailureView {
-                    galleryFailurePlaceholder
-                }
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            TaskAttachmentFullImageView(url: url)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 48)
         } else {
