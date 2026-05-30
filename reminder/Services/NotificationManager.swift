@@ -46,73 +46,28 @@ actor NotificationManager {
         }
     }
 
-    /// 本地通知预调度：清空现有 pending 后，仅保留未来最近的 10 条未完成任务。
-    func syncLocalNotifications(upcomingTasks: [TaskAlarmPayload]) async {
-        center.removeAllPendingNotificationRequests()
-
-        let now = Date()
-        let upcoming = upcomingTasks
-            .map { $0.detachedCopy() }
-            .filter { payload in
-                guard let due = payload.dueDate else { return false }
-                guard due > now else { return false }
-                switch payload.status {
-                case .completed, .cancelled, .failed, .expired:
-                    return false
-                default:
-                    return true
-                }
-            }
-            .sorted { lhs, rhs in
-                (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
-            }
-
-        let top10 = Array(upcoming.prefix(10))
-        guard top10.isEmpty == false else { return }
-
-        guard await requestAuthorization() else {
-            Self.debugLog("preschedule abort reason=notification_not_authorized")
+    /// 批量对齐本地通知：复用单任务 `syncTaskAlarms`（`dueDate - reminderOffsets`），最多保留未来最近的 10 个任务。
+    func syncLocalNotifications(
+        upcomingTasks: [TaskAlarmPayload],
+        cancelForTaskIds staleTaskIds: [UUID] = []
+    ) async {
+        guard await requestAuthorizationIfNeeded() else {
+            Self.debugLog("bulk sync abort reason=notification_not_authorized")
             return
         }
 
-        for (index, task) in top10.enumerated() {
-            guard let due = task.dueDate else { continue }
-            let content = UNMutableNotificationContent()
-            let trimmedTitle = task.title.trimmingCharacters(in: .whitespacesAndNewlines)
-            content.title = trimmedTitle.isEmpty ? String(localized: "您有一个待办任务") : trimmedTitle
-
-            let group = task.groupName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            if group.isEmpty {
-                content.body = String(localized: "您有一个待办任务")
-            } else {
-                content.body = String(localized: "群组：\(group)")
-            }
-
-            content.sound = .default
-            if task.priority == .urgent {
-                content.interruptionLevel = .timeSensitive
-            } else {
-                content.interruptionLevel = .active
-            }
-            content.badge = NSNumber(value: index + 1)
-            content.userInfo = ["taskId": task.id.uuidString]
-
-            let components = Calendar.current.dateComponents(
-                [.year, .month, .day, .hour, .minute, .second],
-                from: due
-            )
-            let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
-            let request = UNNotificationRequest(
-                identifier: task.id.uuidString,
-                content: content,
-                trigger: trigger
-            )
-            do {
-                try await center.add(request)
-            } catch {
-                Self.debugLog("preschedule add failed taskId=\(task.id.uuidString) error=\(error.localizedDescription)")
-            }
+        for taskId in staleTaskIds {
+            cancelAllPending(for: taskId)
         }
+
+        let top = upcomingTasks.prefix(10)
+        for payload in top {
+            await syncTaskAlarms(for: payload.detachedCopy())
+        }
+
+        Self.debugLog(
+            "bulk sync done scheduledTasks=\(top.count) cancelledStale=\(staleTaskIds.count)"
+        )
     }
 
     /// 撤销与该任务相关的所有待触发与已送达本地通知（identifier 统一前缀）。

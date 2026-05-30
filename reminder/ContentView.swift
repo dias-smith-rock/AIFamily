@@ -173,8 +173,16 @@ struct ContentView: View {
             let profiles: [FamilyProfile] = []
             #endif
             let now = Date()
-            let upcoming = tasks
-                .filter { task in
+            var upcoming: [TaskAlarmPayload] = []
+            var staleTaskIds: [UUID] = []
+
+            for task in tasks {
+                let payload = TaskAlarmPayload(
+                    schedulingFrom: task,
+                    profiles: profiles,
+                    locale: appSettings.appLocale
+                )
+                let isUpcoming: Bool = {
                     guard let due = task.alarmAnchorDate else { return false }
                     guard due > now else { return false }
                     switch task.status {
@@ -183,18 +191,27 @@ struct ContentView: View {
                     default:
                         return true
                     }
+                }()
+
+                if isUpcoming {
+                    upcoming.append(payload)
+                } else {
+                    staleTaskIds.append(task.id)
                 }
-                .sorted { lhs, rhs in
-                    (lhs.alarmAnchorDate ?? .distantFuture) < (rhs.alarmAnchorDate ?? .distantFuture)
-                }
-                .map {
-                    TaskAlarmPayload(
-                        schedulingFrom: $0,
-                        profiles: profiles,
-                        locale: appSettings.appLocale
-                    )
-                }
-            await NotificationManager.shared.syncLocalNotifications(upcomingTasks: upcoming)
+            }
+
+            upcoming.sort { lhs, rhs in
+                (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
+            }
+
+            for payload in upcoming.dropFirst(10) {
+                staleTaskIds.append(payload.id)
+            }
+
+            await NotificationManager.shared.syncLocalNotifications(
+                upcomingTasks: upcoming,
+                cancelForTaskIds: staleTaskIds
+            )
         } catch {
             #if DEBUG
             print("[ContentView] preScheduleLocalNotifications failed: \(error.localizedDescription)")

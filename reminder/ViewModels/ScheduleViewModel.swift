@@ -262,7 +262,6 @@ final class ScheduleViewModel: ObservableObject {
                 (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
             }
             syncAlarms(for: createdTask)
-            syncUpcomingLocalNotifications()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -277,7 +276,6 @@ final class ScheduleViewModel: ObservableObject {
             let updatedTask = try await taskService.updateTask(task)
             guard let index = tasks.firstIndex(where: { $0.id == updatedTask.id }) else {
                 await loadTasks()
-                syncUpcomingLocalNotifications()
                 return
             }
             tasks[index] = updatedTask
@@ -285,7 +283,6 @@ final class ScheduleViewModel: ObservableObject {
                 (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
             }
             syncAlarms(for: updatedTask)
-            syncUpcomingLocalNotifications()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -332,6 +329,8 @@ final class ScheduleViewModel: ObservableObject {
         let updated = try await taskService.patchTaskStatus(taskId: taskId, to: status)
         if status == .completed {
             await NotificationManager.shared.cancelAllPending(for: taskId)
+        } else {
+            syncAlarms(for: updated)
         }
         if let index = tasks.firstIndex(where: { $0.id == updated.id }) {
             tasks[index] = updated
@@ -341,7 +340,6 @@ final class ScheduleViewModel: ObservableObject {
         tasks.sort { lhs, rhs in
             (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
         }
-        syncUpcomingLocalNotifications()
         return updated
     }
 
@@ -447,8 +445,16 @@ final class ScheduleViewModel: ObservableObject {
     /// 预调度本地通知：取未来未完成任务，按时间升序后交给通知管理器（内部会截前 10 条）。
     private func syncUpcomingLocalNotifications() {
         let now = Date()
-        let upcoming = tasks
-            .filter { task in
+        var upcoming: [TaskAlarmPayload] = []
+        var staleTaskIds: [UUID] = []
+
+        for task in tasks {
+            let payload = TaskAlarmPayload(
+                schedulingFrom: task,
+                profiles: familyProfiles,
+                locale: AppSettingsManager.shared.appLocale
+            )
+            let isUpcoming: Bool = {
                 guard let due = task.alarmAnchorDate else { return false }
                 guard due > now else { return false }
                 switch task.status {
@@ -457,20 +463,28 @@ final class ScheduleViewModel: ObservableObject {
                 default:
                     return true
                 }
+            }()
+
+            if isUpcoming {
+                upcoming.append(payload)
+            } else {
+                staleTaskIds.append(task.id)
             }
-            .sorted { lhs, rhs in
-                (lhs.alarmAnchorDate ?? .distantFuture) < (rhs.alarmAnchorDate ?? .distantFuture)
-            }
-            .map {
-                TaskAlarmPayload(
-                    schedulingFrom: $0,
-                    profiles: familyProfiles,
-                    locale: AppSettingsManager.shared.appLocale
-                )
-            }
+        }
+
+        upcoming.sort { lhs, rhs in
+            (lhs.dueDate ?? .distantFuture) < (rhs.dueDate ?? .distantFuture)
+        }
+
+        for payload in upcoming.dropFirst(10) {
+            staleTaskIds.append(payload.id)
+        }
 
         Task {
-            await NotificationManager.shared.syncLocalNotifications(upcomingTasks: upcoming)
+            await NotificationManager.shared.syncLocalNotifications(
+                upcomingTasks: upcoming,
+                cancelForTaskIds: staleTaskIds
+            )
         }
     }
 }

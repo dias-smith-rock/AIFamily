@@ -1037,8 +1037,14 @@ struct TaskDetailView: View {
             Group {
                 switch task.status {
                 case .new:
-                    statusFooterPrimaryButton("接受任务", tint: .orange) {
-                        Task { await updateTaskStatus(to: .accepted) }
+                    if task.isFlexibleTodo {
+                        statusFooterPrimaryButton("完成任务", tint: .green) {
+                            Task { await updateTaskStatus(to: .completed) }
+                        }
+                    } else {
+                        statusFooterPrimaryButton("接受任务", tint: .orange) {
+                            Task { await updateTaskStatus(to: .accepted) }
+                        }
                     }
 
                 case .accepted:

@@ -14148,6 +14148,7 @@
       }
     },
     "您有一个待办任务" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -25550,6 +25551,7 @@
 
     },
     "群组：%@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
