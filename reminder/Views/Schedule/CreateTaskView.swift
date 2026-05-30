@@ -1355,6 +1355,12 @@ struct CreateTaskView: View {
         errorMessage = nil
         defer { isSaving = false }
 
+        let recurrenceSyncContext = await prepareRecurrenceSyncContext(
+            existing: existing,
+            scope: scope,
+            householdId: householdId
+        )
+
         do {
             let attachmentUploads = try await uploadSelectedAttachments(householdId: householdId)
             let client = SupabaseManager.shared.client
@@ -1524,6 +1530,12 @@ struct CreateTaskView: View {
                 try await persistAttachmentRecords(taskId: updated.id, uploads: attachmentUploads)
             }
 
+            try await applyRecurrenceTransitionIfNeeded(
+                context: recurrenceSyncContext,
+                updated: updated,
+                householdId: householdId
+            )
+
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
             if attachmentsToDelete.isEmpty == false {
@@ -1545,6 +1557,89 @@ struct CreateTaskView: View {
         }
         #else
         errorMessage = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
+        #endif
+    }
+
+    private struct RecurrenceSyncContext {
+        let rootTaskId: UUID?
+        let oldSnapshot: TaskSeriesSupabaseSupport.RecurrenceFieldSnapshot
+    }
+
+    private func prepareRecurrenceSyncContext(
+        existing: FamilyTask,
+        scope: RecurringTaskScope,
+        householdId: UUID
+    ) async -> RecurrenceSyncContext {
+        #if canImport(Supabase)
+        var rootTaskId: UUID?
+        var oldSnapshot = TaskSeriesSupabaseSupport.RecurrenceFieldSnapshot.normalized(from: existing)
+
+        if existing.isRecurringSeriesMother {
+            rootTaskId = existing.id
+        } else if existing.parentTaskId == nil {
+            rootTaskId = existing.id
+        } else if scope == .thisAndFuture, let grouping = existing.seriesGrouping {
+            switch grouping {
+            case .byParentRoot(let root):
+                rootTaskId = root
+                if existing.id != root {
+                    if let mother = try? await TaskSeriesSupabaseSupport.fetchTask(
+                        id: root,
+                        householdId: householdId
+                    ) {
+                        oldSnapshot = TaskSeriesSupabaseSupport.RecurrenceFieldSnapshot.normalized(from: mother)
+                    }
+                }
+            case .byLegacyGroup:
+                break
+            }
+        }
+
+        return RecurrenceSyncContext(rootTaskId: rootTaskId, oldSnapshot: oldSnapshot)
+        #else
+        return RecurrenceSyncContext(
+            rootTaskId: nil,
+            oldSnapshot: TaskSeriesSupabaseSupport.RecurrenceFieldSnapshot.normalized(from: existing)
+        )
+        #endif
+    }
+
+    private func applyRecurrenceTransitionIfNeeded(
+        context: RecurrenceSyncContext,
+        updated: FamilyTask,
+        householdId: UUID
+    ) async throws {
+        #if canImport(Supabase)
+        guard let rootTaskId = context.rootTaskId else { return }
+
+        let shouldSync = updated.isRecurringSeriesMother
+            || context.oldSnapshot.isRecurring
+            || activeRecurrenceRuleString != nil
+        guard shouldSync else { return }
+
+        let newSnapshot = TaskSeriesSupabaseSupport.RecurrenceFieldSnapshot.normalized(
+            rule: activeRecurrenceRuleString ?? updated.recurrenceRule,
+            interval: resolvedRecurrenceIntervalForPayload() ?? updated.recurrenceInterval,
+            endDate: resolvedRecurrenceEndDateForPayload() ?? updated.recurrenceEndDate
+        )
+
+        let motherForGenerate: FamilyTask
+        if updated.id == rootTaskId {
+            motherForGenerate = updated
+        } else {
+            motherForGenerate = try await TaskSeriesSupabaseSupport.fetchTask(
+                id: rootTaskId,
+                householdId: householdId
+            )
+        }
+
+        try await TaskSeriesSupabaseSupport.handleRecurrenceTransition(
+            rootTaskId: rootTaskId,
+            householdId: householdId,
+            oldSnapshot: context.oldSnapshot,
+            newSnapshot: newSnapshot,
+            updatedMother: motherForGenerate
+        )
         #endif
     }
 

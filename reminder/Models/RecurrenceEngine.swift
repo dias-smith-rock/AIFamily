@@ -17,6 +17,13 @@ enum RecurrenceEngine {
         }
     }
 
+    /// 仅返回 `dueDate` 严格晚于 `cutoff` 的子任务实例（用于更新周期规则后增量展开）。
+    static func generateInstances(from motherTask: FamilyTask, after cutoff: Date) -> [FamilyTask] {
+        generateInstances(from: motherTask).filter { child in
+            (child.dueDate ?? .distantPast) > cutoff
+        }
+    }
+
     /// 包含母任务首次 `dueDate` 在内的所有发生日（时间分量与母任务首次执行时间对齐）。
     static func occurrenceDates(for motherTask: FamilyTask) -> [Date] {
         guard motherTask.isRecurringSeriesMother else { return [] }
