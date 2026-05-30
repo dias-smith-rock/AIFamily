@@ -349,10 +349,10 @@ struct FamilyView: View {
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
 
-            Text(AppLocalized.string("暂无其他成员", locale: locale))
+            Text("暂无其他成员")
                 .foregroundStyle(.secondary)
 
-            Button(AppLocalized.string("添加群组成员", locale: locale)) {
+            Button("添加群组成员") {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -373,14 +373,14 @@ struct FamilyView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text(AppLocalized.string("还没有成员档案", locale: locale))
+            Text("还没有成员档案")
                 .font(.headline)
-            Text(AppLocalized.string("添加第一位成员，一起分工协作、温柔提醒每一天。", locale: locale))
+            Text("添加第一位成员，一起分工协作、温柔提醒每一天。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
-            Button(AppLocalized.string("添加群组成员", locale: locale)) {
+            Button("添加群组成员") {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)

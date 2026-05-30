@@ -60,6 +60,8 @@ struct TaskCardForWhomTrailing: View {
 
 /// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
+    @Environment(\.locale) private var locale
+
     let task: FamilyTask
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
@@ -138,7 +140,7 @@ struct TaskCardView: View {
         if task.isAllDay {
             return date.formatted(.dateTime.month(.abbreviated).day().weekday(.abbreviated))
         }
-        return date.formatted(date: .omitted, time: .shortened)
+        return ScheduleTimeFormatting.timelineClockTime(date, locale: locale)
     }
 
     private var locationDisplayName: String? {

@@ -12999,7 +12999,6 @@
       }
     },
     "当前待办均已逾期，请点击上方横幅查看。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -18406,8 +18405,10 @@
         }
       }
     },
+    "暂无其他成员" : {
+
+    },
     "暂无即将到期" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -18582,7 +18583,6 @@
       }
     },
     "暂无待办" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -20530,7 +20530,6 @@
       }
     },
     "正在加载任务..." : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -22513,7 +22512,6 @@
       }
     },
     "添加没有具体开始时间的任务，在截止日前完成即可。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -22572,7 +22570,6 @@
       }
     },
     "添加第一位成员，一起分工协作、温柔提醒每一天。" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -29078,7 +29075,6 @@
       }
     },
     "还没有成员档案" : {
-      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

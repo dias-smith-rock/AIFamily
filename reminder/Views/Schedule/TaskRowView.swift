@@ -69,6 +69,8 @@ struct ScheduleNowTimeCapsule: View {
 
 /// 日程时间轴单行：左时间列 + 中轴线列 + 右任务卡片。
 struct TaskRowView: View {
+    @Environment(\.locale) private var locale
+
     let task: FamilyTask
     let displayTitle: String
     let anchor: Date
@@ -79,7 +81,7 @@ struct TaskRowView: View {
     let onTap: () -> Void
 
     private var timeText: String {
-        anchor.formatted(date: .omitted, time: .shortened)
+        ScheduleTimeFormatting.timelineClockTime(anchor, locale: locale)
     }
 
     var body: some View {
@@ -148,12 +150,14 @@ struct TaskRowView: View {
 // MARK: - 此刻指示器（由 ScheduleTaskAnchorFlow 顶层 overlay 调用）
 
 struct TaskRowNowIndicatorOverlay: View {
+    @Environment(\.locale) private var locale
+
     let now: Date
     let anchorY: CGFloat
     let containerHeight: CGFloat
 
     private var nowTimeText: String {
-        now.formatted(date: .omitted, time: .shortened)
+        ScheduleTimeFormatting.timelineClockTime(now, locale: locale)
     }
 
     var body: some View {

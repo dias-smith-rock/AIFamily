@@ -208,8 +208,7 @@ private struct TaskModeListMinimalRow: View {
         if startDay != endDay {
             return "00:00 – 23:59"
         }
-        let tf = Date.FormatStyle(date: .omitted, time: .shortened)
-        return "\(start.formatted(tf)) – \(end.formatted(tf))"
+        return "\(ScheduleTimeFormatting.timelineClockTime(start, locale: locale)) – \(ScheduleTimeFormatting.timelineClockTime(end, locale: locale))"
     }
 
     private var locationTrail: String? {

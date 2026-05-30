@@ -23,25 +23,25 @@ struct TodoListView: View {
         NavigationStack {
             Group {
                 if viewModel.isLoading {
-                    ProgressView(AppLocalized.string("正在加载任务...", locale: locale))
+                    ProgressView("正在加载任务...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let message = viewModel.errorMessage {
                     ContentUnavailableView {
-                        Label(AppLocalized.string("加载失败", locale: locale), systemImage: "exclamationmark.triangle")
+                        Label("加载失败", systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                     } actions: {
-                        Button(AppLocalized.string("重新加载", locale: locale)) {
+                        Button("重新加载") {
                             Task { await viewModel.loadTasks(force: true) }
                         }
                     }
                 } else if viewModel.flexibleTasks.isEmpty {
                     ContentUnavailableView {
-                        Label(AppLocalized.string("暂无待办", locale: locale), systemImage: "checklist")
+                        Label("暂无待办", systemImage: "checklist")
                     } description: {
-                        Text(AppLocalized.string("添加没有具体开始时间的任务，在截止日前完成即可。", locale: locale))
+                        Text("添加没有具体开始时间的任务，在截止日前完成即可。")
                     } actions: {
-                        Button(AppLocalized.string("新建待办", locale: locale)) {
+                        Button("新建待办") {
                             presentCreateFlexible()
                         }
                     }
@@ -174,9 +174,9 @@ struct TodoListView: View {
 
     private var overdueOnlyPlaceholderContent: some View {
         ContentUnavailableView {
-            Label(AppLocalized.string("暂无即将到期", locale: locale), systemImage: "checklist")
+            Label("暂无即将到期", systemImage: "checklist")
         } description: {
-            Text(AppLocalized.string("当前待办均已逾期，请点击上方横幅查看。", locale: locale))
+            Text("当前待办均已逾期，请点击上方横幅查看。")
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 32)
