@@ -56,6 +56,7 @@ final class AppRouter: ObservableObject {
         do {
             let client = SupabaseManager.shared.client
             let session = try await client.auth.session
+            AuthSessionHints.markEverAuthenticated()
             let userId = session.user.id
             let memberships = try await fetchMemberships(client: client, userId: userId)
             let activeMemberships = memberships.filter { normalizeStatus($0.status) == "active" }

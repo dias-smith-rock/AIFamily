@@ -330,6 +330,7 @@ struct LoginView: View {
             do {
                 _ = try await SupabaseManager.shared.client.auth.session
                 hasValidSession = true
+                AuthSessionHints.markEverAuthenticated()
                 await appRouter.refreshStateFromBackend()
                 if appRouter.appState != .unauthenticated {
                     AnalyticsManager.logAuthSessionSucceeded()

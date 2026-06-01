@@ -6,18 +6,14 @@ struct ContentView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
+    @State private var hasCompletedInitialSessionCheck = false
 
     var body: some View {
         Group {
-            switch appRouter.appState {
-            case .unauthenticated:
-                LoginView()
-            case .orgRouting, .householdSelection:
-                HouseholdSelectionView()
-            case .pendingApproval:
-                PendingView()
-            case .activeMember:
-                AppTabRootView()
+            if shouldShowSessionRestore {
+                SessionRestoreView()
+            } else {
+                authenticatedRoot
             }
         }
         .environmentObject(groupSwitcher)
@@ -99,6 +95,7 @@ struct ContentView: View {
         .task {
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
+            hasCompletedInitialSessionCheck = true
         }
         .task(id: appRouter.appState) {
             if case .activeMember = appRouter.appState {
@@ -117,6 +114,24 @@ struct ContentView: View {
                     await preScheduleLocalNotifications()
                 }
             }
+        }
+    }
+
+    private var shouldShowSessionRestore: Bool {
+        AuthSessionHints.hasEverAuthenticated && hasCompletedInitialSessionCheck == false
+    }
+
+    @ViewBuilder
+    private var authenticatedRoot: some View {
+        switch appRouter.appState {
+        case .unauthenticated:
+            LoginView()
+        case .orgRouting, .householdSelection:
+            HouseholdSelectionView()
+        case .pendingApproval:
+            PendingView()
+        case .activeMember:
+            AppTabRootView()
         }
     }
 
