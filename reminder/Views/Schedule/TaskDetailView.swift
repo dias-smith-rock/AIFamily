@@ -388,7 +388,7 @@ struct TaskDetailView: View {
         @ViewBuilder value: () -> Content
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-            (Text(label) + Text(verbatim: ":"))
+            Text("\(Text(label)):")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             value()

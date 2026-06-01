@@ -43,7 +43,8 @@ enum TaskAttachmentImageLoading {
 
     private static var displayScale: CGFloat {
         #if canImport(UIKit)
-        UIScreen.main.scale
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.first?.screen.scale ?? 2
         #else
         2
         #endif

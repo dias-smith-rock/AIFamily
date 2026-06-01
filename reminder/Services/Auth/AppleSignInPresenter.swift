@@ -46,7 +46,16 @@ extension AppleSignInPresenter: ASAuthorizationControllerPresentationContextProv
         if let firstWindow = scenes.first?.windows.first {
             return firstWindow
         }
-        return ASPresentationAnchor()
+        if let firstScene = scenes.first {
+            return ASPresentationAnchor(windowScene: firstScene)
+        }
+        if
+            let anyScene = UIApplication.shared.connectedScenes.first,
+            let windowScene = anyScene as? UIWindowScene
+        {
+            return ASPresentationAnchor(windowScene: windowScene)
+        }
+        fatalError("Unable to resolve presentation anchor for Apple Sign-In.")
     }
 }
 #endif

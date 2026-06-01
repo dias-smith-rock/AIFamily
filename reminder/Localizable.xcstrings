@@ -253,6 +253,9 @@
         }
       }
     },
+    "%@:" : {
+
+    },
     "%@：" : {
       "extractionState" : "stale",
       "localizations" : {
