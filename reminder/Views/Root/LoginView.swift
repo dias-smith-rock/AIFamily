@@ -12,6 +12,8 @@ struct LoginView: View {
     @State private var loadingProvider: LoginProvider?
     @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
+    @State private var showPrivacySheet = false
+    @State private var showTermsSheet = false
 
     private enum LoginProvider {
         case apple
@@ -35,11 +37,31 @@ struct LoginView: View {
             if showsMoreLoginEntry {
                 moreEntry
             }
-            Spacer(minLength: 100)
+            Spacer(minLength: 16)
         }
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            LegalConsentFooterView(
+                onPrivacy: { showPrivacySheet = true },
+                onTerms: { showTermsSheet = true }
+            )
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
+        }
+        .sheet(isPresented: $showTermsSheet) {
+            if let url = SupportLegalLinks.termsOfService {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
+        .sheet(isPresented: $showPrivacySheet) {
+            if let url = SupportLegalLinks.privacyPolicy {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
         .alert("无法完成登录", isPresented: Binding(
             get: { loginErrorAlert != nil },
             set: { if $0 == false { loginErrorAlert = nil } }
