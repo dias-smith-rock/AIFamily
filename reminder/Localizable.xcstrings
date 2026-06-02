@@ -8135,6 +8135,7 @@
       }
     },
     "免费版每任务仅支持 1 张图片，升级 Pro 可上传更多附件。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

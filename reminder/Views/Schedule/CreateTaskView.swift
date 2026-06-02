@@ -627,7 +627,7 @@ struct CreateTaskView: View {
         .photosPicker(
             isPresented: $isPresentingPhotoLibrary,
             selection: $selectedItems,
-            maxSelectionCount: hasPremiumAccess ? 10 : 1,
+            maxSelectionCount: maxTaskAttachments,
             matching: .images,
             photoLibrary: .shared()
         )
@@ -685,9 +685,8 @@ struct CreateTaskView: View {
 
     @MainActor
     private func uploadSelectedAttachments(householdId: UUID) async throws -> [TaskAttachmentSupabaseSupport.UploadedFile] {
-        let capped = hasPremiumAccess
-            ? selectedImages
-            : Array(selectedImages.prefix(max(0, maxTaskAttachments - existingAttachments.count)))
+        let uploadLimit = max(0, maxTaskAttachments - existingAttachments.count)
+        let capped = Array(selectedImages.prefix(uploadLimit))
         return try await TaskAttachmentSupabaseSupport.uploadImages(capped, householdId: householdId)
     }
 
@@ -988,13 +987,7 @@ struct CreateTaskView: View {
         Locale.current.currencySymbol ?? "¥"
     }
 
-    private var hasPremiumAccess: Bool {
-        appRouter.hasPremiumAccess
-    }
-
-    private var maxTaskAttachments: Int {
-        hasPremiumAccess ? 10 : 1
-    }
+    private let maxTaskAttachments = 10
 
     private var totalAttachmentCount: Int {
         existingAttachments.count + selectedImages.count
@@ -1009,9 +1002,7 @@ struct CreateTaskView: View {
             Button {
                 dismissKeyboard()
                 guard canAddMoreAttachments else {
-                    errorMessage = hasPremiumAccess
-                        ? String(localized: "附件数量已达上限。", locale: locale)
-                        : String(localized: "免费版每任务仅支持 1 张图片，升级 Pro 可上传更多附件。", locale: locale)
+                    errorMessage = String(localized: "附件数量已达上限。", locale: locale)
                     return
                 }
                 showAttachmentOptions = true
@@ -1123,11 +1114,7 @@ struct CreateTaskView: View {
             images.append(image)
         }
         let remainingSlots = max(0, maxTaskAttachments - existingAttachments.count)
-        if hasPremiumAccess {
-            selectedImages = Array(images.prefix(remainingSlots))
-        } else {
-            selectedImages = Array(images.prefix(min(1, remainingSlots)))
-        }
+        selectedImages = Array(images.prefix(remainingSlots))
     }
 
     private func removeAttachment(at index: Int) {
