@@ -301,19 +301,64 @@ struct SupabaseTaskDataService: TaskDataService {
         #endif
     }
 
-    func createTask(_ task: FamilyTask) async throws -> FamilyTask {
+    func createTask(_ task: FamilyTask, geofence: TaskGeofence?) async throws -> FamilyTask {
         #if canImport(Supabase)
-        let payload = task.sanitizedForPersistence()
-        let response: FamilyTask = try await provider.client
-            .from(SupabaseTable.tasks)
-            .insert(payload)
-            .select()
-            .single()
+        let spatialGeofence = geofence ?? task.geofence ?? task.locationData?.toTaskGeofence()
+        let params = CreateTaskWithSpatialParams(
+            pTitle: task.title,
+            pDescription: task.description,
+            pCreatorId: task.creatorId.uuidString.lowercased(),
+            pTenantId: task.householdId.uuidString.lowercased(),
+            pGeofence: spatialGeofence
+        )
+        let created: FamilyTask = try await provider.client
+            .rpc("create_task_with_spatial", params: params)
             .execute()
             .value
-        return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
+        let sanitized = task.sanitizedForPersistence()
+        let merged = FamilyTask(
+            id: created.id,
+            householdId: sanitized.householdId,
+            creatorId: sanitized.creatorId,
+            parentTaskId: sanitized.parentTaskId,
+            groupId: sanitized.groupId,
+            originalDueDate: sanitized.originalDueDate,
+            involvedMemberIds: sanitized.involvedMemberIds,
+            targetProfileId: sanitized.targetProfileId,
+            targetProfileIds: sanitized.targetProfileIds,
+            targetSubject: sanitized.targetSubject,
+            title: sanitized.title,
+            description: sanitized.description,
+            originalPrompt: sanitized.originalPrompt,
+            attachmentUrls: sanitized.attachmentUrls,
+            externalContacts: sanitized.externalContacts,
+            locationData: sanitized.locationData,
+            geofence: spatialGeofence ?? created.geofence,
+            completionLocation: sanitized.completionLocation,
+            externalSyncRefs: sanitized.externalSyncRefs,
+            alarmSetBy: sanitized.alarmSetBy,
+            status: created.status,
+            priority: sanitized.priority,
+            source: sanitized.source,
+            taskType: sanitized.taskType,
+            dueDate: sanitized.dueDate,
+            endDatetime: sanitized.endDatetime,
+            durationMinutes: sanitized.durationMinutes,
+            isAllDay: sanitized.isAllDay,
+            recurrenceRule: sanitized.recurrenceRule,
+            recurrenceEndDate: sanitized.recurrenceEndDate,
+            recurrenceInterval: sanitized.recurrenceInterval,
+            reminderOffsets: sanitized.reminderOffsets,
+            estimatedCost: sanitized.estimatedCost,
+            backgroundColor: sanitized.backgroundColor,
+            emergencyPhone: sanitized.emergencyPhone,
+            createdAt: created.createdAt,
+            updatedAt: Date()
+        )
+        return try await updateTask(merged)
         #else
         _ = task
+        _ = geofence
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -349,8 +394,26 @@ struct SupabaseTaskDataService: TaskDataService {
         #endif
     }
 
-    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+    func patchTaskStatus(
+        taskId: UUID,
+        to status: TaskStatus,
+        completionLocation: TaskCompletionLocation?,
+        actingMembershipId: UUID?
+    ) async throws -> FamilyTask {
         #if canImport(Supabase)
+        if status == .completed, let actingMembershipId {
+            let params = CompleteTaskWithSpatialParams(
+                pTaskId: taskId.uuidString.lowercased(),
+                pUserId: actingMembershipId.uuidString.lowercased(),
+                pCompletionLocation: completionLocation
+            )
+            let response: FamilyTask = try await provider.client
+                .rpc("complete_task_with_spatial", params: params)
+                .execute()
+                .value
+            return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
+        }
+
         struct StatusPatch: Encodable {
             let status: String
         }
@@ -367,6 +430,8 @@ struct SupabaseTaskDataService: TaskDataService {
         #else
         _ = taskId
         _ = status
+        _ = completionLocation
+        _ = actingMembershipId
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -390,6 +455,7 @@ struct SupabaseTaskDataService: TaskDataService {
         copy.involvedMemberIds = nil
         return copy
     }
+
 }
 
 // MARK: - Feedback Service

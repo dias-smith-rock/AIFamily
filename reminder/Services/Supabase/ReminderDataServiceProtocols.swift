@@ -5,11 +5,32 @@ protocol TaskDataService {
     /// - Important: `involved_member_ids` 存的是 **`household_memberships.id`（成员身份 ID）**，不是 `auth.users` 的 user id。
     ///   禁止在 Query（如 `.filter` / `.or`）或二次 `.filter` 里用 `auth.uid()` / 当前 user id 去比对 `involvedMemberIds`。
     func fetchTasks(in householdId: UUID) async throws -> [FamilyTask]
-    func createTask(_ task: FamilyTask) async throws -> FamilyTask
+    /// 通过 `create_task_with_spatial` 创建任务；`geofence` 优先于 `task.geofence`。
+    func createTask(_ task: FamilyTask, geofence: TaskGeofence?) async throws -> FamilyTask
     func updateTask(_ task: FamilyTask) async throws -> FamilyTask
-    /// 仅更新 `status` 列并返回最新行，用于成员侧状态机操作。
-    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask
+    /// 成员侧状态机：完成时走 `complete_task_with_spatial`；其余状态仍 PATCH `status`。
+    func patchTaskStatus(
+        taskId: UUID,
+        to status: TaskStatus,
+        completionLocation: TaskCompletionLocation?,
+        actingMembershipId: UUID?
+    ) async throws -> FamilyTask
     func deleteTask(taskId: UUID) async throws
+}
+
+extension TaskDataService {
+    func createTask(_ task: FamilyTask) async throws -> FamilyTask {
+        try await createTask(task, geofence: nil)
+    }
+
+    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+        try await patchTaskStatus(
+            taskId: taskId,
+            to: status,
+            completionLocation: nil,
+            actingMembershipId: nil
+        )
+    }
 }
 
 protocol FeedbackDataService {

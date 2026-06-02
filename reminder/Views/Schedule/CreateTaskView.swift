@@ -1776,7 +1776,6 @@ struct CreateTaskView: View {
         errorMessage = nil
         defer { isSaving = false }
         do {
-            let newTaskId = UUID()
             let now = Date()
             let client = SupabaseManager.shared.client
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
@@ -1787,10 +1786,23 @@ struct CreateTaskView: View {
             }
 
             async let attachmentUploads = uploadSelectedAttachments(householdId: householdId)
+            var persistedTaskId: UUID?
 
             if recurrence == nil {
+                let geofence = resolvedLocationData()?.toTaskGeofence()
+                let spatialParams = CreateTaskWithSpatialParams(
+                    pTitle: normalizedTitle,
+                    pDescription: mergedDescriptionForPayload,
+                    pCreatorId: creatorIdLowercased,
+                    pTenantId: householdId.uuidString.lowercased(),
+                    pGeofence: geofence
+                )
+                let createdRow: FamilyTask = try await client
+                    .rpc("create_task_with_spatial", params: spatialParams)
+                    .execute()
+                    .value
                 let singlePayload = TaskInsertPayload(
-                    id: newTaskId,
+                    id: createdRow.id,
                     householdId: householdId,
                     creatorId: creatorIdLowercased,
                     parentTaskId: nil,
@@ -1814,17 +1826,22 @@ struct CreateTaskView: View {
                     backgroundColor: resolvedBackgroundColorHex(),
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
                     locationData: resolvedLocationData(),
-                    createdAt: now,
+                    geofence: geofence,
+                    createdAt: createdRow.createdAt,
                     updatedAt: now
                 )
                 _ = try await client
                     .from("tasks")
-                    .insert(singlePayload)
+                    .update(singlePayload)
+                    .eq("id", value: createdRow.id.uuidString.lowercased())
                     .execute()
+                persistedTaskId = createdRow.id
                 if let synthetic = familyTaskFromInsertPayload(singlePayload) {
                     onAlarmSync?(synthetic)
                 }
             } else {
+                let newTaskId = UUID()
+                persistedTaskId = newTaskId
                 let motherPayload = TaskInsertPayload(
                     id: newTaskId,
                     householdId: householdId,
@@ -1850,6 +1867,7 @@ struct CreateTaskView: View {
                     backgroundColor: resolvedBackgroundColorHex(),
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
                     locationData: resolvedLocationData(),
+                    geofence: resolvedLocationData()?.toTaskGeofence(),
                     createdAt: now,
                     updatedAt: now
                 )
@@ -1893,6 +1911,7 @@ struct CreateTaskView: View {
                             backgroundColor: resolvedBackgroundColorHex(),
                             emergencyPhone: resolvedEmergencyPhoneForPayload(),
                             locationData: resolvedLocationData(),
+                            geofence: nil,
                             createdAt: now,
                             updatedAt: now
                         )
@@ -1910,9 +1929,9 @@ struct CreateTaskView: View {
             }
 
             let resolvedAttachmentUploads = try await attachmentUploads
-            if resolvedAttachmentUploads.isEmpty == false {
+            if resolvedAttachmentUploads.isEmpty == false, let persistedTaskId {
                 try await persistAttachmentRecords(
-                    taskId: newTaskId,
+                    taskId: persistedTaskId,
                     uploads: resolvedAttachmentUploads
                 )
             }
@@ -2073,6 +2092,7 @@ private struct TaskInsertPayload: Encodable {
     let backgroundColor: String?
     let emergencyPhone: String?
     let locationData: FamilyTask.LocationData?
+    let geofence: TaskGeofence?
     let createdAt: Date
     let updatedAt: Date
 
@@ -2101,6 +2121,7 @@ private struct TaskInsertPayload: Encodable {
         case backgroundColor = "background_color"
         case emergencyPhone = "emergency_phone"
         case locationData = "location_data"
+        case geofence
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -2174,6 +2195,11 @@ private struct TaskInsertPayload: Encodable {
             try container.encode(locationData, forKey: .locationData)
         } else {
             try container.encodeNil(forKey: .locationData)
+        }
+        if let geofence {
+            try container.encode(geofence, forKey: .geofence)
+        } else {
+            try container.encodeNil(forKey: .geofence)
         }
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
@@ -2524,6 +2550,8 @@ private extension CreateTaskView {
             attachmentUrls: nil,
             externalContacts: nil,
             locationData: payload.locationData,
+            geofence: payload.geofence,
+            completionLocation: nil,
             externalSyncRefs: nil,
             alarmSetBy: nil,
             status: status,

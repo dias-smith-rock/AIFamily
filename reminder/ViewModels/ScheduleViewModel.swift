@@ -323,10 +323,20 @@ final class ScheduleViewModel: ObservableObject {
     }
 
     /// 成员详情页状态机：仅 PATCH `status`，避免整行写入与并发覆盖。
-    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+    func patchTaskStatus(
+        taskId: UUID,
+        to status: TaskStatus,
+        completionLocation: TaskCompletionLocation? = nil,
+        actingMembershipId: UUID? = nil
+    ) async throws -> FamilyTask {
         errorMessage = nil
 
-        let updated = try await taskService.patchTaskStatus(taskId: taskId, to: status)
+        let updated = try await taskService.patchTaskStatus(
+            taskId: taskId,
+            to: status,
+            completionLocation: completionLocation,
+            actingMembershipId: actingMembershipId
+        )
         if status == .completed {
             await NotificationManager.shared.cancelAllPending(for: taskId)
         } else {

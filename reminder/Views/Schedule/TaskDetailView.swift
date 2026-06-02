@@ -1141,7 +1141,20 @@ struct TaskDetailView: View {
 
         do {
             let previousStatus = task.status
-            let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
+            let completionLocation: TaskCompletionLocation?
+            if newStatus == .completed, let membershipId = appRouter.selectedMembershipId {
+                completionLocation = await TaskCompletionLocationProvider.currentSnapshot(
+                    completedBy: membershipId
+                )
+            } else {
+                completionLocation = nil
+            }
+            let updated = try await scheduleViewModel.patchTaskStatus(
+                taskId: task.id,
+                to: newStatus,
+                completionLocation: completionLocation,
+                actingMembershipId: appRouter.selectedMembershipId
+            )
             task = updated
             if newStatus == .accepted {
                 ReviewRedirectManager.shared.checkAndTriggerAlert(for: .taskAcceptance)

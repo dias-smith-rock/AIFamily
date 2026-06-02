@@ -14,8 +14,9 @@ actor MockTaskDataService: TaskDataService {
             }
     }
 
-    func createTask(_ task: FamilyTask) async throws -> FamilyTask {
-        let stored = task.sanitizedForPersistence()
+    func createTask(_ task: FamilyTask, geofence: TaskGeofence?) async throws -> FamilyTask {
+        var stored = task.sanitizedForPersistence()
+        stored.geofence = geofence ?? task.geofence ?? task.locationData?.toTaskGeofence()
         tasks.append(stored)
         return stored
     }
@@ -29,12 +30,21 @@ actor MockTaskDataService: TaskDataService {
         return stored
     }
 
-    func patchTaskStatus(taskId: UUID, to status: TaskStatus) async throws -> FamilyTask {
+    func patchTaskStatus(
+        taskId: UUID,
+        to status: TaskStatus,
+        completionLocation: TaskCompletionLocation?,
+        actingMembershipId: UUID?
+    ) async throws -> FamilyTask {
+        _ = actingMembershipId
         guard let index = tasks.firstIndex(where: { $0.id == taskId }) else {
             throw SupabaseServiceError.invalidResponse
         }
         var row = tasks[index]
         row.status = status
+        if let completionLocation {
+            row.completionLocation = completionLocation
+        }
         tasks[index] = row
         return row
     }

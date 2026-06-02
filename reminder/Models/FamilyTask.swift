@@ -26,6 +26,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     // JSONB 字段：直接映射为嵌套 Struct / 字典
     var externalContacts: [String: String]?
     var locationData: LocationData?
+    var geofence: TaskGeofence?
+    var completionLocation: TaskCompletionLocation?
     var externalSyncRefs: [String: [String: String]]?
     var alarmSetBy: [String: AlarmConfig]?
 
@@ -89,6 +91,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         attachmentUrls: [String]? = nil,
         externalContacts: [String: String]? = nil,
         locationData: LocationData? = nil,
+        geofence: TaskGeofence? = nil,
+        completionLocation: TaskCompletionLocation? = nil,
         externalSyncRefs: [String: [String: String]]? = nil,
         alarmSetBy: [String: AlarmConfig]? = nil,
         status: TaskStatus,
@@ -125,6 +129,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         self.attachmentUrls = attachmentUrls
         self.externalContacts = externalContacts
         self.locationData = locationData
+        self.geofence = geofence
+        self.completionLocation = completionLocation
         self.externalSyncRefs = externalSyncRefs
         self.alarmSetBy = alarmSetBy
         self.status = status
@@ -163,6 +169,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         case attachmentUrls
         case externalContacts
         case locationData
+        case geofence
+        case completionLocation
         case externalSyncRefs
         case alarmSetBy
         case status
@@ -203,6 +211,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         attachmentUrls = try container.decodeIfPresent([String].self, forKey: .attachmentUrls)
         externalContacts = try container.decodeIfPresent([String: String].self, forKey: .externalContacts)
         locationData = try container.decodeIfPresent(LocationData.self, forKey: .locationData)
+        geofence = try container.decodeIfPresent(TaskGeofence.self, forKey: .geofence)
+        completionLocation = try container.decodeIfPresent(TaskCompletionLocation.self, forKey: .completionLocation)
         externalSyncRefs = try container.decodeIfPresent(
             [String: [String: String]].self,
             forKey: .externalSyncRefs
@@ -247,6 +257,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(attachmentUrls, forKey: .attachmentUrls)
         try container.encodeIfPresent(externalContacts, forKey: .externalContacts)
         try container.encodeIfPresent(locationData, forKey: .locationData)
+        try container.encodeIfPresent(geofence, forKey: .geofence)
+        try container.encodeIfPresent(completionLocation, forKey: .completionLocation)
         try container.encodeIfPresent(externalSyncRefs, forKey: .externalSyncRefs)
         try container.encodeIfPresent(alarmSetBy, forKey: .alarmSetBy)
         try container.encode(status, forKey: .status)

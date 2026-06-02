@@ -40,5 +40,7 @@
 	<string>用于将任务附件图片保存到你的相册。</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>WeSync uses Face ID to protect your private family schedules and tasks.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>用于在完成任务时记录大致位置，便于家人了解事项是否在约定地点完成。</string>
 </dict>
 </plist>
