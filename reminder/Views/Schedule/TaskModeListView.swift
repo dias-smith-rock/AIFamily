@@ -34,7 +34,7 @@ struct TaskModeListView: View {
             } else if let message = viewModel.errorMessage {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label(AppLocalized.string("加载失败", locale: locale), systemImage: "exclamationmark.triangle")
+                        Label(AppLocalized.string("加载中", locale: locale), systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                     }

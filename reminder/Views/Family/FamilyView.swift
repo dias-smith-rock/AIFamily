@@ -248,7 +248,7 @@ struct FamilyView: View {
                     .listRowBackground(Color.clear)
             } else if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView {
-                    Label(AppLocalized.string("加载失败", locale: locale), systemImage: "exclamationmark.triangle")
+                    Label(AppLocalized.string("加载中", locale: locale), systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(errorMessage)
                 } actions: {

@@ -67,7 +67,7 @@ struct TaskAttachmentFullImageView: View {
                         Image(systemName: "photo.badge.exclamationmark")
                             .font(.system(size: 40))
                             .foregroundStyle(.white.opacity(0.6))
-                        Text("图片加载失败")
+                        Text("图片加载中")
                             .font(.subheadline)
                             .foregroundStyle(.white.opacity(0.7))
                     }

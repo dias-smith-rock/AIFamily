@@ -8,6 +8,7 @@ struct MineView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @AppStorage("requireFaceID") private var requireFaceID = true
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
@@ -201,6 +202,27 @@ struct MineView: View {
                         showsChevron: false
                     )
                 }
+
+                HStack(spacing: 12) {
+                    Image(systemName: "faceid")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.mint)
+                        .frame(width: 30, height: 30)
+                        .background(Color.mint.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    Text("开启面部解锁")
+                        .font(AppTheme.FontToken.bodyStrong)
+                        .foregroundStyle(.primary)
+
+                    Spacer(minLength: 8)
+
+                    Toggle("", isOn: $requireFaceID)
+                        .labelsHidden()
+                }
+                .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(AppLocalized.string("开启面部解锁", locale: locale))
             } header: {
                 mineSectionHeader("应用设置")
             }

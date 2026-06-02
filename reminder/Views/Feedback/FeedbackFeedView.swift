@@ -121,7 +121,7 @@ struct FeedbackFeedView: View {
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else if let errorMessage = viewModel.errorMessage {
             ContentUnavailableView {
-                Label("加载失败", systemImage: "exclamationmark.triangle")
+                Label("加载中", systemImage: "exclamationmark.triangle")
             } description: {
                 Text(errorMessage)
             } actions: {

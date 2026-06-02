@@ -28,7 +28,7 @@ struct TodoListView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let message = viewModel.errorMessage {
                     ContentUnavailableView {
-                        Label("加载失败", systemImage: "exclamationmark.triangle")
+                        Label("加载中", systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                     } actions: {

@@ -117,7 +117,9 @@ struct ContentView: View {
                 }
             } else if newPhase == .inactive || newPhase == .background {
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
-                biometricManager.lockIfNeeded()
+                if requireFaceID {
+                    biometricManager.lockIfNeeded()
+                }
                 Task {
                     await preScheduleLocalNotifications()
                 }
