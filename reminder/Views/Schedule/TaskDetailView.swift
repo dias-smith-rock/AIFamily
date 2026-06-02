@@ -1057,8 +1057,11 @@ struct TaskDetailView: View {
                         Task { await updateTaskStatus(to: .completed) }
                     }
 
+                case .completed:
+                    completedStatusFooter
+
                 default:
-                    Text("✅ 该任务已完结")
+                    Text("该任务已完结")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -1100,6 +1103,36 @@ struct TaskDetailView: View {
         }
     }
 
+    private var completedStatusFooter: some View {
+        HStack(alignment: .center, spacing: 12) {
+            if task.source.isReadOnly == false {
+                Button {
+                    Task { await updateTaskStatus(to: .new) }
+                } label: {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.green)
+                }
+                .buttonStyle(.plain)
+                .disabled(isUpdatingStatus)
+                .accessibilityLabel("恢复为待办")
+            } else {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.green)
+                    .accessibilityHidden(true)
+            }
+
+            Text("该任务已完结")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
+    }
+
     private func updateTaskStatus(to newStatus: TaskStatus) async {
         guard isUpdatingStatus == false else { return }
         isUpdatingStatus = true
@@ -1107,10 +1140,14 @@ struct TaskDetailView: View {
         defer { isUpdatingStatus = false }
 
         do {
+            let previousStatus = task.status
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
             if newStatus == .completed {
                 AnalyticsManager.log(event: .taskCompleted(taskId: task.id))
+            }
+            if previousStatus == .completed || newStatus == .completed {
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
             }
             await loadForWhomProfiles()
         } catch {

@@ -9,6 +9,7 @@ import Supabase
 @MainActor
 final class TodoListViewModel: ObservableObject {
     @Published private(set) var flexibleTasks: [FamilyTask] = []
+    @Published private(set) var completedTasks: [FamilyTask] = []
     @Published private(set) var householdMembers: [HouseholdMembership] = []
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
@@ -46,6 +47,7 @@ final class TodoListViewModel: ObservableObject {
         currentHouseholdId = householdId
         if householdId == nil {
             flexibleTasks = []
+            completedTasks = []
             householdMembers = []
             familyProfiles = []
             rosterLoadedForHouseholdId = nil
@@ -66,6 +68,7 @@ final class TodoListViewModel: ObservableObject {
     func loadTasksIfNeeded() async {
         guard let householdId = currentHouseholdId else {
             flexibleTasks = []
+            completedTasks = []
             errorMessage = AppLocalized.localized("当前未选择群组。")
             return
         }
@@ -80,6 +83,7 @@ final class TodoListViewModel: ObservableObject {
     func loadTasks(silent: Bool = false, force: Bool = false) async {
         guard let householdId = currentHouseholdId else {
             flexibleTasks = []
+            completedTasks = []
             loadedHouseholdId = nil
             if !silent {
                 errorMessage = AppLocalized.localized("当前未选择群组。")
@@ -129,12 +133,21 @@ final class TodoListViewModel: ObservableObject {
     }
 
     private func applyFlexibleTasks(from allTasks: [FamilyTask]) {
-        flexibleTasks = allTasks
-            .filter(\.isFlexibleTodo)
+        let flexible = allTasks.filter(\.isFlexibleTodo)
+        completedTasks = flexible
+            .filter { $0.status == .completed }
+            .sorted { lhs, rhs in
+                lhs.updatedAt > rhs.updatedAt
+            }
+        flexibleTasks = flexible
             .filter { isOpenTodo($0) }
             .sorted { lhs, rhs in
                 deadlineSortKey(for: lhs) < deadlineSortKey(for: rhs)
             }
+    }
+
+    var hasOpenFlexibleTasks: Bool {
+        flexibleTasks.isEmpty == false || overdueTasks.isEmpty == false
     }
 
     func displayTitle(for task: FamilyTask) -> String {

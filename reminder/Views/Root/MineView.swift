@@ -11,9 +11,7 @@ struct MineView: View {
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
-    @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var editingSelfProfile: FamilyProfile?
-    @State private var isShowingLoginSheet = false
     @State private var showTermsSheet = false
     @State private var showPrivacySheet = false
 
@@ -45,34 +43,22 @@ struct MineView: View {
             familyViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             familyViewModel.setMembershipContext(appRouter.selectedMembershipId)
             await familyViewModel.loadMembers()
-            updateLoginSheetPresentation()
+            await handleRequiresLoginIfNeeded()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             familyViewModel.setHouseholdContext(newValue)
             Task {
                 await familyViewModel.loadMembers()
-                updateLoginSheetPresentation()
+                await handleRequiresLoginIfNeeded()
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, newValue in
             familyViewModel.setMembershipContext(newValue)
             Task { await familyViewModel.loadMembers() }
         }
-        .onChange(of: familyViewModel.requiresLogin) { _, _ in
-            updateLoginSheetPresentation()
-        }
-        .onChange(of: authSessionGuard.isLoggingOut) { _, isLoggingOut in
-            if isLoggingOut {
-                isShowingLoginSheet = false
-            }
-        }
-        .sheet(isPresented: $isShowingLoginSheet) {
-            FamilySessionLoginSheet(viewModel: authViewModel) {
-                await familyViewModel.didLoginSuccessfully()
-                isShowingLoginSheet = familyViewModel.requiresLogin
-            }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
+        .onChange(of: familyViewModel.requiresLogin) { _, needsLogin in
+            guard needsLogin else { return }
+            Task { await handleRequiresLoginIfNeeded() }
         }
         .fullScreenCover(item: $editingSelfProfile) { profile in
             ProfileEditView(
@@ -114,7 +100,6 @@ struct MineView: View {
                 Task {
                     authSessionGuard.beginLoggingOut()
                     familyViewModel.prepareForSignOut()
-                    isShowingLoginSheet = false
                     await viewModel.deleteAccount(appRouter: appRouter)
                 }
             }
@@ -296,7 +281,6 @@ struct MineView: View {
                     Task {
                         authSessionGuard.beginLoggingOut()
                         familyViewModel.prepareForSignOut()
-                        isShowingLoginSheet = false
                         await viewModel.signOut(appRouter: appRouter)
                     }
                 } label: {
@@ -678,12 +662,15 @@ struct MineView: View {
         .buttonStyle(.plain)
     }
 
-    private func updateLoginSheetPresentation() {
+    @MainActor
+    private func handleRequiresLoginIfNeeded() async {
+        guard familyViewModel.requiresLogin else { return }
         guard authSessionGuard.isLoggingOut == false else {
-            isShowingLoginSheet = false
+            familyViewModel.clearRequiresLogin()
             return
         }
-        isShowingLoginSheet = familyViewModel.requiresLogin
+        familyViewModel.clearRequiresLogin()
+        await appRouter.refreshStateFromBackend()
     }
 }
 

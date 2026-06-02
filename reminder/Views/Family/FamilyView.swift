@@ -19,10 +19,8 @@ struct FamilyView: View {
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
-    @StateObject private var authViewModel = AppViewModels.makeAuthViewModel()
     @State private var addMemberRoute: AddMemberRoute?
     @State private var isPresentingCreateLocalProfile = false
-    @State private var isShowingLoginSheet = false
     @State private var isShowingRenameHouseholdSheet = false
     @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var editingProfile: FamilyProfile?
@@ -74,27 +72,23 @@ struct FamilyView: View {
             viewModel.setMembershipContext(appRouter.selectedMembershipId)
             await appRouter.refreshSelectedHouseholdSnapshot()
             await viewModel.loadMembers()
-            updateLoginSheetPresentation()
+            await handleRequiresLoginIfNeeded()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             viewModel.setHouseholdContext(newValue)
             Task {
                 await appRouter.refreshSelectedHouseholdSnapshot()
                 await viewModel.loadMembers()
-                updateLoginSheetPresentation()
+                await handleRequiresLoginIfNeeded()
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, newValue in
             viewModel.setMembershipContext(newValue)
             Task { await viewModel.loadMembers() }
         }
-        .onChange(of: viewModel.requiresLogin) { _, _ in
-            updateLoginSheetPresentation()
-        }
-        .onChange(of: authSessionGuard.isLoggingOut) { _, isLoggingOut in
-            if isLoggingOut {
-                isShowingLoginSheet = false
-            }
+        .onChange(of: viewModel.requiresLogin) { _, needsLogin in
+            guard needsLogin else { return }
+            Task { await handleRequiresLoginIfNeeded() }
         }
         .sheet(item: $addMemberRoute) { route in
             switch route {
@@ -139,14 +133,6 @@ struct FamilyView: View {
             )
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
-        }
-        .sheet(isPresented: $isShowingLoginSheet) {
-            FamilySessionLoginSheet(viewModel: authViewModel) {
-                await viewModel.didLoginSuccessfully()
-                isShowingLoginSheet = viewModel.requiresLogin
-            }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
         .fullScreenCover(item: $editingProfile) { profile in
             ProfileEditView(
@@ -662,12 +648,15 @@ struct FamilyView: View {
         await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
     }
 
-    private func updateLoginSheetPresentation() {
+    @MainActor
+    private func handleRequiresLoginIfNeeded() async {
+        guard viewModel.requiresLogin else { return }
         guard authSessionGuard.isLoggingOut == false else {
-            isShowingLoginSheet = false
+            viewModel.clearRequiresLogin()
             return
         }
-        isShowingLoginSheet = viewModel.requiresLogin
+        viewModel.clearRequiresLogin()
+        await appRouter.refreshStateFromBackend()
     }
 
 }

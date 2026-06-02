@@ -574,9 +574,8 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func didLoginSuccessfully() async {
+    func clearRequiresLogin() {
         requiresLogin = false
-        await loadMembers()
     }
 
     @discardableResult

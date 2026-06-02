@@ -15,6 +15,7 @@ struct TodoListView: View {
 
     @State private var taskForDetailSheet: FamilyTask?
     @State private var showOverdueSheet = false
+    @State private var showCompletedSheet = false
     @State private var isShowingCreateFlexibleSheet = false
     @State private var createTaskFormInstanceID = UUID()
     @State private var currentMembershipRole: MembershipRole = .member
@@ -35,15 +36,19 @@ struct TodoListView: View {
                             Task { await viewModel.loadTasks(force: true) }
                         }
                     }
-                } else if viewModel.flexibleTasks.isEmpty {
-                    ContentUnavailableView {
-                        Label("暂无待办", systemImage: "checklist")
-                    } description: {
-                        Text("添加没有具体开始时间的任务，在截止日前完成即可。")
-                    } actions: {
-                        Button("新建待办") {
-                            presentCreateFlexible()
+                } else if viewModel.hasOpenFlexibleTasks == false {
+                    if viewModel.completedTasks.isEmpty {
+                        ContentUnavailableView {
+                            Label("暂无待办", systemImage: "checklist")
+                        } description: {
+                            Text("添加没有具体开始时间的任务，在截止日前完成即可。")
+                        } actions: {
+                            Button("新建待办") {
+                                presentCreateFlexible()
+                            }
                         }
+                    } else {
+                        completedOnlyScrollView
                     }
                 } else {
                     todoListScrollView
@@ -66,6 +71,22 @@ struct TodoListView: View {
                     }
                     .accessibilityLabel("新建待办")
                 }
+            }
+            .sheet(isPresented: $showCompletedSheet) {
+                CompletedTasksListView(
+                    tasks: viewModel.completedTasks,
+                    displayTitle: { viewModel.displayTitle(for: $0) },
+                    forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+                    completedLabel: { completedLabel(for: $0) },
+                    onSelectTask: { task in
+                        showCompletedSheet = false
+                        taskForDetailSheet = task
+                    }
+                )
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showOverdueSheet) {
                 OverdueTasksListView(
@@ -137,6 +158,10 @@ struct TodoListView: View {
                     overdueWarningBanner
                 }
 
+                if viewModel.completedTasks.isEmpty == false {
+                    completedTasksBanner
+                }
+
                 if viewModel.mainSectionedTasks().isEmpty {
                     overdueOnlyPlaceholderContent
                 } else {
@@ -152,7 +177,7 @@ struct TodoListView: View {
                                     displayTitle: viewModel.displayTitle(for: task),
                                     forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
                                     deadlineLabel: deadlineLabel(for: task),
-                                    isOverdue: false
+                                    style: .active
                                 )
                                 .contentShape(Rectangle())
                                 .onTapGesture {
@@ -170,6 +195,69 @@ struct TodoListView: View {
         .refreshable {
             await viewModel.loadTasks(silent: true, force: true)
         }
+    }
+
+    private var completedOnlyScrollView: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                ContentUnavailableView {
+                    Label("暂无待办", systemImage: "checklist")
+                } description: {
+                    Text("进行中的待办都已完成，可在下方查看记录。")
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.top, 24)
+
+                completedTasksBanner
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+        }
+        .refreshable {
+            await viewModel.loadTasks(silent: true, force: true)
+        }
+    }
+
+    private var completedTasksBanner: some View {
+        Button {
+            showCompletedSheet = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.body)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(
+                        String(
+                            format: AppLocalized.string("%lld 个待办已完成", locale: locale),
+                            Int64(viewModel.completedTasks.count)
+                        )
+                    )
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.primary)
+                    Text("点击查看已完成记录")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color.green.opacity(0.45), lineWidth: 1)
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("查看已完成待办")
     }
 
     private var overdueOnlyPlaceholderContent: some View {
@@ -278,6 +366,22 @@ struct TodoListView: View {
         scheduleViewModel.assigneeLabel(for: task, locale: locale)
     }
 
+    private func completedLabel(for task: FamilyTask) -> String {
+        let fmt = task.updatedAt.formatted(
+            .dateTime
+                .year()
+                .month(.defaultDigits)
+                .day(.defaultDigits)
+                .hour(.defaultDigits(amPM: .omitted))
+                .minute(.defaultDigits)
+                .locale(locale)
+        )
+        return String(
+            format: AppLocalized.string("已于 %@ 完成", locale: locale),
+            fmt
+        )
+    }
+
     private func deadlineLabel(for task: FamilyTask) -> String {
         guard let day = task.flexibleDeadlineDay else {
             return AppLocalized.string("未设截止日", locale: locale)
@@ -293,6 +397,64 @@ struct TodoListView: View {
             format: AppLocalized.string("%@前", locale: locale),
             fmt
         )
+    }
+}
+
+// MARK: - Completed sheet
+
+private struct CompletedTasksListView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let tasks: [FamilyTask]
+    let displayTitle: (FamilyTask) -> String
+    let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
+    let completedLabel: (FamilyTask) -> String
+    let onSelectTask: (FamilyTask) -> Void
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if tasks.isEmpty {
+                    ContentUnavailableView {
+                        Label("暂无已完成待办", systemImage: "checkmark.circle")
+                    } description: {
+                        Text("完成待办后会显示在这里。")
+                    }
+                } else {
+                    List {
+                        ForEach(tasks) { task in
+                            Button {
+                                onSelectTask(task)
+                            } label: {
+                                TodoFlexibleRow(
+                                    task: task,
+                                    displayTitle: displayTitle(task),
+                                    forWhomAvatars: forWhomAvatars(task),
+                                    deadlineLabel: completedLabel(task),
+                                    style: .completed
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                        }
+                    }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                }
+            }
+            .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .navigationTitle("已完成")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") {
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -319,7 +481,7 @@ private struct OverdueTasksListView: View {
                             displayTitle: displayTitle(task),
                             forWhomAvatars: forWhomAvatars(task),
                             deadlineLabel: deadlineLabel(task),
-                            isOverdue: true
+                            style: .overdue
                         )
                     }
                     .buttonStyle(.plain)
@@ -347,28 +509,35 @@ private struct OverdueTasksListView: View {
 // MARK: - Row
 
 private struct TodoFlexibleRow: View {
+    enum Style {
+        case active
+        case overdue
+        case completed
+    }
+
     let task: FamilyTask
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
     let deadlineLabel: String
-    let isOverdue: Bool
+    let style: Style
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: "flag.fill")
+            Image(systemName: leadingSymbolName)
                 .font(.subheadline)
-                .foregroundStyle(isOverdue ? .red : Color.accentColor)
+                .foregroundStyle(leadingSymbolColor)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(displayTitle)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(titleColor)
+                    .strikethrough(style == .completed)
                     .lineLimit(2)
 
                 Text(deadlineLabel)
                     .font(.caption)
-                    .foregroundStyle(isOverdue ? .red : .secondary)
+                    .foregroundStyle(subtitleColor)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -380,7 +549,49 @@ private struct TodoFlexibleRow: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Color.gray.opacity(0.25), lineWidth: 1)
+                .stroke(cardBorderColor, lineWidth: 1)
+        }
+    }
+
+    private var cardBorderColor: Color {
+        switch style {
+        case .completed:
+            return Color.green.opacity(0.45)
+        case .active, .overdue:
+            return Color.gray.opacity(0.25)
+        }
+    }
+
+    private var leadingSymbolName: String {
+        switch style {
+        case .completed:
+            return "checkmark.circle.fill"
+        case .active, .overdue:
+            return "flag.fill"
+        }
+    }
+
+    private var leadingSymbolColor: Color {
+        switch style {
+        case .overdue:
+            return .red
+        case .completed:
+            return .green
+        case .active:
+            return Color.accentColor
+        }
+    }
+
+    private var titleColor: Color {
+        style == .completed ? .secondary : .primary
+    }
+
+    private var subtitleColor: Color {
+        switch style {
+        case .overdue:
+            return .red
+        case .completed, .active:
+            return .secondary
         }
     }
 }
