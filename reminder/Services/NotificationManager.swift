@@ -78,6 +78,11 @@ actor NotificationManager {
         Self.debugLog("cancel taskId=\(taskId.uuidString) clearedIdentifiers.count=\(ids.count)")
     }
 
+    /// 进入前台清空桌面角标；不影响后续重新同步/注册本地通知。
+    func clearBadgeCount() {
+        center.setBadgeCount(0)
+    }
+
     /// 先清空旧请求，再按 DTO 重建闹钟。
     func syncTaskAlarms(for incoming: TaskAlarmPayload) async {
         let payload = incoming.detachedCopy()
@@ -176,7 +181,10 @@ actor NotificationManager {
                 title: titleForAlert,
                 body: Self.timedReminderBody(minutesBefore: minutes),
                 at: fireDate,
-                taskId: payload.id
+                taskId: payload.id,
+                householdId: payload.householdId,
+                householdName: payload.householdDisplayName,
+                isFlexibleTodo: payload.isFlexibleTodo
             )
             if ok {
                 scheduled += 1
@@ -234,7 +242,10 @@ actor NotificationManager {
                 title: AppLocalized.localizedSync("全天任务提醒"),
                 body: baseBody,
                 at: fire18,
-                taskId: payload.id
+                taskId: payload.id,
+                householdId: payload.householdId,
+                householdName: payload.householdDisplayName,
+                isFlexibleTodo: payload.isFlexibleTodo
             )
             if ok {
                 scheduled += 1
@@ -251,7 +262,10 @@ actor NotificationManager {
                 title: AppLocalized.localizedSync("全天任务提醒"),
                 body: baseBody,
                 at: fire21,
-                taskId: payload.id
+                taskId: payload.id,
+                householdId: payload.householdId,
+                householdName: payload.householdDisplayName,
+                isFlexibleTodo: payload.isFlexibleTodo
             )
             if ok {
                 scheduled += 1
@@ -270,13 +284,25 @@ actor NotificationManager {
         title: String,
         body: String,
         at date: Date,
-        taskId: UUID
+        taskId: UUID,
+        householdId: UUID,
+        householdName: String?,
+        isFlexibleTodo: Bool
     ) async -> Bool {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
         content.sound = .default
-        content.userInfo = ["taskId": taskId.uuidString]
+        var userInfo: [AnyHashable: Any] = [
+            "taskId": taskId.uuidString.lowercased(),
+            "householdId": householdId.uuidString.lowercased(),
+            "isFlexibleTodo": isFlexibleTodo
+        ]
+        if let name = householdName?.trimmingCharacters(in: .whitespacesAndNewlines),
+           name.isEmpty == false {
+            userInfo["householdName"] = name
+        }
+        content.userInfo = userInfo
 
         let comps = Calendar.current.dateComponents(
             [.year, .month, .day, .hour, .minute, .second],

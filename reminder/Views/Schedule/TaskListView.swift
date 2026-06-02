@@ -110,6 +110,7 @@ struct TaskListView: View {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
                 await refreshCurrentMembershipRole()
                 await viewModel.loadTasks()
+                openPendingScheduledTaskIfNeeded()
                 await viewModel.setupRealtimeListener()
             }
             .onDisappear {
@@ -122,6 +123,7 @@ struct TaskListView: View {
                 Task {
                     await refreshCurrentMembershipRole()
                     await viewModel.loadTasks()
+                    openPendingScheduledTaskIfNeeded()
                     await viewModel.setupRealtimeListener()
                 }
             }
@@ -151,8 +153,31 @@ struct TaskListView: View {
                     await viewModel.loadTasks()
                 }
             }
+            .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
+                openPendingScheduledTaskIfNeeded()
+            }
+            .onChange(of: viewModel.tasks) { _, _ in
+                openPendingScheduledTaskIfNeeded()
+            }
         }
         .appLocaleEnvironment(using: appSettings)
+    }
+
+    // MARK: - Notification deep link
+
+    @MainActor
+    private func openPendingScheduledTaskIfNeeded() {
+        guard let pending = appRouter.pendingTaskReminderTap else { return }
+        guard pending.isFlexibleTodo == false else { return }
+        guard appRouter.selectedHouseholdId == pending.householdId else { return }
+        guard let task = viewModel.scheduledTasks.first(where: { $0.id == pending.taskId }) else {
+            // 组织已匹配且任务列表已更新，但目标任务不存在：留在组织主页，清空深链状态。
+            appRouter.consumePendingTaskReminderTap()
+            return
+        }
+
+        taskForDetailSheet = task
+        appRouter.consumePendingTaskReminderTap()
     }
 
     // MARK: - Top bar（参考 Apple Calendar）

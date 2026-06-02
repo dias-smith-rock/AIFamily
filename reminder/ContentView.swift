@@ -106,12 +106,26 @@ struct ContentView: View {
             if newPhase == .active {
                 Self.logAppOpenedIfNeeded()
                 Task {
+                    await NotificationManager.shared.clearBadgeCount()
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
                 }
             } else if newPhase == .inactive || newPhase == .background {
                 Task {
                     await preScheduleLocalNotifications()
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .taskReminderNotificationTapped)) { notification in
+            guard let tap = notification.object as? TaskReminderNotificationUserInfo.Tap else { return }
+            Task { @MainActor in
+                appRouter.preferHouseholdOnNextRefresh(tap.householdId)
+                appRouter.pendingTaskReminderTap = tap
+                await appRouter.refreshStateFromBackend()
+                await fetchHouseholdsAndCheckCreatorRole()
+                if appRouter.selectedHouseholdId != tap.householdId {
+                    appRouter.consumePendingTaskReminderTap()
+                    appRouter.goToHouseholdSelection()
                 }
             }
         }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 #if canImport(UIKit)
 import UIKit
@@ -24,6 +25,7 @@ struct WeFamilyApp: App {
 
     init() {
         FirebaseAppDelegate.configureFirebaseIfNeeded()
+        UNUserNotificationCenter.current().delegate = TaskReminderNotificationDelegate.shared
     }
 
     var sharedModelContainer: ModelContainer = {

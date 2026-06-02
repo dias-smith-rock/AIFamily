@@ -141,14 +141,38 @@ struct TodoListView: View {
                 bindHouseholdContext()
                 await refreshCurrentMembershipRole()
                 await viewModel.loadTasksIfNeeded()
+                openPendingFlexibleTaskIfNeeded()
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
                     await scheduleViewModel.loadTasks(silent: true)
                 }
             }
+            .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
+                openPendingFlexibleTaskIfNeeded()
+            }
+            .onChange(of: viewModel.flexibleTasks) { _, _ in
+                openPendingFlexibleTaskIfNeeded()
+            }
         }
         .appLocaleEnvironment(using: appSettings)
+    }
+
+    // MARK: - Notification deep link
+
+    @MainActor
+    private func openPendingFlexibleTaskIfNeeded() {
+        guard let pending = appRouter.pendingTaskReminderTap else { return }
+        guard pending.isFlexibleTodo else { return }
+        guard appRouter.selectedHouseholdId == pending.householdId else { return }
+        guard let task = viewModel.flexibleTasks.first(where: { $0.id == pending.taskId }) else {
+            // 组织已匹配且任务列表已更新，但目标任务不存在：留在组织主页，清空深链状态。
+            appRouter.consumePendingTaskReminderTap()
+            return
+        }
+
+        taskForDetailSheet = task
+        appRouter.consumePendingTaskReminderTap()
     }
 
     private var todoListScrollView: some View {

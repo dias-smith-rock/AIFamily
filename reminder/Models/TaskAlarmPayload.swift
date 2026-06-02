@@ -4,11 +4,15 @@ import Foundation
 /// 避免大体量模型作为 `async` 参数在挂起恢复后出现异常。
 struct TaskAlarmPayload: Sendable {
     let id: UUID
+    let householdId: UUID
+    /// 群组显示名（写入通知 `userInfo`，便于点击后切换组织）。
+    let householdDisplayName: String?
     let title: String
     let groupName: String?
     let priority: TaskPriority
     let status: TaskStatus
     let isAllDay: Bool
+    let isFlexibleTodo: Bool
     let dueDate: Date?
     /// 与 `FamilyTask.reminderOffsets` 一致：每条为「截止前提前分钟数」；`nil` 或空表示不设提前量。
     let reminderOffsets: [Int]?
@@ -16,14 +20,22 @@ struct TaskAlarmPayload: Sendable {
 
 extension TaskAlarmPayload {
     /// 在同步阶段（首个 `await` 之前）从完整任务模型抽取字段。
-    init(schedulingFrom task: FamilyTask, profiles: [FamilyProfile] = [], locale: Locale) {
+    init(
+        schedulingFrom task: FamilyTask,
+        householdDisplayName: String? = nil,
+        profiles: [FamilyProfile] = [],
+        locale: Locale
+    ) {
         self.init(
             id: task.id,
+            householdId: task.householdId,
+            householdDisplayName: householdDisplayName,
             title: TaskDisplayResolver.resolvedTitle(for: task, profiles: profiles, locale: locale),
             groupName: TaskDisplayResolver.resolvedTargetDisplayName(for: task, profiles: profiles),
             priority: task.priority,
             status: task.status,
             isAllDay: task.isAllDay,
+            isFlexibleTodo: task.isFlexibleTodo,
             dueDate: task.alarmAnchorDate,
             reminderOffsets: task.reminderOffsets
         )
@@ -34,11 +46,14 @@ extension TaskAlarmPayload {
         let offsetsCopy = reminderOffsets.map { Array($0) }
         return TaskAlarmPayload(
             id: id,
+            householdId: householdId,
+            householdDisplayName: householdDisplayName.map { String($0) },
             title: String(title),
             groupName: groupName.map { String($0) },
             priority: priority,
             status: status,
             isAllDay: isAllDay,
+            isFlexibleTodo: isFlexibleTodo,
             dueDate: dueDate,
             reminderOffsets: offsetsCopy
         )

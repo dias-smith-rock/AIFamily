@@ -28,6 +28,9 @@ final class AppRouter: ObservableObject {
     @Published var showNewCreatorAlert = false
     @Published var newlyAssignedHousehold: JoinedHousehold?
 
+    /// 通知点击后等待各列表页消费的“打开任务详情”路由信息。
+    @Published var pendingTaskReminderTap: TaskReminderNotificationUserInfo.Tap?
+
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
     private var pendingPreferredHouseholdId: UUID?
 
@@ -49,6 +52,10 @@ final class AppRouter: ObservableObject {
 
     func preferHouseholdOnNextRefresh(_ householdId: UUID) {
         pendingPreferredHouseholdId = householdId
+    }
+
+    func consumePendingTaskReminderTap() {
+        pendingTaskReminderTap = nil
     }
 
     func refreshStateFromBackend() async {
@@ -172,6 +179,16 @@ final class AppRouter: ObservableObject {
         selectedHouseholdDescription = ""
         selectableHouseholds = []
         recentHouseholds = []
+    }
+
+    /// 当通知目标组织已不存在时，回到组织选择页（保留最新可选组织列表）。
+    func goToHouseholdSelection() {
+        appState = .householdSelection
+        selectedHouseholdId = nil
+        selectedMembershipId = nil
+        selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
+        selectedHouseholdIsPremium = false
     }
 
     func goToActiveMember() {

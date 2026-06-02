@@ -57,6 +57,15 @@ struct AppTabRootView: View {
                 }
                 .tag(Tab.personalSettings)
         }
+        .onAppear {
+            if let tap = appRouter.pendingTaskReminderTap {
+                selectedTab = tap.isFlexibleTodo ? .todos : .schedule
+            }
+        }
+        .onChange(of: appRouter.pendingTaskReminderTap) { _, newValue in
+            guard let tap = newValue else { return }
+            selectedTab = tap.isFlexibleTodo ? .todos : .schedule
+        }
     }
 }
 
