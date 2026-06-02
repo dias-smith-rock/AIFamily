@@ -9,6 +9,7 @@ import Supabase
 struct LoginView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
+    @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
     @State private var loadingProvider: LoginProvider?
     @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
@@ -353,6 +354,11 @@ struct LoginView: View {
                 _ = try await SupabaseManager.shared.client.auth.session
                 hasValidSession = true
                 AuthSessionHints.markEverAuthenticated()
+                await MainActor.run {
+                    withAnimation(.easeInOut) {
+                        isUserLoggedIn = true
+                    }
+                }
                 await appRouter.refreshStateFromBackend()
                 if appRouter.appState != .unauthenticated {
                     AnalyticsManager.logAuthSessionSucceeded()
@@ -372,6 +378,9 @@ struct LoginView: View {
         if hasValidSession {
             // OAuth 已成功，但组织状态读取出现瞬时失败时，先放行到组织路由页，避免卡死登录。
             await MainActor.run {
+                withAnimation(.easeInOut) {
+                    isUserLoggedIn = true
+                }
                 AnalyticsManager.logAuthSessionSucceeded()
                 appRouter.goToOrgRouting()
             }

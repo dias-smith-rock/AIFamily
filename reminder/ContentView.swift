@@ -5,19 +5,19 @@ struct ContentView: View {
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
+    @AppStorage("requireFaceID") private var requireFaceID = true
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
-    @State private var hasCompletedInitialSessionCheck = false
+    @StateObject private var biometricManager = BiometricManager()
+    @State private var shouldHideAppSwitcherSnapshot = false
 
     var body: some View {
         Group {
-            if shouldShowSessionRestore {
-                SessionRestoreView()
-            } else {
-                authenticatedRoot
-            }
+            rootContent
         }
         .environmentObject(groupSwitcher)
-        .animation(.easeInOut, value: appRouter.appState)
+        .animation(.easeInOut, value: isUserLoggedIn)
+        .animation(.easeInOut, value: biometricManager.isUnlocked)
         .alert("权限变更通知", isPresented: newCreatorAlertBinding) {
             Button("立即查看") {
                 appRouter.enterNewlyAssignedCreatorHousehold()
@@ -92,25 +92,32 @@ struct ContentView: View {
                 groupSwitcher.showJoinScanner = false
             }
         }
-        .task {
-            await appRouter.refreshStateFromBackend()
-            await fetchHouseholdsAndCheckCreatorRole()
-            hasCompletedInitialSessionCheck = true
-        }
         .task(id: appRouter.appState) {
-            if case .activeMember = appRouter.appState {
+            if isUserLoggedIn && biometricManager.isUnlocked {
                 _ = await NotificationManager.shared.requestAuthorizationIfNeeded()
             }
+        }
+        .task(id: isUserLoggedIn) {
+            guard isUserLoggedIn else { return }
+            _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
+            appRouter.goToActiveMember()
+            await appRouter.refreshStateFromBackend()
+            await fetchHouseholdsAndCheckCreatorRole()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 Self.logAppOpenedIfNeeded()
+                shouldHideAppSwitcherSnapshot = false
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
+                    guard isUserLoggedIn else { return }
+                    _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
                 }
             } else if newPhase == .inactive || newPhase == .background {
+                shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
+                biometricManager.lockIfNeeded()
                 Task {
                     await preScheduleLocalNotifications()
                 }
@@ -131,21 +138,21 @@ struct ContentView: View {
         }
     }
 
-    private var shouldShowSessionRestore: Bool {
-        AuthSessionHints.hasEverAuthenticated && hasCompletedInitialSessionCheck == false
-    }
-
     @ViewBuilder
-    private var authenticatedRoot: some View {
-        switch appRouter.appState {
-        case .unauthenticated:
+    private var rootContent: some View {
+        if isUserLoggedIn == false {
             LoginView()
-        case .orgRouting, .householdSelection:
-            HouseholdSelectionView()
-        case .pendingApproval:
-            PendingView()
-        case .activeMember:
+        } else if biometricManager.isUnlocked == false {
+            LockScreenView(
+                isAuthenticating: biometricManager.isAuthenticating,
+                onUnlock: { biometricManager.authenticate() }
+            )
+            .onAppear {
+                biometricManager.authenticate()
+            }
+        } else {
             AppTabRootView()
+                .blur(radius: shouldHideAppSwitcherSnapshot ? 20 : 0)
         }
     }
 

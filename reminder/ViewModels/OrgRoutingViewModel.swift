@@ -115,6 +115,9 @@ final class OrgRoutingViewModel: ObservableObject {
         AuthSessionGuard.shared.beginLoggingOut()
         do {
             try await authService.signOut()
+            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
+            LocalCacheManager.shared.removeAll()
             await appRouter.refreshStateFromBackend()
             await AuthSessionGuard.shared.endLoggingOut()
             return true
@@ -140,6 +143,9 @@ final class OrgRoutingViewModel: ObservableObject {
             // try await supabase.functions.invoke("delete-account")
             await authService.cleanUpCurrentUserAvatars()
             try await authService.signOut()
+            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
+            LocalCacheManager.shared.removeAll()
             await appRouter.refreshStateFromBackend()
             await AuthSessionGuard.shared.endLoggingOut()
             return true

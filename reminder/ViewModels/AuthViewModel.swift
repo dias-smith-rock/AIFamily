@@ -28,6 +28,7 @@ final class AuthViewModel: ObservableObject {
         isLoggedIn = await authService.hasValidSession()
         if isLoggedIn {
             statusText = AppLocalized.localized("已检测到有效登录会话")
+            UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
         }
     }
 
@@ -49,6 +50,7 @@ final class AuthViewModel: ObservableObject {
                     ? AppLocalized.localized("Apple 登录成功")
                     : AppLocalized.localized("登录请求已发送，请完成授权后重试")
                 if isLoggedIn {
+                    UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
                     AnalyticsManager.logAuthSessionSucceeded()
                 }
             case .magicLink:
@@ -58,6 +60,7 @@ final class AuthViewModel: ObservableObject {
                     ? AppLocalized.localized("登录成功")
                     : AppLocalized.localized("登录链接已发送，请检查邮箱并回到 App")
                 if isLoggedIn {
+                    UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
                     AnalyticsManager.logAuthSessionSucceeded()
                 }
             case .phoneOTP:
@@ -67,6 +70,7 @@ final class AuthViewModel: ObservableObject {
                     ? AppLocalized.localized("登录成功")
                     : AppLocalized.localized("验证码已发送，请完成验证后重试")
                 if isLoggedIn {
+                    UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
                     AnalyticsManager.logAuthSessionSucceeded()
                 }
             }

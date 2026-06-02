@@ -59,6 +59,25 @@ final class LocalCacheManager {
         }
     }
 
+    func removeAll() {
+        ioQueue.async { [fileManager, cacheDirectoryURL] in
+            do {
+                let files = try fileManager.contentsOfDirectory(
+                    at: cacheDirectoryURL,
+                    includingPropertiesForKeys: nil,
+                    options: [.skipsHiddenFiles]
+                )
+                for url in files {
+                    try? fileManager.removeItem(at: url)
+                }
+            } catch {
+                #if DEBUG
+                print("⚠️ [LocalCache] removeAll failed error=\(error.localizedDescription)")
+                #endif
+            }
+        }
+    }
+
     private static func fileURL(forKey key: String, directory: URL) -> URL {
         let safeName = key
             .addingPercentEncoding(withAllowedCharacters: .alphanumerics.union(CharacterSet(charactersIn: "-._")))

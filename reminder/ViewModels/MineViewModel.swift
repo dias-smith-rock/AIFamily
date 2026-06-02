@@ -61,6 +61,9 @@ final class MineViewModel: ObservableObject {
         AuthSessionGuard.shared.beginLoggingOut()
         do {
             try await authService.signOut()
+            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
+            LocalCacheManager.shared.removeAll()
             await appRouter.refreshStateFromBackend()
         } catch {
             signOutErrorMessage = error.localizedDescription
@@ -80,6 +83,9 @@ final class MineViewModel: ObservableObject {
             // try await supabase.functions.invoke("delete-account")
             await authService.cleanUpCurrentUserAvatars()
             try await authService.signOut()
+            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
+            LocalCacheManager.shared.removeAll()
             await appRouter.refreshStateFromBackend()
         } catch {
             deleteAccountErrorMessage = error.localizedDescription

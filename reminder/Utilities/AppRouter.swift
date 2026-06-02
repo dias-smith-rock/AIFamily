@@ -7,6 +7,8 @@ import Supabase
 
 @MainActor
 final class AppRouter: ObservableObject {
+    static let offlineHouseholdSnapshotKey = "aifamily.offline.household.snapshot"
+
     enum AppState: Equatable {
         case unauthenticated
         case orgRouting
@@ -34,6 +36,13 @@ final class AppRouter: ObservableObject {
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
     private var pendingPreferredHouseholdId: UUID?
 
+    private struct OfflineHouseholdSnapshot: Codable {
+        let householdId: UUID
+        let householdName: String?
+        let householdDescription: String
+        let householdIsPremium: Bool
+    }
+
     struct HouseholdOption: Identifiable, Equatable {
         let id: UUID
         let membershipId: UUID
@@ -56,6 +65,30 @@ final class AppRouter: ObservableObject {
 
     func consumePendingTaskReminderTap() {
         pendingTaskReminderTap = nil
+    }
+
+    /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存。
+    @discardableResult
+    func restoreOfflineHouseholdContextIfNeeded() -> Bool {
+        guard selectedHouseholdId == nil else { return false }
+        guard
+            let data = UserDefaults.standard.data(forKey: Self.offlineHouseholdSnapshotKey),
+            let snapshot = try? JSONDecoder().decode(OfflineHouseholdSnapshot.self, from: data)
+        else {
+            return false
+        }
+
+        selectedHouseholdId = snapshot.householdId
+        selectedMembershipId = nil
+        selectedHouseholdName = snapshot.householdName
+        selectedHouseholdDescription = snapshot.householdDescription
+        selectedHouseholdIsPremium = snapshot.householdIsPremium
+        appState = .activeMember
+        return true
+    }
+
+    func clearOfflineHouseholdSnapshot() {
+        UserDefaults.standard.removeObject(forKey: Self.offlineHouseholdSnapshotKey)
     }
 
     func refreshStateFromBackend() async {
@@ -425,7 +458,20 @@ final class AppRouter: ObservableObject {
         selectedHouseholdIsPremium = option.isPremium
         saveLastHouseholdId(option.id, for: userId)
         saveRecentHouseholdId(option.id, for: userId)
+        saveOfflineHouseholdSnapshot(option: option)
         appState = .activeMember
+    }
+
+    private func saveOfflineHouseholdSnapshot(option: HouseholdOption) {
+        let snapshot = OfflineHouseholdSnapshot(
+            householdId: option.id,
+            householdName: option.name,
+            householdDescription: option.description,
+            householdIsPremium: option.isPremium
+        )
+        if let data = try? JSONEncoder().encode(snapshot) {
+            UserDefaults.standard.set(data, forKey: Self.offlineHouseholdSnapshotKey)
+        }
     }
 
     private func saveLastHouseholdId(_ householdId: UUID, for userId: UUID) {
