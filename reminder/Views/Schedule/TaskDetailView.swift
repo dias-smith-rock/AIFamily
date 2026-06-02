@@ -20,7 +20,6 @@ struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
-    @Environment(\.requestReview) private var requestReview
     @ObservedObject private var scheduleViewModel: ScheduleViewModel
     @StateObject private var taskDetailViewModel = TaskDetailViewModel()
 
@@ -1145,11 +1144,11 @@ struct TaskDetailView: View {
             let updated = try await scheduleViewModel.patchTaskStatus(taskId: task.id, to: newStatus)
             task = updated
             if newStatus == .accepted {
-                ReviewManager.shared.triggerReview(for: .taskAcceptance, requestReview: requestReview)
+                ReviewRedirectManager.shared.checkAndTriggerAlert(for: .taskAcceptance)
             }
             if newStatus == .completed {
                 AnalyticsManager.log(event: .taskCompleted(taskId: task.id))
-                ReviewManager.shared.triggerReview(for: .firstCompletion, requestReview: requestReview)
+                ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstCompletion)
             }
             if previousStatus == .completed || newStatus == .completed {
                 NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)

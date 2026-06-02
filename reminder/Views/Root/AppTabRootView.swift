@@ -3,6 +3,7 @@ import SwiftUI
 struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @State private var selectedTab: Tab = .schedule
+    @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
 
     enum Tab: Hashable {
         case schedule
@@ -66,6 +67,7 @@ struct AppTabRootView: View {
             guard let tap = newValue else { return }
             selectedTab = tap.isFlexibleTodo ? .todos : .schedule
         }
+        .reviewAlertModifier(manager: reviewRedirectManager)
     }
 }
 

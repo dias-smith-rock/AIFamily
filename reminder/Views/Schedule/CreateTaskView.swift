@@ -252,7 +252,6 @@ private struct TaskClearSeriesLinksPatch: Encodable {
 }
 
 struct CreateTaskView: View {
-    @Environment(\.requestReview) private var requestReview
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
@@ -1920,7 +1919,7 @@ struct CreateTaskView: View {
 
             let hasAttachment = resolvedAttachmentUploads.isEmpty == false
             AnalyticsManager.log(event: .taskCreated(hasAttachment: hasAttachment))
-            ReviewManager.shared.triggerReview(for: .firstTask, requestReview: requestReview)
+            ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstTask)
 
             clearAttachmentSelection()
             onSaveSuccess?(isFlexibleMode ? flexibleDeadlineDate : dueDate)

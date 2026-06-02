@@ -3129,6 +3129,9 @@
         }
       }
     },
+    "Enjoying WeSync?" : {
+
+    },
     "Every few days" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3776,6 +3779,9 @@
           }
         }
       }
+    },
+    "Maybe Later" : {
+
     },
     "Member" : {
       "extractionState" : "stale",
@@ -5617,6 +5623,9 @@
         }
       }
     },
+    "Write a Review" : {
+
+    },
     "Yearly" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -5734,6 +5743,9 @@
           }
         }
       }
+    },
+    "Your feedback helps us make the app even better for families and teams. Would you mind leaving a quick review?" : {
+
     },
     "一般" : {
       "localizations" : {
@@ -7741,64 +7753,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "使用 Face ID 解鎖後繼續存取你的家庭日程與任務。"
-          }
-        }
-      }
-    },
-    "开启面部解锁" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تفعيل فتح القفل بالوجه"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Require Face ID"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activar desbloqueo facial"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activer le déverrouillage facial"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "फेस अनलॉक सक्षम करें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ativar desbloqueio facial"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "முக திறப்பை இயக்கு"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "开启面部解锁"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "開啟臉部解鎖"
           }
         }
       }
@@ -13118,6 +13072,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "開發中..."
+          }
+        }
+      }
+    },
+    "开启面部解锁" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تفعيل فتح القفل بالوجه"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Require Face ID"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activar desbloqueo facial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer le déverrouillage facial"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "फेस अनलॉक सक्षम करें"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ativar desbloqueio facial"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "முக திறப்பை இயக்கு"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "开启面部解锁"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟臉部解鎖"
           }
         }
       }
