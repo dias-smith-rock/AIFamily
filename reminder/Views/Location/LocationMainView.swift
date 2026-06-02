@@ -5,6 +5,7 @@ struct LocationMainView: View {
     var isTabActive: Bool = true
 
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel: LocationMainViewModel
     @State private var cameraPosition: MapCameraPosition = .automatic
 
@@ -69,14 +70,23 @@ struct LocationMainView: View {
                 currentMembershipId: appRouter.selectedMembershipId
             )
             await viewModel.refresh()
+            await viewModel.captureCurrentUserLocationForMap()
             fitCameraToDisplayedMembers()
         }
         .onChange(of: isTabActive) { _, active in
             if active == false {
                 viewModel.collapseMemberList()
+            } else {
+                Task {
+                    await viewModel.captureCurrentUserLocationForMap()
+                    fitCameraToDisplayedMembers()
+                }
             }
         }
         .onChange(of: viewModel.mapDisplayedMembers.map(\.id)) { _, _ in
+            fitCameraToDisplayedMembers()
+        }
+        .onChange(of: viewModel.currentUserLiveLocation) { _, _ in
             fitCameraToDisplayedMembers()
         }
     }
@@ -95,7 +105,7 @@ struct LocationMainView: View {
             .onTapGesture {
                 viewModel.collapseMemberList()
             }
-            .accessibilityLabel("收起家人列表")
+            .accessibilityLabel("收起群组成员列表")
             .accessibilityAddTraits(.isButton)
     }
 
@@ -211,20 +221,40 @@ struct LocationMainView: View {
                 }
             }
         }
-        .accessibilityLabel(viewModel.isMemberListExpanded ? "收起家人列表" : "展开家人列表")
+        .accessibilityLabel(viewModel.isMemberListExpanded ? "收起群组成员列表" : "展开群组成员列表")
     }
 
     private var expandedMemberPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("家人位置")
+            Text("群组位置")
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
-                .padding(.bottom, 4)
+                .padding(.bottom, 6)
+
+            organizationSwitcherRow
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
 
             ghostModeEntryRow
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
+
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+            } else if viewModel.members.isEmpty, viewModel.isLoading == false {
+                Text("暂无群组成员")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+            }
 
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
@@ -252,6 +282,41 @@ struct LocationMainView: View {
         .frame(width: 320)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+
+    private var organizationSwitcherRow: some View {
+        Button {
+            groupSwitcher.showSwitchGroupDialog = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "person.2.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .frame(width: 28, height: 28)
+                    .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("当前群组")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(GroupSwitcherData.currentName(for: appRouter))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("切换群组，\(GroupSwitcherData.currentName(for: appRouter))")
     }
 
     private var ghostModeEntryRow: some View {
@@ -327,4 +392,5 @@ struct LocationMainView: View {
         )
     )
     .environmentObject(AppRouter())
+    .environmentObject(GroupSwitcherCoordinator())
 }

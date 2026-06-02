@@ -1,11 +1,13 @@
 import CoreLocation
 import Foundation
 
-/// 家庭成员在地图 Tab 的展示态（档案 + `location_states` 合并，供 UI / Mock）。
+/// 群组成员在地图 Tab 的展示态（档案 + `location_states` 合并，供 UI / Mock）。
 struct UserLocationState: Identifiable, Hashable, Sendable {
     let id: UUID
     let displayName: String
     var avatarURL: URL?
+    /// 无账号虚拟档案（`family_profiles`，无 `household_memberships` 行）。
+    var isVirtualMember: Bool
     var isGhostMode: Bool
     var currentLocation: LocationPayload?
     var historyLocation1: LocationPayload?
@@ -17,7 +19,11 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
     var isCurrentUser: Bool
 
     var isVisibleOnMap: Bool {
-        isGhostMode == false && currentLocation != nil
+        isVirtualMember == false && isGhostMode == false && currentLocation != nil
+    }
+
+    var isSelectableOnMap: Bool {
+        isVirtualMember == false && isGhostMode == false
     }
 
     /// 时间顺序：最旧 → 最新（用于轨迹与渐变折线）。
@@ -36,6 +42,7 @@ extension UserLocationState {
         UserLocationState(
             id: UUID(uuidString: "A1000001-0000-4000-8000-000000000001") ?? UUID(),
             displayName: "王晓明",
+            isVirtualMember: false,
             isGhostMode: false,
             currentLocation: LocationPayload(latitude: 31.2304, longitude: 121.4737),
             historyLocation1: LocationPayload(latitude: 31.2289, longitude: 121.4698),
@@ -49,6 +56,7 @@ extension UserLocationState {
         UserLocationState(
             id: UUID(uuidString: "A1000002-0000-4000-8000-000000000002") ?? UUID(),
             displayName: "李雨桐",
+            isVirtualMember: false,
             isGhostMode: false,
             currentLocation: LocationPayload(latitude: 31.2240, longitude: 121.4805),
             historyLocation1: LocationPayload(latitude: 31.2218, longitude: 121.4770),
@@ -62,6 +70,7 @@ extension UserLocationState {
         UserLocationState(
             id: UUID(uuidString: "A1000003-0000-4000-8000-000000000003") ?? UUID(),
             displayName: "陈奶奶",
+            isVirtualMember: false,
             isGhostMode: true,
             currentLocation: LocationPayload(latitude: 31.2180, longitude: 121.4600),
             historyLocation1: nil,
@@ -70,6 +79,20 @@ extension UserLocationState {
             lastUpdatedAt: Date().addingTimeInterval(-90 * 60),
             batteryLevel: 54,
             isCharging: true,
+            isCurrentUser: false
+        ),
+        UserLocationState(
+            id: UUID(uuidString: "A1000004-0000-4000-8000-000000000004") ?? UUID(),
+            displayName: "小宝（档案）",
+            isVirtualMember: true,
+            isGhostMode: false,
+            currentLocation: nil,
+            historyLocation1: nil,
+            historyLocation2: nil,
+            addressDescription: nil,
+            lastUpdatedAt: nil,
+            batteryLevel: 100,
+            isCharging: false,
             isCurrentUser: false
         ),
     ]

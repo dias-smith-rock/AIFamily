@@ -39,7 +39,7 @@ struct LocationMemberSheetRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: avatarSize, alignment: .center)
 
-            if member.isGhostMode == false {
+            if member.isGhostMode == false, member.isVirtualMember == false {
                 HStack(spacing: 4) {
                     Image(systemName: member.isCharging ? "bolt.fill" : batterySymbol)
                         .font(.caption)
@@ -61,10 +61,16 @@ struct LocationMemberSheetRow: View {
         if member.isGhostMode {
             return "\(member.displayName) · 👻 位置已隐藏"
         }
+        if member.isVirtualMember {
+            return "\(member.displayName) · 虚拟成员"
+        }
         return member.displayName
     }
 
     private var accessibilitySummary: String {
+        if member.isVirtualMember {
+            return "\(member.displayName)，虚拟成员，暂无位置共享"
+        }
         if member.isGhostMode {
             return "\(member.displayName)，位置已隐藏"
         }
@@ -81,7 +87,12 @@ struct LocationMemberSheetRow: View {
 
     @ViewBuilder
     private var selectionColumn: some View {
-        if member.isGhostMode {
+        if member.isVirtualMember {
+            Image(systemName: "person.crop.circle.badge.questionmark")
+                .font(.body.weight(.medium))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        } else if member.isGhostMode {
             Image(systemName: "location.slash")
                 .font(.body.weight(.medium))
                 .foregroundStyle(.tertiary)
