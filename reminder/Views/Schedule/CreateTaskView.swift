@@ -1789,20 +1789,10 @@ struct CreateTaskView: View {
             var persistedTaskId: UUID?
 
             if recurrence == nil {
+                let newTaskId = UUID()
                 let geofence = resolvedLocationData()?.toTaskGeofence()
-                let spatialParams = CreateTaskWithSpatialParams(
-                    pTitle: normalizedTitle,
-                    pDescription: mergedDescriptionForPayload,
-                    pCreatorId: creatorIdLowercased,
-                    pTenantId: householdId.uuidString.lowercased(),
-                    pGeofence: geofence
-                )
-                let createdRow: FamilyTask = try await client
-                    .rpc("create_task_with_spatial", params: spatialParams)
-                    .execute()
-                    .value
                 let singlePayload = TaskInsertPayload(
-                    id: createdRow.id,
+                    id: newTaskId,
                     householdId: householdId,
                     creatorId: creatorIdLowercased,
                     parentTaskId: nil,
@@ -1827,17 +1817,76 @@ struct CreateTaskView: View {
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
                     locationData: resolvedLocationData(),
                     geofence: geofence,
-                    createdAt: createdRow.createdAt,
+                    createdAt: now,
                     updatedAt: now
                 )
-                _ = try await client
-                    .from("tasks")
-                    .update(singlePayload)
-                    .eq("id", value: createdRow.id.uuidString.lowercased())
-                    .execute()
-                persistedTaskId = createdRow.id
-                if let synthetic = familyTaskFromInsertPayload(singlePayload) {
-                    onAlarmSync?(synthetic)
+                let spatialParams = CreateTaskWithSpatialParams(
+                    pTitle: normalizedTitle,
+                    pDescription: mergedDescriptionForPayload,
+                    pCreatorId: creatorIdLowercased,
+                    pTenantId: householdId.uuidString.lowercased(),
+                    pGeofence: geofence
+                )
+                var didPersistViaRPC = false
+                do {
+                    let createdRow: FamilyTask = try await client
+                        .rpc("create_task_with_spatial", params: spatialParams)
+                        .execute()
+                        .value
+                    // 用 RPC 返回的 id / created_at，其余字段仍由 update 写入
+                    let rpcPayload = TaskInsertPayload(
+                        id: createdRow.id,
+                        householdId: singlePayload.householdId,
+                        creatorId: singlePayload.creatorId,
+                        parentTaskId: singlePayload.parentTaskId,
+                        groupId: singlePayload.groupId,
+                        involvedMemberIds: singlePayload.involvedMemberIds,
+                        targetProfileIds: singlePayload.targetProfileIds,
+                        title: singlePayload.title,
+                        description: singlePayload.description,
+                        status: singlePayload.status,
+                        priority: singlePayload.priority,
+                        taskType: singlePayload.taskType,
+                        dueDate: singlePayload.dueDate,
+                        endDatetime: singlePayload.endDatetime,
+                        durationMinutes: singlePayload.durationMinutes,
+                        isAllDay: singlePayload.isAllDay,
+                        recurrenceRule: singlePayload.recurrenceRule,
+                        recurrenceEndDate: singlePayload.recurrenceEndDate,
+                        recurrenceInterval: singlePayload.recurrenceInterval,
+                        reminderOffsets: singlePayload.reminderOffsets,
+                        estimatedCost: singlePayload.estimatedCost,
+                        backgroundColor: singlePayload.backgroundColor,
+                        emergencyPhone: singlePayload.emergencyPhone,
+                        locationData: singlePayload.locationData,
+                        geofence: singlePayload.geofence,
+                        createdAt: createdRow.createdAt,
+                        updatedAt: now
+                    )
+                    _ = try await client
+                        .from("tasks")
+                        .update(rpcPayload)
+                        .eq("id", value: createdRow.id.uuidString.lowercased())
+                        .execute()
+                    persistedTaskId = createdRow.id
+                    if let synthetic = familyTaskFromInsertPayload(rpcPayload) {
+                        onAlarmSync?(synthetic)
+                    }
+                    didPersistViaRPC = true
+                } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
+                    #if DEBUG
+                    print("[CreateTaskView] create_task_with_spatial unavailable; falling back to tasks.insert")
+                    #endif
+                }
+                if didPersistViaRPC == false {
+                    _ = try await client
+                        .from("tasks")
+                        .insert(singlePayload)
+                        .execute()
+                    persistedTaskId = newTaskId
+                    if let synthetic = familyTaskFromInsertPayload(singlePayload) {
+                        onAlarmSync?(synthetic)
+                    }
                 }
             } else {
                 let newTaskId = UUID()
@@ -2563,6 +2612,7 @@ private extension CreateTaskView {
             isAllDay: payload.isAllDay,
             recurrenceRule: payload.recurrenceRule,
             recurrenceEndDate: payload.recurrenceEndDate,
+            issue: nil,
             recurrenceInterval: payload.recurrenceInterval,
             reminderOffsets: payload.reminderOffsets,
             estimatedCost: payload.estimatedCost,

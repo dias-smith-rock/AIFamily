@@ -218,6 +218,7 @@ enum RecurrenceEngine {
             isAllDay: mother.isAllDay,
             recurrenceRule: nil,
             recurrenceEndDate: nil,
+            issue: nil,
             recurrenceInterval: nil,
             reminderOffsets: mother.reminderOffsets,
             estimatedCost: mother.estimatedCost,

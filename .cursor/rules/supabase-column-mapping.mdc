@@ -1,0 +1,30 @@
+---
+description: 禁止改动已上线的 Supabase 列名/CodingKeys 映射，仅增量添加新字段
+globs: reminder/Models/**/*.swift,reminder/Services/**/*.swift,reminder/ViewModels/**/*.swift,reminder/Views/**/*.swift
+alwaysApply: true
+---
+
+# Supabase 列映射：只增不改
+
+## 原则
+
+**已对齐并在线上跑通的「数据库列 ↔ Swift 属性 ↔ CodingKeys / Payload 键名」视为冻结契约，不得因 ERD 草案、文档推测或「命名更优雅」而批量改名。**
+
+## 允许
+
+- 为**新增**库表/JSONB 列增加：Model 属性、`CodingKeys`、RPC 参数、Insert/Update Payload 字段、Mock 数据。
+- 在**不删除、不替换**既有映射的前提下，为**读取**增加向后兼容（例如多 decode 一个旧/新列名），且**写入仍只用线上真实列名**。
+- 用户明确要求迁移某列且已在 Supabase 执行 DDL 后，再改对应写入键名（须与用户确认）。
+
+## 禁止
+
+- 把已存在的 `CodingKeys` 从 `recurrence_end_date` 改成 `recurrence_end_at` 等「仅 ERD 有、库中无」的列名。
+- 因 Studio ERD 与线上一致性未核实，批量重命名 `FamilyTask`、`TaskInsertPayload`、`TaskUpdatePayload` 及各类 Encodable 的 snake_case 键。
+- 修改 `creator_id` / `involved_member_ids` 的 ID 维度（membership id ↔ user id）。
+- 在未部署 RPC/列之前，删除 insert 回退或改掉既有写入路径。
+
+## 动手前
+
+1. 以 **Supabase Table Editor / 实际报错** 为准，不以 ERD 截图为准。
+2. 先读 `.cursor/skills/supabase-schema/SKILL.md` 中的映射表。
+3. 新字段：先更新 skill 映射表一行，再改 Swift。

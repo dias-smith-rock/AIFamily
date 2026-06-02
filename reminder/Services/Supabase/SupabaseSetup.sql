@@ -1,4 +1,6 @@
 -- AIFamily production-oriented setup (household_id + user_role based)
+-- ⚠️ 历史 MVP 草稿：tasks 列名与线上一致 ERD 不符。请以 Supabase Studio ERD 为准，
+--    客户端映射见 `.cursor/skills/supabase-schema/SKILL.md`。
 -- Execute in Supabase SQL editor.
 
 create extension if not exists "pgcrypto";

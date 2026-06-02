@@ -311,10 +311,22 @@ struct SupabaseTaskDataService: TaskDataService {
             pTenantId: task.householdId.uuidString.lowercased(),
             pGeofence: spatialGeofence
         )
-        let created: FamilyTask = try await provider.client
-            .rpc("create_task_with_spatial", params: params)
-            .execute()
-            .value
+        let created: FamilyTask
+        do {
+            created = try await provider.client
+                .rpc("create_task_with_spatial", params: params)
+                .execute()
+                .value
+        } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
+            let payload = task.sanitizedForPersistence()
+            return try await provider.client
+                .from(SupabaseTable.tasks)
+                .insert(payload)
+                .select()
+                .single()
+                .execute()
+                .value
+        }
         let sanitized = task.sanitizedForPersistence()
         let merged = FamilyTask(
             id: created.id,
@@ -347,6 +359,7 @@ struct SupabaseTaskDataService: TaskDataService {
             isAllDay: sanitized.isAllDay,
             recurrenceRule: sanitized.recurrenceRule,
             recurrenceEndDate: sanitized.recurrenceEndDate,
+            issue: sanitized.issue,
             recurrenceInterval: sanitized.recurrenceInterval,
             reminderOffsets: sanitized.reminderOffsets,
             estimatedCost: sanitized.estimatedCost,
@@ -407,11 +420,15 @@ struct SupabaseTaskDataService: TaskDataService {
                 pUserId: actingMembershipId.uuidString.lowercased(),
                 pCompletionLocation: completionLocation
             )
-            let response: FamilyTask = try await provider.client
-                .rpc("complete_task_with_spatial", params: params)
-                .execute()
-                .value
-            return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
+            do {
+                let response: FamilyTask = try await provider.client
+                    .rpc("complete_task_with_spatial", params: params)
+                    .execute()
+                    .value
+                return Self.normalizeInvolvedMemberIdsForRowSemantics(response)
+            } catch where TaskSpatialRPCSupport.isMissingCompleteTaskRPC(error) {
+                // RPC 未部署时回退为仅 PATCH status（不写入 completion_location）
+            }
         }
 
         struct StatusPatch: Encodable {

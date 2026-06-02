@@ -46,6 +46,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     var recurrenceRule: String?
     /// `tasks.recurrence_end_date`（TIMESTAMPTZ）；无重复规则时必须为 `nil`。
     var recurrenceEndDate: Date? = nil
+    /// `tasks.issue`：状态为「遇到问题」时的补充说明（与 `TaskStatus.issue` 枚举不同列）。
+    var issue: String? = nil
     /// `tasks.recurrence_interval`；无重复规则时必须为 `nil`；有重复且未单独配置 UI 时由写入层使用 `1`。
     var recurrenceInterval: Int? = nil
     var reminderOffsets: [Int]?
@@ -105,6 +107,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         isAllDay: Bool,
         recurrenceRule: String? = nil,
         recurrenceEndDate: Date? = nil,
+        issue: String? = nil,
         recurrenceInterval: Int? = nil,
         reminderOffsets: [Int]? = nil,
         estimatedCost: Int? = nil,
@@ -143,6 +146,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         self.isAllDay = isAllDay
         self.recurrenceRule = recurrenceRule
         self.recurrenceEndDate = recurrenceEndDate
+        self.issue = issue
         self.recurrenceInterval = recurrenceInterval
         self.reminderOffsets = reminderOffsets
         self.estimatedCost = estimatedCost
@@ -182,7 +186,9 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         case durationMinutes
         case isAllDay
         case recurrenceRule
-        case recurrenceEndDate
+        case recurrenceEndDate = "recurrence_end_date"
+        case legacyRecurrenceEndAt = "recurrence_end_at"
+        case issue
         case recurrenceInterval
         case reminderOffsets
         case estimatedCost
@@ -228,7 +234,12 @@ struct FamilyTask: Identifiable, Codable, Equatable {
             ?? Self.legacyCacheFallbackDurationMinutes
         isAllDay = try container.decode(Bool.self, forKey: .isAllDay)
         recurrenceRule = try container.decodeIfPresent(String.self, forKey: .recurrenceRule)
-        recurrenceEndDate = try container.decodeIfPresent(Date.self, forKey: .recurrenceEndDate)
+        if let recurrenceEnd = try container.decodeIfPresent(Date.self, forKey: .recurrenceEndDate) {
+            recurrenceEndDate = recurrenceEnd
+        } else {
+            recurrenceEndDate = try container.decodeIfPresent(Date.self, forKey: .legacyRecurrenceEndAt)
+        }
+        issue = try container.decodeIfPresent(String.self, forKey: .issue)
         recurrenceInterval = try container.decodeIfPresent(Int.self, forKey: .recurrenceInterval)
         reminderOffsets = try container.decodeIfPresent([Int].self, forKey: .reminderOffsets)
         estimatedCost = try container.decodeIfPresent(Int.self, forKey: .estimatedCost)
@@ -271,6 +282,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         try container.encode(isAllDay, forKey: .isAllDay)
         try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
         try container.encodeIfPresent(recurrenceEndDate, forKey: .recurrenceEndDate)
+        try container.encodeIfPresent(issue, forKey: .issue)
         try container.encodeIfPresent(recurrenceInterval, forKey: .recurrenceInterval)
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
         try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
