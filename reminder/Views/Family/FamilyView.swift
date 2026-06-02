@@ -14,6 +14,7 @@ private enum AddMemberRoute: Identifiable, Equatable {
 
 struct FamilyView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.requestReview) private var requestReview
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
@@ -128,7 +129,11 @@ struct FamilyView: View {
                     return await viewModel.uploadAvatar(data: data, profileId: profileId)
                 },
                 onSave: { householdId, draft in
-                    await viewModel.createLocalProfile(householdId: householdId, draft: draft)
+                    let result = await viewModel.createLocalProfile(householdId: householdId, draft: draft)
+                    if result == nil {
+                        ReviewManager.shared.triggerReview(for: .virtualMember, requestReview: requestReview)
+                    }
+                    return result
                 }
             )
             .environment(\.locale, appSettings.appLocale)
