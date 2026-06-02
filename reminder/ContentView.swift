@@ -103,6 +103,7 @@ struct ContentView: View {
             appRouter.goToActiveMember()
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
+            await reportLocationIfNeeded()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -114,6 +115,7 @@ struct ContentView: View {
                     _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
+                    await reportLocationIfNeeded()
                 }
             } else if newPhase == .inactive || newPhase == .background {
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
@@ -182,6 +184,17 @@ struct ContentView: View {
         guard appRouter.appState != .unauthenticated else { return }
         let orgViewModel = AppViewModels.makeOrgRoutingViewModel()
         await orgViewModel.fetchMyHouseholds(appRouter: appRouter)
+    }
+
+    @MainActor
+    private func reportLocationIfNeeded() async {
+        guard isUserLoggedIn, biometricManager.isUnlocked else { return }
+        guard appRouter.appState == .activeMember else { return }
+        await LocationStartupReporter.reportIfNeeded(
+            householdId: appRouter.selectedHouseholdId,
+            membershipId: appRouter.selectedMembershipId,
+            locationStateService: appBootstrap.services.locationStateService
+        )
     }
 
     @MainActor

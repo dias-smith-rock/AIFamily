@@ -4,8 +4,16 @@ import SwiftUI
 struct LocationMainView: View {
     var isTabActive: Bool = true
 
-    @StateObject private var viewModel = LocationMainViewModel()
+    @EnvironmentObject private var appRouter: AppRouter
+    @StateObject private var viewModel: LocationMainViewModel
     @State private var cameraPosition: MapCameraPosition = .automatic
+
+    init(isTabActive: Bool = true, viewModel: LocationMainViewModel? = nil) {
+        self.isTabActive = isTabActive
+        _viewModel = StateObject(
+            wrappedValue: viewModel ?? AppViewModels.makeLocationMainViewModel()
+        )
+    }
 
     var body: some View {
         ZStack {
@@ -39,22 +47,28 @@ struct LocationMainView: View {
             titleVisibility: .visible
         ) {
             Button("暂停 1 小时") {
-                viewModel.applyGhostOption(.pauseOneHour)
+                Task { await viewModel.applyGhostOption(.pauseOneHour) }
             }
             Button("直到今晚") {
-                viewModel.applyGhostOption(.untilTonight)
+                Task { await viewModel.applyGhostOption(.untilTonight) }
             }
             Button("保持隐藏") {
-                viewModel.applyGhostOption(.keepHidden)
+                Task { await viewModel.applyGhostOption(.keepHidden) }
             }
             Button("停止隐藏") {
-                viewModel.applyGhostOption(.stopHiding)
+                Task { await viewModel.applyGhostOption(.stopHiding) }
             }
             Button("取消", role: .cancel) {}
         } message: {
             Text("选择隐藏位置的时长")
         }
-        .onAppear {
+        .task(id: locationRefreshToken) {
+            guard isTabActive else { return }
+            viewModel.bind(
+                householdId: appRouter.selectedHouseholdId,
+                currentMembershipId: appRouter.selectedMembershipId
+            )
+            await viewModel.refresh()
             fitCameraToDisplayedMembers()
         }
         .onChange(of: isTabActive) { _, active in
@@ -65,6 +79,12 @@ struct LocationMainView: View {
         .onChange(of: viewModel.mapDisplayedMembers.map(\.id)) { _, _ in
             fitCameraToDisplayedMembers()
         }
+    }
+
+    private var locationRefreshToken: String {
+        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
+        let membership = appRouter.selectedMembershipId?.uuidString ?? "none"
+        return "\(isTabActive)-\(household)-\(membership)"
     }
 
     /// 列表展开时点击地图区域收起浮层（不阻挡右下角按钮与面板）。
@@ -200,6 +220,10 @@ struct LocationMainView: View {
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
+                .padding(.bottom, 4)
+
+            ghostModeEntryRow
+                .padding(.horizontal, 12)
                 .padding(.bottom, 8)
 
             ScrollView {
@@ -228,6 +252,30 @@ struct LocationMainView: View {
         .frame(width: 320)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+
+    private var ghostModeEntryRow: some View {
+        Button {
+            viewModel.presentGhostOptions()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: viewModel.isCurrentUserGhost ? "location.slash.fill" : "location.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(viewModel.isCurrentUserGhost ? Color.secondary : Color.blue)
+                Text(viewModel.isCurrentUserGhost ? "位置隐身中 · 点按管理" : "开启位置隐身")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers
@@ -271,5 +319,12 @@ struct LocationMainView: View {
 }
 
 #Preview {
-    LocationMainView()
+    LocationMainView(
+        viewModel: LocationMainViewModel(
+            locationStateService: MockLocationStateDataService(seedPreview: true),
+            membershipService: MockHouseholdMembershipDataService(),
+            previewMembers: UserLocationState.previewHousehold
+        )
+    )
+    .environmentObject(AppRouter())
 }

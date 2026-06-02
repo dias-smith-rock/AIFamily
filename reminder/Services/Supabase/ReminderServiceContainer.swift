@@ -11,6 +11,7 @@ struct ReminderServiceContainer {
     let feedbackRealtimeService: FeedbackRealtimeService
     let inviteLinkService: InviteLinkService
     let householdRoutingService: HouseholdRoutingService
+    let locationStateService: LocationStateDataService
 
     static func live() -> ReminderServiceContainer {
         let provider = SupabaseProvider()
@@ -32,7 +33,8 @@ struct ReminderServiceContainer {
             householdRoutingService: SupabaseHouseholdRoutingService(
                 provider: provider,
                 voiceStorageService: voiceStorageService
-            )
+            ),
+            locationStateService: SupabaseLocationStateDataService(provider: provider)
         )
     }
 
@@ -47,7 +49,8 @@ struct ReminderServiceContainer {
             avatarStorageService: MockAvatarStorageService(),
             feedbackRealtimeService: MockFeedbackRealtimeService(),
             inviteLinkService: MockInviteLinkService(),
-            householdRoutingService: MockHouseholdRoutingService()
+            householdRoutingService: MockHouseholdRoutingService(),
+            locationStateService: MockLocationStateDataService()
         )
     }
 }

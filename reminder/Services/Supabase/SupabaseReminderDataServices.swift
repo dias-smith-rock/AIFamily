@@ -273,6 +273,7 @@ private enum SupabaseTable {
     static let familyProfiles = "family_profiles"
     static let inviteLinkNonces = "invite_link_nonces"
     static let subscriptionOrders = "subscription_orders"
+    static let locationStates = "location_states"
 }
 
 // MARK: - Task Service

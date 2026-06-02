@@ -82,6 +82,14 @@ final class ViewModelFactory: ObservableObject {
     func makeVIPSubscriptionViewModel() -> VIPSubscriptionViewModel {
         VIPSubscriptionViewModel()
     }
+
+    func makeLocationMainViewModel() -> LocationMainViewModel {
+        LocationMainViewModel(
+            locationStateService: services.locationStateService,
+            membershipService: services.membershipService,
+            previewMembers: nil
+        )
+    }
 }
 
 @MainActor
@@ -130,6 +138,10 @@ enum AppViewModels {
 
     static func makeVIPSubscriptionViewModel() -> VIPSubscriptionViewModel {
         factory.makeVIPSubscriptionViewModel()
+    }
+
+    static func makeLocationMainViewModel() -> LocationMainViewModel {
+        factory.makeLocationMainViewModel()
     }
 }
 

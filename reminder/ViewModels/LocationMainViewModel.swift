@@ -25,17 +25,32 @@ final class LocationMainViewModel: ObservableObject {
     @Published var selectedMemberIDs: Set<UUID> = []
     @Published var isMemberListExpanded = false
     @Published var isGhostOptionsPresented = false
+    @Published private(set) var isLoading = false
+    @Published var errorMessage: String?
 
-    init(members: [UserLocationState] = UserLocationState.previewHousehold) {
-        self.members = members
-        self.selectedMemberIDs = Set(members.filter { $0.isGhostMode == false }.map(\.id))
+    private let locationStateService: LocationStateDataService
+    private let membershipService: HouseholdMembershipDataService
+
+    private var householdId: UUID?
+    private var currentMembershipId: UUID?
+
+    init(
+        locationStateService: LocationStateDataService,
+        membershipService: HouseholdMembershipDataService,
+        previewMembers: [UserLocationState]? = nil
+    ) {
+        self.locationStateService = locationStateService
+        self.membershipService = membershipService
+        if let previewMembers {
+            members = previewMembers
+            selectedMemberIDs = Set(previewMembers.filter { $0.isGhostMode == false }.map(\.id))
+        }
     }
 
     var currentUser: UserLocationState? {
         members.first(where: \.isCurrentUser)
     }
 
-    /// 已勾选且未隐身、有当前坐标的成员（地图轨迹与头像）。
     var mapDisplayedMembers: [UserLocationState] {
         members.filter { member in
             selectedMemberIDs.contains(member.id) && member.isVisibleOnMap
@@ -44,6 +59,39 @@ final class LocationMainViewModel: ObservableObject {
 
     var isCurrentUserGhost: Bool {
         currentUser?.isGhostMode == true
+    }
+
+    func bind(householdId: UUID?, currentMembershipId: UUID?) {
+        self.householdId = householdId
+        self.currentMembershipId = currentMembershipId
+    }
+
+    func refresh() async {
+        guard let householdId else {
+            members = []
+            selectedMemberIDs = []
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+
+        do {
+            async let rosterTask = membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
+            async let statesTask = locationStateService.fetchLocationStates(in: householdId)
+            let roster = try await rosterTask
+            let states = try await statesTask
+            let merged = LocationMemberAssembler.buildMembers(
+                roster: roster,
+                locationRecords: states,
+                currentMembershipId: currentMembershipId
+            )
+            members = merged
+            reconcileSelectionAfterReload()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func isSelected(memberID: UUID) -> Bool {
@@ -69,19 +117,67 @@ final class LocationMainViewModel: ObservableObject {
         isMemberListExpanded = false
     }
 
-    func applyGhostOption(_ option: GhostModeOption) {
-        guard let index = members.firstIndex(where: \.isCurrentUser) else { return }
+    func presentGhostOptions() {
+        isGhostOptionsPresented = true
+    }
+
+    func applyGhostOption(_ option: GhostModeOption) async {
+        guard let householdId, let currentMembershipId else { return }
+
         switch option {
-        case .pauseOneHour, .untilTonight, .keepHidden:
-            members[index].isGhostMode = true
-            selectedMemberIDs.remove(members[index].id)
+        case .pauseOneHour:
+            LocationGhostPreferences.setHiddenUntil(
+                Date().addingTimeInterval(3_600),
+                for: currentMembershipId
+            )
+        case .untilTonight:
+            LocationGhostPreferences.setHiddenUntil(endOfToday(), for: currentMembershipId)
+        case .keepHidden:
+            LocationGhostPreferences.setHiddenUntil(nil, for: currentMembershipId)
         case .stopHiding:
-            members[index].isGhostMode = false
-            selectedMemberIDs.insert(members[index].id)
+            LocationGhostPreferences.setHiddenUntil(nil, for: currentMembershipId)
+        }
+
+        let shouldGhost: Bool
+        switch option {
+        case .stopHiding:
+            shouldGhost = false
+        default:
+            shouldGhost = true
+        }
+
+        do {
+            _ = try await locationStateService.updateGhostMode(
+                householdId: householdId,
+                membershipId: currentMembershipId,
+                isGhostMode: shouldGhost
+            )
+            await refresh()
+            if option == .stopHiding {
+                await LocationStartupReporter.reportIfNeeded(
+                    householdId: householdId,
+                    membershipId: currentMembershipId,
+                    locationStateService: locationStateService
+                )
+                await refresh()
+            }
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
-    func presentGhostOptions() {
-        isGhostOptionsPresented = true
+    private func reconcileSelectionAfterReload() {
+        let selectableIDs = Set(members.filter { $0.isGhostMode == false }.map(\.id))
+        selectedMemberIDs = selectedMemberIDs.intersection(selectableIDs)
+        if selectedMemberIDs.isEmpty {
+            selectedMemberIDs = selectableIDs
+        }
+    }
+
+    private func endOfToday() -> Date {
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        return calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1)
+            ?? Date().addingTimeInterval(86_400)
     }
 }
