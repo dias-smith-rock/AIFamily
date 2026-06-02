@@ -264,7 +264,6 @@ struct TaskModeDayView: View {
                         emptyStateView()
                             .padding(.horizontal, 16)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .allowsHitTesting(false)
                     }
                 }
             }
