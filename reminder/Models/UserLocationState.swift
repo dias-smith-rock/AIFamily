@@ -4,6 +4,8 @@ import Foundation
 /// 群组成员在地图 Tab 的展示态（档案 + `location_states` 合并，供 UI / Mock）。
 struct UserLocationState: Identifiable, Hashable, Sendable {
     let id: UUID
+    /// 当前群组（`location_states.household_id`）；地图与上报均按此隔离。
+    let householdId: UUID
     let displayName: String
     var avatarURL: URL?
     /// 无账号虚拟档案（`family_profiles`，无 `household_memberships` 行）。
@@ -38,9 +40,12 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
 }
 
 extension UserLocationState {
+    static let previewHouseholdId = UUID(uuidString: "B2000000-0000-4000-8000-000000000099") ?? UUID()
+
     static let previewHousehold: [UserLocationState] = [
         UserLocationState(
             id: UUID(uuidString: "A1000001-0000-4000-8000-000000000001") ?? UUID(),
+            householdId: previewHouseholdId,
             displayName: "王晓明",
             isVirtualMember: false,
             isGhostMode: false,
@@ -55,6 +60,7 @@ extension UserLocationState {
         ),
         UserLocationState(
             id: UUID(uuidString: "A1000002-0000-4000-8000-000000000002") ?? UUID(),
+            householdId: previewHouseholdId,
             displayName: "李雨桐",
             isVirtualMember: false,
             isGhostMode: false,
@@ -69,6 +75,7 @@ extension UserLocationState {
         ),
         UserLocationState(
             id: UUID(uuidString: "A1000003-0000-4000-8000-000000000003") ?? UUID(),
+            householdId: previewHouseholdId,
             displayName: "陈奶奶",
             isVirtualMember: false,
             isGhostMode: true,
@@ -83,6 +90,7 @@ extension UserLocationState {
         ),
         UserLocationState(
             id: UUID(uuidString: "A1000004-0000-4000-8000-000000000004") ?? UUID(),
+            householdId: previewHouseholdId,
             displayName: "小宝（档案）",
             isVirtualMember: true,
             isGhostMode: false,

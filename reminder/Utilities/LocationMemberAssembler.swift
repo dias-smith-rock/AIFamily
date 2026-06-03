@@ -5,6 +5,7 @@ enum LocationMemberAssembler {
     static func buildMembers(
         roster: HouseholdMemberRoster,
         locationRecords: [LocationStateRecord],
+        householdId: UUID,
         currentMembershipId: UUID?
     ) -> [UserLocationState] {
         let recordsByMembership = locationRecords.reduce(into: [UUID: LocationStateRecord]()) { partial, record in
@@ -24,6 +25,7 @@ enum LocationMemberAssembler {
             if let membership {
                 return memberState(
                     id: membership.id,
+                    householdId: householdId,
                     displayName: membership.displayName(linkedProfile: profile),
                     profile: profile,
                     record: recordsByMembership[membership.id],
@@ -34,6 +36,7 @@ enum LocationMemberAssembler {
 
             return memberState(
                 id: profile.id,
+                householdId: householdId,
                 displayName: profile.displayName,
                 profile: profile,
                 record: nil,
@@ -44,11 +47,21 @@ enum LocationMemberAssembler {
 
         for membership in roster.memberships {
             guard let profileId = membership.profileId else {
-                members.append(orphanMembershipRow(membership, recordsByMembership: recordsByMembership, currentMembershipId: currentMembershipId))
+                members.append(orphanMembershipRow(
+                    membership,
+                    householdId: householdId,
+                    recordsByMembership: recordsByMembership,
+                    currentMembershipId: currentMembershipId
+                ))
                 continue
             }
             guard profileIds.contains(profileId) == false else { continue }
-            members.append(orphanMembershipRow(membership, recordsByMembership: recordsByMembership, currentMembershipId: currentMembershipId))
+            members.append(orphanMembershipRow(
+                membership,
+                householdId: householdId,
+                recordsByMembership: recordsByMembership,
+                currentMembershipId: currentMembershipId
+            ))
         }
 
         return members.sorted { lhs, rhs in
@@ -64,11 +77,13 @@ enum LocationMemberAssembler {
 
     private static func orphanMembershipRow(
         _ membership: HouseholdMembership,
+        householdId: UUID,
         recordsByMembership: [UUID: LocationStateRecord],
         currentMembershipId: UUID?
     ) -> UserLocationState {
         memberState(
             id: membership.id,
+            householdId: householdId,
             displayName: membership.displayName(linkedProfile: membership.profile),
             profile: membership.profile,
             record: recordsByMembership[membership.id],
@@ -79,6 +94,7 @@ enum LocationMemberAssembler {
 
     private static func memberState(
         id: UUID,
+        householdId: UUID,
         displayName: String,
         profile: FamilyProfile?,
         record: LocationStateRecord?,
@@ -105,6 +121,7 @@ enum LocationMemberAssembler {
 
         return UserLocationState(
             id: id,
+            householdId: record?.householdId ?? householdId,
             displayName: displayName,
             avatarURL: avatarURL,
             isVirtualMember: isVirtualMember,

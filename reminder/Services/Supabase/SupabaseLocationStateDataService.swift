@@ -36,7 +36,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             .from(Self.tableName)
             .select()
             .eq("household_id", value: householdId.uuidString.lowercased())
-            .eq("membership_id", value: membershipId.uuidString.lowercased())
+            .eq("entity_id", value: membershipId.uuidString.lowercased())
             .limit(1)
             .execute()
             .value
@@ -68,34 +68,44 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             return false
         }
 
-        let now = Date()
-        let payload = LocationStateUpsertPayload(
-            householdId: householdId,
-            membershipId: membershipId,
-            currentLocation: coordinate,
-            historyLocation1: existing?.currentLocation,
-            historyLocation2: existing?.historyLocation1,
-            isGhostMode: existing?.isGhostMode ?? false,
-            updatedAt: now
-        )
-
         #if canImport(Supabase)
-        if existing == nil {
+        let params = PushEntityLocationParams(
+            pEntityId: membershipId,
+            pHouseholdId: householdId,
+            pNewLocation: coordinate
+        )
+        do {
             _ = try await provider.client
-                .from(Self.tableName)
-                .insert(payload)
+                .rpc("push_entity_location", params: params)
                 .execute()
-        } else {
-            _ = try await provider.client
-                .from(Self.tableName)
-                .update(payload)
-                .eq("membership_id", value: membershipId.uuidString.lowercased())
-                .eq("household_id", value: householdId.uuidString.lowercased())
-                .execute()
+            return true
+        } catch where LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) {
+            let now = Date()
+            let payload = LocationStateUpsertPayload(
+                householdId: householdId,
+                membershipId: membershipId,
+                currentLocation: coordinate,
+                historyLocation1: existing?.currentLocation,
+                historyLocation2: existing?.historyLocation1,
+                isGhostMode: existing?.isGhostMode ?? false,
+                updatedAt: now
+            )
+            if existing == nil {
+                _ = try await provider.client
+                    .from(Self.tableName)
+                    .insert(payload)
+                    .execute()
+            } else {
+                _ = try await provider.client
+                    .from(Self.tableName)
+                    .update(payload)
+                    .eq("entity_id", value: membershipId.uuidString.lowercased())
+                    .eq("household_id", value: householdId.uuidString.lowercased())
+                    .execute()
+            }
+            return true
         }
-        return true
         #else
-        _ = payload
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -165,7 +175,7 @@ private struct LocationStateUpsertPayload: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case householdId = "household_id"
-        case membershipId = "membership_id"
+        case membershipId = "entity_id"
         case currentLocation = "current_location"
         case historyLocation1 = "history_location_1"
         case historyLocation2 = "history_location_2"

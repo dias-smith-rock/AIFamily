@@ -46,6 +46,28 @@ description: >-
 
 实现位置：`TaskSpatialRPC.swift`、`SupabaseTaskDataService`、`TaskCompletionLocationProvider`。
 
+### `location_states` 与位置 RPC
+
+| 数据库列 | Swift | 说明 |
+|----------|-------|------|
+| `id` | `LocationStateRecord.id` | UUID |
+| `household_id` | `householdId` | **必填**；与 `entity_id` 联合唯一，禁止跨群组混读 |
+| `entity_id` | `membershipId`（Swift 属性名） | **`household_memberships.id`**，不是 user id；PostgREST 键为 `entity_id` |
+| `current_location` / `history_location_1` / `history_location_2` | `LocationPayload?` | 显式 `CodingKeys`：`lat`、`lng`、`address_name` |
+| `is_ghost_mode` | `isGhostMode` | 默认 `false`；仅「保持隐藏」写 `true` |
+| `updated_at` | `updatedAt` | |
+
+| RPC | 参数 | 客户端 |
+|-----|------|--------|
+| `push_entity_location` | `p_entity_id`, `p_household_id`, `p_new_location` | `PushEntityLocationParams`（`LocationStateRPC.swift`）；`p_entity_id` = **membership id**；`p_new_location` = `LocationPayload` JSONB |
+
+- **读取**：`SupabaseLocationStateDataService.fetch*` 按 `household_id` 过滤。
+- **写入**：`reportCurrentLocationIfNeeded` → RPC；RPC 未部署时回退 PostgREST insert/update。
+- **展示态**：`UserLocationState` 含 `householdId`（合并自 `LocationMemberAssembler`）。
+- **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`20260602_live_huddle_realtime_rls.sql`。
+
+迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`。
+
 ### 写入路径
 
 - **单条创建（无重复）**：`CreateTaskView` → RPC → `tasks` `update` 补全列。
@@ -70,7 +92,7 @@ description: >-
 | `family_profiles` | `FamilyProfile` |
 | `feedbacks` | `Feedback` |
 | `task_attachments` | `TaskAttachment` |
-| `location_states` | 尚未建模；空间完成位置写在 `tasks.completion_location` |
+| `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `current_location` / `history_location_*` → `LocationPayload`（`lat`/`lng`/`address_name`） |
 | `subscription_orders` / `user_entitlement` | `SubscriptionSupabaseSupport` |
 | `invite_link_nonces` | `InviteLinkNonce` |
 

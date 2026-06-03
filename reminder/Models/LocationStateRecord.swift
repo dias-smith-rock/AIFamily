@@ -1,9 +1,10 @@
 import Foundation
 
-/// `location_states` 表行（列名经 `SupabaseCodec` 与驼峰互转）。
+/// `location_states` 表行；`entity_id` = **`household_memberships.id`**（非 user id）。
 struct LocationStateRecord: Identifiable, Equatable, Sendable {
     let id: UUID
     let householdId: UUID
+    /// 库列 `entity_id`（membership 主键）。
     let membershipId: UUID
     var currentLocation: LocationPayload?
     var historyLocation1: LocationPayload?
@@ -14,6 +15,17 @@ struct LocationStateRecord: Identifiable, Equatable, Sendable {
 }
 
 extension LocationStateRecord: Codable {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case householdId
+        case membershipId = "entity_id"
+        case currentLocation
+        case historyLocation1
+        case historyLocation2
+        case isGhostMode
+        case updatedAt
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)

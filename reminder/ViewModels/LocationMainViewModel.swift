@@ -150,6 +150,7 @@ final class LocationMainViewModel: ObservableObject {
             members = LocationMemberAssembler.buildMembers(
                 roster: roster,
                 locationRecords: locationRecords,
+                householdId: householdId,
                 currentMembershipId: currentMembershipId
             )
             syncCurrentUserBatteryFromDevice()
