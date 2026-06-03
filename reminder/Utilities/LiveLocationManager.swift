@@ -20,9 +20,11 @@ final class LiveLocationManager: NSObject, ObservableObject {
     /// 本机指南针朝向（真北顺时针角度）；仅 Live 模式有效。
     @Published private(set) var currentHeadingDegrees: Double?
     @Published private(set) var livePeerHeadings: [UUID: Double] = [:]
+    @Published private(set) var livePeerBattery: [UUID: LivePeerBatteryState] = [:]
     @Published var showInactivityEndedNotice = false
 
     private let locationStateService: LocationStateDataService
+    private let batteryMonitor = DeviceBatteryMonitor.shared
     private let locationManager = CLLocationManager()
 
     private var householdId: UUID?
@@ -34,6 +36,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
     private var lastMovementAnchor: CLLocation?
 
     private var inactivityCancellable: AnyCancellable?
+    private var batteryCancellable: AnyCancellable?
     private var receiveTask: Task<Void, Never>?
 
     #if canImport(Supabase)
@@ -51,6 +54,31 @@ final class LiveLocationManager: NSObject, ObservableObject {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         locationManager.distanceFilter = 100
+
+        batteryCancellable = batteryMonitor.$batteryLevel
+            .combineLatest(batteryMonitor.$isCharging)
+            .sink { [weak self] _, _ in
+                Task { @MainActor in
+                    await self?.broadcastBatteryOrLocationUpdate()
+                }
+            }
+    }
+
+    /// 地图 / 列表展示用：本机读 `DeviceBatteryMonitor`，对方读最近广播。
+    func batteryDisplay(
+        for membershipId: UUID,
+        rosterFallback: UserLocationState?
+    ) -> (level: Int, isCharging: Bool) {
+        if membershipId == currentMembershipId {
+            return (batteryMonitor.batteryLevel, batteryMonitor.isCharging)
+        }
+        if let peer = livePeerBattery[membershipId] {
+            return (peer.clampedLevel, peer.isCharging)
+        }
+        if let rosterFallback {
+            return (rosterFallback.clampedBatteryLevel, rosterFallback.isCharging)
+        }
+        return (100, false)
     }
 
     var isHuddleActive: Bool {
@@ -92,8 +120,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
         isLiveModeActive = true
         livePeerLocations = [:]
         livePeerHeadings = [:]
+        livePeerBattery = [:]
         currentHeadingDegrees = nil
         showInactivityEndedNotice = false
+        batteryMonitor.refresh()
         lastLoggedDBLocation = nil
         lastMovementAnchor = nil
         resetInactivityTimer()
@@ -137,6 +167,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         isLiveModeActive = false
         livePeerLocations = [:]
         livePeerHeadings = [:]
+        livePeerBattery = [:]
 
         if silent == false, inactivitySecondsRemaining <= 0 {
             showInactivityEndedNotice = true
@@ -228,8 +259,16 @@ final class LiveLocationManager: NSObject, ObservableObject {
         activeParticipants = []
         livePeerLocations = [:]
         livePeerHeadings = [:]
+        livePeerBattery = [:]
         currentHeadingDegrees = nil
         lastLiveBroadcastLocation = nil
+    }
+
+    private func broadcastBatteryOrLocationUpdate() async {
+        guard isLiveModeActive else { return }
+        if let location = lastLiveBroadcastLocation ?? locationManager.location {
+            await sendLiveBroadcast(location)
+        }
     }
 
     #if canImport(Supabase)
@@ -261,6 +300,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
             if let heading = payload.headingDegrees {
                 livePeerHeadings[payload.membershipId] = heading
             }
+            livePeerBattery[payload.membershipId] = LivePeerBatteryState(
+                level: payload.batteryLevel,
+                isCharging: payload.isCharging
+            )
             #if DEBUG
             if livePeerLocations.count != previousCount {
                 print(
@@ -294,6 +337,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 participantSet.remove(entry.membershipId)
                 livePeerLocations.removeValue(forKey: entry.membershipId)
                 livePeerHeadings.removeValue(forKey: entry.membershipId)
+                livePeerBattery.removeValue(forKey: entry.membershipId)
             }
         } else {
             #if DEBUG
@@ -321,7 +365,9 @@ final class LiveLocationManager: NSObject, ObservableObject {
             membershipId: currentMembershipId,
             lat: location.coordinate.latitude,
             lng: location.coordinate.longitude,
-            headingDegrees: heading ?? currentHeadingDegrees
+            headingDegrees: heading ?? currentHeadingDegrees,
+            batteryLevel: batteryMonitor.batteryLevel,
+            isCharging: batteryMonitor.isCharging
         )
         do {
             try await channel.broadcast(event: "peer_move", message: payload)

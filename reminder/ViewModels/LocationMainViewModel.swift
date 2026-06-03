@@ -38,6 +38,7 @@ final class LocationMainViewModel: ObservableObject {
     private var currentMembershipId: UUID?
     /// 实时模式期间暂停隐身展示与上报拦截（不改变用户已保存的隐身偏好）。
     private(set) var isLiveModeActive = false
+    private var batteryCancellable: AnyCancellable?
 
     init(
         locationStateService: LocationStateDataService,
@@ -50,6 +51,14 @@ final class LocationMainViewModel: ObservableObject {
             members = previewMembers
             selectedMemberIDs = Set(previewMembers.filter(\.isSelectableOnMap).map(\.id))
         }
+
+        let monitor = DeviceBatteryMonitor.shared
+        monitor.refresh()
+        batteryCancellable = monitor.$batteryLevel
+            .combineLatest(monitor.$isCharging)
+            .sink { [weak self] _, _ in
+                self?.syncCurrentUserBatteryFromDevice()
+            }
     }
 
     var currentUser: UserLocationState? {
@@ -96,6 +105,7 @@ final class LocationMainViewModel: ObservableObject {
             longitude: coordinate.longitude
         )
         currentUserLiveLocation = payload
+        syncCurrentUserBatteryFromDevice()
 
         guard let householdId, let currentMembershipId, isCurrentUserGhost == false else { return }
 
@@ -142,6 +152,7 @@ final class LocationMainViewModel: ObservableObject {
                 locationRecords: locationRecords,
                 currentMembershipId: currentMembershipId
             )
+            syncCurrentUserBatteryFromDevice()
             reconcileSelectionAfterReload()
         } catch {
             members = []
@@ -223,10 +234,29 @@ final class LocationMainViewModel: ObservableObject {
         }
     }
 
+    func syncCurrentUserBatteryFromDevice() {
+        guard let currentMembershipId,
+              let index = members.firstIndex(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else {
+            return
+        }
+        let monitor = DeviceBatteryMonitor.shared
+        guard members[index].batteryLevel != monitor.batteryLevel
+            || members[index].isCharging != monitor.isCharging else {
+            return
+        }
+        members[index].batteryLevel = monitor.batteryLevel
+        members[index].isCharging = monitor.isCharging
+    }
+
     private func displayStateForMap(_ member: UserLocationState) -> UserLocationState {
         var updated = member
         if member.isCurrentUser, let live = currentUserLiveLocation {
             updated.currentLocation = live
+        }
+        if member.isCurrentUser {
+            let monitor = DeviceBatteryMonitor.shared
+            updated.batteryLevel = monitor.batteryLevel
+            updated.isCharging = monitor.isCharging
         }
         if isLiveModeActive, member.isCurrentUser {
             updated.isGhostMode = false

@@ -7,35 +7,53 @@ struct LivePeerMapMarker: View {
     let isCharging: Bool
     var headingDegrees: Double?
 
-    @State private var rippleOuter = false
-    @State private var rippleInner = false
-
-    /// 朝向层边长；头像圆心即该框中心，保证旋转不偏。
-    private let headingCanvasSize: CGFloat = 58
     private var avatarRadius: CGFloat { UserMapAvatarView.avatarDiameter / 2 }
 
+    /// 画布边长：容纳涟漪放大后仍绕头像圆心。
+    static var markerCanvasSide: CGFloat {
+        UserMapAvatarView.avatarDiameter * maxRippleScale + 16
+    }
+
+    private static let maxRippleScale: CGFloat = 2.15
+    private static let innerRippleScale: CGFloat = 1.75
+    private static let batteryAreaHeight: CGFloat = 22
+    private static let batterySpacing: CGFloat = 5
+    private static let rippleDuration: TimeInterval = 1.8
+    private static let innerRippleDelay: TimeInterval = 0.85
+
+    /// 地图坐标落在头像圆心（而非整块标注含电量的几何中心）。
+    static var mapCoordinateAnchor: UnitPoint {
+        let totalHeight = markerCanvasSide + batterySpacing + batteryAreaHeight
+        return UnitPoint(x: 0.5, y: (markerCanvasSide / 2) / totalHeight)
+    }
+
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: Self.batterySpacing) {
             ZStack {
-                rippleRing(isOuter: true)
-                rippleRing(isOuter: false)
+                LiveRippleRingsCanvas(
+                    avatarDiameter: UserMapAvatarView.avatarDiameter,
+                    canvasSide: Self.markerCanvasSide,
+                    maxScale: Self.maxRippleScale,
+                    innerScale: Self.innerRippleScale,
+                    duration: Self.rippleDuration,
+                    innerDelay: Self.innerRippleDelay
+                )
+                .allowsHitTesting(false)
+
                 headingIndicator
+
                 MapAvatarRingView(
                     displayName: displayName,
                     batteryLevel: batteryLevel,
                     isCharging: isCharging
                 )
             }
-            .frame(width: headingCanvasSize, height: headingCanvasSize)
+            .frame(width: Self.markerCanvasSide, height: Self.markerCanvasSide)
 
             MapAvatarBatteryBadge(
                 batteryLevel: batteryLevel,
                 isCharging: isCharging
             )
-        }
-        .onAppear {
-            rippleOuter = true
-            rippleInner = true
         }
     }
 
@@ -45,13 +63,13 @@ struct LivePeerMapMarker: View {
             ZStack {
                 HeadingWedgeShape(
                     innerRadius: avatarRadius,
-                    outerRadius: headingCanvasSize / 2 - 2
+                    outerRadius: Self.markerCanvasSide / 2 - 4
                 )
                 .fill(Color.blue.opacity(0.28))
 
                 HeadingWedgeShape(
                     innerRadius: avatarRadius + 2,
-                    outerRadius: headingCanvasSize / 2 - 1
+                    outerRadius: Self.markerCanvasSide / 2 - 3
                 )
                 .stroke(Color.blue.opacity(0.55), lineWidth: 1.5)
 
@@ -59,27 +77,89 @@ struct LivePeerMapMarker: View {
                     .font(.system(size: 14, weight: .bold))
                     .symbolRenderingMode(.hierarchical)
                     .foregroundStyle(Color.blue)
-                    .offset(y: -(headingCanvasSize / 2 - 6))
+                    .offset(y: -(Self.markerCanvasSide / 2 - 8))
             }
-            .frame(width: headingCanvasSize, height: headingCanvasSize)
+            .frame(width: Self.markerCanvasSide, height: Self.markerCanvasSide)
             .rotationEffect(.degrees(headingDegrees))
             .animation(.linear(duration: 0.12), value: headingDegrees)
+            .allowsHitTesting(false)
         }
     }
+}
 
-    private func rippleRing(isOuter: Bool) -> some View {
-        let base = UserMapAvatarView.avatarDiameter + 6
-        return Circle()
-            .stroke(Color.green.opacity(isOuter ? 0.4 : 0.6), lineWidth: isOuter ? 1.5 : 2)
-            .frame(width: base, height: base)
-            .scaleEffect(isOuter ? (rippleOuter ? 2.2 : 1) : (rippleInner ? 2.2 : 1))
-            .opacity(isOuter ? (rippleOuter ? 0 : 0.5) : (rippleInner ? 0 : 0.7))
-            .animation(
-                .easeOut(duration: 1.8)
-                    .repeatForever(autoreverses: false)
-                    .delay(isOuter ? 0 : 0.85),
-                value: isOuter ? rippleOuter : rippleInner
-            )
+// MARK: - Ripple (Canvas，圆心与头像几何中心一致)
+
+private struct LiveRippleRingsCanvas: View {
+    let avatarDiameter: CGFloat
+    let canvasSide: CGFloat
+    let maxScale: CGFloat
+    let innerScale: CGFloat
+    let duration: TimeInterval
+    let innerDelay: TimeInterval
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            Canvas { context, size in
+                let center = CGPoint(x: size.width / 2, y: size.height / 2)
+                let baseRadius = avatarDiameter / 2
+                let elapsed = timeline.date.timeIntervalSinceReferenceDate
+
+                drawRipple(
+                    context: &context,
+                    center: center,
+                    baseRadius: baseRadius,
+                    phase: ripplePhase(elapsed: elapsed, delay: 0),
+                    maxScale: maxScale,
+                    strokeOpacity: 0.5,
+                    lineWidth: 2
+                )
+                drawRipple(
+                    context: &context,
+                    center: center,
+                    baseRadius: baseRadius,
+                    phase: ripplePhase(elapsed: elapsed, delay: innerDelay),
+                    maxScale: innerScale,
+                    strokeOpacity: 0.65,
+                    lineWidth: 1.5
+                )
+            }
+        }
+        .frame(width: canvasSide, height: canvasSide)
+    }
+
+    private func ripplePhase(elapsed: TimeInterval, delay: TimeInterval) -> CGFloat {
+        let shifted = elapsed - delay
+        guard shifted >= 0 else { return 0 }
+        let cycle = shifted.truncatingRemainder(dividingBy: duration)
+        return CGFloat(cycle / duration)
+    }
+
+    private func drawRipple(
+        context: inout GraphicsContext,
+        center: CGPoint,
+        baseRadius: CGFloat,
+        phase: CGFloat,
+        maxScale: CGFloat,
+        strokeOpacity: Double,
+        lineWidth: CGFloat
+    ) {
+        let scale = 1 + (maxScale - 1) * phase
+        let radius = baseRadius * scale
+        let opacity = (1 - phase) * strokeOpacity
+
+        var ring = Path()
+        ring.addEllipse(in: CGRect(
+            x: center.x - radius,
+            y: center.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        ))
+
+        context.stroke(
+            ring,
+            with: .color(Color.green.opacity(opacity)),
+            style: StrokeStyle(lineWidth: lineWidth)
+        )
     }
 }
 
@@ -100,17 +180,13 @@ struct MapAvatarRingView: View {
         ZStack {
             Circle()
                 .stroke(ringColor, lineWidth: UserMapAvatarView.ringLineWidth)
-                .frame(
-                    width: UserMapAvatarView.avatarDiameter,
-                    height: UserMapAvatarView.avatarDiameter
-                )
 
             Image(systemName: "person.circle.fill")
                 .symbolRenderingMode(.hierarchical)
-                .font(.system(size: UserMapAvatarView.personIconSize))
                 .foregroundStyle(.secondary)
                 .accessibilityLabel(displayName)
         }
+        .frame(width: UserMapAvatarView.avatarDiameter, height: UserMapAvatarView.avatarDiameter)
     }
 }
 
@@ -194,10 +270,9 @@ struct LiveTrackingBadge: View {
 }
 
 #Preview {
-    VStack(spacing: 32) {
-        LivePeerMapMarker(displayName: "李雨桐", batteryLevel: 72, isCharging: false, headingDegrees: 45)
-        LivePeerMapMarker(displayName: "王晓明", batteryLevel: 88, isCharging: true, headingDegrees: 0)
-        LiveTrackingBadge()
+    ZStack {
+        Color.black.opacity(0.85)
+        LivePeerMapMarker(displayName: "Dad", batteryLevel: 100, isCharging: false, headingDegrees: 90)
     }
-    .padding()
+    .padding(40)
 }

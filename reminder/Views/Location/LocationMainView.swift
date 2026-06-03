@@ -112,6 +112,12 @@ struct LocationMainView: View {
         .onChange(of: liveManager.livePeerLocations.count) { _, _ in
             fitCameraToLiveAndDisplayedMembers()
         }
+        .onChange(of: DeviceBatteryMonitor.shared.batteryLevel) { _, _ in
+            viewModel.syncCurrentUserBatteryFromDevice()
+        }
+        .onChange(of: DeviceBatteryMonitor.shared.isCharging) { _, _ in
+            viewModel.syncCurrentUserBatteryFromDevice()
+        }
         .onChange(of: liveManager.isLiveModeActive) { _, isActive in
             viewModel.setLiveModeActive(isActive)
             if isActive {
@@ -205,11 +211,19 @@ struct LocationMainView: View {
 
             if liveManager.isLiveModeActive {
                 ForEach(liveHuddleMapAnnotations) { item in
-                    Annotation(item.displayName, coordinate: item.coordinate) {
+                    let battery = liveManager.batteryDisplay(
+                        for: item.id,
+                        rosterFallback: viewModel.members.first(where: { $0.id == item.id })
+                    )
+                    Annotation(
+                        item.displayName,
+                        coordinate: item.coordinate,
+                        anchor: LivePeerMapMarker.mapCoordinateAnchor
+                    ) {
                         LivePeerMapMarker(
                             displayName: item.displayName,
-                            batteryLevel: item.batteryLevel,
-                            isCharging: item.isCharging,
+                            batteryLevel: battery.level,
+                            isCharging: battery.isCharging,
                             headingDegrees: item.headingDegrees
                         )
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.latitude)
@@ -239,13 +253,14 @@ struct LocationMainView: View {
         liveManager.livePeerLocations
             .map { membershipId, coordinate in
                 let member = viewModel.members.first(where: { $0.id == membershipId })
+                let battery = liveManager.batteryDisplay(for: membershipId, rosterFallback: member)
                 return LiveMapAnnotationItem(
                     id: membershipId,
                     displayName: member?.displayName ?? String(localized: "群组成员"),
                     coordinate: coordinate,
                     headingDegrees: liveManager.livePeerHeadings[membershipId],
-                    batteryLevel: member?.clampedBatteryLevel ?? 100,
-                    isCharging: member?.isCharging ?? false
+                    batteryLevel: battery.level,
+                    isCharging: battery.isCharging
                 )
             }
             .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
@@ -283,12 +298,19 @@ struct LocationMainView: View {
             }
 
             if let current = member.currentLocation?.coordinate {
-                Annotation(member.displayName, coordinate: current) {
+                Annotation(
+                    member.displayName,
+                    coordinate: current,
+                    anchor: liveManager.isLiveModeActive && member.isCurrentUser
+                        ? LivePeerMapMarker.mapCoordinateAnchor
+                        : .center
+                ) {
                     if liveManager.isLiveModeActive, member.isCurrentUser {
+                        let battery = liveManager.batteryDisplay(for: member.id, rosterFallback: member)
                         LivePeerMapMarker(
                             displayName: member.displayName,
-                            batteryLevel: member.clampedBatteryLevel,
-                            isCharging: member.isCharging,
+                            batteryLevel: battery.level,
+                            isCharging: battery.isCharging,
                             headingDegrees: liveManager.currentHeadingDegrees
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)

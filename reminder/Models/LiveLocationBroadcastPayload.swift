@@ -29,3 +29,16 @@ struct LiveLocationBroadcastPayload: Codable, Hashable, Sendable {
         self.isCharging = isCharging
     }
 }
+
+extension LiveLocationBroadcastPayload {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        membershipId = try container.decode(UUID.self, forKey: .membershipId)
+        lat = try container.decode(Double.self, forKey: .lat)
+        lng = try container.decode(Double.self, forKey: .lng)
+        headingDegrees = try container.decodeIfPresent(Double.self, forKey: .headingDegrees)
+        timestamp = try container.decodeIfPresent(Date.self, forKey: .timestamp) ?? Date()
+        batteryLevel = try container.decodeIfPresent(Int.self, forKey: .batteryLevel) ?? 100
+        isCharging = try container.decodeIfPresent(Bool.self, forKey: .isCharging) ?? false
+    }
+}
