@@ -41,9 +41,6 @@ struct LocationMainView: View {
                 HStack(alignment: .top) {
                     liveModeToggleControl
                     Spacer(minLength: 0)
-                    if liveManager.isLiveModeActive == false {
-                        ghostModeControl
-                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -55,11 +52,12 @@ struct LocationMainView: View {
                 Spacer()
 
                 if liveManager.isLiveModeActive == false {
-                    HStack {
+                    HStack(alignment: .bottom) {
+                        ghostModeControl
                         Spacer()
                         memberListOverlay
                     }
-                    .padding(.trailing, 16)
+                    .padding(.horizontal, 16)
                     .padding(.bottom, 12)
                     .transition(.opacity.combined(with: .scale(scale: 0.92)))
                 }
