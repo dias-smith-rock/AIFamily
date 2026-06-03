@@ -1,6 +1,11 @@
 import SwiftUI
 
+/// 地图成员标注头像（普通 / Live 模式统一紧凑尺寸）。
 struct UserMapAvatarView: View {
+    static let avatarDiameter: CGFloat = 30
+    static let personIconSize: CGFloat = 24
+    static let ringLineWidth: CGFloat = 2
+
     let displayName: String
     let batteryLevel: Int
     let isCharging: Bool
@@ -26,28 +31,28 @@ struct UserMapAvatarView: View {
     }
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             ZStack {
                 Circle()
-                    .stroke(ringColor, lineWidth: 3)
-                    .frame(width: 48, height: 48)
+                    .stroke(ringColor, lineWidth: Self.ringLineWidth)
+                    .frame(width: Self.avatarDiameter, height: Self.avatarDiameter)
 
                 Image(systemName: "person.circle.fill")
                     .symbolRenderingMode(.hierarchical)
-                    .font(.system(size: 40))
+                    .font(.system(size: Self.personIconSize))
                     .foregroundStyle(.secondary)
                     .accessibilityLabel(displayName)
             }
 
-            HStack(spacing: 3) {
+            HStack(spacing: 2) {
                 Image(systemName: isCharging ? "bolt.fill" : batterySymbol)
-                    .font(.caption2.weight(.semibold))
+                    .font(.system(size: 8, weight: .semibold))
                 Text("\(batteryLevel)%")
-                    .font(.caption2.weight(.semibold))
+                    .font(.system(size: 8, weight: .semibold))
             }
             .foregroundStyle(.primary)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 2)
             .background(.ultraThinMaterial, in: Capsule())
         }
     }

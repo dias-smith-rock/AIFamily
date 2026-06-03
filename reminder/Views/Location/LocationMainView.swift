@@ -113,6 +113,7 @@ struct LocationMainView: View {
             fitCameraToLiveAndDisplayedMembers()
         }
         .onChange(of: liveManager.isLiveModeActive) { _, isActive in
+            viewModel.setLiveModeActive(isActive)
             if isActive {
                 viewModel.collapseMemberList()
             }
@@ -208,10 +209,12 @@ struct LocationMainView: View {
                         LivePeerMapMarker(
                             displayName: item.displayName,
                             batteryLevel: item.batteryLevel,
-                            isCharging: item.isCharging
+                            isCharging: item.isCharging,
+                            headingDegrees: item.headingDegrees
                         )
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.latitude)
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.longitude)
+                        .animation(.linear(duration: 0.12), value: item.headingDegrees)
                     }
                 }
             }
@@ -227,23 +230,25 @@ struct LocationMainView: View {
         let id: UUID
         let displayName: String
         let coordinate: CLLocationCoordinate2D
+        let headingDegrees: Double?
         let batteryLevel: Int
         let isCharging: Bool
     }
 
     private var liveHuddleMapAnnotations: [LiveMapAnnotationItem] {
-        liveManager.livePeerLocations.compactMap { membershipId, coordinate in
-            guard let member = viewModel.members.first(where: { $0.id == membershipId }) else {
-                return nil
+        liveManager.livePeerLocations
+            .map { membershipId, coordinate in
+                let member = viewModel.members.first(where: { $0.id == membershipId })
+                return LiveMapAnnotationItem(
+                    id: membershipId,
+                    displayName: member?.displayName ?? String(localized: "群组成员"),
+                    coordinate: coordinate,
+                    headingDegrees: liveManager.livePeerHeadings[membershipId],
+                    batteryLevel: member?.clampedBatteryLevel ?? 100,
+                    isCharging: member?.isCharging ?? false
+                )
             }
-            return LiveMapAnnotationItem(
-                id: membershipId,
-                displayName: member.displayName,
-                coordinate: coordinate,
-                batteryLevel: member.clampedBatteryLevel,
-                isCharging: member.isCharging
-            )
-        }
+            .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
     }
 
     @MapContentBuilder
@@ -279,13 +284,25 @@ struct LocationMainView: View {
 
             if let current = member.currentLocation?.coordinate {
                 Annotation(member.displayName, coordinate: current) {
-                    UserMapAvatarView(
-                        displayName: member.displayName,
-                        batteryLevel: member.clampedBatteryLevel,
-                        isCharging: member.isCharging
-                    )
-                    .animation(.easeInOut(duration: 0.45), value: current.latitude)
-                    .animation(.easeInOut(duration: 0.45), value: current.longitude)
+                    if liveManager.isLiveModeActive, member.isCurrentUser {
+                        LivePeerMapMarker(
+                            displayName: member.displayName,
+                            batteryLevel: member.clampedBatteryLevel,
+                            isCharging: member.isCharging,
+                            headingDegrees: liveManager.currentHeadingDegrees
+                        )
+                        .animation(.easeInOut(duration: 0.45), value: current.latitude)
+                        .animation(.easeInOut(duration: 0.45), value: current.longitude)
+                        .animation(.linear(duration: 0.12), value: liveManager.currentHeadingDegrees)
+                    } else {
+                        UserMapAvatarView(
+                            displayName: member.displayName,
+                            batteryLevel: member.clampedBatteryLevel,
+                            isCharging: member.isCharging
+                        )
+                        .animation(.easeInOut(duration: 0.45), value: current.latitude)
+                        .animation(.easeInOut(duration: 0.45), value: current.longitude)
+                    }
                 }
             }
         }
@@ -411,9 +428,11 @@ struct LocationMainView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            ghostModeEntryRow
-                .padding(.horizontal, 12)
-                .padding(.bottom, 8)
+            if liveManager.isLiveModeActive == false {
+                ghostModeEntryRow
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 8)
+            }
 
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)

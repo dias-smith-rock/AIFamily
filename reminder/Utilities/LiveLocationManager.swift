@@ -17,6 +17,9 @@ final class LiveLocationManager: NSObject, ObservableObject {
     /// 当前 Huddle 内活跃成员的 **membership id**（来自 Presence，非数据库）。
     @Published private(set) var activeParticipants: [UUID] = []
     @Published private(set) var livePeerLocations: [UUID: CLLocationCoordinate2D] = [:]
+    /// 本机指南针朝向（真北顺时针角度）；仅 Live 模式有效。
+    @Published private(set) var currentHeadingDegrees: Double?
+    @Published private(set) var livePeerHeadings: [UUID: Double] = [:]
     @Published var showInactivityEndedNotice = false
 
     private let locationStateService: LocationStateDataService
@@ -39,6 +42,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
     #endif
 
     private var lastLoggedDBLocation: CLLocation?
+    private var lastLiveBroadcastLocation: CLLocation?
     private var isChannelSubscribed = false
 
     init(locationStateService: LocationStateDataService) {
@@ -87,6 +91,8 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
         isLiveModeActive = true
         livePeerLocations = [:]
+        livePeerHeadings = [:]
+        currentHeadingDegrees = nil
         showInactivityEndedNotice = false
         lastLoggedDBLocation = nil
         lastMovementAnchor = nil
@@ -95,8 +101,12 @@ final class LiveLocationManager: NSObject, ObservableObject {
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
         locationManager.distanceFilter = kCLDistanceFilterNone
         locationManager.startUpdatingLocation()
+        locationManager.startUpdatingHeading()
 
         await ensureChannelConnected(shouldTrack: true)
+        #if DEBUG
+        print("[LiveLocationManager] startLiveSession peers=\(livePeerLocations.count)")
+        #endif
         startInactivityWatchdog()
     }
 
@@ -105,8 +115,11 @@ final class LiveLocationManager: NSObject, ObservableObject {
         guard isLiveModeActive else { return }
 
         locationManager.stopUpdatingLocation()
+        locationManager.stopUpdatingHeading()
         locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         locationManager.distanceFilter = 100
+        currentHeadingDegrees = nil
+        lastLiveBroadcastLocation = nil
 
         inactivityCancellable?.cancel()
         inactivityCancellable = nil
@@ -123,6 +136,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
         isLiveModeActive = false
         livePeerLocations = [:]
+        livePeerHeadings = [:]
 
         if silent == false, inactivitySecondsRemaining <= 0 {
             showInactivityEndedNotice = true
@@ -147,7 +161,9 @@ final class LiveLocationManager: NSObject, ObservableObject {
         let topic = "circle:\(householdId.uuidString.lowercased()):live_huddle"
 
         if liveChannel == nil {
-            let channel = SupabaseManager.shared.client.realtimeV2.channel(topic)
+            let channel = SupabaseManager.shared.client.realtimeV2.channel(topic) { config in
+                config.isPrivate = true
+            }
             liveChannel = channel
 
             presenceSubscription?.cancel()
@@ -157,27 +173,17 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 }
             }
 
-            receiveTask?.cancel()
-            receiveTask = Task { @MainActor [weak self] in
-                guard let self else { return }
-                for await message in channel.broadcastStream(event: "peer_move") {
-                    guard !Task.isCancelled else { break }
-                    if let payload = try? message.decode(as: LiveLocationBroadcastPayload.self) {
-                        guard payload.membershipId != currentMembershipId else { continue }
-                        livePeerLocations[payload.membershipId] = CLLocationCoordinate2D(
-                            latitude: payload.lat,
-                            longitude: payload.lng
-                        )
-                    }
-                }
-            }
-
             do {
                 try await channel.subscribeWithError()
                 isChannelSubscribed = true
-            } catch {
                 #if DEBUG
-                print("[LiveLocationManager] subscribe failed: \(error.localizedDescription)")
+                print("[LiveLocationManager] subscribed topic=\(topic)")
+                #endif
+                startPeerMoveBroadcastReceiver(on: channel)
+            } catch {
+                isChannelSubscribed = false
+                #if DEBUG
+                print("[LiveLocationManager] subscribe failed topic=\(topic): \(error.localizedDescription)")
                 #endif
             }
         }
@@ -189,6 +195,9 @@ final class LiveLocationManager: NSObject, ObservableObject {
             )
             do {
                 try await liveChannel?.track(payload)
+                #if DEBUG
+                print("[LiveLocationManager] track membership=\(currentMembershipId.uuidString.prefix(8))")
+                #endif
             } catch {
                 #if DEBUG
                 print("[LiveLocationManager] track failed: \(error.localizedDescription)")
@@ -218,34 +227,101 @@ final class LiveLocationManager: NSObject, ObservableObject {
         participantSet = []
         activeParticipants = []
         livePeerLocations = [:]
+        livePeerHeadings = [:]
+        currentHeadingDegrees = nil
+        lastLiveBroadcastLocation = nil
     }
 
     #if canImport(Supabase)
+    private func startPeerMoveBroadcastReceiver(on channel: RealtimeChannelV2) {
+        receiveTask?.cancel()
+        receiveTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await message in channel.broadcastStream(event: "peer_move") {
+                guard !Task.isCancelled else { break }
+                handlePeerMoveBroadcast(message)
+            }
+        }
+    }
+
+    private func handlePeerMoveBroadcast(_ message: JSONObject) {
+        do {
+            guard let payloadJSON = message["payload"] else {
+                #if DEBUG
+                print("[LiveLocationManager] peer_move missing payload envelope")
+                #endif
+                return
+            }
+            let payload = try payloadJSON.decode(as: LiveLocationBroadcastPayload.self)
+            guard payload.membershipId != currentMembershipId else { return }
+
+            let coordinate = CLLocationCoordinate2D(latitude: payload.lat, longitude: payload.lng)
+            let previousCount = livePeerLocations.count
+            livePeerLocations[payload.membershipId] = coordinate
+            if let heading = payload.headingDegrees {
+                livePeerHeadings[payload.membershipId] = heading
+            }
+            #if DEBUG
+            if livePeerLocations.count != previousCount {
+                print(
+                    "[LiveLocationManager] livePeerLocations count=\(livePeerLocations.count) "
+                        + "latest=\(payload.membershipId.uuidString.prefix(8))"
+                )
+            }
+            #endif
+        } catch {
+            #if DEBUG
+            print("[LiveLocationManager] peer_move decode failed: \(error.localizedDescription)")
+            #endif
+        }
+    }
+
     private func handlePresenceChange(_ presence: any PresenceAction) {
+        let previousCount = activeParticipants.count
+
         if let joins = try? presence.decodeJoins(as: LiveHuddlePresencePayload.self) {
             for entry in joins where entry.status == "active" {
                 participantSet.insert(entry.membershipId)
             }
+        } else {
+            #if DEBUG
+            print("[LiveLocationManager] presence joins decode failed")
+            #endif
         }
+
         if let leaves = try? presence.decodeLeaves(as: LiveHuddlePresencePayload.self) {
             for entry in leaves {
                 participantSet.remove(entry.membershipId)
                 livePeerLocations.removeValue(forKey: entry.membershipId)
+                livePeerHeadings.removeValue(forKey: entry.membershipId)
             }
+        } else {
+            #if DEBUG
+            print("[LiveLocationManager] presence leaves decode failed")
+            #endif
         }
+
         activeParticipants = participantSet.sorted {
             $0.uuidString.localizedStandardCompare($1.uuidString) == .orderedAscending
         }
+
+        #if DEBUG
+        if activeParticipants.count != previousCount {
+            print("[LiveLocationManager] activeParticipants count=\(activeParticipants.count)")
+        }
+        #endif
     }
     #endif
 
-    private func sendLiveBroadcast(_ location: CLLocation) async {
+    private func sendLiveBroadcast(_ location: CLLocation, heading: Double? = nil) async {
         #if canImport(Supabase)
         guard isLiveModeActive, let channel = liveChannel, let currentMembershipId else { return }
+        lastLiveBroadcastLocation = location
         let payload = LiveLocationBroadcastPayload(
             membershipId: currentMembershipId,
             lat: location.coordinate.latitude,
-            lng: location.coordinate.longitude
+            lng: location.coordinate.longitude,
+            headingDegrees: heading ?? currentHeadingDegrees
         )
         do {
             try await channel.broadcast(event: "peer_move", message: payload)
@@ -329,6 +405,7 @@ extension LiveLocationManager: CLLocationManagerDelegate {
             switch manager.authorizationStatus {
             case .authorizedAlways, .authorizedWhenInUse:
                 manager.startUpdatingLocation()
+                manager.startUpdatingHeading()
             default:
                 break
             }
@@ -343,6 +420,26 @@ extension LiveLocationManager: CLLocationManagerDelegate {
                 await sendLiveBroadcast(location)
             }
             await uploadToDatabaseIfNeeded(location)
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        guard newHeading.headingAccuracy >= 0 else { return }
+        let degrees: Double
+        if newHeading.trueHeading >= 0 {
+            degrees = newHeading.trueHeading
+        } else if newHeading.magneticHeading >= 0 {
+            degrees = newHeading.magneticHeading
+        } else {
+            return
+        }
+
+        Task { @MainActor in
+            guard isLiveModeActive else { return }
+            currentHeadingDegrees = degrees
+            if let location = lastLiveBroadcastLocation ?? manager.location {
+                await sendLiveBroadcast(location, heading: degrees)
+            }
         }
     }
 

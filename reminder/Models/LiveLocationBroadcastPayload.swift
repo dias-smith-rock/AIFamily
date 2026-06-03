@@ -5,6 +5,8 @@ struct LiveLocationBroadcastPayload: Codable, Hashable, Sendable {
     let membershipId: UUID
     let lat: Double
     let lng: Double
+    /// 手机顶部朝向（真北顺时针角度，0–360）；旧客户端可省略。
+    let headingDegrees: Double?
     let timestamp: Date
     let batteryLevel: Int
     let isCharging: Bool
@@ -13,6 +15,7 @@ struct LiveLocationBroadcastPayload: Codable, Hashable, Sendable {
         membershipId: UUID,
         lat: Double,
         lng: Double,
+        headingDegrees: Double? = nil,
         timestamp: Date = Date(),
         batteryLevel: Int = 100,
         isCharging: Bool = false
@@ -20,6 +23,7 @@ struct LiveLocationBroadcastPayload: Codable, Hashable, Sendable {
         self.membershipId = membershipId
         self.lat = lat
         self.lng = lng
+        self.headingDegrees = headingDegrees
         self.timestamp = timestamp
         self.batteryLevel = batteryLevel
         self.isCharging = isCharging

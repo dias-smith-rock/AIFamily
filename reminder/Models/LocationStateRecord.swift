@@ -1,13 +1,28 @@
 import Foundation
 
 /// `location_states` 表行（列名经 `SupabaseCodec` 与驼峰互转）。
-struct LocationStateRecord: Identifiable, Codable, Equatable, Sendable {
+struct LocationStateRecord: Identifiable, Equatable, Sendable {
     let id: UUID
     let householdId: UUID
     let membershipId: UUID
     var currentLocation: LocationPayload?
     var historyLocation1: LocationPayload?
     var historyLocation2: LocationPayload?
+    /// 默认 `false`：仅用户选择「保持隐藏」后为 `true`。
     var isGhostMode: Bool
     var updatedAt: Date
+}
+
+extension LocationStateRecord: Codable {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        householdId = try container.decode(UUID.self, forKey: .householdId)
+        membershipId = try container.decode(UUID.self, forKey: .membershipId)
+        currentLocation = try container.decodeIfPresent(LocationPayload.self, forKey: .currentLocation)
+        historyLocation1 = try container.decodeIfPresent(LocationPayload.self, forKey: .historyLocation1)
+        historyLocation2 = try container.decodeIfPresent(LocationPayload.self, forKey: .historyLocation2)
+        isGhostMode = try container.decodeIfPresent(Bool.self, forKey: .isGhostMode) ?? false
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
 }
