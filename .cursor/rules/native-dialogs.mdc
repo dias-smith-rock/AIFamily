@@ -1,0 +1,48 @@
+---
+description: 弹窗必须使用 SwiftUI 原生 alert/confirmationDialog，禁止 popover 与自定义气泡式确认层
+globs: reminder/**/*.swift
+alwaysApply: true
+---
+
+# 原生弹窗（非气泡）
+
+## 强制规则
+
+1. **确认、删除、退出、多选操作** 仅允许：
+   - `.alert` — 居中警告（1～2 个主操作 + 取消；破坏性操作用 `role: .destructive`）
+   - `.confirmationDialog` — 多选项操作表（必须有 `role: .cancel`）
+2. **禁止** `.popover` 用于确认、菜单、开关、删除等交互。
+3. **禁止** 自定义 ZStack 半透明卡片、尖角气泡、锚点浮层模拟 Alert/Action Sheet。
+4. **允许** `.sheet` / `.fullScreenCover` 用于表单、列表、创建/编辑等多步流程（不是确认弹窗）。
+
+## iPad 非气泡呈现
+
+凡使用 `.confirmationDialog`，在修饰链末尾追加：
+
+```swift
+.forcesNonPopoverDialogPresentation()
+```
+
+实现见 `reminder/Utilities/NativeDialogPresentation.swift`（`presentationCompactAdaptation(.sheet)`），避免 iPad 将操作表显示为 popover 气泡。
+
+`.alert` 在 iPad 上为居中模态，无需额外修饰。
+
+## 选型速查
+
+| 场景 | 用法 |
+|------|------|
+| 删除 / 退出 / 不可逆单步确认 | `.alert` + `destructive` + `cancel` |
+| 3 项及以上并列操作（扫码方式、附件来源） | `.confirmationDialog` + `cancel` + `.forcesNonPopoverDialogPresentation()` |
+| 多选项在 iPad 仍呈气泡时 | **改用 `.sheet` 列表**（如 `LocationGhostOptionsSheet`） |
+| 组织切换、长表单 | `.sheet`（如 `SwitchGroupSheetView`） |
+
+## 文案
+
+- View 层 Title / Message / Button 使用**中文原文**作 `LocalizedStringKey`（见 `chinese-localization-keys` skill）。
+- 细则与示例：`/.cursor/skills/native-dialogs/SKILL.md`
+
+## 提交前检查
+
+```bash
+rg '\.popover' reminder --glob '*.swift'   # 应为 0
+```

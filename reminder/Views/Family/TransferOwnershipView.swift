@@ -86,6 +86,7 @@ struct TransferOwnershipView: View {
             } message: {
                 Text("此操作不可撤销。确认后您将立即失去创建者权限。")
             }
+            .forcesNonPopoverDialogPresentation()
 
             if viewModel.isTransferring {
                 Color.black.opacity(0.15)

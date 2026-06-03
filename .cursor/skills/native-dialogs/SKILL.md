@@ -72,7 +72,12 @@ description: >-
 
 - `titleVisibility: .visible` 当标题需要明确语境时加上
 - 需要说明时使用 `message: { Text("请选择删除范围。") }`
-- iPhone 为底部 sheet；iPad 可能仍为 popover 形态——属系统适配，**不要**为此再写自定义 `.popover` 面板
+- iPhone 为底部 sheet；**iPad 必须非气泡**：在 `confirmationDialog` 修饰链末尾加 `.forcesNonPopoverDialogPresentation()`（`reminder/Utilities/NativeDialogPresentation.swift`），禁止依赖系统 popover 形态，禁止为此手写 `.popover` 面板
+
+## 项目级 Rule
+
+- 始终生效：`.cursor/rules/native-dialogs.mdc`
+- 根规则摘要：`.cursorrules` → UI 与设计系统规范 → 弹窗（非气泡）
 
 ## 多语言（与 Catalog 绑定）
 
@@ -101,6 +106,7 @@ description: >-
 ## 重构检查清单
 
 - [ ] 全仓库无 `.popover` 用于确认或操作菜单（`rg '\.popover' reminder`）
+- [ ] 每个 `.confirmationDialog` 已追加 `.forcesNonPopoverDialogPresentation()`
 - [ ] 无自定义「仿 Alert」全屏遮罩组件（除非改为 `.alert`）
 - [ ] 高危操作使用 `.alert` + `role: .destructive`
 - [ ] 多选项使用 `.confirmationDialog` + `role: .cancel`

@@ -1327,6 +1327,12 @@
         }
       }
     },
+    "⚡️ Live Huddle · %lld 人在线" : {
+
+    },
+    "⚡️ Live Huddle Active (%lld people inside)" : {
+
+    },
     "✅ 该任务已完结" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3727,6 +3733,9 @@
         }
       }
     },
+    "Join" : {
+
+    },
     "Large" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -3785,6 +3794,12 @@
           }
         }
       }
+    },
+    "LIVE" : {
+
+    },
+    "Live Huddle 已因长时间无活动自动结束" : {
+
     },
     "Maybe Later" : {
 
@@ -8144,9 +8159,6 @@
         }
       }
     },
-    "保持隐藏" : {
-
-    },
     "修改此任务及以后" : {
       "localizations" : {
         "ar" : {
@@ -8204,9 +8216,6 @@
           }
         }
       }
-    },
-    "停止隐藏" : {
-
     },
     "儿童活动" : {
       "extractionState" : "stale",
@@ -18878,9 +18887,6 @@
         }
       }
     },
-    "暂停 1 小时" : {
-
-    },
     "暂无任务" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -24187,9 +24193,6 @@
           }
         }
       }
-    },
-    "直到今晚" : {
-
     },
     "相机扫码" : {
       "localizations" : {
@@ -30210,6 +30213,9 @@
         }
       }
     },
+    "进入实时位置模式" : {
+
+    },
     "进行中" : {
       "localizations" : {
         "ar" : {
@@ -30384,6 +30390,9 @@
         }
       }
     },
+    "退出后，群组将不再接收你的秒级位置更新。" : {
+
+    },
     "退出后您将无法查看群内的任务和消息。" : {
       "localizations" : {
         "ar" : {
@@ -30499,6 +30508,12 @@
           }
         }
       }
+    },
+    "退出实时位置模式" : {
+
+    },
+    "退出实时模式" : {
+
     },
     "退出登录" : {
       "localizations" : {

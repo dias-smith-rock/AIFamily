@@ -161,6 +161,7 @@ struct HouseholdSelectionView: View {
             }
             Button("取消", role: .cancel) {}
         }
+        .forcesNonPopoverDialogPresentation()
         .sheet(isPresented: $showCameraScanner) {
             QRScannerSheet { raw in
                 handleRecognizedCode(raw)

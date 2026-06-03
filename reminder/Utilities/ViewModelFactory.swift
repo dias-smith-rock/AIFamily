@@ -90,6 +90,10 @@ final class ViewModelFactory: ObservableObject {
             previewMembers: nil
         )
     }
+
+    func makeLiveLocationManager() -> LiveLocationManager {
+        LiveLocationManager(locationStateService: services.locationStateService)
+    }
 }
 
 @MainActor
@@ -142,6 +146,10 @@ enum AppViewModels {
 
     static func makeLocationMainViewModel() -> LocationMainViewModel {
         factory.makeLocationMainViewModel()
+    }
+
+    static func makeLiveLocationManager() -> LiveLocationManager {
+        factory.makeLiveLocationManager()
     }
 }
 

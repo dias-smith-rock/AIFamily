@@ -613,6 +613,7 @@ struct CreateTaskView: View {
         } message: {
             Text("请选择修改范围。")
         }
+        .forcesNonPopoverDialogPresentation()
         .confirmationDialog("添加附件", isPresented: $showAttachmentOptions, titleVisibility: .visible) {
             Button("照片图库") {
                 isPresentingPhotoLibrary = true
@@ -624,6 +625,7 @@ struct CreateTaskView: View {
             }
             Button("取消", role: .cancel) {}
         }
+        .forcesNonPopoverDialogPresentation()
         .photosPicker(
             isPresented: $isPresentingPhotoLibrary,
             selection: $selectedItems,

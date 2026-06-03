@@ -1,18 +1,31 @@
 import MapKit
 import SwiftUI
 
+#if canImport(Supabase)
+import Supabase
+#endif
+
 struct LocationMainView: View {
     var isTabActive: Bool = true
 
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel: LocationMainViewModel
+    @StateObject private var liveManager: LiveLocationManager
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var isExitLiveModeAlertPresented = false
 
-    init(isTabActive: Bool = true, viewModel: LocationMainViewModel? = nil) {
+    init(
+        isTabActive: Bool = true,
+        viewModel: LocationMainViewModel? = nil,
+        liveManager: LiveLocationManager? = nil
+    ) {
         self.isTabActive = isTabActive
         _viewModel = StateObject(
             wrappedValue: viewModel ?? AppViewModels.makeLocationMainViewModel()
+        )
+        _liveManager = StateObject(
+            wrappedValue: liveManager ?? AppViewModels.makeLiveLocationManager()
         )
     }
 
@@ -24,71 +37,141 @@ struct LocationMainView: View {
                 mapDismissOverlay
             }
 
-            VStack {
-                HStack {
-                    Spacer()
-                    ghostModeControl
+            VStack(spacing: 0) {
+                HStack(alignment: .top) {
+                    liveModeToggleControl
+                    Spacer(minLength: 0)
+                    if liveManager.isLiveModeActive == false {
+                        ghostModeControl
+                    }
                 }
+                .padding(.horizontal, 16)
                 .padding(.top, 12)
-                .padding(.trailing, 16)
+
+                liveModeTopOverlay
+                    .padding(.horizontal, 12)
+                    .padding(.top, liveManager.showInactivityEndedNotice ? 8 : 0)
 
                 Spacer()
 
-                HStack {
-                    Spacer()
-                    memberListOverlay
+                if liveManager.isLiveModeActive == false {
+                    HStack {
+                        Spacer()
+                        memberListOverlay
+                    }
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
                 }
-                .padding(.trailing, 16)
-                .padding(.bottom, 12)
             }
         }
-        .confirmationDialog(
-            "位置共享",
-            isPresented: $viewModel.isGhostOptionsPresented,
-            titleVisibility: .visible
-        ) {
-            Button("暂停 1 小时") {
-                Task { await viewModel.applyGhostOption(.pauseOneHour) }
+        .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
+        .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)
+        .animation(.easeInOut(duration: 0.3), value: liveManager.activeParticipants.count)
+        .sheet(isPresented: $viewModel.isGhostOptionsPresented) {
+            LocationGhostOptionsSheet(isCurrentUserGhost: viewModel.isCurrentUserGhost) { option in
+                Task { await viewModel.applyGhostOption(option) }
             }
-            Button("直到今晚") {
-                Task { await viewModel.applyGhostOption(.untilTonight) }
-            }
-            Button("保持隐藏") {
-                Task { await viewModel.applyGhostOption(.keepHidden) }
-            }
-            Button("停止隐藏") {
-                Task { await viewModel.applyGhostOption(.stopHiding) }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+        .alert("退出实时位置模式", isPresented: $isExitLiveModeAlertPresented) {
+            Button("退出实时模式", role: .destructive) {
+                Task { await liveManager.leaveLiveSession() }
             }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("选择隐藏位置的时长")
+            Text("退出后，群组将不再接收你的秒级位置更新。")
         }
         .task(id: locationRefreshToken) {
             guard isTabActive else { return }
-            viewModel.bind(
-                householdId: appRouter.selectedHouseholdId,
-                currentMembershipId: appRouter.selectedMembershipId
-            )
+            await bindLiveContext()
             await viewModel.refresh()
             await viewModel.captureCurrentUserLocationForMap()
-            fitCameraToDisplayedMembers()
+            await liveManager.observeHuddleLobby()
+            fitCameraToLiveAndDisplayedMembers()
         }
         .onChange(of: isTabActive) { _, active in
             if active == false {
                 viewModel.collapseMemberList()
             } else {
                 Task {
+                    await bindLiveContext()
+                    await liveManager.observeHuddleLobby()
                     await viewModel.captureCurrentUserLocationForMap()
-                    fitCameraToDisplayedMembers()
+                    fitCameraToLiveAndDisplayedMembers()
                 }
             }
         }
         .onChange(of: viewModel.mapDisplayedMembers.map(\.id)) { _, _ in
-            fitCameraToDisplayedMembers()
+            fitCameraToLiveAndDisplayedMembers()
         }
         .onChange(of: viewModel.currentUserLiveLocation) { _, _ in
-            fitCameraToDisplayedMembers()
+            fitCameraToLiveAndDisplayedMembers()
         }
+        .onChange(of: liveManager.livePeerLocations.count) { _, _ in
+            fitCameraToLiveAndDisplayedMembers()
+        }
+        .onChange(of: liveManager.isLiveModeActive) { _, isActive in
+            if isActive {
+                viewModel.collapseMemberList()
+            }
+            fitCameraToLiveAndDisplayedMembers()
+        }
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                liveManager.recordUserInteraction()
+            }
+        )
+    }
+
+    @ViewBuilder
+    private var liveModeTopOverlay: some View {
+        if liveManager.showInactivityEndedNotice {
+            inactivityEndedBanner
+                .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    private var inactivityEndedBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "moon.zzz.fill")
+                .foregroundStyle(.secondary)
+            Text("Live Huddle 已因长时间无活动自动结束")
+                .font(.subheadline.weight(.medium))
+            Spacer(minLength: 0)
+            Button("知道了") {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    liveManager.dismissInactivityNotice()
+                }
+            }
+            .font(.subheadline.weight(.semibold))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .onAppear {
+            Task {
+                try? await Task.sleep(for: .seconds(4))
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    liveManager.dismissInactivityNotice()
+                }
+            }
+        }
+    }
+
+    private var huddleParticipantMembers: [UserLocationState] {
+        viewModel.members.filter { liveManager.activeParticipants.contains($0.id) }
+    }
+
+    private var lobbyParticipantMembers: [UserLocationState] {
+        huddleParticipantMembers
+    }
+
+    private var shouldShowLobbyPortal: Bool {
+        liveManager.isHuddleActive
+            && liveManager.isLiveModeActive == false
+            && lobbyParticipantMembers.isEmpty == false
     }
 
     private var locationRefreshToken: String {
@@ -97,13 +180,13 @@ struct LocationMainView: View {
         return "\(isTabActive)-\(household)-\(membership)"
     }
 
-    /// 列表展开时点击地图区域收起浮层（不阻挡右下角按钮与面板）。
     private var mapDismissOverlay: some View {
         Color.clear
             .contentShape(Rectangle())
             .ignoresSafeArea()
             .onTapGesture {
                 viewModel.collapseMemberList()
+                liveManager.recordUserInteraction()
             }
             .accessibilityLabel("收起群组成员列表")
             .accessibilityAddTraits(.isButton)
@@ -114,7 +197,23 @@ struct LocationMainView: View {
     private var mapLayer: some View {
         Map(position: $cameraPosition) {
             ForEach(viewModel.mapDisplayedMembers) { member in
-                memberMapContent(for: member)
+                if shouldRenderStandardMapContent(for: member) {
+                    memberMapContent(for: member)
+                }
+            }
+
+            if liveManager.isLiveModeActive {
+                ForEach(liveHuddleMapAnnotations) { item in
+                    Annotation(item.displayName, coordinate: item.coordinate) {
+                        LivePeerMapMarker(
+                            displayName: item.displayName,
+                            batteryLevel: item.batteryLevel,
+                            isCharging: item.isCharging
+                        )
+                        .animation(.easeInOut(duration: 0.5), value: item.coordinate.latitude)
+                        .animation(.easeInOut(duration: 0.5), value: item.coordinate.longitude)
+                    }
+                }
             }
         }
         .mapControls {
@@ -122,6 +221,29 @@ struct LocationMainView: View {
             MapCompass()
         }
         .ignoresSafeArea(edges: .top)
+    }
+
+    private struct LiveMapAnnotationItem: Identifiable {
+        let id: UUID
+        let displayName: String
+        let coordinate: CLLocationCoordinate2D
+        let batteryLevel: Int
+        let isCharging: Bool
+    }
+
+    private var liveHuddleMapAnnotations: [LiveMapAnnotationItem] {
+        liveManager.livePeerLocations.compactMap { membershipId, coordinate in
+            guard let member = viewModel.members.first(where: { $0.id == membershipId }) else {
+                return nil
+            }
+            return LiveMapAnnotationItem(
+                id: membershipId,
+                displayName: member.displayName,
+                coordinate: coordinate,
+                batteryLevel: member.clampedBatteryLevel,
+                isCharging: member.isCharging
+            )
+        }
     }
 
     @MapContentBuilder
@@ -169,23 +291,63 @@ struct LocationMainView: View {
         }
     }
 
+    // MARK: - Live mode toggle (top-leading)
+
+    private var liveModeToggleControl: some View {
+        Button {
+            liveManager.recordUserInteraction()
+            if liveManager.isLiveModeActive {
+                isExitLiveModeAlertPresented = true
+            } else {
+                Task {
+                    await liveManager.startLiveSession()
+                    fitCameraToLiveAndDisplayedMembers()
+                }
+            }
+        } label: {
+            Image(systemName: liveModeToggleSymbolName)
+                .font(.title2)
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(liveModeToggleForegroundColor)
+                .mapFloatingControlPlate()
+                .overlay {
+                    if liveManager.isLiveModeActive {
+                        Circle()
+                            .stroke(Color.green, lineWidth: 2)
+                    }
+                }
+        }
+        .accessibilityLabel(liveManager.isLiveModeActive ? "退出实时位置模式" : "进入实时位置模式")
+        .animation(.easeInOut(duration: 0.25), value: liveManager.isLiveModeActive)
+    }
+
+    private var liveModeToggleSymbolName: String {
+        liveManager.isLiveModeActive
+            ? "location.slash.circle.fill"
+            : "antenna.radiowaves.left.and.right"
+    }
+
+    private var liveModeToggleForegroundColor: Color {
+        liveManager.isLiveModeActive ? .orange : .green
+    }
+
     // MARK: - Ghost control
 
     private var ghostModeControl: some View {
         Button {
+            liveManager.recordUserInteraction()
             viewModel.presentGhostOptions()
         } label: {
             Image(systemName: viewModel.isCurrentUserGhost ? "location.slash.fill" : "location.circle.fill")
                 .font(.title2)
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(viewModel.isCurrentUserGhost ? Color.secondary : Color.blue)
-                .frame(width: 44, height: 44)
-                .background(.ultraThinMaterial, in: Circle())
+                .mapFloatingControlPlate()
         }
         .accessibilityLabel(viewModel.isCurrentUserGhost ? "位置已隐藏" : "位置共享设置")
     }
 
-    // MARK: - Member list (bottom-right)
+    // MARK: - Member list
 
     private var memberListOverlay: some View {
         VStack(alignment: .trailing, spacing: 10) {
@@ -197,18 +359,19 @@ struct LocationMainView: View {
             memberListToggleButton
         }
         .animation(.easeInOut(duration: 0.25), value: viewModel.isMemberListExpanded)
+        .animation(.easeInOut(duration: 0.3), value: shouldShowLobbyPortal)
     }
 
     private var memberListToggleButton: some View {
         Button {
+            liveManager.recordUserInteraction()
             viewModel.toggleMemberList()
         } label: {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "person.2.fill")
                     .font(.title3)
                     .foregroundStyle(Color.blue)
-                    .frame(width: 48, height: 48)
-                    .background(.ultraThinMaterial, in: Circle())
+                    .mapFloatingControlPlate(diameter: MapFloatingControlStyle.largeDiameter)
 
                 if viewModel.selectedMemberIDs.isEmpty == false {
                     Text("\(viewModel.selectedMemberIDs.count)")
@@ -236,6 +399,18 @@ struct LocationMainView: View {
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
 
+            if shouldShowLobbyPortal {
+                LiveHuddleLobbyCard(participants: lobbyParticipantMembers) {
+                    Task {
+                        await liveManager.startLiveSession()
+                        fitCameraToLiveAndDisplayedMembers()
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
             ghostModeEntryRow
                 .padding(.horizontal, 12)
                 .padding(.bottom, 8)
@@ -262,7 +437,10 @@ struct LocationMainView: View {
                         LocationMemberSheetRow(
                             member: member,
                             isSelected: viewModel.isSelected(memberID: member.id),
+                            isInLiveHuddle: liveManager.isLiveModeActive
+                                && liveManager.activeParticipants.contains(member.id),
                             onSelectionChange: { selected in
+                                liveManager.recordUserInteraction()
                                 viewModel.setSelected(selected, for: member.id)
                             }
                         )
@@ -286,6 +464,7 @@ struct LocationMainView: View {
 
     private var organizationSwitcherRow: some View {
         Button {
+            liveManager.recordUserInteraction()
             groupSwitcher.showSwitchGroupDialog = true
         } label: {
             HStack(spacing: 10) {
@@ -321,6 +500,7 @@ struct LocationMainView: View {
 
     private var ghostModeEntryRow: some View {
         Button {
+            liveManager.recordUserInteraction()
             viewModel.presentGhostOptions()
         } label: {
             HStack(spacing: 10) {
@@ -345,6 +525,32 @@ struct LocationMainView: View {
 
     // MARK: - Helpers
 
+    private func bindLiveContext() async {
+        viewModel.bind(
+            householdId: appRouter.selectedHouseholdId,
+            currentMembershipId: appRouter.selectedMembershipId
+        )
+
+        var authUserId: UUID?
+        #if canImport(Supabase)
+        authUserId = try? await SupabaseManager.shared.client.auth.session.user.id
+        #endif
+
+        liveManager.bind(
+            householdId: appRouter.selectedHouseholdId,
+            currentMembershipId: appRouter.selectedMembershipId,
+            currentUserId: authUserId
+        )
+    }
+
+    private func shouldRenderStandardMapContent(for member: UserLocationState) -> Bool {
+        if liveManager.isLiveModeActive,
+           liveManager.livePeerLocations[member.id] != nil {
+            return false
+        }
+        return true
+    }
+
     private func polylineSegments(for coordinates: [CLLocationCoordinate2D]) -> [[CLLocationCoordinate2D]] {
         guard coordinates.count >= 2 else { return [] }
         return zip(coordinates, coordinates.dropFirst()).map { [$0, $1] }
@@ -355,8 +561,11 @@ struct LocationMainView: View {
         return Color.blue.opacity(0.18 + (0.82 * progress))
     }
 
-    private func fitCameraToDisplayedMembers() {
-        let coordinates = viewModel.mapDisplayedMembers.flatMap(\.breadcrumbCoordinates)
+    private func fitCameraToLiveAndDisplayedMembers() {
+        var coordinates = viewModel.mapDisplayedMembers.flatMap(\.breadcrumbCoordinates)
+        if liveManager.isLiveModeActive {
+            coordinates.append(contentsOf: liveManager.livePeerLocations.values)
+        }
         guard let first = coordinates.first else {
             cameraPosition = .automatic
             return

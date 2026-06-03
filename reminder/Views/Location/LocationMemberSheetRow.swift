@@ -3,6 +3,7 @@ import SwiftUI
 struct LocationMemberSheetRow: View {
     let member: UserLocationState
     let isSelected: Bool
+    let isInLiveHuddle: Bool
     let onSelectionChange: (Bool) -> Void
     @Environment(\.locale) private var locale
 
@@ -39,7 +40,11 @@ struct LocationMemberSheetRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: avatarSize, alignment: .center)
 
-            if member.isGhostMode == false, member.isVirtualMember == false {
+            if isInLiveHuddle {
+                LiveTrackingBadge()
+                    .frame(minWidth: 44, alignment: .trailing)
+                    .frame(height: avatarSize)
+            } else if member.isGhostMode == false, member.isVirtualMember == false {
                 HStack(spacing: 4) {
                     Image(systemName: member.isCharging ? "bolt.fill" : batterySymbol)
                         .font(.caption)
@@ -58,6 +63,9 @@ struct LocationMemberSheetRow: View {
     }
 
     private var titleLine: String {
+        if isInLiveHuddle {
+            return "\(member.displayName) · LIVE"
+        }
         if member.isGhostMode {
             return "\(member.displayName) · 👻 位置已隐藏"
         }
@@ -138,18 +146,21 @@ struct LocationMemberSheetRow: View {
         LocationMemberSheetRow(
             member: UserLocationState.previewHousehold[0],
             isSelected: true,
+            isInLiveHuddle: false,
             onSelectionChange: { _ in }
         )
         Divider()
         LocationMemberSheetRow(
             member: UserLocationState.previewHousehold[1],
             isSelected: false,
+            isInLiveHuddle: true,
             onSelectionChange: { _ in }
         )
         Divider()
         LocationMemberSheetRow(
             member: UserLocationState.previewHousehold[2],
             isSelected: false,
+            isInLiveHuddle: false,
             onSelectionChange: { _ in }
         )
     }
