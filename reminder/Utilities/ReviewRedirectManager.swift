@@ -23,8 +23,6 @@ final class ReviewRedirectManager: ObservableObject {
 
     @Published var showReviewAlert = false
 
-    let appStoreReviewURL = "https://apps.apple.com/app/idYOUR_APP_ID?action=write-review"
-
     func checkAndTriggerAlert(for milestone: Milestone) {
         guard shouldPrompt(for: milestone) else { return }
         markPrompted(for: milestone)
@@ -81,7 +79,7 @@ struct ReviewAlertModifier: ViewModifier {
     }
 
     private func openReviewPage() {
-        guard let url = URL(string: manager.appStoreReviewURL) else { return }
+        guard let url = AppInfo.appStoreWriteReviewURL else { return }
         #if canImport(UIKit)
         UIApplication.shared.open(url)
         #endif
