@@ -578,7 +578,8 @@ struct LocationMainView: View {
         liveManager.bind(
             householdId: appRouter.selectedHouseholdId,
             currentMembershipId: appRouter.selectedMembershipId,
-            currentUserId: authUserId
+            currentUserId: authUserId,
+            displayName: viewModel.currentUser?.displayName
         )
     }
 

@@ -12,6 +12,8 @@ final class LiveLocationManager: NSObject, ObservableObject {
     static let inactivityTimeoutSeconds = 900
     static let databaseAggregationMeters: Double = 200
     private static let movementResetsInactivityMeters: Double = 8
+    private static let peerMoveMinInterval: TimeInterval = 1.0
+    private static let presenceRefreshMinInterval: TimeInterval = 5.0
 
     @Published private(set) var isLiveModeActive = false
     /// 当前 Huddle 内活跃成员的 **membership id**（来自 Presence，非数据库）。
@@ -30,6 +32,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
     private var householdId: UUID?
     private var currentMembershipId: UUID?
     private var currentUserId: UUID?
+    private var currentDisplayName: String = "群组成员"
+    private var connectedChannelHouseholdId: UUID?
+    private var pendingPresenceTrack = false
+    private var householdTransitionTask: Task<Void, Never>?
 
     private var participantSet: Set<UUID> = []
     private var inactivitySecondsRemaining = inactivityTimeoutSeconds
@@ -38,6 +44,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
     private var inactivityCancellable: AnyCancellable?
     private var batteryCancellable: AnyCancellable?
     private var receiveTask: Task<Void, Never>?
+    private var receiveSyncRequestTask: Task<Void, Never>?
 
     #if canImport(Supabase)
     private var liveChannel: RealtimeChannelV2?
@@ -46,7 +53,17 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     private var lastLoggedDBLocation: CLLocation?
     private var lastLiveBroadcastLocation: CLLocation?
+    private var lastPeerMoveSentAt: Date?
+    private var lastPresenceRefreshAt: Date?
     private var isChannelSubscribed = false
+
+    #if DEBUG
+    private func liveLog(_ message: String) {
+        print("[LiveLocationManager] \(message)")
+    }
+    #else
+    private func liveLog(_ message: String) {}
+    #endif
 
     init(locationStateService: LocationStateDataService) {
         self.locationStateService = locationStateService
@@ -90,26 +107,45 @@ final class LiveLocationManager: NSObject, ObservableObject {
         return isLiveModeActive || activeParticipants.contains(currentMembershipId)
     }
 
-    func bind(householdId: UUID?, currentMembershipId: UUID?, currentUserId: UUID?) {
+    func bind(
+        householdId: UUID?,
+        currentMembershipId: UUID?,
+        currentUserId: UUID?,
+        displayName: String? = nil
+    ) {
         let householdChanged = self.householdId != householdId
         self.householdId = householdId
         self.currentMembershipId = currentMembershipId
         self.currentUserId = currentUserId
+        if let trimmed = displayName?.trimmingCharacters(in: .whitespacesAndNewlines),
+           trimmed.isEmpty == false {
+            currentDisplayName = trimmed
+        }
 
         if householdChanged {
-            Task {
+            householdTransitionTask?.cancel()
+            householdTransitionTask = Task { @MainActor in
                 if isLiveModeActive {
                     await leaveLiveSession(silent: true)
                 }
                 await disconnectChannel()
-                await observeHuddleLobby()
             }
         }
     }
 
     /// 被动订阅 Presence，用于 Lobby 卡片展示（不 track、不开启高精度 GPS）。
     func observeHuddleLobby() async {
-        await ensureChannelConnected(shouldTrack: false)
+        guard isLiveModeActive == false else {
+            liveLog("observeHuddleLobby skipped: live mode active")
+            return
+        }
+        for attempt in 1...3 {
+            await ensureChannelConnected(shouldTrack: false, subscribeAttempt: 0)
+            if isChannelSubscribed { return }
+            if Task.isCancelled { return }
+            guard attempt < 3 else { break }
+            try? await Task.sleep(nanoseconds: UInt64(attempt) * 400_000_000)
+        }
     }
 
     /// 加入 Live Huddle：track Presence + 高精度 GPS + 广播位置。
@@ -134,9 +170,19 @@ final class LiveLocationManager: NSObject, ObservableObject {
         locationManager.startUpdatingHeading()
 
         await ensureChannelConnected(shouldTrack: true)
-        #if DEBUG
-        print("[LiveLocationManager] startLiveSession peers=\(livePeerLocations.count)")
-        #endif
+        liveLog(
+            "startLiveSession after track: participants=\(participantSet.count) "
+                + "peerLocations=\(livePeerLocations.count) liveActive=\(isLiveModeActive)"
+        )
+        await seedPeerLocationsFromDatabase(
+            for: participantSet.filter { $0 != currentMembershipId }
+        )
+        await requestPeerLocationSync()
+        await rebroadcastLocationToPeers()
+        liveLog(
+            "startLiveSession ready: participants=\(activeParticipants.count) "
+                + "peerLocations=\(livePeerLocations.count)"
+        )
         startInactivityWatchdog()
     }
 
@@ -165,6 +211,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         }
 
         isLiveModeActive = false
+        pendingPresenceTrack = false
         livePeerLocations = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
@@ -185,17 +232,47 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     // MARK: - Channel
 
-    private func ensureChannelConnected(shouldTrack: Bool) async {
-        #if canImport(Supabase)
-        guard let householdId else { return }
+    private func liveHuddleTopic(for householdId: UUID) -> String {
+        "circle:\(householdId.uuidString.lowercased()):live_huddle"
+    }
 
-        let topic = "circle:\(householdId.uuidString.lowercased()):live_huddle"
+    private func awaitHouseholdTransitionIfNeeded() async {
+        guard let task = householdTransitionTask else { return }
+        await task.value
+        householdTransitionTask = nil
+    }
+
+    private func ensureChannelConnected(shouldTrack: Bool, subscribeAttempt: Int = 0) async {
+        #if canImport(Supabase)
+        await awaitHouseholdTransitionIfNeeded()
+
+        guard let householdId else {
+            #if DEBUG
+            print("[LiveLocationManager] skip channel connect: householdId is nil")
+            #endif
+            return
+        }
+
+        pendingPresenceTrack = pendingPresenceTrack || shouldTrack
+
+        if let connectedChannelHouseholdId, connectedChannelHouseholdId != householdId {
+            #if DEBUG
+            print(
+                "[LiveLocationManager] household changed \(connectedChannelHouseholdId.uuidString.prefix(8))"
+                    + " → \(householdId.uuidString.prefix(8)), reconnecting channel"
+            )
+            #endif
+            await disconnectChannel()
+        }
+
+        let topic = liveHuddleTopic(for: householdId)
 
         if liveChannel == nil {
             let channel = SupabaseManager.shared.client.realtimeV2.channel(topic) { config in
                 config.isPrivate = true
             }
             liveChannel = channel
+            connectedChannelHouseholdId = householdId
 
             presenceSubscription?.cancel()
             presenceSubscription = channel.onPresenceChange { [weak self] presence in
@@ -206,43 +283,181 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
             do {
                 try await channel.subscribeWithError()
-                isChannelSubscribed = true
-                #if DEBUG
-                print("[LiveLocationManager] subscribed topic=\(topic)")
-                #endif
+                guard liveChannel === channel else { return }
+                isChannelSubscribed = channel.status == .subscribed
+                liveLog("subscribed topic=\(topic) status=\(channel.status)")
                 startPeerMoveBroadcastReceiver(on: channel)
+                startPeerSyncRequestReceiver(on: channel)
+                await trackPresenceIfNeeded(on: channel)
+            } catch is CancellationError {
+                await abandonChannel(channel)
+                guard Task.isCancelled == false, subscribeAttempt < 1 else {
+                    #if DEBUG
+                    print("⚠️ [LiveLocationManager] subscribe cancelled topic=\(topic)")
+                    #endif
+                    return
+                }
+                #if DEBUG
+                print("⚠️ [LiveLocationManager] subscribe cancelled, retrying topic=\(topic)")
+                #endif
+                try? await Task.sleep(nanoseconds: 350_000_000)
+                guard Task.isCancelled == false else { return }
+                await ensureChannelConnected(shouldTrack: shouldTrack, subscribeAttempt: subscribeAttempt + 1)
             } catch {
-                isChannelSubscribed = false
-                #if DEBUG
-                print("[LiveLocationManager] subscribe failed topic=\(topic): \(error.localizedDescription)")
-                #endif
+                await abandonChannel(channel)
+                print("❌ [Realtime Error] subscribe failed topic=\(topic): \(error)")
             }
-        }
-
-        if shouldTrack, isChannelSubscribed, let currentUserId, let currentMembershipId {
-            let payload = LiveHuddlePresencePayload(
-                userId: currentUserId,
-                membershipId: currentMembershipId
-            )
-            do {
-                try await liveChannel?.track(payload)
-                #if DEBUG
-                print("[LiveLocationManager] track membership=\(currentMembershipId.uuidString.prefix(8))")
-                #endif
-            } catch {
-                #if DEBUG
-                print("[LiveLocationManager] track failed: \(error.localizedDescription)")
-                #endif
-            }
+        } else if isLiveChannelReady() {
+            isChannelSubscribed = true
+            await trackPresenceIfNeeded(on: liveChannel)
+        } else if isLiveModeActive {
+            liveLog("channel lost during live — reconnecting")
+            await reconnectChannelForLiveSession()
+        } else {
+            await disconnectChannel()
         }
         #endif
     }
 
-    private func disconnectChannel() async {
+    private func isLiveChannelReady() -> Bool {
+        #if canImport(Supabase)
+        guard let channel = liveChannel else { return false }
+        return channel.status == .subscribed
+        #else
+        return false
+        #endif
+    }
+
+    @discardableResult
+    private func ensureLiveChannelReady() async -> Bool {
+        #if canImport(Supabase)
+        if isLiveChannelReady() {
+            isChannelSubscribed = true
+            return true
+        }
+        liveLog(
+            "channel not ready status=\(String(describing: liveChannel?.status)) "
+                + "liveActive=\(isLiveModeActive)"
+        )
+        if isLiveModeActive {
+            await reconnectChannelForLiveSession()
+        } else {
+            await ensureChannelConnected(shouldTrack: pendingPresenceTrack)
+        }
+        let ready = isLiveChannelReady()
+        isChannelSubscribed = ready
+        return ready
+        #else
+        return false
+        #endif
+    }
+
+    private func reconnectChannelForLiveSession() async {
+        liveLog("reconnectChannelForLiveSession preserve peer cache")
+        pendingPresenceTrack = true
+        await disconnectChannel(preserveLiveState: true)
+        await ensureChannelConnected(shouldTrack: true)
+    }
+
+    private func ensurePresenceTracked() async {
+        pendingPresenceTrack = true
+        guard await ensureLiveChannelReady() else { return }
+        await trackPresenceIfNeeded(on: liveChannel)
+    }
+
+    #if canImport(Supabase)
+    private func abandonChannel(_ channel: RealtimeChannelV2) async {
+        receiveTask?.cancel()
+        receiveTask = nil
+        receiveSyncRequestTask?.cancel()
+        receiveSyncRequestTask = nil
+        presenceSubscription?.cancel()
+        presenceSubscription = nil
+        await SupabaseManager.shared.client.realtimeV2.removeChannel(channel)
+        if liveChannel === channel {
+            liveChannel = nil
+            connectedChannelHouseholdId = nil
+        }
+        isChannelSubscribed = false
+    }
+    #endif
+
+    #if canImport(Supabase)
+    private func currentLocationForPresence() -> CLLocation? {
+        lastLiveBroadcastLocation ?? locationManager.location
+    }
+
+    private func makePresencePayload(includeLocation: Bool) -> LiveHuddlePresencePayload? {
+        guard let currentUserId, let currentMembershipId else { return nil }
+        let location = includeLocation ? currentLocationForPresence() : nil
+        return LiveHuddlePresencePayload(
+            userId: currentUserId,
+            displayName: currentDisplayName,
+            membershipId: currentMembershipId,
+            lat: location?.coordinate.latitude,
+            lng: location?.coordinate.longitude,
+            headingDegrees: currentHeadingDegrees,
+            batteryLevel: batteryMonitor.batteryLevel,
+            isCharging: batteryMonitor.isCharging
+        )
+    }
+
+    private func trackPresenceIfNeeded(on channel: RealtimeChannelV2?) async {
+        guard pendingPresenceTrack, let channel else { return }
+        guard channel.status == .subscribed else {
+            liveLog("track skipped: channel status=\(channel.status)")
+            return
+        }
+        isChannelSubscribed = true
+        guard let payload = makePresencePayload(includeLocation: true) else {
+            liveLog("track skipped: missing user/membership context")
+            return
+        }
+
+        do {
+            try await channel.track(payload)
+            pendingPresenceTrack = false
+            lastPresenceRefreshAt = Date()
+            liveLog(
+                "track user_id=\(payload.userId.prefix(8)) name=\(payload.name) "
+                    + "membership=\(payload.membershipId.prefix(8)) "
+                    + "coord=\(payload.hasCoordinate ? "yes" : "no")"
+            )
+        } catch {
+            print("❌ [Realtime Error] track failed: \(error)")
+        }
+    }
+
+    private func syncPresenceWithCurrentLocation(_ location: CLLocation) async {
+        guard isLiveModeActive else { return }
+        let now = Date()
+        if let last = lastPresenceRefreshAt,
+           now.timeIntervalSince(last) < Self.presenceRefreshMinInterval {
+            return
+        }
+        guard await ensureLiveChannelReady(), let channel = liveChannel else { return }
+        guard let payload = makePresencePayload(includeLocation: true) else { return }
+
+        do {
+            try await channel.track(payload)
+            lastPresenceRefreshAt = now
+            liveLog(
+                "presence refresh lat=\(location.coordinate.latitude) "
+                    + "lng=\(location.coordinate.longitude)"
+            )
+        } catch {
+            liveLog("presence refresh failed: \(error.localizedDescription)")
+        }
+    }
+    #endif
+
+    private func disconnectChannel(preserveLiveState: Bool = false) async {
         inactivityCancellable?.cancel()
         inactivityCancellable = nil
         receiveTask?.cancel()
         receiveTask = nil
+        receiveSyncRequestTask?.cancel()
+        receiveSyncRequestTask = nil
 
         #if canImport(Supabase)
         presenceSubscription?.cancel()
@@ -252,16 +467,21 @@ final class LiveLocationManager: NSObject, ObservableObject {
             await SupabaseManager.shared.client.realtimeV2.removeChannel(channel)
         }
         liveChannel = nil
+        connectedChannelHouseholdId = nil
+        pendingPresenceTrack = false
+        householdTransitionTask = nil
         #endif
 
         isChannelSubscribed = false
-        participantSet = []
-        activeParticipants = []
-        livePeerLocations = [:]
-        livePeerHeadings = [:]
-        livePeerBattery = [:]
-        currentHeadingDegrees = nil
-        lastLiveBroadcastLocation = nil
+        if preserveLiveState == false {
+            participantSet = []
+            activeParticipants = []
+            livePeerLocations = [:]
+            livePeerHeadings = [:]
+            livePeerBattery = [:]
+            currentHeadingDegrees = nil
+            lastLiveBroadcastLocation = nil
+        }
     }
 
     private func broadcastBatteryOrLocationUpdate() async {
@@ -283,12 +503,73 @@ final class LiveLocationManager: NSObject, ObservableObject {
         }
     }
 
+    private func startPeerSyncRequestReceiver(on channel: RealtimeChannelV2) {
+        receiveSyncRequestTask?.cancel()
+        receiveSyncRequestTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for await message in channel.broadcastStream(event: "peer_sync_request") {
+                guard !Task.isCancelled else { break }
+                handlePeerSyncRequest(message)
+            }
+        }
+    }
+
+    private struct PeerSyncRequestPayload: Codable, Sendable {
+        let membershipId: UUID
+    }
+
+    private func handlePeerSyncRequest(_ message: JSONObject) {
+        do {
+            guard let payloadJSON = message["payload"] else {
+                liveLog("peer_sync_request ignored: missing payload envelope")
+                return
+            }
+            let payload = try payloadJSON.decode(as: PeerSyncRequestPayload.self)
+            liveLog(
+                "peer_sync_request received from membership=\(payload.membershipId.uuidString.prefix(8)) "
+                    + "liveActive=\(isLiveModeActive)"
+            )
+            guard payload.membershipId != currentMembershipId else { return }
+            guard isLiveModeActive else {
+                liveLog("peer_sync_request ignored: not in live mode")
+                return
+            }
+            Task { await rebroadcastLocationToPeers() }
+        } catch {
+            print("❌ [Realtime Error] Failed to decode metadata: \(error)")
+        }
+    }
+
+    private func applyPeerLocationFromPresence(_ entry: LiveHuddlePresencePayload) {
+        guard let membershipUUID = entry.membershipUUID, membershipUUID != currentMembershipId else { return }
+        guard let lat = entry.lat, let lng = entry.lng else {
+            liveLog(
+                "presence join without coords membership=\(entry.membershipId.prefix(8)) name=\(entry.name)"
+            )
+            return
+        }
+
+        let hadLocation = livePeerLocations[membershipUUID] != nil
+        livePeerLocations[membershipUUID] = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+        if let heading = entry.headingDegrees {
+            livePeerHeadings[membershipUUID] = heading
+        }
+        if let level = entry.batteryLevel {
+            livePeerBattery[membershipUUID] = LivePeerBatteryState(
+                level: level,
+                isCharging: entry.isCharging ?? false
+            )
+        }
+        liveLog(
+            "presence coords applied membership=\(entry.membershipId.prefix(8)) "
+                + "lat=\(lat) lng=\(lng) updated=\(hadLocation)"
+        )
+    }
+
     private func handlePeerMoveBroadcast(_ message: JSONObject) {
         do {
             guard let payloadJSON = message["payload"] else {
-                #if DEBUG
-                print("[LiveLocationManager] peer_move missing payload envelope")
-                #endif
+                print("❌ [Realtime Error] peer_move missing payload envelope")
                 return
             }
             let payload = try payloadJSON.decode(as: LiveLocationBroadcastPayload.self)
@@ -304,62 +585,192 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 level: payload.batteryLevel,
                 isCharging: payload.isCharging
             )
-            #if DEBUG
-            if livePeerLocations.count != previousCount {
-                print(
-                    "[LiveLocationManager] livePeerLocations count=\(livePeerLocations.count) "
-                        + "latest=\(payload.membershipId.uuidString.prefix(8))"
-                )
-            }
-            #endif
+            liveLog(
+                "peer_move received membership=\(payload.membershipId.uuidString.prefix(8)) "
+                    + "lat=\(payload.lat) lng=\(payload.lng) "
+                    + "peerCount \(previousCount)→\(livePeerLocations.count)"
+            )
         } catch {
-            #if DEBUG
-            print("[LiveLocationManager] peer_move decode failed: \(error.localizedDescription)")
-            #endif
+            print("❌ [Realtime Error] Failed to decode metadata: \(error)")
         }
     }
 
     private func handlePresenceChange(_ presence: any PresenceAction) {
+        let isSync = presence.rawMessage.event == "presence_state"
+        let previousParticipants = participantSet
+        var nextParticipants = isSync ? Set<UUID>() : participantSet
+        var newlyJoined = Set<UUID>()
+        var joinedInThisDiff = Set<UUID>()
+
+        liveLog(
+            "presence \(isSync ? "sync" : "diff") joins=\(presence.joins.count) "
+                + "leaves=\(presence.leaves.count) before=\(previousParticipants.count)"
+        )
+
+        for (_, presenceEntry) in presence.joins {
+            do {
+                let entry = try presenceEntry.decodeState(as: LiveHuddlePresencePayload.self)
+                guard entry.status == "active", let membershipUUID = entry.membershipUUID else { continue }
+                joinedInThisDiff.insert(membershipUUID)
+                if membershipUUID != currentMembershipId, previousParticipants.contains(membershipUUID) == false {
+                    newlyJoined.insert(membershipUUID)
+                }
+                nextParticipants.insert(membershipUUID)
+                applyPeerLocationFromPresence(entry)
+            } catch {
+                print("❌ [Realtime Error] Failed to decode metadata: \(error)")
+            }
+        }
+
+        for (_, presenceEntry) in presence.leaves {
+            do {
+                let entry = try presenceEntry.decodeState(as: LiveHuddlePresencePayload.self)
+                guard let membershipUUID = entry.membershipUUID else { continue }
+
+                if joinedInThisDiff.contains(membershipUUID) {
+                    liveLog("presence leave ignored (re-track) membership=\(entry.membershipId.prefix(8))")
+                    continue
+                }
+
+                if membershipUUID == currentMembershipId, isLiveModeActive {
+                    liveLog("presence self-leave while live — re-tracking")
+                    nextParticipants.insert(membershipUUID)
+                    Task { await ensurePresenceTracked() }
+                    continue
+                }
+
+                nextParticipants.remove(membershipUUID)
+                if isLiveModeActive == false {
+                    livePeerLocations.removeValue(forKey: membershipUUID)
+                    livePeerHeadings.removeValue(forKey: membershipUUID)
+                    livePeerBattery.removeValue(forKey: membershipUUID)
+                }
+                liveLog("presence leave membership=\(entry.membershipId.prefix(8))")
+            } catch {
+                print("❌ [Realtime Error] Failed to decode metadata: \(error)")
+            }
+        }
+
+        applyActiveParticipants(nextParticipants, newlyJoined: newlyJoined)
+    }
+
+    private func applyActiveParticipants(_ nextParticipants: Set<UUID>, newlyJoined: Set<UUID> = []) {
         let previousCount = activeParticipants.count
-
-        if let joins = try? presence.decodeJoins(as: LiveHuddlePresencePayload.self) {
-            for entry in joins where entry.status == "active" {
-                participantSet.insert(entry.membershipId)
-            }
-        } else {
-            #if DEBUG
-            print("[LiveLocationManager] presence joins decode failed")
-            #endif
-        }
-
-        if let leaves = try? presence.decodeLeaves(as: LiveHuddlePresencePayload.self) {
-            for entry in leaves {
-                participantSet.remove(entry.membershipId)
-                livePeerLocations.removeValue(forKey: entry.membershipId)
-                livePeerHeadings.removeValue(forKey: entry.membershipId)
-                livePeerBattery.removeValue(forKey: entry.membershipId)
-            }
-        } else {
-            #if DEBUG
-            print("[LiveLocationManager] presence leaves decode failed")
-            #endif
-        }
-
-        activeParticipants = participantSet.sorted {
+        participantSet = nextParticipants
+        activeParticipants = nextParticipants.sorted {
             $0.uuidString.localizedStandardCompare($1.uuidString) == .orderedAscending
         }
-
-        #if DEBUG
         if activeParticipants.count != previousCount {
-            print("[LiveLocationManager] activeParticipants count=\(activeParticipants.count)")
+            liveLog(
+                "activeParticipants \(previousCount)→\(activeParticipants.count) "
+                    + "ids=\(activeParticipants.map { $0.uuidString.prefix(8) }.joined(separator: ",")) "
+                    + "peerLocations=\(livePeerLocations.count)"
+            )
         }
-        #endif
+
+        guard isLiveModeActive else { return }
+
+        let peersMissingLocation = nextParticipants
+            .filter { $0 != currentMembershipId && livePeerLocations[$0] == nil }
+
+        if peersMissingLocation.isEmpty == false {
+            liveLog(
+                "peers missing live coords: "
+                    + peersMissingLocation.map { $0.uuidString.prefix(8) }.joined(separator: ",")
+            )
+            Task {
+                await seedPeerLocationsFromDatabase(for: peersMissingLocation)
+                await requestPeerLocationSync()
+            }
+        }
+
+        if newlyJoined.isEmpty == false {
+            liveLog(
+                "presence newly joined: "
+                    + newlyJoined.map { $0.uuidString.prefix(8) }.joined(separator: ",")
+            )
+            Task { await rebroadcastLocationToPeers() }
+        }
     }
     #endif
 
+    private func rebroadcastLocationToPeers() async {
+        guard isLiveModeActive else {
+            liveLog("rebroadcast skipped: not in live mode")
+            return
+        }
+        if let location = lastLiveBroadcastLocation ?? locationManager.location {
+            liveLog("rebroadcast lat=\(location.coordinate.latitude) lng=\(location.coordinate.longitude)")
+            await sendLiveBroadcast(location)
+        } else {
+            liveLog("rebroadcast skipped: no GPS fix yet")
+        }
+    }
+
+    private func requestPeerLocationSync() async {
+        #if canImport(Supabase)
+        guard isLiveModeActive, let currentMembershipId else {
+            liveLog("peer_sync_request skipped: live=\(isLiveModeActive)")
+            return
+        }
+        guard await ensureLiveChannelReady(), let channel = liveChannel else {
+            liveLog("peer_sync_request skipped: channel unavailable")
+            return
+        }
+        let payload = PeerSyncRequestPayload(membershipId: currentMembershipId)
+        do {
+            try await channel.broadcast(event: "peer_sync_request", message: payload)
+            liveLog("peer_sync_request sent membership=\(currentMembershipId.uuidString.prefix(8))")
+        } catch {
+            print("❌ [Realtime Error] peer_sync_request failed: \(error)")
+        }
+        #endif
+    }
+
+    /// 后进入 Live 时，用库中聚合位置作地图占位，直至收到秒级 `peer_move` / Presence 覆盖。
+    private func seedPeerLocationsFromDatabase(for membershipIds: Set<UUID>) async {
+        guard let householdId, membershipIds.isEmpty == false else { return }
+
+        liveLog("DB seed attempt for \(membershipIds.count) peer(s)")
+        for membershipId in membershipIds where membershipId != currentMembershipId {
+            guard livePeerLocations[membershipId] == nil else { continue }
+            do {
+                guard let record = try await locationStateService.fetchLocationState(
+                    householdId: householdId,
+                    membershipId: membershipId
+                ), let payload = record.currentLocation else {
+                    liveLog("DB seed empty row membership=\(membershipId.uuidString.prefix(8))")
+                    continue
+                }
+                livePeerLocations[membershipId] = payload.coordinate
+                liveLog(
+                    "DB seed ok membership=\(membershipId.uuidString.prefix(8)) "
+                        + "lat=\(payload.latitude) lng=\(payload.longitude)"
+                )
+            } catch {
+                liveLog("DB seed failed membership=\(membershipId.uuidString.prefix(8)): \(error.localizedDescription)")
+            }
+        }
+    }
+
     private func sendLiveBroadcast(_ location: CLLocation, heading: Double? = nil) async {
         #if canImport(Supabase)
-        guard isLiveModeActive, let channel = liveChannel, let currentMembershipId else { return }
+        guard isLiveModeActive, let currentMembershipId else {
+            liveLog("peer_move skipped: live=\(isLiveModeActive)")
+            return
+        }
+
+        let now = Date()
+        if let last = lastPeerMoveSentAt,
+           now.timeIntervalSince(last) < Self.peerMoveMinInterval {
+            return
+        }
+
+        guard await ensureLiveChannelReady(), let channel = liveChannel else {
+            liveLog("peer_move skipped: channel unavailable")
+            return
+        }
+
         lastLiveBroadcastLocation = location
         let payload = LiveLocationBroadcastPayload(
             membershipId: currentMembershipId,
@@ -371,10 +782,14 @@ final class LiveLocationManager: NSObject, ObservableObject {
         )
         do {
             try await channel.broadcast(event: "peer_move", message: payload)
+            lastPeerMoveSentAt = now
+            liveLog(
+                "peer_move sent membership=\(currentMembershipId.uuidString.prefix(8)) "
+                    + "lat=\(payload.lat) lng=\(payload.lng) ws=\(channel.status == .subscribed)"
+            )
+            await syncPresenceWithCurrentLocation(location)
         } catch {
-            #if DEBUG
-            print("[LiveLocationManager] broadcast failed: \(error.localizedDescription)")
-            #endif
+            print("❌ [Realtime Error] peer_move failed: \(error)")
         }
         #endif
     }
