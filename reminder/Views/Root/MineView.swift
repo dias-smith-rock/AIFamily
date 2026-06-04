@@ -269,9 +269,20 @@ struct MineView: View {
                     Task { await viewModel.contactSupport() }
                 } label: {
                     SettingsRowView(
-                        title: "支持",
-                        systemImage: "lifepreserver.circle.fill",
+                        title: "反馈",
+                        systemImage: "envelope.fill",
                         iconTint: .cyan
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    openAppStoreReview()
+                } label: {
+                    SettingsRowView(
+                        title: "支持我们",
+                        systemImage: "star.fill",
+                        iconTint: .yellow
                     )
                 }
                 .buttonStyle(.plain)
@@ -309,7 +320,7 @@ struct MineView: View {
                     )
                 }
             } header: {
-                mineSectionHeader("支持与法律")
+                mineSectionHeader("反馈与法律")
             }
 
             Section {
@@ -696,6 +707,13 @@ struct MineView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func openAppStoreReview() {
+        #if canImport(UIKit)
+        guard let url = AppInfo.appStoreWriteReviewURL else { return }
+        UIApplication.shared.open(url)
+        #endif
     }
 
     @MainActor
