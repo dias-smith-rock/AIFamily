@@ -23,6 +23,8 @@ final class ReviewRedirectManager: ObservableObject {
 
     @Published var showReviewAlert = false
 
+    let appStoreReviewURL = "https://apps.apple.com/app/idYOUR_APP_ID?action=write-review"
+
     func checkAndTriggerAlert(for milestone: Milestone) {
         guard shouldPrompt(for: milestone) else { return }
         markPrompted(for: milestone)
@@ -66,20 +68,20 @@ struct ReviewAlertModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(
-                "喜欢同圈吗？",
+                "Enjoying WeSync?",
                 isPresented: $manager.showReviewAlert
             ) {
-                Button("以后再说", role: .cancel) {}
-                Button("去评分") {
+                Button("Maybe Later", role: .cancel) {}
+                Button("Write a Review") {
                     openReviewPage()
                 }
             } message: {
-                Text("您的反馈能帮助我们为家庭和团队把应用做得更好。愿意花一点时间留个评价吗？")
+                Text("Your feedback helps us make the app even better for families and teams. Would you mind leaving a quick review?")
             }
     }
 
     private func openReviewPage() {
-        guard let url = AppInfo.appStoreWriteReviewURL else { return }
+        guard let url = URL(string: manager.appStoreReviewURL) else { return }
         #if canImport(UIKit)
         UIApplication.shared.open(url)
         #endif

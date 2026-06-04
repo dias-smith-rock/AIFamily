@@ -29,7 +29,7 @@ enum TaskReminderLabel {
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     default:
-                        Text(titleKey(forMinutes: minutes))
+                        Text("提前\(minutes)分钟")
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }

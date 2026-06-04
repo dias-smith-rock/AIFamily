@@ -1,10 +1,8 @@
 import SwiftUI
 
 struct LockScreenView: View {
-    let isAuthenticatingBiometrics: Bool
-    let isAuthenticatingPasscode: Bool
-    let onUnlockWithBiometrics: () -> Void
-    let onUnlockWithPasscode: () -> Void
+    let isAuthenticating: Bool
+    let onUnlock: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -22,9 +20,9 @@ struct LockScreenView: View {
                 .padding(.horizontal, 24)
 
             Button {
-                onUnlockWithBiometrics()
+                onUnlock()
             } label: {
-                if isAuthenticatingBiometrics {
+                if isAuthenticating {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
@@ -36,25 +34,7 @@ struct LockScreenView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(isAuthenticatingBiometrics || isAuthenticatingPasscode)
-            .padding(.horizontal, 24)
-
-            Button {
-                onUnlockWithPasscode()
-            } label: {
-                if isAuthenticatingPasscode {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                } else {
-                    Label("使用设备密码解锁", systemImage: "lock.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                }
-            }
-            .buttonStyle(.bordered)
-            .disabled(isAuthenticatingBiometrics || isAuthenticatingPasscode)
+            .disabled(isAuthenticating)
             .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -63,10 +43,5 @@ struct LockScreenView: View {
 }
 
 #Preview {
-    LockScreenView(
-        isAuthenticatingBiometrics: false,
-        isAuthenticatingPasscode: false,
-        onUnlockWithBiometrics: {},
-        onUnlockWithPasscode: {}
-    )
+    LockScreenView(isAuthenticating: false, onUnlock: {})
 }

@@ -11,7 +11,6 @@ struct MineView: View {
     @AppStorage("requireFaceID") private var requireFaceID = false
     @AppStorage(BackgroundLocationPreferences.storageKey) private var backgroundLocationEnabled = true
     @ObservedObject private var backgroundLocationCoordinator = BackgroundLocationCoordinator.shared
-    @State private var isVerifyingFaceIDEnrollment = false
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
@@ -220,21 +219,8 @@ struct MineView: View {
 
                     Spacer(minLength: 8)
 
-                    Toggle(
-                        "",
-                        isOn: Binding(
-                            get: { requireFaceID },
-                            set: { newValue in
-                                if newValue {
-                                    Task { await enableFaceIDIfVerified() }
-                                } else {
-                                    requireFaceID = false
-                                }
-                            }
-                        )
-                    )
-                    .labelsHidden()
-                    .disabled(isVerifyingFaceIDEnrollment)
+                    Toggle("", isOn: $requireFaceID)
+                        .labelsHidden()
                 }
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .combine)
@@ -306,20 +292,9 @@ struct MineView: View {
                     Task { await viewModel.contactSupport() }
                 } label: {
                     SettingsRowView(
-                        title: "反馈",
-                        systemImage: "envelope.fill",
+                        title: "支持",
+                        systemImage: "lifepreserver.circle.fill",
                         iconTint: .cyan
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    openAppStoreReview()
-                } label: {
-                    SettingsRowView(
-                        title: "支持我们",
-                        systemImage: "star.fill",
-                        iconTint: .yellow
                     )
                 }
                 .buttonStyle(.plain)
@@ -357,7 +332,7 @@ struct MineView: View {
                     )
                 }
             } header: {
-                mineSectionHeader("反馈与法律")
+                mineSectionHeader("支持与法律")
             }
 
             Section {
@@ -744,25 +719,6 @@ struct MineView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-    }
-
-    private func openAppStoreReview() {
-        #if canImport(UIKit)
-        guard let url = AppInfo.appStoreWriteReviewURL else { return }
-        UIApplication.shared.open(url)
-        #endif
-    }
-
-    @MainActor
-    private func enableFaceIDIfVerified() async {
-        guard requireFaceID == false else { return }
-        isVerifyingFaceIDEnrollment = true
-        defer { isVerifyingFaceIDEnrollment = false }
-        let manager = BiometricManager()
-        let verified = await manager.verifyEnrollmentForSettings()
-        if verified {
-            requireFaceID = true
-        }
     }
 
     @MainActor

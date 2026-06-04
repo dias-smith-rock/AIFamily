@@ -50,7 +50,7 @@ struct PendingView: View {
             Spacer()
 
             Button {
-                appRouter.goToHouseholdSelection()
+                appRouter.goToOrgRouting()
             } label: {
                 Text(AppLocalized.string("这不是我家？重新输入", locale: locale))
                     .font(.system(size: 15, weight: .semibold))

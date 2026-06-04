@@ -31,7 +31,7 @@ struct TaskAssigneeLabelView: View {
             if ids.count == 1 {
                 Text("成员")
             } else {
-                Text("\(ids.count) 人")
+                Text("\(ids.count) people")
             }
         } else {
             Text(verbatim: names.joined(separator: ", "))

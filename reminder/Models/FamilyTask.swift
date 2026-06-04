@@ -217,8 +217,12 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         attachmentUrls = try container.decodeIfPresent([String].self, forKey: .attachmentUrls)
         externalContacts = try container.decodeIfPresent([String: String].self, forKey: .externalContacts)
         locationData = try container.decodeIfPresent(LocationData.self, forKey: .locationData)
-        geofence = try container.decodeIfPresent(TaskGeofence.self, forKey: .geofence)
-        completionLocation = try container.decodeIfPresent(TaskCompletionLocation.self, forKey: .completionLocation)
+        geofence = Self.decodeLenientJSON(TaskGeofence.self, from: container, forKey: .geofence)
+        completionLocation = Self.decodeLenientJSON(
+            TaskCompletionLocation.self,
+            from: container,
+            forKey: .completionLocation
+        )
         externalSyncRefs = try container.decodeIfPresent(
             [String: [String: String]].self,
             forKey: .externalSyncRefs
@@ -232,7 +236,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         endDatetime = try container.decodeIfPresent(Date.self, forKey: .endDatetime)
         durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
             ?? Self.legacyCacheFallbackDurationMinutes
-        isAllDay = try container.decode(Bool.self, forKey: .isAllDay)
+        isAllDay = try container.decodeIfPresent(Bool.self, forKey: .isAllDay) ?? false
         recurrenceRule = try container.decodeIfPresent(String.self, forKey: .recurrenceRule)
         if let recurrenceEnd = try container.decodeIfPresent(Date.self, forKey: .recurrenceEndDate) {
             recurrenceEndDate = recurrenceEnd
@@ -294,6 +298,21 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 }
 
 extension FamilyTask {
+    /// JSONB 字段不完整时不拖垮整行任务解码（合并定位字段后常见残缺 `geofence`）。
+    private static func decodeLenientJSON<T: Decodable>(
+        _ type: T.Type,
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> T? {
+        guard container.contains(key) else { return nil }
+        if (try? container.decodeNil(forKey: key)) == true { return nil }
+        do {
+            return try container.decode(T.self, forKey: key)
+        } catch {
+            return nil
+        }
+    }
+
     /// 与数据库 `duration_minutes` 列默认值及时间轴 fallback 对齐。
     static let defaultDurationMinutes = 60
     /// 本地旧缓存缺少 `duration_minutes` 时的解码兜底（向下兼容）。

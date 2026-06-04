@@ -137,7 +137,6 @@ struct ContentView: View {
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
                     guard isUserLoggedIn else { return }
-                    guard biometricManager.isAuthenticating == false else { return }
                     _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
                     refreshForegroundLocationSchedulerContext()
                     Task {
@@ -188,13 +187,11 @@ struct ContentView: View {
             LoginView()
         } else if requireFaceID, biometricManager.isUnlocked == false {
             LockScreenView(
-                isAuthenticatingBiometrics: biometricManager.isAuthenticatingBiometrics,
-                isAuthenticatingPasscode: biometricManager.isAuthenticatingPasscode,
-                onUnlockWithBiometrics: { biometricManager.authenticateWithBiometrics() },
-                onUnlockWithPasscode: { biometricManager.authenticateWithPasscode() }
+                isAuthenticating: biometricManager.isAuthenticating,
+                onUnlock: { biometricManager.authenticate() }
             )
-            .task(id: biometricManager.lockPresentationGeneration) {
-                biometricManager.performAutoUnlockOnLockScreen()
+            .onAppear {
+                biometricManager.authenticate()
             }
         } else {
             authenticatedRoot
@@ -216,7 +213,7 @@ struct ContentView: View {
         case .activeMember:
             householdRoutingFallback
         case .unauthenticated:
-            HouseholdSelectionView()
+            routingBootstrapPlaceholder
         }
     }
 

@@ -38,8 +38,6 @@ final class AppRouter: ObservableObject {
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
     private var pendingPreferredHouseholdId: UUID?
 
-    private var refreshCoalesceTask: Task<Void, Never>?
-
     private struct OfflineHouseholdSnapshot: Codable {
         let householdId: UUID
         let membershipId: UUID?
@@ -100,19 +98,6 @@ final class AppRouter: ObservableObject {
     }
 
     func refreshStateFromBackend() async {
-        if let existing = refreshCoalesceTask {
-            await existing.value
-            return
-        }
-        let task = Task { @MainActor in
-            await performRefreshStateFromBackend()
-        }
-        refreshCoalesceTask = task
-        await task.value
-        refreshCoalesceTask = nil
-    }
-
-    private func performRefreshStateFromBackend() async {
         #if canImport(Supabase)
         if await NetworkMonitor.shared.isConnected == false {
             if clientHasPersistedSession(),
@@ -152,14 +137,14 @@ final class AppRouter: ObservableObject {
                     appState = .pendingApproval
                     debugLog("route.pendingApproval reason=no_active_membership")
                 } else {
-                    appState = .householdSelection
-                    debugLog("route.householdSelection reason=no_active_membership")
+                    appState = .orgRouting
+                    debugLog("route.orgRouting reason=no_active_membership")
                 }
                 selectableHouseholds = []
                 recentHouseholds = []
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
-                selectedProfileId = nil
+        selectedProfileId = nil
                 selectedHouseholdName = nil
                 selectedHouseholdDescription = ""
                 selectedHouseholdIsPremium = false
@@ -200,7 +185,7 @@ final class AppRouter: ObservableObject {
 
             selectedHouseholdId = nil
             selectedMembershipId = nil
-            selectedProfileId = nil
+        selectedProfileId = nil
             selectedHouseholdName = nil
             selectedHouseholdDescription = ""
             selectedHouseholdIsPremium = false
@@ -211,24 +196,20 @@ final class AppRouter: ObservableObject {
             // 仅在鉴权确实失效时回退到登录页；
             // 其余瞬时错误（网络、解码、RLS 变更等）保持当前页面，避免错误踢回登录。
             if isAuthenticationError(error) {
-                if appState != .activeMember {
-                    appState = .unauthenticated
-                    selectableHouseholds = []
-                    recentHouseholds = []
-                    selectedHouseholdId = nil
-                    selectedMembershipId = nil
-                    selectedProfileId = nil
-                    selectedHouseholdName = nil
-                    selectedHouseholdDescription = ""
-                    selectedHouseholdIsPremium = false
-                    debugLog("route.unauthenticated reason=auth_error")
-                } else {
-                    debugLog("route.keep_activeMember reason=auth_error")
-                }
+                appState = .unauthenticated
+                selectableHouseholds = []
+                recentHouseholds = []
+                selectedHouseholdId = nil
+                selectedMembershipId = nil
+        selectedProfileId = nil
+                selectedHouseholdName = nil
+                selectedHouseholdDescription = ""
+                selectedHouseholdIsPremium = false
+                debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
-                // 已有会话但拉取组织状态失败时，进入群组选择页，避免卡在登录页死循环。
-                appState = .householdSelection
-                debugLog("route.householdSelection reason=non_auth_error_while_unauthenticated")
+                // 已有会话但拉取组织状态失败时，至少进入组织路由页，避免卡在登录页死循环。
+                appState = .orgRouting
+                debugLog("route.orgRouting reason=non_auth_error_while_unauthenticated")
             }
         }
         #else
@@ -283,9 +264,9 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectableHouseholds = []
-        appState = .householdSelection
+        appState = .orgRouting
         #if DEBUG
-        print("[AppRouter] route.householdSelection reason=household_disbanded")
+        print("[AppRouter] route.orgRouting reason=household_disbanded")
         #endif
     }
 
@@ -297,9 +278,9 @@ final class AppRouter: ObservableObject {
 
         let remaining = selectableHouseholds.filter { $0.id != leftHouseholdId }
         guard let first = remaining.first else {
-            goToHouseholdSelection()
+            goToOrgRouting()
             #if DEBUG
-            print("[AppRouter] route.householdSelection reason=household_left_no_remaining")
+            print("[AppRouter] route.orgRouting reason=household_left_no_remaining")
             #endif
             return
         }
@@ -604,17 +585,12 @@ final class AppRouter: ObservableObject {
     }
 
     private func isAuthenticationError(_ error: Error) -> Bool {
-        if let routingError = error as? HouseholdRoutingError, case .unauthenticated = routingError {
-            return true
-        }
         let message = error.localizedDescription.lowercased()
-        return message.contains("jwt expired")
-            || message.contains("invalid jwt")
-            || message.contains("invalid refresh token")
-            || message.contains("refresh token not found")
-            || message.contains("session not found")
-            || message.contains("not authenticated")
+        return message.contains("jwt")
+            || message.contains("session")
             || message.contains("unauthenticated")
+            || message.contains("invalid refresh token")
+            || message.contains("auth")
     }
 
     private func membershipStatusSummary(_ memberships: [MembershipRow]) -> String {
