@@ -237,10 +237,16 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     func isSelected(memberID: UUID) -> Bool {
-        selectedMemberIDs.contains(memberID)
+        if isCurrentUserSelectionLocked(memberID: memberID) {
+            return true
+        }
+        return selectedMemberIDs.contains(memberID)
     }
 
     func setSelected(_ selected: Bool, for memberID: UUID) {
+        if isCurrentUserSelectionLocked(memberID: memberID) {
+            return
+        }
         guard let member = members.first(where: { $0.id == memberID }), member.isSelectableOnMap else {
             return
         }
@@ -249,6 +255,12 @@ final class LocationMainViewModel: ObservableObject {
         } else {
             selectedMemberIDs.remove(memberID)
         }
+    }
+
+    /// 当前登录成员始终在地图上展示，列表勾选不可取消。
+    func isCurrentUserSelectionLocked(memberID: UUID) -> Bool {
+        guard let currentMembershipId, memberID == currentMembershipId else { return false }
+        return members.first(where: { $0.id == memberID })?.isCurrentUser == true
     }
 
     func toggleMemberList() {
@@ -371,10 +383,25 @@ final class LocationMainViewModel: ObservableObject {
     private func reconcileSelectionAfterReload() {
         let selectableIDs = Set(members.filter(\.isSelectableOnMap).map(\.id))
         let visibleIDs = Set(members.filter(\.isVisibleOnMap).map(\.id))
+        let virtualIDs = Set(members.filter(\.isVirtualMember).map(\.id))
+        let defaultVisibleIDs = visibleIDs.subtracting(virtualIDs)
+        let defaultSelectableIDs = selectableIDs.subtracting(virtualIDs)
+
         selectedMemberIDs = selectedMemberIDs.intersection(selectableIDs)
         if selectedMemberIDs.isEmpty {
-            selectedMemberIDs = visibleIDs.isEmpty == false ? visibleIDs : selectableIDs
+            selectedMemberIDs = defaultVisibleIDs.isEmpty == false
+                ? defaultVisibleIDs
+                : defaultSelectableIDs
         }
+        pinCurrentUserInSelection()
+    }
+
+    private func pinCurrentUserInSelection() {
+        guard let currentMembershipId,
+              members.contains(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else {
+            return
+        }
+        selectedMemberIDs.insert(currentMembershipId)
     }
 
     private func endOfToday() -> Date {

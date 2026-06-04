@@ -21,11 +21,12 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
     var isCurrentUser: Bool
 
     var isVisibleOnMap: Bool {
-        isVirtualMember == false && isGhostMode == false && currentLocation != nil
+        isGhostMode == false && currentLocation != nil
     }
 
+    /// 含虚拟成员（硬件定位器档案）；隐身成员不可勾选。
     var isSelectableOnMap: Bool {
-        isVirtualMember == false && isGhostMode == false
+        isGhostMode == false
     }
 
     /// 时间顺序：最旧 → 最新（用于轨迹与渐变折线）。

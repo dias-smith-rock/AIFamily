@@ -38,9 +38,10 @@ struct LocationMainView: View {
             }
 
             VStack(spacing: 0) {
-                HStack(alignment: .top) {
+                HStack(alignment: .center, spacing: 0) {
                     liveModeToggleControl
                     Spacer(minLength: 0)
+                    mapRecenterControl
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -53,8 +54,7 @@ struct LocationMainView: View {
 
                 if liveManager.isLiveModeActive == false {
                     HStack(alignment: .bottom) {
-                        ghostModeControl
-                        Spacer()
+                        Spacer(minLength: 0)
                         memberListOverlay
                     }
                     .padding(.horizontal, 16)
@@ -66,13 +66,6 @@ struct LocationMainView: View {
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
         .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)
         .animation(.easeInOut(duration: 0.3), value: liveManager.activeParticipants.count)
-        .sheet(isPresented: $viewModel.isGhostOptionsPresented) {
-            LocationGhostOptionsSheet(isCurrentUserGhost: viewModel.isCurrentUserGhost) { option in
-                Task { await viewModel.applyGhostOption(option) }
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
         .alert("退出实时位置模式", isPresented: $isExitLiveModeAlertPresented) {
             Button("退出实时模式", role: .destructive) {
                 Task { await liveManager.leaveLiveSession() }
@@ -217,8 +210,8 @@ struct LocationMainView: View {
 
     private var mapLayer: some View {
         Map(position: $cameraPosition) {
-            ForEach(viewModel.mapDisplayedMembers) { member in
-                if shouldRenderStandardMapContent(for: member) {
+            if liveManager.isLiveModeActive == false {
+                ForEach(viewModel.mapDisplayedMembers) { member in
                     memberMapContent(for: member)
                 }
             }
@@ -248,7 +241,6 @@ struct LocationMainView: View {
             }
         }
         .mapControls {
-            MapUserLocationButton()
             MapCompass()
         }
         .ignoresSafeArea(edges: .top)
@@ -392,20 +384,19 @@ struct LocationMainView: View {
         liveManager.isLiveModeActive ? .orange : .green
     }
 
-    // MARK: - Ghost control
-
-    private var ghostModeControl: some View {
+    /// 替代系统 `MapUserLocationButton`，与左上角 Live 按钮同一行、同一安全区内边距。
+    private var mapRecenterControl: some View {
         Button {
             liveManager.recordUserInteraction()
-            viewModel.presentGhostOptions()
+            centerCameraOnCurrentUser()
         } label: {
-            Image(systemName: viewModel.isCurrentUserGhost ? "location.slash.fill" : "location.circle.fill")
+            Image(systemName: "location.circle.fill")
                 .font(.title2)
                 .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(viewModel.isCurrentUserGhost ? Color.secondary : Color.blue)
+                .foregroundStyle(Color.blue)
                 .mapFloatingControlPlate()
         }
-        .accessibilityLabel(viewModel.isCurrentUserGhost ? "位置已隐藏" : "位置共享设置")
+        .accessibilityLabel("定位到我的位置")
     }
 
     // MARK: - Member list
@@ -472,12 +463,6 @@ struct LocationMainView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            if liveManager.isLiveModeActive == false {
-                ghostModeEntryRow
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
-            }
-
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
@@ -503,6 +488,9 @@ struct LocationMainView: View {
                             isInLiveHuddle: liveManager.isLiveModeActive
                                 && liveManager.activeParticipants.contains(member.id),
                             onSelectionChange: { selected in
+                                guard viewModel.isCurrentUserSelectionLocked(memberID: member.id) == false else {
+                                    return
+                                }
                                 liveManager.recordUserInteraction()
                                 viewModel.setSelected(selected, for: member.id)
                             }
@@ -561,31 +549,6 @@ struct LocationMainView: View {
         .accessibilityLabel("切换群组，\(GroupSwitcherData.currentName(for: appRouter))")
     }
 
-    private var ghostModeEntryRow: some View {
-        Button {
-            liveManager.recordUserInteraction()
-            viewModel.presentGhostOptions()
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: viewModel.isCurrentUserGhost ? "location.slash.fill" : "location.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(viewModel.isCurrentUserGhost ? Color.secondary : Color.blue)
-                Text(viewModel.isCurrentUserGhost ? "位置隐身中 · 点按管理" : "开启位置隐身")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Helpers
 
     private func bindLiveContext() {
@@ -609,17 +572,28 @@ struct LocationMainView: View {
         )
     }
 
-    private func shouldRenderStandardMapContent(for member: UserLocationState) -> Bool {
-        if liveManager.isLiveModeActive,
-           liveManager.livePeerLocations[member.id] != nil {
-            return false
-        }
-        return true
-    }
-
     private func polylineSegments(for coordinates: [CLLocationCoordinate2D]) -> [[CLLocationCoordinate2D]] {
         guard coordinates.count >= 2 else { return [] }
         return zip(coordinates, coordinates.dropFirst()).map { [$0, $1] }
+    }
+
+    private func centerCameraOnCurrentUser() {
+        let coordinate: CLLocationCoordinate2D?
+        if let live = viewModel.currentUserLiveLocation {
+            coordinate = CLLocationCoordinate2D(latitude: live.latitude, longitude: live.longitude)
+        } else if let current = viewModel.currentUser?.currentLocation?.coordinate {
+            coordinate = current
+        } else {
+            coordinate = nil
+        }
+        guard let coordinate else { return }
+        cameraPosition = .region(
+            MKCoordinateRegion(
+                center: coordinate,
+                latitudinalMeters: 1_200,
+                longitudinalMeters: 1_200
+            )
+        )
     }
 
     private func fitCameraToLiveAndDisplayedMembers() {

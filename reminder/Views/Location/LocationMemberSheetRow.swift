@@ -44,7 +44,8 @@ struct LocationMemberSheetRow: View {
                 LiveTrackingBadge()
                     .frame(minWidth: 44, alignment: .trailing)
                     .frame(height: avatarSize)
-            } else if member.isGhostMode == false, member.isVirtualMember == false {
+            } else if member.isGhostMode == false,
+                      member.isVirtualMember == false || member.currentLocation != nil {
                 HStack(spacing: 4) {
                     Image(systemName: member.isCharging ? "bolt.fill" : batterySymbol)
                         .font(.caption)
@@ -69,15 +70,15 @@ struct LocationMemberSheetRow: View {
         if member.isGhostMode {
             return "\(member.displayName) · 👻 位置已隐藏"
         }
-        if member.isVirtualMember {
-            return "\(member.displayName) · 虚拟成员"
-        }
         return member.displayName
     }
 
     private var accessibilitySummary: String {
         if member.isVirtualMember {
-            return "\(member.displayName)，虚拟成员，暂无位置共享"
+            if member.currentLocation != nil {
+                return "\(member.displayName)，已选中时在地图上显示"
+            }
+            return "\(member.displayName)，暂无位置，勾选后将在有定位数据时显示"
         }
         if member.isGhostMode {
             return "\(member.displayName)，位置已隐藏"
@@ -95,40 +96,45 @@ struct LocationMemberSheetRow: View {
 
     @ViewBuilder
     private var selectionColumn: some View {
-        if member.isVirtualMember {
-            Image(systemName: "person.crop.circle.badge.questionmark")
-                .font(.body.weight(.medium))
-                .foregroundStyle(.tertiary)
-                .accessibilityHidden(true)
-        } else if member.isGhostMode {
+        if member.isGhostMode {
             Image(systemName: "location.slash")
                 .font(.body.weight(.medium))
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
-        } else {
-            Button {
-                onSelectionChange(isSelected == false)
-            } label: {
-                ZStack {
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundStyle(Color.blue)
-                    } else {
-                        Circle()
-                            .strokeBorder(Color.secondary.opacity(0.75), lineWidth: 2)
-                            .background(
-                                Circle()
-                                    .fill(Color(.systemBackground).opacity(0.6))
-                            )
-                            .frame(width: 22, height: 22)
-                    }
-                }
+        } else if member.isCurrentUser {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(Color.blue)
                 .frame(width: 28, height: 28)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isSelected ? "已选中" : "未选中")
+                .accessibilityLabel("当前用户，始终在地图上显示")
+        } else {
+            memberSelectionToggle
         }
+    }
+
+    private var memberSelectionToggle: some View {
+        Button {
+            onSelectionChange(isSelected == false)
+        } label: {
+            ZStack {
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundStyle(Color.blue)
+                } else {
+                    Circle()
+                        .strokeBorder(Color.secondary.opacity(0.75), lineWidth: 2)
+                        .background(
+                            Circle()
+                                .fill(Color(.systemBackground).opacity(0.6))
+                        )
+                        .frame(width: 22, height: 22)
+                }
+            }
+            .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isSelected ? "已选中" : "未选中")
     }
 
     private func lastUpdatedText(since date: Date) -> String {
@@ -159,6 +165,13 @@ struct LocationMemberSheetRow: View {
         Divider()
         LocationMemberSheetRow(
             member: UserLocationState.previewHousehold[2],
+            isSelected: false,
+            isInLiveHuddle: false,
+            onSelectionChange: { _ in }
+        )
+        Divider()
+        LocationMemberSheetRow(
+            member: UserLocationState.previewHousehold[3],
             isSelected: false,
             isInLiveHuddle: false,
             onSelectionChange: { _ in }
