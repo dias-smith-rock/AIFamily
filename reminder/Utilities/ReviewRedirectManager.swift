@@ -68,15 +68,15 @@ struct ReviewAlertModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(
-                "Enjoying WeSync?",
+                "喜欢同圈吗？",
                 isPresented: $manager.showReviewAlert
             ) {
-                Button("Maybe Later", role: .cancel) {}
-                Button("Write a Review") {
+                Button("以后再说", role: .cancel) {}
+                Button("去评分") {
                     openReviewPage()
                 }
             } message: {
-                Text("Your feedback helps us make the app even better for families and teams. Would you mind leaving a quick review?")
+                Text("您的反馈能帮助我们为家庭和团队把应用做得更好。愿意花一点时间留个评价吗？")
             }
     }
 
