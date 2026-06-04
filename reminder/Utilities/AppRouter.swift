@@ -115,8 +115,8 @@ final class AppRouter: ObservableObject {
                     appState = .pendingApproval
                     debugLog("route.pendingApproval reason=no_active_membership")
                 } else {
-                    appState = .orgRouting
-                    debugLog("route.orgRouting reason=no_active_membership")
+                    appState = .householdSelection
+                    debugLog("route.householdSelection reason=no_active_membership")
                 }
                 selectableHouseholds = []
                 recentHouseholds = []
@@ -182,9 +182,9 @@ final class AppRouter: ObservableObject {
                 selectedHouseholdIsPremium = false
                 debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
-                // 已有会话但拉取组织状态失败时，至少进入组织路由页，避免卡在登录页死循环。
-                appState = .orgRouting
-                debugLog("route.orgRouting reason=non_auth_error_while_unauthenticated")
+                // 已有会话但拉取组织状态失败时，进入群组选择页，避免卡在登录页死循环。
+                appState = .householdSelection
+                debugLog("route.householdSelection reason=non_auth_error_while_unauthenticated")
             }
         }
         #else
@@ -235,9 +235,9 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectableHouseholds = []
-        appState = .orgRouting
+        appState = .householdSelection
         #if DEBUG
-        print("[AppRouter] route.orgRouting reason=household_disbanded")
+        print("[AppRouter] route.householdSelection reason=household_disbanded")
         #endif
     }
 
@@ -249,9 +249,9 @@ final class AppRouter: ObservableObject {
 
         let remaining = selectableHouseholds.filter { $0.id != leftHouseholdId }
         guard let first = remaining.first else {
-            goToOrgRouting()
+            goToHouseholdSelection()
             #if DEBUG
-            print("[AppRouter] route.orgRouting reason=household_left_no_remaining")
+            print("[AppRouter] route.householdSelection reason=household_left_no_remaining")
             #endif
             return
         }

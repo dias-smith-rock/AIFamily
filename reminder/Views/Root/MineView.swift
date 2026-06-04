@@ -8,7 +8,8 @@ struct MineView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
-    @AppStorage("requireFaceID") private var requireFaceID = true
+    @AppStorage("requireFaceID") private var requireFaceID = false
+    @State private var isVerifyingFaceIDEnrollment = false
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
@@ -217,8 +218,21 @@ struct MineView: View {
 
                     Spacer(minLength: 8)
 
-                    Toggle("", isOn: $requireFaceID)
-                        .labelsHidden()
+                    Toggle(
+                        "",
+                        isOn: Binding(
+                            get: { requireFaceID },
+                            set: { newValue in
+                                if newValue {
+                                    Task { await enableFaceIDIfVerified() }
+                                } else {
+                                    requireFaceID = false
+                                }
+                            }
+                        )
+                    )
+                    .labelsHidden()
+                    .disabled(isVerifyingFaceIDEnrollment)
                 }
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .combine)
@@ -682,6 +696,18 @@ struct MineView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    @MainActor
+    private func enableFaceIDIfVerified() async {
+        guard requireFaceID == false else { return }
+        isVerifyingFaceIDEnrollment = true
+        defer { isVerifyingFaceIDEnrollment = false }
+        let manager = BiometricManager()
+        let verified = await manager.verifyEnrollmentForSettings()
+        if verified {
+            requireFaceID = true
+        }
     }
 
     @MainActor

@@ -6,7 +6,7 @@ struct ContentView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
-    @AppStorage("requireFaceID") private var requireFaceID = true
+    @AppStorage("requireFaceID") private var requireFaceID = false
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
     @StateObject private var biometricManager = BiometricManager()
     @State private var shouldHideAppSwitcherSnapshot = false
@@ -18,6 +18,7 @@ struct ContentView: View {
         .environmentObject(groupSwitcher)
         .animation(.easeInOut, value: isUserLoggedIn)
         .animation(.easeInOut, value: biometricManager.isUnlocked)
+        .animation(.easeInOut, value: appRouter.appState)
         .alert("权限变更通知", isPresented: newCreatorAlertBinding) {
             Button("立即查看") {
                 appRouter.enterNewlyAssignedCreatorHousehold()
@@ -100,7 +101,6 @@ struct ContentView: View {
         .task(id: isUserLoggedIn) {
             guard isUserLoggedIn else { return }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-            appRouter.goToActiveMember()
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
         }
@@ -144,17 +144,34 @@ struct ContentView: View {
     private var rootContent: some View {
         if isUserLoggedIn == false {
             LoginView()
-        } else if biometricManager.isUnlocked == false {
+        } else if requireFaceID, biometricManager.isUnlocked == false {
             LockScreenView(
                 isAuthenticating: biometricManager.isAuthenticating,
-                onUnlock: { biometricManager.authenticate() }
+                onUnlockWithBiometrics: { biometricManager.authenticateWithBiometrics() },
+                onUnlockWithPasscode: { biometricManager.authenticateWithPasscode() }
             )
             .onAppear {
-                biometricManager.authenticate()
+                biometricManager.authenticateWithBiometrics()
             }
         } else {
+            postAuthRoutedContent
+        }
+    }
+
+    @ViewBuilder
+    private var postAuthRoutedContent: some View {
+        switch appRouter.appState {
+        case .activeMember:
             AppTabRootView()
                 .blur(radius: shouldHideAppSwitcherSnapshot ? 20 : 0)
+        case .pendingApproval:
+            PendingView()
+        case .householdSelection, .orgRouting:
+            HouseholdSelectionView()
+        case .unauthenticated:
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(AppTheme.ColorToken.background.ignoresSafeArea())
         }
     }
 
