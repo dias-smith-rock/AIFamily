@@ -382,7 +382,7 @@ struct LoginView: View {
                     isUserLoggedIn = true
                 }
                 AnalyticsManager.logAuthSessionSucceeded()
-                appRouter.goToOrgRouting()
+                appRouter.goToHouseholdSelection()
             }
             return
         }

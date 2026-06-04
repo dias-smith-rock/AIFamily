@@ -2,7 +2,8 @@ import SwiftUI
 
 struct LockScreenView: View {
     let isAuthenticating: Bool
-    let onUnlock: () -> Void
+    let onUnlockWithBiometrics: () -> Void
+    let onUnlockWithPasscode: () -> Void
 
     var body: some View {
         VStack(spacing: 20) {
@@ -20,7 +21,7 @@ struct LockScreenView: View {
                 .padding(.horizontal, 24)
 
             Button {
-                onUnlock()
+                onUnlockWithBiometrics()
             } label: {
                 if isAuthenticating {
                     ProgressView()
@@ -36,6 +37,18 @@ struct LockScreenView: View {
             .buttonStyle(.borderedProminent)
             .disabled(isAuthenticating)
             .padding(.horizontal, 24)
+
+            Button {
+                onUnlockWithPasscode()
+            } label: {
+                Label("使用设备密码解锁", systemImage: "lock.fill")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.bordered)
+            .disabled(isAuthenticating)
+            .padding(.horizontal, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppTheme.ColorToken.background.ignoresSafeArea())
@@ -43,5 +56,9 @@ struct LockScreenView: View {
 }
 
 #Preview {
-    LockScreenView(isAuthenticating: false, onUnlock: {})
+    LockScreenView(
+        isAuthenticating: false,
+        onUnlockWithBiometrics: {},
+        onUnlockWithPasscode: {}
+    )
 }
