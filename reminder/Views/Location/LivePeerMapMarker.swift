@@ -169,11 +169,12 @@ struct MapAvatarRingView: View {
     let displayName: String
     let batteryLevel: Int
     let isCharging: Bool
+    var mapAccentColor: Color?
 
     private var ringColor: Color {
         if isCharging { return .green }
         if batteryLevel <= 20 { return .red }
-        return .blue
+        return mapAccentColor ?? .blue
     }
 
     var body: some View {

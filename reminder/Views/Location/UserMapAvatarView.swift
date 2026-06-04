@@ -9,13 +9,15 @@ struct UserMapAvatarView: View {
     let displayName: String
     let batteryLevel: Int
     let isCharging: Bool
+    var mapAccentColor: Color?
 
     var body: some View {
         VStack(spacing: 2) {
             MapAvatarRingView(
                 displayName: displayName,
                 batteryLevel: batteryLevel,
-                isCharging: isCharging
+                isCharging: isCharging,
+                mapAccentColor: mapAccentColor
             )
             MapAvatarBatteryBadge(
                 batteryLevel: batteryLevel,

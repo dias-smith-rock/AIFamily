@@ -276,14 +276,20 @@ struct LocationMainView: View {
     @MapContentBuilder
     private func memberMapContent(for member: UserLocationState) -> some MapContent {
         let coordinates = member.breadcrumbCoordinates
+        let accent = LocationMemberMapColors.accent(for: member.id)
+        let segmentCount = max(0, coordinates.count - 1)
 
         Group {
             if coordinates.count >= 2 {
                 ForEach(Array(polylineSegments(for: coordinates).enumerated()), id: \.offset) { index, segment in
                     MapPolyline(coordinates: segment)
                         .stroke(
-                            segmentStrokeColor(segmentIndex: index, totalSegments: coordinates.count - 1),
-                            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round, dash: [7, 5])
+                            LocationMemberMapColors.trajectorySegment(
+                                for: member.id,
+                                segmentIndex: index,
+                                totalSegments: segmentCount
+                            ),
+                            style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round)
                         )
                 }
             }
@@ -291,7 +297,7 @@ struct LocationMainView: View {
             if let history2 = member.historyLocation2?.coordinate {
                 Annotation("", coordinate: history2, anchor: .center) {
                     Circle()
-                        .fill(Color.blue.opacity(0.28))
+                        .fill(LocationMemberMapColors.historyDot(for: member.id, rank: 0))
                         .frame(width: 8, height: 8)
                 }
             }
@@ -299,7 +305,7 @@ struct LocationMainView: View {
             if let history1 = member.historyLocation1?.coordinate {
                 Annotation("", coordinate: history1, anchor: .center) {
                     Circle()
-                        .fill(Color.blue.opacity(0.45))
+                        .fill(LocationMemberMapColors.historyDot(for: member.id, rank: 1))
                         .frame(width: 9, height: 9)
                 }
             }
@@ -327,7 +333,8 @@ struct LocationMainView: View {
                         UserMapAvatarView(
                             displayName: member.displayName,
                             batteryLevel: member.clampedBatteryLevel,
-                            isCharging: member.isCharging
+                            isCharging: member.isCharging,
+                            mapAccentColor: accent
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
                         .animation(.easeInOut(duration: 0.45), value: current.longitude)
@@ -605,11 +612,6 @@ struct LocationMainView: View {
     private func polylineSegments(for coordinates: [CLLocationCoordinate2D]) -> [[CLLocationCoordinate2D]] {
         guard coordinates.count >= 2 else { return [] }
         return zip(coordinates, coordinates.dropFirst()).map { [$0, $1] }
-    }
-
-    private func segmentStrokeColor(segmentIndex: Int, totalSegments: Int) -> Color {
-        let progress = totalSegments > 0 ? Double(segmentIndex + 1) / Double(totalSegments) : 1
-        return Color.blue.opacity(0.18 + (0.82 * progress))
     }
 
     private func fitCameraToLiveAndDisplayedMembers() {
