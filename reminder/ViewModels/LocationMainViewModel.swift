@@ -111,7 +111,7 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     /// 进入位置 Tab 时调用：读取本机 GPS 并更新地图；非隐身时再按距离规则上报服务端。
-    func captureCurrentUserLocationForMap() async {
+    func captureCurrentUserLocationForMap(timeoutSeconds: TimeInterval? = nil) async {
         guard currentMembershipId != nil else { return }
 
         let isOffline = await NetworkMonitor.shared.isConnected == false
@@ -122,6 +122,8 @@ final class LocationMainViewModel: ObservableObject {
             } else {
                 coordinate = await DeviceLocationFetcher.currentCoordinate(timeoutSeconds: 2)
             }
+        } else if let timeoutSeconds {
+            coordinate = await DeviceLocationFetcher.currentCoordinate(timeoutSeconds: timeoutSeconds)
         } else {
             coordinate = await DeviceLocationFetcher.currentCoordinate()
         }

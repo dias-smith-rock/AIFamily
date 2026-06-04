@@ -14,6 +14,7 @@ struct LocationMainView: View {
     @StateObject private var liveManager: LiveLocationManager
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isExitLiveModeAlertPresented = false
+    @State private var fitCameraTask: Task<Void, Never>?
 
     init(
         isTabActive: Bool = true,
@@ -110,10 +111,10 @@ struct LocationMainView: View {
             fitCameraToLiveAndDisplayedMembers()
         }
         .onChange(of: liveManager.livePeerLocations.count) { _, _ in
-            fitCameraToLiveAndDisplayedMembers()
+            scheduleFitCameraToLiveAndDisplayedMembers()
         }
         .onChange(of: liveManager.activeParticipants.count) { _, _ in
-            fitCameraToLiveAndDisplayedMembers()
+            scheduleFitCameraToLiveAndDisplayedMembers()
         }
         .onChange(of: viewModel.profileIdByMembershipId) { _, map in
             liveManager.updateProfileIdByMembershipId(map)
@@ -130,9 +131,10 @@ struct LocationMainView: View {
             if isActive {
                 viewModel.collapseMemberList()
                 viewModel.applyCachedDeviceLocationForMap()
-                Task { await viewModel.captureCurrentUserLocationForMap() }
+                scheduleFitCameraToLiveAndDisplayedMembers()
+                Task { await viewModel.captureCurrentUserLocationForMap(timeoutSeconds: 2) }
             }
-            fitCameraToLiveAndDisplayedMembers()
+            scheduleFitCameraToLiveAndDisplayedMembers()
         }
         .simultaneousGesture(
             TapGesture().onEnded {
@@ -367,9 +369,11 @@ struct LocationMainView: View {
             if liveManager.isLiveModeActive {
                 isExitLiveModeAlertPresented = true
             } else {
+                viewModel.applyCachedDeviceLocationForMap()
+                scheduleFitCameraToLiveAndDisplayedMembers()
                 Task {
                     await liveManager.startLiveSession()
-                    fitCameraToLiveAndDisplayedMembers()
+                    scheduleFitCameraToLiveAndDisplayedMembers()
                 }
             }
         } label: {
@@ -609,6 +613,15 @@ struct LocationMainView: View {
                 longitudinalMeters: 1_200
             )
         )
+    }
+
+    private func scheduleFitCameraToLiveAndDisplayedMembers() {
+        fitCameraTask?.cancel()
+        fitCameraTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(280))
+            guard Task.isCancelled == false else { return }
+            fitCameraToLiveAndDisplayedMembers()
+        }
     }
 
     private func fitCameraToLiveAndDisplayedMembers() {
