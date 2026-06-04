@@ -378,6 +378,23 @@ final class FamilyViewModel: ObservableObject {
             requiresLogin = false
         }
 
+        if await NetworkMonitor.shared.isConnected == false {
+            if cachedPayload != nil {
+                requiresLogin = false
+                return
+            }
+            let hasSession = await authService.hasValidSession()
+            requiresLogin = !hasSession
+            if hasSession == false {
+                errorMessage = nil
+                profiles = []
+                orderedProfiles = []
+                members = []
+            }
+            hasLoadedOnce = true
+            return
+        }
+
         let hasSession = await authService.hasValidSession()
         guard hasSession else {
             if AuthSessionGuard.shared.isLoggingOut {

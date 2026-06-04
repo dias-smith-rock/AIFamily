@@ -42,6 +42,17 @@ enum HouseholdLocalCache {
     }
 
     /// 将缓存名册写入日程/待办 VM 的 `householdMembers` / `familyProfiles`。
+    /// 离线时从成员快照解析当前 membership 角色，避免为 `role` 单独请求 Supabase。
+    static func membershipRole(for membershipId: UUID, in householdId: UUID) async -> MembershipRole? {
+        guard let snapshot = await loadMembers(for: householdId) else { return nil }
+        let filtered = snapshot.filteredToActiveMembers(in: householdId)
+        if let match = filtered.members.first(where: { $0.id == membershipId }) {
+            return match.parsedRole
+        }
+        let embedded = FamilyProfile.uniqueMembershipsFlattened(from: filtered.profiles)
+        return embedded.first(where: { $0.id == membershipId })?.parsedRole
+    }
+
     static func applyRosterSnapshot(
         _ snapshot: MembersSnapshot,
         to householdMembers: inout [HouseholdMembership],

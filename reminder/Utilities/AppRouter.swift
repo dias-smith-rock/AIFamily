@@ -395,6 +395,7 @@ final class AppRouter: ObservableObject {
 
     func refreshSelectedHouseholdSnapshot() async {
         #if canImport(Supabase)
+        guard await NetworkMonitor.shared.isConnected else { return }
         guard let householdId = selectedHouseholdId else { return }
         do {
             let rows: [HouseholdRow] = try await SupabaseManager.shared.client

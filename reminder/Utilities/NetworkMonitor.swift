@@ -7,12 +7,13 @@ import Network
 final class NetworkMonitor: ObservableObject {
     static let shared = NetworkMonitor()
 
-    private(set) var isConnected = true
+    private(set) var isConnected = false
 
     private let monitor = NWPathMonitor()
     private let queue = DispatchQueue(label: "com.aifamily.networkmonitor", qos: .utility)
 
     private init() {
+        isConnected = monitor.currentPath.status == .satisfied
         monitor.pathUpdateHandler = { [weak self] path in
             let connected = path.status == .satisfied
             Task { @MainActor in

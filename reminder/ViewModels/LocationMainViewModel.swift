@@ -99,11 +99,33 @@ final class LocationMainViewModel: ObservableObject {
         self.currentProfileId = currentProfileId
     }
 
+    /// 先用会话内缓存坐标更新地图，避免离线/弱网时等待 GPS。
+    func applyCachedDeviceLocationForMap() {
+        guard currentMembershipId != nil else { return }
+        guard let cached = LastKnownDeviceLocation.cachedCoordinate() else { return }
+        currentUserLiveLocation = LocationPayload(
+            latitude: cached.latitude,
+            longitude: cached.longitude
+        )
+        syncCurrentUserBatteryFromDevice()
+    }
+
     /// 进入位置 Tab 时调用：读取本机 GPS 并更新地图；非隐身时再按距离规则上报服务端。
     func captureCurrentUserLocationForMap() async {
         guard currentMembershipId != nil else { return }
 
-        guard let coordinate = await DeviceLocationFetcher.currentCoordinate() else { return }
+        let isOffline = await NetworkMonitor.shared.isConnected == false
+        let coordinate: CLLocationCoordinate2D?
+        if isOffline {
+            if let cached = LastKnownDeviceLocation.cachedCoordinate() {
+                coordinate = cached
+            } else {
+                coordinate = await DeviceLocationFetcher.currentCoordinate(timeoutSeconds: 2)
+            }
+        } else {
+            coordinate = await DeviceLocationFetcher.currentCoordinate()
+        }
+        guard let coordinate else { return }
         let payload = LocationPayload(
             latitude: coordinate.latitude,
             longitude: coordinate.longitude
@@ -113,6 +135,7 @@ final class LocationMainViewModel: ObservableObject {
         syncCurrentUserBatteryFromDevice()
 
         guard let householdId, let currentProfileId, isCurrentUserGhost == false else { return }
+        guard await NetworkMonitor.shared.isConnected else { return }
 
         do {
             _ = try await locationStateService.reportCurrentLocationIfNeeded(

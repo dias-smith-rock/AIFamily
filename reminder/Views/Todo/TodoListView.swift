@@ -139,9 +139,9 @@ struct TodoListView: View {
             }
             .task(id: appRouter.selectedHouseholdId) {
                 bindHouseholdContext()
-                await refreshCurrentMembershipRole()
                 await viewModel.loadTasksIfNeeded()
                 openPendingFlexibleTaskIfNeeded()
+                Task { await refreshCurrentMembershipRole() }
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
@@ -366,6 +366,12 @@ struct TodoListView: View {
     private func refreshCurrentMembershipRole() async {
         guard let membershipId = appRouter.selectedMembershipId else {
             currentMembershipRole = .member
+            return
+        }
+        if await NetworkMonitor.shared.isConnected == false,
+           let householdId = appRouter.selectedHouseholdId,
+           let cachedRole = await HouseholdLocalCache.membershipRole(for: membershipId, in: householdId) {
+            currentMembershipRole = cachedRole
             return
         }
         #if canImport(Supabase)

@@ -83,19 +83,27 @@ struct LocationMainView: View {
         }
         .task(id: locationRefreshToken) {
             guard isTabActive else { return }
-            await bindLiveContext()
+            bindLiveContext()
             await viewModel.refresh()
             liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
-            await viewModel.captureCurrentUserLocationForMap()
-            await liveManager.observeHuddleLobby()
+            viewModel.applyCachedDeviceLocationForMap()
             fitCameraToLiveAndDisplayedMembers()
+            guard await NetworkMonitor.shared.isConnected else { return }
+            Task {
+                await liveManager.observeHuddleLobby()
+                await viewModel.captureCurrentUserLocationForMap()
+                fitCameraToLiveAndDisplayedMembers()
+            }
         }
         .onChange(of: isTabActive) { _, active in
             if active == false {
                 viewModel.collapseMemberList()
             } else {
+                bindLiveContext()
+                viewModel.applyCachedDeviceLocationForMap()
+                fitCameraToLiveAndDisplayedMembers()
                 Task {
-                    await bindLiveContext()
+                    guard await NetworkMonitor.shared.isConnected else { return }
                     await liveManager.observeHuddleLobby()
                     await viewModel.captureCurrentUserLocationForMap()
                     fitCameraToLiveAndDisplayedMembers()
@@ -580,7 +588,7 @@ struct LocationMainView: View {
 
     // MARK: - Helpers
 
-    private func bindLiveContext() async {
+    private func bindLiveContext() {
         viewModel.bind(
             householdId: appRouter.selectedHouseholdId,
             currentMembershipId: appRouter.selectedMembershipId,
@@ -589,7 +597,7 @@ struct LocationMainView: View {
 
         var authUserId: UUID?
         #if canImport(Supabase)
-        authUserId = try? await SupabaseManager.shared.client.auth.session.user.id
+        authUserId = SupabaseManager.shared.client.auth.currentSession?.user.id
         #endif
 
         liveManager.bind(

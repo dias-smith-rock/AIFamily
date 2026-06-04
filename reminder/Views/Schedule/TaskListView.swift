@@ -350,6 +350,12 @@ struct TaskListView: View {
             currentMembershipRole = .member
             return
         }
+        if await NetworkMonitor.shared.isConnected == false,
+           let householdId = appRouter.selectedHouseholdId,
+           let cachedRole = await HouseholdLocalCache.membershipRole(for: membershipId, in: householdId) {
+            currentMembershipRole = cachedRole
+            return
+        }
         #if canImport(Supabase)
         do {
             let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client

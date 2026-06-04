@@ -70,16 +70,16 @@ struct FamilyView: View {
         .task {
             viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             viewModel.setMembershipContext(appRouter.selectedMembershipId)
-            await appRouter.refreshSelectedHouseholdSnapshot()
             await viewModel.loadMembers()
             await handleRequiresLoginIfNeeded()
+            Task { await appRouter.refreshSelectedHouseholdSnapshot() }
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
             viewModel.setHouseholdContext(newValue)
             Task {
-                await appRouter.refreshSelectedHouseholdSnapshot()
                 await viewModel.loadMembers()
                 await handleRequiresLoginIfNeeded()
+                Task { await appRouter.refreshSelectedHouseholdSnapshot() }
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, newValue in

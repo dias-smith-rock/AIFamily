@@ -152,6 +152,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     /// 被动订阅 Presence，用于 Lobby 卡片展示（不 track、不开启高精度 GPS）。
     func observeHuddleLobby() async {
+        guard await NetworkMonitor.shared.isConnected else {
+            liveLog("observeHuddleLobby skipped: offline")
+            return
+        }
         guard isLiveModeActive == false else {
             liveLog("observeHuddleLobby skipped: live mode active")
             return
