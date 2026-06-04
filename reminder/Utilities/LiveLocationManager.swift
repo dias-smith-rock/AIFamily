@@ -640,18 +640,34 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 }
 
                 nextParticipants.remove(membershipUUID)
-                if isLiveModeActive == false {
-                    livePeerLocations.removeValue(forKey: membershipUUID)
-                    livePeerHeadings.removeValue(forKey: membershipUUID)
-                    livePeerBattery.removeValue(forKey: membershipUUID)
+                if membershipUUID != currentMembershipId {
+                    removeLivePeerState(for: membershipUUID)
+                    liveLog(
+                        "presence peer cleared membership=\(entry.membershipId.prefix(8)) "
+                            + "peerLocations=\(livePeerLocations.count)"
+                    )
+                } else {
+                    liveLog("presence leave membership=\(entry.membershipId.prefix(8))")
                 }
-                liveLog("presence leave membership=\(entry.membershipId.prefix(8))")
             } catch {
                 print("❌ [Realtime Error] Failed to decode metadata: \(error)")
             }
         }
 
         applyActiveParticipants(nextParticipants, newlyJoined: newlyJoined)
+    }
+
+    private func removeLivePeerState(for membershipId: UUID) {
+        livePeerLocations.removeValue(forKey: membershipId)
+        livePeerHeadings.removeValue(forKey: membershipId)
+        livePeerBattery.removeValue(forKey: membershipId)
+    }
+
+    private func pruneLivePeerState(to participants: Set<UUID>) {
+        let staleIds = Set(livePeerLocations.keys).subtracting(participants)
+        for membershipId in staleIds where membershipId != currentMembershipId {
+            removeLivePeerState(for: membershipId)
+        }
     }
 
     private func applyActiveParticipants(_ nextParticipants: Set<UUID>, newlyJoined: Set<UUID> = []) {
@@ -666,6 +682,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
                     + "ids=\(activeParticipants.map { $0.uuidString.prefix(8) }.joined(separator: ",")) "
                     + "peerLocations=\(livePeerLocations.count)"
             )
+        }
+
+        if isLiveModeActive {
+            pruneLivePeerState(to: nextParticipants)
         }
 
         guard isLiveModeActive else { return }

@@ -110,6 +110,9 @@ struct LocationMainView: View {
         .onChange(of: liveManager.livePeerLocations.count) { _, _ in
             fitCameraToLiveAndDisplayedMembers()
         }
+        .onChange(of: liveManager.activeParticipants.count) { _, _ in
+            fitCameraToLiveAndDisplayedMembers()
+        }
         .onChange(of: DeviceBatteryMonitor.shared.batteryLevel) { _, _ in
             viewModel.syncCurrentUserBatteryFromDevice()
         }
@@ -249,6 +252,7 @@ struct LocationMainView: View {
 
     private var liveHuddleMapAnnotations: [LiveMapAnnotationItem] {
         liveManager.livePeerLocations
+            .filter { liveManager.activeParticipants.contains($0.key) }
             .map { membershipId, coordinate in
                 let member = viewModel.members.first(where: { $0.id == membershipId })
                 let battery = liveManager.batteryDisplay(for: membershipId, rosterFallback: member)
