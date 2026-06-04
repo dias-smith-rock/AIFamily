@@ -10731,6 +10731,64 @@
         }
       }
     },
+    "后台定位" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الموقع في الخلفية"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubicación en segundo plano"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localisation en arrière-plan"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पृष्ठभूमि में स्थान"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localização em segundo plano"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "பின்னணி இருப்பிடம்"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "后台定位"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "背景定位"
+          }
+        }
+      }
+    },
     "后端尚未完成升级，请先执行最新 Supabase migration 后重试。" : {
       "localizations" : {
         "en" : {
@@ -18947,7 +19005,62 @@
       }
     },
     "暂无其他成员" : {
-
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا يوجد أعضاء آخرون بعد"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No other members yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no hay otros miembros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas d'autres membres pour l'instant"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "अभी कोई अन्य सदस्य नहीं"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhum outro membro ainda"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இன்னும் வேறு உறுப்பினர்கள் இல்லை"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暂无其他成员"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "暫無其他成員"
+          }
+        }
+      }
     },
     "暂无即将到期" : {
       "localizations" : {
@@ -23296,43 +23409,43 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أضف العضو الأول لتقسيم العمل والتعاون معًا، وتقديم تذكيرات لطيفة كل يوم."
+            "value" : "أضِف العضو الأول لتقسيم المهام وتذكيرات لطيفة كل يوم."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add the first member to divide the work and collaborate together, and provide gentle reminders every day."
+            "value" : "Add the first member to share tasks and gentle daily reminders together."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agregue al primer miembro para dividir el trabajo y colaborar juntos, y proporcione recordatorios amables todos los días."
+            "value" : "Añade al primer miembro para repartir tareas y recordatorios amables cada día."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajoutez le premier membre pour diviser le travail et collaborer ensemble, et fournissez des rappels doux chaque jour."
+            "value" : "Ajoutez le premier membre pour partager les tâches et des rappels bienveillants au quotidien."
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "कार्य को विभाजित करने और एक साथ सहयोग करने के लिए पहले सदस्य को जोड़ें, और हर दिन धीरे-धीरे अनुस्मारक प्रदान करें।"
+            "value" : "पहला सदस्य जोड़ें—मिलकर काम बाँटें और हर दिन कोमल अनुस्मारक पाएँ।"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicione o primeiro membro para dividir o trabalho e colaborar juntos, além de fornecer lembretes gentis todos os dias."
+            "value" : "Adicione o primeiro membro para dividir tarefas e lembretes gentis no dia a dia."
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "வேலையைப் பிரித்து ஒன்றாக ஒத்துழைக்க முதல் உறுப்பினரைச் சேர்த்து, ஒவ்வொரு நாளும் மென்மையான நினைவூட்டல்களை வழங்கவும்."
+            "value" : "முதல் உறுப்பினரைச் சேர்த்து, பணிகளைப் பகிர்ந்து தினமும் மென்மையான நினைவூட்டல்களைப் பெறுங்கள்."
           }
         },
         "zh-Hans" : {
@@ -23344,7 +23457,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "增加第一位成員，一起分工協作、溫柔提醒每一天。"
+            "value" : "新增第一位成員，一起分工協作、溫柔提醒每一天。"
           }
         }
       }
@@ -28315,6 +28428,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "请发送邮件至 %@。"
+          }
+        }
+      }
+    },
+    "请在系统设置中将位置设为「始终」，才能在后台更新位置。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختر «دائمًا» في الإعدادات لتحديث الموقع في الخلفية."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set location to Always in Settings to update your position in the background."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige «Siempre» en Ajustes para actualizar tu ubicación en segundo plano."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez « Toujours » dans Réglages pour mettre à jour la position en arrière-plan."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पृष्ठभूमि में अपडेट के लिए सेटिंग्स में स्थान को «हमेशा» चुनें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Defina «Sempre» em Ajustes para atualizar a localização em segundo plano."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "பின்னணியில் புதுப்பிக்க அமைப்புகளில் «எப்போதும்» என தேர்ந்தெடுக்கவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在系统设置中将位置设为「始终」，才能在后台更新位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在系統設定中將位置設為「始終」，才能在背景更新位置。"
           }
         }
       }

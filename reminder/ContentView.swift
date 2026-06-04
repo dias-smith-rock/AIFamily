@@ -100,11 +100,21 @@ struct ContentView: View {
             }
         }
         .task(id: isUserLoggedIn) {
-            guard isUserLoggedIn else { return }
+            guard isUserLoggedIn else {
+                BackgroundLocationCoordinator.shared.stop()
+                return
+            }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
             await reportLocationIfNeeded()
+            await syncBackgroundLocationService()
+        }
+        .onChange(of: appRouter.selectedHouseholdId) { _, _ in
+            Task { await syncBackgroundLocationService() }
+        }
+        .onChange(of: appRouter.selectedMembershipId) { _, _ in
+            Task { await syncBackgroundLocationService() }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -117,6 +127,7 @@ struct ContentView: View {
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
                     await reportLocationIfNeeded()
+                    await syncBackgroundLocationService()
                 }
             } else if newPhase == .inactive || newPhase == .background {
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
@@ -231,6 +242,26 @@ struct ContentView: View {
             membershipId: appRouter.selectedMembershipId,
             locationStateService: appBootstrap.services.locationStateService
         )
+    }
+
+    @MainActor
+    private func syncBackgroundLocationService() async {
+        guard isUserLoggedIn else {
+            BackgroundLocationCoordinator.shared.stop()
+            return
+        }
+        guard appRouter.appState == .activeMember else { return }
+        let unlocked = requireFaceID == false || biometricManager.isUnlocked
+        guard unlocked else { return }
+
+        BackgroundLocationCoordinator.shared.configure(
+            locationStateService: appBootstrap.services.locationStateService
+        )
+        BackgroundLocationCoordinator.shared.updateContext(
+            householdId: appRouter.selectedHouseholdId,
+            membershipId: appRouter.selectedMembershipId
+        )
+        await BackgroundLocationCoordinator.shared.applyStoredPreference()
     }
 
     @MainActor

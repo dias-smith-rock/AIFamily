@@ -1072,6 +1072,28 @@ NEW_KEYS: dict[str, dict[str, str]] = {
         "hi": "समूह के सदस्यों को जोड़ें",
         "ta": "குழு உறுப்பினர்களைச் சேர்க்கவும்",
     },
+    "后台定位": {
+        "en": "Background location",
+        "zh-Hans": "后台定位",
+        "zh-Hant": "背景定位",
+        "es": "Ubicación en segundo plano",
+        "pt": "Localização em segundo plano",
+        "fr": "Localisation en arrière-plan",
+        "ar": "الموقع في الخلفية",
+        "hi": "पृष्ठभूमि में स्थान",
+        "ta": "பின்னணி இருப்பிடம்",
+    },
+    "请在系统设置中将位置设为「始终」，才能在后台更新位置。": {
+        "en": "Set location to Always in Settings to update your position in the background.",
+        "zh-Hans": "请在系统设置中将位置设为「始终」，才能在后台更新位置。",
+        "zh-Hant": "請在系統設定中將位置設為「始終」，才能在背景更新位置。",
+        "es": "Elige «Siempre» en Ajustes para actualizar tu ubicación en segundo plano.",
+        "pt": "Defina «Sempre» em Ajustes para atualizar a localização em segundo plano.",
+        "fr": "Choisissez « Toujours » dans Réglages pour mettre à jour la position en arrière-plan.",
+        "ar": "اختر «دائمًا» في الإعدادات لتحديث الموقع في الخلفية.",
+        "hi": "पृष्ठभूमि में अपडेट के लिए सेटिंग्स में स्थान को «हमेशा» चुनें।",
+        "ta": "பின்னணியில் புதுப்பிக்க அமைப்புகளில் «எப்போதும்» என தேர்ந்தெடுக்கவும்.",
+    },
 }
 
 

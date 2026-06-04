@@ -9,6 +9,8 @@ struct MineView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @AppStorage("requireFaceID") private var requireFaceID = false
+    @AppStorage(BackgroundLocationPreferences.storageKey) private var backgroundLocationEnabled = true
+    @ObservedObject private var backgroundLocationCoordinator = BackgroundLocationCoordinator.shared
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
@@ -223,6 +225,41 @@ struct MineView: View {
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(AppLocalized.string("开启面部解锁", locale: locale))
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "location.circle.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.blue)
+                            .frame(width: 30, height: 30)
+                            .background(Color.blue.opacity(0.15))
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                        Text("后台定位")
+                            .font(AppTheme.FontToken.bodyStrong)
+                            .foregroundStyle(.primary)
+
+                        Spacer(minLength: 8)
+
+                        Toggle("", isOn: $backgroundLocationEnabled)
+                            .labelsHidden()
+                    }
+                    .contentShape(Rectangle())
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel(AppLocalized.string("后台定位", locale: locale))
+
+                    if backgroundLocationEnabled, backgroundLocationCoordinator.needsAlwaysPermission {
+                        Text("请在系统设置中将位置设为「始终」，才能在后台更新位置。")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.leading, 42)
+                    }
+                }
+                .onChange(of: backgroundLocationEnabled) { _, enabled in
+                    Task {
+                        await backgroundLocationCoordinator.setEnabled(enabled)
+                    }
+                }
             } header: {
                 mineSectionHeader("应用设置")
             }

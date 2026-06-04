@@ -121,6 +121,7 @@ struct LocationMainView: View {
         }
         .onChange(of: liveManager.isLiveModeActive) { _, isActive in
             viewModel.setLiveModeActive(isActive)
+            BackgroundLocationCoordinator.shared.setPausedForLiveMode(isActive)
             if isActive {
                 viewModel.collapseMemberList()
             }

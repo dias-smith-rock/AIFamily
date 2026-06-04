@@ -41,6 +41,12 @@
 	<key>NSFaceIDUsageDescription</key>
 	<string>WeSync uses Face ID to protect your private family schedules and tasks.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>用于在完成任务时记录大致位置，便于家人了解事项是否在约定地点完成。</string>
+	<string>用于在地图中展示您与家人的大致位置，并在完成任务时记录地点。</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>用于在应用后台时向同圈家庭成员更新您的大致位置；可在「我的」中关闭后台定位。</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>
