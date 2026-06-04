@@ -231,8 +231,13 @@ struct TaskListView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
-                .accessibilityHint("轻点以切换群组")
+                .accessibilityLabel(
+                    String(
+                        format: AppLocalized.string("群组，%@", locale: locale),
+                        GroupSwitcherData.currentName(for: appRouter)
+                    )
+                )
+                .accessibilityHint(AppLocalized.string("轻点以切换群组", locale: locale))
 
                 Button {
                     isShowingCalendarSheet = true

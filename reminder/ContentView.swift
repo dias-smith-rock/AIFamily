@@ -188,12 +188,13 @@ struct ContentView: View {
             LoginView()
         } else if requireFaceID, biometricManager.isUnlocked == false {
             LockScreenView(
-                isAuthenticating: biometricManager.isAuthenticating,
+                isAuthenticatingBiometrics: biometricManager.isAuthenticatingBiometrics,
+                isAuthenticatingPasscode: biometricManager.isAuthenticatingPasscode,
                 onUnlockWithBiometrics: { biometricManager.authenticateWithBiometrics() },
                 onUnlockWithPasscode: { biometricManager.authenticateWithPasscode() }
             )
-            .onAppear {
-                biometricManager.authenticateWithBiometrics()
+            .task(id: biometricManager.lockPresentationGeneration) {
+                biometricManager.performAutoUnlockOnLockScreen()
             }
         } else {
             authenticatedRoot
@@ -215,7 +216,7 @@ struct ContentView: View {
         case .activeMember:
             householdRoutingFallback
         case .unauthenticated:
-            routingBootstrapPlaceholder
+            HouseholdSelectionView()
         }
     }
 
