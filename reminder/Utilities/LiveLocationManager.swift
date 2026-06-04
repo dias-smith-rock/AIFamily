@@ -178,6 +178,8 @@ final class LiveLocationManager: NSObject, ObservableObject {
         livePeerLocations = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
+        participantSet = []
+        activeParticipants = []
         currentHeadingDegrees = nil
         showInactivityEndedNotice = false
         batteryMonitor.refresh()
@@ -191,12 +193,13 @@ final class LiveLocationManager: NSObject, ObservableObject {
         locationManager.startUpdatingHeading()
 
         await ensureChannelConnected(shouldTrack: true)
+        applyActiveParticipants(participantSet)
+        if let location = currentLocationForPresence() {
+            recordLocalLiveLocation(location)
+        }
         liveLog(
             "startLiveSession after track: participants=\(participantSet.count) "
                 + "peerLocations=\(livePeerLocations.count) liveActive=\(isLiveModeActive)"
-        )
-        await seedPeerLocationsFromDatabase(
-            for: participantSet.filter { $0 != currentMembershipId }
         )
         await requestPeerLocationSync()
         await rebroadcastLocationToPeers()
@@ -207,7 +210,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         startInactivityWatchdog()
     }
 
-    /// 离开 Huddle：untrack Presence；最后一人离开时房间由 Realtime 自动清空。
+    /// 离开 Huddle：untrack Presence；若为房间内最后一人则 unsubscribe 并移除 Realtime 频道。
     func leaveLiveSession(silent: Bool = false) async {
         guard isLiveModeActive else { return }
 
@@ -220,6 +223,8 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
         inactivityCancellable?.cancel()
         inactivityCancellable = nil
+
+        let shouldCloseChannel = isOnlyParticipantInRoom()
 
         #if canImport(Supabase)
         if let channel = liveChannel {
@@ -236,6 +241,13 @@ final class LiveLocationManager: NSObject, ObservableObject {
         livePeerLocations = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
+        participantSet = []
+        activeParticipants = []
+
+        if shouldCloseChannel {
+            await disconnectChannel()
+            liveLog("live channel closed: last participant left live mode")
+        }
 
         if silent == false, inactivitySecondsRemaining <= 0 {
             showInactivityEndedNotice = true
@@ -472,6 +484,14 @@ final class LiveLocationManager: NSObject, ObservableObject {
     }
     #endif
 
+    /// 当前 Presence 房间内是否仅剩本机（含仅自己一人 tracked 的情况）。
+    private func isOnlyParticipantInRoom() -> Bool {
+        guard let currentMembershipId else {
+            return participantSet.isEmpty
+        }
+        return participantSet.allSatisfy { $0 == currentMembershipId }
+    }
+
     private func disconnectChannel(preserveLiveState: Bool = false) async {
         inactivityCancellable?.cancel()
         inactivityCancellable = nil
@@ -485,7 +505,13 @@ final class LiveLocationManager: NSObject, ObservableObject {
         presenceSubscription = nil
 
         if let channel = liveChannel {
+            let topic = channel.topic
+            if channel.status == .subscribed || channel.status == .subscribing {
+                await channel.unsubscribe()
+                liveLog("live channel unsubscribed topic=\(topic)")
+            }
             await SupabaseManager.shared.client.realtimeV2.removeChannel(channel)
+            liveLog("live channel removed topic=\(topic)")
         }
         liveChannel = nil
         connectedChannelHouseholdId = nil
@@ -595,6 +621,12 @@ final class LiveLocationManager: NSObject, ObservableObject {
             }
             let payload = try payloadJSON.decode(as: LiveLocationBroadcastPayload.self)
             guard payload.membershipId != currentMembershipId else { return }
+            guard participantSet.contains(payload.membershipId) else {
+                liveLog(
+                    "peer_move ignored stale membership=\(payload.membershipId.uuidString.prefix(8))"
+                )
+                return
+            }
 
             let coordinate = CLLocationCoordinate2D(latitude: payload.lat, longitude: payload.lng)
             let previousCount = livePeerLocations.count
@@ -686,15 +718,32 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     private func pruneLivePeerState(to participants: Set<UUID>) {
         let staleIds = Set(livePeerLocations.keys).subtracting(participants)
-        for membershipId in staleIds where membershipId != currentMembershipId {
+        for membershipId in staleIds {
             removeLivePeerState(for: membershipId)
         }
     }
 
+    private func recordLocalLiveLocation(_ location: CLLocation, heading: Double? = nil) {
+        guard let currentMembershipId, isLiveModeActive else { return }
+        livePeerLocations[currentMembershipId] = location.coordinate
+        if let heading {
+            livePeerHeadings[currentMembershipId] = heading
+        }
+        livePeerBattery[currentMembershipId] = LivePeerBatteryState(
+            level: batteryMonitor.batteryLevel,
+            isCharging: batteryMonitor.isCharging
+        )
+    }
+
     private func applyActiveParticipants(_ nextParticipants: Set<UUID>, newlyJoined: Set<UUID> = []) {
+        var participants = nextParticipants
+        if isLiveModeActive, let currentMembershipId {
+            participants.insert(currentMembershipId)
+        }
+
         let previousCount = activeParticipants.count
-        participantSet = nextParticipants
-        activeParticipants = nextParticipants.sorted {
+        participantSet = participants
+        activeParticipants = participants.sorted {
             $0.uuidString.localizedStandardCompare($1.uuidString) == .orderedAscending
         }
         if activeParticipants.count != previousCount {
@@ -706,12 +755,19 @@ final class LiveLocationManager: NSObject, ObservableObject {
         }
 
         if isLiveModeActive {
-            pruneLivePeerState(to: nextParticipants)
+            pruneLivePeerState(to: participants)
+        }
+
+        if participants.isEmpty, previousCount > 0 {
+            Task {
+                await disconnectChannel()
+                liveLog("live channel closed: presence room empty")
+            }
         }
 
         guard isLiveModeActive else { return }
 
-        let peersMissingLocation = nextParticipants
+        let peersMissingLocation = participants
             .filter { $0 != currentMembershipId && livePeerLocations[$0] == nil }
 
         if peersMissingLocation.isEmpty == false {
@@ -805,6 +861,9 @@ final class LiveLocationManager: NSObject, ObservableObject {
             return
         }
 
+        lastLiveBroadcastLocation = location
+        recordLocalLiveLocation(location, heading: heading ?? currentHeadingDegrees)
+
         let now = Date()
         if let last = lastPeerMoveSentAt,
            now.timeIntervalSince(last) < Self.peerMoveMinInterval {
@@ -816,7 +875,6 @@ final class LiveLocationManager: NSObject, ObservableObject {
             return
         }
 
-        lastLiveBroadcastLocation = location
         let payload = LiveLocationBroadcastPayload(
             membershipId: currentMembershipId,
             lat: location.coordinate.latitude,

@@ -129,6 +129,8 @@ struct LocationMainView: View {
             BackgroundLocationCoordinator.shared.setPausedForLiveMode(isActive)
             if isActive {
                 viewModel.collapseMemberList()
+                viewModel.applyCachedDeviceLocationForMap()
+                Task { await viewModel.captureCurrentUserLocationForMap() }
             }
             fitCameraToLiveAndDisplayedMembers()
         }
@@ -256,21 +258,34 @@ struct LocationMainView: View {
     }
 
     private var liveHuddleMapAnnotations: [LiveMapAnnotationItem] {
-        liveManager.livePeerLocations
-            .filter { liveManager.activeParticipants.contains($0.key) }
-            .map { membershipId, coordinate in
-                let member = viewModel.members.first(where: { $0.id == membershipId })
-                let battery = liveManager.batteryDisplay(for: membershipId, rosterFallback: member)
-                return LiveMapAnnotationItem(
-                    id: membershipId,
-                    displayName: member?.displayName ?? String(localized: "群组成员"),
-                    coordinate: coordinate,
-                    headingDegrees: liveManager.livePeerHeadings[membershipId],
-                    batteryLevel: battery.level,
-                    isCharging: battery.isCharging
-                )
-            }
-            .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+        liveManager.activeParticipants.compactMap { membershipId in
+            guard let coordinate = liveAnnotationCoordinate(for: membershipId) else { return nil }
+            let member = viewModel.members.first(where: { $0.id == membershipId })
+            let battery = liveManager.batteryDisplay(for: membershipId, rosterFallback: member)
+            let heading = membershipId == appRouter.selectedMembershipId
+                ? liveManager.currentHeadingDegrees ?? liveManager.livePeerHeadings[membershipId]
+                : liveManager.livePeerHeadings[membershipId]
+            return LiveMapAnnotationItem(
+                id: membershipId,
+                displayName: member?.displayName ?? String(localized: "群组成员"),
+                coordinate: coordinate,
+                headingDegrees: heading,
+                batteryLevel: battery.level,
+                isCharging: battery.isCharging
+            )
+        }
+        .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
+    }
+
+    private func liveAnnotationCoordinate(for membershipId: UUID) -> CLLocationCoordinate2D? {
+        if let coordinate = liveManager.livePeerLocations[membershipId] {
+            return coordinate
+        }
+        guard membershipId == appRouter.selectedMembershipId else { return nil }
+        if let payload = viewModel.currentUserLiveLocation {
+            return payload.coordinate
+        }
+        return LastKnownDeviceLocation.cachedCoordinate()
     }
 
     @MapContentBuilder
@@ -597,9 +612,11 @@ struct LocationMainView: View {
     }
 
     private func fitCameraToLiveAndDisplayedMembers() {
-        var coordinates = viewModel.mapDisplayedMembers.flatMap(\.breadcrumbCoordinates)
+        let coordinates: [CLLocationCoordinate2D]
         if liveManager.isLiveModeActive {
-            coordinates.append(contentsOf: liveManager.livePeerLocations.values)
+            coordinates = liveHuddleMapAnnotations.map(\.coordinate)
+        } else {
+            coordinates = viewModel.mapDisplayedMembers.flatMap(\.breadcrumbCoordinates)
         }
         guard let first = coordinates.first else {
             cameraPosition = .automatic
