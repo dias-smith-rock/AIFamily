@@ -170,11 +170,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
         guard currentMembershipId != nil, currentUserId != nil else { return }
 
         isLiveModeActive = true
+        // 仅清空坐标缓存；保留 `participantSet`（Lobby / 已有 presence_diff），避免已订阅频道上丢失在场成员。
         livePeerLocations = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
-        participantSet = []
-        activeParticipants = []
         currentHeadingDegrees = nil
         showInactivityEndedNotice = false
         batteryMonitor.refresh()
@@ -189,26 +188,26 @@ final class LiveLocationManager: NSObject, ObservableObject {
         locationManager.startUpdatingHeading()
 
         await ensureChannelConnected(shouldTrack: true)
+
+        if hasRemoteParticipants() == false {
+            try? await Task.sleep(nanoseconds: 250_000_000)
+        }
         applyActiveParticipants(participantSet)
+
         if let location = currentLocationForPresence() {
             recordLocalLiveLocation(location)
         } else {
             seedLocalLiveLocationFromCache()
         }
+
+        await requestPeerLocationSync()
+        await rebroadcastLocationToPeers()
+
         liveLog(
-            "startLiveSession after track: participants=\(participantSet.count) "
+            "startLiveSession ready: participants=\(activeParticipants.count) "
                 + "peerLocations=\(livePeerLocations.count) liveActive=\(isLiveModeActive)"
         )
         startInactivityWatchdog()
-
-        Task {
-            await requestPeerLocationSync()
-            await rebroadcastLocationToPeers()
-            liveLog(
-                "startLiveSession background sync done: participants=\(activeParticipants.count) "
-                    + "peerLocations=\(livePeerLocations.count)"
-            )
-        }
     }
 
     /// 离开 Huddle：untrack Presence；若为房间内最后一人则 unsubscribe 并移除 Realtime 频道。
@@ -242,10 +241,10 @@ final class LiveLocationManager: NSObject, ObservableObject {
         livePeerLocations = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
-        participantSet = []
-        activeParticipants = []
 
         if shouldCloseChannel {
+            participantSet = []
+            activeParticipants = []
             await disconnectChannel()
             liveLog("live channel closed: last participant left live mode")
         }
@@ -450,6 +449,11 @@ final class LiveLocationManager: NSObject, ObservableObject {
         pendingPresenceTrack = true
         await disconnectChannel(preserveLiveState: true)
         await ensureChannelConnected(shouldTrack: true)
+    }
+
+    private func hasRemoteParticipants() -> Bool {
+        guard let currentMembershipId else { return false }
+        return participantSet.contains { $0 != currentMembershipId }
     }
 
     private func seedLocalLiveLocationFromCache() {
@@ -674,14 +678,22 @@ final class LiveLocationManager: NSObject, ObservableObject {
             }
             let payload = try payloadJSON.decode(as: LiveLocationBroadcastPayload.self)
             guard payload.membershipId != currentMembershipId else { return }
-            guard participantSet.contains(payload.membershipId) else {
+            let coordinate = CLLocationCoordinate2D(latitude: payload.lat, longitude: payload.lng)
+            if participantSet.contains(payload.membershipId) == false {
+                guard isLiveModeActive else {
+                    liveLog(
+                        "peer_move ignored stale membership=\(payload.membershipId.uuidString.prefix(8))"
+                    )
+                    return
+                }
                 liveLog(
-                    "peer_move ignored stale membership=\(payload.membershipId.uuidString.prefix(8))"
+                    "peer_move admitted before presence membership=\(payload.membershipId.uuidString.prefix(8))"
                 )
-                return
+                var admitted = participantSet
+                admitted.insert(payload.membershipId)
+                applyActiveParticipants(admitted)
             }
 
-            let coordinate = CLLocationCoordinate2D(latitude: payload.lat, longitude: payload.lng)
             let previousCount = livePeerLocations.count
             livePeerLocations[payload.membershipId] = coordinate
             if let heading = payload.headingDegrees {
@@ -704,6 +716,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
     private func handlePresenceChange(_ presence: any PresenceAction) {
         let isSync = presence.rawMessage.event == "presence_state"
         let previousParticipants = participantSet
+        // `presence_state` 是全量快照；`presence_diff` 在现有名册上增量更新。
         var nextParticipants = isSync ? Set<UUID>() : participantSet
         var newlyJoined = Set<UUID>()
         var joinedInThisDiff = Set<UUID>()
