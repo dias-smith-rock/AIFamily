@@ -15,6 +15,9 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         #endif
     }
     private static let tableName = "location_states"
+    /// 与线上一致：表可能无 `id` 列，仅选实际存在的字段。
+    private static let selectColumns =
+        "household_id,entity_id,current_location,history_location_1,history_location_2,is_ghost_mode,updated_at"
 
     private let provider: SupabaseClientProviding
 
@@ -24,13 +27,12 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
 
     func fetchLocationStates(in householdId: UUID) async throws -> [LocationStateRecord] {
         #if canImport(Supabase)
-        let response: [LocationStateRecord] = try await provider.client
+        let rawResponse = try await provider.client
             .from(Self.tableName)
-            .select()
+            .select(Self.selectColumns)
             .eq("household_id", value: householdId.uuidString.lowercased())
             .execute()
-            .value
-        return response
+        return try Self.decodeLocationStateRows(from: rawResponse.data)
         #else
         _ = householdId
         throw SupabaseServiceError.sdkUnavailable
@@ -39,14 +41,14 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
 
     func fetchLocationState(householdId: UUID, profileId: UUID) async throws -> LocationStateRecord? {
         #if canImport(Supabase)
-        let rows: [LocationStateRecord] = try await provider.client
+        let rawResponse = try await provider.client
             .from(Self.tableName)
-            .select()
+            .select(Self.selectColumns)
             .eq("household_id", value: householdId.uuidString.lowercased())
             .eq("entity_id", value: profileId.uuidString.lowercased())
             .limit(1)
             .execute()
-            .value
+        let rows = try Self.decodeLocationStateRows(from: rawResponse.data)
         return rows.first
         #else
         _ = householdId
@@ -166,18 +168,22 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         #if canImport(Supabase)
         let patch = LocationStateGhostPatch(isGhostMode: isGhostMode, updatedAt: Date())
         if let existing = try await fetchLocationState(householdId: householdId, profileId: profileId) {
-            let updated: LocationStateRecord = try await provider.client
+            let rawResponse = try await provider.client
                 .from(Self.tableName)
                 .update(patch)
-                .eq("id", value: existing.id.uuidString.lowercased())
-                .select()
+                .eq("household_id", value: householdId.uuidString.lowercased())
+                .eq("entity_id", value: profileId.uuidString.lowercased())
+                .select(Self.selectColumns)
                 .single()
                 .execute()
-                .value
+            let rows = try Self.decodeLocationStateRows(from: rawResponse.data)
+            guard let updated = rows.first else {
+                return existing
+            }
             return updated
         }
 
-        let inserted: LocationStateRecord = try await provider.client
+        let insertResponse = try await provider.client
             .from(Self.tableName)
             .insert(
                 LocationStateUpsertPayload(
@@ -190,11 +196,14 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                     updatedAt: Date()
                 )
             )
-            .select()
+            .select(Self.selectColumns)
             .single()
             .execute()
-            .value
-        return inserted
+        let inserted = try Self.decodeLocationStateRows(from: insertResponse.data)
+        guard let row = inserted.first else {
+            throw SupabaseServiceError.invalidResponse
+        }
+        return row
         #else
         _ = householdId
         _ = profileId
@@ -244,6 +253,27 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         let a = CLLocation(latitude: origin.latitude, longitude: origin.longitude)
         let b = CLLocation(latitude: destination.latitude, longitude: destination.longitude)
         return a.distance(from: b)
+    }
+
+    private static func decodeLocationStateRows(from data: Data) throws -> [LocationStateRecord] {
+        let decoder = locationStateDecoder()
+        do {
+            return try decoder.decode([LocationStateRecord].self, from: data)
+        } catch {
+            #if DEBUG
+            if let rawJSON = String(data: data, encoding: .utf8) {
+                print("[LocationPersist] location_states decode failed JSON:\n\(rawJSON)")
+            }
+            if let decodingError = error as? DecodingError {
+                print("[LocationPersist] decoding detail: \(decodingError)")
+            }
+            #endif
+            throw error
+        }
+    }
+
+    private static func locationStateDecoder() -> JSONDecoder {
+        SupabaseCodec.makeLiteralColumnDecoder()
     }
 }
 

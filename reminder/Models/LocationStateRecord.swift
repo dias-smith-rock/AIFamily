@@ -1,8 +1,10 @@
 import Foundation
 
 /// `location_states` 表行；`entity_id` = **`family_profiles.id`**（非 membership / user id）。
+/// 表主键常为 `(household_id, entity_id)`，**无** `id` 列时 `databaseId` 为 nil。
 struct LocationStateRecord: Identifiable, Equatable, Sendable {
-    let id: UUID
+    /// 若表有 `id` 列则解码；否则用 `profileId` 作为 `Identifiable.id`。
+    let databaseId: UUID?
     let householdId: UUID
     /// 库列 `entity_id`（family_profiles 主键）。
     let profileId: UUID
@@ -12,29 +14,85 @@ struct LocationStateRecord: Identifiable, Equatable, Sendable {
     /// 默认 `false`：仅用户选择「保持隐藏」后为 `true`。
     var isGhostMode: Bool
     var updatedAt: Date
+
+    var id: UUID { databaseId ?? profileId }
 }
 
 extension LocationStateRecord: Codable {
+    /// 与 PostgREST 列名一致；`entity_id` 在 Swift 侧解码为 `entityId` 再赋给 `profileId`。
     enum CodingKeys: String, CodingKey {
-        case id
-        case householdId
-        case profileId = "entity_id"
-        case currentLocation
-        case historyLocation1
-        case historyLocation2
-        case isGhostMode
-        case updatedAt
+        case databaseId = "id"
+        case householdId = "household_id"
+        case entityId = "entity_id"
+        case currentLocation = "current_location"
+        case historyLocation1 = "history_location_1"
+        case historyLocation2 = "history_location_2"
+        case isGhostMode = "is_ghost_mode"
+        case updatedAt = "updated_at"
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        householdId = try container.decode(UUID.self, forKey: .householdId)
-        profileId = try container.decode(UUID.self, forKey: .profileId)
-        currentLocation = try container.decodeIfPresent(LocationPayload.self, forKey: .currentLocation)
-        historyLocation1 = try container.decodeIfPresent(LocationPayload.self, forKey: .historyLocation1)
-        historyLocation2 = try container.decodeIfPresent(LocationPayload.self, forKey: .historyLocation2)
-        isGhostMode = try container.decodeIfPresent(Bool.self, forKey: .isGhostMode) ?? false
-        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        databaseId = Self.decodeOptionalUUID(from: container, forKey: .databaseId)
+        householdId = try Self.decodeRequiredUUID(from: container, forKey: .householdId)
+        profileId = try Self.decodeRequiredUUID(from: container, forKey: .entityId)
+        currentLocation = Self.decodeLenientLocation(from: container, forKey: .currentLocation)
+        historyLocation1 = Self.decodeLenientLocation(from: container, forKey: .historyLocation1)
+        historyLocation2 = Self.decodeLenientLocation(from: container, forKey: .historyLocation2)
+        isGhostMode = (try? container.decode(Bool.self, forKey: .isGhostMode)) ?? false
+        updatedAt = (try? container.decode(Date.self, forKey: .updatedAt)) ?? Date.distantPast
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(databaseId, forKey: .databaseId)
+        try container.encode(householdId, forKey: .householdId)
+        try container.encode(profileId, forKey: .entityId)
+        try container.encodeIfPresent(currentLocation, forKey: .currentLocation)
+        try container.encodeIfPresent(historyLocation1, forKey: .historyLocation1)
+        try container.encodeIfPresent(historyLocation2, forKey: .historyLocation2)
+        try container.encode(isGhostMode, forKey: .isGhostMode)
+        try container.encode(updatedAt, forKey: .updatedAt)
+    }
+
+    private static func decodeOptionalUUID(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> UUID? {
+        if let uuid = try? container.decodeIfPresent(UUID.self, forKey: key) {
+            return uuid
+        }
+        guard let raw = try? container.decodeIfPresent(String.self, forKey: key) else {
+            return nil
+        }
+        return UUID(uuidString: raw)
+    }
+
+    private static func decodeRequiredUUID(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) throws -> UUID {
+        if let uuid = try? container.decode(UUID.self, forKey: key) {
+            return uuid
+        }
+        let raw = try container.decode(String.self, forKey: key)
+        guard let uuid = UUID(uuidString: raw) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: key,
+                in: container,
+                debugDescription: "Invalid UUID string: \(raw)"
+            )
+        }
+        return uuid
+    }
+
+    private static func decodeLenientLocation(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> LocationPayload? {
+        if let payload = try? container.decodeIfPresent(LocationPayload.self, forKey: key) {
+            return payload
+        }
+        return nil
     }
 }

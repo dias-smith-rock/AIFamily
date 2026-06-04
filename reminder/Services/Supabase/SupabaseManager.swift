@@ -56,25 +56,35 @@ enum SupabaseCodec {
     static func makeDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .custom { decoder in
-            let container = try decoder.singleValueContainer()
-            let raw = try container.decode(String.self)
-
-            if let date = isoFormatterWithFractional.date(from: raw) {
-                return date
-            }
-            if let date = isoFormatterPlain.date(from: raw) {
-                return date
-            }
-            if let date = postgresFormatter.date(from: raw) {
-                return date
-            }
-            throw DecodingError.dataCorruptedError(
-                in: container,
-                debugDescription: "Unsupported date format: \(raw)"
-            )
-        }
+        decoder.dateDecodingStrategy = .custom { try decodePostgresTimestamp(from: $0) }
         return decoder
+    }
+
+    /// 模型 `CodingKeys` 已写 PostgREST 列名字面量（如 `history_location_1`）时使用，避免 snake 策略冲突。
+    static func makeLiteralColumnDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .useDefaultKeys
+        decoder.dateDecodingStrategy = .custom { try decodePostgresTimestamp(from: $0) }
+        return decoder
+    }
+
+    private static func decodePostgresTimestamp(from decoder: Decoder) throws -> Date {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+
+        if let date = isoFormatterWithFractional.date(from: raw) {
+            return date
+        }
+        if let date = isoFormatterPlain.date(from: raw) {
+            return date
+        }
+        if let date = postgresFormatter.date(from: raw) {
+            return date
+        }
+        throw DecodingError.dataCorruptedError(
+            in: container,
+            debugDescription: "Unsupported date format: \(raw)"
+        )
     }
 
     private static let isoFormatterWithFractional: ISO8601DateFormatter = {

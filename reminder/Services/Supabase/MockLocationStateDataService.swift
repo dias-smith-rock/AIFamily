@@ -8,7 +8,7 @@ actor MockLocationStateDataService: LocationStateDataService {
         if seedPreview {
             records = UserLocationState.previewHousehold.map { preview in
                 LocationStateRecord(
-                    id: UUID(),
+                    databaseId: UUID(),
                     householdId: UUID(),
                     profileId: preview.id,
                     currentLocation: preview.currentLocation,
@@ -58,7 +58,7 @@ actor MockLocationStateDataService: LocationStateDataService {
         }
         records.append(
             LocationStateRecord(
-                id: UUID(),
+                databaseId: UUID(),
                 householdId: householdId,
                 profileId: profileId,
                 currentLocation: coordinate,
@@ -84,7 +84,7 @@ actor MockLocationStateDataService: LocationStateDataService {
             return row
         }
         let row = LocationStateRecord(
-            id: UUID(),
+            databaseId: UUID(),
             householdId: householdId,
             profileId: profileId,
             currentLocation: nil,

@@ -17,29 +17,46 @@ enum LocationMemberAssembler {
             memberships: roster.memberships
         )
         let profileIds = Set(mergedProfiles.map(\.id))
+        var servedLocationProfileIds = Set<UUID>()
 
         var members: [UserLocationState] = mergedProfiles.map { profile in
             let membership = roster.memberships.first(where: { $0.profileId == profile.id })
                 ?? profile.primaryMembership
 
             if let membership {
+                let record = resolveLocationRecord(
+                    profile: profile,
+                    membership: membership,
+                    recordsByProfile: recordsByProfile
+                )
+                if let record {
+                    servedLocationProfileIds.insert(record.profileId)
+                }
                 return memberState(
                     id: membership.id,
                     householdId: householdId,
                     displayName: membership.displayName(linkedProfile: profile),
                     profile: profile,
-                    record: recordsByProfile[profile.id],
+                    record: record,
                     isVirtualMember: profile.isVirtualUser,
                     currentMembershipId: currentMembershipId
                 )
             }
 
+            let record = resolveLocationRecord(
+                profile: profile,
+                membership: nil,
+                recordsByProfile: recordsByProfile
+            )
+            if let record {
+                servedLocationProfileIds.insert(record.profileId)
+            }
             return memberState(
                 id: profile.id,
                 householdId: householdId,
                 displayName: profile.displayName,
                 profile: profile,
-                record: recordsByProfile[profile.id],
+                record: record,
                 isVirtualMember: profile.isVirtualUser,
                 currentMembershipId: currentMembershipId
             )
@@ -47,22 +64,36 @@ enum LocationMemberAssembler {
 
         for membership in roster.memberships {
             guard let profileId = membership.profileId else {
-                members.append(orphanMembershipRow(
+                let row = orphanMembershipRow(
                     membership,
                     householdId: householdId,
                     recordsByProfile: recordsByProfile,
-                    currentMembershipId: currentMembershipId
-                ))
+                    currentMembershipId: currentMembershipId,
+                    servedLocationProfileIds: &servedLocationProfileIds
+                )
+                members.append(row)
                 continue
             }
             guard profileIds.contains(profileId) == false else { continue }
-            members.append(orphanMembershipRow(
-                membership,
-                householdId: householdId,
-                recordsByProfile: recordsByProfile,
-                currentMembershipId: currentMembershipId
-            ))
+            members.append(
+                orphanMembershipRow(
+                    membership,
+                    householdId: householdId,
+                    recordsByProfile: recordsByProfile,
+                    currentMembershipId: currentMembershipId,
+                    servedLocationProfileIds: &servedLocationProfileIds
+                )
+            )
         }
+
+        appendMembersForUnmappedLocationRecords(
+            into: &members,
+            roster: roster,
+            recordsByProfile: recordsByProfile,
+            servedLocationProfileIds: servedLocationProfileIds,
+            householdId: householdId,
+            currentMembershipId: currentMembershipId
+        )
 
         return members.sorted { lhs, rhs in
             if lhs.isCurrentUser != rhs.isCurrentUser {
@@ -75,22 +106,120 @@ enum LocationMemberAssembler {
         }
     }
 
+    private static func resolveLocationRecord(
+        profile: FamilyProfile,
+        membership: HouseholdMembership?,
+        recordsByProfile: [UUID: LocationStateRecord]
+    ) -> LocationStateRecord? {
+        if let record = recordsByProfile[profile.id] {
+            return record
+        }
+        if let membershipProfileId = membership?.profileId,
+           membershipProfileId != profile.id,
+           let record = recordsByProfile[membershipProfileId] {
+            return record
+        }
+        if let nestedId = membership?.profile?.id,
+           nestedId != profile.id,
+           let record = recordsByProfile[nestedId] {
+            return record
+        }
+        return nil
+    }
+
     private static func orphanMembershipRow(
         _ membership: HouseholdMembership,
         householdId: UUID,
         recordsByProfile: [UUID: LocationStateRecord],
-        currentMembershipId: UUID?
+        currentMembershipId: UUID?,
+        servedLocationProfileIds: inout Set<UUID>
     ) -> UserLocationState {
-        let profileId = membership.profileId
+        let record: LocationStateRecord?
+        if let profile = membership.profile {
+            record = resolveLocationRecord(
+                profile: profile,
+                membership: membership,
+                recordsByProfile: recordsByProfile
+            )
+        } else if let profileId = membership.profileId {
+            record = recordsByProfile[profileId]
+        } else {
+            record = nil
+        }
+        if let record {
+            servedLocationProfileIds.insert(record.profileId)
+        }
         return memberState(
             id: membership.id,
             householdId: householdId,
             displayName: membership.displayName(linkedProfile: membership.profile),
             profile: membership.profile,
-            record: profileId.flatMap { recordsByProfile[$0] },
+            record: record,
             isVirtualMember: membership.userId == nil,
             currentMembershipId: currentMembershipId
         )
+    }
+
+    /// 库里有 `location_states` 但名册未挂上档案时，仍生成可展示成员行（避免地图只显示自己）。
+    private static func appendMembersForUnmappedLocationRecords(
+        into members: inout [UserLocationState],
+        roster: HouseholdMemberRoster,
+        recordsByProfile: [UUID: LocationStateRecord],
+        servedLocationProfileIds: Set<UUID>,
+        householdId: UUID,
+        currentMembershipId: UUID?
+    ) {
+        let memberProfileIds = Set(roster.memberships.compactMap(\.profileId))
+        for record in recordsByProfile.values {
+            guard servedLocationProfileIds.contains(record.profileId) == false else { continue }
+            guard record.currentLocation != nil else { continue }
+
+            if let membership = roster.memberships.first(where: { $0.profileId == record.profileId }) {
+                if let index = members.firstIndex(where: { $0.id == membership.id }) {
+                    if members[index].currentLocation == nil {
+                        members[index] = memberState(
+                            id: membership.id,
+                            householdId: householdId,
+                            displayName: membership.displayName(linkedProfile: membership.profile),
+                            profile: membership.profile,
+                            record: record,
+                            isVirtualMember: membership.userId == nil,
+                            currentMembershipId: currentMembershipId
+                        )
+                    }
+                } else {
+                    members.append(
+                        memberState(
+                            id: membership.id,
+                            householdId: householdId,
+                            displayName: membership.displayName(linkedProfile: membership.profile),
+                            profile: membership.profile,
+                            record: record,
+                            isVirtualMember: membership.userId == nil,
+                            currentMembershipId: currentMembershipId
+                        )
+                    )
+                }
+                continue
+            }
+
+            if memberProfileIds.contains(record.profileId) {
+                continue
+            }
+
+            let profile = roster.profiles.first(where: { $0.id == record.profileId })
+            members.append(
+                memberState(
+                    id: record.profileId,
+                    householdId: householdId,
+                    displayName: profile?.displayName ?? String(localized: "群组成员"),
+                    profile: profile,
+                    record: record,
+                    isVirtualMember: profile?.isVirtualUser == true,
+                    currentMembershipId: currentMembershipId
+                )
+            )
+        }
     }
 
     private static func memberState(

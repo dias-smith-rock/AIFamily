@@ -145,6 +145,13 @@ final class LocationMainViewModel: ObservableObject {
             var locationRecords: [LocationStateRecord] = []
             do {
                 locationRecords = try await locationStateService.fetchLocationStates(in: householdId)
+                #if DEBUG
+                let withCoordinates = locationRecords.filter { $0.currentLocation != nil }.count
+                print(
+                    "[LocationMainViewModel] location_states rows=\(locationRecords.count) "
+                        + "withCoordinates=\(withCoordinates) household=\(householdId.uuidString.prefix(8))"
+                )
+                #endif
             } catch {
                 #if DEBUG
                 print("[LocationMainViewModel] location_states fetch failed (members still shown): \(error.localizedDescription)")
@@ -164,6 +171,13 @@ final class LocationMainViewModel: ObservableObject {
                 householdId: householdId,
                 currentMembershipId: currentMembershipId
             )
+            #if DEBUG
+            print(
+                "[LocationMainViewModel] map members=\(members.count) "
+                    + "visibleOnMap=\(members.filter(\.isVisibleOnMap).count) "
+                    + "rosterMemberships=\(roster.memberships.count)"
+            )
+            #endif
             syncCurrentUserBatteryFromDevice()
             reconcileSelectionAfterReload()
         } catch {
@@ -306,9 +320,10 @@ final class LocationMainViewModel: ObservableObject {
 
     private func reconcileSelectionAfterReload() {
         let selectableIDs = Set(members.filter(\.isSelectableOnMap).map(\.id))
+        let visibleIDs = Set(members.filter(\.isVisibleOnMap).map(\.id))
         selectedMemberIDs = selectedMemberIDs.intersection(selectableIDs)
         if selectedMemberIDs.isEmpty {
-            selectedMemberIDs = selectableIDs
+            selectedMemberIDs = visibleIDs.isEmpty == false ? visibleIDs : selectableIDs
         }
     }
 
