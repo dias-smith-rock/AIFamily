@@ -8,7 +8,7 @@ struct MineView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
-    @AppStorage("requireFaceID") private var requireFaceID = true
+    @AppStorage("requireFaceID") private var requireFaceID = false
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
     @StateObject private var viewModel = AppViewModels.makeMineViewModel()
     @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()

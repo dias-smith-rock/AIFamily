@@ -6,7 +6,7 @@ struct ContentView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
-    @AppStorage("requireFaceID") private var requireFaceID = true
+    @AppStorage("requireFaceID") private var requireFaceID = false
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
     @StateObject private var biometricManager = BiometricManager()
     @State private var shouldHideAppSwitcherSnapshot = false
@@ -147,7 +147,7 @@ struct ContentView: View {
     private var rootContent: some View {
         if isUserLoggedIn == false {
             LoginView()
-        } else if biometricManager.isUnlocked == false {
+        } else if requireFaceID, biometricManager.isUnlocked == false {
             LockScreenView(
                 isAuthenticating: biometricManager.isAuthenticating,
                 onUnlock: { biometricManager.authenticate() }

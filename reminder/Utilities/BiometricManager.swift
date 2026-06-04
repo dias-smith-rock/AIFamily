@@ -4,7 +4,7 @@ import LocalAuthentication
 
 @MainActor
 final class BiometricManager: ObservableObject {
-    @AppStorage("requireFaceID") var requireFaceID: Bool = true
+    @AppStorage("requireFaceID") var requireFaceID: Bool = false
     @Published var isUnlocked: Bool = false
     @Published private(set) var isAuthenticating = false
 
