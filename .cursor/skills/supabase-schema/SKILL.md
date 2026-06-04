@@ -66,7 +66,7 @@ description: >-
 - **展示态**：`UserLocationState` 含 `householdId`（合并自 `LocationMemberAssembler`）。
 - **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`20260602_live_huddle_realtime_rls.sql`。
 
-迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`。
+迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`、`20260602_location_states_rls.sql`、`20260602_location_states_entity_fk_membership.sql`（`entity_id` → `household_memberships.id`，修复 `fk_location_states_entity`）。
 
 ### 写入路径
 

@@ -85,6 +85,7 @@ struct LocationMainView: View {
             guard isTabActive else { return }
             await bindLiveContext()
             await viewModel.refresh()
+            liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
             await viewModel.captureCurrentUserLocationForMap()
             await liveManager.observeHuddleLobby()
             fitCameraToLiveAndDisplayedMembers()
@@ -112,6 +113,9 @@ struct LocationMainView: View {
         }
         .onChange(of: liveManager.activeParticipants.count) { _, _ in
             fitCameraToLiveAndDisplayedMembers()
+        }
+        .onChange(of: viewModel.profileIdByMembershipId) { _, map in
+            liveManager.updateProfileIdByMembershipId(map)
         }
         .onChange(of: DeviceBatteryMonitor.shared.batteryLevel) { _, _ in
             viewModel.syncCurrentUserBatteryFromDevice()
@@ -572,7 +576,8 @@ struct LocationMainView: View {
     private func bindLiveContext() async {
         viewModel.bind(
             householdId: appRouter.selectedHouseholdId,
-            currentMembershipId: appRouter.selectedMembershipId
+            currentMembershipId: appRouter.selectedMembershipId,
+            currentProfileId: appRouter.selectedProfileId
         )
 
         var authUserId: UUID?
@@ -583,6 +588,7 @@ struct LocationMainView: View {
         liveManager.bind(
             householdId: appRouter.selectedHouseholdId,
             currentMembershipId: appRouter.selectedMembershipId,
+            currentProfileId: appRouter.selectedProfileId,
             currentUserId: authUserId,
             displayName: viewModel.currentUser?.displayName
         )

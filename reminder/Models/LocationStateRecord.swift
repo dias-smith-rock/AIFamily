@@ -1,11 +1,11 @@
 import Foundation
 
-/// `location_states` 表行；`entity_id` = **`household_memberships.id`**（非 user id）。
+/// `location_states` 表行；`entity_id` = **`family_profiles.id`**（非 membership / user id）。
 struct LocationStateRecord: Identifiable, Equatable, Sendable {
     let id: UUID
     let householdId: UUID
-    /// 库列 `entity_id`（membership 主键）。
-    let membershipId: UUID
+    /// 库列 `entity_id`（family_profiles 主键）。
+    let profileId: UUID
     var currentLocation: LocationPayload?
     var historyLocation1: LocationPayload?
     var historyLocation2: LocationPayload?
@@ -18,7 +18,7 @@ extension LocationStateRecord: Codable {
     enum CodingKeys: String, CodingKey {
         case id
         case householdId
-        case membershipId = "entity_id"
+        case profileId = "entity_id"
         case currentLocation
         case historyLocation1
         case historyLocation2
@@ -30,7 +30,7 @@ extension LocationStateRecord: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         householdId = try container.decode(UUID.self, forKey: .householdId)
-        membershipId = try container.decode(UUID.self, forKey: .membershipId)
+        profileId = try container.decode(UUID.self, forKey: .profileId)
         currentLocation = try container.decodeIfPresent(LocationPayload.self, forKey: .currentLocation)
         historyLocation1 = try container.decodeIfPresent(LocationPayload.self, forKey: .historyLocation1)
         historyLocation2 = try container.decodeIfPresent(LocationPayload.self, forKey: .historyLocation2)

@@ -22,6 +22,8 @@ final class AppRouter: ObservableObject {
     @Published private(set) var recentHouseholds: [HouseholdOption] = []
     @Published private(set) var selectedHouseholdId: UUID?
     @Published private(set) var selectedMembershipId: UUID?
+    /// 当前用户在 `location_states` 中的 `entity_id`（`family_profiles.id`）。
+    @Published private(set) var selectedProfileId: UUID?
     @Published private(set) var selectedHouseholdName: String?
     @Published private(set) var selectedHouseholdDescription: String = ""
     @Published private(set) var userEntitlement: UserEntitlement?
@@ -46,6 +48,7 @@ final class AppRouter: ObservableObject {
     struct HouseholdOption: Identifiable, Equatable {
         let id: UUID
         let membershipId: UUID
+        let profileId: UUID?
         let name: String
         var isPremium: Bool
         var description: String
@@ -80,6 +83,7 @@ final class AppRouter: ObservableObject {
 
         selectedHouseholdId = snapshot.householdId
         selectedMembershipId = nil
+        selectedProfileId = nil
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
         selectedHouseholdIsPremium = snapshot.householdIsPremium
@@ -122,6 +126,7 @@ final class AppRouter: ObservableObject {
                 recentHouseholds = []
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
+        selectedProfileId = nil
                 selectedHouseholdName = nil
                 selectedHouseholdDescription = ""
                 selectedHouseholdIsPremium = false
@@ -162,6 +167,7 @@ final class AppRouter: ObservableObject {
 
             selectedHouseholdId = nil
             selectedMembershipId = nil
+        selectedProfileId = nil
             selectedHouseholdName = nil
             selectedHouseholdDescription = ""
             selectedHouseholdIsPremium = false
@@ -177,6 +183,7 @@ final class AppRouter: ObservableObject {
                 recentHouseholds = []
                 selectedHouseholdId = nil
                 selectedMembershipId = nil
+        selectedProfileId = nil
                 selectedHouseholdName = nil
                 selectedHouseholdDescription = ""
                 selectedHouseholdIsPremium = false
@@ -196,6 +203,7 @@ final class AppRouter: ObservableObject {
         appState = .orgRouting
         selectedHouseholdId = nil
         selectedMembershipId = nil
+        selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectedHouseholdIsPremium = false
@@ -208,6 +216,7 @@ final class AppRouter: ObservableObject {
         appState = .pendingApproval
         selectedHouseholdId = nil
         selectedMembershipId = nil
+        selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectableHouseholds = []
@@ -219,6 +228,7 @@ final class AppRouter: ObservableObject {
         appState = .householdSelection
         selectedHouseholdId = nil
         selectedMembershipId = nil
+        selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectedHouseholdIsPremium = false
@@ -232,6 +242,7 @@ final class AppRouter: ObservableObject {
     func exitToOrgHubAfterDisband() {
         selectedHouseholdId = nil
         selectedMembershipId = nil
+        selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectableHouseholds = []
@@ -270,6 +281,7 @@ final class AppRouter: ObservableObject {
         let option = HouseholdOption(
             id: joined.householdId,
             membershipId: joined.id,
+            profileId: joined.profileId,
             name: joined.displayHouseholdName,
             isPremium: joined.household?.isPremium == true,
             description: ""
@@ -344,6 +356,7 @@ final class AppRouter: ObservableObject {
     private struct MembershipRow: Decodable {
         let id: UUID
         let householdId: UUID
+        let profileId: UUID?
         let status: String
     }
 
@@ -391,7 +404,7 @@ final class AppRouter: ObservableObject {
         debugLog("query.memberships.start user=\(userId.uuidString)")
         let rows: [MembershipRow] = try await client
             .from("household_memberships")
-            .select("id,household_id,status")
+            .select("id,household_id,profile_id,status")
             .eq("user_id", value: userId.uuidString)
             .order("created_at", ascending: false)
             .execute()
@@ -423,6 +436,7 @@ final class AppRouter: ObservableObject {
                     .init(
                         id: household.id,
                         membershipId: membership.id,
+                        profileId: membership.profileId,
                         name: household.name,
                         isPremium: household.isPremium == true,
                         description: household.description ?? ""
@@ -434,6 +448,7 @@ final class AppRouter: ObservableObject {
                     .init(
                         id: householdID,
                         membershipId: membership.id,
+                        profileId: membership.profileId,
                         name: "群组 \(householdID.uuidString.prefix(6))",
                         isPremium: false,
                         description: ""
@@ -453,6 +468,7 @@ final class AppRouter: ObservableObject {
     private func selectHouseholdAndEnter(option: HouseholdOption, userId: UUID) {
         selectedHouseholdId = option.id
         selectedMembershipId = option.membershipId
+        selectedProfileId = option.profileId
         selectedHouseholdName = option.name
         selectedHouseholdDescription = option.description
         selectedHouseholdIsPremium = option.isPremium

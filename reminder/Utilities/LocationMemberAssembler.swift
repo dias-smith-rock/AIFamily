@@ -8,8 +8,8 @@ enum LocationMemberAssembler {
         householdId: UUID,
         currentMembershipId: UUID?
     ) -> [UserLocationState] {
-        let recordsByMembership = locationRecords.reduce(into: [UUID: LocationStateRecord]()) { partial, record in
-            partial[record.membershipId] = record
+        let recordsByProfile = locationRecords.reduce(into: [UUID: LocationStateRecord]()) { partial, record in
+            partial[record.profileId] = record
         }
 
         let mergedProfiles = FamilyProfile.mergingMembershipRows(
@@ -28,7 +28,7 @@ enum LocationMemberAssembler {
                     householdId: householdId,
                     displayName: membership.displayName(linkedProfile: profile),
                     profile: profile,
-                    record: recordsByMembership[membership.id],
+                    record: recordsByProfile[profile.id],
                     isVirtualMember: profile.isVirtualUser,
                     currentMembershipId: currentMembershipId
                 )
@@ -39,7 +39,7 @@ enum LocationMemberAssembler {
                 householdId: householdId,
                 displayName: profile.displayName,
                 profile: profile,
-                record: nil,
+                record: recordsByProfile[profile.id],
                 isVirtualMember: profile.isVirtualUser,
                 currentMembershipId: currentMembershipId
             )
@@ -50,7 +50,7 @@ enum LocationMemberAssembler {
                 members.append(orphanMembershipRow(
                     membership,
                     householdId: householdId,
-                    recordsByMembership: recordsByMembership,
+                    recordsByProfile: recordsByProfile,
                     currentMembershipId: currentMembershipId
                 ))
                 continue
@@ -59,7 +59,7 @@ enum LocationMemberAssembler {
             members.append(orphanMembershipRow(
                 membership,
                 householdId: householdId,
-                recordsByMembership: recordsByMembership,
+                recordsByProfile: recordsByProfile,
                 currentMembershipId: currentMembershipId
             ))
         }
@@ -78,15 +78,16 @@ enum LocationMemberAssembler {
     private static func orphanMembershipRow(
         _ membership: HouseholdMembership,
         householdId: UUID,
-        recordsByMembership: [UUID: LocationStateRecord],
+        recordsByProfile: [UUID: LocationStateRecord],
         currentMembershipId: UUID?
     ) -> UserLocationState {
-        memberState(
+        let profileId = membership.profileId
+        return memberState(
             id: membership.id,
             householdId: householdId,
             displayName: membership.displayName(linkedProfile: membership.profile),
             profile: membership.profile,
-            record: recordsByMembership[membership.id],
+            record: profileId.flatMap { recordsByProfile[$0] },
             isVirtualMember: membership.userId == nil,
             currentMembershipId: currentMembershipId
         )
@@ -101,13 +102,14 @@ enum LocationMemberAssembler {
         isVirtualMember: Bool,
         currentMembershipId: UUID?
     ) -> UserLocationState {
+        let ghostProfileId = profile?.id ?? record?.profileId
         let isGhost: Bool
         if isVirtualMember {
             isGhost = false
-        } else if id == currentMembershipId {
+        } else if id == currentMembershipId, let ghostProfileId {
             isGhost = LocationGhostPreferences.isEffectivelyGhost(
                 databaseFlag: record?.isGhostMode == true,
-                membershipId: id
+                profileId: ghostProfileId
             )
         } else {
             isGhost = LocationGhostPreferences.isGhostOnServer(record: record)

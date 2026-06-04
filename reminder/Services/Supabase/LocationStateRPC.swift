@@ -2,7 +2,7 @@ import Foundation
 
 #if canImport(Supabase)
 
-/// `push_entity_location`：`p_entity_id` = **`household_memberships.id`**（非 `auth.users.id`）。
+/// `push_entity_location`：`p_entity_id` = **`family_profiles.id`**（非 membership / user id）。
 struct PushEntityLocationParams: Encodable, Sendable {
     let pEntityId: UUID
     let pHouseholdId: UUID

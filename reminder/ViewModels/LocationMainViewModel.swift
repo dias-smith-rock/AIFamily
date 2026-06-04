@@ -30,12 +30,15 @@ final class LocationMainViewModel: ObservableObject {
     @Published var errorMessage: String?
     /// 本机刚读取的坐标，用于地图展示当前用户（隐身时亦显示，不一定写入服务端）。
     @Published private(set) var currentUserLiveLocation: LocationPayload?
+    /// 名册 membership.id → family_profiles.id（Live 读库种子用）。
+    @Published private(set) var profileIdByMembershipId: [UUID: UUID] = [:]
 
     private let locationStateService: LocationStateDataService
     private let membershipService: HouseholdMembershipDataService
 
     private var householdId: UUID?
     private var currentMembershipId: UUID?
+    private var currentProfileId: UUID?
     /// 实时模式期间暂停隐身展示与上报拦截（不改变用户已保存的隐身偏好）。
     private(set) var isLiveModeActive = false
     private var batteryCancellable: AnyCancellable?
@@ -90,9 +93,10 @@ final class LocationMainViewModel: ObservableObject {
         }
     }
 
-    func bind(householdId: UUID?, currentMembershipId: UUID?) {
+    func bind(householdId: UUID?, currentMembershipId: UUID?, currentProfileId: UUID?) {
         self.householdId = householdId
         self.currentMembershipId = currentMembershipId
+        self.currentProfileId = currentProfileId
     }
 
     /// 进入位置 Tab 时调用：读取本机 GPS 并更新地图；非隐身时再按距离规则上报服务端。
@@ -105,14 +109,15 @@ final class LocationMainViewModel: ObservableObject {
             longitude: coordinate.longitude
         )
         currentUserLiveLocation = payload
+        LastKnownDeviceLocation.record(latitude: payload.latitude, longitude: payload.longitude)
         syncCurrentUserBatteryFromDevice()
 
-        guard let householdId, let currentMembershipId, isCurrentUserGhost == false else { return }
+        guard let householdId, let currentProfileId, isCurrentUserGhost == false else { return }
 
         do {
             _ = try await locationStateService.reportCurrentLocationIfNeeded(
                 householdId: householdId,
-                membershipId: currentMembershipId,
+                profileId: currentProfileId,
                 coordinate: payload,
                 minDistanceMeters: SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
             )
@@ -147,6 +152,12 @@ final class LocationMainViewModel: ObservableObject {
             }
             await reconcileCurrentUserGhostStateIfNeeded(in: householdId)
 
+            profileIdByMembershipId = Dictionary(
+                uniqueKeysWithValues: roster.memberships.compactMap { membership in
+                    guard let profileId = membership.profileId else { return nil }
+                    return (membership.id, profileId)
+                }
+            )
             members = LocationMemberAssembler.buildMembers(
                 roster: roster,
                 locationRecords: locationRecords,
@@ -190,23 +201,23 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     func applyGhostOption(_ option: GhostModeOption) async {
-        guard let householdId, let currentMembershipId else { return }
+        guard let householdId, let currentProfileId else { return }
 
         switch option {
         case .pauseOneHour:
             LocationGhostPreferences.applyTimedGhost(
                 until: Date().addingTimeInterval(3_600),
-                for: currentMembershipId
+                for: currentProfileId
             )
         case .untilTonight:
             LocationGhostPreferences.applyTimedGhost(
                 until: endOfToday(),
-                for: currentMembershipId
+                for: currentProfileId
             )
         case .keepHidden:
-            LocationGhostPreferences.applyPersistentGhost(for: currentMembershipId)
+            LocationGhostPreferences.applyPersistentGhost(for: currentProfileId)
         case .stopHiding:
-            LocationGhostPreferences.clearGhostPreferences(for: currentMembershipId)
+            LocationGhostPreferences.clearGhostPreferences(for: currentProfileId)
         }
 
         let shouldPersistGhostInDatabase: Bool
@@ -220,7 +231,7 @@ final class LocationMainViewModel: ObservableObject {
         do {
             _ = try await locationStateService.updateGhostMode(
                 householdId: householdId,
-                membershipId: currentMembershipId,
+                profileId: currentProfileId,
                 isGhostMode: shouldPersistGhostInDatabase
             )
             await refresh()
@@ -267,25 +278,25 @@ final class LocationMainViewModel: ObservableObject {
 
     /// 旧版曾把计时时效写入 `is_ghost_mode`；计时结束后自动清库，避免长期误显示隐身。
     private func reconcileCurrentUserGhostStateIfNeeded(in householdId: UUID) async {
-        guard let currentMembershipId else { return }
+        guard let currentProfileId else { return }
 
         do {
             let record = try await locationStateService.fetchLocationState(
                 householdId: householdId,
-                membershipId: currentMembershipId
+                profileId: currentProfileId
             )
             guard let record else { return }
             guard LocationGhostPreferences.shouldClearDatabaseGhostAfterReconcile(
                 databaseFlag: record.isGhostMode,
-                membershipId: currentMembershipId
+                profileId: currentProfileId
             ) else { return }
 
             _ = try await locationStateService.updateGhostMode(
                 householdId: householdId,
-                membershipId: currentMembershipId,
+                profileId: currentProfileId,
                 isGhostMode: false
             )
-            LocationGhostPreferences.clearGhostPreferences(for: currentMembershipId)
+            LocationGhostPreferences.clearGhostPreferences(for: currentProfileId)
         } catch {
             #if DEBUG
             print("[LocationMainViewModel] ghost reconcile skipped: \(error.localizedDescription)")

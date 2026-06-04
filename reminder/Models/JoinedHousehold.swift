@@ -4,12 +4,14 @@ import Foundation
 struct JoinedHousehold: Identifiable, Codable, Equatable {
     let id: UUID
     let householdId: UUID
+    let profileId: UUID?
     let role: String?
     let household: HouseholdBasicInfo?
 
     enum CodingKeys: String, CodingKey {
         case id
         case householdId
+        case profileId
         case role
         case household = "households"
     }
@@ -17,11 +19,13 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
     init(
         id: UUID,
         householdId: UUID,
+        profileId: UUID? = nil,
         role: String?,
         household: HouseholdBasicInfo?
     ) {
         self.id = id
         self.householdId = householdId
+        self.profileId = profileId
         self.role = role
         self.household = household
     }
@@ -30,6 +34,7 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         householdId = try Self.decodeHouseholdId(from: container)
+        profileId = try container.decodeIfPresent(UUID.self, forKey: .profileId)
         role = try container.decodeIfPresent(String.self, forKey: .role)
         household = try Self.decodeHouseholdEmbed(from: container)
     }

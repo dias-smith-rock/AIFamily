@@ -6,7 +6,14 @@ import Supabase
 #endif
 
 struct SupabaseLocationStateDataService: LocationStateDataService {
-    static let defaultMinUpdateDistanceMeters: Double = 500
+    /// Release：500m；Debug：0m，便于验证入库链路。
+    static var defaultMinUpdateDistanceMeters: Double {
+        #if DEBUG
+        return 0
+        #else
+        return 500
+        #endif
+    }
     private static let tableName = "location_states"
 
     private let provider: SupabaseClientProviding
@@ -30,20 +37,20 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         #endif
     }
 
-    func fetchLocationState(householdId: UUID, membershipId: UUID) async throws -> LocationStateRecord? {
+    func fetchLocationState(householdId: UUID, profileId: UUID) async throws -> LocationStateRecord? {
         #if canImport(Supabase)
         let rows: [LocationStateRecord] = try await provider.client
             .from(Self.tableName)
             .select()
             .eq("household_id", value: householdId.uuidString.lowercased())
-            .eq("entity_id", value: membershipId.uuidString.lowercased())
+            .eq("entity_id", value: profileId.uuidString.lowercased())
             .limit(1)
             .execute()
             .value
         return rows.first
         #else
         _ = householdId
-        _ = membershipId
+        _ = profileId
         throw SupabaseServiceError.sdkUnavailable
         #endif
     }
@@ -51,26 +58,53 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
     @discardableResult
     func reportCurrentLocationIfNeeded(
         householdId: UUID,
-        membershipId: UUID,
+        profileId: UUID,
         coordinate: LocationPayload,
         minDistanceMeters: Double
-    ) async throws -> Bool {
-        let existing = try await fetchLocationState(householdId: householdId, membershipId: membershipId)
+    ) async throws -> LocationPersistOutcome {
+        let existing = try await fetchLocationStateForReport(
+            householdId: householdId,
+            profileId: profileId
+        )
         if LocationGhostPreferences.isEffectivelyGhost(
             databaseFlag: existing?.isGhostMode == true,
-            membershipId: membershipId
+            profileId: profileId
         ) {
-            return false
+            print(
+                "[LocationPersist] skip write ghost mode "
+                + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+            )
+            return .skippedGhost
         }
 
-        if let current = existing?.currentLocation,
-           distanceMeters(from: current, to: coordinate) < minDistanceMeters {
-            return false
+        let movedMeters: Double?
+        if let current = existing?.currentLocation {
+            let moved = distanceMeters(from: current, to: coordinate)
+            movedMeters = moved
+            if moved < minDistanceMeters {
+                print(
+                    "[LocationPersist] skip write moved=\(String(format: "%.1f", moved))m "
+                        + "need≥\(String(format: "%.0f", minDistanceMeters))m "
+                        + String(format: "new lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+                        + String(format: " prev lat=%.6f lng=%.6f", current.latitude, current.longitude)
+                )
+                return .skippedWithinThreshold(distanceMeters: moved)
+            }
+        } else {
+            movedMeters = nil
         }
+
+        print(
+            "[LocationPersist] writing to database "
+                + "profile=\(profileId.uuidString.prefix(8)) "
+                + "household=\(householdId.uuidString.prefix(8)) "
+                + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+                + (movedMeters.map { " moved=\(String(format: "%.1f", $0))m" } ?? " moved=first_write")
+        )
 
         #if canImport(Supabase)
         let params = PushEntityLocationParams(
-            pEntityId: membershipId,
+            pEntityId: profileId,
             pHouseholdId: householdId,
             pNewLocation: coordinate
         )
@@ -78,12 +112,21 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             _ = try await provider.client
                 .rpc("push_entity_location", params: params)
                 .execute()
-            return true
-        } catch where LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) {
+            print(
+                "[LocationPersist] push_entity_location ok profile=\(profileId.uuidString.prefix(8)) "
+                + "household=\(householdId.uuidString.prefix(8)) "
+                + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+            )
+            return .persisted
+        } catch {
+            logLocationPersistDatabaseError(error)
+            guard LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) else {
+                throw error
+            }
             let now = Date()
             let payload = LocationStateUpsertPayload(
                 householdId: householdId,
-                membershipId: membershipId,
+                profileId: profileId,
                 currentLocation: coordinate,
                 historyLocation1: existing?.currentLocation,
                 historyLocation2: existing?.historyLocation1,
@@ -99,11 +142,16 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                 _ = try await provider.client
                     .from(Self.tableName)
                     .update(payload)
-                    .eq("entity_id", value: membershipId.uuidString.lowercased())
+                    .eq("entity_id", value: profileId.uuidString.lowercased())
                     .eq("household_id", value: householdId.uuidString.lowercased())
                     .execute()
             }
-            return true
+            print(
+                "[LocationPersist] location_states \(existing == nil ? "insert" : "update") ok "
+                    + "profile=\(profileId.uuidString.prefix(8)) "
+                    + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+            )
+            return .persisted
         }
         #else
         throw SupabaseServiceError.sdkUnavailable
@@ -112,12 +160,12 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
 
     func updateGhostMode(
         householdId: UUID,
-        membershipId: UUID,
+        profileId: UUID,
         isGhostMode: Bool
     ) async throws -> LocationStateRecord {
         #if canImport(Supabase)
         let patch = LocationStateGhostPatch(isGhostMode: isGhostMode, updatedAt: Date())
-        if let existing = try await fetchLocationState(householdId: householdId, membershipId: membershipId) {
+        if let existing = try await fetchLocationState(householdId: householdId, profileId: profileId) {
             let updated: LocationStateRecord = try await provider.client
                 .from(Self.tableName)
                 .update(patch)
@@ -134,7 +182,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             .insert(
                 LocationStateUpsertPayload(
                     householdId: householdId,
-                    membershipId: membershipId,
+                    profileId: profileId,
                     currentLocation: nil,
                     historyLocation1: nil,
                     historyLocation2: nil,
@@ -149,10 +197,47 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         return inserted
         #else
         _ = householdId
-        _ = membershipId
+        _ = profileId
         _ = isGhostMode
         throw SupabaseServiceError.sdkUnavailable
         #endif
+    }
+
+    /// 读库失败（常见：未执行 GRANT/RLS 迁移）时返回 `nil`，写入改走 `push_entity_location`。
+    private func logLocationPersistDatabaseError(_ error: Error) {
+        let message = error.localizedDescription.lowercased()
+        if message.contains("fk_location_states_entity")
+            || message.contains("foreign key constraint") {
+            print(
+                "[LocationPersist] FK error: entity_id must be family_profiles.id — "
+                    + "run 20260602_location_states_profile_entity.sql on Supabase"
+            )
+        }
+    }
+
+    private func fetchLocationStateForReport(
+        householdId: UUID,
+        profileId: UUID
+    ) async throws -> LocationStateRecord? {
+        do {
+            return try await fetchLocationState(householdId: householdId, profileId: profileId)
+        } catch {
+            let message = error.localizedDescription.lowercased()
+            if message.contains("permission denied") {
+                print(
+                    "[LocationPersist] fetchLocationState denied (run 20260602_location_states_rls.sql); "
+                        + "will try push_entity_location RPC"
+                )
+                if LocationGhostPreferences.isEffectivelyGhost(
+                    databaseFlag: false,
+                    profileId: profileId
+                ) {
+                    return nil
+                }
+                return nil
+            }
+            throw error
+        }
     }
 
     private func distanceMeters(from origin: LocationPayload, to destination: LocationPayload) -> CLLocationDistance {
@@ -166,7 +251,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
 
 private struct LocationStateUpsertPayload: Encodable {
     let householdId: UUID
-    let membershipId: UUID
+    let profileId: UUID
     let currentLocation: LocationPayload?
     let historyLocation1: LocationPayload?
     let historyLocation2: LocationPayload?
@@ -175,7 +260,7 @@ private struct LocationStateUpsertPayload: Encodable {
 
     enum CodingKeys: String, CodingKey {
         case householdId = "household_id"
-        case membershipId = "entity_id"
+        case profileId = "entity_id"
         case currentLocation = "current_location"
         case historyLocation1 = "history_location_1"
         case historyLocation2 = "history_location_2"
@@ -186,7 +271,7 @@ private struct LocationStateUpsertPayload: Encodable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(householdId, forKey: .householdId)
-        try container.encode(membershipId, forKey: .membershipId)
+        try container.encode(profileId, forKey: .profileId)
         if let currentLocation {
             try container.encode(currentLocation, forKey: .currentLocation)
         } else {

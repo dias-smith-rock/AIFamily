@@ -3,8 +3,21 @@ import Foundation
 
 enum DeviceLocationFetcher {
     /// 单次读取设备坐标；授权失败或定位失败时返回 `nil`（DEBUG 模拟器回退香港随机点）。
-    static func currentCoordinate() async -> CLLocationCoordinate2D? {
-        await OneShotCoordinateFetcher().fetch()
+    static func currentCoordinate(timeoutSeconds: TimeInterval? = nil) async -> CLLocationCoordinate2D? {
+        guard let timeoutSeconds, timeoutSeconds > 0 else {
+            return await OneShotCoordinateFetcher().fetch()
+        }
+
+        return await withTaskGroup(of: CLLocationCoordinate2D?.self) { group in
+            group.addTask { await OneShotCoordinateFetcher().fetch() }
+            group.addTask {
+                try? await Task.sleep(nanoseconds: UInt64(timeoutSeconds * 1_000_000_000))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
+        }
     }
 }
 
@@ -58,6 +71,9 @@ private final class OneShotCoordinateFetcher: NSObject, CLLocationManagerDelegat
 
     private func finish(with coordinate: CLLocationCoordinate2D?) {
         let resolved = resolveCoordinate(coordinate)
+        if let resolved {
+            LastKnownDeviceLocation.record(latitude: resolved.latitude, longitude: resolved.longitude)
+        }
         continuation?.resume(returning: resolved)
         continuation = nil
         manager.delegate = nil

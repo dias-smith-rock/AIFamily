@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 
 actor MockLocationStateDataService: LocationStateDataService {
@@ -9,7 +10,7 @@ actor MockLocationStateDataService: LocationStateDataService {
                 LocationStateRecord(
                     id: UUID(),
                     householdId: UUID(),
-                    membershipId: preview.id,
+                    profileId: preview.id,
                     currentLocation: preview.currentLocation,
                     historyLocation1: preview.historyLocation1,
                     historyLocation2: preview.historyLocation2,
@@ -25,34 +26,41 @@ actor MockLocationStateDataService: LocationStateDataService {
         return records
     }
 
-    func fetchLocationState(householdId: UUID, membershipId: UUID) async throws -> LocationStateRecord? {
+    func fetchLocationState(householdId: UUID, profileId: UUID) async throws -> LocationStateRecord? {
         _ = householdId
-        return records.first(where: { $0.membershipId == membershipId })
+        return records.first(where: { $0.profileId == profileId })
     }
 
     @discardableResult
     func reportCurrentLocationIfNeeded(
         householdId: UUID,
-        membershipId: UUID,
+        profileId: UUID,
         coordinate: LocationPayload,
         minDistanceMeters: Double
-    ) async throws -> Bool {
-        _ = minDistanceMeters
-        if let index = records.firstIndex(where: { $0.membershipId == membershipId }) {
+    ) async throws -> LocationPersistOutcome {
+        if let index = records.firstIndex(where: { $0.profileId == profileId }) {
             var row = records[index]
-            if row.isGhostMode { return false }
+            if row.isGhostMode { return .skippedGhost }
+            if let current = row.currentLocation {
+                let a = CLLocation(latitude: current.latitude, longitude: current.longitude)
+                let b = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+                let moved = a.distance(from: b)
+                if moved < minDistanceMeters {
+                    return .skippedWithinThreshold(distanceMeters: moved)
+                }
+            }
             row.historyLocation2 = row.historyLocation1
             row.historyLocation1 = row.currentLocation
             row.currentLocation = coordinate
             row.updatedAt = Date()
             records[index] = row
-            return true
+            return .persisted
         }
         records.append(
             LocationStateRecord(
                 id: UUID(),
                 householdId: householdId,
-                membershipId: membershipId,
+                profileId: profileId,
                 currentLocation: coordinate,
                 historyLocation1: nil,
                 historyLocation2: nil,
@@ -60,15 +68,15 @@ actor MockLocationStateDataService: LocationStateDataService {
                 updatedAt: Date()
             )
         )
-        return true
+        return .persisted
     }
 
     func updateGhostMode(
         householdId: UUID,
-        membershipId: UUID,
+        profileId: UUID,
         isGhostMode: Bool
     ) async throws -> LocationStateRecord {
-        if let index = records.firstIndex(where: { $0.membershipId == membershipId }) {
+        if let index = records.firstIndex(where: { $0.profileId == profileId }) {
             var row = records[index]
             row.isGhostMode = isGhostMode
             row.updatedAt = Date()
@@ -78,7 +86,7 @@ actor MockLocationStateDataService: LocationStateDataService {
         let row = LocationStateRecord(
             id: UUID(),
             householdId: householdId,
-            membershipId: membershipId,
+            profileId: profileId,
             currentLocation: nil,
             historyLocation1: nil,
             historyLocation2: nil,

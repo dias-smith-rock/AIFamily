@@ -10,7 +10,13 @@ import Supabase
 @MainActor
 final class LiveLocationManager: NSObject, ObservableObject {
     static let inactivityTimeoutSeconds = 900
-    static let databaseAggregationMeters: Double = 200
+    static var databaseAggregationMeters: Double {
+        #if DEBUG
+        return 0
+        #else
+        return 200
+        #endif
+    }
     private static let movementResetsInactivityMeters: Double = 8
     private static let peerMoveMinInterval: TimeInterval = 1.0
     private static let presenceRefreshMinInterval: TimeInterval = 5.0
@@ -31,6 +37,9 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     private var householdId: UUID?
     private var currentMembershipId: UUID?
+    /// `location_states.entity_id`（family_profiles.id）。
+    private var currentProfileId: UUID?
+    private var profileIdByMembershipId: [UUID: UUID] = [:]
     private var currentUserId: UUID?
     private var currentDisplayName: String = "群组成员"
     private var connectedChannelHouseholdId: UUID?
@@ -110,12 +119,14 @@ final class LiveLocationManager: NSObject, ObservableObject {
     func bind(
         householdId: UUID?,
         currentMembershipId: UUID?,
+        currentProfileId: UUID?,
         currentUserId: UUID?,
         displayName: String? = nil
     ) {
         let householdChanged = self.householdId != householdId
         self.householdId = householdId
         self.currentMembershipId = currentMembershipId
+        self.currentProfileId = currentProfileId
         self.currentUserId = currentUserId
         if let trimmed = displayName?.trimmingCharacters(in: .whitespacesAndNewlines),
            trimmed.isEmpty == false {
@@ -123,6 +134,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         }
 
         if householdChanged {
+            profileIdByMembershipId = [:]
             householdTransitionTask?.cancel()
             householdTransitionTask = Task { @MainActor in
                 if isLiveModeActive {
@@ -131,6 +143,11 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 await disconnectChannel()
             }
         }
+    }
+
+    /// 名册刷新后更新 membership → profile，供 Live 从 `location_states` 占位种子。
+    func updateProfileIdByMembershipId(_ map: [UUID: UUID]) {
+        profileIdByMembershipId = map
     }
 
     /// 被动订阅 Presence，用于 Lobby 卡片展示（不 track、不开启高精度 GPS）。
@@ -754,10 +771,14 @@ final class LiveLocationManager: NSObject, ObservableObject {
         liveLog("DB seed attempt for \(membershipIds.count) peer(s)")
         for membershipId in membershipIds where membershipId != currentMembershipId {
             guard livePeerLocations[membershipId] == nil else { continue }
+            guard let profileId = profileIdForDatabase(membershipId: membershipId) else {
+                liveLog("DB seed skipped no profile membership=\(membershipId.uuidString.prefix(8))")
+                continue
+            }
             do {
                 guard let record = try await locationStateService.fetchLocationState(
                     householdId: householdId,
-                    membershipId: membershipId
+                    profileId: profileId
                 ), let payload = record.currentLocation else {
                     liveLog("DB seed empty row membership=\(membershipId.uuidString.prefix(8))")
                     continue
@@ -814,8 +835,15 @@ final class LiveLocationManager: NSObject, ObservableObject {
         #endif
     }
 
+    private func profileIdForDatabase(membershipId: UUID) -> UUID? {
+        if membershipId == currentMembershipId {
+            return currentProfileId
+        }
+        return profileIdByMembershipId[membershipId]
+    }
+
     private func uploadToDatabaseIfNeeded(_ location: CLLocation, force: Bool = false) async {
-        guard let householdId, let currentMembershipId else { return }
+        guard let householdId, let currentProfileId else { return }
 
         if force == false, let lastLoggedDBLocation {
             let distance = location.distance(from: lastLoggedDBLocation)
@@ -830,17 +858,25 @@ final class LiveLocationManager: NSObject, ObservableObject {
         )
 
         do {
-            _ = try await locationStateService.reportCurrentLocationIfNeeded(
+            let outcome = try await locationStateService.reportCurrentLocationIfNeeded(
                 householdId: householdId,
-                membershipId: currentMembershipId,
+                profileId: currentProfileId,
                 coordinate: payload,
                 minDistanceMeters: Self.databaseAggregationMeters
             )
-            lastLoggedDBLocation = location
+            switch outcome {
+            case .persisted:
+                lastLoggedDBLocation = location
+                liveLog("DB upload persisted lat=\(payload.latitude) lng=\(payload.longitude)")
+            case .skippedGhost:
+                liveLog("DB upload skipped: ghost mode")
+            case .skippedWithinThreshold(let distanceMeters):
+                liveLog(
+                    "DB upload skipped: moved=\(Int(distanceMeters))m need≥\(Int(Self.databaseAggregationMeters))m"
+                )
+            }
         } catch {
-            #if DEBUG
-            print("[LiveLocationManager] DB upload skipped: \(error.localizedDescription)")
-            #endif
+            liveLog("DB upload failed: \(error.localizedDescription)")
         }
     }
 
@@ -896,6 +932,7 @@ extension LiveLocationManager: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         Task { @MainActor in
+            LastKnownDeviceLocation.record(location)
             noteMovementIfSignificant(location)
             if isLiveModeActive {
                 await sendLiveBroadcast(location)

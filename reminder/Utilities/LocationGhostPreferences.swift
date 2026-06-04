@@ -9,25 +9,25 @@ enum LocationGhostPreferences {
         case persistent
     }
 
-    private static func hiddenUntilKey(for membershipId: UUID) -> String {
-        "location.ghostUntil.\(membershipId.uuidString.lowercased())"
+    private static func hiddenUntilKey(for profileId: UUID) -> String {
+        "location.ghostUntil.\(profileId.uuidString.lowercased())"
     }
 
-    private static func intentKey(for membershipId: UUID) -> String {
-        "location.ghostIntent.\(membershipId.uuidString.lowercased())"
+    private static func intentKey(for profileId: UUID) -> String {
+        "location.ghostIntent.\(profileId.uuidString.lowercased())"
     }
 
-    static func hiddenUntil(for membershipId: UUID) -> Date? {
+    static func hiddenUntil(for profileId: UUID) -> Date? {
         let interval = UserDefaults.standard.double(
-            forKey: hiddenUntilKey(for: membershipId)
+            forKey: hiddenUntilKey(for: profileId)
         )
         guard interval > 0 else { return nil }
         let date = Date(timeIntervalSince1970: interval)
         return date > Date() ? date : nil
     }
 
-    static func setHiddenUntil(_ date: Date?, for membershipId: UUID) {
-        let key = hiddenUntilKey(for: membershipId)
+    static func setHiddenUntil(_ date: Date?, for profileId: UUID) {
+        let key = hiddenUntilKey(for: profileId)
         if let date {
             UserDefaults.standard.set(date.timeIntervalSince1970, forKey: key)
         } else {
@@ -35,24 +35,24 @@ enum LocationGhostPreferences {
         }
     }
 
-    static func applyTimedGhost(until: Date, for membershipId: UUID) {
-        setHiddenUntil(until, for: membershipId)
-        UserDefaults.standard.set(GhostIntent.timed.rawValue, forKey: intentKey(for: membershipId))
+    static func applyTimedGhost(until: Date, for profileId: UUID) {
+        setHiddenUntil(until, for: profileId)
+        UserDefaults.standard.set(GhostIntent.timed.rawValue, forKey: intentKey(for: profileId))
     }
 
-    static func applyPersistentGhost(for membershipId: UUID) {
-        setHiddenUntil(nil, for: membershipId)
-        UserDefaults.standard.set(GhostIntent.persistent.rawValue, forKey: intentKey(for: membershipId))
+    static func applyPersistentGhost(for profileId: UUID) {
+        setHiddenUntil(nil, for: profileId)
+        UserDefaults.standard.set(GhostIntent.persistent.rawValue, forKey: intentKey(for: profileId))
     }
 
-    static func clearGhostPreferences(for membershipId: UUID) {
-        setHiddenUntil(nil, for: membershipId)
-        UserDefaults.standard.removeObject(forKey: intentKey(for: membershipId))
+    static func clearGhostPreferences(for profileId: UUID) {
+        setHiddenUntil(nil, for: profileId)
+        UserDefaults.standard.removeObject(forKey: intentKey(for: profileId))
     }
 
-    /// 本机当前成员是否应视为隐身（计时中或库中已标记保持隐藏）。
-    static func isEffectivelyGhost(databaseFlag: Bool, membershipId: UUID) -> Bool {
-        if hiddenUntil(for: membershipId) != nil {
+    /// 本机当前档案是否应视为隐身（计时中或库中已标记保持隐藏）。
+    static func isEffectivelyGhost(databaseFlag: Bool, profileId: UUID) -> Bool {
+        if hiddenUntil(for: profileId) != nil {
             return true
         }
         return databaseFlag
@@ -66,11 +66,11 @@ enum LocationGhostPreferences {
     /// 计时结束后若库中仍有陈旧 `is_ghost_mode`（旧版误写入），自动恢复为可见。
     static func reconcileStaleDatabaseGhostIfNeeded(
         databaseFlag: Bool,
-        membershipId: UUID
+        profileId: UUID
     ) -> Bool {
         guard databaseFlag else { return false }
-        guard hiddenUntil(for: membershipId) == nil else { return true }
-        let intent = UserDefaults.standard.string(forKey: intentKey(for: membershipId))
+        guard hiddenUntil(for: profileId) == nil else { return true }
+        let intent = UserDefaults.standard.string(forKey: intentKey(for: profileId))
         if intent == GhostIntent.persistent.rawValue {
             return true
         }
@@ -79,11 +79,11 @@ enum LocationGhostPreferences {
 
     static func shouldClearDatabaseGhostAfterReconcile(
         databaseFlag: Bool,
-        membershipId: UUID
+        profileId: UUID
     ) -> Bool {
         databaseFlag && reconcileStaleDatabaseGhostIfNeeded(
             databaseFlag: databaseFlag,
-            membershipId: membershipId
+            profileId: profileId
         ) == false
     }
 }

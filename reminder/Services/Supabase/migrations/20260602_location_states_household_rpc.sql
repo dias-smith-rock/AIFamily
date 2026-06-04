@@ -1,4 +1,5 @@
--- location_states 群组隔离 + push_entity_location RPC
+-- location_states 群组隔离 + push_entity_location RPC（历史版本，entity 曾误用 membership）
+-- 当前 canonical 迁移：20260602_location_states_profile_entity.sql（entity_id = family_profiles.id）
 -- 在 Supabase SQL Editor 执行后：Settings → API → Reload schema cache
 
 alter table if exists public.location_states

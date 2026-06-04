@@ -102,19 +102,29 @@ struct ContentView: View {
         .task(id: isUserLoggedIn) {
             guard isUserLoggedIn else {
                 BackgroundLocationCoordinator.shared.stop()
+                ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
+                ForegroundLocationPersistEligibility.shared.canPersist = false
                 return
             }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
-            await reportLocationIfNeeded()
+            refreshForegroundLocationSchedulerContext()
+            await persistForegroundLocation(trigger: .appEnteredForeground)
             await syncBackgroundLocationService()
+            startForegroundLocationPeriodicRefreshIfNeeded()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
-            Task { await syncBackgroundLocationService() }
+            Task {
+                refreshForegroundLocationSchedulerContext()
+                await syncBackgroundLocationService()
+            }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, _ in
-            Task { await syncBackgroundLocationService() }
+            Task {
+                refreshForegroundLocationSchedulerContext()
+                await syncBackgroundLocationService()
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -126,10 +136,19 @@ struct ContentView: View {
                     _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
-                    await reportLocationIfNeeded()
+                    refreshForegroundLocationSchedulerContext()
+                    await persistForegroundLocation(trigger: .appEnteredForeground)
                     await syncBackgroundLocationService()
+                    startForegroundLocationPeriodicRefreshIfNeeded()
                 }
-            } else if newPhase == .inactive || newPhase == .background {
+            } else if newPhase == .inactive {
+                ForegroundLocationPersistScheduler.shared.stop(reason: "sceneInactive")
+                shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
+            } else if newPhase == .background {
+                Task {
+                    await flushLocationBeforeEnteringBackground()
+                }
+                ForegroundLocationPersistScheduler.shared.stop(reason: "sceneBackground")
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
                 if requireFaceID {
                     biometricManager.lockIfNeeded()
@@ -234,14 +253,66 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func reportLocationIfNeeded() async {
-        guard isUserLoggedIn, biometricManager.isUnlocked else { return }
-        guard appRouter.appState == .activeMember else { return }
-        await LocationStartupReporter.reportIfNeeded(
+    private var canPersistForegroundLocation: Bool {
+        guard isUserLoggedIn else { return false }
+        let unlocked = requireFaceID == false || biometricManager.isUnlocked
+        guard unlocked else { return false }
+        guard appRouter.appState == .activeMember else { return false }
+        return true
+    }
+
+    @MainActor
+    private func locationPersistContext() -> LocationPersistSession.Context {
+        LocationPersistSession.Context(
+            isUserLoggedIn: isUserLoggedIn,
+            isUnlockedForLocation: requireFaceID == false || biometricManager.isUnlocked,
+            appState: appRouter.appState,
             householdId: appRouter.selectedHouseholdId,
-            membershipId: appRouter.selectedMembershipId,
+            profileId: appRouter.selectedProfileId,
+            backgroundLocationEnabled: BackgroundLocationPreferences.isEnabled
+        )
+    }
+
+    @MainActor
+    private func persistForegroundLocation(trigger: LocationPersistTrigger) async {
+        await LocationPersistSession.perform(
+            trigger: trigger,
+            context: locationPersistContext(),
+            locationStateService: appBootstrap.services.locationStateService,
+            allowWhenBackgroundLocationEnabled: false
+        )
+    }
+
+    /// 退后台前最后一次入库：不受「后台定位」开关限制（与 BackgroundLocationCoordinator 双轨互补）。
+    @MainActor
+    private func flushLocationBeforeEnteringBackground() async {
+        await LocationPersistSession.perform(
+            trigger: .appEnteringBackground,
+            context: locationPersistContext(),
+            locationStateService: appBootstrap.services.locationStateService,
+            allowWhenBackgroundLocationEnabled: true
+        )
+    }
+
+    @MainActor
+    private func refreshForegroundLocationSchedulerContext() {
+        ForegroundLocationPersistEligibility.shared.canPersist =
+            BackgroundLocationPreferences.isEnabled == false && canPersistForegroundLocation
+        ForegroundLocationPersistScheduler.shared.updateContext(
+            householdId: appRouter.selectedHouseholdId,
+            profileId: appRouter.selectedProfileId,
             locationStateService: appBootstrap.services.locationStateService
         )
+    }
+
+    @MainActor
+    private func startForegroundLocationPeriodicRefreshIfNeeded() {
+        guard BackgroundLocationPreferences.isEnabled == false else {
+            ForegroundLocationPersistScheduler.shared.stop(reason: "backgroundLocationEnabled")
+            return
+        }
+        refreshForegroundLocationSchedulerContext()
+        ForegroundLocationPersistScheduler.shared.startIfNeeded()
     }
 
     @MainActor
@@ -259,7 +330,7 @@ struct ContentView: View {
         )
         BackgroundLocationCoordinator.shared.updateContext(
             householdId: appRouter.selectedHouseholdId,
-            membershipId: appRouter.selectedMembershipId
+            profileId: appRouter.selectedProfileId
         )
         await BackgroundLocationCoordinator.shared.applyStoredPreference()
     }

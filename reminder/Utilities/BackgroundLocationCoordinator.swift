@@ -12,7 +12,7 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
     private let manager = CLLocationManager()
     private var locationStateService: LocationStateDataService?
     private var householdId: UUID?
-    private var membershipId: UUID?
+    private var profileId: UUID?
     private var isMonitoring = false
     private var isPausedForLiveMode = false
 
@@ -30,9 +30,9 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         self.locationStateService = locationStateService
     }
 
-    func updateContext(householdId: UUID?, membershipId: UUID?) {
+    func updateContext(householdId: UUID?, profileId: UUID?) {
         self.householdId = householdId
-        self.membershipId = membershipId
+        self.profileId = profileId
     }
 
     func setPausedForLiveMode(_ paused: Bool) {
@@ -46,13 +46,19 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
     func setEnabled(_ enabled: Bool) async {
         UserDefaults.standard.set(enabled, forKey: BackgroundLocationPreferences.storageKey)
         refreshAuthorizationNotice()
+        print(
+            "[LocationPersist] backgroundCoordinator setEnabled=\(enabled) "
+                + "auth=\(manager.authorizationStatus.rawValue) "
+                + "hasContext=\(householdId != nil && profileId != nil && locationStateService != nil)"
+        )
 
         guard enabled else {
             stopMonitoring()
             return
         }
 
-        guard householdId != nil, membershipId != nil, locationStateService != nil else {
+        guard householdId != nil, profileId != nil, locationStateService != nil else {
+            print("[LocationPersist] backgroundCoordinator skipped reason=missingContext")
             stopMonitoring()
             return
         }
@@ -75,7 +81,7 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
     func stop() {
         stopMonitoring()
         householdId = nil
-        membershipId = nil
+        profileId = nil
         needsAlwaysPermission = false
     }
 
@@ -85,7 +91,7 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
             stopMonitoring()
             return
         }
-        guard householdId != nil, membershipId != nil else { return }
+        guard householdId != nil, profileId != nil else { return }
 
         switch manager.authorizationStatus {
         case .authorizedAlways:
@@ -117,9 +123,7 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         manager.startUpdatingLocation()
         manager.startMonitoringSignificantLocationChanges()
         isMonitoring = true
-        #if DEBUG
-        print("[BackgroundLocationCoordinator] monitoring started (always)")
-        #endif
+        print("[LocationPersist] backgroundCoordinator monitoring started mode=always")
     }
 
     private func startForegroundStyleUpdatesIfPossible() {
@@ -127,9 +131,7 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         manager.allowsBackgroundLocationUpdates = false
         manager.startUpdatingLocation()
         isMonitoring = true
-        #if DEBUG
-        print("[BackgroundLocationCoordinator] monitoring started (when in use only)")
-        #endif
+        print("[LocationPersist] backgroundCoordinator monitoring started mode=whenInUseOnly")
     }
 
     private func stopMonitoring() {
@@ -141,18 +143,27 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         manager.stopMonitoringSignificantLocationChanges()
         manager.allowsBackgroundLocationUpdates = false
         isMonitoring = false
-        #if DEBUG
-        print("[BackgroundLocationCoordinator] monitoring stopped")
-        #endif
+        print("[LocationPersist] backgroundCoordinator monitoring stopped")
     }
 
     private func reportIfNeeded(_ location: CLLocation) async {
-        guard isPausedForLiveMode == false else { return }
-        guard let householdId, let membershipId, let locationStateService else { return }
+        guard isPausedForLiveMode == false else {
+            #if DEBUG
+            print("[LocationPersist] backgroundGPS skipped reason=liveModeActive")
+            #endif
+            return
+        }
+        guard let householdId, let profileId, let locationStateService else {
+            #if DEBUG
+            print("[LocationPersist] backgroundGPS skipped reason=missingContext")
+            #endif
+            return
+        }
 
         await LocationStartupReporter.reportCoordinate(
+            trigger: .backgroundContinuous,
             householdId: householdId,
-            membershipId: membershipId,
+            profileId: profileId,
             coordinate: location.coordinate,
             locationStateService: locationStateService
         )
@@ -171,6 +182,7 @@ extension BackgroundLocationCoordinator: CLLocationManagerDelegate {
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         Task { @MainActor in
+            LastKnownDeviceLocation.record(location)
             await reportIfNeeded(location)
         }
     }
