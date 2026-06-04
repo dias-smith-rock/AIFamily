@@ -111,11 +111,14 @@ struct ContentView: View {
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
                     guard isUserLoggedIn else { return }
+                    guard biometricManager.isAuthenticating == false else { return }
                     _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
                     await appRouter.refreshStateFromBackend()
                     await fetchHouseholdsAndCheckCreatorRole()
                 }
-            } else if newPhase == .inactive || newPhase == .background {
+            } else if newPhase == .inactive {
+                shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
+            } else if newPhase == .background {
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
                 if requireFaceID {
                     biometricManager.lockIfNeeded()
@@ -146,12 +149,13 @@ struct ContentView: View {
             LoginView()
         } else if requireFaceID, biometricManager.isUnlocked == false {
             LockScreenView(
-                isAuthenticating: biometricManager.isAuthenticating,
+                isAuthenticatingBiometrics: biometricManager.isAuthenticatingBiometrics,
+                isAuthenticatingPasscode: biometricManager.isAuthenticatingPasscode,
                 onUnlockWithBiometrics: { biometricManager.authenticateWithBiometrics() },
                 onUnlockWithPasscode: { biometricManager.authenticateWithPasscode() }
             )
-            .onAppear {
-                biometricManager.authenticateWithBiometrics()
+            .task(id: biometricManager.lockPresentationGeneration) {
+                biometricManager.performAutoUnlockOnLockScreen()
             }
         } else {
             postAuthRoutedContent
@@ -169,9 +173,7 @@ struct ContentView: View {
         case .householdSelection, .orgRouting:
             HouseholdSelectionView()
         case .unauthenticated:
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            HouseholdSelectionView()
         }
     }
 
