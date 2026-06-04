@@ -18,6 +18,8 @@ struct ContentView: View {
         .environmentObject(groupSwitcher)
         .animation(.easeInOut, value: isUserLoggedIn)
         .animation(.easeInOut, value: biometricManager.isUnlocked)
+        .animation(.easeInOut, value: appRouter.appState)
+        .animation(.easeInOut, value: appRouter.selectedHouseholdId)
         .alert("权限变更通知", isPresented: newCreatorAlertBinding) {
             Button("立即查看") {
                 appRouter.enterNewlyAssignedCreatorHousehold()
@@ -100,7 +102,6 @@ struct ContentView: View {
         .task(id: isUserLoggedIn) {
             guard isUserLoggedIn else { return }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-            appRouter.goToActiveMember()
             await appRouter.refreshStateFromBackend()
             await fetchHouseholdsAndCheckCreatorRole()
             await reportLocationIfNeeded()
@@ -155,9 +156,44 @@ struct ContentView: View {
                 biometricManager.authenticate()
             }
         } else {
-            AppTabRootView()
+            authenticatedRoot
                 .blur(radius: shouldHideAppSwitcherSnapshot ? 20 : 0)
         }
+    }
+
+    @ViewBuilder
+    private var authenticatedRoot: some View {
+        switch appRouter.appState {
+        case .activeMember where appRouter.selectedHouseholdId != nil:
+            AppTabRootView()
+        case .householdSelection:
+            HouseholdSelectionView()
+        case .orgRouting:
+            OrgRoutingView()
+        case .pendingApproval:
+            PendingView()
+        case .activeMember:
+            householdRoutingFallback
+        case .unauthenticated:
+            routingBootstrapPlaceholder
+        }
+    }
+
+    /// 已登录但尚未选出当前群组：优先组织选择页，无可用群组时回到创建/加入入口。
+    private var householdRoutingFallback: some View {
+        Group {
+            if appRouter.selectableHouseholds.isEmpty {
+                OrgRoutingView()
+            } else {
+                HouseholdSelectionView()
+            }
+        }
+    }
+
+    private var routingBootstrapPlaceholder: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemGroupedBackground))
     }
 
     private static var hasLoggedAppOpenThisSession = false
