@@ -34,6 +34,20 @@ final class LocalCacheManager {
     }
 
     func load<T: Codable>(forKey key: String) -> T? {
+        loadSync(forKey: key)
+    }
+
+    /// 在后台队列读盘解码，避免大 JSON 阻塞主线程。
+    func load<T: Codable>(forKey key: String) async -> T? {
+        await withCheckedContinuation { continuation in
+            ioQueue.async { [weak self] in
+                let value: T? = self?.loadSync(forKey: key)
+                continuation.resume(returning: value)
+            }
+        }
+    }
+
+    private func loadSync<T: Codable>(forKey key: String) -> T? {
         let url = Self.fileURL(forKey: key, directory: cacheDirectoryURL)
         guard fileManager.fileExists(atPath: url.path) else { return nil }
         do {

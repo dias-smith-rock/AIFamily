@@ -136,6 +136,30 @@ final class LocationMainViewModel: ObservableObject {
             return
         }
 
+        if await NetworkMonitor.shared.isConnected == false {
+            if let cachedMembers = await HouseholdLocalCache.loadMembers(for: householdId) {
+                let filtered = cachedMembers.filteredToActiveMembers(in: householdId)
+                let locationRecords = await HouseholdLocalCache.loadLocationStates(for: householdId) ?? []
+                members = LocationMemberAssembler.buildMembers(
+                    roster: HouseholdMemberRoster(
+                        profiles: filtered.profiles,
+                        memberships: filtered.members
+                    ),
+                    locationRecords: locationRecords,
+                    householdId: householdId,
+                    currentMembershipId: currentMembershipId
+                )
+                profileIdByMembershipId = Dictionary(
+                    uniqueKeysWithValues: filtered.members.compactMap { membership in
+                        guard let profileId = membership.profileId else { return nil }
+                        return (membership.id, profileId)
+                    }
+                )
+                reconcileSelectionAfterReload()
+            }
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -171,6 +195,9 @@ final class LocationMainViewModel: ObservableObject {
                 householdId: householdId,
                 currentMembershipId: currentMembershipId
             )
+            if !locationRecords.isEmpty {
+                HouseholdLocalCache.saveLocationStates(locationRecords, for: householdId)
+            }
             #if DEBUG
             print(
                 "[LocationMainViewModel] map members=\(members.count) "

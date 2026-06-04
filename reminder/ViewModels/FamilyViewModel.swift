@@ -33,23 +33,12 @@ final class FamilyViewModel: ObservableObject {
     private var currentHouseholdId: UUID?
     private var currentMembershipId: UUID?
 
-    private struct FamilyMembersCachePayload: Codable {
-        let profiles: [FamilyProfile]
-        let members: [HouseholdMembership]
-
-        func filteredToActiveMembers(in householdId: UUID) -> FamilyMembersCachePayload {
-            let roster = HouseholdMemberRoster(profiles: profiles, memberships: members)
-                .filteredToActiveMembers(in: householdId)
-            return FamilyMembersCachePayload(profiles: roster.profiles, members: roster.memberships)
-        }
-    }
-
     private static func membersCacheKey(for householdId: UUID) -> String {
-        "family.members.snapshot.\(householdId.uuidString.lowercased())"
+        HouseholdLocalCache.membersCacheKey(for: householdId)
     }
 
     static func tasksCacheKey(for householdId: UUID) -> String {
-        "schedule.tasks.snapshot.\(householdId.uuidString.lowercased())"
+        HouseholdLocalCache.tasksCacheKey(for: householdId)
     }
 
     var canDisbandCurrentHousehold: Bool {
@@ -361,9 +350,41 @@ final class FamilyViewModel: ObservableObject {
         #if DEBUG
         print("🔎 [FamilyDebug] loadMembers start - householdId=\(currentHouseholdId?.uuidString ?? "nil"), membershipId=\(currentMembershipId?.uuidString ?? "nil")")
         #endif
+        guard let householdId = currentHouseholdId else {
+            requiresLogin = false
+            errorMessage = ProfileManagementCopy.noHouseholdSelected
+            profiles = []
+            orderedProfiles = []
+            members = []
+            hasLoadedOnce = true
+            #if DEBUG
+            print("🔎 [FamilyDebug] loadMembers aborted - no household selected")
+            #endif
+            return
+        }
+
+        let cacheKey = Self.membersCacheKey(for: householdId)
+        let cachedPayload = await HouseholdLocalCache.loadMembers(for: householdId)
+        if let cachedPayload {
+            let filtered = cachedPayload.filteredToActiveMembers(in: householdId)
+            profiles = filtered.profiles
+            let fromEmbed = FamilyProfile.uniqueMembershipsFlattened(from: profiles)
+            members = fromEmbed.isEmpty ? filtered.members : fromEmbed
+            attachMembershipsFromFlatMembers()
+            sortProfilesForDisplay()
+            applyLocalOrdering()
+            errorMessage = nil
+            hasLoadedOnce = true
+            requiresLogin = false
+        }
+
         let hasSession = await authService.hasValidSession()
         guard hasSession else {
             if AuthSessionGuard.shared.isLoggingOut {
+                return
+            }
+            if cachedPayload != nil {
+                requiresLogin = false
                 return
             }
             requiresLogin = true
@@ -378,36 +399,16 @@ final class FamilyViewModel: ObservableObject {
             return
         }
 
-        guard let householdId = currentHouseholdId else {
-            requiresLogin = false
-            errorMessage = ProfileManagementCopy.noHouseholdSelected
-            profiles = []
-            orderedProfiles = []
-            members = []
-            hasLoadedOnce = true
+        requiresLogin = false
+
+        let hadDiskCache = cachedPayload != nil
+
+        guard await NetworkMonitor.shared.isConnected else {
             #if DEBUG
-            print("🔎 [FamilyDebug] loadMembers aborted - no household selected")
+            print("🔎 [FamilyDebug] loadMembers skipped network reason=offline hadCache=\(hadDiskCache)")
             #endif
             return
         }
-
-        requiresLogin = false
-
-        let cacheKey = Self.membersCacheKey(for: householdId)
-        let cachedPayload: FamilyMembersCachePayload? = LocalCacheManager.shared.load(forKey: cacheKey)
-        if let cachedPayload {
-            let filtered = cachedPayload.filteredToActiveMembers(in: householdId)
-            profiles = filtered.profiles
-            let fromEmbed = FamilyProfile.uniqueMembershipsFlattened(from: profiles)
-            members = fromEmbed.isEmpty ? filtered.members : fromEmbed
-            attachMembershipsFromFlatMembers()
-            sortProfilesForDisplay()
-            applyLocalOrdering()
-            errorMessage = nil
-            hasLoadedOnce = true
-        }
-
-        let hadDiskCache = cachedPayload != nil
         let showBlockingSpinner = hadDiskCache == false
         if showBlockingSpinner {
             isLoading = true
@@ -452,7 +453,7 @@ final class FamilyViewModel: ObservableObject {
             members = combined
             attachMembershipsFromFlatMembers()
             applyLocalOrdering()
-            let snapshot = FamilyMembersCachePayload(profiles: profiles, members: members)
+            let snapshot = HouseholdLocalCache.MembersSnapshot(profiles: profiles, members: members)
             LocalCacheManager.shared.save(snapshot, forKey: cacheKey)
             #if DEBUG
             print("✅ [FamilyDebug] loadMembers success - profiles=\(p.count), memberships=\(members.count)")

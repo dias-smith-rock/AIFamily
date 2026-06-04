@@ -230,6 +230,13 @@ struct SupabaseAuthService: AuthService {
 
     func hasValidSession() async -> Bool {
         #if canImport(Supabase)
+        if provider.client.auth.currentSession != nil {
+            return true
+        }
+        let isConnected = await NetworkMonitor.shared.isConnected
+        if isConnected == false {
+            return AuthSessionHints.hasEverAuthenticated
+        }
         do {
             _ = try await provider.client.auth.session
             return true

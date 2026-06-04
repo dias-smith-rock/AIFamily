@@ -61,7 +61,7 @@ final class TodoListViewModel: ObservableObject {
     }
 
     private static func tasksCacheKey(for householdId: UUID) -> String {
-        "schedule.tasks.snapshot.\(householdId.uuidString.lowercased())"
+        HouseholdLocalCache.tasksCacheKey(for: householdId)
     }
 
     /// 首次进入或切换群组时加载；已有内存缓存则跳过网络请求。
@@ -91,19 +91,19 @@ final class TodoListViewModel: ObservableObject {
             return
         }
 
-        if rosterLoadedForHouseholdId != householdId {
-            await loadHouseholdRoster(in: householdId)
-        }
-
         let cacheKey = Self.tasksCacheKey(for: householdId)
 
         var restoredFromDisk = false
         if force == false, silent == false,
-           let cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: cacheKey) {
+           let cached = await HouseholdLocalCache.loadTasks(for: householdId) {
             applyFlexibleTasks(from: cached)
             errorMessage = nil
             restoredFromDisk = true
             loadedHouseholdId = householdId
+        }
+
+        if rosterLoadedForHouseholdId != householdId {
+            await loadHouseholdRosterFromCache(in: householdId)
         }
 
         let showLoading = !silent && !restoredFromDisk && flexibleTasks.isEmpty
@@ -117,7 +117,14 @@ final class TodoListViewModel: ObservableObject {
             }
         }
 
+        guard await NetworkMonitor.shared.isConnected else {
+            return
+        }
+
         do {
+            if rosterLoadedForHouseholdId != householdId {
+                await loadHouseholdRosterFromNetwork(in: householdId)
+            }
             let fresh = try await taskService.fetchTasks(in: householdId)
             applyFlexibleTasks(from: fresh)
             LocalCacheManager.shared.save(fresh, forKey: cacheKey)
@@ -253,7 +260,19 @@ final class TodoListViewModel: ObservableObject {
 
     // MARK: - Private
 
-    private func loadHouseholdRoster(in householdId: UUID) async {
+    private func loadHouseholdRosterFromCache(in householdId: UUID) async {
+        guard rosterLoadedForHouseholdId != householdId else { return }
+        guard let snapshot = await HouseholdLocalCache.loadMembers(for: householdId) else { return }
+        let filtered = snapshot.filteredToActiveMembers(in: householdId)
+        HouseholdLocalCache.applyRosterSnapshot(
+            filtered,
+            to: &householdMembers,
+            familyProfiles: &familyProfiles
+        )
+        rosterLoadedForHouseholdId = householdId
+    }
+
+    private func loadHouseholdRosterFromNetwork(in householdId: UUID) async {
         do {
             let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
                 .filteredToActiveMembers(in: householdId)
@@ -267,9 +286,10 @@ final class TodoListViewModel: ObservableObject {
                 .sorted { $0.createdAt < $1.createdAt }
             rosterLoadedForHouseholdId = householdId
         } catch {
-            householdMembers = []
-            familyProfiles = []
-            rosterLoadedForHouseholdId = nil
+            if rosterLoadedForHouseholdId != householdId {
+                householdMembers = []
+                familyProfiles = []
+            }
         }
     }
 

@@ -88,7 +88,7 @@ final class ScheduleViewModel: ObservableObject {
     }
 
     private static func tasksCacheKey(for householdId: UUID) -> String {
-        "schedule.tasks.snapshot.\(householdId.uuidString.lowercased())"
+        HouseholdLocalCache.tasksCacheKey(for: householdId)
     }
 
     func loadTasks(silent: Bool = false) async {
@@ -100,17 +100,17 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
 
-        if rosterLoadedForHouseholdId != householdId {
-            await loadHouseholdRoster(in: householdId)
-        }
-
         let cacheKey = Self.tasksCacheKey(for: householdId)
 
         var restoredFromDisk = false
-        if silent == false, let cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: cacheKey) {
+        if silent == false, let cached = await HouseholdLocalCache.loadTasks(for: householdId) {
             tasks = cached
             errorMessage = nil
             restoredFromDisk = true
+        }
+
+        if rosterLoadedForHouseholdId != householdId {
+            await loadHouseholdRosterFromCache(in: householdId)
         }
 
         let showLoading = !silent && !restoredFromDisk
@@ -124,7 +124,14 @@ final class ScheduleViewModel: ObservableObject {
             }
         }
 
+        guard await NetworkMonitor.shared.isConnected else {
+            return
+        }
+
         do {
+            if rosterLoadedForHouseholdId != householdId {
+                await loadHouseholdRosterFromNetwork(in: householdId)
+            }
             // `tasks` 已由 RLS 裁剪为当前登录用户在该家庭下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
             let fresh = try await taskService.fetchTasks(in: householdId)
             tasks = fresh
@@ -141,7 +148,21 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
-    private func loadHouseholdRoster(in householdId: UUID) async {
+    private func loadHouseholdRosterFromCache(in householdId: UUID) async {
+        guard rosterLoadedForHouseholdId != householdId else { return }
+        guard let snapshot = await HouseholdLocalCache.loadMembers(for: householdId) else {
+            return
+        }
+        let filtered = snapshot.filteredToActiveMembers(in: householdId)
+        HouseholdLocalCache.applyRosterSnapshot(
+            filtered,
+            to: &householdMembers,
+            familyProfiles: &familyProfiles
+        )
+        rosterLoadedForHouseholdId = householdId
+    }
+
+    private func loadHouseholdRosterFromNetwork(in householdId: UUID) async {
         do {
             let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
                 .filteredToActiveMembers(in: householdId)
@@ -155,9 +176,10 @@ final class ScheduleViewModel: ObservableObject {
                 .sorted { $0.createdAt < $1.createdAt }
             rosterLoadedForHouseholdId = householdId
         } catch {
-            householdMembers = []
-            familyProfiles = []
-            rosterLoadedForHouseholdId = nil
+            if rosterLoadedForHouseholdId != householdId {
+                householdMembers = []
+                familyProfiles = []
+            }
         }
     }
 
@@ -165,7 +187,7 @@ final class ScheduleViewModel: ObservableObject {
     func refreshHouseholdRosterIfMatchesPostedHousehold(_ householdId: UUID?) async {
         guard let householdId, householdId == currentHouseholdId else { return }
         rosterLoadedForHouseholdId = nil
-        await loadHouseholdRoster(in: householdId)
+        await loadHouseholdRosterFromNetwork(in: householdId)
     }
 
     func purgeLocalDataForDisbandedHousehold(_ householdId: UUID) {
@@ -187,6 +209,7 @@ final class ScheduleViewModel: ObservableObject {
     #if canImport(Supabase)
     func setupRealtimeListener() async {
         await stopRealtimeListener()
+        guard await NetworkMonitor.shared.isConnected else { return }
         guard let householdId = currentHouseholdId else { return }
 
         let client = SupabaseManager.shared.client

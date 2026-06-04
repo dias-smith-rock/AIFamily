@@ -107,12 +107,16 @@ struct ContentView: View {
                 return
             }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-            await appRouter.refreshStateFromBackend()
-            await fetchHouseholdsAndCheckCreatorRole()
             refreshForegroundLocationSchedulerContext()
-            await persistForegroundLocation(trigger: .appEnteredForeground)
-            await syncBackgroundLocationService()
-            startForegroundLocationPeriodicRefreshIfNeeded()
+            Task {
+                await appRouter.refreshStateFromBackend()
+                await fetchHouseholdsAndCheckCreatorRole()
+            }
+            if await NetworkMonitor.shared.isConnected {
+                await persistForegroundLocation(trigger: .appEnteredForeground)
+                await syncBackgroundLocationService()
+                startForegroundLocationPeriodicRefreshIfNeeded()
+            }
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -134,12 +138,16 @@ struct ContentView: View {
                     await NotificationManager.shared.clearBadgeCount()
                     guard isUserLoggedIn else { return }
                     _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-                    await appRouter.refreshStateFromBackend()
-                    await fetchHouseholdsAndCheckCreatorRole()
                     refreshForegroundLocationSchedulerContext()
-                    await persistForegroundLocation(trigger: .appEnteredForeground)
-                    await syncBackgroundLocationService()
-                    startForegroundLocationPeriodicRefreshIfNeeded()
+                    Task {
+                        await appRouter.refreshStateFromBackend()
+                        await fetchHouseholdsAndCheckCreatorRole()
+                    }
+                    if await NetworkMonitor.shared.isConnected {
+                        await persistForegroundLocation(trigger: .appEnteredForeground)
+                        await syncBackgroundLocationService()
+                        startForegroundLocationPeriodicRefreshIfNeeded()
+                    }
                 }
             } else if newPhase == .inactive {
                 ForegroundLocationPersistScheduler.shared.stop(reason: "sceneInactive")

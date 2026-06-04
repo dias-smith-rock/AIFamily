@@ -40,6 +40,8 @@ final class AppRouter: ObservableObject {
 
     private struct OfflineHouseholdSnapshot: Codable {
         let householdId: UUID
+        let membershipId: UUID?
+        let profileId: UUID?
         let householdName: String?
         let householdDescription: String
         let householdIsPremium: Bool
@@ -82,8 +84,8 @@ final class AppRouter: ObservableObject {
         }
 
         selectedHouseholdId = snapshot.householdId
-        selectedMembershipId = nil
-        selectedProfileId = nil
+        selectedMembershipId = snapshot.membershipId
+        selectedProfileId = snapshot.profileId
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
         selectedHouseholdIsPremium = snapshot.householdIsPremium
@@ -97,6 +99,22 @@ final class AppRouter: ObservableObject {
 
     func refreshStateFromBackend() async {
         #if canImport(Supabase)
+        if await NetworkMonitor.shared.isConnected == false {
+            if clientHasPersistedSession(),
+               appState == .activeMember,
+               selectedHouseholdId != nil {
+                debugLog("refresh.skipped reason=offline keepActiveMember")
+                return
+            }
+            if clientHasPersistedSession(), AuthSessionHints.hasEverAuthenticated {
+                if appState == .unauthenticated {
+                    _ = restoreOfflineHouseholdContextIfNeeded()
+                }
+                debugLog("refresh.skipped reason=offline")
+            }
+            return
+        }
+
         do {
             let client = SupabaseManager.shared.client
             let session = try await client.auth.session
@@ -478,9 +496,19 @@ final class AppRouter: ObservableObject {
         appState = .activeMember
     }
 
+    #if canImport(Supabase)
+    private func clientHasPersistedSession() -> Bool {
+        SupabaseManager.shared.client.auth.currentSession != nil
+    }
+    #else
+    private func clientHasPersistedSession() -> Bool { false }
+    #endif
+
     private func saveOfflineHouseholdSnapshot(option: HouseholdOption) {
         let snapshot = OfflineHouseholdSnapshot(
             householdId: option.id,
+            membershipId: option.membershipId,
+            profileId: option.profileId,
             householdName: option.name,
             householdDescription: option.description,
             householdIsPremium: option.isPremium

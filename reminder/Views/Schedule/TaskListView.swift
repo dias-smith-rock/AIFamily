@@ -108,10 +108,12 @@ struct TaskListView: View {
             }
             .task {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-                await refreshCurrentMembershipRole()
                 await viewModel.loadTasks()
                 openPendingScheduledTaskIfNeeded()
-                await viewModel.setupRealtimeListener()
+                Task {
+                    await refreshCurrentMembershipRole()
+                    await viewModel.setupRealtimeListener()
+                }
             }
             .onDisappear {
                 Task {
@@ -121,10 +123,12 @@ struct TaskListView: View {
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
                 viewModel.setHouseholdContext(newValue)
                 Task {
-                    await refreshCurrentMembershipRole()
                     await viewModel.loadTasks()
                     openPendingScheduledTaskIfNeeded()
-                    await viewModel.setupRealtimeListener()
+                    Task {
+                        await refreshCurrentMembershipRole()
+                        await viewModel.setupRealtimeListener()
+                    }
                 }
             }
             .onChange(of: appRouter.selectedMembershipId) { _, _ in
