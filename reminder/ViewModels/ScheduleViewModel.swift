@@ -19,9 +19,9 @@ final class ScheduleViewModel: ObservableObject {
     var flexibleTasks: [FamilyTask] {
         tasks.filter(\.isFlexibleTodo)
     }
-    /// 当前家庭下活跃成员（`household_memberships`），用于列表「谁去办」解析。
+    /// 当前群组下活跃成员（`household_memberships`），用于列表「谁去办」解析。
     @Published private(set) var householdMembers: [HouseholdMembership] = []
-    /// 当前家庭档案（`family_profiles`），用于列表「为了谁」头像。
+    /// 当前群组档案（`family_profiles`），用于列表「为了谁」头像。
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
@@ -132,7 +132,7 @@ final class ScheduleViewModel: ObservableObject {
             if rosterLoadedForHouseholdId != householdId {
                 await loadHouseholdRosterFromNetwork(in: householdId)
             }
-            // `tasks` 已由 RLS 裁剪为当前登录用户在该家庭下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
+            // `tasks` 已由 RLS 裁剪为当前登录用户在该群组下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
             let fresh = try await taskService.fetchTasks(in: householdId)
             tasks = fresh
             LocalCacheManager.shared.save(fresh, forKey: cacheKey)
@@ -183,7 +183,7 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
-    /// 家庭页写入成员/档案后调用：`householdId` 须与当前日程上下文一致。
+    /// 群组页写入成员/档案后调用：`householdId` 须与当前日程上下文一致。
     func refreshHouseholdRosterIfMatchesPostedHousehold(_ householdId: UUID?) async {
         guard let householdId, householdId == currentHouseholdId else { return }
         rosterLoadedForHouseholdId = nil

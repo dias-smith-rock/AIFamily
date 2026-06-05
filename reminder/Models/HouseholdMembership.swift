@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - 2. 家庭成员关系 (HouseholdMembership)
+// MARK: - 2. 群组成员关系 (HouseholdMembership)
 /// `userId` 为空表示影子成员（未注册账号、由管理员代建）。
 /// 组织内展示名使用 `nickname`（千组织千面）；全局档案名见关联的 `family_profiles.name`。
 /// - Note: `role` / `status` 暂用 `String?` 解码，规避枚举大小写不一致导致嵌套 JSON 整段静默丢失。

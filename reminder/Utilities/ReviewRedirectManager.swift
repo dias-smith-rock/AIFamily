@@ -71,12 +71,12 @@ struct ReviewAlertModifier: ViewModifier {
                 "Enjoying WeSync?",
                 isPresented: $manager.showReviewAlert
             ) {
-                Button("Maybe Later", role: .cancel) {}
-                Button("Write a Review") {
+                Button("以后再说", role: .cancel) {}
+                Button("去评分") {
                     openReviewPage()
                 }
             } message: {
-                Text("Your feedback helps us make the app even better for families and teams. Would you mind leaving a quick review?")
+                Text("您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？")
             }
     }
 

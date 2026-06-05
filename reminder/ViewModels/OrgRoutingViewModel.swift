@@ -43,7 +43,7 @@ final class OrgRoutingViewModel: ObservableObject {
             print("✅ [OrgHub] fetchMyHouseholds — count=\(joinedHouseholds.count)")
             #endif
         } catch {
-            print("拉取家庭列表失败: \(error)")
+            print("拉取群组列表失败: \(error)")
             joinedHouseholds = []
         }
     }
@@ -191,12 +191,12 @@ final class OrgRoutingViewModel: ObservableObject {
         switch action {
         case .create:
             #if DEBUG
-            print("创建家庭失败: \(error)")
+            print("创建群组失败: \(error)")
             #endif
             return Copy.createHouseholdFailed
         case .join:
             #if DEBUG
-            print("加入家庭失败: \(error)")
+            print("加入群组失败: \(error)")
             #endif
             return Copy.joinHouseholdFailed
         }

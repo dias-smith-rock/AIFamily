@@ -4,4 +4,6 @@
 
 "NSCameraUsageDescription" = "Permet de scanner les codes QR d'invitation partagés par d'autres pour vous aider à rejoindre un groupe rapidement.";
 "NSPhotoLibraryAddUsageDescription" = "Permet d'enregistrer les images jointes aux tâches dans votre album photo.";
-"NSFaceIDUsageDescription" = "WeSync utilise Face ID pour protéger vos plannings et tâches familiales privés.";
+"NSFaceIDUsageDescription" = "WeSync utilise Face ID pour protéger vos plannings et tâches de groupe privés.";
+"NSLocationWhenInUseUsageDescription" = "Permet d'afficher votre position approximative et celle des membres sur la carte, et d'enregistrer les lieux lors de l'achèvement des tâches.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Permet de mettre à jour votre position approximative auprès des membres du groupe lorsque l'app est en arrière-plan ; vous pouvez désactiver la localisation en arrière-plan dans « Moi ».";

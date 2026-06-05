@@ -46,7 +46,7 @@ final class AssistantViewModel: ObservableObject {
 
     /// 把预检卡片提交到后端。
     /// - Parameters:
-    ///   - householdId: 当前家庭 ID（由上层路由层注入，避免 VM 自己跨层取数据）。
+    ///   - householdId: 当前群组 ID（由上层路由层注入，避免 VM 自己跨层取数据）。
     ///   - creatorMembershipId: 创建者在 `household_memberships` 中的主键。
     ///   - involvedMemberIds: 涉及到的成员（执行人 / 跟进人）。
     func confirmSend(

@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - 1. 家庭组织 (Household)
+// MARK: - 1. 群组组织 (Household)
 struct Household: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String

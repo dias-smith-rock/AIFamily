@@ -9,7 +9,7 @@ import UIKit
 import Supabase
 #endif
 
-/// 组织选择与管理枢纽：展示已加入家庭、创建新家庭、扫码/邀请码加入。
+/// 组织选择与管理枢纽：展示已加入群组、创建新群组、扫码/邀请码加入。
 struct HouseholdSelectionView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter

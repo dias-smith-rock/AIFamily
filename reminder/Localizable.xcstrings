@@ -4908,7 +4908,6 @@
         }
       }
     },
-    "Your feedback helps us make the app even better for families and teams. Would you mind leaving a quick review?": {},
     "channel: %@": {
       "localizations": {
         "ar": {
@@ -7731,64 +7730,6 @@
         }
       }
     },
-    "使用 Face ID 解锁后继续访问你的家庭日程与任务。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "استخدم Face ID للمتابعة والوصول إلى جداول ومهام العائلة."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use Face ID to unlock and continue to your family schedules and tasks."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usa Face ID para desbloquear y continuar con tus horarios y tareas familiares."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utilisez Face ID pour déverrouiller et accéder à vos plannings et tâches familiales."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अनलॉक करने और परिवार के शेड्यूल व कार्यों तक पहुँचने के लिए Face ID का उपयोग करें।"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use o Face ID para desbloquear e continuar para seus horários e tarefas da família."
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "குடும்ப அட்டவணை மற்றும் பணிகளை அணுக Face ID மூலம் திறக்கவும்."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 Face ID 解锁后继续访问你的家庭日程与任务。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用 Face ID 解鎖後繼續存取你的家庭日程與任務。"
-          }
-        }
-      }
-    },
     "使用 Google 继续": {
       "localizations": {
         "ar": {
@@ -7911,43 +7852,43 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "على سبيل المثال: فناء عائلة وانغ"
+            "value": "على سبيل المثال: فناء مجموعة وانغ"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "For example: Wang Family Courtyard"
+            "value": "For example: Wang Group Courtyard"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Por ejemplo: patio de la familia Wang"
+            "value": "Por ejemplo: patio del grupo Wang"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Par exemple : Cour de la famille Wang"
+            "value": "Par exemple : Cour du groupe Wang"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "उदाहरण के लिए: वांग फैमिली कोर्टयार्ड"
+            "value": "उदाहरण के लिए: वांग ग्रुप कोर्टयार्ड"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Por exemplo: Pátio da Família Wang"
+            "value": "Por exemplo: Pátio do Grupo Wang"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "உதாரணமாக: வாங் குடும்ப முற்றம்"
+            "value": "உதாரணமாக: வாங் குழு முற்றம்"
           }
         },
         "zh-Hans": {
@@ -15100,64 +15041,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "您的加入請求已提交。請等待管理員批准。"
-          }
-        }
-      }
-    },
-    "您的反馈能帮助我们为家庭和团队把应用做得更好。愿意花一点时间留个评价吗？": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ملاحظاتك تساعدنا على تحسين التطبيق للعائلات والفرق. هل تود ترك تقييم سريع؟"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your feedback helps us improve the app for families and teams. Would you mind leaving a quick review?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu opinión nos ayuda a mejorar la app para familias y equipos. ¿Podrías dejar una reseña rápida?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vos retours nous aident à améliorer l'app pour les familles et les équipes. Pourriez-vous laisser un avis rapide ?"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपकी प्रतिक्रिया परिवारों और टीमों के लिए ऐप को बेहतर बनाने में मदद करती है। क्या आप एक समीक्षा छोड़ सकते हैं?"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O seu feedback ajuda-nos a melhorar a app para famílias e equipas. Pode deixar uma avaliação rápida?"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "உங்கள் கருத்து குடும்பங்களுக்கும் குழுக்களுக்கும் செயலியை மேம்படுத்த உதவுகிறது. ஒரு மதிப்புரை விடுவீர்களா?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您的反馈能帮助我们为家庭和团队把应用做得更好。愿意花一点时间留个评价吗？"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "您的回饋能幫助我們為家庭與團隊把應用做得更好。願意花一點時間留個評價嗎？"
           }
         }
       }
@@ -29975,64 +29858,6 @@
         }
       }
     },
-    "请验证身份以访问同圈中的家庭日程与任务。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تحقق من هويتك للوصول إلى جداول ومهام العائلة في WeSync."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verify your identity to access family schedules and tasks in WeSync."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verifica tu identidad para acceder a los horarios y tareas familiares en WeSync."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vérifiez votre identité pour accéder aux plannings et tâches familiales dans WeSync."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync में परिवार के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verifique sua identidade para acessar horários e tarefas da família no WeSync."
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync இல் குடும்ப அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请验证身份以访问同圈中的家庭日程与任务。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請驗證身分以存取同圈中的家庭日程與任務。"
-          }
-        }
-      }
-    },
     "读取到原始图片数据为空，请重新选择。": {
       "localizations": {
         "en": {
@@ -34133,7 +33958,181 @@
         }
       }
     },
-    "": {}
+    "": {},
+    "使用 Face ID 解锁后继续访问你的群组日程与任务。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم Face ID للمتابعة والوصول إلى جداول ومهام المجموعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Face ID to unlock and continue to your group schedules and tasks."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Face ID para desbloquear y continuar con tus horarios y tareas del grupo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisez Face ID pour déverrouiller et accéder à vos plannings et tâches de groupe."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अनलॉक करने और समूह के शेड्यूल व कार्यों तक पहुँचने के लिए Face ID का उपयोग करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use o Face ID para desbloquear e continuar para seus horários e tarefas do grupo."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குழு அட்டவணை மற்றும் பணிகளை அணுக Face ID மூலம் திறக்கவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Face ID 解锁后继续访问你的群组日程与任务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Face ID 解鎖後繼續存取你的群組日程與任務。"
+          }
+        }
+      }
+    },
+    "请验证身份以访问同圈中的群组日程与任务。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في WeSync."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity to access group schedules and tasks in WeSync."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en WeSync."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans WeSync."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no WeSync."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请验证身份以访问同圈中的群组日程与任务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請驗證身分以存取同圈中的群組日程與任務。"
+          }
+        }
+      }
+    },
+    "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملاحظاتك تساعدنا على تحسين التطبيق للمجموعات والفرق. هل تود ترك تقييم سريع؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your feedback helps us improve the app for groups and teams. Would you mind leaving a quick review?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu opinión nos ayuda a mejorar la app para grupos y equipos. ¿Podrías dejar una reseña rápida?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos retours nous aident à améliorer l'app pour les groupes et les équipes. Pourriez-vous laisser un avis rapide ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपकी प्रतिक्रिया समूहों और टीमों के लिए ऐप को बेहतर बनाने में मदद करती है। क्या आप एक समीक्षा छोड़ सकते हैं?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O seu feedback ajuda-nos a melhorar a app para grupos e equipas. Pode deixar uma avaliação rápida?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் கருத்து குழுக்களுக்கும் அணிகளுக்கும் செயலியை மேம்படுத்த உதவுகிறது. ஒரு மதிப்புரை விடுவீர்களா?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的回饋能幫助我們為群組與團隊把應用做得更好。願意花一點時間留個評價嗎？"
+          }
+        }
+      }
+    }
   },
   "version": "1.1"
 }

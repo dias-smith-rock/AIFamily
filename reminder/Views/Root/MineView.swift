@@ -395,7 +395,7 @@ struct MineView: View {
         .contentMargins(.top, 0, for: .scrollContent)
     }
 
-    // MARK: - Profile header（与「家庭」成员行 / 编辑页一致）
+    // MARK: - Profile header（与「群组」成员行 / 编辑页一致）
 
     private var profileHeaderRow: some View {
         HStack(spacing: 14) {

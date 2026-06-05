@@ -38,7 +38,7 @@ final class AppRouter: ObservableObject {
     /// 「我的」页创建者无法注销时，请求打开当前群组的群组设置页。
     @Published var pendingOpenGroupSettings = false
 
-    /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
+    /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的群组）。
     private var pendingPreferredHouseholdId: UUID?
 
     private struct OfflineHouseholdSnapshot: Codable {
@@ -267,7 +267,7 @@ final class AppRouter: ObservableObject {
         appState = .activeMember
     }
 
-    /// 解散家庭后清空当前组织上下文并回到入口枢纽页。
+    /// 解散群组后清空当前组织上下文并回到入口枢纽页。
     func exitToOrgHubAfterDisband() {
         selectedHouseholdId = nil
         selectedMembershipId = nil
@@ -346,7 +346,7 @@ final class AppRouter: ObservableObject {
         chooseJoinedHousehold(joined)
     }
 
-    /// 与 UserDefaults 快照比对，检测是否新获得某家庭的创建者权限。
+    /// 与 UserDefaults 快照比对，检测是否新获得某群组的创建者权限。
     func checkForNewCreatorRoles(fetchedHouseholds: [JoinedHousehold]) async {
         guard let userId = await CreatorRoleSnapshotStore.currentUserId() else { return }
 

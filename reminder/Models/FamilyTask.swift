@@ -1,6 +1,6 @@
 import Foundation
 
-// MARK: - 4. 家庭任务 (FamilyTask)
+// MARK: - 4. 群组任务 (FamilyTask)
 /// 命名为 `FamilyTask` 是为了避免与 Swift 并发框架的 `Swift.Task` 冲突。
 struct FamilyTask: Identifiable, Codable, Equatable {
     let id: UUID
@@ -318,7 +318,7 @@ extension FamilyTask {
     /// 本地旧缓存缺少 `duration_minutes` 时的解码兜底（向下兼容）。
     static let legacyCacheFallbackDurationMinutes = 30
 
-    /// `involved_member_ids` 为数据库 `NULL`（或空数组）时，表示任务指派给**整个家庭**，
+    /// `involved_member_ids` 为数据库 `NULL`（或空数组）时，表示任务指派给**整个群组**，
     /// 语义随成员增减扩展；若写入具体 UUID 列表则为创建时的指派快照（列表元素为 **membership id**）。
     var involvesWholeHousehold: Bool {
         guard let ids = involvedMemberIds else { return true }

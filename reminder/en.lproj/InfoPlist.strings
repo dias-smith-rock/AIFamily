@@ -4,4 +4,6 @@
 
 "NSCameraUsageDescription" = "Used to scan invitation QR codes shared by others so you can join a group quickly.";
 "NSPhotoLibraryAddUsageDescription" = "Used to save task attachment images to your photo library.";
-"NSFaceIDUsageDescription" = "WeSync uses Face ID to protect your private family schedules and tasks.";
+"NSFaceIDUsageDescription" = "WeSync uses Face ID to protect your private group schedules and tasks.";
+"NSLocationWhenInUseUsageDescription" = "Used to show your and members' approximate locations on the map and record locations when completing tasks.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";

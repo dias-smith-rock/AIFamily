@@ -59,7 +59,7 @@ protocol HouseholdRoutingService {
     func fetchMyJoinedHouseholds() async throws -> [JoinedHousehold]
     func leaveHousehold(householdId: UUID) async throws
     func disbandHousehold(id: UUID, expectedName: String) async throws
-    /// 解散家庭前清理该家庭下全部反馈语音；失败不抛出。
+    /// 解散群组前清理该群组下全部反馈语音；失败不抛出。
     func cleanUpHouseholdFeedbackAudios(householdId: UUID) async
     func transferOwnership(householdId: UUID, newCreatorUserId: UUID) async throws
 }
@@ -551,7 +551,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         }
         let normalizedDescription = Self.normalizedOptionalDescription(description)
 
-        /// 仅校验非空后直接写入；允许同名家庭，不做前端或客户端去重查询。
+        /// 仅校验非空后直接写入；允许同名群组，不做前端或客户端去重查询。
         return try await createHouseholdOnBackend(
             normalizedName: normalizedName,
             normalizedDescription: normalizedDescription
@@ -563,7 +563,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         #endif
     }
 
-    /// 通过 RPC `join_household_by_nonce` 完成邀请码核销 + 加入家庭原子流程。
+    /// 通过 RPC `join_household_by_nonce` 完成邀请码核销 + 加入群组原子流程。
     func joinHousehold(inviteCode: String) async throws {
         #if canImport(Supabase)
         let normalizedCode = inviteCode.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
@@ -589,7 +589,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
                 )
                 .execute()
         } catch {
-            print("加入家庭详细错误: \(error)")
+            print("加入群组详细错误: \(error)")
             if isUnauthenticatedError(error) {
                 throw HouseholdRoutingError.unauthenticated
             }
@@ -658,7 +658,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
                     .eq("id", value: householdId.uuidString.lowercased())
                     .execute()
             } catch {
-                print("重命名家庭详细错误: \(error)")
+                print("重命名群组详细错误: \(error)")
                 if isUnauthenticatedError(error) {
                     throw HouseholdRoutingError.unauthenticated
                 }
@@ -726,7 +726,7 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
 
             await voiceStorageService.removeVoiceFiles(atPaths: paths)
         } catch {
-            print("⚠️ 清理家庭语音记录失败（可忽略，不阻断后续解散流程）: \(error)")
+            print("⚠️ 清理群组语音记录失败（可忽略，不阻断后续解散流程）: \(error)")
         }
         #else
         _ = householdId
@@ -1006,12 +1006,12 @@ extension SupabaseHouseholdRoutingService {
 
             return householdId
         } catch {
-            print("创建家庭详细错误: \(error)")
+            print("创建群组详细错误: \(error)")
             if let hid = householdIdForRollback {
                 do {
                     try await client.from("households").delete().eq("id", value: hid.uuidString).execute()
                 } catch {
-                    print("创建家庭回滚删除 households 失败: \(error)")
+                    print("创建群组回滚删除 households 失败: \(error)")
                 }
             }
             throw mapCreateHouseholdFlowError(error)

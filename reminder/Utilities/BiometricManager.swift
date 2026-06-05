@@ -22,7 +22,7 @@ final class BiometricManager: ObservableObject {
             defer { isAuthenticating = false }
             let context = LAContext()
             context.localizedCancelTitle = String(localized: "稍后")
-            let reason = String(localized: "请验证身份以访问同圈中的家庭日程与任务。")
+            let reason = String(localized: "请验证身份以访问同圈中的群组日程与任务。")
             let policy: LAPolicy = .deviceOwnerAuthentication
 
             var authError: NSError?

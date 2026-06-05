@@ -13,7 +13,7 @@ struct LockScreenView: View {
             Text("已锁定")
                 .font(.title2.weight(.semibold))
 
-            Text("使用 Face ID 解锁后继续访问你的家庭日程与任务。")
+            Text("使用 Face ID 解锁后继续访问你的群组日程与任务。")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

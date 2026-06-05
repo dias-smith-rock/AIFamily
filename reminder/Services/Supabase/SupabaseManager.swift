@@ -151,7 +151,7 @@ final class SupabaseManager {
             if let first = rows.first {
                 print("Supabase connected. First household: \(first.name)")
             } else {
-                print("Supabase connected. `households` 可达，但当前账号尚无可见家庭。")
+                print("Supabase connected. `households` 可达，但当前账号尚无可见群组。")
             }
         } catch {
             print("Supabase connection test failed: \(error.localizedDescription)")

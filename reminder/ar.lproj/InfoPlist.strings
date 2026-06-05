@@ -4,4 +4,6 @@
 
 "NSCameraUsageDescription" = "يُستخدم لمسح رموز QR لرمز الدعوة التي يشاركها الآخرون لمساعدتك على الانضمام إلى مجموعة بسرعة.";
 "NSPhotoLibraryAddUsageDescription" = "يُستخدم لحفظ صور مرفقات المهام في ألبوم الصور.";
-"NSFaceIDUsageDescription" = "يستخدم WeSync Face ID لحماية جداولك ومهام عائلتك الخاصة.";
+"NSFaceIDUsageDescription" = "يستخدم WeSync Face ID لحماية جداول ومهام مجموعتك الخاصة.";
+"NSLocationWhenInUseUsageDescription" = "يُستخدم لعرض موقعك التقريبي وموقع الأعضاء على الخريطة، وتسجيل المواقع عند إكمال المهام.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "يُستخدم لتحديث موقعك التقريبي لأعضاء المجموعة أثناء عمل التطبيق في الخلفية؛ يمكنك إيقاف تحديد الموقع في الخلفية من «أنا».";

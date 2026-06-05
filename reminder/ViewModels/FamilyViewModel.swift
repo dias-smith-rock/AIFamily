@@ -93,7 +93,7 @@ final class FamilyViewModel: ObservableObject {
         await loadMembers()
     }
 
-    /// 解散当前家庭：调用 RPC、清洗本地缓存；成功返回 `true` 供 View 切换根路由。
+    /// 解散当前群组：调用 RPC、清洗本地缓存；成功返回 `true` 供 View 切换根路由。
     @discardableResult
     func confirmDisband(
         householdId: UUID,
@@ -110,7 +110,7 @@ final class FamilyViewModel: ObservableObject {
         guard normalizedInput.isEmpty == false, normalizedInput == normalizedCurrent else {
             #if DEBUG
             print("🔎 [DisbandDebug] ViewModel 本地名称校验未通过。")
-            print("   ↳ 当前记录的真实家庭名称: '\(currentName)'")
+            print("   ↳ 当前记录的真实群组名称: '\(currentName)'")
             print("   ↳ 用户输入的匹配名称: '\(userInputName)'")
             print("   ↳ 归一化后 current='\(normalizedCurrent)' input='\(normalizedInput)'")
             print("   ↳ ID: \(householdId.uuidString)")
@@ -123,7 +123,7 @@ final class FamilyViewModel: ObservableObject {
         let trimmedInputForRPC = userInputName.trimmingCharacters(in: .whitespacesAndNewlines)
         #if DEBUG
         print("🔎 [DisbandDebug] ViewModel 准备解散。")
-        print("   ↳ 当前记录的真实家庭名称: '\(currentName)'")
+        print("   ↳ 当前记录的真实群组名称: '\(currentName)'")
         print("   ↳ 用户输入的匹配名称: '\(userInputName)'")
         print("   ↳ 传入 RPC 的 expectedName: '\(trimmedInputForRPC)'")
         print("   ↳ ID: \(householdId.uuidString)")
@@ -909,7 +909,7 @@ final class FamilyViewModel: ObservableObject {
         return orderedProfiles.filter { $0.id != me.id }
     }
 
-    /// 非「创建者」身份行在列表中的顺序（与家庭页「家庭成员」区块一致）。
+    /// 非「创建者」身份行在列表中的顺序（与群组页「群组成员」区块一致）。
     var nonCreatorProfiles: [FamilyProfile] {
         orderedProfiles.filter { resolvedListRole($0) != .creator }
     }
@@ -1038,7 +1038,7 @@ final class FamilyViewModel: ObservableObject {
         pinCreatorFirstIfPresent()
     }
 
-    /// 家庭页设计：创建者卡片置顶；其余行保持相对顺序不变。
+    /// 群组页设计：创建者卡片置顶；其余行保持相对顺序不变。
     private func pinCreatorFirstIfPresent() {
         guard let idx = orderedProfiles.firstIndex(where: { resolvedListRole($0) == .creator }) else { return }
         let creator = orderedProfiles[idx]

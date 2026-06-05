@@ -4,7 +4,7 @@ import Foundation
 import Supabase
 #endif
 
-/// UserDefaults 快照：检测「他人转移创建者权限」并避免首次登录 / 自建家庭误弹窗。
+/// UserDefaults 快照：检测「他人转移创建者权限」并避免首次登录 / 自建群组误弹窗。
 enum CreatorRoleSnapshotStore {
     static func cacheKey(for userId: UUID) -> String {
         "known_creator_ids_\(userId.uuidString.lowercased())"
@@ -34,7 +34,7 @@ enum CreatorRoleSnapshotStore {
         markKnownCreatorHousehold(householdId, userId: userId)
     }
 
-    /// 返回应弹窗的新创建者家庭；`nil` 表示无需弹窗。
+    /// 返回应弹窗的新创建者群组；`nil` 表示无需弹窗。
     @MainActor
     static func newlyAssignedCreatorHousehold(
         in fetchedHouseholds: [JoinedHousehold],

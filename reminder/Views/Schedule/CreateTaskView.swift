@@ -227,7 +227,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
 extension Notification.Name {
     static let scheduleTasksDidChange = Notification.Name("scheduleTasksDidChange")
-    /// `object`：`UUID`（`households.id`）。家庭页保存成员/档案后发出，日程列表应刷新 roster 缓存。
+    /// `object`：`UUID`（`households.id`）。群组页保存成员/档案后发出，日程列表应刷新 roster 缓存。
     static let scheduleHouseholdRosterDidChange = Notification.Name("scheduleHouseholdRosterDidChange")
     static let householdDidDisband = Notification.Name("householdDidDisband")
 }
