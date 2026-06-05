@@ -201,7 +201,10 @@ private struct TaskPreviewCard: View {
             Text("任务确认预检卡片")
                 .font(.system(size: 16, weight: .bold))
             Label(draft.title, systemImage: "checklist")
-            Label(draft.dueDate.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+            Label(
+                "\(draft.dueDate.formatted(date: .abbreviated, time: .omitted)) \(ScheduleTimeFormatting.timelineClockTime(draft.dueDate))",
+                systemImage: "clock"
+            )
             if let location = draft.locationName {
                 Label(location, systemImage: "location")
             }

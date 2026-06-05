@@ -200,15 +200,11 @@ private struct TaskModeListMinimalRow: View {
         if task.isAllDay {
             return AppLocalized.string("全天", locale: locale)
         }
-        let cal = Calendar.current
-        let start = task.dueDate ?? task.originalDueDate ?? task.createdAt
-        let end = task.endDatetime ?? cal.date(byAdding: .hour, value: 1, to: start) ?? start
-        let startDay = cal.startOfDay(for: start)
-        let endDay = cal.startOfDay(for: end)
-        if startDay != endDay {
-            return "00:00 – 23:59"
-        }
-        return "\(ScheduleTimeFormatting.timelineClockTime(start, locale: locale)) – \(ScheduleTimeFormatting.timelineClockTime(end, locale: locale))"
+        return ScheduleTimeFormatting.timelineClockRange(
+            start: task.scheduleStartDate,
+            end: task.timelineEndDate,
+            locale: locale
+        )
     }
 
     private var locationTrail: String? {

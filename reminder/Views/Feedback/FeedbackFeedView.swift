@@ -244,7 +244,7 @@ private struct FeedbackCardView: View {
                         .foregroundStyle(.secondary)
                     HStack(spacing: 6) {
                         if let taskScheduledAt {
-                            Text(taskScheduledAt.formatted(date: .omitted, time: .shortened))
+                            Text(ScheduleTimeFormatting.timelineClockTime(taskScheduledAt))
                         }
                         Text(task.title)
                     }
@@ -266,7 +266,7 @@ private struct FeedbackCardView: View {
                     Text(senderName)
                         .font(.system(size: 20, weight: .semibold))
                     HStack(spacing: 6) {
-                        Text(feedback.createdAt.formatted(date: .omitted, time: .shortened))
+                        Text(ScheduleTimeFormatting.timelineClockTime(feedback.createdAt))
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.secondary)
                         if feedback.showsEditedBadge {

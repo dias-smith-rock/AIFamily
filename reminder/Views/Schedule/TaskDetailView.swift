@@ -882,12 +882,7 @@ struct TaskDetailView: View {
                     .locale(locale)
             )
         }
-        return start.formatted(
-            .dateTime
-                .hour(.twoDigits(amPM: .omitted))
-                .minute(.twoDigits)
-                .locale(locale)
-        )
+        return ScheduleTimeFormatting.timelineClockTime(start, locale: locale)
     }
 
     private var timePlanningEndText: String? {
@@ -901,19 +896,14 @@ struct TaskDetailView: View {
                     .locale(locale)
             )
         }
-        return end.formatted(
-            .dateTime
-                .hour(.twoDigits(amPM: .omitted))
-                .minute(.twoDigits)
-                .locale(locale)
-        )
+        return ScheduleTimeFormatting.timelineClockTime(end, locale: locale)
     }
 
     private var plannedEndDate: Date? {
         if task.isFlexibleTodo {
             return task.endDatetime
         }
-        return Calendar.current.date(byAdding: .minute, value: task.durationMinutes, to: scheduledAt)
+        return task.timelineEndDate
     }
 
     private var flexibleDeadlineDetailText: String {

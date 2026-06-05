@@ -193,6 +193,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                 )
                 .labelsHidden()
                 .datePickerStyle(.compact)
+                .environment(\.locale, ScheduleTimeFormatting.twentyFourHourLocale(basedOn: locale))
                 .accessibilityLabel("执行时间")
             }
             .layoutPriority(0)
@@ -213,15 +214,10 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             .labelsHidden()
             .datePickerStyle(.compact)
             // 时长是“持续时间”而不是一天中的时间点，统一使用 24 小时制避免 AM/PM 歧义。
-            .environment(\.locale, durationPickerLocale)
+            .environment(\.locale, ScheduleTimeFormatting.twentyFourHourLocale(basedOn: locale))
             .accessibilityLabel("任务时长")
             .layoutPriority(0)
         }
-    }
-
-    private var durationPickerLocale: Locale {
-        let normalizedIdentifier = locale.identifier.replacingOccurrences(of: "_", with: "-")
-        return Locale(identifier: "\(normalizedIdentifier)-u-hc-h23")
     }
 }
 

@@ -136,11 +136,15 @@ struct TaskCardView: View {
     }
 
     private var metaTimeText: String {
-        let date = task.dueDate ?? task.originalDueDate ?? task.createdAt
         if task.isAllDay {
+            let date = task.scheduleStartDate
             return date.formatted(.dateTime.month(.abbreviated).day().weekday(.abbreviated))
         }
-        return ScheduleTimeFormatting.timelineClockTime(date, locale: locale)
+        return ScheduleTimeFormatting.timelineClockRange(
+            start: task.scheduleStartDate,
+            end: task.timelineEndDate,
+            locale: locale
+        )
     }
 
     private var locationDisplayName: String? {

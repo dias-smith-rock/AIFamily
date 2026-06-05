@@ -1,13 +1,38 @@
 import Foundation
 
-/// 日程 Tab 时间展示：固定 24 小时制，避免「上午/下午」与 AM/PM 文案。
+/// 日程 Tab 时间展示：固定 24 小时制，避免跟随系统 12/24 小时设置。
 enum ScheduleTimeFormatting {
+    private static let clockFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
     static func timelineClockTime(_ date: Date, locale: Locale = .current) -> String {
-        date.formatted(
-            .dateTime
-                .hour(.twoDigits(amPM: .omitted))
-                .minute(.twoDigits)
-                .locale(locale)
-        )
+        _ = locale
+        return clockFormatter.string(from: date)
+    }
+
+    static func timelineClockRange(start: Date, end: Date, locale: Locale = .current) -> String {
+        _ = locale
+        let calendar = Calendar.current
+        let startDay = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: end)
+        if startDay != endDay {
+            return "00:00 – 23:59"
+        }
+        return "\(timelineClockTime(start)) – \(timelineClockTime(end))"
+    }
+
+    /// SwiftUI `DatePicker` 强制 24 小时滚轮（`-u-hc-h23`）。
+    static func twentyFourHourLocale(basedOn locale: Locale) -> Locale {
+        let normalizedIdentifier = locale.identifier.replacingOccurrences(of: "_", with: "-")
+        if normalizedIdentifier.contains("-u-hc-") {
+            return locale
+        }
+        return Locale(identifier: "\(normalizedIdentifier)-u-hc-h23")
     }
 }
