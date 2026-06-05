@@ -18842,7 +18842,7 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "غير قادر على تسجيل الخروج مباشرة"
+            "value": "لا يمكن حذف الحساب مباشرة"
           }
         },
         "en": {
@@ -18854,31 +18854,31 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se puede cerrar sesión directamente"
+            "value": "No se puede eliminar la cuenta directamente"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impossible de se déconnecter directement"
+            "value": "Impossible de supprimer le compte directement"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "सीधे लॉग आउट करने में असमर्थ"
+            "value": "खाता सीधे हटाया नहीं जा सकता"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não é possível sair diretamente"
+            "value": "Não é possível excluir a conta diretamente"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "நேரடியாக வெளியேற முடியவில்லை"
+            "value": "கணக்கை நேரடியாக நீக்க முடியாது"
           }
         },
         "zh-Hans": {
@@ -18890,7 +18890,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "無法直接註銷"
+            "value": "無法直接刪除帳號"
           }
         }
       }
@@ -23545,43 +23545,43 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "فشل تسجيل الخروج"
+            "value": "فشل حذف الحساب"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Logout failed"
+            "value": "Account deletion failed"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Error al cerrar sesión"
+            "value": "No se pudo eliminar la cuenta"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Échec de la déconnexion"
+            "value": "Échec de la suppression du compte"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "लॉगआउट विफल"
+            "value": "खाता हटाना विफल"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Falha ao sair"
+            "value": "Falha ao excluir a conta"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "வெளியேற முடியவில்லை"
+            "value": "கணக்கை நீக்க முடியவில்லை"
           }
         },
         "zh-Hans": {
@@ -23593,7 +23593,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "註銷失敗"
+            "value": "刪除帳號失敗"
           }
         }
       }
@@ -23603,43 +23603,43 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "إلغاء الحساب"
+            "value": "حذف الحساب"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancel account"
+            "value": "Delete Account"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelar cuenta"
+            "value": "Eliminar cuenta"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Annuler le compte"
+            "value": "Supprimer le compte"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "खाता रद्द करें"
+            "value": "खाता हटाएँ"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cancelar conta"
+            "value": "Excluir conta"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "கணக்கை ரத்து செய்"
+            "value": "கணக்கை நீக்கு"
           }
         },
         "zh-Hans": {
@@ -23651,7 +23651,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "註銷帳號"
+            "value": "刪除帳號"
           }
         }
       }
@@ -25683,43 +25683,43 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تأكيد الخروج"
+            "value": "حذف الحساب"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirm logout"
+            "value": "Delete Account"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirmar cierre de sesión"
+            "value": "Eliminar cuenta"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirmer la déconnexion"
+            "value": "Supprimer le compte"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "लॉगआउट की पुष्टि करें"
+            "value": "खाता हटाएँ"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Confirmar logout"
+            "value": "Excluir conta"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "வெளியேறுவதை உறுதிப்படுத்தவும்"
+            "value": "கணக்கை நீக்கு"
           }
         },
         "zh-Hans": {
@@ -25731,7 +25731,7 @@
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "確認註銷"
+            "value": "刪除帳號"
           }
         }
       }
