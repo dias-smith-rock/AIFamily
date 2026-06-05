@@ -90,6 +90,11 @@ struct FamilyView: View {
             guard needsLogin else { return }
             Task { await handleRequiresLoginIfNeeded() }
         }
+        .task(id: appRouter.pendingOpenGroupSettings) {
+            guard appRouter.pendingOpenGroupSettings else { return }
+            appRouter.consumePendingOpenGroupSettingsRequest()
+            openOrganizationSettings()
+        }
         .sheet(item: $addMemberRoute) { route in
             switch route {
             case .entry:

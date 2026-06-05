@@ -1,3 +1,7 @@
 /* App display name shown on Home Screen */
 "CFBundleDisplayName" = "WeSync";
 "CFBundleName" = "WeSync";
+
+"NSCameraUsageDescription" = "Used to scan invitation QR codes shared by others so you can join a group quickly.";
+"NSPhotoLibraryAddUsageDescription" = "Used to save task attachment images to your photo library.";
+"NSFaceIDUsageDescription" = "WeSync uses Face ID to protect your private family schedules and tasks.";

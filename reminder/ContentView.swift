@@ -65,9 +65,7 @@ struct ContentView: View {
                 inviteCode: $groupSwitcher.joinCode,
                 inputError: $groupSwitcher.joinInputError,
                 isSubmitting: groupSwitcher.orgRoutingViewModel.isJoining,
-                onScan: {
-                    groupSwitcher.showJoinScanner = true
-                },
+                parseInviteCode: groupSwitcher.firstInviteCode(from:),
                 onSubmit: {
                     await groupSwitcher.submitJoinGroup(appRouter: appRouter, locale: appSettings.appLocale)
                 }
@@ -76,23 +74,6 @@ struct ContentView: View {
             .environment(\.layoutDirection, appSettings.layoutDirection)
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $groupSwitcher.showJoinScanner) {
-            OrganizationJoinQRScannerSheet { raw in
-                if let code = groupSwitcher.firstInviteCode(from: raw.uppercased()) {
-                    groupSwitcher.joinCode = code
-                    groupSwitcher.joinInputError = nil
-                } else {
-                    groupSwitcher.joinInputError = AppLocalized.string(
-                        "未识别到有效邀请码，请重试。",
-                        locale: appSettings.appLocale
-                    )
-                }
-                groupSwitcher.showJoinScanner = false
-            } onError: { message in
-                groupSwitcher.joinInputError = message
-                groupSwitcher.showJoinScanner = false
-            }
         }
         .task(id: appRouter.appState) {
             if isUserLoggedIn && biometricManager.isUnlocked {

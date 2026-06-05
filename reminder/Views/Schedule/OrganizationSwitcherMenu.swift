@@ -213,8 +213,10 @@ struct JoinExistingGroupSheet: View {
     @Binding var inviteCode: String
     @Binding var inputError: String?
     let isSubmitting: Bool
-    let onScan: () -> Void
+    let parseInviteCode: (String) -> String?
     let onSubmit: () async -> Void
+
+    @State private var showScanner = false
 
     var body: some View {
         NavigationStack {
@@ -230,7 +232,7 @@ struct JoinExistingGroupSheet: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Button {
-                    onScan()
+                    showScanner = true
                 } label: {
                     Label("相机扫码", systemImage: "qrcode.viewfinder")
                         .frame(maxWidth: .infinity)
@@ -271,6 +273,51 @@ struct JoinExistingGroupSheet: View {
                         .disabled(isSubmitting)
                 }
             }
+            .fullScreenCover(isPresented: $showScanner) {
+                OrganizationJoinQRScannerContainer { raw in
+                    if let code = parseInviteCode(raw.uppercased()) {
+                        inviteCode = code
+                        inputError = nil
+                    } else {
+                        inputError = AppLocalized.string(
+                            "未识别到有效邀请码，请重试。",
+                            locale: locale
+                        )
+                    }
+                    showScanner = false
+                } onError: { message in
+                    inputError = message
+                    showScanner = false
+                }
+                .environment(\.locale, locale)
+            }
+        }
+    }
+}
+
+struct OrganizationJoinQRScannerContainer: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let onCode: (String) -> Void
+    let onError: (String) -> Void
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            OrganizationJoinQRScannerSheet(onCode: onCode, onError: onError)
+                .ignoresSafeArea()
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .frame(width: 36, height: 36)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .padding(.top, 12)
+            .padding(.leading, 16)
+            .accessibilityLabel(Text("关闭"))
         }
     }
 }
