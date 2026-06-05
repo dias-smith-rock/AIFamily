@@ -13,7 +13,6 @@ final class GroupSwitcherCoordinator: ObservableObject {
     @Published var showJoinGroupSheet = false
     @Published var joinCode = ""
     @Published var joinInputError: String?
-    @Published var showJoinScanner = false
 
     let orgRoutingViewModel: OrgRoutingViewModel
 
