@@ -35,7 +35,7 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>用于扫描他人分享的邀请码二维码，帮助你快速加入群组。</string>
+	<string>WeSync 需要访问您的相机以扫描邀请码、拍摄通知单或收据并自动生成任务。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>用于将任务附件图片保存到你的相册。</string>
 	<key>NSFaceIDUsageDescription</key>

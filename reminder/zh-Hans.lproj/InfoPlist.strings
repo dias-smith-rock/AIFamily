@@ -2,7 +2,7 @@
 "CFBundleDisplayName" = "同圈";
 "CFBundleName" = "同圈";
 
-"NSCameraUsageDescription" = "用于扫描他人分享的邀请码二维码，帮助你快速加入群组。";
+"NSCameraUsageDescription" = "WeSync 需要访问您的相机以扫描邀请码、拍摄通知单或收据并自动生成任务。";
 "NSPhotoLibraryAddUsageDescription" = "用于将任务附件图片保存到你的相册。";
 "NSFaceIDUsageDescription" = "用于通过 Face ID 保护你的群组日程与任务。";
 "NSLocationWhenInUseUsageDescription" = "用于在地图中展示您与成员的大致位置，并在完成任务时记录地点。";

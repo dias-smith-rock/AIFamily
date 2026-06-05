@@ -31,7 +31,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: "deepseek-vl", 
+        model: "WeSync-create-task-from-image", 
         response_format: { type: "json_object" }, // 强力约束纯净 JSON 输出
         messages: [
           {

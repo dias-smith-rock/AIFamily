@@ -2,7 +2,7 @@
 "CFBundleDisplayName" = "WeSync";
 "CFBundleName" = "WeSync";
 
-"NSCameraUsageDescription" = "Usado para escanear códigos QR de convite compartilhados por outros para ajudá-lo a entrar em um grupo rapidamente.";
+"NSCameraUsageDescription" = "O WeSync precisa de acesso à câmera para escanear códigos de convite e capturar avisos ou recibos para criar tarefas automaticamente.";
 "NSPhotoLibraryAddUsageDescription" = "Usado para salvar imagens de anexos de tarefas no seu álbum de fotos.";
 "NSFaceIDUsageDescription" = "O WeSync usa o Face ID para proteger suas agendas e tarefas privadas do grupo.";
 "NSLocationWhenInUseUsageDescription" = "Usado para mostrar sua localização aproximada e a dos membros no mapa, e registrar locais ao concluir tarefas.";

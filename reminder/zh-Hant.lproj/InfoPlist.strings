@@ -2,7 +2,7 @@
 "CFBundleDisplayName" = "同圈";
 "CFBundleName" = "同圈";
 
-"NSCameraUsageDescription" = "用於掃描他人分享的邀請碼 QR 碼，協助你快速加入群組。";
+"NSCameraUsageDescription" = "WeSync 需要存取您的相機以掃描邀請碼、拍攝通知單或收據並自動產生任務。";
 "NSPhotoLibraryAddUsageDescription" = "用於將任務附件圖片儲存到你的相簿。";
 "NSFaceIDUsageDescription" = "用於透過 Face ID 保護你的群組日程與任務。";
 "NSLocationWhenInUseUsageDescription" = "用於在地圖中展示您與成員的大致位置，並在完成任務時記錄地點。";

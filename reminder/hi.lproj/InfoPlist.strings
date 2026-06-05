@@ -2,7 +2,7 @@
 "CFBundleDisplayName" = "WeSync";
 "CFBundleName" = "WeSync";
 
-"NSCameraUsageDescription" = "दूसरों द्वारा साझा किए गए निमंत्रण QR कोड स्कैन करने के लिए उपयोग किया जाता है, ताकि आप जल्दी से समूह में शामिल हो सकें।";
+"NSCameraUsageDescription" = "WeSync को आमंत्रण कोड स्कैन करने और नोटिस या रसीदें फोटो करके स्वचालित रूप से कार्य बनाने के लिए कैमरा एक्सेस चाहिए।";
 "NSPhotoLibraryAddUsageDescription" = "कार्य संलग्नक छवियों को आपके फ़ोटो एल्बम में सहेजने के लिए उपयोग किया जाता है।";
 "NSFaceIDUsageDescription" = "WeSync आपके निजी समूह शेड्यूल और कार्यों की सुरक्षा के लिए Face ID का उपयोग करता है।";
 "NSLocationWhenInUseUsageDescription" = "मानचित्र पर आपकी और सदस्यों की अनुमानित स्थिति दिखाने और कार्य पूरा करते समय स्थान रिकॉर्ड करने के लिए उपयोग किया जाता है।";

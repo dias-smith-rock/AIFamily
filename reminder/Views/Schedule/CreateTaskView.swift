@@ -296,6 +296,12 @@ struct CreateTaskView: View {
     private let formMode: EditTaskViewModel.TaskMode
     private let familyProfiles: [FamilyProfile]
     private let initialTitle: String?
+    private let initialNote: String?
+    private let initialLocationName: String?
+    private let initialDueDate: Date?
+    private let initialAttachmentImages: [UIImage]
+    private let defaultDueDate: Date?
+    private let defaultAllDayForNewTask: Bool
     private let onSaveSuccess: ((Date) -> Void)?
     private let onUpdateSuccess: ((FamilyTask) -> Void)?
     /// 保存成功后同步本地通知（由外层注入 `ScheduleViewModel.syncAlarms`）。须为同步闭包，避免再经 `async` 传递 `FamilyTask`。
@@ -310,6 +316,10 @@ struct CreateTaskView: View {
         formMode: EditTaskViewModel.TaskMode = .scheduled,
         familyProfiles: [FamilyProfile] = [],
         initialTitle: String? = nil,
+        initialNote: String? = nil,
+        initialLocationName: String? = nil,
+        initialDueDate: Date? = nil,
+        initialAttachmentImages: [UIImage] = [],
         defaultDueDate: Date? = nil,
         defaultAllDayForNewTask: Bool = false,
         onSaveSuccess: ((Date) -> Void)? = nil,
@@ -320,6 +330,12 @@ struct CreateTaskView: View {
         self.formMode = editingTask.map { EditTaskViewModel.mode(forEditing: $0) } ?? formMode
         self.familyProfiles = familyProfiles
         self.initialTitle = initialTitle
+        self.initialNote = initialNote
+        self.initialLocationName = initialLocationName
+        self.initialDueDate = initialDueDate
+        self.initialAttachmentImages = initialAttachmentImages
+        self.defaultDueDate = defaultDueDate
+        self.defaultAllDayForNewTask = defaultAllDayForNewTask
         self.onSaveSuccess = onSaveSuccess
         self.onUpdateSuccess = onUpdateSuccess
         self.onAlarmSync = onAlarmSync
@@ -374,10 +390,15 @@ struct CreateTaskView: View {
             _locationName = State(initialValue: task.locationData?.name ?? "")
         } else {
             _title = State(initialValue: initialTitle ?? "")
-            let resolvedDue = Self.initialDueDateForNewTask(
-                calendarDay: defaultDueDate,
-                allDay: defaultAllDayForNewTask
-            )
+            let resolvedDue: Date
+            if let initialDueDate {
+                resolvedDue = initialDueDate
+            } else {
+                resolvedDue = Self.initialDueDateForNewTask(
+                    calendarDay: defaultDueDate,
+                    allDay: defaultAllDayForNewTask
+                )
+            }
             _dueDate = State(initialValue: resolvedDue)
             _durationPickerDate = State(
                 initialValue: Self.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
@@ -391,13 +412,14 @@ struct CreateTaskView: View {
             _reminderOption = State(initialValue: .minutesBefore15)
             _selectedAssigneeIds = State(initialValue: [])
             _selectedTargetProfileIds = State(initialValue: [])
-            _note = State(initialValue: "")
+            _note = State(initialValue: initialNote ?? "")
             _financeDetailNote = State(initialValue: "")
             _costInput = State(initialValue: "")
             _selectedBackgroundHex = State(initialValue: nil)
             _emergencyPhone = State(initialValue: "")
             _formPriority = State(initialValue: .normal)
-            _locationName = State(initialValue: "")
+            _locationName = State(initialValue: initialLocationName ?? "")
+            _selectedImages = State(initialValue: initialAttachmentImages)
         }
     }
 

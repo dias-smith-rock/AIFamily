@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import UIKit
 
 #if canImport(Supabase)
 import Supabase
@@ -27,6 +28,15 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var errorMessage: String?
     /// 列表滚动时当前视野内的月份（用于顶栏动态标题）。
     @Published var currentVisibleDate: Date = Calendar.current.startOfDay(for: Date())
+
+    // MARK: - AI 识图创建任务
+
+    @Published var isShowingCamera = false
+    @Published var isAIProcessing = false
+    @Published var prefilledTaskForAI: AIPrefilledTaskDraft?
+    @Published var aiProcessingError: String?
+
+    private let aiTaskParserService = AITaskParserService()
 
     private let taskService: TaskDataService
     private let membershipService: HouseholdMembershipDataService
@@ -518,6 +528,31 @@ final class ScheduleViewModel: ObservableObject {
                 upcomingTasks: upcoming,
                 cancelForTaskIds: staleTaskIds
             )
+        }
+    }
+
+    // MARK: - AI 识图创建任务
+
+    func processCapturedImage(_ compressedData: Data, originalImage: UIImage) async {
+        isAIProcessing = true
+        aiProcessingError = nil
+        defer { isAIProcessing = false }
+
+        do {
+            let parsed = try await aiTaskParserService.parseTask(fromJPEGData: compressedData)
+
+            prefilledTaskForAI = AIPrefilledTaskDraft(
+                title: parsed.title.trimmingCharacters(in: .whitespacesAndNewlines),
+                description: parsed.description?.trimmingCharacters(in: .whitespacesAndNewlines),
+                dueDate: parsed.dueDate,
+                locationName: parsed.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
+                attachmentImage: originalImage
+            )
+        } catch {
+            aiProcessingError = error.localizedDescription
+            #if DEBUG
+            print("[ScheduleViewModel] processCapturedImage failed: \(error.localizedDescription)")
+            #endif
         }
     }
 }

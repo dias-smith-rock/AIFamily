@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 #if canImport(Supabase)
 import Supabase
@@ -23,42 +24,16 @@ struct TaskListView: View {
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
+    @State private var quickTaskInput = ""
+    @State private var aiPrefillFormInstanceID = UUID()
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                calendarTopBar
-
-                Group {
-                    switch currentViewMode {
-                    case .list:
-                        TaskModeListView(
-                            viewModel: viewModel,
-                            listScrollToken: listScrollToken,
-                            onTaskTap: { taskForDetailSheet = $0 },
-                            onRefresh: refreshTasks
-                        )
-                    case .day:
-                        TaskModeDayView(
-                            selectedDate: $selectedDate,
-                            viewModel: viewModel,
-                            onTaskSelect: { taskForDetailSheet = $0 },
-                            onQuickCreate: { prefill, dueOverride in
-                                prefillTitle = prefill
-                                createTaskDueDateOverride = dueOverride
-                                createTaskFormInstanceID = UUID()
-                                isShowingCreateTaskSheet = true
-                            },
-                            onRefresh: refreshTasks
-                        )
-                    case .threeDay, .week, .month, .year:
-                        Text(AppLocalized.string("开发中...", locale: locale))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
+            ZStack {
+                mainContent
+                if viewModel.isAIProcessing {
+                    aiProcessingOverlay
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
             .navigationBarHidden(true)
@@ -105,6 +80,54 @@ struct TaskListView: View {
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+            }
+            .sheet(item: $viewModel.prefilledTaskForAI) { draft in
+                EditTaskView(
+                    formMode: .scheduled,
+                    initialTitle: draft.title,
+                    initialNote: draft.description,
+                    initialLocationName: draft.locationName,
+                    initialDueDate: draft.dueDate,
+                    initialAttachmentImages: [draft.attachmentImage],
+                    defaultDueDate: draft.dueDate.map { dayID(for: $0) } ?? dayID(for: selectedDate),
+                    defaultAllDayForNewTask: false,
+                    onSaveSuccess: { createdDueDate in
+                        selectedDate = dayID(for: createdDueDate)
+                        Task {
+                            await viewModel.loadTasks()
+                        }
+                    },
+                    onAlarmSync: { task in
+                        viewModel.syncAlarms(for: task)
+                    }
+                )
+                .id(aiPrefillFormInstanceID)
+                .environmentObject(appRouter)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
+                CameraPicker(
+                    onImageCaptured: { originalImage, compressedData in
+                        viewModel.isShowingCamera = false
+                        Task {
+                            await viewModel.processCapturedImage(compressedData, originalImage: originalImage)
+                        }
+                    },
+                    onCancel: {
+                        viewModel.isShowingCamera = false
+                    }
+                )
+                .ignoresSafeArea()
+            }
+            .alert("识图失败", isPresented: aiErrorAlertBinding) {
+                Button("好", role: .cancel) {
+                    viewModel.aiProcessingError = nil
+                }
+            } message: {
+                if let message = viewModel.aiProcessingError {
+                    Text(message)
+                }
             }
             .task {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
@@ -157,6 +180,9 @@ struct TaskListView: View {
                     await viewModel.loadTasks()
                 }
             }
+            .onChange(of: viewModel.prefilledTaskForAI?.id) { _, _ in
+                aiPrefillFormInstanceID = UUID()
+            }
             .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
                 openPendingScheduledTaskIfNeeded()
             }
@@ -165,6 +191,111 @@ struct TaskListView: View {
             }
         }
         .appLocaleEnvironment(using: appSettings)
+    }
+
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            calendarTopBar
+
+            Group {
+                switch currentViewMode {
+                case .list:
+                    TaskModeListView(
+                        viewModel: viewModel,
+                        listScrollToken: listScrollToken,
+                        onTaskTap: { taskForDetailSheet = $0 },
+                        onRefresh: refreshTasks
+                    )
+                case .day:
+                    TaskModeDayView(
+                        selectedDate: $selectedDate,
+                        viewModel: viewModel,
+                        onTaskSelect: { taskForDetailSheet = $0 },
+                        onQuickCreate: { prefill, dueOverride in
+                            prefillTitle = prefill
+                            createTaskDueDateOverride = dueOverride
+                            createTaskFormInstanceID = UUID()
+                            isShowingCreateTaskSheet = true
+                        },
+                        onRefresh: refreshTasks
+                    )
+                case .threeDay, .week, .month, .year:
+                    Text(AppLocalized.string("开发中...", locale: locale))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            quickTaskInputBar
+        }
+    }
+
+    private var quickTaskInputBar: some View {
+        HStack(spacing: 10) {
+            TextField("输入任务标题…", text: $quickTaskInput)
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .onSubmit(submitQuickTaskInput)
+
+            Button(action: openCameraIfAvailable) {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppTheme.ColorToken.accent)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isAIProcessing)
+            .accessibilityLabel("拍照创建任务")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
+    }
+
+    private var aiProcessingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.35)
+                .ignoresSafeArea()
+
+            VStack(spacing: 16) {
+                ProgressView()
+                    .controlSize(.large)
+                    .tint(.white)
+                Text("AI 正在阅读您的图片...")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(28)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isAIProcessing)
+    }
+
+    private var aiErrorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.aiProcessingError != nil },
+            set: { isPresented in
+                if isPresented == false {
+                    viewModel.aiProcessingError = nil
+                }
+            }
+        )
+    }
+
+    private func submitQuickTaskInput() {
+        let trimmed = quickTaskInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return }
+        quickTaskInput = ""
+        openCreateTask(prefill: trimmed)
+    }
+
+    private func openCameraIfAvailable() {
+        viewModel.isShowingCamera = true
     }
 
     // MARK: - Notification deep link

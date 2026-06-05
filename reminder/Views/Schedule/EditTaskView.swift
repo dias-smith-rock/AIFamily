@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 任务新建 / 编辑统一入口：由 `TaskMode` 决定定时日程或灵活待办 UI。
 struct EditTaskView: View {
@@ -8,6 +9,10 @@ struct EditTaskView: View {
     private let formMode: EditTaskViewModel.TaskMode
     private let familyProfiles: [FamilyProfile]
     private let initialTitle: String?
+    private let initialNote: String?
+    private let initialLocationName: String?
+    private let initialDueDate: Date?
+    private let initialAttachmentImages: [UIImage]
     private let defaultDueDate: Date?
     private let defaultAllDayForNewTask: Bool
     private let onSaveSuccess: ((Date) -> Void)?
@@ -25,6 +30,10 @@ struct EditTaskView: View {
         self.formMode = EditTaskViewModel.mode(forEditing: task)
         self.familyProfiles = familyProfiles
         self.initialTitle = nil
+        self.initialNote = nil
+        self.initialLocationName = nil
+        self.initialDueDate = nil
+        self.initialAttachmentImages = []
         self.defaultDueDate = nil
         self.defaultAllDayForNewTask = false
         self.onSaveSuccess = nil
@@ -37,6 +46,10 @@ struct EditTaskView: View {
         formMode: EditTaskViewModel.TaskMode,
         familyProfiles: [FamilyProfile] = [],
         initialTitle: String? = nil,
+        initialNote: String? = nil,
+        initialLocationName: String? = nil,
+        initialDueDate: Date? = nil,
+        initialAttachmentImages: [UIImage] = [],
         defaultDueDate: Date? = nil,
         defaultAllDayForNewTask: Bool = false,
         onSaveSuccess: ((Date) -> Void)? = nil,
@@ -46,6 +59,10 @@ struct EditTaskView: View {
         self.formMode = formMode
         self.familyProfiles = familyProfiles
         self.initialTitle = initialTitle
+        self.initialNote = initialNote
+        self.initialLocationName = initialLocationName
+        self.initialDueDate = initialDueDate
+        self.initialAttachmentImages = initialAttachmentImages
         self.defaultDueDate = defaultDueDate
         self.defaultAllDayForNewTask = defaultAllDayForNewTask
         self.onSaveSuccess = onSaveSuccess
@@ -59,6 +76,10 @@ struct EditTaskView: View {
             formMode: formMode,
             familyProfiles: familyProfiles,
             initialTitle: initialTitle,
+            initialNote: initialNote,
+            initialLocationName: initialLocationName,
+            initialDueDate: initialDueDate,
+            initialAttachmentImages: initialAttachmentImages,
             defaultDueDate: defaultDueDate,
             defaultAllDayForNewTask: defaultAllDayForNewTask,
             onSaveSuccess: onSaveSuccess,

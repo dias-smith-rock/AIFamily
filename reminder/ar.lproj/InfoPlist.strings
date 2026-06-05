@@ -2,7 +2,7 @@
 "CFBundleDisplayName" = "WeSync";
 "CFBundleName" = "WeSync";
 
-"NSCameraUsageDescription" = "يُستخدم لمسح رموز QR لرمز الدعوة التي يشاركها الآخرون لمساعدتك على الانضمام إلى مجموعة بسرعة.";
+"NSCameraUsageDescription" = "WeSync يحتاج إلى الوصول إلى الكاميرا لمسح رموز الدعوة والتقاط الإشعارات أو الإيصالات لإنشاء المهام تلقائيًا.";
 "NSPhotoLibraryAddUsageDescription" = "يُستخدم لحفظ صور مرفقات المهام في ألبوم الصور.";
 "NSFaceIDUsageDescription" = "يستخدم WeSync Face ID لحماية جداول ومهام مجموعتك الخاصة.";
 "NSLocationWhenInUseUsageDescription" = "يُستخدم لعرض موقعك التقريبي وموقع الأعضاء على الخريطة، وتسجيل المواقع عند إكمال المهام.";
