@@ -110,6 +110,9 @@ struct MineView: View {
         }
         .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
             Button("我知道了", role: .cancel) {}
+            Button("群组管理") {
+                appRouter.requestOpenGroupSettings()
+            }
         } message: {
             Text("您是「\(viewModel.creatorBlockGroupName)」等 \(viewModel.creatorBlockGroupCount) 个群组的创建者，请先转移权限或解散群组后再注销账户。")
         }

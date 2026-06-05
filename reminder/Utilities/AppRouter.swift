@@ -33,6 +33,9 @@ final class AppRouter: ObservableObject {
     /// 通知点击后等待各列表页消费的“打开任务详情”路由信息。
     @Published var pendingTaskReminderTap: TaskReminderNotificationUserInfo.Tap?
 
+    /// 「我的」页创建者无法注销时，请求打开当前群组的群组设置页。
+    @Published var pendingOpenGroupSettings = false
+
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的家庭）。
     private var pendingPreferredHouseholdId: UUID?
 
@@ -67,6 +70,14 @@ final class AppRouter: ObservableObject {
 
     func consumePendingTaskReminderTap() {
         pendingTaskReminderTap = nil
+    }
+
+    func requestOpenGroupSettings() {
+        pendingOpenGroupSettings = true
+    }
+
+    func consumePendingOpenGroupSettingsRequest() {
+        pendingOpenGroupSettings = false
     }
 
     /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存。

@@ -67,6 +67,10 @@ struct AppTabRootView: View {
             guard let tap = newValue else { return }
             selectedTab = tap.isFlexibleTodo ? .todos : .schedule
         }
+        .onChange(of: appRouter.pendingOpenGroupSettings) { _, shouldOpen in
+            guard shouldOpen else { return }
+            selectedTab = .family
+        }
         .reviewAlertModifier(manager: reviewRedirectManager)
     }
 }
