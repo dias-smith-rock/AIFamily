@@ -1,0 +1,7 @@
+/* App display name shown on Home Screen */
+"CFBundleDisplayName" = "WeSync";
+"CFBundleName" = "WeSync";
+
+"NSCameraUsageDescription" = "Se usa para escanear códigos QR de invitación compartidos por otros y ayudarte a unirte a un grupo rápidamente.";
+"NSPhotoLibraryAddUsageDescription" = "Se usa para guardar imágenes adjuntas de tareas en tu álbum de fotos.";
+"NSFaceIDUsageDescription" = "WeSync usa Face ID para proteger tus horarios y tareas familiares privados.";
