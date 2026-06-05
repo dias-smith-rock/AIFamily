@@ -149,6 +149,7 @@ struct FamilyView: View {
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: viewModel.canEditProfile(profile),
                 memberRemoval: memberRemovalAction(for: profile),
+                adminRoleToggle: adminRoleToggleAction(for: profile),
                 uploadAvatar: { data, profileId in
                     #if DEBUG
                     print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
@@ -477,6 +478,10 @@ struct FamilyView: View {
             isVirtualMember: viewModel.isVirtualMember(profile),
             onDelete: { await viewModel.deleteOrRemoveMember(profile: profile) }
         )
+    }
+
+    private func adminRoleToggleAction(for profile: FamilyProfile) -> ProfileEditView.AdminRoleToggleAction? {
+        viewModel.adminRoleToggleAction(for: profile)
     }
 
     private var otherMembersSectionHeader: some View {

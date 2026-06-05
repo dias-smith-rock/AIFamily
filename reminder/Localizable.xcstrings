@@ -1,6 +1,240 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "": {},
+    "—": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "—"
+          }
+        }
+      }
+    },
+    ", ": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "، "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "、"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "、"
+          }
+        }
+      }
+    },
+    "、": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "، "
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": ", "
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "、"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "、"
+          }
+        }
+      }
+    },
+    "(已编辑)": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(تحرير)"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(edited)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(editado)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(édité)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(संपादित)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(editado)"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(திருத்தப்பட்டது)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(已编辑)"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(已編輯)"
+          }
+        }
+      }
+    },
     "%@ 即将推出。": {
       "localizations": {
         "en": {
@@ -75,65 +309,6 @@
         }
       }
     },
-    "%@前": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "قبل %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Due by %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Para el %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avant le %@"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ तक"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Até %@"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@க்கு முன்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@前"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@前"
-          }
-        }
-      }
-    },
     "%@：": {
       "extractionState": "stale",
       "localizations": {
@@ -189,6 +364,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@："
+          }
+        }
+      }
+    },
+    "%@前": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due by %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para el %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avant le %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ तक"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Até %@"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@க்கு முன்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@前"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@前"
           }
         }
       }
@@ -553,8 +787,7 @@
             "value": "%lld 人"
           }
         }
-      },
-      "extractionState": "stale"
+      }
     },
     "%lld 个待办已完成": {
       "extractionState": "stale",
@@ -908,118 +1141,653 @@
         }
       }
     },
-    "(已编辑)": {
+    "• 上传学校通知截图": {
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "(تحرير)"
+            "value": "• تحميل لقطات من الإخطارات المدرسية"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "(edited)"
+            "value": "• Upload screenshots of school notifications"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "(editado)"
+            "value": "• Cargar capturas de pantalla de notificaciones escolares."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "(édité)"
+            "value": "• Importez des captures d'écran des notifications de l'école"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "(संपादित)"
+            "value": "• स्कूल सूचनाओं के स्क्रीनशॉट अपलोड करें"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "(editado)"
+            "value": "• Faça upload de capturas de tela de notificações escolares"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "(திருத்தப்பட்டது)"
+            "value": "• பள்ளி அறிவிப்புகளின் ஸ்கிரீன்ஷாட்களைப் பதிவேற்றவும்"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "(已编辑)"
+            "value": "• 上传学校通知截图"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "(已編輯)"
+            "value": "• 上傳學校通知截圖"
           }
         }
       }
     },
-    ", ": {
+    "• 直接语音说出需求": {
       "localizations": {
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "، "
+            "value": "• تحدث المتطلبات مباشرة بالصوت"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": ", "
+            "value": "• Speak the requirements directly by voice"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": ", "
+            "value": "• Decir los requisitos directamente por voz."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": ", "
+            "value": "• Exprimez les exigences directement par la voix"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": ", "
+            "value": "• आवश्यकताओं को सीधे आवाज से बताएं"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": ", "
+            "value": "• Fale os requisitos diretamente por voz"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": ", "
+            "value": "• தேவைகளை நேரடியாக குரல் மூலம் பேசுங்கள்"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "、"
+            "value": "• 直接语音说出需求"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "、"
+            "value": "• 直接語音說出需求"
+          }
+        }
+      }
+    },
+    "• 粘贴微信通知文字": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• لصق نص إشعار WeChat"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Paste WeChat notification text"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Pegar el texto de notificación de WeChat"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Coller le texte de notification WeChat"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• WeChat अधिसूचना पाठ चिपकाएँ"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• Colar o texto de notificação do WeChat"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• WeChat அறிவிப்பு உரையை ஒட்டவும்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• 粘贴微信通知文字"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "• 貼上微信通知文字"
+          }
+        }
+      }
+    },
+    "˄": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˄"
+          }
+        }
+      }
+    },
+    "˅": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "˅"
+          }
+        }
+      }
+    },
+    "⚡️ Live Huddle · %lld 人在线": {},
+    "⚡️ Live Huddle Active (%lld people inside)": {},
+    "✅ 该任务已完结": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ تم الانتهاء من هذه المهمة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ This task has been completed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Esta tarea ha sido completada"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Cette tâche est terminée"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅यह कार्य पूर्ण हो चुका है"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ Esta tarefa foi concluída"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ இந்த பணி முடிந்தது"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ 该任务已完结"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✅ 該任務已結束"
+          }
+        }
+      }
+    },
+    "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Unlimited images per task, original quality, plus video and documents (PDF/Word)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 單任務無限圖片、支援原圖 (Original Quality)、解鎖影片與文件 (PDF/Word) 上傳。"
+          }
+        }
+      }
+    },
+    "👑 无限创建与加入群组，无限成员人数。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Unlimited groups to create and join, unlimited members."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 无限创建与加入群组，无限成员人数。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 無限建立與加入群組，無限成員人數。"
+          }
+        }
+      }
+    },
+    "🔴 Urgent": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 عاجل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgent"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgent"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 जरूरी"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgente"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 அவசரம்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 紧急"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 緊急"
+          }
+        }
+      }
+    },
+    "🔴 紧急": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 عاجل"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgent"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgent"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 जरूरी"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 Urgente"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 அவசரம்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 紧急"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🔴 緊急"
+          }
+        }
+      }
+    },
+    "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 Founding member offer: claim 1 year of Pro free for a limited time!"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 創世用戶福利：限時免費領取 1 年 Pro 權益！"
+          }
+        }
+      }
+    },
+    "🟢 Normal": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 عادي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 सामान्य"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 சாதாரண"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 一般"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 一般"
+          }
+        }
+      }
+    },
+    "🟢 一般": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 عادي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 सामान्य"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 Normal"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 சாதாரண"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 一般"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🟢 一般"
           }
         }
       }
@@ -1258,6 +2026,123 @@
         }
       }
     },
+    "3 天": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 يوم"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 Day"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 dias"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 jours"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 दिन"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 dias"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 நாள்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3天"
+          }
+        }
+      }
+    },
+    "5 minutes before": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل 5 دقائق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes before"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutos antes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes avant"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 मिनट पहले"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutos antes"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 நிமிடங்களுக்கு முன்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提前5分钟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提前5分鐘"
+          }
+        }
+      }
+    },
     "10 minutes before": {
       "extractionState": "stale",
       "localizations": {
@@ -1376,64 +2261,6 @@
         }
       }
     },
-    "3 天": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 يوم"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 Day"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 dias"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 jours"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 दिन"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 dias"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3 நாள்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3天"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "3天"
-          }
-        }
-      }
-    },
     "30 minutes before": {
       "extractionState": "stale",
       "localizations": {
@@ -1489,145 +2316,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "提前30分鐘"
-          }
-        }
-      }
-    },
-    "5 minutes before": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "قبل 5 دقائق"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutes before"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutos antes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutes avant"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 मिनट पहले"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutos antes"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 நிமிடங்களுக்கு முன்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提前5分钟"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提前5分鐘"
-          }
-        }
-      }
-    },
-    "AI 语音极速建任务、群组智能周报、高阶提醒规则等更多专属功能即将上线。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI voice task creation, group smart weekly reports, advanced reminders, and more Pro features are on the way."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI 语音极速建任务、群组智能周报、高阶提醒规则等更多专属功能即将上线。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI 語音極速建任務、群組智慧週報、高階提醒規則等更多專屬功能即將上線。"
-          }
-        }
-      }
-    },
-    "AI助理": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مساعد الذكاء الاصطناعي"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI Assistant"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Asistente de IA"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistant IA"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "एआई सहायक"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Assistente de IA"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI உதவியாளர்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI助理"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "AI助理"
           }
         }
       }
@@ -1746,6 +2434,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "新增群組成員"
+          }
+        }
+      }
+    },
+    "AI 语音极速建任务、群组智能周报、高阶提醒规则等更多专属功能即将上线。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI voice task creation, group smart weekly reports, advanced reminders, and more Pro features are on the way."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 语音极速建任务、群组智能周报、高阶提醒规则等更多专属功能即将上线。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI 語音極速建任務、群組智慧週報、高階提醒規則等更多專屬功能即將上線。"
+          }
+        }
+      }
+    },
+    "AI助理": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مساعد الذكاء الاصطناعي"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI Assistant"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistente de IA"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistant IA"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एआई सहायक"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assistente de IA"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI உதவியாளர்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI助理"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI助理"
           }
         }
       }
@@ -1880,6 +2648,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "已取消"
+          }
+        }
+      }
+    },
+    "channel: %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "القناة: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "channel: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "canal: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "canal : %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चैनल: %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "canal: %@"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சேனல்: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通道：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通道：%@"
           }
         }
       }
@@ -3006,7 +3832,6 @@
       }
     },
     "Join": {},
-    "LIVE": {},
     "Large": {
       "extractionState": "stale",
       "localizations": {
@@ -3066,8 +3891,8 @@
         }
       }
     },
+    "LIVE": {},
     "Live Huddle 已因长时间无活动自动结束": {},
-    "Maybe Later": {},
     "Member": {
       "extractionState": "stale",
       "localizations": {
@@ -3422,6 +4247,64 @@
         }
       }
     },
+    "nonce: %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نونس: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nonce: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nonce: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "occasionnel : %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गैर: %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nonce: %@"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இல்லை: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "随机数：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隨機數：%@"
+          }
+        }
+      }
+    },
     "None": {
       "extractionState": "stale",
       "localizations": {
@@ -3738,64 +4621,6 @@
         }
       }
     },
-    "SIG": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "SIG"
-          }
-        }
-      }
-    },
     "Send an invite link so they can sign in on their phone and participate.": {
       "extractionState": "stale",
       "localizations": {
@@ -3851,6 +4676,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "發送邀請連結，對方可使用自己的手機登入並互動。"
+          }
+        }
+      }
+    },
+    "SIG": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SIG"
           }
         }
       }
@@ -4182,6 +5065,64 @@
         }
       }
     },
+    "token: %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الرمز: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "token: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "token: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "jeton : %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "टोकन: %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "token: %@"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "டோக்கன்: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代币：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "代幣：%@"
+          }
+        }
+      }
+    },
     "Transfer ownership": {
       "extractionState": "stale",
       "localizations": {
@@ -4418,6 +5359,64 @@
         }
       }
     },
+    "valid: %@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صالح: %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "valid: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "válido: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "valide : %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वैध: %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "válido: %@"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "செல்லுபடியாகும்: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有效：%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有效：%@"
+          }
+        }
+      }
+    },
     "VIP 权益即将开放。": {
       "extractionState": "stale",
       "localizations": {
@@ -4431,65 +5430,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "VIP 权益即将开放。"
-          }
-        }
-      }
-    },
-    "WeSync": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "同圈"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "同圈"
           }
         }
       }
@@ -4671,6 +5611,65 @@
         }
       }
     },
+    "WeSync": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同圈"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "同圈"
+          }
+        }
+      }
+    },
     "What would you like to do?": {
       "extractionState": "stale",
       "localizations": {
@@ -4789,7 +5788,6 @@
         }
       }
     },
-    "Write a Review": {},
     "Yearly": {
       "extractionState": "stale",
       "localizations": {
@@ -4908,706 +5906,6 @@
         }
       }
     },
-    "channel: %@": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "القناة: %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "channel: %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "canal: %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "canal : %@"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चैनल: %@"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "canal: %@"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "சேனல்: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通道：%@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通道：%@"
-          }
-        }
-      }
-    },
-    "nonce: %@": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "نونس: %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nonce: %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nonce: %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "occasionnel : %@"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "गैर: %@"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nonce: %@"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இல்லை: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "随机数：%@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隨機數：%@"
-          }
-        }
-      }
-    },
-    "token: %@": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الرمز: %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "token: %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "token: %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "jeton : %@"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "टोकन: %@"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "token: %@"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "டோக்கன்: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "代币：%@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "代幣：%@"
-          }
-        }
-      }
-    },
-    "valid: %@": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "صالح: %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "valid: %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "válido: %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "valide : %@"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वैध: %@"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "válido: %@"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "செல்லுபடியாகும்: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "有效：%@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "有效：%@"
-          }
-        }
-      }
-    },
-    "˄": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˄"
-          }
-        }
-      }
-    },
-    "˅": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "˅"
-          }
-        }
-      }
-    },
-    "—": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "—"
-          }
-        }
-      }
-    },
-    "• 上传学校通知截图": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• تحميل لقطات من الإخطارات المدرسية"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Upload screenshots of school notifications"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Cargar capturas de pantalla de notificaciones escolares."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Importez des captures d'écran des notifications de l'école"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• स्कूल सूचनाओं के स्क्रीनशॉट अपलोड करें"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Faça upload de capturas de tela de notificações escolares"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• பள்ளி அறிவிப்புகளின் ஸ்கிரீன்ஷாட்களைப் பதிவேற்றவும்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 上传学校通知截图"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 上傳學校通知截圖"
-          }
-        }
-      }
-    },
-    "• 直接语音说出需求": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• تحدث المتطلبات مباشرة بالصوت"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Speak the requirements directly by voice"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Decir los requisitos directamente por voz."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Exprimez les exigences directement par la voix"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• आवश्यकताओं को सीधे आवाज से बताएं"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Fale os requisitos diretamente por voz"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• தேவைகளை நேரடியாக குரல் மூலம் பேசுங்கள்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 直接语音说出需求"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 直接語音說出需求"
-          }
-        }
-      }
-    },
-    "• 粘贴微信通知文字": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• لصق نص إشعار WeChat"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Paste WeChat notification text"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Pegar el texto de notificación de WeChat"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Coller le texte de notification WeChat"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• WeChat अधिसूचना पाठ चिपकाएँ"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Colar o texto de notificação do WeChat"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• WeChat அறிவிப்பு உரையை ஒட்டவும்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 粘贴微信通知文字"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 貼上微信通知文字"
-          }
-        }
-      }
-    },
-    "⚡️ Live Huddle Active (%lld people inside)": {},
-    "⚡️ Live Huddle · %lld 人在线": {},
-    "✅ 该任务已完结": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ تم الانتهاء من هذه المهمة"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ This task has been completed"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ Esta tarea ha sido completada"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ Cette tâche est terminée"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅यह कार्य पूर्ण हो चुका है"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ Esta tarefa foi concluída"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ இந்த பணி முடிந்தது"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ 该任务已完结"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "✅ 該任務已結束"
-          }
-        }
-      }
-    },
-    "、": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "، "
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", "
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", "
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", "
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", "
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", "
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": ", "
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "、"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "、"
-          }
-        }
-      }
-    },
     "一般": {
       "localizations": {
         "ar": {
@@ -5662,6 +5960,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "一般"
+          }
+        }
+      }
+    },
+    "一起，完美同步。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معًا، متزامنين تمامًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Together, perfectly synced."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juntos, perfectamente sincronizados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ensemble, parfaitement synchronisés."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एक साथ, पूरी तरह से समन्वयित।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Juntos, perfeitamente sincronizados."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஒன்றாக, சரியாக ஒத்திசைக்கப்பட்டது."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一起，完美同步。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一起，完美同步。"
           }
         }
       }
@@ -5721,64 +6077,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "一起晚餐"
-          }
-        }
-      }
-    },
-    "一起，完美同步。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "معًا، متزامنين تمامًا."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Together, perfectly synced."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juntos, perfectamente sincronizados."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ensemble, parfaitement synchronisés."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "एक साथ, पूरी तरह से समन्वयित।"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Juntos, perfeitamente sincronizados."
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ஒன்றாக, சரியாக ஒத்திசைக்கப்பட்டது."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在一起，完美同步。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在一起，完美同步。"
           }
         }
       }
@@ -7730,6 +8028,64 @@
         }
       }
     },
+    "使用 Face ID 解锁后继续访问你的群组日程与任务。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم Face ID للمتابعة والوصول إلى جداول ومهام المجموعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Face ID to unlock and continue to your group schedules and tasks."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Face ID para desbloquear y continuar con tus horarios y tareas del grupo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisez Face ID pour déverrouiller et accéder à vos plannings et tâches de groupe."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अनलॉक करने और समूह के शेड्यूल व कार्यों तक पहुँचने के लिए Face ID का उपयोग करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use o Face ID para desbloquear e continuar para seus horários e tarefas do grupo."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குழு அட்டவணை மற்றும் பணிகளை அணுக Face ID மூலம் திறக்கவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Face ID 解锁后继续访问你的群组日程与任务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Face ID 解鎖後繼續存取你的群組日程與任務。"
+          }
+        }
+      }
+    },
     "使用 Google 继续": {
       "localizations": {
         "ar": {
@@ -7789,6 +8145,7 @@
       }
     },
     "使用设备密码解锁": {
+      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -8582,6 +8939,87 @@
           "stringUnit": {
             "state": "translated",
             "value": "關閉"
+          }
+        }
+      }
+    },
+    "最多 1 个群组，每组上限 2 人。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to 1 group, 2 members per group."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最多 1 个群组，每组上限 2 人。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最多 1 個群組，每組上限 2 人。"
+          }
+        }
+      }
+    },
+    "最大": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الحد الأقصى"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "maximum"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "máximo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "maximum"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अधिकतम"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "máximo"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அதிகபட்சம்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最大"
           }
         }
       }
@@ -10380,6 +10818,7 @@
       }
     },
     "反馈": {
+      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -10438,6 +10877,7 @@
       }
     },
     "反馈与法律": {
+      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -11183,6 +11623,7 @@
       }
     },
     "喜欢同圈吗？": {
+      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -11242,28 +11683,16 @@
     },
     "图片加载中": {
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading image"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "图片加载中"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "圖片載入中"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
             "value": "جارٍ تحميل الصورة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading image"
           }
         },
         "es": {
@@ -11294,6 +11723,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "படம் ஏற்றப்படுகிறது"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "图片加载中"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圖片載入中"
           }
         }
       }
@@ -15045,6 +15486,64 @@
         }
       }
     },
+    "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ملاحظاتك تساعدنا على تحسين التطبيق للمجموعات والفرق. هل تود ترك تقييم سريع؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your feedback helps us improve the app for groups and teams. Would you mind leaving a quick review?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu opinión nos ayuda a mejorar la app para grupos y equipos. ¿Podrías dejar una reseña rápida?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vos retours nous aident à améliorer l'app pour les groupes et les équipes. Pourriez-vous laisser un avis rapide ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपकी प्रतिक्रिया समूहों और टीमों के लिए ऐप को बेहतर बनाने में मदद करती है। क्या आप एक समीक्षा छोड़ सकते हैं?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O seu feedback ajuda-nos a melhorar a app para grupos e equipas. Pode deixar uma avaliação rápida?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் கருத்து குழுக்களுக்கும் அணிகளுக்கும் செயலியை மேம்படுத்த உதவுகிறது. ஒரு மதிப்புரை விடுவீர்களா?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的回饋能幫助我們為群組與團隊把應用做得更好。願意花一點時間留個評價嗎？"
+          }
+        }
+      }
+    },
     "您的登录会话已过期。请重新登录。": {
       "localizations": {
         "ar": {
@@ -16938,6 +17437,122 @@
         }
       }
     },
+    "提前1小时": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل ساعة واحدة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hour before"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hora antes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 heure avant"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 घंटे पहले"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 hora antes"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 மணி நேரத்திற்கு முன்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提前1小时"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提前1小時"
+          }
+        }
+      }
+    },
+    "提前5分钟": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قبل 5 دقائق"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes before"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutos antes"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutes avant"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 मिनट पहले"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 minutos antes"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5 நிமிடங்களுக்கு முன்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提前5分钟"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提前5分鐘"
+          }
+        }
+      }
+    },
     "提前10分钟": {
       "localizations": {
         "ar": {
@@ -17054,64 +17669,6 @@
         }
       }
     },
-    "提前1小时": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "قبل ساعة واحدة"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 hour before"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 hora antes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 heure avant"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 घंटे पहले"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 hora antes"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "1 மணி நேரத்திற்கு முன்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提前1小时"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提前1小時"
-          }
-        }
-      }
-    },
     "提前30分钟": {
       "localizations": {
         "ar": {
@@ -17166,64 +17723,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "提前30分鐘"
-          }
-        }
-      }
-    },
-    "提前5分钟": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "قبل 5 دقائق"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutes before"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutos antes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutes avant"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 मिनट पहले"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 minutos antes"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "5 நிமிடங்களுக்கு முன்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提前5分钟"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提前5分鐘"
           }
         }
       }
@@ -17597,8 +18096,7 @@
             "value": "支援"
           }
         }
-      },
-      "extractionState": "stale"
+      }
     },
     "支持 Apple、Magic Link、Phone OTP": {
       "extractionState": "stale",
@@ -17715,10 +18213,10 @@
             "value": "支持與法律"
           }
         }
-      },
-      "extractionState": "stale"
+      }
     },
     "支持我们": {
+      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -18534,64 +19032,6 @@
         }
       }
     },
-    "无法解析重复任务分组。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not resolve the recurring task group."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法解析重复任务分组。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "無法解析重複任務分組。"
-          }
-        }
-      }
-    },
     "无法解析重复任务分组，无法批量删除。": {
       "localizations": {
         "ar": {
@@ -18646,6 +19086,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "無法解析重複任務分組，無法批量刪除。"
+          }
+        }
+      }
+    },
+    "无法解析重复任务分组。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not resolve the recurring task group."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法解析重复任务分组。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法解析重複任務分組。"
           }
         }
       }
@@ -19925,87 +20423,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "更改語言後，App 會立即切換顯示語言。"
-          }
-        }
-      }
-    },
-    "最多 1 个群组，每组上限 2 人。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Up to 1 group, 2 members per group."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最多 1 个群组，每组上限 2 人。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最多 1 個群組，每組上限 2 人。"
-          }
-        }
-      }
-    },
-    "最大": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الحد الأقصى"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "maximum"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "máximo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "maximum"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अधिकतम"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "máximo"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "அதிகபட்சம்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最大"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "最大"
           }
         }
       }
@@ -26359,65 +26776,6 @@
         }
       }
     },
-    "组织资料": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الملف التعريفي للمنظمة"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Organization Profile"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perfil de la organización"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Profil de l'organisation"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "संगठन प्रोफ़ाइल"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Perfil da organização"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "நிறுவன சுயவிவரம்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "组织简介"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "組織簡介"
-          }
-        }
-      }
-    },
     "组织，%@，菜单": {
       "extractionState": "stale",
       "localizations": {
@@ -26473,6 +26831,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "組織，%@，選單"
+          }
+        }
+      }
+    },
+    "组织资料": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الملف التعريفي للمنظمة"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Organization Profile"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perfil de la organización"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil de l'organisation"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "संगठन प्रोफ़ाइल"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Perfil da organização"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நிறுவன சுயவிவரம்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "组织简介"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "組織簡介"
           }
         }
       }
@@ -27141,6 +27558,81 @@
         }
       }
     },
+    "群组，%@": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المجموعة، %@"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group, %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grupo, %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groupe, %@"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समूह, %@"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grupo, %@"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குழு, %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群组，%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群組，%@"
+          }
+        }
+      }
+    },
+    "群组：%@": {
+      "extractionState": "stale",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group: %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群组：%@"
+          }
+        }
+      }
+    },
     "群组不存在或已被删除，请刷新后重试。": {
       "localizations": {
         "ar": {
@@ -27296,64 +27788,6 @@
         }
       }
     },
-    "群组名称不能为空。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "لا يمكن أن يكون اسم المجموعة فارغًا."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Group name cannot be empty."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El nombre del grupo no puede estar vacío."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Le nom du groupe ne peut pas être vide."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "समूह का नाम खाली नहीं हो सकता।"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O nome do grupo não pode estar vazio."
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "குழுப் பெயர் காலியாக இருக்க முடியாது."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "群组名称不能为空。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "群組名稱不能為空。"
-          }
-        }
-      }
-    },
     "群组名称不能为空，请输入后再创建。": {
       "localizations": {
         "ar": {
@@ -27408,6 +27842,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "群組名稱不能為空，請輸入後再建立。"
+          }
+        }
+      }
+    },
+    "群组名称不能为空。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن أن يكون اسم المجموعة فارغًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group name cannot be empty."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El nombre del grupo no puede estar vacío."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le nom du groupe ne peut pas être vide."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समूह का नाम खाली नहीं हो सकता।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O nome do grupo não pode estar vazio."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குழுப் பெயர் காலியாக இருக்க முடியாது."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群组名称不能为空。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "群組名稱不能為空。"
           }
         }
       }
@@ -27472,10 +27964,46 @@
     },
     "群组管理": {
       "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعدادات المجموعة"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
             "value": "Group Settings"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuración del grupo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paramètres du groupe"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समूह सेटिंग्स"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurações do grupo"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குழு அமைப்புகள்"
           }
         },
         "zh-Hans": {
@@ -27488,42 +28016,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "群組管理"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configuración del grupo"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurações do grupo"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إعدادات المجموعة"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "समूह सेटिंग्स"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paramètres du groupe"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "குழு அமைப்புகள்"
           }
         }
       }
@@ -27582,81 +28074,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "群組設定"
-          }
-        }
-      }
-    },
-    "群组，%@": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "المجموعة، %@"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Group, %@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grupo, %@"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Groupe, %@"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "समूह, %@"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Grupo, %@"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "குழு, %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "群组，%@"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "群組，%@"
-          }
-        }
-      }
-    },
-    "群组：%@": {
-      "extractionState": "stale",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Group: %@"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "群组：%@"
           }
         }
       }
@@ -29801,6 +30218,7 @@
       }
     },
     "请验证身份以开启面部解锁。": {
+      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -29854,6 +30272,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "請驗證身分以開啟面部解鎖。"
+          }
+        }
+      }
+    },
+    "请验证身份以访问同圈中的群组日程与任务。": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في WeSync."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify your identity to access group schedules and tasks in WeSync."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en WeSync."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans WeSync."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no WeSync."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请验证身份以访问同圈中的群组日程与任务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請驗證身分以存取同圈中的群組日程與任務。"
           }
         }
       }
@@ -30644,7 +31120,6 @@
       }
     },
     "轻点以切换群组": {
-      "extractionState": "stale",
       "localizations": {
         "ar": {
           "stringUnit": {
@@ -31529,6 +32004,7 @@
         }
       }
     },
+    "退出后，群组将不再接收你的秒级位置更新。": {},
     "退出后您将无法查看群内的任务和消息。": {
       "localizations": {
         "ar": {
@@ -31587,7 +32063,6 @@
         }
       }
     },
-    "退出后，群组将不再接收你的秒级位置更新。": {},
     "退出失败": {
       "localizations": {
         "ar": {
@@ -33658,477 +34133,466 @@
         }
       }
     },
-    "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。": {
+    "设为管理员": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "👑 Unlimited images per task, original quality, plus video and documents (PDF/Word)."
+            "value": "Make Admin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。"
+            "value": "设为管理员"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "👑 單任務無限圖片、支援原圖 (Original Quality)、解鎖影片與文件 (PDF/Word) 上傳。"
-          }
-        }
-      }
-    },
-    "👑 无限创建与加入群组，无限成员人数。": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "👑 Unlimited groups to create and join, unlimited members."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "👑 无限创建与加入群组，无限成员人数。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "👑 無限建立與加入群組，無限成員人數。"
-          }
-        }
-      }
-    },
-    "🔴 Urgent": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 عاجل"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 Urgent"
+            "value": "設為管理員"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 Urgente"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 Urgent"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 जरूरी"
+            "value": "Hacer administrador"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 Urgente"
+            "value": "Tornar administrador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nommer administrateur"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعيين كمسؤول"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "व्यवस्थापक बनाएं"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 அவசரம்"
+            "value": "நிர்வாகியாக அமை"
+          }
+        }
+      }
+    },
+    "移除管理员": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Admin"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 紧急"
+            "value": "移除管理员"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 緊急"
-          }
-        }
-      }
-    },
-    "🔴 紧急": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 عاجل"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 Urgent"
+            "value": "移除管理員"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 Urgente"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 Urgent"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🔴 जरूरी"
+            "value": "Quitar administrador"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 Urgente"
+            "value": "Remover administrador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer administrateur"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة صلاحية المسؤول"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "व्यवस्थापक हटाएं"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 அவசரம்"
+            "value": "நிர்வாகியை நீக்கு"
+          }
+        }
+      }
+    },
+    "确认将该成员设为管理员？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make this member an admin?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 紧急"
+            "value": "确认将该成员设为管理员？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "🔴 緊急"
-          }
-        }
-      }
-    },
-    "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🚀 Founding member offer: claim 1 year of Pro free for a limited time!"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🚀 創世用戶福利：限時免費領取 1 年 Pro 權益！"
-          }
-        }
-      }
-    },
-    "🟢 Normal": {
-      "extractionState": "stale",
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 عادي"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 Normal"
+            "value": "確認將該成員設為管理員？"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 Normal"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 Normal"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 सामान्य"
+            "value": "¿Hacer administrador a este miembro?"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 Normal"
+            "value": "Tornar este membro administrador?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nommer ce membre administrateur ?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعيين هذا العضو كمسؤول؟"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस सदस्य को व्यवस्थापक बनाएं?"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 சாதாரண"
+            "value": "இந்த உறுப்பினரை நிர்வாகியாக அமைக்கவா?"
+          }
+        }
+      }
+    },
+    "确认移除该成员的管理员权限？": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove this member's admin role?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 一般"
+            "value": "确认移除该成员的管理员权限？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 一般"
-          }
-        }
-      }
-    },
-    "🟢 一般": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 عادي"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 Normal"
+            "value": "確認移除該成員的管理員權限？"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 Normal"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 Normal"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "🟢 सामान्य"
+            "value": "¿Quitar el rol de administrador de este miembro?"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 Normal"
+            "value": "Remover a função de administrador deste membro?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer le rôle d'administrateur de ce membre ?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إزالة صلاحيات المسؤول عن هذا العضو؟"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस सदस्य की व्यवस्थापक भूमिका हटाएं?"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 சாதாரண"
+            "value": "இந்த உறுப்பினரின் நிர்வாகி பங்கை நீக்கவா?"
+          }
+        }
+      }
+    },
+    "设为管理员后，该成员可以协助管理群组成员与设置。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Admins can help manage group members and settings."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 一般"
+            "value": "设为管理员后，该成员可以协助管理群组成员与设置。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "🟢 一般"
-          }
-        }
-      }
-    },
-    "": {},
-    "使用 Face ID 解锁后继续访问你的群组日程与任务。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "استخدم Face ID للمتابعة والوصول إلى جداول ومهام المجموعة."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Use Face ID to unlock and continue to your group schedules and tasks."
+            "value": "設為管理員後，該成員可以協助管理群組成員與設定。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usa Face ID para desbloquear y continuar con tus horarios y tareas del grupo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utilisez Face ID pour déverrouiller et accéder à vos plannings et tâches de groupe."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "अनलॉक करने और समूह के शेड्यूल व कार्यों तक पहुँचने के लिए Face ID का उपयोग करें।"
+            "value": "Los administradores pueden ayudar a gestionar miembros y ajustes del grupo."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Use o Face ID para desbloquear e continuar para seus horários e tarefas do grupo."
+            "value": "Administradores podem ajudar a gerir membros e definições do grupo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les administrateurs peuvent aider à gérer les membres et les réglages du groupe."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكن للمسؤولين المساعدة في إدارة أعضاء المجموعة وإعداداتها."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "व्यवस्थापक समूह सदस्यों और सेटिंग्स प्रबंधित करने में मदद कर सकते हैं।"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "குழு அட்டவணை மற்றும் பணிகளை அணுக Face ID மூலம் திறக்கவும்."
+            "value": "நிர்வாகிகள் குழு உறுப்பினர்களையும் அமைப்புகளையும் நிர்வகிக்க உதவலாம்."
+          }
+        }
+      }
+    },
+    "移除后，该成员将恢复为普通成员权限。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "They will return to regular member permissions."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用 Face ID 解锁后继续访问你的群组日程与任务。"
+            "value": "移除后，该成员将恢复为普通成员权限。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "使用 Face ID 解鎖後繼續存取你的群組日程與任務。"
-          }
-        }
-      }
-    },
-    "请验证身份以访问同圈中的群组日程与任务。": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في WeSync."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verify your identity to access group schedules and tasks in WeSync."
+            "value": "移除後，該成員將恢復為普通成員權限。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en WeSync."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans WeSync."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WeSync में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+            "value": "Volverá a tener permisos de miembro regular."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no WeSync."
+            "value": "Voltará a ter permissões de membro comum."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il repassera aux permissions d'un membre ordinaire."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيعود إلى صلاحيات العضو العادي."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वे सामान्य सदस्य अनुमतियों पर वापस आ जाएंगे।"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "WeSync இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+            "value": "அவர்கள் சாதாரண உறுப்பினர் அனுமதிகளுக்கு திரும்புவார்கள்."
+          }
+        }
+      }
+    },
+    "群组管理员人数已达上限（3 人）。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This group already has the maximum of 3 admins."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请验证身份以访问同圈中的群组日程与任务。"
+            "value": "群组管理员人数已达上限（3 人）。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請驗證身分以存取同圈中的群組日程與任務。"
-          }
-        }
-      }
-    },
-    "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ملاحظاتك تساعدنا على تحسين التطبيق للمجموعات والفرق. هل تود ترك تقييم سريع؟"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your feedback helps us improve the app for groups and teams. Would you mind leaving a quick review?"
+            "value": "群組管理員人數已達上限（3 人）。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tu opinión nos ayuda a mejorar la app para grupos y equipos. ¿Podrías dejar una reseña rápida?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vos retours nous aident à améliorer l'app pour les groupes et les équipes. Pourriez-vous laisser un avis rapide ?"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आपकी प्रतिक्रिया समूहों और टीमों के लिए ऐप को बेहतर बनाने में मदद करती है। क्या आप एक समीक्षा छोड़ सकते हैं?"
+            "value": "El grupo ya tiene el máximo de 3 administradores."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "O seu feedback ajuda-nos a melhorar a app para grupos e equipas. Pode deixar uma avaliação rápida?"
+            "value": "O grupo já tem o máximo de 3 administradores."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le groupe a déjà le maximum de 3 administrateurs."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وصلت المجموعة إلى الحد الأقصى وهو 3 مسؤولين."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समूह में पहले से अधिकतम 3 व्यवस्थापक हैं।"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "உங்கள் கருத்து குழுக்களுக்கும் அணிகளுக்கும் செயலியை மேம்படுத்த உதவுகிறது. ஒரு மதிப்புரை விடுவீர்களா?"
+            "value": "குழுவில் ஏற்கனவே அதிகபட்சம் 3 நிர்வாகிகள் உள்ளனர்."
+          }
+        }
+      }
+    },
+    "当前没有权限修改该成员的管理员身份。": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You don't have permission to change this member's admin role."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？"
+            "value": "当前没有权限修改该成员的管理员身份。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "您的回饋能幫助我們為群組與團隊把應用做得更好。願意花一點時間留個評價嗎？"
+            "value": "目前沒有權限修改該成員的管理員身份。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No tienes permiso para cambiar el rol de administrador de este miembro."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não tem permissão para alterar a função de administrador deste membro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous n'avez pas l'autorisation de modifier le rôle d'administrateur de ce membre."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس لديك إذن لتغيير دور المسؤول لهذا العضو."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके पास इस सदस्य की व्यवस्थापक भूमिका बदलने की अनुमति नहीं है।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த உறுப்பினரின் நிர்வாகி பங்கை மாற்ற உங்களுக்கு அனுமதி இல்லை."
           }
         }
       }

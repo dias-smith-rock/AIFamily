@@ -10,11 +10,14 @@ struct ProfileEditView: View {
     let householdId: UUID?
     let canEdit: Bool
     let memberRemoval: MemberRemovalAction?
+    let adminRoleToggle: AdminRoleToggleAction?
     let uploadAvatar: @MainActor (Data, UUID?) async -> URL?
     let onSave: @MainActor (UUID, LocalProfileDraft) async -> String?
 
     @State private var showDeleteAlert = false
+    @State private var showAdminToggleAlert = false
     @State private var isDeleting = false
+    @State private var isUpdatingAdminRole = false
     @State private var name: String
     @State private var gender: ProfileDraftGender
     @State private var shouldSetBirthDate: Bool
@@ -41,6 +44,7 @@ struct ProfileEditView: View {
         householdId: UUID?,
         canEdit: Bool,
         memberRemoval: MemberRemovalAction? = nil,
+        adminRoleToggle: AdminRoleToggleAction? = nil,
         uploadAvatar: @escaping @MainActor (Data, UUID?) async -> URL?,
         onSave: @escaping @MainActor (UUID, LocalProfileDraft) async -> String?
     ) {
@@ -48,6 +52,7 @@ struct ProfileEditView: View {
         self.householdId = householdId
         self.canEdit = canEdit
         self.memberRemoval = memberRemoval
+        self.adminRoleToggle = adminRoleToggle
         self.uploadAvatar = uploadAvatar
         self.onSave = onSave
 
@@ -145,6 +150,26 @@ struct ProfileEditView: View {
                     TextField("旅行证 / 回乡证号", text: $permitNum)
                 }
 
+                if let adminRoleToggle {
+                    Section {
+                        Button {
+                            showAdminToggleAlert = true
+                        } label: {
+                            HStack {
+                                Spacer()
+                                if isUpdatingAdminRole {
+                                    ProgressView()
+                                } else {
+                                    Text(adminRoleToggle.buttonTitle)
+                                        .fontWeight(.bold)
+                                }
+                                Spacer()
+                            }
+                        }
+                        .disabled(isUpdatingAdminRole || isDeleting || isSaving || isUploadingAvatar)
+                    }
+                }
+
                 if let memberRemoval {
                     Section {
                         Button(role: .destructive) {
@@ -161,7 +186,7 @@ struct ProfileEditView: View {
                                 Spacer()
                             }
                         }
-                        .disabled(isDeleting || isSaving || isUploadingAvatar)
+                        .disabled(isDeleting || isSaving || isUploadingAvatar || isUpdatingAdminRole)
                     }
                 }
 
@@ -206,6 +231,41 @@ struct ProfileEditView: View {
                             : "移出后，该成员将无法再访问本群组的任务与信息。"
                     )
                 }
+            }
+            .alert(adminToggleAlertTitle, isPresented: $showAdminToggleAlert) {
+                Button("取消", role: .cancel) {}
+                Button("确定") {
+                    performAdminRoleToggle()
+                }
+            } message: {
+                Text(adminToggleAlertMessage)
+            }
+        }
+    }
+
+    private var adminToggleAlertTitle: LocalizedStringKey {
+        guard let adminRoleToggle else { return "确定要执行此操作吗？" }
+        return adminRoleToggle.isPromoting ? "确认将该成员设为管理员？" : "确认移除该成员的管理员权限？"
+    }
+
+    private var adminToggleAlertMessage: LocalizedStringKey {
+        guard let adminRoleToggle else { return "" }
+        return adminRoleToggle.isPromoting
+            ? "设为管理员后，该成员可以协助管理群组成员与设置。"
+            : "移除后，该成员将恢复为普通成员权限。"
+    }
+
+    private func performAdminRoleToggle() {
+        guard let adminRoleToggle else { return }
+        isUpdatingAdminRole = true
+        errorMessage = nil
+        Task { @MainActor in
+            defer { isUpdatingAdminRole = false }
+            let failure = await adminRoleToggle.onToggle()
+            if let failure {
+                errorMessage = failure
+            } else {
+                dismiss()
             }
         }
     }
@@ -400,6 +460,12 @@ struct ProfileEditView: View {
 }
 
 extension ProfileEditView {
+    struct AdminRoleToggleAction {
+        let buttonTitle: LocalizedStringKey
+        let isPromoting: Bool
+        let onToggle: @MainActor () async -> String?
+    }
+
     struct MemberRemovalAction {
         let buttonTitle: LocalizedStringKey
         let isVirtualMember: Bool

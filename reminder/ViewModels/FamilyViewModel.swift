@@ -271,7 +271,11 @@ final class FamilyViewModel: ObservableObject {
             localized: "群组不存在或已被删除，请刷新后重试。"
         )
         static let renameFailed = String(localized: "重命名群组失败，请稍后重试。")
+        static let cannotToggleAdminRole = String(localized: "当前没有权限修改该成员的管理员身份。")
+        static let adminLimitReached = String(localized: "群组管理员人数已达上限（3 人）。")
     }
+
+    private static let maxAdminCount = 3
 
     private func mapDisbandErrorMessage(_ error: Error) -> String {
         let message = error.localizedDescription.lowercased()
@@ -825,6 +829,68 @@ final class FamilyViewModel: ObservableObject {
         isVirtualMember(profile) ? "删除该成员档案" : "将该成员移出群组"
     }
 
+    func adminRoleToggleAction(for profile: FamilyProfile) -> ProfileEditView.AdminRoleToggleAction? {
+        guard canToggleAdminRole(for: profile) else { return nil }
+        guard let targetRole = membership(for: profile)?.parsedRole else { return nil }
+
+        let isAdmin = targetRole == .admin
+        return ProfileEditView.AdminRoleToggleAction(
+            buttonTitle: isAdmin ? "移除管理员" : "设为管理员",
+            isPromoting: isAdmin == false,
+            onToggle: { [weak self] in
+                guard let self else { return ProfileManagementCopy.removeMemberFailed }
+                return await self.toggleAdminRole(for: profile, makeAdmin: isAdmin == false)
+            }
+        )
+    }
+
+    func canToggleAdminRole(for profile: FamilyProfile) -> Bool {
+        guard let currentRole = currentMembership?.parsedRole else { return false }
+        guard currentRole == .creator || currentRole == .admin else { return false }
+        if isVirtualMember(profile) { return false }
+        if isEditingSelf(profile) { return false }
+
+        guard let targetMembership = membership(for: profile),
+              targetMembership.userId != nil,
+              targetMembership.isActiveMembership(),
+              let targetRole = targetMembership.parsedRole else {
+            return false
+        }
+
+        if targetRole == .creator { return false }
+        if currentRole == .admin, targetRole == .admin { return false }
+        return targetRole == .member || targetRole == .admin
+    }
+
+    func toggleAdminRole(for profile: FamilyProfile, makeAdmin: Bool) async -> String? {
+        guard canToggleAdminRole(for: profile) else {
+            return ProfileManagementCopy.cannotToggleAdminRole
+        }
+        guard var targetMembership = membership(for: profile) else {
+            return ProfileManagementCopy.removeMemberFailed
+        }
+        if makeAdmin {
+            guard activeAdminCount() < Self.maxAdminCount else {
+                return ProfileManagementCopy.adminLimitReached
+            }
+            targetMembership.role = MembershipRole.admin.rawValue
+        } else {
+            targetMembership.role = MembershipRole.member.rawValue
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        do {
+            _ = try await membershipService.updateMembership(targetMembership)
+            await loadMembers()
+            postScheduleHouseholdRosterChangedIfNeeded()
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
     func deleteOrRemoveMember(profile: FamilyProfile) async -> String? {
         guard let householdId = currentHouseholdId else {
             return AppLocalized.localized("当前未选择群组。")
@@ -1084,6 +1150,10 @@ final class FamilyViewModel: ObservableObject {
         case .member:
             return 2
         }
+    }
+
+    private func activeAdminCount() -> Int {
+        members.filter { $0.isActiveMembership() && $0.hasRole(.admin) }.count
     }
 
     private func persistOrder(for others: [FamilyProfile]) {
