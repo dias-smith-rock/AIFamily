@@ -50,10 +50,16 @@ private struct AIParseTaskImageResponse: Decodable {
     let error: String?
 }
 
+/// Edge Function 400 响应体（不用 snake_case 转换，避免解码失败）。
+private struct AIEdgeFunctionErrorBody: Decodable {
+    let success: Bool?
+    let error: String?
+}
+
 enum AITaskParserError: LocalizedError {
     case sdkUnavailable
     case notAuthenticated
-    case uploadFailed
+    case uploadFailed(detail: String, isStorageRLS: Bool)
     case invalidResponse
     case serverError(String)
 
@@ -63,7 +69,10 @@ enum AITaskParserError: LocalizedError {
             return String(localized: "当前构建环境未包含 Supabase SDK。")
         case .notAuthenticated:
             return String(localized: "请先登录后再使用 AI 识图创建任务。")
-        case .uploadFailed:
+        case .uploadFailed(_, let isStorageRLS):
+            if isStorageRLS {
+                return String(localized: "图片上传失败，服务器存储权限未配置。请联系管理员在 Supabase 为 create-task-from-images 桶添加写入策略。")
+            }
             return String(localized: "图片上传失败，请检查网络后重试。")
         case .invalidResponse:
             return String(localized: "AI 返回的数据无法解析，请重试。")
@@ -81,28 +90,64 @@ struct AITaskParserService: Sendable {
     func parseTask(fromJPEGData data: Data) async throws -> AIParsedTaskPayload {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
-        let session = try await client.auth.session
-        let userId = session.user.id.uuidString.lowercased()
-        let filePath = "tasks/\(userId)_\(UUID().uuidString.lowercased()).jpg"
 
+        let session: Session
         do {
-            _ = try await client.storage
-                .from(Self.storageBucket)
-                .upload(
-                    filePath,
-                    data: data,
-                    options: FileOptions(contentType: "image/jpeg", upsert: false)
-                )
+            session = try await client.auth.session
         } catch {
-            #if DEBUG
-            print("[AITaskParser] upload failed path=\(filePath) error=\(error.localizedDescription)")
-            #endif
-            throw AITaskParserError.uploadFailed
+            AIPhotoTaskCreationLogger.failure(step: .authSessionReady, error: error)
+            throw AITaskParserError.notAuthenticated
         }
 
-        let publicURL = try client.storage
-            .from(Self.storageBucket)
-            .getPublicURL(path: filePath)
+        let userId = session.user.id.uuidString.lowercased()
+        AIPhotoTaskCreationLogger.step(
+            .authSessionReady,
+            detail: "userId=\(userId.prefix(8))…"
+        )
+
+        let fileName = "\(UUID().uuidString.lowercased()).jpg"
+        let uploadTargets: [(bucket: String, paths: [String])] = [
+            (
+                Self.storageBucket,
+                ["\(userId)/\(fileName)"]
+            ),
+            (
+                TaskAttachmentSupabaseSupport.bucket,
+                [
+                    "\(userId)/\(fileName)",
+                    fileName,
+                ]
+            ),
+        ]
+
+        AIPhotoTaskCreationLogger.step(
+            .storageUploadStarted,
+            detail: "primaryBucket=\(Self.storageBucket) fallback=\(TaskAttachmentSupabaseSupport.bucket)",
+            byteCount: data.count
+        )
+
+        let uploadResult = try await uploadImageData(
+            data,
+            client: client,
+            targets: uploadTargets
+        )
+
+        AIPhotoTaskCreationLogger.step(
+            .storageUploadSucceeded,
+            byteCount: data.count,
+            path: "\(uploadResult.bucket)/\(uploadResult.path)"
+        )
+
+        let imageAccessURL = try await client.storage
+            .from(uploadResult.bucket)
+            .createSignedURL(path: uploadResult.path, expiresIn: 600)
+
+        AIPhotoTaskCreationLogger.step(
+            .publicURLResolved,
+            detail: "signedURL bucket=\(uploadResult.bucket)",
+            path: uploadResult.path,
+            url: imageAccessURL.absoluteString
+        )
 
         struct InvokeBody: Encodable {
             let imageUrl: String
@@ -112,34 +157,37 @@ struct AITaskParserService: Sendable {
             }
         }
 
-        let body = InvokeBody(imageUrl: publicURL.absoluteString)
+        let body = InvokeBody(imageUrl: imageAccessURL.absoluteString)
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
 
-        let response: AIParseTaskImageResponse
-        do {
-            response = try await client.functions.invoke(
-                Self.edgeFunctionName,
-                options: FunctionInvokeOptions(body: body),
-                decoder: decoder
-            )
-        } catch {
-            #if DEBUG
-            print("[AITaskParser] edge function failed error=\(error.localizedDescription)")
-            #endif
-            if let functionsError = error as? FunctionsError,
-               case .httpError(_, let responseData) = functionsError,
-               let server = try? JSONDecoder().decode(AIParseTaskImageResponse.self, from: responseData),
-               let message = server.error {
-                throw AITaskParserError.serverError(message)
-            }
-            throw error
-        }
+        AIPhotoTaskCreationLogger.step(
+            .edgeFunctionStarted,
+            detail: "function=\(Self.edgeFunctionName)"
+        )
+
+        let response = try await invokeParseEdgeFunction(
+            client: client,
+            body: body,
+            decoder: decoder
+        )
+
+        AIPhotoTaskCreationLogger.step(.edgeFunctionSucceeded)
 
         guard response.success, let task = response.task else {
             let message = response.error ?? String(localized: "图片识别失败，请重试。")
+            AIPhotoTaskCreationLogger.failure(
+                step: .parseResponseInvalid,
+                error: AITaskParserError.serverError(message),
+                detail: "success=\(response.success)"
+            )
             throw AITaskParserError.serverError(message)
         }
+
+        AIPhotoTaskCreationLogger.step(
+            .parseResponseSucceeded,
+            detail: "title=\(task.title.prefix(40))"
+        )
 
         return task
         #else
@@ -147,4 +195,105 @@ struct AITaskParserService: Sendable {
         throw AITaskParserError.sdkUnavailable
         #endif
     }
+
+    #if canImport(Supabase)
+    private struct UploadResult {
+        let bucket: String
+        let path: String
+    }
+
+    private func invokeParseEdgeFunction(
+        client: SupabaseClient,
+        body: some Encodable,
+        decoder: JSONDecoder
+    ) async throws -> AIParseTaskImageResponse {
+        do {
+            return try await client.functions.invoke(
+                Self.edgeFunctionName,
+                options: FunctionInvokeOptions(body: body),
+                decoder: decoder
+            )
+        } catch {
+            if let functionsError = error as? FunctionsError,
+               case .httpError(let code, let responseData) = functionsError {
+                let bodyText = String(data: responseData, encoding: .utf8) ?? ""
+                AIPhotoTaskCreationLogger.failure(
+                    step: .edgeFunctionFailed,
+                    error: error,
+                    detail: "http=\(code) body=\(bodyText)"
+                )
+
+                if let parsed = try? JSONDecoder().decode(AIEdgeFunctionErrorBody.self, from: responseData),
+                   let message = parsed.error?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   message.isEmpty == false {
+                    throw AITaskParserError.serverError(message)
+                }
+                if bodyText.isEmpty == false {
+                    throw AITaskParserError.serverError(bodyText)
+                }
+            } else {
+                AIPhotoTaskCreationLogger.failure(
+                    step: .edgeFunctionFailed,
+                    error: error,
+                    detail: AIPhotoTaskCreationLogger.describe(error)
+                )
+            }
+            throw error
+        }
+    }
+
+    private func uploadImageData(
+        _ data: Data,
+        client: SupabaseClient,
+        targets: [(bucket: String, paths: [String])]
+    ) async throws -> UploadResult {
+        var lastError: Error?
+        var sawStorageRLS = false
+
+        for target in targets {
+            for path in target.paths {
+                do {
+                    _ = try await client.storage
+                        .from(target.bucket)
+                        .upload(
+                            path,
+                            data: data,
+                            options: FileOptions(contentType: "image/jpeg", upsert: false)
+                        )
+                    if target.bucket != Self.storageBucket {
+                        AIPhotoTaskCreationLogger.step(
+                            .storageUploadSucceeded,
+                            detail: "usedFallbackBucket=\(target.bucket)"
+                        )
+                    }
+                    return UploadResult(bucket: target.bucket, path: path)
+                } catch {
+                    lastError = error
+                    if Self.isStorageRLSViolation(error) {
+                        sawStorageRLS = true
+                    }
+                    AIPhotoTaskCreationLogger.failure(
+                        step: .storageUploadFailed,
+                        error: error,
+                        detail: "bucket=\(target.bucket) path=\(path)"
+                    )
+                }
+            }
+        }
+
+        let detail = lastError.map { AIPhotoTaskCreationLogger.describe($0) } ?? "unknown"
+        throw AITaskParserError.uploadFailed(detail: detail, isStorageRLS: sawStorageRLS)
+    }
+
+    private static func isStorageRLSViolation(_ error: Error) -> Bool {
+        if let storageError = error as? StorageError {
+            if storageError.statusCode == "403" { return true }
+            if storageError.message.localizedCaseInsensitiveContains("row-level security") {
+                return true
+            }
+        }
+        let text = String(describing: error).lowercased()
+        return text.contains("403") && text.contains("row-level security")
+    }
+    #endif
 }

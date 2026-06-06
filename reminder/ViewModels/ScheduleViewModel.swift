@@ -533,10 +533,16 @@ final class ScheduleViewModel: ObservableObject {
 
     // MARK: - AI 识图创建任务
 
-    func processCapturedImage(_ compressedData: Data, originalImage: UIImage) async {
+    func processCapturedImage(
+        _ compressedData: Data,
+        originalImage: UIImage,
+        source: AIPhotoTaskCreationLogger.CaptureSource
+    ) async {
         isAIProcessing = true
         aiProcessingError = nil
         defer { isAIProcessing = false }
+
+        AIPhotoTaskCreationLogger.step(.flowStarted, source: source, byteCount: compressedData.count)
 
         do {
             let parsed = try await aiTaskParserService.parseTask(fromJPEGData: compressedData)
@@ -548,11 +554,13 @@ final class ScheduleViewModel: ObservableObject {
                 locationName: parsed.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
                 attachmentImage: originalImage
             )
+
+            AIPhotoTaskCreationLogger.step(.prefilledDraftReady, source: source)
+            AIPhotoTaskCreationLogger.step(.flowSucceeded, source: source)
+            AnalyticsManager.log(event: .aiPhotoTaskSucceeded)
         } catch {
             aiProcessingError = error.localizedDescription
-            #if DEBUG
-            print("[ScheduleViewModel] processCapturedImage failed: \(error.localizedDescription)")
-            #endif
+            AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: source)
         }
     }
 }

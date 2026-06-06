@@ -22,15 +22,20 @@ enum AnalyticsManager {
         case taskCompleted(taskId: UUID)
         case vipPageViewed
         case vipClaimed
+        case aiPhotoTaskFailed(step: String, message: String, detail: String)
+        case aiPhotoTaskSucceeded
     }
 
     /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
     private static let newRegistrationWindow: TimeInterval = 120
 
+    /// Firebase Analytics 字符串参数上限（见 ACS013000）。
+    private static let firebaseMaxParameterLength = 100
+
     static func log(event: AppEvent) {
         #if canImport(FirebaseAnalytics)
         let (name, parameters) = firebasePayload(for: event)
-        Analytics.logEvent(name, parameters: parameters)
+        Analytics.logEvent(name, parameters: sanitizedFirebaseParameters(parameters))
         #endif
         #if DEBUG
         print("[Analytics] \(debugDescription(for: event))")
@@ -120,7 +125,35 @@ enum AnalyticsManager {
 
         case .vipClaimed:
             return ("vip_claimed", nil)
+
+        case .aiPhotoTaskFailed(let step, let message, let detail):
+            return (
+                "ai_photo_task_failed",
+                [
+                    "step": step,
+                    "error_code": message,
+                    "detail": detail,
+                ]
+            )
+
+        case .aiPhotoTaskSucceeded:
+            return ("ai_photo_task_succeeded", nil)
         }
+    }
+
+    private static func sanitizedFirebaseParameters(_ parameters: [String: Any]?) -> [String: Any]? {
+        guard let parameters else { return nil }
+        var sanitized: [String: Any] = [:]
+        sanitized.reserveCapacity(parameters.count)
+        for (key, value) in parameters {
+            switch value {
+            case let string as String:
+                sanitized[key] = String(string.prefix(firebaseMaxParameterLength))
+            default:
+                sanitized[key] = value
+            }
+        }
+        return sanitized
     }
     #endif
 
@@ -146,6 +179,10 @@ enum AnalyticsManager {
             return "vip_page_viewed"
         case .vipClaimed:
             return "vip_claimed"
+        case .aiPhotoTaskFailed(let step, let message, let detail):
+            return "ai_photo_task_failed step=\(step) error=\(message) \(detail)"
+        case .aiPhotoTaskSucceeded:
+            return "ai_photo_task_succeeded"
         }
     }
 }

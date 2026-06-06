@@ -108,10 +108,14 @@ struct TaskListView: View {
             }
             .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
                 CameraPicker(
-                    onImageCaptured: { originalImage, compressedData in
+                    onImageCaptured: { source, originalImage, compressedData in
                         viewModel.isShowingCamera = false
                         Task {
-                            await viewModel.processCapturedImage(compressedData, originalImage: originalImage)
+                            await viewModel.processCapturedImage(
+                                compressedData,
+                                originalImage: originalImage,
+                                source: source
+                            )
                         }
                     },
                     onCancel: {

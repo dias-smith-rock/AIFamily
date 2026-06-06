@@ -304,3 +304,25 @@ with check (
 
 alter publication supabase_realtime add table public.tasks;
 alter publication supabase_realtime add table public.feedbacks;
+
+-- AI 识图建任务临时桶：公开读；认证用户仅可写入以 auth.uid() 为第一级目录的路径。
+insert into storage.buckets (id, name, public)
+values ('create-task-from-images', 'create-task-from-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "create_task_from_images_insert_own_folder" on storage.objects;
+create policy "create_task_from_images_insert_own_folder"
+on storage.objects
+for insert
+to authenticated
+with check (
+    bucket_id = 'create-task-from-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "create_task_from_images_public_read" on storage.objects;
+create policy "create_task_from_images_public_read"
+on storage.objects
+for select
+to public
+using (bucket_id = 'create-task-from-images');

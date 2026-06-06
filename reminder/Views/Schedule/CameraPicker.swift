@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 
 /// 相机拍照 + 相册选图；完成后返回原图与压缩 JPEG（<400KB，用于 AI 上传）。
 struct CameraPicker: View {
-    let onImageCaptured: (_ originalImage: UIImage, _ compressedJPEG: Data) -> Void
+    let onImageCaptured: (_ source: AIPhotoTaskCreationLogger.CaptureSource, _ originalImage: UIImage, _ compressedJPEG: Data) -> Void
     let onCancel: () -> Void
 
     @State private var selectedPhotoItem: PhotosPickerItem?
@@ -88,6 +88,7 @@ struct CameraPicker: View {
 
         CameraPickerImageProcessing.deliver(
             image,
+            source: .photoLibrary,
             onImageCaptured: onImageCaptured,
             onCancel: onCancel
         )
@@ -97,7 +98,7 @@ struct CameraPicker: View {
 // MARK: - System camera
 
 private struct SystemCameraPicker: UIViewControllerRepresentable {
-    let onImageCaptured: (_ originalImage: UIImage, _ compressedJPEG: Data) -> Void
+    let onImageCaptured: (_ source: AIPhotoTaskCreationLogger.CaptureSource, _ originalImage: UIImage, _ compressedJPEG: Data) -> Void
     let onCancel: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -116,11 +117,11 @@ private struct SystemCameraPicker: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
-        let onImageCaptured: (_ originalImage: UIImage, _ compressedJPEG: Data) -> Void
+        let onImageCaptured: (_ source: AIPhotoTaskCreationLogger.CaptureSource, _ originalImage: UIImage, _ compressedJPEG: Data) -> Void
         let onCancel: () -> Void
 
         init(
-            onImageCaptured: @escaping (_ originalImage: UIImage, _ compressedJPEG: Data) -> Void,
+            onImageCaptured: @escaping (_ source: AIPhotoTaskCreationLogger.CaptureSource, _ originalImage: UIImage, _ compressedJPEG: Data) -> Void,
             onCancel: @escaping () -> Void
         ) {
             self.onImageCaptured = onImageCaptured
@@ -142,6 +143,7 @@ private struct SystemCameraPicker: UIViewControllerRepresentable {
 
             CameraPickerImageProcessing.deliver(
                 image,
+                source: .camera,
                 onImageCaptured: onImageCaptured,
                 onCancel: onCancel
             )
@@ -154,16 +156,25 @@ private struct SystemCameraPicker: UIViewControllerRepresentable {
 private enum CameraPickerImageProcessing {
     static func deliver(
         _ image: UIImage,
-        onImageCaptured: @escaping (_ originalImage: UIImage, _ compressedJPEG: Data) -> Void,
+        source: AIPhotoTaskCreationLogger.CaptureSource,
+        onImageCaptured: @escaping (_ source: AIPhotoTaskCreationLogger.CaptureSource, _ originalImage: UIImage, _ compressedJPEG: Data) -> Void,
         onCancel: @escaping () -> Void
     ) {
+        AIPhotoTaskCreationLogger.step(.imageCaptured, source: source)
+
         Task.detached(priority: .userInitiated) {
             guard let data = CameraImageCompression.compressForUpload(image) else {
+                AIPhotoTaskCreationLogger.failure(
+                    step: .compressionFailed,
+                    error: AITaskParserError.invalidResponse,
+                    source: source
+                )
                 await MainActor.run { onCancel() }
                 return
             }
             await MainActor.run {
-                onImageCaptured(image, data)
+                AIPhotoTaskCreationLogger.step(.compressionDone, source: source, byteCount: data.count)
+                onImageCaptured(source, image, data)
             }
         }
     }
