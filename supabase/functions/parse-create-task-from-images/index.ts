@@ -191,13 +191,57 @@ function resolveDeepSeekTextConfig(): { baseUrl: string; apiKey: string; model: 
   }
 }
 
-async function ocrExtractFromImage(dataUrl: string): Promise<string> {
+type OcrExtractPayload = {
+  stage: "ocr_extract"
+  timestamp: string
+  model: string
+  provider_base_url: string
+  char_count: number
+  line_count: number
+  lines: string[]
+  text: string
+}
+
+function buildOcrExtractPayload(
+  extractedText: string,
+  ocr: { baseUrl: string; model: string },
+): OcrExtractPayload {
+  const lines = extractedText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+  return {
+    stage: "ocr_extract",
+    timestamp: new Date().toISOString(),
+    model: ocr.model,
+    provider_base_url: ocr.baseUrl,
+    char_count: extractedText.length,
+    line_count: lines.length,
+    lines,
+    text: extractedText,
+  }
+}
+
+function logOcrExtractResult(payload: OcrExtractPayload): void {
+  console.log("[parse-create-task-from-images] ocr_extract_result")
+  console.log(JSON.stringify(payload, null, 2))
+}
+
+function shouldIncludeOcrInResponse(): boolean {
+  return Deno.env.get("AI_TASK_INCLUDE_OCR_DEBUG")?.trim() !== "false"
+}
+
+async function ocrExtractFromImage(dataUrl: string): Promise<{
+  text: string
+  debug: OcrExtractPayload
+}> {
   const ocr = resolveOcrConfig()
   console.log(
     `[parse-create-task-from-images] OCR stage base=${ocr.baseUrl} model=${ocr.model}`,
   )
 
-  return await callChatCompletions({
+  const extractedText = await callChatCompletions({
     baseUrl: ocr.baseUrl,
     apiKey: ocr.apiKey,
     model: ocr.model,
@@ -212,6 +256,10 @@ async function ocrExtractFromImage(dataUrl: string): Promise<string> {
       },
     ],
   })
+
+  const payload = buildOcrExtractPayload(extractedText, ocr)
+  logOcrExtractResult(payload)
+  return { text: extractedText, debug: payload }
 }
 
 async function deepSeekStructureTask(extractedText: string): Promise<string> {
@@ -259,8 +307,8 @@ serve(async (req) => {
     const dataUrl = await fetchImageAsDataUrl(imageUrl)
 
     console.log("[parse-create-task-from-images] pipeline=ocr_then_deepseek")
-    const extractedText = await ocrExtractFromImage(dataUrl)
-    const rawJsonText = await deepSeekStructureTask(extractedText)
+    const ocrResult = await ocrExtractFromImage(dataUrl)
+    const rawJsonText = await deepSeekStructureTask(ocrResult.text)
 
     let structuredTask: unknown
     try {
@@ -269,7 +317,16 @@ serve(async (req) => {
       return jsonError(`Task JSON parse failed. Raw: ${rawJsonText.slice(0, 200)}`)
     }
 
-    return new Response(JSON.stringify({ success: true, task: structuredTask }), {
+    const responseBody: Record<string, unknown> = {
+      success: true,
+      task: structuredTask,
+    }
+
+    if (shouldIncludeOcrInResponse()) {
+      responseBody.ocr_extract = ocrResult.debug
+    }
+
+    return new Response(JSON.stringify(responseBody), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     })

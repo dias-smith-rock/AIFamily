@@ -48,6 +48,18 @@ private struct AIParseTaskImageResponse: Decodable {
     let success: Bool
     let task: AIParsedTaskPayload?
     let error: String?
+    let ocrExtract: OcrExtractDebug?
+}
+
+private struct OcrExtractDebug: Decodable {
+    let stage: String?
+    let timestamp: String?
+    let model: String?
+    let providerBaseUrl: String?
+    let charCount: Int?
+    let lineCount: Int?
+    let lines: [String]?
+    let text: String?
 }
 
 /// Edge Function 400 响应体（不用 snake_case 转换，避免解码失败）。
@@ -173,6 +185,20 @@ struct AITaskParserService: Sendable {
         )
 
         AIPhotoTaskCreationLogger.step(.edgeFunctionSucceeded)
+
+        if let ocr = response.ocrExtract {
+            AIPhotoTaskCreationLogger.logOcrExtract(
+                AIPhotoTaskCreationLogger.OcrExtractDebugLog(
+                    stage: ocr.stage,
+                    timestamp: ocr.timestamp,
+                    model: ocr.model,
+                    charCount: ocr.charCount,
+                    lineCount: ocr.lineCount,
+                    lines: ocr.lines,
+                    text: ocr.text
+                )
+            )
+        }
 
         guard response.success, let task = response.task else {
             let message = response.error ?? String(localized: "图片识别失败，请重试。")

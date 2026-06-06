@@ -22,6 +22,7 @@ enum AIPhotoTaskCreationLogger {
         case edgeFunctionFailed = "edge_function_failed"
         case parseResponseInvalid = "parse_response_invalid"
         case parseResponseSucceeded = "parse_response_succeeded"
+        case ocrExtractLogged = "ocr_extract_logged"
         case prefilledDraftReady = "prefilled_draft_ready"
         case flowFailed = "flow_failed"
         case flowSucceeded = "flow_succeeded"
@@ -123,5 +124,37 @@ enum AIPhotoTaskCreationLogger {
             return "\(error.localizedDescription) | \(mirror)"
         }
         return error.localizedDescription
+    }
+
+    struct OcrExtractDebugLog: Sendable {
+        var stage: String?
+        var timestamp: String?
+        var model: String?
+        var charCount: Int?
+        var lineCount: Int?
+        var lines: [String]?
+        var text: String?
+    }
+
+    nonisolated static func logOcrExtract(_ ocr: OcrExtractDebugLog) {
+        var payload: [String: Any] = [
+            "stage": ocr.stage ?? "ocr_extract",
+            "char_count": ocr.charCount ?? 0,
+            "line_count": ocr.lineCount ?? 0,
+        ]
+        if let model = ocr.model { payload["model"] = model }
+        if let timestamp = ocr.timestamp { payload["timestamp"] = timestamp }
+        if let lines = ocr.lines { payload["lines"] = lines }
+        if let text = ocr.text { payload["text"] = text }
+
+        guard JSONSerialization.isValidJSONObject(payload),
+              let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted]),
+              let json = String(data: data, encoding: .utf8) else {
+            step(.ocrExtractLogged, detail: ocr.text ?? "")
+            return
+        }
+
+        logger.info("[AIPhotoTask] ocr_extract_result\n\(json, privacy: .public)")
+        step(.ocrExtractLogged, detail: "chars=\(ocr.charCount ?? 0) lines=\(ocr.lineCount ?? 0)")
     }
 }
