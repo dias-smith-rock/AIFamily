@@ -28,7 +28,19 @@ enum TaskAttachmentSupabaseSupport {
     /// 并发上传 JPEG 至 `task_attachments` 桶。
     @MainActor
     static func uploadImages(_ images: [UIImage], householdId: UUID) async throws -> [UploadedFile] {
-        guard images.isEmpty == false else { return [] }
+        let payloads = images.compactMap { image in
+            image.jpegData(compressionQuality: 0.7)
+        }
+        guard payloads.count == images.count else {
+            throw TaskAttachmentSupabaseError.imageEncodingFailed
+        }
+        return try await uploadJPEGData(payloads, householdId: householdId)
+    }
+
+    /// 直接上传已编码 JPEG（用于 AI 识图等已压缩的裁剪图，避免重新编码）。
+    @MainActor
+    static func uploadJPEGData(_ payloads: [Data], householdId: UUID) async throws -> [UploadedFile] {
+        guard payloads.isEmpty == false else { return [] }
 
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
@@ -37,62 +49,75 @@ enum TaskAttachmentSupabaseSupport {
         let householdFolder = householdId.uuidString.lowercased()
 
         return try await withThrowingTaskGroup(of: UploadedFile.self) { group in
-            for image in images {
+            for data in payloads {
                 group.addTask {
-                    guard let data = image.jpegData(compressionQuality: 0.7) else {
-                        throw TaskAttachmentSupabaseError.imageEncodingFailed
-                    }
-                    let fileName = "\(UUID().uuidString).jpg"
-                    let candidatePaths = [
-                        "\(userFolder)/\(fileName)",
-                        "\(householdFolder)/\(fileName)",
-                        fileName
-                    ]
-
-                    var lastError: Error?
-                    for path in candidatePaths {
-                        do {
-                            _ = try await client.storage
-                                .from(bucket)
-                                .upload(
-                                    path,
-                                    data: data,
-                                    options: FileOptions(contentType: mimeType, upsert: false)
-                                )
-                            let url = try client.storage
-                                .from(bucket)
-                                .getPublicURL(path: path)
-                                .absoluteString
-                            return UploadedFile(
-                                fileUrl: url,
-                                fileSizeBytes: Int64(data.count),
-                                fileType: mimeType
-                            )
-                        } catch {
-                            lastError = error
-                            #if DEBUG
-                            print("[TaskAttachmentUpload] failed path=\(path) error=\(error.localizedDescription)")
-                            #endif
-                        }
-                    }
-
-                    throw lastError ?? TaskAttachmentSupabaseError.uploadFailed
+                    try await uploadSingleJPEG(
+                        data: data,
+                        client: client,
+                        userFolder: userFolder,
+                        householdFolder: householdFolder
+                    )
                 }
             }
 
             var uploads: [UploadedFile] = []
-            uploads.reserveCapacity(images.count)
+            uploads.reserveCapacity(payloads.count)
             for try await upload in group {
                 uploads.append(upload)
             }
             return uploads
         }
         #else
-        _ = images
+        _ = payloads
         _ = householdId
-        throw TaskAttachmentSupabaseError.sdkUnavailable
+        return []
         #endif
     }
+
+    #if canImport(Supabase)
+    private static func uploadSingleJPEG(
+        data: Data,
+        client: SupabaseClient,
+        userFolder: String,
+        householdFolder: String
+    ) async throws -> UploadedFile {
+        let fileName = "\(UUID().uuidString).jpg"
+        let candidatePaths = [
+            "\(userFolder)/\(fileName)",
+            "\(householdFolder)/\(fileName)",
+            fileName,
+        ]
+
+        var lastError: Error?
+        for path in candidatePaths {
+            do {
+                _ = try await client.storage
+                    .from(bucket)
+                    .upload(
+                        path,
+                        data: data,
+                        options: FileOptions(contentType: mimeType, upsert: false)
+                    )
+                let url = try client.storage
+                    .from(bucket)
+                    .getPublicURL(path: path)
+                    .absoluteString
+                return UploadedFile(
+                    fileUrl: url,
+                    fileSizeBytes: Int64(data.count),
+                    fileType: mimeType
+                )
+            } catch {
+                lastError = error
+                #if DEBUG
+                print("[TaskAttachmentUpload] failed path=\(path) error=\(error.localizedDescription)")
+                #endif
+            }
+        }
+
+        throw lastError ?? TaskAttachmentSupabaseError.uploadFailed
+    }
+    #endif
 
     @MainActor
     static func fetchRecords(taskId: UUID) async throws -> [TaskAttachment] {

@@ -16,6 +16,8 @@ enum AIPhotoTaskCreationLogger {
         case storageUploadStarted = "storage_upload_started"
         case storageUploadSucceeded = "storage_upload_succeeded"
         case storageUploadFailed = "storage_upload_failed"
+        case storageDeleteSucceeded = "storage_delete_succeeded"
+        case storageDeleteFailed = "storage_delete_failed"
         case publicURLResolved = "public_url_resolved"
         case edgeFunctionStarted = "edge_function_started"
         case edgeFunctionSucceeded = "edge_function_succeeded"

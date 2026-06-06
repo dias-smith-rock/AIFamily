@@ -286,6 +286,7 @@ struct CreateTaskView: View {
 
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
+    @State private var selectedAttachmentJPEGData: [Data] = []
     @State private var existingAttachments: [TaskAttachment] = []
     @State private var attachmentsToDelete: [TaskAttachment] = []
     @State private var showAttachmentOptions = false
@@ -300,6 +301,7 @@ struct CreateTaskView: View {
     private let initialLocationName: String?
     private let initialDueDate: Date?
     private let initialAttachmentImages: [UIImage]
+    private let initialAttachmentJPEGData: [Data]
     private let defaultDueDate: Date?
     private let defaultAllDayForNewTask: Bool
     private let onSaveSuccess: ((Date) -> Void)?
@@ -320,6 +322,7 @@ struct CreateTaskView: View {
         initialLocationName: String? = nil,
         initialDueDate: Date? = nil,
         initialAttachmentImages: [UIImage] = [],
+        initialAttachmentJPEGData: [Data] = [],
         defaultDueDate: Date? = nil,
         defaultAllDayForNewTask: Bool = false,
         onSaveSuccess: ((Date) -> Void)? = nil,
@@ -334,6 +337,7 @@ struct CreateTaskView: View {
         self.initialLocationName = initialLocationName
         self.initialDueDate = initialDueDate
         self.initialAttachmentImages = initialAttachmentImages
+        self.initialAttachmentJPEGData = initialAttachmentJPEGData
         self.defaultDueDate = defaultDueDate
         self.defaultAllDayForNewTask = defaultAllDayForNewTask
         self.onSaveSuccess = onSaveSuccess
@@ -420,6 +424,7 @@ struct CreateTaskView: View {
             _formPriority = State(initialValue: .normal)
             _locationName = State(initialValue: initialLocationName ?? "")
             _selectedImages = State(initialValue: initialAttachmentImages)
+            _selectedAttachmentJPEGData = State(initialValue: initialAttachmentJPEGData)
         }
     }
 
@@ -683,6 +688,7 @@ struct CreateTaskView: View {
 
     private func clearAttachmentSelection() {
         selectedImages = []
+        selectedAttachmentJPEGData = []
         selectedItems = []
     }
 
@@ -706,8 +712,14 @@ struct CreateTaskView: View {
     @MainActor
     private func uploadSelectedAttachments(householdId: UUID) async throws -> [TaskAttachmentSupabaseSupport.UploadedFile] {
         let uploadLimit = max(0, maxTaskAttachments - existingAttachments.count)
-        let capped = Array(selectedImages.prefix(uploadLimit))
-        return try await TaskAttachmentSupabaseSupport.uploadImages(capped, householdId: householdId)
+        let cappedImages = Array(selectedImages.prefix(uploadLimit))
+        let cappedData = Array(selectedAttachmentJPEGData.prefix(uploadLimit))
+
+        if cappedData.count == cappedImages.count, cappedData.isEmpty == false {
+            return try await TaskAttachmentSupabaseSupport.uploadJPEGData(cappedData, householdId: householdId)
+        }
+
+        return try await TaskAttachmentSupabaseSupport.uploadImages(cappedImages, householdId: householdId)
     }
 
     @MainActor
@@ -1135,11 +1147,15 @@ struct CreateTaskView: View {
         }
         let remainingSlots = max(0, maxTaskAttachments - existingAttachments.count)
         selectedImages = Array(images.prefix(remainingSlots))
+        selectedAttachmentJPEGData = []
     }
 
     private func removeAttachment(at index: Int) {
         guard selectedImages.indices.contains(index) else { return }
         selectedImages.remove(at: index)
+        if selectedAttachmentJPEGData.indices.contains(index) {
+            selectedAttachmentJPEGData.remove(at: index)
+        }
         if selectedItems.indices.contains(index) {
             selectedItems.remove(at: index)
         }

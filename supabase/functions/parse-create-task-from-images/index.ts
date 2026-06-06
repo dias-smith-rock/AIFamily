@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import jpeg from "jpeg-js"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,8 +20,16 @@ Current year base context: 2026.
 
 ${TASK_JSON_SCHEMA_PROMPT}`
 
-const DEFAULT_OCR_USER_PROMPT =
-  "<image>\nExtract ONLY the text visible inside this cropped calendar date cell.\nDo not invent lunar calendar sequences. Output plain text lines only."
+const DEFAULT_OCR_USER_PROMPT = "<image>\nFree OCR."
+
+const RED_BOX_OCR_USER_PROMPT =
+  "<image>\nFree OCR. This image shows only the user-selected region from a photo. " +
+  "Extract all readable text in the image."
+
+const FALLBACK_OCR_PROMPTS = [
+  "<image>\nFree OCR.",
+  "<image>\n<|grounding|>OCR this image.",
+]
 
 const MAX_OCR_CHARS = 2000
 const MAX_OCR_LINES = 80
@@ -50,14 +59,143 @@ function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
-async function fetchImageAsDataUrl(imageUrl: string): Promise<string> {
+type NormalizedPoint = { x: number; y: number }
+
+type RecognitionRegion = {
+  top_left: NormalizedPoint
+  top_right: NormalizedPoint
+  bottom_left: NormalizedPoint
+  bottom_right: NormalizedPoint
+}
+
+async function fetchImageBytes(imageUrl: string): Promise<{ bytes: Uint8Array; mime: string }> {
   const res = await fetch(imageUrl)
   if (!res.ok) {
     throw new Error(`Image fetch failed (HTTP ${res.status})`)
   }
   const mime = res.headers.get("content-type")?.split(";")[0]?.trim() || "image/jpeg"
   const bytes = new Uint8Array(await res.arrayBuffer())
+  return { bytes, mime }
+}
+
+function bytesToDataUrl(bytes: Uint8Array, mime: string): string {
   return `data:${mime};base64,${bytesToBase64(bytes)}`
+}
+
+function parseRecognitionRegion(raw: unknown): RecognitionRegion | null {
+  if (!raw || typeof raw !== "object") return null
+
+  const region = raw as Record<string, unknown>
+  const parsePoint = (key: string): NormalizedPoint | null => {
+    const value = region[key]
+    if (!value || typeof value !== "object") return null
+    const point = value as Record<string, unknown>
+    const x = Number(point.x)
+    const y = Number(point.y)
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+    if (x < 0 || x > 1 || y < 0 || y > 1) return null
+    return { x, y }
+  }
+
+  const topLeft = parsePoint("top_left")
+  const topRight = parsePoint("top_right")
+  const bottomLeft = parsePoint("bottom_left")
+  const bottomRight = parsePoint("bottom_right")
+  if (!topLeft || !topRight || !bottomLeft || !bottomRight) return null
+
+  const area = polygonArea(topLeft, topRight, bottomRight, bottomLeft)
+  if (area < 0.01) return null
+
+  return {
+    top_left: topLeft,
+    top_right: topRight,
+    bottom_left: bottomLeft,
+    bottom_right: bottomRight,
+  }
+}
+
+function polygonArea(
+  a: NormalizedPoint,
+  b: NormalizedPoint,
+  c: NormalizedPoint,
+  d: NormalizedPoint,
+): number {
+  return Math.abs(
+    (a.x * b.y - b.x * a.y) +
+      (b.x * c.y - c.x * b.y) +
+      (c.x * d.y - d.x * c.y) +
+      (d.x * a.y - a.x * d.y),
+  ) / 2
+}
+
+function toPixelPoint(point: NormalizedPoint, width: number, height: number): { x: number; y: number } {
+  return {
+    x: Math.min(width - 1, Math.max(0, Math.round(point.x * (width - 1)))),
+    y: Math.min(height - 1, Math.max(0, Math.round(point.y * (height - 1)))),
+  }
+}
+
+const MIN_REGION_CROP_PIXEL = 640
+
+/** 从上传的原图 JPEG 按红框外接矩形裁切（服务端裁切，避免客户端压缩后不可读）。 */
+function cropRecognitionRegionJpeg(
+  imageBytes: Uint8Array,
+  region: RecognitionRegion,
+): Uint8Array {
+  const decoded = jpeg.decode(imageBytes, { useTArray: true })
+  const width = decoded.width
+  const height = decoded.height
+  if (width <= 0 || height <= 0) {
+    throw new Error("Failed to decode JPEG for recognition region")
+  }
+
+  const corners = [
+    toPixelPoint(region.top_left, width, height),
+    toPixelPoint(region.top_right, width, height),
+    toPixelPoint(region.bottom_left, width, height),
+    toPixelPoint(region.bottom_right, width, height),
+  ]
+
+  let x0 = Math.min(...corners.map((point) => point.x))
+  let y0 = Math.min(...corners.map((point) => point.y))
+  let x1 = Math.max(...corners.map((point) => point.x))
+  let y1 = Math.max(...corners.map((point) => point.y))
+
+  let cropWidth = Math.max(1, x1 - x0 + 1)
+  let cropHeight = Math.max(1, y1 - y0 + 1)
+
+  const shortest = Math.min(cropWidth, cropHeight)
+  if (shortest < MIN_REGION_CROP_PIXEL && shortest > 0) {
+    const scale = MIN_REGION_CROP_PIXEL / shortest
+    const centerX = (x0 + x1) / 2
+    const centerY = (y0 + y1) / 2
+    cropWidth = Math.min(width, Math.round(cropWidth * scale))
+    cropHeight = Math.min(height, Math.round(cropHeight * scale))
+    x0 = Math.max(0, Math.round(centerX - (cropWidth - 1) / 2))
+    y0 = Math.max(0, Math.round(centerY - (cropHeight - 1) / 2))
+    x1 = Math.min(width - 1, x0 + cropWidth - 1)
+    y1 = Math.min(height - 1, y0 + cropHeight - 1)
+    cropWidth = x1 - x0 + 1
+    cropHeight = y1 - y0 + 1
+  }
+
+  const cropped = new Uint8Array(cropWidth * cropHeight * 4)
+  for (let y = 0; y < cropHeight; y++) {
+    for (let x = 0; x < cropWidth; x++) {
+      const srcIndex = ((y0 + y) * width + (x0 + x)) * 4
+      const dstIndex = (y * cropWidth + x) * 4
+      cropped[dstIndex] = decoded.data[srcIndex]
+      cropped[dstIndex + 1] = decoded.data[srcIndex + 1]
+      cropped[dstIndex + 2] = decoded.data[srcIndex + 2]
+      cropped[dstIndex + 3] = decoded.data[srcIndex + 3]
+    }
+  }
+
+  const encoded = jpeg.encode(
+    { data: cropped, width: cropWidth, height: cropHeight },
+    92,
+  )
+  return encoded.data
 }
 
 type TextChatMessage = {
@@ -77,6 +215,8 @@ async function callChatCompletions(args: {
   messages: Array<TextChatMessage | MultimodalChatMessage>
   jsonMode?: boolean
   label: string
+  maxTokens?: number
+  allowEmpty?: boolean
 }): Promise<string> {
   const url = `${args.baseUrl.replace(/\/$/, "")}/chat/completions`
   const response = await fetch(url, {
@@ -89,6 +229,7 @@ async function callChatCompletions(args: {
       model: args.model,
       messages: args.messages,
       ...(args.jsonMode ? { response_format: { type: "json_object" } } : {}),
+      ...(args.maxTokens ? { max_tokens: args.maxTokens } : {}),
       temperature: 0.1,
     }),
   })
@@ -117,10 +258,42 @@ async function callChatCompletions(args: {
     ?.choices?.[0]?.message?.content
 
   if (!content?.trim()) {
+    if (args.allowEmpty) {
+      console.log(
+        `[parse-create-task-from-images] ${args.label} empty content: ${
+          JSON.stringify(payload).slice(0, 300)
+        }`,
+      )
+      return ""
+    }
     throw new Error(`${args.label} returned empty content: ${JSON.stringify(payload).slice(0, 300)}`)
   }
 
   return content.trim()
+}
+
+async function runOcrWithPrompt(args: {
+  dataUrl: string
+  ocr: { baseUrl: string; apiKey: string; model: string }
+  prompt: string
+}): Promise<string> {
+  return await callChatCompletions({
+    baseUrl: args.ocr.baseUrl,
+    apiKey: args.ocr.apiKey,
+    model: args.ocr.model,
+    label: "OCR-Stage1",
+    maxTokens: 4096,
+    allowEmpty: true,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "image_url", image_url: { url: args.dataUrl } },
+          { type: "text", text: args.prompt },
+        ],
+      },
+    ],
+  })
 }
 
 /** 阶段 1 OCR：必须使用支持 image_url 的 OCR 端点（非 api.deepseek.com 文本 API）。
@@ -216,6 +389,7 @@ type OcrExtractPayload = {
   raw_char_count?: number
   sanitized?: boolean
   crop_hint?: string
+  recognition_region?: RecognitionRegion
   target_date?: string
 }
 
@@ -282,7 +456,7 @@ function sanitizeOcrText(rawText: string): SanitizeOcrResult {
 function buildOcrExtractPayload(
   sanitized: SanitizeOcrResult,
   ocr: { baseUrl: string; model: string },
-  meta?: { targetDate?: string },
+  meta?: { targetDate?: string; recognitionRegion?: RecognitionRegion },
 ): OcrExtractPayload {
   const lines = sanitized.text
     .split(/\r?\n/)
@@ -301,7 +475,8 @@ function buildOcrExtractPayload(
     raw_text: sanitized.rawText,
     raw_char_count: sanitized.rawText.length,
     sanitized: sanitized.sanitized,
-    crop_hint: "client_manual",
+    crop_hint: meta?.recognitionRegion ? "client_red_box_region_server_crop" : "full_image",
+    ...(meta?.recognitionRegion ? { recognition_region: meta.recognitionRegion } : {}),
     ...(meta?.targetDate ? { target_date: meta.targetDate } : {}),
   }
 }
@@ -318,31 +493,50 @@ function shouldIncludeOcrInResponse(): boolean {
 async function ocrExtractFromImage(
   dataUrl: string,
   targetDate?: string,
+  options?: { recognitionRegion?: RecognitionRegion },
 ): Promise<{
   text: string
   debug: OcrExtractPayload
 }> {
   const ocr = resolveOcrConfig()
-  const ocrPrompt = resolveOcrUserPrompt()
   console.log(
-    `[parse-create-task-from-images] OCR stage base=${ocr.baseUrl} model=${ocr.model} target_date=${targetDate ?? "none"}`,
+    `[parse-create-task-from-images] OCR stage base=${ocr.baseUrl} model=${ocr.model} target_date=${targetDate ?? "none"} red_box=${options?.recognitionRegion ? "yes" : "no"}`,
   )
 
-  const rawExtractedText = await callChatCompletions({
-    baseUrl: ocr.baseUrl,
-    apiKey: ocr.apiKey,
-    model: ocr.model,
-    label: "OCR-Stage1",
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "image_url", image_url: { url: dataUrl } },
-          { type: "text", text: ocrPrompt },
-        ],
-      },
-    ],
-  })
+  const promptCandidates = (
+    options?.recognitionRegion
+      ? [RED_BOX_OCR_USER_PROMPT, resolveOcrUserPrompt(), ...FALLBACK_OCR_PROMPTS]
+      : [resolveOcrUserPrompt(), ...FALLBACK_OCR_PROMPTS]
+  ).filter((prompt, index, all) => all.indexOf(prompt) === index)
+
+  let rawExtractedText = ""
+  let usedPrompt = promptCandidates[0]
+  for (const prompt of promptCandidates) {
+    usedPrompt = prompt
+    const attempt = await runOcrWithPrompt({ dataUrl, ocr, prompt })
+    if (attempt.trim()) {
+      rawExtractedText = attempt
+      console.log(
+        `[parse-create-task-from-images] ocr_prompt_ok chars=${attempt.length} prompt=${
+          prompt.replace(/\n/g, "\\n").slice(0, 60)
+        }`,
+      )
+      break
+    }
+    console.log(
+      `[parse-create-task-from-images] ocr_empty_retry prompt=${prompt.replace(/\n/g, "\\n").slice(0, 60)}`,
+    )
+  }
+
+  if (!rawExtractedText.trim()) {
+    throw new Error(
+      options?.recognitionRegion
+        ? "OCR-Stage1 returned empty content after trying all prompts. " +
+          "The red box region may be too small or unreadable; try enlarging the selection."
+        : "OCR-Stage1 returned empty content after trying all prompts. " +
+          "The image may be too small or unreadable; try retaking the photo.",
+    )
+  }
 
   const sanitized = sanitizeOcrText(rawExtractedText)
   if (sanitized.sanitized) {
@@ -351,7 +545,11 @@ async function ocrExtractFromImage(
     )
   }
 
-  const payload = buildOcrExtractPayload(sanitized, ocr, { targetDate })
+  const payload = buildOcrExtractPayload(sanitized, ocr, {
+    targetDate,
+    recognitionRegion: options?.recognitionRegion,
+  })
+  payload.crop_hint = `${payload.crop_hint}|prompt=${usedPrompt.replace(/\n/g, " ").slice(0, 40)}`
   logOcrExtractResult(payload)
   return { text: sanitized.text, debug: payload }
 }
@@ -395,7 +593,11 @@ serve(async (req) => {
   }
 
   try {
-    let body: { image_url?: string; target_date?: string }
+    let body: {
+      image_url?: string
+      target_date?: string
+      recognition_region?: unknown
+    }
     try {
       body = await req.json()
     } catch {
@@ -408,13 +610,43 @@ serve(async (req) => {
     }
 
     const targetDate = body.target_date?.trim() || undefined
+    const recognitionRegion = body.recognition_region
+      ? parseRecognitionRegion(body.recognition_region)
+      : null
 
-    const dataUrl = await fetchImageAsDataUrl(imageUrl)
+    if (body.recognition_region && !recognitionRegion) {
+      return jsonError("Invalid recognition_region")
+    }
+
+    const { bytes, mime } = await fetchImageBytes(imageUrl)
+    let ocrBytes = bytes
+    let ocrMime = mime
+    if (recognitionRegion) {
+      try {
+        ocrBytes = cropRecognitionRegionJpeg(bytes, recognitionRegion)
+        ocrMime = "image/jpeg"
+        console.log(
+          `[parse-create-task-from-images] region_cropped bytes=${ocrBytes.length} region=${
+            JSON.stringify(recognitionRegion)
+          }`,
+        )
+      } catch (cropError) {
+        const cropMessage = cropError instanceof Error ? cropError.message : String(cropError)
+        console.error(`[parse-create-task-from-images] region_crop_failed ${cropMessage}`)
+        throw new Error(`Recognition region crop failed: ${cropMessage}`)
+      }
+    }
+
+    const dataUrl = bytesToDataUrl(ocrBytes, ocrMime)
 
     console.log(
-      `[parse-create-task-from-images] pipeline=ocr_then_deepseek crop_hint=client_manual target_date=${targetDate ?? "none"}`,
+      `[parse-create-task-from-images] pipeline=ocr_then_deepseek mode=${
+        recognitionRegion ? "red_box_server_crop" : "full_image"
+      } target_date=${targetDate ?? "none"}`,
     )
-    const ocrResult = await ocrExtractFromImage(dataUrl, targetDate)
+    const ocrResult = await ocrExtractFromImage(dataUrl, targetDate, {
+      recognitionRegion: recognitionRegion ?? undefined,
+    })
     const rawJsonText = await deepSeekStructureTask(ocrResult.text, targetDate)
 
     let structuredTask: unknown
@@ -440,6 +672,6 @@ serve(async (req) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error("[parse-create-task-from-images]", message)
-    return jsonError(message)
+    return jsonError(message, 500)
   }
 })

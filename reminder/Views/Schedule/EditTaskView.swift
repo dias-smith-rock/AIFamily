@@ -13,6 +13,7 @@ struct EditTaskView: View {
     private let initialLocationName: String?
     private let initialDueDate: Date?
     private let initialAttachmentImages: [UIImage]
+    private let initialAttachmentJPEGData: [Data]
     private let defaultDueDate: Date?
     private let defaultAllDayForNewTask: Bool
     private let onSaveSuccess: ((Date) -> Void)?
@@ -34,6 +35,7 @@ struct EditTaskView: View {
         self.initialLocationName = nil
         self.initialDueDate = nil
         self.initialAttachmentImages = []
+        self.initialAttachmentJPEGData = []
         self.defaultDueDate = nil
         self.defaultAllDayForNewTask = false
         self.onSaveSuccess = nil
@@ -50,6 +52,7 @@ struct EditTaskView: View {
         initialLocationName: String? = nil,
         initialDueDate: Date? = nil,
         initialAttachmentImages: [UIImage] = [],
+        initialAttachmentJPEGData: [Data] = [],
         defaultDueDate: Date? = nil,
         defaultAllDayForNewTask: Bool = false,
         onSaveSuccess: ((Date) -> Void)? = nil,
@@ -63,6 +66,7 @@ struct EditTaskView: View {
         self.initialLocationName = initialLocationName
         self.initialDueDate = initialDueDate
         self.initialAttachmentImages = initialAttachmentImages
+        self.initialAttachmentJPEGData = initialAttachmentJPEGData
         self.defaultDueDate = defaultDueDate
         self.defaultAllDayForNewTask = defaultAllDayForNewTask
         self.onSaveSuccess = onSaveSuccess
@@ -80,6 +84,7 @@ struct EditTaskView: View {
             initialLocationName: initialLocationName,
             initialDueDate: initialDueDate,
             initialAttachmentImages: initialAttachmentImages,
+            initialAttachmentJPEGData: initialAttachmentJPEGData,
             defaultDueDate: defaultDueDate,
             defaultAllDayForNewTask: defaultAllDayForNewTask,
             onSaveSuccess: onSaveSuccess,

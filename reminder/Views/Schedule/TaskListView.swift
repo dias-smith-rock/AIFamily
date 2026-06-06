@@ -89,6 +89,7 @@ struct TaskListView: View {
                     initialLocationName: draft.locationName,
                     initialDueDate: draft.dueDate,
                     initialAttachmentImages: [draft.attachmentImage],
+                    initialAttachmentJPEGData: [draft.attachmentJPEGData],
                     defaultDueDate: draft.dueDate.map { dayID(for: $0) } ?? dayID(for: selectedDate),
                     defaultAllDayForNewTask: false,
                     onSaveSuccess: { createdDueDate in

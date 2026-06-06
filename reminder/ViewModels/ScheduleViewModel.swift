@@ -550,20 +550,23 @@ final class ScheduleViewModel: ObservableObject {
     ) {
         pendingCropContext = nil
 
-        guard let cropped = image.cropped(normalizedQuad: normalizedQuad) else {
-            aiProcessingError = String(localized: "裁剪失败，请重试。")
+        guard normalizedQuad.isValidRegion else {
+            aiProcessingError = String(localized: "识别区域无效，请调整红框后重试。")
             return
         }
 
-        guard let compressed = CameraImageCompression.compressForUpload(cropped) else {
+        guard let compressed = CameraImageCompression.compressForUpload(image) else {
             aiProcessingError = String(localized: "图片处理失败，请重试。")
             return
         }
 
+        let attachmentImage = UIImage(data: compressed) ?? image
+
         Task {
             await processCapturedImage(
-                compressed,
-                originalImage: cropped,
+                imageJPEG: compressed,
+                attachmentImage: attachmentImage,
+                recognitionRegion: normalizedQuad,
                 source: source,
                 targetDate: targetDate
             )
@@ -571,8 +574,9 @@ final class ScheduleViewModel: ObservableObject {
     }
 
     func processCapturedImage(
-        _ compressedData: Data,
-        originalImage: UIImage,
+        imageJPEG: Data,
+        attachmentImage: UIImage,
+        recognitionRegion: NormalizedCropQuad,
         source: AIPhotoTaskCreationLogger.CaptureSource,
         targetDate: Date
     ) async {
@@ -580,12 +584,13 @@ final class ScheduleViewModel: ObservableObject {
         aiProcessingError = nil
         defer { isAIProcessing = false }
 
-        AIPhotoTaskCreationLogger.step(.flowStarted, source: source, byteCount: compressedData.count)
+        AIPhotoTaskCreationLogger.step(.flowStarted, source: source, byteCount: imageJPEG.count)
 
         do {
             let parsed = try await aiTaskParserService.parseTask(
-                fromJPEGData: compressedData,
-                targetDate: targetDate
+                fromJPEGData: imageJPEG,
+                targetDate: targetDate,
+                recognitionRegion: recognitionRegion
             )
 
             prefilledTaskForAI = AIPrefilledTaskDraft(
@@ -593,7 +598,8 @@ final class ScheduleViewModel: ObservableObject {
                 description: parsed.description?.trimmingCharacters(in: .whitespacesAndNewlines),
                 dueDate: parsed.dueDate,
                 locationName: parsed.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
-                attachmentImage: originalImage
+                attachmentImage: attachmentImage,
+                attachmentJPEGData: imageJPEG
             )
 
             AIPhotoTaskCreationLogger.step(.prefilledDraftReady, source: source)

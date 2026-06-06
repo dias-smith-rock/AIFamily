@@ -105,7 +105,11 @@ struct AITaskParserService: Sendable {
         return formatter.string(from: date)
     }
 
-    func parseTask(fromJPEGData data: Data, targetDate: Date? = nil) async throws -> AIParsedTaskPayload {
+    func parseTask(
+        fromJPEGData data: Data,
+        targetDate: Date? = nil,
+        recognitionRegion: NormalizedCropQuad? = nil
+    ) async throws -> AIParsedTaskPayload {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
 
@@ -150,6 +154,16 @@ struct AITaskParserService: Sendable {
             targets: uploadTargets
         )
 
+        defer {
+            Task {
+                await Self.deleteTemporaryUpload(
+                    client: client,
+                    bucket: uploadResult.bucket,
+                    path: uploadResult.path
+                )
+            }
+        }
+
         AIPhotoTaskCreationLogger.step(
             .storageUploadSucceeded,
             byteCount: data.count,
@@ -170,24 +184,27 @@ struct AITaskParserService: Sendable {
         struct InvokeBody: Encodable {
             let imageUrl: String
             let targetDate: String?
+            let recognitionRegion: RecognitionRegionPayload?
 
             enum CodingKeys: String, CodingKey {
                 case imageUrl = "image_url"
                 case targetDate = "target_date"
+                case recognitionRegion = "recognition_region"
             }
         }
 
         let targetDateString = targetDate.map { Self.iso8601DateString(for: $0) }
         let body = InvokeBody(
             imageUrl: imageAccessURL.absoluteString,
-            targetDate: targetDateString
+            targetDate: targetDateString,
+            recognitionRegion: recognitionRegion?.apiPayload
         )
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
 
         AIPhotoTaskCreationLogger.step(
             .edgeFunctionStarted,
-            detail: "function=\(Self.edgeFunctionName) targetDate=\(targetDateString ?? "nil")"
+            detail: "function=\(Self.edgeFunctionName) targetDate=\(targetDateString ?? "nil") region=\(recognitionRegion != nil)"
         )
 
         let response = try await invokeParseEdgeFunction(
@@ -321,6 +338,29 @@ struct AITaskParserService: Sendable {
 
         let detail = lastError.map { AIPhotoTaskCreationLogger.describe($0) } ?? "unknown"
         throw AITaskParserError.uploadFailed(detail: detail, isStorageRLS: sawStorageRLS)
+    }
+
+    private static func deleteTemporaryUpload(
+        client: SupabaseClient,
+        bucket: String,
+        path: String
+    ) async {
+        do {
+            _ = try await client.storage
+                .from(bucket)
+                .remove(paths: [path])
+            AIPhotoTaskCreationLogger.step(
+                .storageDeleteSucceeded,
+                detail: "bucket=\(bucket)",
+                path: path
+            )
+        } catch {
+            AIPhotoTaskCreationLogger.failure(
+                step: .storageDeleteFailed,
+                error: error,
+                detail: "bucket=\(bucket) path=\(path)"
+            )
+        }
     }
 
     private static func isStorageRLSViolation(_ error: Error) -> Bool {

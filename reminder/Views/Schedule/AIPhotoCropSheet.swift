@@ -1,4 +1,3 @@
-import CoreImage
 import SwiftUI
 import UIKit
 
@@ -25,6 +24,14 @@ struct NormalizedCropQuad: Equatable, Sendable {
         )
     }
 
+    var isApproximatelyAxisAligned: Bool {
+        let tolerance: CGFloat = 0.02
+        return abs(topLeft.y - topRight.y) < tolerance
+            && abs(bottomLeft.y - bottomRight.y) < tolerance
+            && abs(topLeft.x - bottomLeft.x) < tolerance
+            && abs(topRight.x - bottomRight.x) < tolerance
+    }
+
     func point(for corner: CropCorner) -> CGPoint {
         switch corner {
         case .topLeft: topLeft
@@ -43,9 +50,44 @@ struct NormalizedCropQuad: Equatable, Sendable {
         }
     }
 
-    var isValidForCrop: Bool {
+    var isValidRegion: Bool {
         polygonArea(topLeft, topRight, bottomRight, bottomLeft) > 0.01
     }
+
+    /// Edge Function `recognition_region` 请求体。
+    var apiPayload: RecognitionRegionPayload {
+        RecognitionRegionPayload(quad: self)
+    }
+}
+
+struct RecognitionRegionPayload: Encodable, Sendable {
+    struct Point: Encodable, Sendable {
+        let x: Double
+        let y: Double
+    }
+
+    let topLeft: Point
+    let topRight: Point
+    let bottomLeft: Point
+    let bottomRight: Point
+
+    enum CodingKeys: String, CodingKey {
+        case topLeft = "top_left"
+        case topRight = "top_right"
+        case bottomLeft = "bottom_left"
+        case bottomRight = "bottom_right"
+    }
+
+    init(quad: NormalizedCropQuad) {
+        topLeft = Point(x: Double(quad.topLeft.x), y: Double(quad.topLeft.y))
+        topRight = Point(x: Double(quad.topRight.x), y: Double(quad.topRight.y))
+        bottomLeft = Point(x: Double(quad.bottomLeft.x), y: Double(quad.bottomLeft.y))
+        bottomRight = Point(x: Double(quad.bottomRight.x), y: Double(quad.bottomRight.y))
+    }
+}
+
+extension NormalizedCropQuad {
+    var isValidForCrop: Bool { isValidRegion }
 }
 
 enum CropCorner: CaseIterable, Identifiable {
@@ -57,7 +99,7 @@ enum CropCorner: CaseIterable, Identifiable {
     var id: Self { self }
 }
 
-/// 拍照后框选日历格等区域，再提交 AI 识图。
+/// 拍照后在原图上用红框标记识别区域（不裁剪原图），再提交 AI 识图。
 struct AIPhotoCropSheet: View {
     let image: UIImage
     let onConfirm: (_ quad: NormalizedCropQuad) -> Void
@@ -100,7 +142,7 @@ struct AIPhotoCropSheet: View {
                 .coordinateSpace(name: "cropSpace")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationTitle("框选要识别的区域")
+            .navigationTitle("用红框标记识别区域")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(Color.black.opacity(0.85), for: .navigationBar)
@@ -112,7 +154,7 @@ struct AIPhotoCropSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("识别此区域", action: confirmSelection)
                         .fontWeight(.semibold)
-                        .disabled(cropQuad.isValidForCrop == false)
+                        .disabled(cropQuad.isValidRegion == false)
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -137,7 +179,7 @@ struct AIPhotoCropSheet: View {
                     .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
                     .foregroundStyle(.black)
             }
-            .disabled(cropQuad.isValidForCrop == false)
+            .disabled(cropQuad.isValidRegion == false)
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
@@ -146,7 +188,7 @@ struct AIPhotoCropSheet: View {
     }
 
     private func confirmSelection() {
-        guard cropQuad.isValidForCrop else { return }
+        guard cropQuad.isValidRegion else { return }
         onConfirm(cropQuad)
     }
 
@@ -177,7 +219,7 @@ struct AIPhotoCropSheet: View {
                 path.addLine(to: corners.bottomLeft)
                 path.closeSubpath()
             }
-            .fill(Color.white.opacity(0.08))
+            .fill(Color.red.opacity(0.10))
 
             Path { path in
                 path.move(to: corners.topLeft)
@@ -186,7 +228,7 @@ struct AIPhotoCropSheet: View {
                 path.addLine(to: corners.bottomLeft)
                 path.closeSubpath()
             }
-            .stroke(Color.white, lineWidth: 2)
+            .stroke(Color.red, lineWidth: 3)
         }
         .frame(width: imageRect.width, height: imageRect.height)
         .offset(x: imageRect.minX, y: imageRect.minY)
@@ -196,12 +238,12 @@ struct AIPhotoCropSheet: View {
         let point = viewPoint(for: corner, in: imageRect)
 
         return Circle()
-            .fill(Color.white)
+            .fill(Color.red)
             .frame(width: 28, height: 28)
             .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
             .overlay {
                 Circle()
-                    .strokeBorder(Color.black.opacity(0.15), lineWidth: 1)
+                    .strokeBorder(Color.white, lineWidth: 2)
             }
             .position(x: point.x, y: point.y)
             .gesture(cornerDragGesture(corner: corner, imageRect: imageRect))
@@ -321,66 +363,6 @@ extension UIImage {
             return CGSize(width: size.height, height: size.width)
         default:
             return CGSize(width: size.width, height: size.height)
-        }
-    }
-
-    /// 透视校正裁剪：将归一化四边形区域拉正为矩形图。
-    func cropped(normalizedQuad quad: NormalizedCropQuad) -> UIImage? {
-        guard quad.isValidForCrop,
-              let upright = normalizedToUpOrientation(),
-              let cgImage = upright.cgImage else {
-            return nil
-        }
-
-        let width = CGFloat(cgImage.width)
-        let height = CGFloat(cgImage.height)
-        guard width > 1, height > 1 else { return nil }
-
-        func toCoreImagePoint(_ normalized: CGPoint) -> CGPoint {
-            CGPoint(
-                x: normalized.x * width,
-                y: height - normalized.y * height
-            )
-        }
-
-        let input = CIImage(cgImage: cgImage)
-        guard let filter = CIFilter(name: "CIPerspectiveCorrection") else { return nil }
-        filter.setValue(input, forKey: kCIInputImageKey)
-        filter.setValue(CIVector(cgPoint: toCoreImagePoint(quad.topLeft)), forKey: "inputTopLeft")
-        filter.setValue(CIVector(cgPoint: toCoreImagePoint(quad.topRight)), forKey: "inputTopRight")
-        filter.setValue(CIVector(cgPoint: toCoreImagePoint(quad.bottomRight)), forKey: "inputBottomRight")
-        filter.setValue(CIVector(cgPoint: toCoreImagePoint(quad.bottomLeft)), forKey: "inputBottomLeft")
-
-        guard let output = filter.outputImage else { return nil }
-
-        let context = CIContext(options: nil)
-        let extent = output.extent.integral
-        guard extent.width > 1, extent.height > 1,
-              let result = context.createCGImage(output, from: extent) else {
-            return nil
-        }
-
-        return UIImage(cgImage: result, scale: upright.scale, orientation: .up)
-    }
-
-    /// 以 `.up` 像素坐标系裁剪，`rect` 为 0…1 归一化轴对齐矩形（保留兼容）。
-    func cropped(normalizedRect rect: CGRect) -> UIImage? {
-        cropped(
-            normalizedQuad: NormalizedCropQuad(
-                topLeft: CGPoint(x: rect.minX, y: rect.minY),
-                topRight: CGPoint(x: rect.maxX, y: rect.minY),
-                bottomLeft: CGPoint(x: rect.minX, y: rect.maxY),
-                bottomRight: CGPoint(x: rect.maxX, y: rect.maxY)
-            )
-        )
-    }
-
-    private func normalizedToUpOrientation() -> UIImage? {
-        guard imageOrientation != .up else { return self }
-        let format = UIGraphicsImageRendererFormat.default()
-        format.scale = scale
-        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
-            draw(in: CGRect(origin: .zero, size: size))
         }
     }
 }
