@@ -108,18 +108,30 @@ struct TaskListView: View {
             }
             .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
                 CameraPicker(
-                    onImageCaptured: { source, originalImage, compressedData in
+                    onImageCaptured: { source, originalImage, _ in
                         viewModel.isShowingCamera = false
-                        Task {
-                            await viewModel.processCapturedImage(
-                                compressedData,
-                                originalImage: originalImage,
-                                source: source
-                            )
-                        }
+                        viewModel.presentCrop(for: originalImage, source: source)
                     },
                     onCancel: {
                         viewModel.isShowingCamera = false
+                    }
+                )
+                .ignoresSafeArea()
+            }
+            .fullScreenCover(item: $viewModel.pendingCropContext) { context in
+                AIPhotoCropSheet(
+                    image: context.image,
+                    onConfirm: { normalizedQuad in
+                        viewModel.confirmCrop(
+                            normalizedQuad: normalizedQuad,
+                            image: context.image,
+                            source: context.source,
+                            targetDate: dayID(for: selectedDate)
+                        )
+                    },
+                    onRetake: {
+                        viewModel.cancelCrop()
+                        viewModel.isShowingCamera = true
                     }
                 )
                 .ignoresSafeArea()

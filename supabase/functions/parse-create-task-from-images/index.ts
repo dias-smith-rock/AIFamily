@@ -19,8 +19,20 @@ Current year base context: 2026.
 
 ${TASK_JSON_SCHEMA_PROMPT}`
 
-/** DeepSeek-OCR 官方推荐 prompt（见 DeepSeek-OCR-2 README） */
-const OCR_USER_PROMPT = "<image>\nFree OCR."
+const DEFAULT_OCR_USER_PROMPT =
+  "<image>\nExtract ONLY the text visible inside this cropped calendar date cell.\nDo not invent lunar calendar sequences. Output plain text lines only."
+
+const MAX_OCR_CHARS = 2000
+const MAX_OCR_LINES = 80
+const LUNAR_RUN_THRESHOLD = 15
+
+/** 农历单行标签（用于检测 OCR 幻觉循环） */
+const LUNAR_LINE_PATTERN =
+  /^(初[一二三四五六七八九十]{1,2}|廿[一二三四五六七八九十]?|三十|三十一)$/
+
+function resolveOcrUserPrompt(): string {
+  return Deno.env.get("OCR_USER_PROMPT")?.trim() || DEFAULT_OCR_USER_PROMPT
+}
 
 function jsonError(message: string, status = 400) {
   return new Response(JSON.stringify({ success: false, error: message }), {
@@ -200,13 +212,79 @@ type OcrExtractPayload = {
   line_count: number
   lines: string[]
   text: string
+  raw_text?: string
+  raw_char_count?: number
+  sanitized?: boolean
+  crop_hint?: string
+  target_date?: string
+}
+
+type SanitizeOcrResult = {
+  text: string
+  rawText: string
+  sanitized: boolean
+}
+
+function isLunarCalendarLine(line: string): boolean {
+  return LUNAR_LINE_PATTERN.test(line.trim())
+}
+
+function sanitizeOcrText(rawText: string): SanitizeOcrResult {
+  const raw = rawText.trim()
+  let lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+  let lunarRun = 0
+  let truncateAt: number | null = null
+  for (let i = 0; i < lines.length; i++) {
+    if (isLunarCalendarLine(lines[i])) {
+      lunarRun++
+      if (lunarRun >= LUNAR_RUN_THRESHOLD) {
+        truncateAt = i - LUNAR_RUN_THRESHOLD + 1
+        break
+      }
+    } else {
+      lunarRun = 0
+    }
+  }
+
+  if (truncateAt !== null && truncateAt >= 0) {
+    console.log(
+      `[parse-create-task-from-images] ocr_hallucination_truncated at_line=${truncateAt}`,
+    )
+    lines = lines.slice(0, truncateAt)
+  }
+
+  if (lines.length > MAX_OCR_LINES) {
+    console.log(
+      `[parse-create-task-from-images] ocr_max_lines_truncated before=${lines.length} after=${MAX_OCR_LINES}`,
+    )
+    lines = lines.slice(0, MAX_OCR_LINES)
+  }
+
+  let text = lines.join("\n")
+  if (text.length > MAX_OCR_CHARS) {
+    console.log(
+      `[parse-create-task-from-images] ocr_max_chars_truncated before=${text.length} after=${MAX_OCR_CHARS}`,
+    )
+    text = text.slice(0, MAX_OCR_CHARS)
+  }
+
+  return {
+    text,
+    rawText: raw,
+    sanitized: text !== raw,
+  }
 }
 
 function buildOcrExtractPayload(
-  extractedText: string,
+  sanitized: SanitizeOcrResult,
   ocr: { baseUrl: string; model: string },
+  meta?: { targetDate?: string },
 ): OcrExtractPayload {
-  const lines = extractedText
+  const lines = sanitized.text
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
@@ -216,10 +294,15 @@ function buildOcrExtractPayload(
     timestamp: new Date().toISOString(),
     model: ocr.model,
     provider_base_url: ocr.baseUrl,
-    char_count: extractedText.length,
+    char_count: sanitized.text.length,
     line_count: lines.length,
     lines,
-    text: extractedText,
+    text: sanitized.text,
+    raw_text: sanitized.rawText,
+    raw_char_count: sanitized.rawText.length,
+    sanitized: sanitized.sanitized,
+    crop_hint: "client_manual",
+    ...(meta?.targetDate ? { target_date: meta.targetDate } : {}),
   }
 }
 
@@ -232,16 +315,20 @@ function shouldIncludeOcrInResponse(): boolean {
   return Deno.env.get("AI_TASK_INCLUDE_OCR_DEBUG")?.trim() !== "false"
 }
 
-async function ocrExtractFromImage(dataUrl: string): Promise<{
+async function ocrExtractFromImage(
+  dataUrl: string,
+  targetDate?: string,
+): Promise<{
   text: string
   debug: OcrExtractPayload
 }> {
   const ocr = resolveOcrConfig()
+  const ocrPrompt = resolveOcrUserPrompt()
   console.log(
-    `[parse-create-task-from-images] OCR stage base=${ocr.baseUrl} model=${ocr.model}`,
+    `[parse-create-task-from-images] OCR stage base=${ocr.baseUrl} model=${ocr.model} target_date=${targetDate ?? "none"}`,
   )
 
-  const extractedText = await callChatCompletions({
+  const rawExtractedText = await callChatCompletions({
     baseUrl: ocr.baseUrl,
     apiKey: ocr.apiKey,
     model: ocr.model,
@@ -251,22 +338,43 @@ async function ocrExtractFromImage(dataUrl: string): Promise<{
         role: "user",
         content: [
           { type: "image_url", image_url: { url: dataUrl } },
-          { type: "text", text: OCR_USER_PROMPT },
+          { type: "text", text: ocrPrompt },
         ],
       },
     ],
   })
 
-  const payload = buildOcrExtractPayload(extractedText, ocr)
+  const sanitized = sanitizeOcrText(rawExtractedText)
+  if (sanitized.sanitized) {
+    console.log(
+      `[parse-create-task-from-images] ocr_sanitize raw_chars=${sanitized.rawText.length} clean_chars=${sanitized.text.length}`,
+    )
+  }
+
+  const payload = buildOcrExtractPayload(sanitized, ocr, { targetDate })
   logOcrExtractResult(payload)
-  return { text: extractedText, debug: payload }
+  return { text: sanitized.text, debug: payload }
 }
 
-async function deepSeekStructureTask(extractedText: string): Promise<string> {
+async function deepSeekStructureTask(
+  extractedText: string,
+  targetDate?: string,
+): Promise<string> {
   const deepseek = resolveDeepSeekTextConfig()
   console.log(
-    `[parse-create-task-from-images] Structure stage base=${deepseek.baseUrl} model=${deepseek.model}`,
+    `[parse-create-task-from-images] Structure stage base=${deepseek.baseUrl} model=${deepseek.model} target_date=${targetDate ?? "none"}`,
   )
+
+  let userContent =
+    `The following text was extracted from a user photo via OCR. ` +
+    `Turn it into the JSON task schema.\n\n---\n${extractedText}\n---`
+
+  if (targetDate) {
+    userContent +=
+      `\n\nTarget calendar date: ${targetDate}. Extract ONLY tasks/events for this date from the OCR text.` +
+      `\nIgnore printed lunar labels (初一/廿七) unless part of an event description.` +
+      `\nCurrent year: 2026. Infer month from OCR context if present (e.g. 6月).`
+  }
 
   return await callChatCompletions({
     baseUrl: deepseek.baseUrl,
@@ -276,12 +384,7 @@ async function deepSeekStructureTask(extractedText: string): Promise<string> {
     jsonMode: true,
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      {
-        role: "user",
-        content:
-          `The following text was extracted from a user photo via OCR. ` +
-          `Turn it into the JSON task schema.\n\n---\n${extractedText}\n---`,
-      },
+      { role: "user", content: userContent },
     ],
   })
 }
@@ -292,7 +395,7 @@ serve(async (req) => {
   }
 
   try {
-    let body: { image_url?: string }
+    let body: { image_url?: string; target_date?: string }
     try {
       body = await req.json()
     } catch {
@@ -304,11 +407,15 @@ serve(async (req) => {
       return jsonError("Missing required parameter: image_url")
     }
 
+    const targetDate = body.target_date?.trim() || undefined
+
     const dataUrl = await fetchImageAsDataUrl(imageUrl)
 
-    console.log("[parse-create-task-from-images] pipeline=ocr_then_deepseek")
-    const ocrResult = await ocrExtractFromImage(dataUrl)
-    const rawJsonText = await deepSeekStructureTask(ocrResult.text)
+    console.log(
+      `[parse-create-task-from-images] pipeline=ocr_then_deepseek crop_hint=client_manual target_date=${targetDate ?? "none"}`,
+    )
+    const ocrResult = await ocrExtractFromImage(dataUrl, targetDate)
+    const rawJsonText = await deepSeekStructureTask(ocrResult.text, targetDate)
 
     let structuredTask: unknown
     try {

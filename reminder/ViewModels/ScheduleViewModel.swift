@@ -35,6 +35,7 @@ final class ScheduleViewModel: ObservableObject {
     @Published var isAIProcessing = false
     @Published var prefilledTaskForAI: AIPrefilledTaskDraft?
     @Published var aiProcessingError: String?
+    @Published var pendingCropContext: AIPhotoCropPendingContext?
 
     private let aiTaskParserService = AITaskParserService()
 
@@ -533,10 +534,47 @@ final class ScheduleViewModel: ObservableObject {
 
     // MARK: - AI 识图创建任务
 
+    func presentCrop(for image: UIImage, source: AIPhotoTaskCreationLogger.CaptureSource) {
+        pendingCropContext = AIPhotoCropPendingContext(image: image, source: source)
+    }
+
+    func cancelCrop() {
+        pendingCropContext = nil
+    }
+
+    func confirmCrop(
+        normalizedQuad: NormalizedCropQuad,
+        image: UIImage,
+        source: AIPhotoTaskCreationLogger.CaptureSource,
+        targetDate: Date
+    ) {
+        pendingCropContext = nil
+
+        guard let cropped = image.cropped(normalizedQuad: normalizedQuad) else {
+            aiProcessingError = String(localized: "裁剪失败，请重试。")
+            return
+        }
+
+        guard let compressed = CameraImageCompression.compressForUpload(cropped) else {
+            aiProcessingError = String(localized: "图片处理失败，请重试。")
+            return
+        }
+
+        Task {
+            await processCapturedImage(
+                compressed,
+                originalImage: cropped,
+                source: source,
+                targetDate: targetDate
+            )
+        }
+    }
+
     func processCapturedImage(
         _ compressedData: Data,
         originalImage: UIImage,
-        source: AIPhotoTaskCreationLogger.CaptureSource
+        source: AIPhotoTaskCreationLogger.CaptureSource,
+        targetDate: Date
     ) async {
         isAIProcessing = true
         aiProcessingError = nil
@@ -545,7 +583,10 @@ final class ScheduleViewModel: ObservableObject {
         AIPhotoTaskCreationLogger.step(.flowStarted, source: source, byteCount: compressedData.count)
 
         do {
-            let parsed = try await aiTaskParserService.parseTask(fromJPEGData: compressedData)
+            let parsed = try await aiTaskParserService.parseTask(
+                fromJPEGData: compressedData,
+                targetDate: targetDate
+            )
 
             prefilledTaskForAI = AIPrefilledTaskDraft(
                 title: parsed.title.trimmingCharacters(in: .whitespacesAndNewlines),

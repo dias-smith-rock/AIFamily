@@ -99,7 +99,13 @@ struct AITaskParserService: Sendable {
     static let storageBucket = "create-task-from-images"
     static let edgeFunctionName = "parse-create-task-from-images"
 
-    func parseTask(fromJPEGData data: Data) async throws -> AIParsedTaskPayload {
+    private static func iso8601DateString(for date: Date) -> String {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        return formatter.string(from: date)
+    }
+
+    func parseTask(fromJPEGData data: Data, targetDate: Date? = nil) async throws -> AIParsedTaskPayload {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
 
@@ -163,19 +169,25 @@ struct AITaskParserService: Sendable {
 
         struct InvokeBody: Encodable {
             let imageUrl: String
+            let targetDate: String?
 
             enum CodingKeys: String, CodingKey {
                 case imageUrl = "image_url"
+                case targetDate = "target_date"
             }
         }
 
-        let body = InvokeBody(imageUrl: imageAccessURL.absoluteString)
+        let targetDateString = targetDate.map { Self.iso8601DateString(for: $0) }
+        let body = InvokeBody(
+            imageUrl: imageAccessURL.absoluteString,
+            targetDate: targetDateString
+        )
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
 
         AIPhotoTaskCreationLogger.step(
             .edgeFunctionStarted,
-            detail: "function=\(Self.edgeFunctionName)"
+            detail: "function=\(Self.edgeFunctionName) targetDate=\(targetDateString ?? "nil")"
         )
 
         let response = try await invokeParseEdgeFunction(
