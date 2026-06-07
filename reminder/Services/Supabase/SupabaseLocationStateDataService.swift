@@ -7,13 +7,13 @@ import Supabase
 
 struct SupabaseLocationStateDataService: LocationStateDataService {
     /// Release：500m；Debug：0m，便于验证入库链路。
-    static var defaultMinUpdateDistanceMeters: Double {
+    static let defaultMinUpdateDistanceMeters: Double = {
         #if DEBUG
         return 0
         #else
         return 500
         #endif
-    }
+    }()
     private static let tableName = "location_states"
     /// 与线上一致：表可能无 `id` 列，仅选实际存在的字段。
     private static let selectColumns =
@@ -81,14 +81,15 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
 
         let movedMeters: Double?
         if let current = existing?.currentLocation {
-            let moved = distanceMeters(from: current, to: coordinate)
+            let moved = coordinate.distanceMeters(to: current)
             movedMeters = moved
             if moved < minDistanceMeters {
                 print(
                     "[LocationPersist] skip write moved=\(String(format: "%.1f", moved))m "
                         + "need≥\(String(format: "%.0f", minDistanceMeters))m "
+                        + "(db current_location vs new) "
                         + String(format: "new lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
-                        + String(format: " prev lat=%.6f lng=%.6f", current.latitude, current.longitude)
+                        + String(format: " db lat=%.6f lng=%.6f", current.latitude, current.longitude)
                 )
                 return .skippedWithinThreshold(distanceMeters: moved)
             }
@@ -114,7 +115,8 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         let params = PushEntityLocationParams(
             pEntityId: profileId,
             pHouseholdId: householdId,
-            pNewLocation: stampedCoordinate
+            pNewLocation: stampedCoordinate,
+            pMinDistanceMeters: minDistanceMeters
         )
         do {
             _ = try await provider.client
@@ -253,12 +255,6 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             }
             throw error
         }
-    }
-
-    private func distanceMeters(from origin: LocationPayload, to destination: LocationPayload) -> CLLocationDistance {
-        let a = CLLocation(latitude: origin.latitude, longitude: origin.longitude)
-        let b = CLLocation(latitude: destination.latitude, longitude: destination.longitude)
-        return a.distance(from: b)
     }
 
     private static func decodeLocationStateRows(from data: Data) throws -> [LocationStateRecord] {

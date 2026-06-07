@@ -72,6 +72,13 @@ struct LocationPayload: Codable, Hashable, Sendable {
         batteryLevel.map { min(100, max(0, $0)) }
     }
 
+    /// 与另一点的球面距离（米）；用于入库前与 `current_location` 比对。
+    func distanceMeters(to other: LocationPayload) -> CLLocationDistance {
+        let origin = CLLocation(latitude: latitude, longitude: longitude)
+        let destination = CLLocation(latitude: other.latitude, longitude: other.longitude)
+        return origin.distance(from: destination)
+    }
+
     /// 写入前补全时间戳与电量快照，便于历史轨迹点展示相对时间与电量。
     func stampingDeviceSnapshotIfNeeded(
         at date: Date = Date(),

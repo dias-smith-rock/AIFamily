@@ -42,9 +42,7 @@ actor MockLocationStateDataService: LocationStateDataService {
             var row = records[index]
             if row.isGhostMode { return .skippedGhost }
             if let current = row.currentLocation {
-                let a = CLLocation(latitude: current.latitude, longitude: current.longitude)
-                let b = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-                let moved = a.distance(from: b)
+                let moved = current.distanceMeters(to: coordinate)
                 if moved < minDistanceMeters {
                     return .skippedWithinThreshold(distanceMeters: moved)
                 }

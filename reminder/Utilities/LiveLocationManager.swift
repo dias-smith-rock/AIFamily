@@ -10,7 +10,6 @@ import Supabase
 @MainActor
 final class LiveLocationManager: NSObject, ObservableObject {
     static let inactivityTimeoutSeconds = 900
-    static let databaseAggregationMeters: Double = 200
     private static let movementResetsInactivityMeters: Double = 8
     private static let peerMoveMinInterval: TimeInterval = 1.0
     /// 退出 Live 后抑制迟到的 presence_state / peer_move 把该成员又加回地图。
@@ -57,7 +56,6 @@ final class LiveLocationManager: NSObject, ObservableObject {
     private var presenceSubscription: RealtimeSubscription?
     #endif
 
-    private var lastLoggedDBLocation: CLLocation?
     private var lastLiveBroadcastLocation: CLLocation?
     private var lastPeerMoveSentAt: Date?
     private var lastPresenceRefreshAt: Date?
@@ -191,7 +189,6 @@ final class LiveLocationManager: NSObject, ObservableObject {
         currentHeadingDegrees = nil
         showInactivityEndedNotice = false
         batteryMonitor.refresh()
-        lastLoggedDBLocation = nil
         lastMovementAnchor = nil
         resetInactivityTimer()
         seedLocalLiveLocationFromCache()
@@ -1145,34 +1142,28 @@ final class LiveLocationManager: NSObject, ObservableObject {
         // Live 期间靠 Realtime 同步；避免与频道争用网络，仅在退出时 force 写库。
         guard force || isLiveModeActive == false else { return }
 
-        if force == false, let lastLoggedDBLocation {
-            let distance = location.distance(from: lastLoggedDBLocation)
-            if distance < Self.databaseAggregationMeters {
-                return
-            }
-        }
-
         let payload = LocationPayload(
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude
         )
+        let minDistanceMeters = SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
 
         do {
             let outcome = try await locationStateService.reportCurrentLocationIfNeeded(
                 householdId: householdId,
                 profileId: currentProfileId,
                 coordinate: payload,
-                minDistanceMeters: Self.databaseAggregationMeters
+                minDistanceMeters: minDistanceMeters
             )
             switch outcome {
             case .persisted:
-                lastLoggedDBLocation = location
                 liveLog("DB upload persisted lat=\(payload.latitude) lng=\(payload.longitude)")
             case .skippedGhost:
                 liveLog("DB upload skipped: ghost mode")
             case .skippedWithinThreshold(let distanceMeters):
                 liveLog(
-                    "DB upload skipped: moved=\(Int(distanceMeters))m need≥\(Int(Self.databaseAggregationMeters))m"
+                    "DB upload skipped: db current_location moved=\(Int(distanceMeters))m "
+                        + "need≥\(Int(minDistanceMeters))m"
                 )
             }
         } catch {

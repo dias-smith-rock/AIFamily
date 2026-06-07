@@ -7,11 +7,13 @@ struct PushEntityLocationParams: Encodable, Sendable {
     let pEntityId: UUID
     let pHouseholdId: UUID
     let pNewLocation: LocationPayload
+    let pMinDistanceMeters: Double
 
     enum CodingKeys: String, CodingKey {
         case pEntityId = "p_entity_id"
         case pHouseholdId = "p_household_id"
         case pNewLocation = "p_new_location"
+        case pMinDistanceMeters = "p_min_distance_meters"
     }
 }
 
