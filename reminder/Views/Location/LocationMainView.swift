@@ -315,19 +315,43 @@ struct LocationMainView: View {
                 }
             }
 
-            if let history2 = member.historyLocation2?.coordinate {
-                Annotation("", coordinate: history2, anchor: .center) {
-                    Circle()
-                        .fill(LocationMemberMapColors.historyDot(for: member.id, rank: 0))
-                        .frame(width: 8, height: 8)
+            if let history2 = member.historyLocation2 {
+                let showsInfoBadge = history2.batteryLevel != nil || history2.recordedAt != nil
+                Annotation(
+                    "",
+                    coordinate: history2.coordinate,
+                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(
+                        dotDiameter: 8,
+                        showsInfoBadge: showsInfoBadge
+                    )
+                ) {
+                    MapHistoryTrajectoryMarker(
+                        dotDiameter: 8,
+                        dotColor: LocationMemberMapColors.historyDot(for: member.id, rank: 0),
+                        batteryLevel: history2.clampedBatteryLevel,
+                        isCharging: history2.isCharging ?? false,
+                        recordedAt: history2.recordedAt
+                    )
                 }
             }
 
-            if let history1 = member.historyLocation1?.coordinate {
-                Annotation("", coordinate: history1, anchor: .center) {
-                    Circle()
-                        .fill(LocationMemberMapColors.historyDot(for: member.id, rank: 1))
-                        .frame(width: 9, height: 9)
+            if let history1 = member.historyLocation1 {
+                let showsInfoBadge = history1.batteryLevel != nil || history1.recordedAt != nil
+                Annotation(
+                    "",
+                    coordinate: history1.coordinate,
+                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(
+                        dotDiameter: 9,
+                        showsInfoBadge: showsInfoBadge
+                    )
+                ) {
+                    MapHistoryTrajectoryMarker(
+                        dotDiameter: 9,
+                        dotColor: LocationMemberMapColors.historyDot(for: member.id, rank: 1),
+                        batteryLevel: history1.clampedBatteryLevel,
+                        isCharging: history1.isCharging ?? false,
+                        recordedAt: history1.recordedAt
+                    )
                 }
             }
 
@@ -356,7 +380,7 @@ struct LocationMainView: View {
                             displayName: member.displayName,
                             batteryLevel: member.clampedBatteryLevel,
                             isCharging: member.isCharging,
-                            lastUpdatedAt: member.lastUpdatedAt,
+                            lastUpdatedAt: member.currentLocationUpdatedAt,
                             mapAccentColor: accent
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)

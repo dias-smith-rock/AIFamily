@@ -244,6 +244,50 @@ struct MapAvatarLastUpdatedBadge: View {
     }
 }
 
+/// 历史轨迹点：圆点 + 可选电量/时间轮播（锚点在圆心）。
+struct MapHistoryTrajectoryMarker: View {
+    let dotDiameter: CGFloat
+    let dotColor: Color
+    let batteryLevel: Int?
+    let isCharging: Bool
+    let recordedAt: Date?
+
+    private static let badgeSpacing: CGFloat = 4
+
+    private var showsInfoBadge: Bool {
+        batteryLevel != nil || recordedAt != nil
+    }
+
+    static func mapCoordinateAnchor(dotDiameter: CGFloat, showsInfoBadge: Bool) -> UnitPoint {
+        guard showsInfoBadge else { return .center }
+        let totalHeight = dotDiameter + badgeSpacing + MapAvatarBatteryBadge.badgeHeight
+        return UnitPoint(x: 0.5, y: (dotDiameter / 2) / totalHeight)
+    }
+
+    var body: some View {
+        VStack(spacing: Self.badgeSpacing) {
+            Circle()
+                .fill(dotColor)
+                .frame(width: dotDiameter, height: dotDiameter)
+
+            infoBadge
+        }
+    }
+
+    @ViewBuilder
+    private var infoBadge: some View {
+        if let batteryLevel {
+            MapAvatarInfoBadge(
+                batteryLevel: min(100, max(0, batteryLevel)),
+                isCharging: isCharging,
+                lastUpdatedAt: recordedAt
+            )
+        } else if let recordedAt {
+            MapAvatarLastUpdatedBadge(lastUpdatedAt: recordedAt)
+        }
+    }
+}
+
 /// 地图标注底部信息：电量 ↔ 位置更新时间轮播。
 struct MapAvatarInfoBadge: View {
     let batteryLevel: Int

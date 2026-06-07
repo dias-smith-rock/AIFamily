@@ -38,6 +38,11 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
     var clampedBatteryLevel: Int {
         min(100, max(0, batteryLevel))
     }
+
+    /// 当前位置坐标携带的采集时间，否则回退行级 `updated_at`。
+    var currentLocationUpdatedAt: Date? {
+        currentLocation?.recordedAt ?? lastUpdatedAt
+    }
 }
 
 extension UserLocationState {
@@ -50,9 +55,27 @@ extension UserLocationState {
             displayName: "王晓明",
             isVirtualMember: false,
             isGhostMode: false,
-            currentLocation: LocationPayload(latitude: 31.2304, longitude: 121.4737),
-            historyLocation1: LocationPayload(latitude: 31.2289, longitude: 121.4698),
-            historyLocation2: LocationPayload(latitude: 31.2265, longitude: 121.4652),
+            currentLocation: LocationPayload(
+                latitude: 31.2304,
+                longitude: 121.4737,
+                recordedAt: Date().addingTimeInterval(-12 * 60),
+                batteryLevel: 78,
+                isCharging: false
+            ),
+            historyLocation1: LocationPayload(
+                latitude: 31.2289,
+                longitude: 121.4698,
+                recordedAt: Date().addingTimeInterval(-38 * 60),
+                batteryLevel: 82,
+                isCharging: false
+            ),
+            historyLocation2: LocationPayload(
+                latitude: 31.2265,
+                longitude: 121.4652,
+                recordedAt: Date().addingTimeInterval(-72 * 60),
+                batteryLevel: 88,
+                isCharging: false
+            ),
             addressDescription: "上海市黄浦区外滩",
             lastUpdatedAt: Date().addingTimeInterval(-12 * 60),
             batteryLevel: 78,
@@ -65,9 +88,27 @@ extension UserLocationState {
             displayName: "李雨桐",
             isVirtualMember: false,
             isGhostMode: false,
-            currentLocation: LocationPayload(latitude: 31.2240, longitude: 121.4805),
-            historyLocation1: LocationPayload(latitude: 31.2218, longitude: 121.4770),
-            historyLocation2: LocationPayload(latitude: 31.2195, longitude: 121.4720),
+            currentLocation: LocationPayload(
+                latitude: 31.2240,
+                longitude: 121.4805,
+                recordedAt: Date().addingTimeInterval(-4 * 60),
+                batteryLevel: 19,
+                isCharging: false
+            ),
+            historyLocation1: LocationPayload(
+                latitude: 31.2218,
+                longitude: 121.4770,
+                recordedAt: Date().addingTimeInterval(-28 * 60),
+                batteryLevel: 24,
+                isCharging: false
+            ),
+            historyLocation2: LocationPayload(
+                latitude: 31.2195,
+                longitude: 121.4720,
+                recordedAt: Date().addingTimeInterval(-55 * 60),
+                batteryLevel: 31,
+                isCharging: false
+            ),
             addressDescription: "上海市浦东新区陆家嘴",
             lastUpdatedAt: Date().addingTimeInterval(-4 * 60),
             batteryLevel: 19,

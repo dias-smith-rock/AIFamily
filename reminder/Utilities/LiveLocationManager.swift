@@ -112,7 +112,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         if let live = livePeerLocationUpdatedAt[membershipId] {
             return live
         }
-        return rosterFallback?.lastUpdatedAt
+        return rosterFallback?.currentLocationUpdatedAt
     }
 
     var isHuddleActive: Bool {

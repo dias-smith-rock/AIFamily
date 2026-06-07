@@ -104,11 +104,17 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                 + (movedMeters.map { " moved=\(String(format: "%.1f", $0))m" } ?? " moved=first_write")
         )
 
+        let battery = DeviceBatteryMonitor.readSnapshot()
+        let stampedCoordinate = coordinate.stampingDeviceSnapshotIfNeeded(
+            batteryLevel: battery.level,
+            isCharging: battery.isCharging
+        )
+
         #if canImport(Supabase)
         let params = PushEntityLocationParams(
             pEntityId: profileId,
             pHouseholdId: householdId,
-            pNewLocation: coordinate
+            pNewLocation: stampedCoordinate
         )
         do {
             _ = try await provider.client
@@ -129,7 +135,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             let payload = LocationStateUpsertPayload(
                 householdId: householdId,
                 profileId: profileId,
-                currentLocation: coordinate,
+                currentLocation: stampedCoordinate,
                 historyLocation1: existing?.currentLocation,
                 historyLocation2: existing?.historyLocation1,
                 isGhostMode: existing?.isGhostMode ?? false,

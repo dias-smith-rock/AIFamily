@@ -51,7 +51,11 @@ actor MockLocationStateDataService: LocationStateDataService {
             }
             row.historyLocation2 = row.historyLocation1
             row.historyLocation1 = row.currentLocation
-            row.currentLocation = coordinate
+            let battery = DeviceBatteryMonitor.readSnapshot()
+            row.currentLocation = coordinate.stampingDeviceSnapshotIfNeeded(
+                batteryLevel: battery.level,
+                isCharging: battery.isCharging
+            )
             row.updatedAt = Date()
             records[index] = row
             return .persisted
@@ -61,7 +65,13 @@ actor MockLocationStateDataService: LocationStateDataService {
                 databaseId: UUID(),
                 householdId: householdId,
                 profileId: profileId,
-                currentLocation: coordinate,
+                currentLocation: {
+                    let battery = DeviceBatteryMonitor.readSnapshot()
+                    return coordinate.stampingDeviceSnapshotIfNeeded(
+                        batteryLevel: battery.level,
+                        isCharging: battery.isCharging
+                    )
+                }(),
                 historyLocation1: nil,
                 historyLocation2: nil,
                 isGhostMode: false,

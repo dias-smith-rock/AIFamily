@@ -38,7 +38,7 @@ final class DeviceBatteryMonitor: ObservableObject {
         isCharging = snapshot.isCharging
     }
 
-    static func readSnapshot() -> (level: Int, isCharging: Bool) {
+    nonisolated static func readSnapshot() -> (level: Int, isCharging: Bool) {
         UIDevice.current.isBatteryMonitoringEnabled = true
         let device = UIDevice.current
         let charging = device.batteryState == .charging || device.batteryState == .full
