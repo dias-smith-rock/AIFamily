@@ -9,6 +9,7 @@ struct UserMapAvatarView: View {
     let displayName: String
     let batteryLevel: Int
     let isCharging: Bool
+    var lastUpdatedAt: Date?
     var mapAccentColor: Color?
 
     var body: some View {
@@ -19,9 +20,10 @@ struct UserMapAvatarView: View {
                 isCharging: isCharging,
                 mapAccentColor: mapAccentColor
             )
-            MapAvatarBatteryBadge(
+            MapAvatarInfoBadge(
                 batteryLevel: batteryLevel,
-                isCharging: isCharging
+                isCharging: isCharging,
+                lastUpdatedAt: lastUpdatedAt
             )
         }
     }

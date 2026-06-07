@@ -20,6 +20,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
     /// 当前 Huddle 内活跃成员的 **membership id**（来自 Presence，非数据库）。
     @Published private(set) var activeParticipants: [UUID] = []
     @Published private(set) var livePeerLocations: [UUID: CLLocationCoordinate2D] = [:]
+    @Published private(set) var livePeerLocationUpdatedAt: [UUID: Date] = [:]
     /// 本机指南针朝向（真北顺时针角度）；仅 Live 模式有效。
     @Published private(set) var currentHeadingDegrees: Double?
     @Published private(set) var livePeerHeadings: [UUID: Double] = [:]
@@ -106,6 +107,14 @@ final class LiveLocationManager: NSObject, ObservableObject {
         return (100, false)
     }
 
+    /// 地图标注轮播用：Live 优先取最近一次坐标更新时间，否则回落到 `location_states.updated_at`。
+    func locationUpdatedAt(for membershipId: UUID, rosterFallback: UserLocationState?) -> Date? {
+        if let live = livePeerLocationUpdatedAt[membershipId] {
+            return live
+        }
+        return rosterFallback?.lastUpdatedAt
+    }
+
     var isHuddleActive: Bool {
         activeParticipants.isEmpty == false
     }
@@ -176,6 +185,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         isLiveModeActive = true
         // 仅清空坐标缓存；保留 `participantSet`（Lobby / 已有 presence_diff），避免已订阅频道上丢失在场成员。
         livePeerLocations = [:]
+        livePeerLocationUpdatedAt = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
         currentHeadingDegrees = nil
@@ -246,6 +256,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         isLiveModeActive = false
         pendingPresenceTrack = false
         livePeerLocations = [:]
+        livePeerLocationUpdatedAt = [:]
         livePeerHeadings = [:]
         livePeerBattery = [:]
 
@@ -478,7 +489,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         guard let currentMembershipId, isLiveModeActive else { return }
         guard livePeerLocations[currentMembershipId] == nil else { return }
         guard let cached = LastKnownDeviceLocation.cachedCoordinate() else { return }
-        livePeerLocations[currentMembershipId] = cached
+        setLivePeerLocation(cached, for: currentMembershipId)
         livePeerBattery[currentMembershipId] = LivePeerBatteryState(
             level: batteryMonitor.batteryLevel,
             isCharging: batteryMonitor.isCharging
@@ -603,6 +614,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
             participantSet = []
             activeParticipants = []
             livePeerLocations = [:]
+            livePeerLocationUpdatedAt = [:]
             livePeerHeadings = [:]
             livePeerBattery = [:]
             currentHeadingDegrees = nil
@@ -768,7 +780,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
         }
 
         let hadLocation = livePeerLocations[membershipUUID] != nil
-        livePeerLocations[membershipUUID] = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+        setLivePeerLocation(CLLocationCoordinate2D(latitude: lat, longitude: lng), for: membershipUUID)
         if let heading = entry.headingDegrees {
             livePeerHeadings[membershipUUID] = heading
         }
@@ -815,7 +827,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
             }
 
             let previousCount = livePeerLocations.count
-            livePeerLocations[payload.membershipId] = coordinate
+            setLivePeerLocation(coordinate, for: payload.membershipId)
             if let heading = payload.headingDegrees {
                 livePeerHeadings[payload.membershipId] = heading
             }
@@ -910,8 +922,18 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     private func removeLivePeerState(for membershipId: UUID) {
         livePeerLocations.removeValue(forKey: membershipId)
+        livePeerLocationUpdatedAt.removeValue(forKey: membershipId)
         livePeerHeadings.removeValue(forKey: membershipId)
         livePeerBattery.removeValue(forKey: membershipId)
+    }
+
+    private func setLivePeerLocation(
+        _ coordinate: CLLocationCoordinate2D,
+        for membershipId: UUID,
+        updatedAt: Date = Date()
+    ) {
+        livePeerLocations[membershipId] = coordinate
+        livePeerLocationUpdatedAt[membershipId] = updatedAt
     }
 
     private func pruneLivePeerState(to participants: Set<UUID>) {
@@ -923,7 +945,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
 
     private func recordLocalLiveLocation(_ location: CLLocation, heading: Double? = nil) {
         guard let currentMembershipId, isLiveModeActive else { return }
-        livePeerLocations[currentMembershipId] = location.coordinate
+        setLivePeerLocation(location.coordinate, for: currentMembershipId)
         if let heading {
             livePeerHeadings[currentMembershipId] = heading
         }
@@ -1054,7 +1076,11 @@ final class LiveLocationManager: NSObject, ObservableObject {
                     liveLog("DB seed empty row membership=\(membershipId.uuidString.prefix(8))")
                     continue
                 }
-                livePeerLocations[membershipId] = payload.coordinate
+                setLivePeerLocation(
+                    payload.coordinate,
+                    for: membershipId,
+                    updatedAt: record.updatedAt
+                )
                 liveLog(
                     "DB seed ok membership=\(membershipId.uuidString.prefix(8)) "
                         + "lat=\(payload.latitude) lng=\(payload.longitude)"

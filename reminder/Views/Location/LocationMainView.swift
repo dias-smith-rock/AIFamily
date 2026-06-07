@@ -235,6 +235,10 @@ struct LocationMainView: View {
                             displayName: item.displayName,
                             batteryLevel: battery.level,
                             isCharging: battery.isCharging,
+                            lastUpdatedAt: liveManager.locationUpdatedAt(
+                                for: item.id,
+                                rosterFallback: viewModel.members.first(where: { $0.id == item.id })
+                            ),
                             headingDegrees: item.headingDegrees
                         )
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.latitude)
@@ -341,6 +345,7 @@ struct LocationMainView: View {
                             displayName: member.displayName,
                             batteryLevel: battery.level,
                             isCharging: battery.isCharging,
+                            lastUpdatedAt: liveManager.locationUpdatedAt(for: member.id, rosterFallback: member),
                             headingDegrees: liveManager.currentHeadingDegrees
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
@@ -351,6 +356,7 @@ struct LocationMainView: View {
                             displayName: member.displayName,
                             batteryLevel: member.clampedBatteryLevel,
                             isCharging: member.isCharging,
+                            lastUpdatedAt: member.lastUpdatedAt,
                             mapAccentColor: accent
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
