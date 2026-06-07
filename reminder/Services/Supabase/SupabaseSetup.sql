@@ -326,3 +326,13 @@ on storage.objects
 for select
 to public
 using (bucket_id = 'create-task-from-images');
+
+drop policy if exists "create_task_from_images_delete_own_folder" on storage.objects;
+create policy "create_task_from_images_delete_own_folder"
+on storage.objects
+for delete
+to authenticated
+using (
+    bucket_id = 'create-task-from-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+);

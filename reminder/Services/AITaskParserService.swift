@@ -94,6 +94,17 @@ enum AITaskParserError: LocalizedError {
     }
 }
 
+/// 识图流程上传到 Supabase 的临时文件位置（识别完成后应删除）。
+struct AITemporaryStorageUpload: Sendable {
+    let bucket: String
+    let path: String
+}
+
+struct AIParseTaskResult: Sendable {
+    let task: AIParsedTaskPayload
+    let temporaryUpload: AITemporaryStorageUpload
+}
+
 /// 上传识图 JPEG → 调用 Edge Function → 解析任务字段。
 struct AITaskParserService: Sendable {
     static let storageBucket = "create-task-from-images"
@@ -109,7 +120,7 @@ struct AITaskParserService: Sendable {
         fromJPEGData data: Data,
         targetDate: Date? = nil,
         recognitionRegion: NormalizedCropQuad? = nil
-    ) async throws -> AIParsedTaskPayload {
+    ) async throws -> AIParseTaskResult {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
 
@@ -153,16 +164,10 @@ struct AITaskParserService: Sendable {
             client: client,
             targets: uploadTargets
         )
-
-        defer {
-            Task {
-                await Self.deleteTemporaryUpload(
-                    client: client,
-                    bucket: uploadResult.bucket,
-                    path: uploadResult.path
-                )
-            }
-        }
+        let temporaryUpload = AITemporaryStorageUpload(
+            bucket: uploadResult.bucket,
+            path: uploadResult.path
+        )
 
         AIPhotoTaskCreationLogger.step(
             .storageUploadSucceeded,
@@ -207,11 +212,17 @@ struct AITaskParserService: Sendable {
             detail: "function=\(Self.edgeFunctionName) targetDate=\(targetDateString ?? "nil") region=\(recognitionRegion != nil)"
         )
 
-        let response = try await invokeParseEdgeFunction(
-            client: client,
-            body: body,
-            decoder: decoder
-        )
+        let response: AIParseTaskImageResponse
+        do {
+            response = try await invokeParseEdgeFunction(
+                client: client,
+                body: body,
+                decoder: decoder
+            )
+        } catch {
+            await deleteTemporaryUpload(temporaryUpload)
+            throw error
+        }
 
         AIPhotoTaskCreationLogger.step(.edgeFunctionSucceeded)
 
@@ -236,6 +247,7 @@ struct AITaskParserService: Sendable {
                 error: AITaskParserError.serverError(message),
                 detail: "success=\(response.success)"
             )
+            await deleteTemporaryUpload(temporaryUpload)
             throw AITaskParserError.serverError(message)
         }
 
@@ -244,10 +256,22 @@ struct AITaskParserService: Sendable {
             detail: "title=\(task.title.prefix(40))"
         )
 
-        return task
+        return AIParseTaskResult(task: task, temporaryUpload: temporaryUpload)
         #else
         _ = data
         throw AITaskParserError.sdkUnavailable
+        #endif
+    }
+
+    func deleteTemporaryUpload(_ upload: AITemporaryStorageUpload) async {
+        #if canImport(Supabase)
+        await Self.deleteTemporaryUpload(
+            client: SupabaseManager.shared.client,
+            bucket: upload.bucket,
+            path: upload.path
+        )
+        #else
+        _ = upload
         #endif
     }
 

@@ -587,20 +587,22 @@ final class ScheduleViewModel: ObservableObject {
         AIPhotoTaskCreationLogger.step(.flowStarted, source: source, byteCount: imageJPEG.count)
 
         do {
-            let parsed = try await aiTaskParserService.parseTask(
+            let parseResult = try await aiTaskParserService.parseTask(
                 fromJPEGData: imageJPEG,
                 targetDate: targetDate,
                 recognitionRegion: recognitionRegion
             )
 
             prefilledTaskForAI = AIPrefilledTaskDraft(
-                title: parsed.title.trimmingCharacters(in: .whitespacesAndNewlines),
-                description: parsed.description?.trimmingCharacters(in: .whitespacesAndNewlines),
-                dueDate: parsed.dueDate,
-                locationName: parsed.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
+                title: parseResult.task.title.trimmingCharacters(in: .whitespacesAndNewlines),
+                description: parseResult.task.description?.trimmingCharacters(in: .whitespacesAndNewlines),
+                dueDate: parseResult.task.dueDate,
+                locationName: parseResult.task.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
                 attachmentImage: attachmentImage,
                 attachmentJPEGData: imageJPEG
             )
+
+            await aiTaskParserService.deleteTemporaryUpload(parseResult.temporaryUpload)
 
             AIPhotoTaskCreationLogger.step(.prefilledDraftReady, source: source)
             AIPhotoTaskCreationLogger.step(.flowSucceeded, source: source)
