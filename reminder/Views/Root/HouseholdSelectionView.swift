@@ -156,7 +156,7 @@ struct HouseholdSelectionView: View {
             Button("相机扫码") {
                 showCameraScanner = true
             }
-            Button("从相册识别") {
+            Button("相册") {
                 showPhotoPicker = true
             }
             Button("取消", role: .cancel) {}

@@ -62,7 +62,7 @@ struct CameraPicker: View {
             HStack(spacing: 8) {
                 Image(systemName: "photo.on.rectangle")
                     .font(.body.weight(.semibold))
-                Text("从相册选择")
+                Text("相册")
                     .font(.body.weight(.semibold))
             }
             .foregroundStyle(.primary)
@@ -74,7 +74,7 @@ struct CameraPicker: View {
                     .strokeBorder(.white.opacity(0.25), lineWidth: 0.5)
             }
         }
-        .accessibilityLabel("从相册选择")
+        .accessibilityLabel("相册")
     }
 
     @MainActor
