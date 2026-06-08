@@ -38,6 +38,22 @@ struct ReminderServiceContainer {
         )
     }
 
+    static func guest() -> ReminderServiceContainer {
+        ReminderServiceContainer(
+            taskService: GuestTaskDataService(),
+            feedbackService: MockFeedbackDataService(),
+            membershipService: GuestMembershipDataService(),
+            familyProfileService: GuestProfileDataService(),
+            authService: GuestAuthService(),
+            voiceStorageService: MockVoiceStorageService(),
+            avatarStorageService: MockAvatarStorageService(),
+            feedbackRealtimeService: MockFeedbackRealtimeService(),
+            inviteLinkService: MockInviteLinkService(),
+            householdRoutingService: GuestHouseholdRoutingService(),
+            locationStateService: MockLocationStateDataService()
+        )
+    }
+
     static func mock() -> ReminderServiceContainer {
         ReminderServiceContainer(
             taskService: MockTaskDataService(),

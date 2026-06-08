@@ -43,8 +43,10 @@ enum GroupSwitcherData {
 // MARK: - 切换群组半屏 Sheet
 
 struct SwitchGroupSheetView: View {
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @ObservedObject var coordinator: GroupSwitcherCoordinator
+    @State private var showsGuestSignInAlert = false
 
     private var organizations: [AppRouter.HouseholdOption] {
         GroupSwitcherData.organizations(for: appRouter)
@@ -93,6 +95,7 @@ struct SwitchGroupSheetView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 0) {
+                if isGuestMode == false {
                 Button {
                     coordinator.presentCreateOrganizationAfterDismiss()
                 } label: {
@@ -122,12 +125,14 @@ struct SwitchGroupSheetView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                }
             }
             .background(Color(.systemBackground))
             .padding(.bottom, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemGroupedBackground))
+        .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
     }
 }
 

@@ -580,6 +580,11 @@ final class ScheduleViewModel: ObservableObject {
         source: AIPhotoTaskCreationLogger.CaptureSource,
         targetDate: Date
     ) async {
+        if GuestSessionStore.isGuestMode {
+            aiProcessingError = String(localized: "登录后可使用拍照识图功能。")
+            return
+        }
+
         isAIProcessing = true
         aiProcessingError = nil
         defer { isAIProcessing = false }

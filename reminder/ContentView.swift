@@ -6,6 +6,7 @@ struct ContentView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
+    @AppStorage(GuestSessionStore.isGuestModeKey) private var isGuestMode = false
     @AppStorage("requireFaceID") private var requireFaceID = false
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
     @StateObject private var biometricManager = BiometricManager()
@@ -16,7 +17,9 @@ struct ContentView: View {
             rootContent
         }
         .environmentObject(groupSwitcher)
+        .environment(\.isGuestMode, isGuestMode)
         .animation(.easeInOut, value: isUserLoggedIn)
+        .animation(.easeInOut, value: isGuestMode)
         .animation(.easeInOut, value: biometricManager.isUnlocked)
         .animation(.easeInOut, value: appRouter.appState)
         .animation(.easeInOut, value: appRouter.selectedHouseholdId)
@@ -80,11 +83,23 @@ struct ContentView: View {
                 _ = await NotificationManager.shared.requestAuthorizationIfNeeded()
             }
         }
+        .task(id: isGuestMode) {
+            guard isGuestMode, let snapshot = GuestSessionStore.loadSnapshot() else { return }
+            if appBootstrap.mode != .guestLocal {
+                appBootstrap.enterGuestMode()
+            }
+            if appRouter.appState != .activeMember
+                || appRouter.selectedHouseholdId != snapshot.householdId {
+                appRouter.enterGuestMode(snapshot: snapshot)
+            }
+        }
         .task(id: isUserLoggedIn) {
             guard isUserLoggedIn else {
-                BackgroundLocationCoordinator.shared.stop()
-                ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
-                ForegroundLocationPersistEligibility.shared.canPersist = false
+                if isGuestMode == false {
+                    BackgroundLocationCoordinator.shared.stop()
+                    ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
+                    ForegroundLocationPersistEligibility.shared.canPersist = false
+                }
                 return
             }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
@@ -168,11 +183,15 @@ struct ContentView: View {
         }
     }
 
+    private var hasAppAccess: Bool {
+        isUserLoggedIn || isGuestMode
+    }
+
     @ViewBuilder
     private var rootContent: some View {
-        if isUserLoggedIn == false {
+        if hasAppAccess == false {
             LoginView()
-        } else if requireFaceID, biometricManager.isUnlocked == false {
+        } else if isUserLoggedIn && requireFaceID && biometricManager.isUnlocked == false {
             LockScreenView(
                 isAuthenticating: biometricManager.isAuthenticating,
                 onUnlock: { biometricManager.authenticate() }
@@ -191,6 +210,7 @@ struct ContentView: View {
         switch appRouter.appState {
         case .activeMember where appRouter.selectedHouseholdId != nil:
             AppTabRootView()
+                .id(appBootstrap.sessionRevision)
         case .householdSelection:
             HouseholdSelectionView()
         case .orgRouting:
@@ -242,6 +262,7 @@ struct ContentView: View {
 
     @MainActor
     private func reconcileStaleLoginSession() {
+        guard isGuestMode == false else { return }
         guard isUserLoggedIn,
               appRouter.hasCompletedAuthBootstrap,
               appRouter.appState == .unauthenticated else {

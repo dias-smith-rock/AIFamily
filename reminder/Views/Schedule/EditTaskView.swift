@@ -100,6 +100,7 @@ struct EditTaskView: View {
 #Preview("新建日程") {
     EditTaskView(formMode: .scheduled)
         .environmentObject(AppRouter())
+        .environmentObject(AppBootstrap())
 }
 
 #Preview("编辑") {

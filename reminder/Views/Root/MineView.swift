@@ -6,8 +6,12 @@ import UIKit
 
 struct MineView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
+    @AppStorage(GuestSessionStore.isGuestModeKey) private var isGuestModeStorage = false
     @AppStorage("requireFaceID") private var requireFaceID = false
     @AppStorage(BackgroundLocationPreferences.storageKey) private var backgroundLocationEnabled = true
     @ObservedObject private var backgroundLocationCoordinator = BackgroundLocationCoordinator.shared
@@ -17,6 +21,7 @@ struct MineView: View {
     @State private var editingSelfProfile: FamilyProfile?
     @State private var showTermsSheet = false
     @State private var showPrivacySheet = false
+    @State private var showDiscardGuestDataAlert = false
 
     /// 与 `mineNavigationRow` 中「图标列 + 间距」一致，避免居中文字导致系统把分隔线对齐到屏幕中间。
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
@@ -137,11 +142,48 @@ struct MineView: View {
                     .ignoresSafeArea()
             }
         }
+        .alert("放弃本地数据", isPresented: $showDiscardGuestDataAlert) {
+            Button("取消", role: .cancel) {}
+            Button("放弃", role: .destructive) {
+                GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
+                isGuestModeStorage = false
+            }
+        } message: {
+            Text("将删除本机试用数据，且无法恢复。")
+        }
     }
 
     @ViewBuilder
     private var mineSettingsList: some View {
         List {
+            if isGuestMode {
+                Section {
+                    GuestAccountLinkCard(
+                        isUserLoggedIn: $isUserLoggedIn,
+                        isGuestMode: $isGuestModeStorage
+                    )
+                }
+                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+            } else if isUserLoggedIn, GuestSessionStore.hasPendingSnapshot {
+                Section {
+                    Button {
+                        Task { await retryGuestMigration() }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("本地数据尚未同步")
+                                .font(.headline)
+                            Text("轻点重试，将试用数据写入云端。")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
+            }
+
             Section {
                 profileHeaderRow
             }
@@ -339,11 +381,32 @@ struct MineView: View {
             }
 
             Section {
+                if isGuestMode {
+                    Button(role: .destructive) {
+                        showDiscardGuestDataAlert = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("放弃本地数据")
+                                .font(AppTheme.FontToken.bodyStrong)
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Button {
                     Task {
-                        authSessionGuard.beginLoggingOut()
-                        familyViewModel.prepareForSignOut()
-                        await viewModel.signOut(appRouter: appRouter)
+                        if isGuestMode {
+                            GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
+                            isGuestModeStorage = false
+                        } else {
+                            authSessionGuard.beginLoggingOut()
+                            familyViewModel.prepareForSignOut()
+                            await viewModel.signOut(appRouter: appRouter)
+                        }
                     }
                 } label: {
                     HStack {
@@ -351,7 +414,7 @@ struct MineView: View {
                         if viewModel.isSigningOut {
                             ProgressView()
                         } else {
-                            Text("退出登录")
+                            Text(isGuestMode ? "退出试用" : "退出登录")
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()
@@ -362,6 +425,7 @@ struct MineView: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
 
+                if isGuestMode == false {
                 Button(role: .destructive) {
                     Task { await viewModel.checkCreatorStatusBeforeDeletion() }
                 } label: {
@@ -385,6 +449,7 @@ struct MineView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
+                }
             } header: {
                 mineSectionHeader("账户")
             }
@@ -445,10 +510,16 @@ struct MineView: View {
     }
 
     private var mineHeaderMainTitle: String {
-        familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
+        if isGuestMode {
+            return familyViewModel.currentUserProfile?.displayName ?? "试用用户"
+        }
+        return familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
     }
 
     private var mineHeaderSubtitle: String {
+        if isGuestMode {
+            return "数据仅保存在本机"
+        }
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.email
         }
@@ -668,6 +739,18 @@ struct MineView: View {
         .contentShape(Rectangle())
     }
 
+    private func retryGuestMigration() async {
+        guard let snapshot = GuestSessionStore.loadSnapshot() else { return }
+        do {
+            _ = try await GuestDataMigrationService.migrate(snapshot: snapshot, appRouter: appRouter)
+            isGuestModeStorage = false
+            await appRouter.refreshStateFromBackend()
+            viewModel.toastMessage = "本地数据已同步到云端"
+        } catch {
+            viewModel.toastMessage = error.localizedDescription
+        }
+    }
+
     // MARK: - Section chrome
 
     private func mineSectionHeader(_ title: LocalizedStringKey) -> some View {
@@ -727,6 +810,10 @@ struct MineView: View {
     @MainActor
     private func handleRequiresLoginIfNeeded() async {
         guard familyViewModel.requiresLogin else { return }
+        if isGuestMode {
+            familyViewModel.clearRequiresLogin()
+            return
+        }
         guard authSessionGuard.isLoggingOut == false else {
             familyViewModel.clearRequiresLogin()
             return

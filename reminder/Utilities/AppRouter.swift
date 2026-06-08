@@ -116,6 +116,11 @@ final class AppRouter: ObservableObject {
     }
 
     func refreshStateFromBackend() async {
+        if GuestSessionStore.isGuestMode {
+            hasCompletedAuthBootstrap = true
+            return
+        }
+
         hasCompletedAuthBootstrap = false
         defer { hasCompletedAuthBootstrap = true }
 
@@ -275,6 +280,45 @@ final class AppRouter: ObservableObject {
 
     func goToActiveMember() {
         appState = .activeMember
+    }
+
+    /// 纯本地游客：直接进入主 Tab，不触发 Supabase 路由刷新。
+    func enterGuestMode(snapshot: GuestWorkspaceSnapshot) {
+        selectedHouseholdId = snapshot.householdId
+        selectedMembershipId = snapshot.membershipId
+        selectedProfileId = snapshot.profileId
+        selectedHouseholdName = snapshot.householdName
+        selectedHouseholdDescription = snapshot.householdDescription
+        selectedHouseholdIsPremium = false
+        userEntitlement = nil
+        selectableHouseholds = [
+            HouseholdOption(
+                id: snapshot.householdId,
+                membershipId: snapshot.membershipId,
+                profileId: snapshot.profileId,
+                name: snapshot.householdName,
+                isPremium: false,
+                description: snapshot.householdDescription
+            )
+        ]
+        recentHouseholds = selectableHouseholds
+        hasCompletedAuthBootstrap = true
+        appState = .activeMember
+    }
+
+    /// 退出游客或迁移前清空本地组织上下文。
+    func exitGuestMode() {
+        selectedHouseholdId = nil
+        selectedMembershipId = nil
+        selectedProfileId = nil
+        selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
+        selectedHouseholdIsPremium = false
+        userEntitlement = nil
+        selectableHouseholds = []
+        recentHouseholds = []
+        appState = .unauthenticated
+        hasCompletedAuthBootstrap = true
     }
 
     /// 解散群组后清空当前组织上下文并回到入口枢纽页。

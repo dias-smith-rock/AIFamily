@@ -8,6 +8,7 @@ import Supabase
 struct LocationMainView: View {
     var isTabActive: Bool = true
 
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel: LocationMainViewModel
@@ -34,6 +35,9 @@ struct LocationMainView: View {
 
     var body: some View {
         ZStack {
+            if isGuestMode {
+                guestLockedPlaceholder
+            } else {
             mapLayer
 
             if viewModel.isMemberListExpanded || isLiveSharingPanelExpanded {
@@ -77,6 +81,7 @@ struct LocationMainView: View {
                     .padding(.bottom, 12)
                     .transition(.opacity.combined(with: .scale(scale: 0.92)))
                 }
+            }
             }
         }
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
@@ -848,6 +853,16 @@ struct LocationMainView: View {
         }
         rect = rect.insetBy(dx: -rect.size.width * 0.25, dy: -rect.size.height * 0.25)
         cameraPosition = .rect(rect)
+    }
+
+    private var guestLockedPlaceholder: some View {
+        ContentUnavailableView {
+            Label("位置共享", systemImage: "map")
+        } description: {
+            Text("登录后可与群组成员共享实时位置。")
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
     }
 }
 

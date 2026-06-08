@@ -7,6 +7,7 @@ import Supabase
 /// 灵活待办 Tab：`task_type == flexible`，按截止日分组，点击编辑分配时间。
 struct TodoListView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
@@ -365,6 +366,10 @@ struct TodoListView: View {
     private func refreshCurrentMembershipRole() async {
         guard let membershipId = appRouter.selectedMembershipId else {
             currentMembershipRole = .member
+            return
+        }
+        if isGuestMode {
+            currentMembershipRole = .creator
             return
         }
         if await NetworkMonitor.shared.isConnected == false,

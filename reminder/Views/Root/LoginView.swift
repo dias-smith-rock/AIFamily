@@ -9,7 +9,9 @@ import Supabase
 struct LoginView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appBootstrap: AppBootstrap
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
+    @AppStorage(GuestSessionStore.isGuestModeKey) private var isGuestMode = false
     @State private var loadingProvider: LoginProvider?
     @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
@@ -110,6 +112,19 @@ struct LoginView: View {
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
             #endif
+
+            Button {
+                startGuestMode()
+            } label: {
+                Text("暂不登录，先试用")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.plain)
+            .disabled(loadingProvider != nil)
+            .padding(.top, 4)
         }
     }
 
@@ -292,37 +307,13 @@ struct LoginView: View {
     /// 走 supabase-swift 的内置 `signInWithOAuth`：iOS 上会用 `ASWebAuthenticationSession`
     /// 在当前 App 内弹出 Safari View 卡片完成登录，回跳由 SDK 内部接管，不需要 `onOpenURL`。
     private func signInWithGoogleOAuth() async throws {
-        #if canImport(Supabase)
-        try await SupabaseManager.shared.client.auth.signInWithOAuth(
-            provider: .google,
-            redirectTo: Self.oauthRedirectURL,
-            queryParams: [
-                (name: "prompt", value: "select_account"),
-                (name: "access_type", value: "offline")
-            ]
-        )
-        #else
-        throw NSError(
-            domain: "LoginView",
-            code: -1,
-            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)]
-        )
-        #endif
+        try await OAuthSignInSupport.signInWithGoogleOAuth()
     }
 
     /// 用户在 Safari View 卡片里点了"取消"会抛 `ASWebAuthenticationSessionError.canceledLogin`，
     /// 这是正常交互而非错误，不要把它显示成红字提示。
     private func isUserCancelled(_ error: Error) -> Bool {
-        let nsError = error as NSError
-        if nsError.domain == "com.apple.AuthenticationServices.WebAuthenticationSession", nsError.code == 1 {
-            return true
-        }
-        #if canImport(AuthenticationServices)
-        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
-            return true
-        }
-        #endif
-        return false
+        OAuthSignInSupport.isUserCancelled(error)
     }
 
     /// 兜底：处理 Magic Link 等通过 URL Scheme 直接拉起 App 的回跳。
@@ -346,57 +337,35 @@ struct LoginView: View {
     /// OAuth 结束后，Auth 会话与 RLS 可见性在本地可能有短暂传播延迟。
     /// 这里做轻量重试，避免刚回调就误判成未登录，留在登录页。
     private func settlePostOAuthState() async throws {
-        #if canImport(Supabase)
-        let maxAttempts = 8
-        var hasValidSession = false
-        for attempt in 1...maxAttempts {
-            do {
-                _ = try await SupabaseManager.shared.client.auth.session
-                hasValidSession = true
-                AuthSessionHints.markEverAuthenticated()
-                await MainActor.run {
-                    withAnimation(.easeInOut) {
-                        isUserLoggedIn = true
-                    }
-                }
-                await appRouter.refreshStateFromBackend()
-                if appRouter.appState != .unauthenticated {
-                    AnalyticsManager.logAuthSessionSucceeded()
-                    return
-                }
-            } catch {
-                if attempt == maxAttempts {
-                    throw error
-                }
+        let migrationFailed = try await OAuthSessionCoordinator.settleAfterOAuth(
+            appRouter: appRouter,
+            appBootstrap: appBootstrap,
+            migrationFailureHandler: { message in
+                loginErrorAlert = message
             }
-
-            if attempt < maxAttempts {
-                try? await Task.sleep(nanoseconds: 250_000_000)
-            }
-        }
-
-        if hasValidSession {
-            // OAuth 已成功，但组织状态读取出现瞬时失败时，先放行到组织路由页，避免卡死登录。
-            await MainActor.run {
-                withAnimation(.easeInOut) {
-                    isUserLoggedIn = true
-                }
-                AnalyticsManager.logAuthSessionSucceeded()
-                appRouter.goToOrgRouting()
-            }
-            return
-        }
-
-        throw NSError(
-            domain: "LoginView",
-            code: -2,
-            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("登录会话尚未就绪，请稍后重试。", locale: locale)]
         )
-        #endif
+        await MainActor.run {
+            withAnimation(.easeInOut) {
+                isUserLoggedIn = true
+                isGuestMode = migrationFailed && GuestSessionStore.hasPendingSnapshot
+            }
+        }
+    }
+
+    private func startGuestMode() {
+        let snapshot = GuestSessionStore.loadOrCreate()
+        GuestSessionStore.setGuestMode(true)
+        appBootstrap.enterGuestMode()
+        appRouter.enterGuestMode(snapshot: snapshot)
+        withAnimation(.easeInOut) {
+            isGuestMode = true
+        }
+        AnalyticsManager.log(event: .guestStarted)
     }
 }
 
 #Preview {
     LoginView()
         .environmentObject(AppRouter())
+        .environmentObject(AppBootstrap())
 }

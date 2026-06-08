@@ -11,7 +11,9 @@ struct TaskListView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
+    @Environment(\.isGuestMode) private var isGuestMode
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
+    @State private var showsGuestSignInAlert = false
 
     @State private var currentViewMode: CalendarViewMode = .day
     @State private var selectedDate: Date = Date()
@@ -358,25 +360,36 @@ struct TaskListView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 4) {
-                Button {
-                    groupSwitcher.showSwitchGroupDialog = true
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(GroupSwitcherData.currentName(for: appRouter))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .multilineTextAlignment(.leading)
+                Group {
+                    if isGuestMode {
+                        HStack(spacing: 4) {
+                            Text(GroupSwitcherData.currentName(for: appRouter))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                        }
+                    } else {
+                        Button {
+                            groupSwitcher.showSwitchGroupDialog = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(GroupSwitcherData.currentName(for: appRouter))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                    .multilineTextAlignment(.leading)
 
-                        Image(systemName: "chevron.down")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
+                        .accessibilityHint("轻点以切换群组")
                     }
                 }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
-                .accessibilityHint("轻点以切换群组")
 
                 Button {
                     isShowingCalendarSheet = true

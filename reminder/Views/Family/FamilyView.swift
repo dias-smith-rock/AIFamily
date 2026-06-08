@@ -14,6 +14,7 @@ private enum AddMemberRoute: Identifiable, Equatable {
 
 struct FamilyView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
@@ -27,6 +28,7 @@ struct FamilyView: View {
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
+    @State private var showsGuestSignInAlert = false
 
     var body: some View {
         NavigationStack {
@@ -223,6 +225,7 @@ struct FamilyView: View {
         } message: {
             Text(viewModel.leaveErrorMessage ?? "请稍后重试。")
         }
+        .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
     }
 
     private var leaveErrorAlertBinding: Binding<Bool> {
@@ -362,6 +365,10 @@ struct FamilyView: View {
     }
 
     private func presentAddMemberFlow() {
+        if isGuestMode {
+            showsGuestSignInAlert = true
+            return
+        }
         addMemberRoute = .entry
     }
 
@@ -678,6 +685,10 @@ struct FamilyView: View {
     @MainActor
     private func handleRequiresLoginIfNeeded() async {
         guard viewModel.requiresLogin else { return }
+        if isGuestMode {
+            viewModel.clearRequiresLogin()
+            return
+        }
         guard authSessionGuard.isLoggingOut == false else {
             viewModel.clearRequiresLogin()
             return
@@ -689,6 +700,7 @@ struct FamilyView: View {
 }
 
 private struct OrganizationSettingsSheet: View {
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.dismiss) private var dismiss
 
@@ -773,19 +785,21 @@ private struct OrganizationSettingsSheet: View {
 
                 Spacer(minLength: 0)
 
-                VStack(spacing: 18) {
-                    if familyViewModel.canTransferOwnership {
-                        transferOwnershipRow
-                    }
+                if isGuestMode == false {
+                    VStack(spacing: 18) {
+                        if familyViewModel.canTransferOwnership {
+                            transferOwnershipRow
+                        }
 
-                    if canDisband {
-                        disbandHouseholdSection
-                    } else if familyViewModel.canLeaveCurrentHousehold {
-                        leaveHouseholdSection
+                        if canDisband {
+                            disbandHouseholdSection
+                        } else if familyViewModel.canLeaveCurrentHousehold {
+                            leaveHouseholdSection
+                        }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 28)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 28)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color(.systemGroupedBackground))

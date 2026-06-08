@@ -250,7 +250,9 @@ private struct TaskClearSeriesLinksPatch: Encodable {
 struct CreateTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
+    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appBootstrap: AppBootstrap
 
     @FocusState private var focusedField: CreateTaskFocusField?
 
@@ -292,6 +294,7 @@ struct CreateTaskView: View {
     @State private var showAttachmentOptions = false
     @State private var isPresentingPhotoLibrary = false
     @State private var isPresentingCamera = false
+    @State private var showGuestSignInRequiredAlert = false
 
     private let editingTask: FamilyTask?
     private let formMode: EditTaskViewModel.TaskMode
@@ -625,14 +628,22 @@ struct CreateTaskView: View {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
-                    await performUpdate(existing: existing, scope: .singleOnly)
+                    if isGuestMode {
+                        await performGuestUpdate(existing: existing)
+                    } else {
+                        await performUpdate(existing: existing, scope: .singleOnly)
+                    }
                 }
             }
             Button("修改此任务及以后", role: .destructive) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
-                    await performUpdate(existing: existing, scope: .thisAndFuture)
+                    if isGuestMode {
+                        showGuestSignInRequiredAlert = true
+                    } else {
+                        await performUpdate(existing: existing, scope: .thisAndFuture)
+                    }
                 }
             }
             Button("取消", role: .cancel) {
@@ -679,6 +690,7 @@ struct CreateTaskView: View {
             )
             .ignoresSafeArea()
         }
+        .guestSignInRequiredAlert(isPresented: $showGuestSignInRequiredAlert)
     }
 
     private func dismissKeyboard() {
@@ -700,6 +712,11 @@ struct CreateTaskView: View {
     @MainActor
     private func loadExistingAttachmentsIfNeeded() async {
         guard let taskId = editingTask?.id else {
+            existingAttachments = []
+            attachmentsToDelete = []
+            return
+        }
+        if isGuestMode {
             existingAttachments = []
             attachmentsToDelete = []
             return
@@ -1038,6 +1055,10 @@ struct CreateTaskView: View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
                 dismissKeyboard()
+                if isGuestMode {
+                    showGuestSignInRequiredAlert = true
+                    return
+                }
                 guard canAddMoreAttachments else {
                     errorMessage = String(localized: "附件数量已达上限。", locale: locale)
                     return
@@ -1375,6 +1396,22 @@ struct CreateTaskView: View {
             forWhomDebugLog("load.aborted reason=no_resolved_household_id")
             return
         }
+        if isGuestMode {
+            do {
+                let roster = try await appBootstrap.services.membershipService.fetchMemberRoster(
+                    in: householdId,
+                    activeOnly: true
+                )
+                applyAssigneeRoster(roster, householdId: householdId)
+            } catch {
+                applyAssigneeOptionsFromFamilyProfiles()
+            }
+            return
+        }
+        if familyProfiles.isEmpty == false {
+            applyAssigneeOptionsFromFamilyProfiles()
+            return
+        }
         #if canImport(Supabase)
         do {
             let roster = try await SupabaseHouseholdRosterLoader.fetch(
@@ -1390,25 +1427,7 @@ struct CreateTaskView: View {
             let summary = profiles.map { "\($0.displayName)(\($0.id.uuidString.prefix(8)))" }.joined(separator: "; ")
             forWhomDebugLog("family_profiles (via join) OK count=\(profiles.count) rows=[\(summary)]")
 
-            let mergedProfiles = FamilyProfile.mergingMembershipRows(profiles, memberships: members)
-
-            assignees = members.map { member in
-                AssigneeOption(
-                    id: member.id,
-                    name: MemberDisplayName.displayName(for: member, profiles: mergedProfiles),
-                    hasRegisteredAccount: member.userId != nil
-                )
-            }
-            forWhomProfileOptions = mergedProfiles.map { profile in
-                AssigneeOption(
-                    id: profile.id,
-                    name: profile.displayName,
-                    hasRegisteredAccount: profile.userId != nil
-                )
-            }
-            forWhomDebugLog(
-                "load.done assignees.count=\(assignees.count) forWhomProfileOptions.count=\(forWhomProfileOptions.count)"
-            )
+            applyAssigneeRoster(roster, householdId: householdId)
         } catch {
             forWhomDebugLog(
                 "fetchMemberRoster FAILED household=\(householdId.uuidString) error=\(error.localizedDescription) detail=\(String(describing: error))"
@@ -1443,6 +1462,20 @@ struct CreateTaskView: View {
             return
         }
 
+        if isGuestMode {
+            if let existing = editingTask {
+                if existing.needsRecurringScopeDialog {
+                    pendingRecurringUpdateTask = existing
+                    isShowingRecurringUpdateScopeDialog = true
+                } else {
+                    await performGuestUpdate(existing: existing)
+                }
+                return
+            }
+            await performGuestCreate(householdId: householdId, creatorMembershipId: creatorMembershipId)
+            return
+        }
+
         #if canImport(Supabase)
         if let existing = editingTask {
             if existing.needsRecurringScopeDialog {
@@ -1461,8 +1494,282 @@ struct CreateTaskView: View {
         #endif
     }
 
+    private func applyAssigneeRoster(_ roster: HouseholdMemberRoster, householdId: UUID) {
+        let members = roster.memberships
+        let profiles = roster.profiles
+        forWhomDebugLog(
+            "household_memberships OK count=\(members.count) ids=\(members.map(\.id.uuidString).joined(separator: ","))"
+        )
+        let summary = profiles.map { "\($0.displayName)(\($0.id.uuidString.prefix(8)))" }.joined(separator: "; ")
+        forWhomDebugLog("family_profiles (via join) OK count=\(profiles.count) rows=[\(summary)]")
+
+        let mergedProfiles = FamilyProfile.mergingMembershipRows(profiles, memberships: members)
+        assignees = members.map { member in
+            AssigneeOption(
+                id: member.id,
+                name: MemberDisplayName.displayName(for: member, profiles: mergedProfiles),
+                hasRegisteredAccount: member.userId != nil
+            )
+        }
+        forWhomProfileOptions = mergedProfiles.map { profile in
+            AssigneeOption(
+                id: profile.id,
+                name: profile.displayName,
+                hasRegisteredAccount: profile.userId != nil
+            )
+        }
+        forWhomDebugLog(
+            "load.done assignees.count=\(assignees.count) forWhomProfileOptions.count=\(forWhomProfileOptions.count)"
+        )
+        _ = householdId
+    }
+
+    private func applyAssigneeOptionsFromFamilyProfiles() {
+        let mergedProfiles = familyProfiles
+        assignees = mergedProfiles.compactMap { profile in
+            guard let membership = profile.primaryMembership else { return nil }
+            return AssigneeOption(
+                id: membership.id,
+                name: profile.displayName,
+                hasRegisteredAccount: profile.userId != nil
+            )
+        }
+        forWhomProfileOptions = mergedProfiles.map { profile in
+            AssigneeOption(
+                id: profile.id,
+                name: profile.displayName,
+                hasRegisteredAccount: profile.userId != nil
+            )
+        }
+    }
+
+    private func performGuestCreate(householdId: UUID, creatorMembershipId: UUID) async {
+        if selectedImages.isEmpty == false || selectedAttachmentJPEGData.isEmpty == false {
+            showGuestSignInRequiredAlert = true
+            return
+        }
+
+        let recurrence = resolvedRecurrenceRuleForPayload()
+        if isFlexibleMode, recurrence != nil {
+            errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+            return
+        }
+
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
+
+        let taskService = appBootstrap.services.taskService
+        let now = Date()
+        let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
+
+        do {
+            if recurrence == nil {
+                let newTaskId = UUID()
+                let geofence = resolvedLocationData()?.toTaskGeofence()
+                let payload = guestTaskInsertPayload(
+                    id: newTaskId,
+                    householdId: householdId,
+                    creatorIdLowercased: creatorIdLowercased,
+                    parentTaskId: nil,
+                    recurrenceRule: nil,
+                    recurrenceEndDate: nil,
+                    recurrenceInterval: nil,
+                    dueDate: resolvedDueDateForPayload(),
+                    endDatetime: resolvedEndDatetimeForPayload(),
+                    durationMinutes: resolvedDurationMinutesForPayload(),
+                    isAllDay: resolvedIsAllDayForPayload(),
+                    geofence: geofence,
+                    now: now
+                )
+                guard let draft = familyTaskFromInsertPayload(payload) else {
+                    throw TaskAttachmentSupabaseError.taskPayloadAssemblyFailed
+                }
+                let created = try await taskService.createTask(draft, geofence: geofence)
+                onAlarmSync?(created)
+            } else {
+                let newTaskId = UUID()
+                let motherPayload = guestTaskInsertPayload(
+                    id: newTaskId,
+                    householdId: householdId,
+                    creatorIdLowercased: creatorIdLowercased,
+                    parentTaskId: nil,
+                    recurrenceRule: recurrence,
+                    recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
+                    recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
+                    dueDate: dueDate,
+                    endDatetime: resolvedEndDatetime(for: dueDate),
+                    durationMinutes: resolvedDurationMinutes(for: dueDate),
+                    isAllDay: isAllDay,
+                    geofence: resolvedLocationData()?.toTaskGeofence(),
+                    now: now
+                )
+                guard let syntheticMother = familyTaskFromInsertPayload(motherPayload) else {
+                    throw TaskAttachmentSupabaseError.taskPayloadAssemblyFailed
+                }
+                _ = try await taskService.createTask(syntheticMother, geofence: syntheticMother.geofence)
+                onAlarmSync?(syntheticMother)
+
+                let children = await Task.detached(priority: .userInitiated) {
+                    RecurrenceEngine.generateInstances(from: syntheticMother)
+                }.value
+                for child in children {
+                    let childPayload = guestTaskInsertPayload(
+                        id: child.id,
+                        householdId: householdId,
+                        creatorIdLowercased: creatorIdLowercased,
+                        parentTaskId: newTaskId,
+                        recurrenceRule: nil,
+                        recurrenceEndDate: nil,
+                        recurrenceInterval: nil,
+                        dueDate: child.dueDate ?? dueDate,
+                        endDatetime: child.endDatetime,
+                        durationMinutes: child.durationMinutes,
+                        isAllDay: isAllDay,
+                        geofence: nil,
+                        now: now
+                    )
+                    guard let childTask = familyTaskFromInsertPayload(childPayload) else { continue }
+                    let createdChild = try await taskService.createTask(childTask, geofence: childTask.geofence)
+                    onAlarmSync?(createdChild)
+                }
+            }
+
+            ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstTask)
+            clearAttachmentSelection()
+            onSaveSuccess?(isFlexibleMode ? flexibleDeadlineDate : dueDate)
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            dismiss()
+        } catch {
+            errorMessage = String(
+                format: String(localized: "任务保存失败：%@", locale: locale),
+                error.localizedDescription
+            )
+        }
+    }
+
+    private func performGuestUpdate(existing: FamilyTask) async {
+        if selectedImages.isEmpty == false
+            || selectedAttachmentJPEGData.isEmpty == false
+            || attachmentsToDelete.isEmpty == false {
+            showGuestSignInRequiredAlert = true
+            return
+        }
+        if isFlexibleMode, resolvedRecurrenceRuleForPayload() != nil {
+            errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+            return
+        }
+
+        isSaving = true
+        errorMessage = nil
+        defer { isSaving = false }
+
+        let updated = FamilyTask(
+            id: existing.id,
+            householdId: existing.householdId,
+            creatorId: existing.creatorId,
+            parentTaskId: existing.parentTaskId,
+            groupId: existing.groupId,
+            originalDueDate: existing.originalDueDate,
+            involvedMemberIds: resolvedInvolvedMemberIds,
+            targetProfileId: existing.targetProfileId,
+            targetProfileIds: resolvedTargetProfileIds,
+            targetSubject: existing.targetSubject,
+            title: normalizedTitle,
+            description: mergedDescriptionForPayload,
+            originalPrompt: existing.originalPrompt,
+            attachmentUrls: existing.attachmentUrls,
+            externalContacts: existing.externalContacts,
+            locationData: resolvedLocationData(),
+            geofence: resolvedLocationData()?.toTaskGeofence(),
+            completionLocation: existing.completionLocation,
+            externalSyncRefs: existing.externalSyncRefs,
+            alarmSetBy: existing.alarmSetBy,
+            status: existing.status,
+            priority: formPriority,
+            source: existing.source,
+            taskType: resolvedTaskTypeForPayload(),
+            dueDate: resolvedDueDateForPayload(),
+            endDatetime: resolvedEndDatetimeForPayload(),
+            durationMinutes: resolvedDurationMinutesForPayload(),
+            isAllDay: resolvedIsAllDayForPayload(),
+            recurrenceRule: resolvedRecurrenceRuleForPayload(),
+            recurrenceEndDate: resolvedRecurrenceEndDateForPayloadStrict(),
+            issue: existing.issue,
+            recurrenceInterval: resolvedRecurrenceIntervalForPayloadStrict(),
+            reminderOffsets: reminderOption.reminderOffsetsMinutes,
+            estimatedCost: estimatedCostMinorUnits,
+            backgroundColor: resolvedBackgroundColorHex(),
+            emergencyPhone: resolvedEmergencyPhoneForPayload(),
+            createdAt: existing.createdAt,
+            updatedAt: Date()
+        )
+
+        do {
+            let saved = try await appBootstrap.services.taskService.updateTask(updated)
+            onAlarmSync?(saved)
+            onUpdateSuccess?(saved)
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            dismiss()
+        } catch {
+            errorMessage = String(
+                format: String(localized: "任务保存失败：%@", locale: locale),
+                error.localizedDescription
+            )
+        }
+    }
+
+    private func guestTaskInsertPayload(
+        id: UUID,
+        householdId: UUID,
+        creatorIdLowercased: String,
+        parentTaskId: UUID?,
+        recurrenceRule: String?,
+        recurrenceEndDate: Date?,
+        recurrenceInterval: Int?,
+        dueDate: Date?,
+        endDatetime: Date?,
+        durationMinutes: Int,
+        isAllDay: Bool,
+        geofence: TaskGeofence?,
+        now: Date
+    ) -> TaskInsertPayload {
+        TaskInsertPayload(
+            id: id,
+            householdId: householdId,
+            creatorId: creatorIdLowercased,
+            parentTaskId: parentTaskId,
+            groupId: nil,
+            involvedMemberIds: resolvedInvolvedMemberIds,
+            targetProfileIds: resolvedTargetProfileIds,
+            title: normalizedTitle,
+            description: mergedDescriptionForPayload,
+            status: TaskStatus.new.rawValue,
+            priority: formPriority.rawValue,
+            taskType: resolvedTaskTypeForPayload(),
+            dueDate: dueDate,
+            endDatetime: endDatetime,
+            durationMinutes: durationMinutes,
+            isAllDay: isAllDay,
+            recurrenceRule: recurrenceRule,
+            recurrenceEndDate: recurrenceEndDate,
+            recurrenceInterval: recurrenceInterval,
+            reminderOffsets: reminderOption.reminderOffsetsMinutes,
+            estimatedCost: estimatedCostMinorUnits,
+            backgroundColor: resolvedBackgroundColorHex(),
+            emergencyPhone: resolvedEmergencyPhoneForPayload(),
+            locationData: resolvedLocationData(),
+            geofence: geofence,
+            createdAt: now,
+            updatedAt: now
+        )
+    }
+
     private func performUpdate(existing: FamilyTask, scope: RecurringTaskScope) async {
         #if canImport(Supabase)
+        if GuestCapability.presentSignInRequiredIfGuest(isPresented: &showGuestSignInRequiredAlert) {
+            return
+        }
         guard let householdId = appRouter.selectedHouseholdId else {
             errorMessage = String(localized: "当前未选择群组。", locale: locale)
             return
@@ -1813,6 +2120,9 @@ struct CreateTaskView: View {
 
     private func performCreate(householdId: UUID, creatorMembershipId: UUID) async {
         #if canImport(Supabase)
+        if GuestCapability.presentSignInRequiredIfGuest(isPresented: &showGuestSignInRequiredAlert) {
+            return
+        }
         isSaving = true
         errorMessage = nil
         defer { isSaving = false }

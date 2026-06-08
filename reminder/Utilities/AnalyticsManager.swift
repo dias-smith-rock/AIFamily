@@ -24,6 +24,8 @@ enum AnalyticsManager {
         case vipClaimed
         case aiPhotoTaskFailed(step: String, message: String, detail: String)
         case aiPhotoTaskSucceeded
+        case guestStarted
+        case guestMigrated(taskCount: Int)
     }
 
     /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
@@ -138,6 +140,15 @@ enum AnalyticsManager {
 
         case .aiPhotoTaskSucceeded:
             return ("ai_photo_task_succeeded", nil)
+
+        case .guestStarted:
+            return ("guest_started", nil)
+
+        case .guestMigrated(let taskCount):
+            return (
+                "guest_migrated",
+                ["task_count": taskCount]
+            )
         }
     }
 
@@ -183,6 +194,10 @@ enum AnalyticsManager {
             return "ai_photo_task_failed step=\(step) error=\(message) \(detail)"
         case .aiPhotoTaskSucceeded:
             return "ai_photo_task_succeeded"
+        case .guestStarted:
+            return "guest_started"
+        case .guestMigrated(let taskCount):
+            return "guest_migrated task_count=\(taskCount)"
         }
     }
 }

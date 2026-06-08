@@ -3,16 +3,19 @@ import Combine
 
 enum AppServiceMode: String {
     case liveSupabase
+    case guestLocal
     case mockPreview
     case mockFallback
 }
 
 @MainActor
 final class AppBootstrap: ObservableObject {
-    let services: ReminderServiceContainer
-    let viewModelFactory: ViewModelFactory
-    let mode: AppServiceMode
+    private(set) var services: ReminderServiceContainer
+    private(set) var viewModelFactory: ViewModelFactory
+    private(set) var mode: AppServiceMode
     let featureFlags: FeatureFlags
+    /// 切换 Live / Guest 服务后递增，用于重建 Tab 内 `@StateObject` ViewModel。
+    @Published private(set) var sessionRevision = UUID()
 
     init() {
         if Self.isRunningPreview {
@@ -30,6 +33,30 @@ final class AppBootstrap: ObservableObject {
 
         viewModelFactory = ViewModelFactory(services: services)
         AppViewModels.configure(with: viewModelFactory)
+    }
+
+    func enterGuestMode() {
+        let snapshot = GuestSessionStore.loadOrCreate()
+        Task {
+            await GuestWorkspaceStore.shared.replace(snapshot)
+        }
+        mode = .guestLocal
+        services = .guest()
+        viewModelFactory = ViewModelFactory(services: services)
+        AppViewModels.configure(with: viewModelFactory)
+        sessionRevision = UUID()
+    }
+
+    func enterLiveMode() {
+        mode = .liveSupabase
+        services = .live()
+        viewModelFactory = ViewModelFactory(services: services)
+        AppViewModels.configure(with: viewModelFactory)
+        sessionRevision = UUID()
+    }
+
+    func exitGuestMode() {
+        enterLiveMode()
     }
 
     private static var isRunningPreview: Bool {

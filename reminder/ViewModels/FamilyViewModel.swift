@@ -367,6 +367,11 @@ final class FamilyViewModel: ObservableObject {
             return
         }
 
+        if GuestSessionStore.isGuestMode {
+            await loadMembersFromGuestWorkspace(householdId: householdId)
+            return
+        }
+
         let cacheKey = Self.membersCacheKey(for: householdId)
         let cachedPayload = await HouseholdLocalCache.loadMembers(for: householdId)
         if let cachedPayload {
@@ -443,41 +448,9 @@ final class FamilyViewModel: ObservableObject {
         }
 
         do {
-            let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
-                .filteredToActiveMembers(in: householdId)
-            let rawMemberships = roster.memberships
-            var p = roster.profiles
+            try await applyMemberRoster(householdId: householdId, persistToDiskCache: true)
             #if DEBUG
-            Self.debugLogFetchedProfiles(p, label: "fetchMemberRoster 原始响应")
-            Self.debugLogFetchedMemberships(rawMemberships, label: "fetchMemberRoster memberships")
-            #endif
-            p = FamilyProfile.mergingMembershipRows(p, memberships: rawMemberships)
-            #if DEBUG
-            Self.debugLogFetchedProfiles(p, label: "mergingMembershipRows 之后（即将写入 profiles）")
-            #endif
-            profiles = p
-            sortProfilesForDisplay()
-            let embedded = FamilyProfile.uniqueMembershipsFlattened(from: p)
-            var seen = Set<UUID>()
-            var combined: [HouseholdMembership] = []
-            for row in embedded + rawMemberships where seen.insert(row.id).inserted {
-                combined.append(row)
-            }
-            combined.sort { lhs, rhs in
-                let lr = membershipRoleSortIndex(for: lhs)
-                let rr = membershipRoleSortIndex(for: rhs)
-                if lr != rr {
-                    return lr < rr
-                }
-                return lhs.createdAt < rhs.createdAt
-            }
-            members = combined
-            attachMembershipsFromFlatMembers()
-            applyLocalOrdering()
-            let snapshot = HouseholdLocalCache.MembersSnapshot(profiles: profiles, members: members)
-            LocalCacheManager.shared.save(snapshot, forKey: cacheKey)
-            #if DEBUG
-            print("✅ [FamilyDebug] loadMembers success - profiles=\(p.count), memberships=\(members.count)")
+            print("✅ [FamilyDebug] loadMembers success - profiles=\(profiles.count), memberships=\(members.count)")
             #endif
         } catch {
             if hadDiskCache == false {
@@ -491,6 +464,79 @@ final class FamilyViewModel: ObservableObject {
             print("   phase: membershipService.fetchMemberRoster")
             print("   household_id=\(householdId.uuidString)")
             #endif
+        }
+    }
+
+    /// 游客模式：直接从本机工作区读取名册，不校验 Supabase 会话。
+    private func loadMembersFromGuestWorkspace(householdId: UUID) async {
+        requiresLogin = false
+        let showBlockingSpinner = hasLoadedOnce == false && profiles.isEmpty
+        if showBlockingSpinner {
+            isLoading = true
+        }
+        errorMessage = nil
+        defer {
+            if showBlockingSpinner {
+                isLoading = false
+            }
+            hasLoadedOnce = true
+        }
+
+        do {
+            try await applyMemberRoster(
+                householdId: householdId,
+                persistToDiskCache: false
+            )
+            #if DEBUG
+            print("✅ [FamilyDebug] loadMembers guest success - profiles=\(profiles.count), memberships=\(members.count)")
+            #endif
+        } catch {
+            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("❌ [FamilyDebug] loadMembers guest failed: \(error.localizedDescription)")
+            #endif
+        }
+    }
+
+    private func applyMemberRoster(
+        householdId: UUID,
+        persistToDiskCache: Bool
+    ) async throws {
+        let cacheKey = Self.membersCacheKey(for: householdId)
+        let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
+            .filteredToActiveMembers(in: householdId)
+        let rawMemberships = roster.memberships
+        var p = roster.profiles
+        #if DEBUG
+        Self.debugLogFetchedProfiles(p, label: "fetchMemberRoster 原始响应")
+        Self.debugLogFetchedMemberships(rawMemberships, label: "fetchMemberRoster memberships")
+        #endif
+        p = FamilyProfile.mergingMembershipRows(p, memberships: rawMemberships)
+        #if DEBUG
+        Self.debugLogFetchedProfiles(p, label: "mergingMembershipRows 之后（即将写入 profiles）")
+        #endif
+        profiles = p
+        sortProfilesForDisplay()
+        let embedded = FamilyProfile.uniqueMembershipsFlattened(from: p)
+        var seen = Set<UUID>()
+        var combined: [HouseholdMembership] = []
+        for row in embedded + rawMemberships where seen.insert(row.id).inserted {
+            combined.append(row)
+        }
+        combined.sort { lhs, rhs in
+            let lr = membershipRoleSortIndex(for: lhs)
+            let rr = membershipRoleSortIndex(for: rhs)
+            if lr != rr {
+                return lr < rr
+            }
+            return lhs.createdAt < rhs.createdAt
+        }
+        members = combined
+        attachMembershipsFromFlatMembers()
+        applyLocalOrdering()
+        if persistToDiskCache {
+            let snapshot = HouseholdLocalCache.MembersSnapshot(profiles: profiles, members: members)
+            LocalCacheManager.shared.save(snapshot, forKey: cacheKey)
         }
     }
 
