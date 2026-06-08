@@ -50,7 +50,7 @@ struct ReminderServiceContainer {
             feedbackRealtimeService: MockFeedbackRealtimeService(),
             inviteLinkService: MockInviteLinkService(),
             householdRoutingService: GuestHouseholdRoutingService(),
-            locationStateService: MockLocationStateDataService()
+            locationStateService: GuestLocationStateDataService()
         )
     }
 

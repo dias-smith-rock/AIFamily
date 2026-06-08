@@ -21,6 +21,33 @@ enum GuestSessionStore {
     /// String Catalog Key；游客默认自称（档案名 / nickname）持久化用此固定键。
     static let defaultSelfDisplayNameCatalogKey = "我"
 
+    /// 游客位置 Tab 演示用虚拟成员（稳定 ID，便于与模拟坐标对齐）。
+    static let locationDemoProfile1Id = UUID(uuidString: "D1000001-0000-4000-8000-000000000001") ?? UUID()
+    static let locationDemoProfile2Id = UUID(uuidString: "D1000002-0000-4000-8000-000000000002") ?? UUID()
+    static let locationDemoProfile1NameKey = "王晓明"
+    static let locationDemoProfile2NameKey = "李雨桐"
+
+    static func locationDemoProfiles(householdId: UUID) -> [FamilyProfile] {
+        [
+            FamilyProfile(
+                id: locationDemoProfile1Id,
+                householdId: householdId,
+                name: locationDemoProfile1NameKey,
+                userId: nil
+            ),
+            FamilyProfile(
+                id: locationDemoProfile2Id,
+                householdId: householdId,
+                name: locationDemoProfile2NameKey,
+                userId: nil
+            ),
+        ]
+    }
+
+    static func isLocationDemoProfileId(_ profileId: UUID) -> Bool {
+        profileId == locationDemoProfile1Id || profileId == locationDemoProfile2Id
+    }
+
     static var isGuestMode: Bool {
         UserDefaults.standard.bool(forKey: isGuestModeKey)
     }
@@ -127,7 +154,7 @@ enum GuestSessionStore {
             householdName: defaultHouseholdNameCatalogKey,
             householdDescription: "",
             tasks: [],
-            profiles: [profile],
+            profiles: [profile] + locationDemoProfiles(householdId: householdId),
             memberships: [membership],
             createdAt: now
         )
