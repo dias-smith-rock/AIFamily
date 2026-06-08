@@ -6,7 +6,7 @@ enum GuestCapabilityError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .requiresSignIn:
-            "登录后可使用此功能，并同步本地数据。"
+            String(localized: "登录后可使用此功能，并同步本地数据。")
         }
     }
 }

@@ -39,7 +39,11 @@ struct FamilyMemberRowView: View {
 
     private var initialCharacter: String {
         if isCurrentUser {
-            return "我"
+            let trimmed = profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let first = trimmed.first {
+                return String(first)
+            }
+            return String(GuestSessionStore.localizedDefaultSelfDisplayName().prefix(1))
         }
         let trimmed = profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let first = trimmed.first else { return "?" }

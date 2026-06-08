@@ -360,12 +360,12 @@ extension FamilyProfile {
            let firstMembership = list.first {
             let nickname = firstMembership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if nickname.isEmpty == false {
-                return nickname
+                return GuestSessionStore.displaySelfName(nickname)
             }
         }
         let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if profileName.isEmpty == false, profileName != String(localized: "未命名成员") {
-            return profileName
+            return GuestSessionStore.displaySelfName(profileName)
         }
         return MemberDisplayName.unknownFallback
     }

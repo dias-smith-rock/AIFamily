@@ -18,6 +18,7 @@ struct LocationMainView: View {
     @State private var isRefreshingMapLocations = false
     @State private var isLiveSharingPanelExpanded = false
     @State private var fitCameraTask: Task<Void, Never>?
+    @State private var showGuestSignInRequiredAlert = false
 
     init(
         isTabActive: Bool = true,
@@ -35,9 +36,6 @@ struct LocationMainView: View {
 
     var body: some View {
         ZStack {
-            if isGuestMode {
-                guestLockedPlaceholder
-            } else {
             mapLayer
 
             if viewModel.isMemberListExpanded || isLiveSharingPanelExpanded {
@@ -82,7 +80,6 @@ struct LocationMainView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.92)))
                 }
             }
-            }
         }
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
         .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)
@@ -103,9 +100,10 @@ struct LocationMainView: View {
             liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
             viewModel.applyCachedDeviceLocationForMap()
             fitCameraToLiveAndDisplayedMembers()
-            guard await NetworkMonitor.shared.isConnected else { return }
             Task {
-                await liveManager.observeHuddleLobby()
+                if isGuestMode == false, await NetworkMonitor.shared.isConnected {
+                    await liveManager.observeHuddleLobby()
+                }
                 await viewModel.captureCurrentUserLocationForMap()
                 fitCameraToLiveAndDisplayedMembers()
             }
@@ -120,8 +118,9 @@ struct LocationMainView: View {
                 fitCameraToLiveAndDisplayedMembers()
                 Task {
                     _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
-                    guard await NetworkMonitor.shared.isConnected else { return }
-                    await liveManager.observeHuddleLobby()
+                    if isGuestMode == false, await NetworkMonitor.shared.isConnected {
+                        await liveManager.observeHuddleLobby()
+                    }
                     await viewModel.captureCurrentUserLocationForMap()
                     fitCameraToLiveAndDisplayedMembers()
                 }
@@ -165,6 +164,7 @@ struct LocationMainView: View {
                 liveManager.recordUserInteraction()
             }
         )
+        .guestSignInRequiredAlert(isPresented: $showGuestSignInRequiredAlert)
     }
 
     @ViewBuilder
@@ -421,6 +421,10 @@ struct LocationMainView: View {
     private var liveModeToggleControl: some View {
         Button {
             liveManager.recordUserInteraction()
+            if isGuestMode {
+                showGuestSignInRequiredAlert = true
+                return
+            }
             if liveManager.isLiveModeActive {
                 isExitLiveModeAlertPresented = true
             } else {
@@ -716,39 +720,67 @@ struct LocationMainView: View {
     }
 
     private var organizationSwitcherRow: some View {
-        Button {
-            liveManager.recordUserInteraction()
-            groupSwitcher.showSwitchGroupDialog = true
-        } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "person.2.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(.orange)
-                    .frame(width: 28, height: 28)
-                    .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        Group {
+            if isGuestMode {
+                HStack(spacing: 10) {
+                    Image(systemName: "person.2.fill")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .frame(width: 28, height: 28)
+                        .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("当前群组")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(GroupSwitcherData.currentName(for: appRouter))
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("当前群组")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(GroupSwitcherData.currentName(for: appRouter))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 0)
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
+            } else {
+                Button {
+                    liveManager.recordUserInteraction()
+                    groupSwitcher.showSwitchGroupDialog = true
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "person.2.fill")
+                            .font(.body.weight(.semibold))
+                            .foregroundStyle(.orange)
+                            .frame(width: 28, height: 28)
+                            .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                Spacer(minLength: 0)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("当前群组")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(GroupSwitcherData.currentName(for: appRouter))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                        }
 
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("切换群组，\(GroupSwitcherData.currentName(for: appRouter))")
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("切换群组，\(GroupSwitcherData.currentName(for: appRouter))")
     }
 
     // MARK: - Helpers
@@ -764,9 +796,10 @@ struct LocationMainView: View {
         liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
         viewModel.applyCachedDeviceLocationForMap()
 
-        guard await NetworkMonitor.shared.isConnected else { return }
         await viewModel.captureCurrentUserLocationForMap()
-        await liveManager.observeHuddleLobby()
+        if isGuestMode == false, await NetworkMonitor.shared.isConnected {
+            await liveManager.observeHuddleLobby()
+        }
     }
 
     private func bindLiveContext() {
@@ -855,15 +888,6 @@ struct LocationMainView: View {
         cameraPosition = .rect(rect)
     }
 
-    private var guestLockedPlaceholder: some View {
-        ContentUnavailableView {
-            Label("位置共享", systemImage: "map")
-        } description: {
-            Text("登录后可与群组成员共享实时位置。")
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground))
-    }
 }
 
 #Preview {

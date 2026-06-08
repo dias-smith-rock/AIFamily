@@ -43,6 +43,7 @@ struct ContentView: View {
         .sheet(isPresented: $groupSwitcher.showSwitchGroupDialog) {
             SwitchGroupSheetView(coordinator: groupSwitcher)
                 .environmentObject(appRouter)
+                .environment(\.isGuestMode, isGuestMode)
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
                 .presentationDetents([.medium, .large])

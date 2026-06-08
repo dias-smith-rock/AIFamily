@@ -16,6 +16,10 @@ struct GuestWorkspaceSnapshot: Codable, Equatable, Sendable {
 enum GuestSessionStore {
     static let snapshotCacheKey = "guest.workspace.snapshot"
     static let isGuestModeKey = "isGuestMode"
+    /// String Catalog Key；游客默认群组名持久化用此固定键，展示时按当前语言解析。
+    static let defaultHouseholdNameCatalogKey = "我的空间"
+    /// String Catalog Key；游客默认自称（档案名 / nickname）持久化用此固定键。
+    static let defaultSelfDisplayNameCatalogKey = "我"
 
     static var isGuestMode: Bool {
         UserDefaults.standard.bool(forKey: isGuestModeKey)
@@ -52,6 +56,45 @@ enum GuestSessionStore {
         setGuestMode(false)
     }
 
+    static func isDefaultGuestHouseholdName(_ name: String) -> Bool {
+        name.trimmingCharacters(in: .whitespacesAndNewlines) == defaultHouseholdNameCatalogKey
+    }
+
+    static func localizedDefaultHouseholdName() -> String {
+        String(localized: String.LocalizationValue(defaultHouseholdNameCatalogKey))
+    }
+
+    /// 游客默认群组名按当前语言展示；用户自定义名称原样返回。
+    static func displayHouseholdName(_ storedName: String?) -> String {
+        let trimmed = storedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmed.isEmpty == false else { return trimmed }
+        guard isGuestMode, isDefaultGuestHouseholdName(trimmed) else { return trimmed }
+        return localizedDefaultHouseholdName()
+    }
+
+    static func isDefaultGuestSelfDisplayName(_ name: String) -> Bool {
+        name.trimmingCharacters(in: .whitespacesAndNewlines) == defaultSelfDisplayNameCatalogKey
+    }
+
+    static func localizedDefaultSelfDisplayName() -> String {
+        String(localized: String.LocalizationValue(defaultSelfDisplayNameCatalogKey))
+    }
+
+    /// 游客默认自称按当前语言展示；用户自定义名称原样返回。
+    static func displaySelfName(_ storedName: String?) -> String {
+        let trimmed = storedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard trimmed.isEmpty == false else { return trimmed }
+        guard isGuestMode, isDefaultGuestSelfDisplayName(trimmed) else { return trimmed }
+        return localizedDefaultSelfDisplayName()
+    }
+
+    /// 迁移写入云端时将默认自称解析为当前语言。
+    static func cloudMigrationSelfName(_ storedName: String) -> String {
+        let trimmed = storedName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard isDefaultGuestSelfDisplayName(trimmed) else { return trimmed }
+        return localizedDefaultSelfDisplayName()
+    }
+
     static func makeDefaultSnapshot() -> GuestWorkspaceSnapshot {
         let now = Date()
         let householdId = UUID()
@@ -63,7 +106,7 @@ enum GuestSessionStore {
             userId: nil,
             profileId: profileId,
             role: MembershipRole.creator.rawValue,
-            nickname: "我",
+            nickname: defaultSelfDisplayNameCatalogKey,
             status: MembershipStatus.active.rawValue,
             joinedAt: now,
             createdAt: now,
@@ -72,7 +115,7 @@ enum GuestSessionStore {
         var profile = FamilyProfile(
             id: profileId,
             householdId: nil,
-            name: "我",
+            name: defaultSelfDisplayNameCatalogKey,
             userId: nil
         )
         profile.householdMemberships = [membership]
@@ -81,7 +124,7 @@ enum GuestSessionStore {
             householdId: householdId,
             membershipId: membershipId,
             profileId: profileId,
-            householdName: "我的空间",
+            householdName: defaultHouseholdNameCatalogKey,
             householdDescription: "",
             tasks: [],
             profiles: [profile],

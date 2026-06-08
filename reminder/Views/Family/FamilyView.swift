@@ -456,7 +456,8 @@ struct FamilyView: View {
 
     private var currentOrganizationDisplayName: String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? String(localized: "未命名群组") : trimmed
+        if trimmed.isEmpty { return String(localized: "未命名群组") }
+        return GuestSessionStore.displayHouseholdName(trimmed)
     }
 
     @ViewBuilder

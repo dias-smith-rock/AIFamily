@@ -7,9 +7,9 @@ enum GuestDataMigrationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingMembershipContext:
-            "迁移后未能获取群组成员身份，请稍后重试。"
+            String(localized: "迁移后未能获取群组成员身份，请稍后重试。")
         case .householdCreationFailed:
-            "创建云端群组失败，请检查网络后重试。"
+            String(localized: "创建云端群组失败，请检查网络后重试。")
         }
     }
 }
@@ -24,7 +24,12 @@ enum GuestDataMigrationService {
     static func migrate(snapshot: GuestWorkspaceSnapshot, appRouter: AppRouter) async throws -> MigrationResult {
         let live = ReminderServiceContainer.live()
         let trimmedName = snapshot.householdName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let householdName = trimmedName.isEmpty ? "我的空间" : trimmedName
+        let householdName: String
+        if trimmedName.isEmpty || GuestSessionStore.isDefaultGuestHouseholdName(trimmedName) {
+            householdName = GuestSessionStore.localizedDefaultHouseholdName()
+        } else {
+            householdName = trimmedName
+        }
         let description = snapshot.householdDescription.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let newHouseholdId = try await live.householdRoutingService.createHousehold(
@@ -53,7 +58,7 @@ enum GuestDataMigrationService {
 
         for profile in virtualProfiles {
             let draft = LocalProfileDraft(
-                name: profile.name,
+                name: GuestSessionStore.cloudMigrationSelfName(profile.name),
                 avatarURL: profile.avatarUrl,
                 gender: profile.gender,
                 birthDate: profile.birthDate.flatMap { GuestMigrationDateParsing.date(from: $0) },
@@ -73,8 +78,9 @@ enum GuestDataMigrationService {
 
         let roster = try await live.membershipService.fetchMemberRoster(in: newHouseholdId, activeOnly: true)
         for guestProfile in virtualProfiles {
+            let expectedName = GuestSessionStore.cloudMigrationSelfName(guestProfile.name)
             if let match = roster.profiles.first(where: {
-                $0.name == guestProfile.name && $0.isVirtualUser
+                $0.name == expectedName && $0.isVirtualUser
             }) {
                 profileMap[guestProfile.id] = match.id
             }

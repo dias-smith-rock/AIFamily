@@ -24,7 +24,7 @@ enum MemberDisplayName {
         for membership: HouseholdMembership,
         profiles: [FamilyProfile]
     ) -> String {
-        membership.displayName(linkedProfile: profile(for: membership, in: profiles))
+        resolvedGuestSelfName(membership.displayName(linkedProfile: profile(for: membership, in: profiles)))
     }
 
     static func displayName(
@@ -41,13 +41,17 @@ enum MemberDisplayName {
         if let membership {
             let nickname = membership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if nickname.isEmpty == false {
-                return nickname
+                return resolvedGuestSelfName(nickname)
             }
             if let profileName = profile.profileName {
-                return profileName
+                return resolvedGuestSelfName(profileName)
             }
             return unknownFallback
         }
         return profile.displayName
+    }
+
+    private static func resolvedGuestSelfName(_ raw: String) -> String {
+        GuestSessionStore.displaySelfName(raw)
     }
 }

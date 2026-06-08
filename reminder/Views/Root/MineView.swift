@@ -511,14 +511,15 @@ struct MineView: View {
 
     private var mineHeaderMainTitle: String {
         if isGuestMode {
-            return familyViewModel.currentUserProfile?.displayName ?? "试用用户"
+            return familyViewModel.currentUserProfile?.displayName
+                ?? AppLocalized.string("试用用户", locale: locale)
         }
         return familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
     }
 
     private var mineHeaderSubtitle: String {
         if isGuestMode {
-            return "数据仅保存在本机"
+            return AppLocalized.string("数据仅保存在本机", locale: locale)
         }
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.email
@@ -745,7 +746,7 @@ struct MineView: View {
             _ = try await GuestDataMigrationService.migrate(snapshot: snapshot, appRouter: appRouter)
             isGuestModeStorage = false
             await appRouter.refreshStateFromBackend()
-            viewModel.toastMessage = "本地数据已同步到云端"
+            viewModel.toastMessage = AppLocalized.string("本地数据已同步到云端", locale: locale)
         } catch {
             viewModel.toastMessage = error.localizedDescription
         }

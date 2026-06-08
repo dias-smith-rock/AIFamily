@@ -27,7 +27,7 @@ enum GroupSwitcherData {
                 id: householdId,
                 membershipId: membershipId,
                 profileId: appRouter.selectedProfileId,
-                name: name.isEmpty ? "未命名群组" : name,
+                name: name.isEmpty ? "未命名群组" : GuestSessionStore.displayHouseholdName(name),
                 isPremium: appRouter.selectedHouseholdIsPremium,
                 description: appRouter.selectedHouseholdDescription
             )
@@ -36,7 +36,8 @@ enum GroupSwitcherData {
 
     static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return trimmed.isEmpty ? "未命名群组" : trimmed
+        if trimmed.isEmpty { return String(localized: "未命名群组") }
+        return GuestSessionStore.displayHouseholdName(trimmed)
     }
 }
 
@@ -95,9 +96,12 @@ struct SwitchGroupSheetView: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 0) {
-                if isGuestMode == false {
                 Button {
-                    coordinator.presentCreateOrganizationAfterDismiss()
+                    if isGuestMode {
+                        showsGuestSignInAlert = true
+                    } else {
+                        coordinator.presentCreateOrganizationAfterDismiss()
+                    }
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
@@ -112,7 +116,11 @@ struct SwitchGroupSheetView: View {
                 .buttonStyle(.plain)
 
                 Button {
-                    coordinator.presentJoinGroupAfterDismiss()
+                    if isGuestMode {
+                        showsGuestSignInAlert = true
+                    } else {
+                        coordinator.presentJoinGroupAfterDismiss()
+                    }
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "person.badge.plus")
@@ -125,7 +133,6 @@ struct SwitchGroupSheetView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                }
             }
             .background(Color(.systemBackground))
             .padding(.bottom, 10)
