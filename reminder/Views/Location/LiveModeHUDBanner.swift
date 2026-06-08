@@ -2,7 +2,8 @@ import SwiftUI
 
 struct LiveHuddleHUDBanner: View {
     let participants: [UserLocationState]
-    let exitButtonTitle: String
+    let exitButtonTitle: LocalizedStringKey
+    let isDestructiveExit: Bool
     let onExit: () -> Void
 
     @State private var radarPulse = false
@@ -16,7 +17,7 @@ struct LiveHuddleHUDBanner: View {
                     .foregroundStyle(Color.green)
                     .symbolEffect(.pulse, options: .repeating, value: radarPulse)
 
-                Text("⚡️ Live Huddle · \(participants.count) 人在线")
+                Text("⚡️ 实时位置 · \(participants.count) 人在线")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -30,11 +31,11 @@ struct LiveHuddleHUDBanner: View {
                 } label: {
                     Text(exitButtonTitle)
                         .font(.caption.weight(.heavy))
-                        .foregroundStyle(exitButtonTitle == "End Session" ? .white : .primary)
+                        .foregroundStyle(isDestructiveExit ? .white : .primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 7)
                         .background {
-                            if exitButtonTitle == "End Session" {
+                            if isDestructiveExit {
                                 Capsule().fill(Color.red)
                             } else {
                                 Capsule().fill(Color.primary.opacity(0.08))
@@ -91,7 +92,8 @@ struct LiveHuddleHUDBanner: View {
 #Preview {
     LiveHuddleHUDBanner(
         participants: UserLocationState.previewHousehold,
-        exitButtonTitle: "Leave"
+        exitButtonTitle: "离开",
+        isDestructiveExit: false
     ) {}
     .padding()
 }

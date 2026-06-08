@@ -65,10 +65,18 @@ struct LocationMemberSheetRow: View {
 
     private var titleLine: String {
         if isInLiveHuddle {
-            return "\(member.displayName) · LIVE"
+            return String(
+                format: String(localized: "%@ · LIVE", locale: locale),
+                locale: locale,
+                member.displayName
+            )
         }
         if member.isGhostMode {
-            return "\(member.displayName) · 👻 位置已隐藏"
+            return String(
+                format: String(localized: "%@ · 👻 位置已隐藏", locale: locale),
+                locale: locale,
+                member.displayName
+            )
         }
         return member.displayName
     }
@@ -76,12 +84,27 @@ struct LocationMemberSheetRow: View {
     private var accessibilitySummary: String {
         if member.isVirtualMember {
             if member.currentLocation != nil {
-                return "\(member.displayName)，已选中时在地图上显示"
+                return String(
+                    format: String(localized: "%@，已选中时在地图上显示", locale: locale),
+                    locale: locale,
+                    member.displayName
+                )
             }
-            return "\(member.displayName)，暂无位置，勾选后将在有定位数据时显示"
+            return String(
+                format: String(
+                    localized: "%@，暂无位置，勾选后将在有定位数据时显示",
+                    locale: locale
+                ),
+                locale: locale,
+                member.displayName
+            )
         }
         if member.isGhostMode {
-            return "\(member.displayName)，位置已隐藏"
+            return String(
+                format: String(localized: "%@，位置已隐藏", locale: locale),
+                locale: locale,
+                member.displayName
+            )
         }
         var parts = [member.displayName]
         if let address = member.addressDescription {
@@ -90,7 +113,13 @@ struct LocationMemberSheetRow: View {
         if let lastUpdatedAt = member.lastUpdatedAt {
             parts.append(lastUpdatedText(since: lastUpdatedAt))
         }
-        parts.append("电量 \(member.clampedBatteryLevel)%")
+        parts.append(
+            String(
+                format: String(localized: "电量 %lld%%", locale: locale),
+                locale: locale,
+                member.clampedBatteryLevel
+            )
+        )
         return parts.joined(separator: "，")
     }
 
@@ -106,7 +135,7 @@ struct LocationMemberSheetRow: View {
                 .font(.system(size: 24))
                 .foregroundStyle(Color.blue)
                 .frame(width: 28, height: 28)
-                .accessibilityLabel("当前用户，始终在地图上显示")
+                .accessibilityLabel(String(localized: "当前用户，始终在地图上显示", locale: locale))
         } else {
             memberSelectionToggle
         }
@@ -134,7 +163,11 @@ struct LocationMemberSheetRow: View {
             .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isSelected ? "已选中" : "未选中")
+        .accessibilityLabel(
+            isSelected
+                ? String(localized: "已选中", locale: locale)
+                : String(localized: "未选中", locale: locale)
+        )
     }
 
     private func lastUpdatedText(since date: Date) -> String {

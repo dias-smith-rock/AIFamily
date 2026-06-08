@@ -1,6 +1,7 @@
 import Combine
 import CoreLocation
 import Foundation
+import SwiftUI
 
 enum GhostModeOption: String, CaseIterable, Identifiable {
     case pauseOneHour
@@ -10,7 +11,7 @@ enum GhostModeOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var titleKey: String {
+    var titleKey: LocalizedStringKey {
         switch self {
         case .pauseOneHour: "暂停 1 小时"
         case .untilTonight: "直到今晚"

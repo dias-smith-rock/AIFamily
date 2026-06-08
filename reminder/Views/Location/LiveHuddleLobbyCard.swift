@@ -12,7 +12,7 @@ struct LiveHuddleLobbyCard: View {
             avatarStack
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("⚡️ Live Huddle Active (\(participants.count) people inside)")
+                Text("⚡️ 实时位置进行中（\(participants.count) 人）")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
@@ -24,7 +24,7 @@ struct LiveHuddleLobbyCard: View {
                 joinTapToken += 1
                 onJoin()
             } label: {
-                Text("Join")
+                Text("加入")
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
