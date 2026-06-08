@@ -105,10 +105,9 @@ struct ContentView: View {
             }
             _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
             refreshForegroundLocationSchedulerContext()
-            Task {
-                await appRouter.refreshStateFromBackend()
-                await fetchHouseholdsAndCheckCreatorRole()
-            }
+            await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+            await appRouter.refreshStateFromBackend()
+            await fetchHouseholdsAndCheckCreatorRole()
             if await NetworkMonitor.shared.isConnected {
                 await persistForegroundLocation(trigger: .appEnteredForeground)
                 await syncBackgroundLocationService()
@@ -142,10 +141,9 @@ struct ContentView: View {
                     guard isUserLoggedIn else { return }
                     _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
                     refreshForegroundLocationSchedulerContext()
-                    Task {
-                        await appRouter.refreshStateFromBackend()
-                        await fetchHouseholdsAndCheckCreatorRole()
-                    }
+                    await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+                    await appRouter.refreshStateFromBackend()
+                    await fetchHouseholdsAndCheckCreatorRole()
                     if await NetworkMonitor.shared.isConnected {
                         await persistForegroundLocation(trigger: .appEnteredForeground)
                         await syncBackgroundLocationService()

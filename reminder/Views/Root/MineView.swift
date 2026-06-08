@@ -391,7 +391,9 @@ struct MineView: View {
                                 .font(AppTheme.FontToken.bodyStrong)
                             Spacer()
                         }
+                        .padding(.vertical, 12)
                         .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                         .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                     }
                     .buttonStyle(.plain)
@@ -419,7 +421,9 @@ struct MineView: View {
                         }
                         Spacer()
                     }
+                    .padding(.vertical, 12)
                     .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
                     .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                 }
                 .buttonStyle(.plain)
@@ -444,7 +448,9 @@ struct MineView: View {
                         }
                         Spacer()
                     }
+                    .padding(.vertical, 12)
                     .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
                     .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                 }
                 .buttonStyle(.plain)
