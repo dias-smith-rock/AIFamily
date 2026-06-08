@@ -79,7 +79,6 @@ struct TaskListView: View {
                 .id(createTaskFormInstanceID)
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
             }
             .sheet(item: $viewModel.prefilledTaskForAI) { draft in
                 EditTaskView(
@@ -105,7 +104,6 @@ struct TaskListView: View {
                 .id(aiPrefillFormInstanceID)
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
             }
             .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
                 CameraPicker(

@@ -7,6 +7,7 @@ struct AssistantSheetView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeAssistantViewModel()
+    @FocusState private var isComposerFocused: Bool
 
     init(scheduleAnchorDay: Date = Calendar.current.startOfDay(for: Date())) {
         self.scheduleAnchorDay = scheduleAnchorDay
@@ -153,6 +154,8 @@ struct AssistantSheetView: View {
 
             TextField("粘贴通知或说出需求", text: $viewModel.inputText)
                 .textFieldStyle(.plain)
+                .focused($isComposerFocused)
+                .clipboardPasteOnFocus(when: isComposerFocused, text: $viewModel.inputText)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 11)
                 .background(Color(.secondarySystemBackground))
@@ -195,6 +198,7 @@ private struct TaskPreviewCard: View {
     let onConfirm: () async -> Void
     let onCorrection: (String) async -> Void
     @State private var correction = ""
+    @FocusState private var isCorrectionFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -213,6 +217,8 @@ private struct TaskPreviewCard: View {
             }
             TextField("自然语言修正：例如“时间改成明天下午”", text: $correction)
                 .textFieldStyle(.roundedBorder)
+                .focused($isCorrectionFocused)
+                .clipboardPasteOnFocus(when: isCorrectionFocused, text: $correction)
             HStack {
                 Button("应用修正") {
                     Task {

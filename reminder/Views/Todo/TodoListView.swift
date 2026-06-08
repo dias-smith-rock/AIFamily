@@ -135,7 +135,6 @@ struct TodoListView: View {
                 .id(createTaskFormInstanceID)
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
             }
             .task(id: appRouter.selectedHouseholdId) {
                 bindHouseholdContext()

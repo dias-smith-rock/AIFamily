@@ -173,7 +173,6 @@ struct TaskDetailView: View {
                 }
             )
             .environmentObject(appRouter)
-            .presentationDragIndicator(.visible)
         }
         .task(id: task.id) {
             await loadForWhomProfiles()

@@ -92,6 +92,8 @@ struct EditTaskView: View {
             onAlarmSync: onAlarmSync
         )
         .environmentObject(appRouter)
+        .interactiveDismissDisabled()
+        .presentationDragIndicator(.hidden)
     }
 }
 
