@@ -18,6 +18,8 @@ final class AppRouter: ObservableObject {
     }
 
     @Published var appState: AppState = .unauthenticated
+    /// `refreshStateFromBackend()` 是否已跑完一轮（含离线短路）；用于区分启动加载与鉴权失效。
+    @Published private(set) var hasCompletedAuthBootstrap = false
     @Published private(set) var selectableHouseholds: [HouseholdOption] = []
     @Published private(set) var recentHouseholds: [HouseholdOption] = []
     @Published private(set) var selectedHouseholdId: UUID?
@@ -108,7 +110,15 @@ final class AppRouter: ObservableObject {
         UserDefaults.standard.removeObject(forKey: Self.offlineHouseholdSnapshotKey)
     }
 
+    /// 本地是否仍存有 Supabase 会话（未必有效，离线启动时用于避免误踢回登录页）。
+    var hasPersistedSupabaseSession: Bool {
+        clientHasPersistedSession()
+    }
+
     func refreshStateFromBackend() async {
+        hasCompletedAuthBootstrap = false
+        defer { hasCompletedAuthBootstrap = true }
+
         #if canImport(Supabase)
         if await NetworkMonitor.shared.isConnected == false {
             if clientHasPersistedSession(),

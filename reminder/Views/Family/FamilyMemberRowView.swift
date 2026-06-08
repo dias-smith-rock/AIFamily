@@ -5,6 +5,8 @@ struct FamilyMemberRowView: View {
     let profile: FamilyProfile
     /// 当前行是否为 **虚拟档案**（无 `household_memberships` 关联）。
     var isVirtualUser: Bool = false
+    /// 当前行是否为登录用户在本群的档案。
+    var isCurrentUser: Bool = false
     /// 列表行内显著角色：仅传 `.creator` 或 `.admin`；普通成员传 `nil`。
     var prominentRole: MembershipRole? = nil
     var onTap: (() -> Void)? = nil
@@ -26,8 +28,20 @@ struct FamilyMemberRowView: View {
         profile.displayName
     }
 
+    @ViewBuilder
+    private var titleView: some View {
+        if isCurrentUser {
+            Text("我自己")
+        } else {
+            Text(verbatim: mainTitle)
+        }
+    }
+
     private var initialCharacter: String {
-        let trimmed = mainTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        if isCurrentUser {
+            return "我"
+        }
+        let trimmed = profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let first = trimmed.first else { return "?" }
         return String(first)
     }
@@ -88,7 +102,7 @@ struct FamilyMemberRowView: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .center, spacing: 6) {
-                        Text(mainTitle)
+                        titleView
                             .font(.headline)
                             .foregroundStyle(.primary)
                             .lineLimit(2)
@@ -103,18 +117,20 @@ struct FamilyMemberRowView: View {
                         }
                     }
 
-                    HStack(spacing: 6) {
-                        contactLineView
+                    if isCurrentUser == false {
+                        HStack(spacing: 6) {
+                            contactLineView
 
-                        if canTogglePhoneReveal {
-                            Button {
-                                revealsFullPhone.toggle()
-                            } label: {
-                                Image(systemName: revealsFullPhone ? "eye.slash" : "eye")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                            if canTogglePhoneReveal {
+                                Button {
+                                    revealsFullPhone.toggle()
+                                } label: {
+                                    Image(systemName: revealsFullPhone ? "eye.slash" : "eye")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }

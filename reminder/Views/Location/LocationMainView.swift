@@ -14,6 +14,7 @@ struct LocationMainView: View {
     @StateObject private var liveManager: LiveLocationManager
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isExitLiveModeAlertPresented = false
+    @State private var isRefreshingMapLocations = false
     @State private var fitCameraTask: Task<Void, Never>?
 
     init(
@@ -42,7 +43,10 @@ struct LocationMainView: View {
                 HStack(alignment: .center, spacing: 0) {
                     liveModeToggleControl
                     Spacer(minLength: 0)
-                    mapRecenterControl
+                    HStack(spacing: 10) {
+                        mapRefreshControl
+                        mapRecenterControl
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -436,6 +440,28 @@ struct LocationMainView: View {
     }
 
     /// 替代系统 `MapUserLocationButton`，与左上角 Live 按钮同一行、同一安全区内边距。
+    private var mapRefreshControl: some View {
+        Button {
+            liveManager.recordUserInteraction()
+            Task { await refreshMapLocations() }
+        } label: {
+            Group {
+                if isRefreshingMapLocations {
+                    ProgressView()
+                        .controlSize(.regular)
+                } else {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.title2)
+                        .symbolRenderingMode(.hierarchical)
+                        .foregroundStyle(Color.blue)
+                }
+            }
+            .mapFloatingControlPlate()
+        }
+        .disabled(isRefreshingMapLocations)
+        .accessibilityLabel("刷新位置")
+    }
+
     private var mapRecenterControl: some View {
         Button {
             liveManager.recordUserInteraction()
@@ -601,6 +627,22 @@ struct LocationMainView: View {
     }
 
     // MARK: - Helpers
+
+    /// 从服务端拉取成员 `location_states`，并更新本机 GPS 展示。
+    private func refreshMapLocations() async {
+        guard isRefreshingMapLocations == false else { return }
+        isRefreshingMapLocations = true
+        defer { isRefreshingMapLocations = false }
+
+        bindLiveContext()
+        await viewModel.refresh()
+        liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
+        viewModel.applyCachedDeviceLocationForMap()
+
+        guard await NetworkMonitor.shared.isConnected else { return }
+        await viewModel.captureCurrentUserLocationForMap()
+        await liveManager.observeHuddleLobby()
+    }
 
     private func bindLiveContext() {
         viewModel.bind(

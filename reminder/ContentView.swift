@@ -111,6 +111,12 @@ struct ContentView: View {
                 await syncBackgroundLocationService()
             }
         }
+        .onChange(of: appRouter.appState) { _, _ in
+            reconcileStaleLoginSession()
+        }
+        .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, _ in
+            reconcileStaleLoginSession()
+        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 Self.logAppOpenedIfNeeded()
@@ -232,6 +238,25 @@ struct ContentView: View {
                 }
             }
         )
+    }
+
+    @MainActor
+    private func reconcileStaleLoginSession() {
+        guard isUserLoggedIn,
+              appRouter.hasCompletedAuthBootstrap,
+              appRouter.appState == .unauthenticated else {
+            return
+        }
+
+        #if canImport(Supabase)
+        if appRouter.hasPersistedSupabaseSession {
+            appRouter.goToOrgRouting()
+            return
+        }
+        #endif
+
+        isUserLoggedIn = false
+        appRouter.clearOfflineHouseholdSnapshot()
     }
 
     @MainActor

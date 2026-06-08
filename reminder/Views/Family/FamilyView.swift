@@ -295,6 +295,7 @@ struct FamilyView: View {
                         FamilyMemberRowView(
                             profile: creator,
                             isVirtualUser: creator.isVirtualUser,
+                            isCurrentUser: isCurrentUserProfile(creator),
                             prominentRole: prominentListRole(for: creator)
                         ) {
                             presentMemberFlow(for: creator)
@@ -313,6 +314,7 @@ struct FamilyView: View {
                             FamilyMemberRowView(
                                 profile: profile,
                                 isVirtualUser: profile.isVirtualUser,
+                                isCurrentUser: isCurrentUserProfile(profile),
                                 prominentRole: prominentListRole(for: profile)
                             ) {
                                 presentMemberFlow(for: profile)
@@ -540,6 +542,17 @@ struct FamilyView: View {
         } else {
             selectedProfileForDetail = profile
         }
+    }
+
+    private func isCurrentUserProfile(_ profile: FamilyProfile) -> Bool {
+        guard let selectedMembershipId = appRouter.selectedMembershipId,
+              let currentMembership = viewModel.members.first(where: { $0.id == selectedMembershipId }) else {
+            return false
+        }
+        if currentMembership.profileId == profile.id {
+            return true
+        }
+        return resolvedMembership(for: profile)?.id == selectedMembershipId
     }
 
     private func isCreatorProfile(_ profile: FamilyProfile) -> Bool {
