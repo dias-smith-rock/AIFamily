@@ -600,14 +600,9 @@ struct CreateTaskView: View {
             .onAppear {
                 if editingTask == nil {
                     focusedField = .title
-                    ClipboardPasteSupport.pasteStringIfFieldEmpty(get: { title }, set: { title = $0 })
                 } else {
                     isShowingMoreOptions = true
                 }
-            }
-            .onChange(of: focusedField) { _, field in
-                guard field == .title else { return }
-                ClipboardPasteSupport.pasteStringIfFieldEmpty(get: { title }, set: { title = $0 })
             }
             .task(id: editingTask?.parentTaskId) {
                 await loadParentRecurrenceTemplateIfNeeded()
