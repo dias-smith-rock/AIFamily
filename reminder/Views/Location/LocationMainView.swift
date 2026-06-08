@@ -77,6 +77,7 @@ struct LocationMainView: View {
         }
         .task(id: locationRefreshToken) {
             guard isTabActive else { return }
+            _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
             bindLiveContext()
             await viewModel.refresh()
             liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
@@ -97,6 +98,7 @@ struct LocationMainView: View {
                 viewModel.applyCachedDeviceLocationForMap()
                 fitCameraToLiveAndDisplayedMembers()
                 Task {
+                    _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
                     guard await NetworkMonitor.shared.isConnected else { return }
                     await liveManager.observeHuddleLobby()
                     await viewModel.captureCurrentUserLocationForMap()
