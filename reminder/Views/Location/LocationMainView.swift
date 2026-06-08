@@ -44,7 +44,9 @@ struct LocationMainView: View {
                     liveModeToggleControl
                     Spacer(minLength: 0)
                     HStack(spacing: 10) {
-                        mapRefreshControl
+                        if liveManager.isLiveModeActive == false {
+                            mapRefreshControl
+                        }
                         mapRecenterControl
                     }
                 }
