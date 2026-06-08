@@ -14,6 +14,7 @@
 		DDD16A0A2FC91B21009FE64F /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A092FC91B21009FE64F /* FirebaseAnalytics */; };
 		DDD16A0C2FC91B21009FE64F /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */; };
 		DDD16A0E2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */; };
+		DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,10 +54,34 @@
 				DDC2AF702F9F860600D9A032 /* Supabase in Frameworks */,
 				DDD16A0A2FC91B21009FE64F /* FirebaseAnalytics in Frameworks */,
 				DDD16A062FC91B21009FE64F /* FirebaseAI in Frameworks */,
+				DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		DDD16A122FC91B21009FE64F /* Upload Crashlytics dSYMs */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Resources/DWARF/${PRODUCT_NAME}",
+				"${DWARF_DSYM_FOLDER_PATH}/${DWARF_DSYM_FILE_NAME}/Contents/Info.plist",
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+				"$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)",
+			);
+			name = "Upload Crashlytics dSYMs";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Debug\" ]; then\n  exit 0\nfi\n\"${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXGroup section */
 		DD17A5E62F9F4E500059AE67 = {
@@ -85,6 +110,7 @@
 				DD17A5EB2F9F4E500059AE67 /* Sources */,
 				DD17A5EC2F9F4E500059AE67 /* Frameworks */,
 				DD17A5ED2F9F4E500059AE67 /* Resources */,
+				DDD16A122FC91B21009FE64F /* Upload Crashlytics dSYMs */,
 			);
 			buildRules = (
 			);
@@ -102,6 +128,7 @@
 				DDD16A092FC91B21009FE64F /* FirebaseAnalytics */,
 				DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */,
 				DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */,
+				DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */,
 			);
 			productName = WeSync;
 			productReference = DD17A5EF2F9F4E500059AE67 /* WeSync.app */;
@@ -455,6 +482,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DDD16A042FC91B21009FE64F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalyticsIdentitySupport;
+		};
+		DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DDD16A042FC91B21009FE64F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

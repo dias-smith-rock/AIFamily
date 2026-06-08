@@ -8,7 +8,7 @@ import UIKit
 import FirebaseCore
 #endif
 
-/// 在 App 启动时配置 Firebase（Analytics 等模块依赖此初始化）。
+/// 在 App 启动时配置 Firebase（Analytics、Crashlytics 等模块依赖此初始化）。
 #if canImport(UIKit)
 final class FirebaseAppDelegate: NSObject, UIApplicationDelegate {
     func application(
@@ -23,6 +23,7 @@ final class FirebaseAppDelegate: NSObject, UIApplicationDelegate {
         #if canImport(FirebaseCore)
         guard FirebaseApp.app() == nil else { return }
         FirebaseApp.configure()
+        CrashReporting.configureAfterFirebaseStartup()
         #if DEBUG
         print("[Firebase] FirebaseApp.configure() completed")
         #endif
