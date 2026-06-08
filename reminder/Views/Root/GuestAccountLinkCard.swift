@@ -31,23 +31,23 @@ struct GuestAccountLinkCard: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Button {
-                triggerGoogleLogin()
-            } label: {
-                oauthButtonLabel(title: "使用 Google 同步", provider: .google)
-            }
-            .buttonStyle(.plain)
-            .disabled(loadingProvider != nil)
+            VStack(spacing: 12) {
+                OAuthGoogleSignInButton(
+                    title: "使用 Google 同步",
+                    isLoading: loadingProvider == .google,
+                    action: triggerGoogleLogin
+                )
+                .disabled(loadingProvider != nil)
 
-            #if canImport(Supabase) && canImport(AuthenticationServices)
-            Button {
-                triggerAppleSignIn()
-            } label: {
-                oauthButtonLabel(title: "通过 Apple 同步", provider: .apple)
+                #if canImport(Supabase) && canImport(AuthenticationServices)
+                OAuthAppleSignInButton(
+                    title: "通过 Apple 同步",
+                    isLoading: loadingProvider == .apple,
+                    action: triggerAppleSignIn
+                )
+                .disabled(loadingProvider != nil)
+                #endif
             }
-            .buttonStyle(.plain)
-            .disabled(loadingProvider != nil)
-            #endif
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -61,22 +61,6 @@ struct GuestAccountLinkCard: View {
         } message: {
             Text(errorMessage ?? "")
         }
-    }
-
-    private func oauthButtonLabel(title: LocalizedStringKey, provider: OAuthProvider) -> some View {
-        HStack(spacing: 10) {
-            if loadingProvider == provider {
-                ProgressView()
-            }
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-            Spacer()
-        }
-        .foregroundStyle(.primary)
-        .padding(.vertical, 10)
-        .padding(.horizontal, 12)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     #if canImport(Supabase) && canImport(AuthenticationServices)

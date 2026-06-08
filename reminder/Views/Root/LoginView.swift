@@ -95,17 +95,20 @@ struct LoginView: View {
 
     private var actionSection: some View {
         VStack(spacing: 12) {
-            loginButton(
+            OAuthGoogleSignInButton(
                 title: "使用 Google 继续",
-                icon: "g.circle.fill",
-                provider: .google,
-                background: Color.blue,
-                foreground: .white,
-                border: .clear
+                isLoading: loadingProvider == .google,
+                action: triggerGoogleLogin
             )
+            .disabled(loadingProvider != nil)
 
             #if canImport(Supabase) && canImport(AuthenticationServices)
-            appleSignInControl
+            OAuthAppleSignInButton(
+                title: "通过 Apple 登录",
+                isLoading: loadingProvider == .apple,
+                action: triggerAppleSignIn
+            )
+            .disabled(loadingProvider != nil)
             #else
             Text(AppLocalized.string("当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。", locale: locale))
                 .font(.system(size: 13, weight: .medium))
@@ -128,33 +131,6 @@ struct LoginView: View {
         }
     }
 
-    #if canImport(Supabase) && canImport(AuthenticationServices)
-    private var appleSignInControl: some View {
-        Button {
-            triggerAppleSignIn()
-        } label: {
-            HStack(spacing: 10) {
-                if loadingProvider == .apple {
-                    ProgressView()
-                        .tint(.black)
-                } else {
-                    Image(systemName: "apple.logo")
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                Text("通过 Apple 登录")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundStyle(.black)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .disabled(loadingProvider != nil)
-    }
-    #endif
-
     private var moreEntry: some View {
         Button {
             // 预留更多登录方式入口
@@ -164,42 +140,6 @@ struct LoginView: View {
                 .foregroundStyle(.white.opacity(0.8))
         }
         .buttonStyle(.plain)
-    }
-
-    private func loginButton(
-        title: LocalizedStringKey,
-        icon: String,
-        provider: LoginProvider,
-        background: Color,
-        foreground: Color,
-        border: Color
-    ) -> some View {
-        Button {
-            triggerGoogleLogin()
-        } label: {
-            HStack(spacing: 10) {
-                if loadingProvider == provider {
-                    ProgressView()
-                        .tint(foreground)
-                } else {
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .semibold))
-                }
-                Text(title)
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundStyle(foreground)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(background)
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(border, lineWidth: 1)
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .disabled(loadingProvider != nil)
     }
 
     // MARK: - Actions
