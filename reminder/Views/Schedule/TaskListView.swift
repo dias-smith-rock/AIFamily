@@ -244,8 +244,6 @@ struct TaskListView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-            quickTaskInputBar
         }
     }
 
