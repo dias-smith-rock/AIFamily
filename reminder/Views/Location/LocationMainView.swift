@@ -15,6 +15,7 @@ struct LocationMainView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isExitLiveModeAlertPresented = false
     @State private var isRefreshingMapLocations = false
+    @State private var isLiveSharingPanelExpanded = false
     @State private var fitCameraTask: Task<Void, Never>?
 
     init(
@@ -35,7 +36,7 @@ struct LocationMainView: View {
         ZStack {
             mapLayer
 
-            if viewModel.isMemberListExpanded {
+            if viewModel.isMemberListExpanded || isLiveSharingPanelExpanded {
                 mapDismissOverlay
             }
 
@@ -59,7 +60,15 @@ struct LocationMainView: View {
 
                 Spacer()
 
-                if liveManager.isLiveModeActive == false {
+                if liveManager.isLiveModeActive {
+                    HStack(alignment: .bottom) {
+                        Spacer(minLength: 0)
+                        liveSharingOverlay
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                } else {
                     HStack(alignment: .bottom) {
                         Spacer(minLength: 0)
                         memberListOverlay
@@ -99,6 +108,7 @@ struct LocationMainView: View {
         .onChange(of: isTabActive) { _, active in
             if active == false {
                 viewModel.collapseMemberList()
+                isLiveSharingPanelExpanded = false
             } else {
                 bindLiveContext()
                 viewModel.applyCachedDeviceLocationForMap()
@@ -138,6 +148,7 @@ struct LocationMainView: View {
             BackgroundLocationCoordinator.shared.setPausedForLiveMode(isActive)
             if isActive {
                 viewModel.collapseMemberList()
+                isLiveSharingPanelExpanded = false
                 viewModel.applyCachedDeviceLocationForMap()
                 scheduleFitCameraToLiveAndDisplayedMembers()
                 Task { await viewModel.captureCurrentUserLocationForMap(timeoutSeconds: 2) }
@@ -212,6 +223,7 @@ struct LocationMainView: View {
             .ignoresSafeArea()
             .onTapGesture {
                 viewModel.collapseMemberList()
+                isLiveSharingPanelExpanded = false
                 liveManager.recordUserInteraction()
             }
             .accessibilityLabel("收起群组成员列表")
@@ -476,6 +488,112 @@ struct LocationMainView: View {
                 .mapFloatingControlPlate()
         }
         .accessibilityLabel("定位到我的位置")
+    }
+
+    // MARK: - Live sharing panel
+
+    private var liveSharingMembers: [UserLocationState] {
+        liveManager.activeParticipants.compactMap { membershipId in
+            viewModel.members.first(where: { $0.id == membershipId })
+        }
+    }
+
+    private var liveSharingOverlay: some View {
+        VStack(alignment: .trailing, spacing: 10) {
+            if isLiveSharingPanelExpanded {
+                expandedLiveSharingPanel
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+
+            liveSharingToggleButton
+        }
+        .animation(.easeInOut(duration: 0.25), value: isLiveSharingPanelExpanded)
+        .animation(.easeInOut(duration: 0.3), value: liveManager.activeParticipants.count)
+    }
+
+    private var liveSharingToggleButton: some View {
+        Button {
+            liveManager.recordUserInteraction()
+            isLiveSharingPanelExpanded.toggle()
+        } label: {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "person.2.fill")
+                    .font(.title3)
+                    .foregroundStyle(Color.blue)
+                    .mapFloatingControlPlate(diameter: MapFloatingControlStyle.largeDiameter)
+
+                if liveManager.activeParticipants.isEmpty == false {
+                    Text("\(liveManager.activeParticipants.count)")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.blue, in: Capsule())
+                        .offset(x: 4, y: -4)
+                }
+            }
+        }
+        .accessibilityLabel(isLiveSharingPanelExpanded ? "收起位置共享" : "展开位置共享")
+    }
+
+    private var expandedLiveSharingPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("位置共享")
+                .font(.headline)
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 10)
+
+            if liveSharingMembers.isEmpty {
+                Text("暂无共享成员")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+            } else {
+                ScrollView {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 48), spacing: 12)],
+                        alignment: .leading,
+                        spacing: 12
+                    ) {
+                        ForEach(liveSharingMembers) { member in
+                            Button {
+                                focusMapOnLiveSharingMember(member)
+                            } label: {
+                                LocationMemberAvatarView(
+                                    displayName: member.displayName,
+                                    avatarURL: member.avatarURL,
+                                    size: 44
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel(member.displayName)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                }
+                .frame(maxHeight: 280)
+            }
+        }
+        .frame(width: 320)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+
+    private func focusMapOnLiveSharingMember(_ member: UserLocationState) {
+        liveManager.recordUserInteraction()
+        isLiveSharingPanelExpanded = false
+        guard let coordinate = liveAnnotationCoordinate(for: member.id) else { return }
+        cameraPosition = .region(
+            MKCoordinateRegion(
+                center: coordinate,
+                latitudinalMeters: 1_200,
+                longitudinalMeters: 1_200
+            )
+        )
     }
 
     // MARK: - Member list
