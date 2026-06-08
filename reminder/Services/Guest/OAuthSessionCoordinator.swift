@@ -49,16 +49,24 @@ enum OAuthSessionCoordinator {
         appBootstrap.enterLiveMode()
 
         var migrationFailed = false
-        if let guestSnapshot = GuestSessionStore.loadSnapshot() {
-            do {
-                _ = try await GuestDataMigrationService.migrate(
-                    snapshot: guestSnapshot,
-                    appRouter: appRouter
-                )
-            } catch {
-                migrationFailed = true
-                CrashReporting.record(error, context: ["step": "guest_migration"])
-                migrationFailureHandler?(error.localizedDescription)
+        if GuestSessionStore.loadSnapshot() != nil {
+            switch await GuestDataMigrationService.evaluateTrialMigration() {
+            case .migrate:
+                guard let guestSnapshot = GuestSessionStore.loadSnapshot() else { break }
+                do {
+                    _ = try await GuestDataMigrationService.migrate(
+                        snapshot: guestSnapshot,
+                        appRouter: appRouter
+                    )
+                } catch {
+                    migrationFailed = true
+                    CrashReporting.record(error, context: ["step": "guest_migration"])
+                    migrationFailureHandler?(error.localizedDescription)
+                }
+            case .discardReturningUser:
+                await GuestDataMigrationService.discardTrialSnapshotWithoutMigration()
+            case .keepSnapshotRetryLater:
+                break
             }
         }
 

@@ -742,6 +742,16 @@ struct MineView: View {
 
     private func retryGuestMigration() async {
         guard let snapshot = GuestSessionStore.loadSnapshot() else { return }
+        switch await GuestDataMigrationService.evaluateTrialMigration() {
+        case .discardReturningUser:
+            await GuestDataMigrationService.discardTrialSnapshotWithoutMigration()
+            isGuestModeStorage = false
+            return
+        case .keepSnapshotRetryLater:
+            return
+        case .migrate:
+            break
+        }
         do {
             _ = try await GuestDataMigrationService.migrate(snapshot: snapshot, appRouter: appRouter)
             isGuestModeStorage = false

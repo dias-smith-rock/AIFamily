@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(Supabase)
+import Supabase
+#endif
 
 enum GuestDataMigrationError: LocalizedError {
     case missingMembershipContext
@@ -19,6 +22,29 @@ enum GuestDataMigrationService {
     struct MigrationResult {
         let householdId: UUID
         let taskCount: Int
+    }
+
+    enum TrialMigrationDecision: Equatable {
+        case migrate
+        case discardReturningUser
+        case keepSnapshotRetryLater
+    }
+
+    static func evaluateTrialMigration() async -> TrialMigrationDecision {
+        switch await userHasAnyHouseholdMembership() {
+        case .some(true):
+            .discardReturningUser
+        case .some(false):
+            .migrate
+        case .none:
+            .keepSnapshotRetryLater
+        }
+    }
+
+    /// 老用户重新登录：清除本机试用快照，不写入云端。
+    static func discardTrialSnapshotWithoutMigration() async {
+        GuestSessionStore.clear()
+        await GuestWorkspaceStore.shared.reloadFromDisk()
     }
 
     static func migrate(snapshot: GuestWorkspaceSnapshot, appRouter: AppRouter) async throws -> MigrationResult {
@@ -161,6 +187,35 @@ enum GuestDataMigrationService {
         )
         return remapped.sanitizedForPersistence()
     }
+
+    #if canImport(Supabase)
+    private struct MembershipProbe: Decodable {
+        let id: UUID
+    }
+
+    /// `true` = 已有成员关系；`false` = 确认为新账号；`nil` = 查询失败。
+    private static func userHasAnyHouseholdMembership() async -> Bool? {
+        do {
+            let client = SupabaseManager.shared.client
+            let userId = try await client.auth.session.user.id
+            let rows: [MembershipProbe] = try await client
+                .from("household_memberships")
+                .select("id")
+                .eq("user_id", value: userId.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            return rows.isEmpty == false
+        } catch {
+            CrashReporting.record(error, context: ["step": "guest_migration_eligibility"])
+            return nil
+        }
+    }
+    #else
+    private static func userHasAnyHouseholdMembership() async -> Bool? {
+        false
+    }
+    #endif
 }
 
 private enum GuestMigrationDateParsing {
