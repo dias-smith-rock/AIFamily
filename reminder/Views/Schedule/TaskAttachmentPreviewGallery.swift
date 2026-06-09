@@ -18,6 +18,7 @@ struct TaskAttachmentPreviewGallery: View {
     let items: [TaskAttachmentPreviewItem]
     @State private var currentIndex: Int
     @State private var isCurrentImageZoomed = false
+    @State private var isClosing = false
     @Environment(\.dismiss) private var dismiss
 
     init(items: [TaskAttachmentPreviewItem], startIndex: Int) {
@@ -31,26 +32,29 @@ struct TaskAttachmentPreviewGallery: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            if items.isEmpty {
-                emptyPlaceholder
-            } else {
-                TabView(selection: $currentIndex) {
-                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        galleryPage(item, isActive: index == currentIndex)
-                            .tag(index)
+            if isClosing == false {
+                if items.isEmpty {
+                    emptyPlaceholder
+                } else {
+                    TabView(selection: $currentIndex) {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            galleryPage(item, isActive: index == currentIndex)
+                                .tag(index)
+                        }
+                    }
+                    .tabViewStyle(
+                        .page(indexDisplayMode: items.count > 1 ? .automatic : .never)
+                    )
+                    .scrollDisabled(isCurrentImageZoomed)
+                    .onChange(of: currentIndex) { _, _ in
+                        isCurrentImageZoomed = false
                     }
                 }
-                .tabViewStyle(
-                    .page(indexDisplayMode: items.count > 1 ? .automatic : .never)
-                )
-                .scrollDisabled(isCurrentImageZoomed)
-                .onChange(of: currentIndex) { _, _ in
-                    isCurrentImageZoomed = false
-                }
-            }
 
-            overlayChrome
+                overlayChrome
+            }
         }
+        .interactiveDismissDisabled(true)
     }
 
     private var emptyPlaceholder: some View {
@@ -111,13 +115,13 @@ struct TaskAttachmentPreviewGallery: View {
     }
 
     private func closeGallery() {
+        guard isClosing == false else { return }
         #if canImport(UIKit)
-        TaskAttachmentGalleryDismissal.prepareForDismiss()
-        isCurrentImageZoomed = false
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 80_000_000)
-            dismiss()
-        }
+        TaskAttachmentGalleryDismissal.beginClose(
+            isClosing: { isClosing = $0 },
+            isZoomed: { isCurrentImageZoomed = $0 },
+            dismiss: { dismiss() }
+        )
         #else
         dismiss()
         #endif

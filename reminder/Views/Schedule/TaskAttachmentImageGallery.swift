@@ -9,6 +9,7 @@ struct TaskAttachmentImageGallery: View {
     @State private var isShowingSaveSuccessAlert = false
     @State private var isShowingSaveErrorAlert = false
     @State private var saveErrorMessage = ""
+    @State private var isClosing = false
     @Environment(\.dismiss) private var dismiss
 
     init(attachments: [TaskAttachment], startIndex: Int) {
@@ -22,22 +23,27 @@ struct TaskAttachmentImageGallery: View {
         ZStack {
             Color.black.ignoresSafeArea()
 
-            TabView(selection: $currentIndex) {
-                ForEach(Array(attachments.enumerated()), id: \.element.id) { index, attachment in
-                    galleryPage(attachment, isActive: index == currentIndex)
-                        .tag(index)
+            if isClosing == false {
+                TabView(selection: $currentIndex) {
+                    ForEach(Array(attachments.enumerated()), id: \.element.id) { index, attachment in
+                        galleryPage(attachment, isActive: index == currentIndex)
+                            .tag(index)
+                    }
+                }
+                .tabViewStyle(
+                    .page(indexDisplayMode: attachments.count > 1 ? .automatic : .never)
+                )
+                .scrollDisabled(isCurrentImageZoomed)
+                .onChange(of: currentIndex) { _, _ in
+                    isCurrentImageZoomed = false
                 }
             }
-            .tabViewStyle(
-                .page(indexDisplayMode: attachments.count > 1 ? .automatic : .never)
-            )
-            .scrollDisabled(isCurrentImageZoomed)
-            .onChange(of: currentIndex) { _, _ in
-                isCurrentImageZoomed = false
-            }
 
-            overlayChrome
+            if isClosing == false {
+                overlayChrome
+            }
         }
+        .interactiveDismissDisabled(true)
         .alert("已保存到相册", isPresented: $isShowingSaveSuccessAlert) {
             Button("好的", role: .cancel) {}
         }
@@ -105,13 +111,13 @@ struct TaskAttachmentImageGallery: View {
     }
 
     private func closeGallery() {
+        guard isClosing == false else { return }
         #if canImport(UIKit)
-        TaskAttachmentGalleryDismissal.prepareForDismiss()
-        isCurrentImageZoomed = false
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 80_000_000)
-            dismiss()
-        }
+        TaskAttachmentGalleryDismissal.beginClose(
+            isClosing: { isClosing = $0 },
+            isZoomed: { isCurrentImageZoomed = $0 },
+            dismiss: { dismiss() }
+        )
         #else
         dismiss()
         #endif

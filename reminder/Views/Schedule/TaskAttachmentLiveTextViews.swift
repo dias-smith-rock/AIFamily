@@ -154,14 +154,20 @@ struct LiveTextZoomableImageView: UIViewRepresentable {
             scrollView.delegate = nil
             (scrollView as? LiveTextImageScrollView)?.onDidEnterWindow = nil
 
+            if let imageView {
+                removeLiveTextInteraction(from: imageView)
+                imageView.transform = .identity
+                imageView.isHidden = true
+            }
+
             if scrollView.zoomScale.isFinite, scrollView.zoomScale > 0 {
                 scrollView.setZoomScale(1, animated: false)
             }
             scrollView.contentOffset = .zero
+            scrollView.transform = .identity
+            scrollView.layoutIfNeeded()
+            scrollView.isHidden = true
 
-            if let imageView {
-                removeLiveTextInteraction(from: imageView)
-            }
             liveTextInteraction = nil
             imageView = nil
             self.scrollView = nil
@@ -197,6 +203,22 @@ enum TaskAttachmentGalleryDismissal {
             from: nil,
             for: nil
         )
+    }
+
+    /// 先卸掉 Live Text 视图，再延迟 dismiss，避免选区手柄在转场中布局出 NaN。
+    @MainActor
+    static func beginClose(
+        isClosing: @escaping (Bool) -> Void,
+        isZoomed: @escaping (Bool) -> Void,
+        dismiss: @escaping () -> Void
+    ) {
+        prepareForDismiss()
+        isZoomed(false)
+        isClosing(true)
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            dismiss()
+        }
     }
 }
 
