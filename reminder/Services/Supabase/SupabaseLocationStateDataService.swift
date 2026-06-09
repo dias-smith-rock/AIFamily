@@ -69,12 +69,9 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             householdId: householdId,
             profileId: profileId
         )
-        if LocationGhostPreferences.isEffectivelyGhost(
-            databaseFlag: existing?.isGhostMode == true,
-            profileId: profileId
-        ) {
+        if LocationGhostPreferences.shouldSkipLocationUpload(householdId: householdId, profileId: profileId) {
             print(
-                "[LocationPersist] skip write ghost mode "
+                "[LocationPersist] skip write local ghost mode "
                 + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
             )
             return .skippedGhost
@@ -193,22 +190,22 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         #if canImport(Supabase)
         let patch = LocationStateGhostPatch(isGhostMode: isGhostMode, updatedAt: Date())
         if let existing = try await fetchLocationState(householdId: householdId, profileId: profileId) {
-            let rawResponse = try await provider.client
+            _ = try await provider.client
                 .from(Self.tableName)
                 .update(patch)
                 .eq("household_id", value: householdId.uuidString.lowercased())
                 .eq("entity_id", value: profileId.uuidString.lowercased())
-                .select(Self.selectColumns)
-                .single()
                 .execute()
-            let rows = try Self.decodeLocationStateRows(from: rawResponse.data)
-            guard let updated = rows.first else {
-                return existing
+            if let updated = try await fetchLocationState(householdId: householdId, profileId: profileId) {
+                return updated
             }
-            return updated
+            var fallback = existing
+            fallback.isGhostMode = isGhostMode
+            fallback.updatedAt = Date()
+            return fallback
         }
 
-        let insertResponse = try await provider.client
+        _ = try await provider.client
             .from(Self.tableName)
             .insert(
                 LocationStateUpsertPayload(
@@ -219,14 +216,18 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                     updatedAt: Date()
                 )
             )
-            .select(Self.selectColumns)
-            .single()
             .execute()
-        let inserted = try Self.decodeLocationStateRows(from: insertResponse.data)
-        guard let row = inserted.first else {
-            throw SupabaseServiceError.invalidResponse
+        if let inserted = try await fetchLocationState(householdId: householdId, profileId: profileId) {
+            return inserted
         }
-        return row
+        return LocationStateRecord(
+            databaseId: nil,
+            householdId: householdId,
+            profileId: profileId,
+            locations: [],
+            isGhostMode: isGhostMode,
+            updatedAt: Date()
+        )
         #else
         _ = householdId
         _ = profileId
@@ -291,12 +292,6 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                     "[LocationPersist] fetchLocationState denied (run 20260602_location_states_rls.sql); "
                         + "will try push_entity_location RPC"
                 )
-                if LocationGhostPreferences.isEffectivelyGhost(
-                    databaseFlag: false,
-                    profileId: profileId
-                ) {
-                    return nil
-                }
                 return nil
             }
             throw error

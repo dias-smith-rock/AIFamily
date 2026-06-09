@@ -33,7 +33,9 @@ actor GuestLocationStateDataService: LocationStateDataService {
 
         if let index = records.firstIndex(where: { $0.profileId == profileId }) {
             var row = records[index]
-            if row.isGhostMode { return .skippedGhost }
+            if LocationGhostPreferences.shouldSkipLocationUpload(householdId: householdId, profileId: profileId) {
+                return .skippedGhost
+            }
             if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
                 newCoordinate: coordinate,
                 storedLocations: row.locations,

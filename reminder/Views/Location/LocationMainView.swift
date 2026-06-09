@@ -658,6 +658,10 @@ struct LocationMainView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
 
+            locationGhostToggleRow
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
@@ -706,6 +710,25 @@ struct LocationMainView: View {
         .frame(width: 320)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+    }
+
+
+    private var locationGhostToggleRow: some View {
+        Toggle(isOn: locationGhostModeBinding) {
+            Text("位置隐身")
+                .font(.subheadline)
+        }
+        .disabled(isGuestMode || liveManager.isLiveModeActive)
+        .accessibilityLabel("位置隐身")
+    }
+
+    private var locationGhostModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.isLocationGhostModeEnabled },
+            set: { newValue in
+                Task { await viewModel.setLocationGhostMode(newValue) }
+            }
+        )
     }
 
     private var organizationSwitcherRow: some View {

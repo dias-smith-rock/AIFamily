@@ -7458,6 +7458,64 @@
         }
       }
     },
+    "位置隐身" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إخفاء الموقع"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer la position"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान छुपाएँ"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar localização"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடத்தை மறை"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置隐身"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置隱身"
+          }
+        }
+      }
+    },
     "体检复查" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -8333,6 +8391,7 @@
       }
     },
     "保持隐藏" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -8449,6 +8508,7 @@
       }
     },
     "停止隐藏" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -23642,6 +23702,7 @@
       }
     },
     "暂停 1 小时" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -31039,6 +31100,7 @@
       }
     },
     "直到今晚" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -41517,6 +41579,7 @@
       }
     },
     "选择隐藏位置的时长" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -42907,6 +42970,123 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "隱私權政策"
+          }
+        }
+      }
+    },
+    "隐身期间，群组成员无法在地图上看到你的位置，且不会向服务器上报新坐标。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أثناء الإخفاء، لا يمكن لأعضاء المجموعة رؤية موقعك على الخريطة ولن تُرسل إحداثيات جديدة إلى الخادم."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While hidden, group members cannot see your location on the map, and new coordinates are not sent to the server."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras esté oculta, los miembros del grupo no verán tu ubicación en el mapa y no se enviarán nuevas coordenadas al servidor."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tant que vous êtes masqué, les membres du groupe ne voient pas votre position sur la carte et aucune nouvelle coordonnée n'est envoyée au serveur."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "छिपे रहने पर समूह के सदस्य मानचित्र पर आपका स्थान नहीं देख पाएंगे और नए निर्देशांक सर्वर पर नहीं भेजे जाएंगे।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto oculto, os membros do grupo não verão sua localização no mapa e novas coordenadas não serão enviadas ao servidor."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "மறைத்திருக்கும் போது, குழு உறுப்பினர்கள் வரைபடத்தில் உங்கள் இடத்தைக் காண முடியாது; புதிய ஆயத்தொலைவுகள் சேவையகத்திற்கு அனுப்பப்படாது."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐身期间，群组成员无法在地图上看到你的位置，且不会向服务器上报新坐标。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱身期間，群組成員無法在地圖上看到你的位置，且不會向伺服器上報新座標。"
+          }
+        }
+      }
+    },
+    "隐身期间不会向服务器上报新坐标，群组成员仍可看到您上次上报的位置。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أثناء الإخفاء، لا تُرسل إحداثيات جديدة إلى الخادم. لا يزال بإمكان أعضاء المجموعة رؤية آخر موقع أبلغت عنه."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While hidden, new coordinates are not sent to the server. Group members can still see your last reported location."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras esté oculto, no se envían nuevas coordenadas al servidor. Los miembros del grupo aún pueden ver su última ubicación reportada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tant que vous êtes masqué, aucune nouvelle coordonnée n'est envoyée au serveur. Les membres du groupe voient toujours votre dernière position signalée."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "छिपे रहने पर नए निर्देशांक सर्वर पर नहीं भेजे जाते। समूह के सदस्य आपका अंतिम रिपोर्ट किया स्थान अभी भी देख सकते हैं।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto oculto, novas coordenadas não são enviadas ao servidor. Os membros do grupo ainda podem ver sua última localização reportada."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "மறைத்திருக்கும் போது புதிய ஆயத்தொலைவுகள் சேவையகத்திற்கு அனுப்பப்படாது. குழு உறுப்பினர்கள் உங்கள் கடைசியாக அறிவித்த இடத்தை இன்னும் காணலாம்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐身期间不会向服务器上报新坐标，群组成员仍可看到您上次上报的位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱身期間不會向伺服器上報新座標，群組成員仍可看到您上次上報的位置。"
           }
         }
       }

@@ -3,30 +3,11 @@ import CoreLocation
 import Foundation
 import SwiftUI
 
-enum GhostModeOption: String, CaseIterable, Identifiable {
-    case pauseOneHour
-    case untilTonight
-    case keepHidden
-    case stopHiding
-
-    var id: String { rawValue }
-
-    var titleKey: LocalizedStringKey {
-        switch self {
-        case .pauseOneHour: "暂停 1 小时"
-        case .untilTonight: "直到今晚"
-        case .keepHidden: "保持隐藏"
-        case .stopHiding: "停止隐藏"
-        }
-    }
-}
-
 @MainActor
 final class LocationMainViewModel: ObservableObject {
     @Published private(set) var members: [UserLocationState] = []
     @Published var selectedMemberIDs: Set<UUID> = []
     @Published var isMemberListExpanded = false
-    @Published var isGhostOptionsPresented = false
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
     /// 本机刚读取的坐标，用于地图展示当前用户（隐身时亦显示，不一定写入服务端）。
@@ -82,25 +63,28 @@ final class LocationMainViewModel: ObservableObject {
         }
     }
 
+    /// 本机隐身偏好（不向服务器同步；不受 Live 临时覆盖影响）。
+    var isLocationGhostModeEnabled: Bool {
+        guard let householdId, let currentProfileId else { return false }
+        return LocationGhostPreferences.isEnabled(householdId: householdId, profileId: currentProfileId)
+    }
+
     var isCurrentUserGhost: Bool {
         guard isLiveModeActive == false else { return false }
-        return currentUser?.isGhostMode == true
+        return isLocationGhostModeEnabled
     }
 
     func setLiveModeActive(_ active: Bool) {
         isLiveModeActive = active
-        if active {
-            isGhostOptionsPresented = false
-        }
     }
 
     func bind(householdId: UUID?, currentMembershipId: UUID?, currentProfileId: UUID?) {
         self.householdId = householdId
         self.currentMembershipId = currentMembershipId
         self.currentProfileId = currentProfileId
+        objectWillChange.send()
     }
 
-    /// 先用会话内缓存坐标更新地图，避免离线/弱网时等待 GPS。
     func applyCachedDeviceLocationForMap() {
         guard currentMembershipId != nil else { return }
         guard let cached = LastKnownDeviceLocation.cachedCoordinate() else { return }
@@ -111,7 +95,6 @@ final class LocationMainViewModel: ObservableObject {
         syncCurrentUserBatteryFromDevice()
     }
 
-    /// 进入位置 Tab 时调用：读取本机 GPS 并更新地图；非隐身时再按距离规则上报服务端。
     func captureCurrentUserLocationForMap(timeoutSeconds: TimeInterval? = nil) async {
         guard currentMembershipId != nil else { return }
 
@@ -196,19 +179,11 @@ final class LocationMainViewModel: ObservableObject {
             var locationRecords: [LocationStateRecord] = []
             do {
                 locationRecords = try await locationStateService.fetchLocationStates(in: householdId)
-                #if DEBUG
-                let withCoordinates = locationRecords.filter { $0.latestLocation != nil }.count
-                print(
-                    "[LocationMainViewModel] location_states rows=\(locationRecords.count) "
-                        + "withCoordinates=\(withCoordinates) household=\(householdId.uuidString.prefix(8))"
-                )
-                #endif
             } catch {
                 #if DEBUG
-                print("[LocationMainViewModel] location_states fetch failed (members still shown): \(error.localizedDescription)")
+                print("[LocationMainViewModel] location_states fetch failed: \(error.localizedDescription)")
                 #endif
             }
-            await reconcileCurrentUserGhostStateIfNeeded(in: householdId)
 
             profileIdByMembershipId = Dictionary(
                 uniqueKeysWithValues: roster.memberships.compactMap { membership in
@@ -225,13 +200,6 @@ final class LocationMainViewModel: ObservableObject {
             if !locationRecords.isEmpty {
                 HouseholdLocalCache.saveLocationStates(locationRecords, for: householdId)
             }
-            #if DEBUG
-            print(
-                "[LocationMainViewModel] map members=\(members.count) "
-                    + "visibleOnMap=\(members.filter(\.isVisibleOnMap).count) "
-                    + "rosterMemberships=\(roster.memberships.count)"
-            )
-            #endif
             syncCurrentUserBatteryFromDevice()
             reconcileSelectionAfterReload()
         } catch {
@@ -241,101 +209,64 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     func isSelected(memberID: UUID) -> Bool {
-        if isCurrentUserSelectionLocked(memberID: memberID) {
-            return true
-        }
+        if isCurrentUserSelectionLocked(memberID: memberID) { return true }
         return selectedMemberIDs.contains(memberID)
     }
 
     func setSelected(_ selected: Bool, for memberID: UUID) {
-        if isCurrentUserSelectionLocked(memberID: memberID) {
-            return
-        }
-        guard let member = members.first(where: { $0.id == memberID }), member.isSelectableOnMap else {
-            return
-        }
-        if selected {
-            selectedMemberIDs.insert(memberID)
-        } else {
-            selectedMemberIDs.remove(memberID)
-        }
+        if isCurrentUserSelectionLocked(memberID: memberID) { return }
+        guard let member = members.first(where: { $0.id == memberID }), member.isSelectableOnMap else { return }
+        if selected { selectedMemberIDs.insert(memberID) } else { selectedMemberIDs.remove(memberID) }
     }
 
-    /// 当前登录成员始终在地图上展示，列表勾选不可取消。
     func isCurrentUserSelectionLocked(memberID: UUID) -> Bool {
         guard let currentMembershipId, memberID == currentMembershipId else { return false }
         return members.first(where: { $0.id == memberID })?.isCurrentUser == true
     }
 
-    func toggleMemberList() {
-        isMemberListExpanded.toggle()
-    }
+    func toggleMemberList() { isMemberListExpanded.toggle() }
+    func collapseMemberList() { isMemberListExpanded = false }
 
-    func collapseMemberList() {
-        isMemberListExpanded = false
-    }
-
-    func presentGhostOptions() {
-        guard isLiveModeActive == false else { return }
-        isGhostOptionsPresented = true
-    }
-
-    func applyGhostOption(_ option: GhostModeOption) async {
+    func setLocationGhostMode(_ enabled: Bool) async {
         guard let householdId, let currentProfileId else { return }
+        guard isLiveModeActive == false else { return }
+        guard isLocationGhostModeEnabled != enabled else { return }
 
-        switch option {
-        case .pauseOneHour:
-            LocationGhostPreferences.applyTimedGhost(
-                until: Date().addingTimeInterval(3_600),
-                for: currentProfileId
-            )
-        case .untilTonight:
-            LocationGhostPreferences.applyTimedGhost(
-                until: endOfToday(),
-                for: currentProfileId
-            )
-        case .keepHidden:
-            LocationGhostPreferences.applyPersistentGhost(for: currentProfileId)
-        case .stopHiding:
-            LocationGhostPreferences.clearGhostPreferences(for: currentProfileId)
+        LocationGhostPreferences.setEnabled(enabled, householdId: householdId, profileId: currentProfileId)
+        objectWillChange.send()
+
+        if enabled == false {
+            await clearLegacyServerGhostFlagIfNeeded(householdId: householdId, profileId: currentProfileId)
+            await captureCurrentUserLocationForMap()
         }
+    }
 
-        let shouldPersistGhostInDatabase: Bool
-        switch option {
-        case .keepHidden:
-            shouldPersistGhostInDatabase = true
-        case .stopHiding, .pauseOneHour, .untilTonight:
-            shouldPersistGhostInDatabase = false
-        }
-
+    /// 旧版曾写入服务端 `is_ghost_mode`；关闭本机隐身后顺带清掉，避免 RPC 误拦上报。
+    private func clearLegacyServerGhostFlagIfNeeded(householdId: UUID, profileId: UUID) async {
         do {
+            let record = try await locationStateService.fetchLocationState(
+                householdId: householdId,
+                profileId: profileId
+            )
+            guard record?.isGhostMode == true else { return }
             _ = try await locationStateService.updateGhostMode(
                 householdId: householdId,
-                profileId: currentProfileId,
-                isGhostMode: shouldPersistGhostInDatabase
+                profileId: profileId,
+                isGhostMode: false
             )
-            await refresh()
-            if option == .stopHiding {
-                await captureCurrentUserLocationForMap()
-                await refresh()
-            } else {
-                await captureCurrentUserLocationForMap()
-            }
         } catch {
-            errorMessage = error.localizedDescription
+            #if DEBUG
+            print("[LocationMainViewModel] clear legacy server ghost skipped: \(error.localizedDescription)")
+            #endif
         }
     }
 
     func syncCurrentUserBatteryFromDevice() {
         guard let currentMembershipId,
-              let index = members.firstIndex(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else {
-            return
-        }
+              let index = members.firstIndex(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else { return }
         let monitor = DeviceBatteryMonitor.shared
         guard members[index].batteryLevel != monitor.batteryLevel
-            || members[index].isCharging != monitor.isCharging else {
-            return
-        }
+            || members[index].isCharging != monitor.isCharging else { return }
         members[index].batteryLevel = monitor.batteryLevel
         members[index].isCharging = monitor.isCharging
     }
@@ -356,34 +287,6 @@ final class LocationMainViewModel: ObservableObject {
         return updated
     }
 
-    /// 旧版曾把计时时效写入 `is_ghost_mode`；计时结束后自动清库，避免长期误显示隐身。
-    private func reconcileCurrentUserGhostStateIfNeeded(in householdId: UUID) async {
-        guard let currentProfileId else { return }
-
-        do {
-            let record = try await locationStateService.fetchLocationState(
-                householdId: householdId,
-                profileId: currentProfileId
-            )
-            guard let record else { return }
-            guard LocationGhostPreferences.shouldClearDatabaseGhostAfterReconcile(
-                databaseFlag: record.isGhostMode,
-                profileId: currentProfileId
-            ) else { return }
-
-            _ = try await locationStateService.updateGhostMode(
-                householdId: householdId,
-                profileId: currentProfileId,
-                isGhostMode: false
-            )
-            LocationGhostPreferences.clearGhostPreferences(for: currentProfileId)
-        } catch {
-            #if DEBUG
-            print("[LocationMainViewModel] ghost reconcile skipped: \(error.localizedDescription)")
-            #endif
-        }
-    }
-
     private func reconcileSelectionAfterReload() {
         let selectableIDs = Set(members.filter(\.isSelectableOnMap).map(\.id))
         let visibleIDs = Set(members.filter(\.isVisibleOnMap).map(\.id))
@@ -393,25 +296,14 @@ final class LocationMainViewModel: ObservableObject {
 
         selectedMemberIDs = selectedMemberIDs.intersection(selectableIDs)
         if selectedMemberIDs.isEmpty {
-            selectedMemberIDs = defaultVisibleIDs.isEmpty == false
-                ? defaultVisibleIDs
-                : defaultSelectableIDs
+            selectedMemberIDs = defaultVisibleIDs.isEmpty == false ? defaultVisibleIDs : defaultSelectableIDs
         }
         pinCurrentUserInSelection()
     }
 
     private func pinCurrentUserInSelection() {
         guard let currentMembershipId,
-              members.contains(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else {
-            return
-        }
+              members.contains(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else { return }
         selectedMemberIDs.insert(currentMembershipId)
-    }
-
-    private func endOfToday() -> Date {
-        let calendar = Calendar.current
-        let start = calendar.startOfDay(for: Date())
-        return calendar.date(byAdding: .day, value: 1, to: start)?.addingTimeInterval(-1)
-            ?? Date().addingTimeInterval(86_400)
     }
 }

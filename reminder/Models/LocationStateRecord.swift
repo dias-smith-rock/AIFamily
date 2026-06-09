@@ -10,7 +10,7 @@ struct LocationStateRecord: Identifiable, Equatable, Sendable {
     let profileId: UUID
     /// newest-first；`locations[0]` 为最新位置。
     var locations: [LocationPayload]
-    /// 默认 `false`：仅用户选择「保持隐藏」后为 `true`。
+    /// 默认 `false`：用户开启「位置隐身」后为 `true`。
     var isGhostMode: Bool
     var updatedAt: Date
 

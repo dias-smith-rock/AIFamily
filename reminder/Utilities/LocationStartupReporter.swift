@@ -19,15 +19,7 @@ enum LocationStartupReporter {
 
         do {
             print("\(logPrefix) trigger=\(trigger.rawValue) step=ghostCheck")
-            let record = try? await locationStateService.fetchLocationState(
-                householdId: householdId,
-                profileId: profileId
-            )
-            if let record,
-               LocationGhostPreferences.isEffectivelyGhost(
-                databaseFlag: record.isGhostMode,
-                profileId: profileId
-               ) {
+            if LocationGhostPreferences.shouldSkipLocationUpload(householdId: householdId, profileId: profileId) {
                 let entry = LocationPersistLogEntry(
                     trigger: trigger,
                     profileId: profileId,
@@ -89,14 +81,7 @@ enum LocationStartupReporter {
         )
 
         do {
-            if let record = try? await locationStateService.fetchLocationState(
-                householdId: householdId,
-                profileId: profileId
-            ),
-               LocationGhostPreferences.isEffectivelyGhost(
-                databaseFlag: record.isGhostMode,
-                profileId: profileId
-               ) {
+            if LocationGhostPreferences.shouldSkipLocationUpload(householdId: householdId, profileId: profileId) {
                 let entry = LocationPersistLogEntry(
                     trigger: trigger,
                     profileId: profileId,

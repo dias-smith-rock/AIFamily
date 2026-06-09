@@ -231,19 +231,6 @@ enum LocationMemberAssembler {
         isVirtualMember: Bool,
         currentMembershipId: UUID?
     ) -> UserLocationState {
-        let ghostProfileId = profile?.id ?? record?.profileId
-        let isGhost: Bool
-        if isVirtualMember {
-            isGhost = false
-        } else if id == currentMembershipId, let ghostProfileId {
-            isGhost = LocationGhostPreferences.isEffectivelyGhost(
-                databaseFlag: record?.isGhostMode == true,
-                profileId: ghostProfileId
-            )
-        } else {
-            isGhost = LocationGhostPreferences.isGhostOnServer(record: record)
-        }
-
         let avatarURLString = profile?.avatarUrl?.trimmingCharacters(in: .whitespacesAndNewlines)
         let avatarURL = avatarURLString.flatMap { URL(string: $0) }
 
@@ -256,7 +243,7 @@ enum LocationMemberAssembler {
             displayName: displayName,
             avatarURL: avatarURL,
             isVirtualMember: isVirtualMember,
-            isGhostMode: isGhost,
+            isGhostMode: false,
             locations: record?.locations ?? [],
             addressDescription: address?.isEmpty == false ? address : nil,
             lastUpdatedAt: record?.updatedAt,
