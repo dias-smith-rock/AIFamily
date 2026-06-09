@@ -97,33 +97,31 @@ struct ContentView: View {
         .task(id: isUserLoggedIn) {
             guard isUserLoggedIn else {
                 if isGuestMode == false {
+                    Self.hasReportedLocationOnLaunchThisSession = false
                     BackgroundLocationCoordinator.shared.stop()
                     ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
                     ForegroundLocationPersistEligibility.shared.canPersist = false
                 }
                 return
             }
-            _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-            refreshForegroundLocationSchedulerContext()
-            await AuthSessionRefresher.refreshOnForegroundIfNeeded()
-            await appRouter.refreshStateFromBackend()
-            await fetchHouseholdsAndCheckCreatorRole()
-            if await NetworkMonitor.shared.isConnected {
-                await persistForegroundLocation(trigger: .appEnteredForeground)
-                await syncBackgroundLocationService()
-                startForegroundLocationPeriodicRefreshIfNeeded()
-            }
+            await runForegroundLocationBootstrap()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
                 refreshForegroundLocationSchedulerContext()
                 await syncBackgroundLocationService()
+                if await NetworkMonitor.shared.isConnected {
+                    await reportLocationOnAppLaunchIfNeeded()
+                }
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, _ in
             Task {
                 refreshForegroundLocationSchedulerContext()
                 await syncBackgroundLocationService()
+                if await NetworkMonitor.shared.isConnected {
+                    await reportLocationOnAppLaunchIfNeeded()
+                }
             }
         }
         .onChange(of: appRouter.appState) { _, _ in
@@ -139,16 +137,7 @@ struct ContentView: View {
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
                     guard isUserLoggedIn else { return }
-                    _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-                    refreshForegroundLocationSchedulerContext()
-                    await AuthSessionRefresher.refreshOnForegroundIfNeeded()
-                    await appRouter.refreshStateFromBackend()
-                    await fetchHouseholdsAndCheckCreatorRole()
-                    if await NetworkMonitor.shared.isConnected {
-                        await persistForegroundLocation(trigger: .appEnteredForeground)
-                        await syncBackgroundLocationService()
-                        startForegroundLocationPeriodicRefreshIfNeeded()
-                    }
+                    await runForegroundLocationBootstrap()
                 }
             } else if newPhase == .inactive {
                 ForegroundLocationPersistScheduler.shared.stop(reason: "sceneInactive")
@@ -241,6 +230,7 @@ struct ContentView: View {
     }
 
     private static var hasLoggedAppOpenThisSession = false
+    private static var hasReportedLocationOnLaunchThisSession = false
 
     private static func logAppOpenedIfNeeded() {
         guard hasLoggedAppOpenThisSession == false else { return }
@@ -304,6 +294,51 @@ struct ContentView: View {
             householdId: appRouter.selectedHouseholdId,
             profileId: appRouter.selectedProfileId,
             backgroundLocationEnabled: BackgroundLocationPreferences.isEnabled
+        )
+    }
+
+    @MainActor
+    private func runForegroundLocationBootstrap() async {
+        _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
+        refreshForegroundLocationSchedulerContext()
+        await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+        await appRouter.refreshStateFromBackend()
+        await fetchHouseholdsAndCheckCreatorRole()
+        guard await NetworkMonitor.shared.isConnected else { return }
+        await reportLocationWhenEnteringForeground()
+        await syncBackgroundLocationService()
+        startForegroundLocationPeriodicRefreshIfNeeded()
+    }
+
+    /// 本会话首次进入前台：启动上报；之后回前台仍走 `appEnteredForeground`（后台定位开启时不重复上报）。
+    @MainActor
+    private func reportLocationWhenEnteringForeground() async {
+        if Self.hasReportedLocationOnLaunchThisSession {
+            await persistForegroundLocation(trigger: .appEnteredForeground)
+        } else {
+            await reportLocationOnAppLaunchIfNeeded()
+        }
+    }
+
+    /// App 启动后首次具备入库上下文时上报一次；不受「后台定位」开关限制。
+    @MainActor
+    private func reportLocationOnAppLaunchIfNeeded() async {
+        guard Self.hasReportedLocationOnLaunchThisSession == false else { return }
+        let context = locationPersistContext()
+        guard context.isUserLoggedIn,
+              context.isUnlockedForLocation,
+              context.appState == .activeMember,
+              context.householdId != nil,
+              context.profileId != nil else {
+            return
+        }
+
+        Self.hasReportedLocationOnLaunchThisSession = true
+        await LocationPersistSession.perform(
+            trigger: .appLaunched,
+            context: context,
+            locationStateService: appBootstrap.services.locationStateService,
+            allowWhenBackgroundLocationEnabled: true
         )
     }
 

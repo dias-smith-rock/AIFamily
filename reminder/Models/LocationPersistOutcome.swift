@@ -8,6 +8,7 @@ enum LocationPersistOutcome: Sendable, Equatable {
 }
 
 enum LocationPersistTrigger: String, Sendable {
+    case appLaunched
     case appEnteredForeground
     case appEnteringBackground
     case foregroundPeriodicRefresh
