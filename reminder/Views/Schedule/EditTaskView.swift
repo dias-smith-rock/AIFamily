@@ -12,6 +12,13 @@ struct EditTaskView: View {
     private let initialNote: String?
     private let initialLocationName: String?
     private let initialDueDate: Date?
+    private let initialEndDatetime: Date?
+    private let initialIsAllDay: Bool?
+    private let initialDurationMinutes: Int?
+    private let initialCostDisplay: String?
+    private let initialAssigneeMembershipIds: Set<UUID>?
+    private let initialTargetProfileIds: Set<UUID>?
+    private let initialPriorityUrgent: Bool?
     private let initialAttachmentImages: [UIImage]
     private let initialAttachmentJPEGData: [Data]
     private let defaultDueDate: Date?
@@ -34,6 +41,13 @@ struct EditTaskView: View {
         self.initialNote = nil
         self.initialLocationName = nil
         self.initialDueDate = nil
+        self.initialEndDatetime = nil
+        self.initialIsAllDay = nil
+        self.initialDurationMinutes = nil
+        self.initialCostDisplay = nil
+        self.initialAssigneeMembershipIds = nil
+        self.initialTargetProfileIds = nil
+        self.initialPriorityUrgent = nil
         self.initialAttachmentImages = []
         self.initialAttachmentJPEGData = []
         self.defaultDueDate = nil
@@ -51,6 +65,13 @@ struct EditTaskView: View {
         initialNote: String? = nil,
         initialLocationName: String? = nil,
         initialDueDate: Date? = nil,
+        initialEndDatetime: Date? = nil,
+        initialIsAllDay: Bool? = nil,
+        initialDurationMinutes: Int? = nil,
+        initialCostDisplay: String? = nil,
+        initialAssigneeMembershipIds: Set<UUID>? = nil,
+        initialTargetProfileIds: Set<UUID>? = nil,
+        initialPriorityUrgent: Bool? = nil,
         initialAttachmentImages: [UIImage] = [],
         initialAttachmentJPEGData: [Data] = [],
         defaultDueDate: Date? = nil,
@@ -65,6 +86,13 @@ struct EditTaskView: View {
         self.initialNote = initialNote
         self.initialLocationName = initialLocationName
         self.initialDueDate = initialDueDate
+        self.initialEndDatetime = initialEndDatetime
+        self.initialIsAllDay = initialIsAllDay
+        self.initialDurationMinutes = initialDurationMinutes
+        self.initialCostDisplay = initialCostDisplay
+        self.initialAssigneeMembershipIds = initialAssigneeMembershipIds
+        self.initialTargetProfileIds = initialTargetProfileIds
+        self.initialPriorityUrgent = initialPriorityUrgent
         self.initialAttachmentImages = initialAttachmentImages
         self.initialAttachmentJPEGData = initialAttachmentJPEGData
         self.defaultDueDate = defaultDueDate
@@ -83,6 +111,13 @@ struct EditTaskView: View {
             initialNote: initialNote,
             initialLocationName: initialLocationName,
             initialDueDate: initialDueDate,
+            initialEndDatetime: initialEndDatetime,
+            initialIsAllDay: initialIsAllDay,
+            initialDurationMinutes: initialDurationMinutes,
+            initialCostDisplay: initialCostDisplay,
+            initialAssigneeMembershipIds: initialAssigneeMembershipIds,
+            initialTargetProfileIds: initialTargetProfileIds,
+            initialPriorityUrgent: initialPriorityUrgent,
             initialAttachmentImages: initialAttachmentImages,
             initialAttachmentJPEGData: initialAttachmentJPEGData,
             defaultDueDate: defaultDueDate,

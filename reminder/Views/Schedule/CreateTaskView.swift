@@ -303,6 +303,13 @@ struct CreateTaskView: View {
     private let initialNote: String?
     private let initialLocationName: String?
     private let initialDueDate: Date?
+    private let initialEndDatetime: Date?
+    private let initialIsAllDay: Bool?
+    private let initialDurationMinutes: Int?
+    private let initialCostDisplay: String?
+    private let initialAssigneeMembershipIds: Set<UUID>?
+    private let initialTargetProfileIds: Set<UUID>?
+    private let initialPriorityUrgent: Bool?
     private let initialAttachmentImages: [UIImage]
     private let initialAttachmentJPEGData: [Data]
     private let defaultDueDate: Date?
@@ -324,6 +331,13 @@ struct CreateTaskView: View {
         initialNote: String? = nil,
         initialLocationName: String? = nil,
         initialDueDate: Date? = nil,
+        initialEndDatetime: Date? = nil,
+        initialIsAllDay: Bool? = nil,
+        initialDurationMinutes: Int? = nil,
+        initialCostDisplay: String? = nil,
+        initialAssigneeMembershipIds: Set<UUID>? = nil,
+        initialTargetProfileIds: Set<UUID>? = nil,
+        initialPriorityUrgent: Bool? = nil,
         initialAttachmentImages: [UIImage] = [],
         initialAttachmentJPEGData: [Data] = [],
         defaultDueDate: Date? = nil,
@@ -339,6 +353,13 @@ struct CreateTaskView: View {
         self.initialNote = initialNote
         self.initialLocationName = initialLocationName
         self.initialDueDate = initialDueDate
+        self.initialEndDatetime = initialEndDatetime
+        self.initialIsAllDay = initialIsAllDay
+        self.initialDurationMinutes = initialDurationMinutes
+        self.initialCostDisplay = initialCostDisplay
+        self.initialAssigneeMembershipIds = initialAssigneeMembershipIds
+        self.initialTargetProfileIds = initialTargetProfileIds
+        self.initialPriorityUrgent = initialPriorityUrgent
         self.initialAttachmentImages = initialAttachmentImages
         self.initialAttachmentJPEGData = initialAttachmentJPEGData
         self.defaultDueDate = defaultDueDate
@@ -407,24 +428,31 @@ struct CreateTaskView: View {
                 )
             }
             _dueDate = State(initialValue: resolvedDue)
-            _durationPickerDate = State(
-                initialValue: Self.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
+            let resolvedDurationMinutes = Self.resolvedInitialDurationMinutes(
+                dueDate: initialDueDate,
+                endDatetime: initialEndDatetime,
+                durationMinutes: initialDurationMinutes
             )
-            _isAllDay = State(initialValue: defaultAllDayForNewTask)
-            _flexibleDeadlineDate = State(initialValue: EditTaskViewModel.defaultFlexibleDeadlineDate())
+            _durationPickerDate = State(
+                initialValue: Self.makeDurationPickerDate(minutes: resolvedDurationMinutes)
+            )
+            _isAllDay = State(initialValue: initialIsAllDay ?? defaultAllDayForNewTask)
+            _flexibleDeadlineDate = State(
+                initialValue: initialEndDatetime ?? EditTaskViewModel.defaultFlexibleDeadlineDate()
+            )
             _selectedRecurrence = State(initialValue: .none)
             _recurrenceInterval = State(initialValue: 2)
             _recurrenceEndDate = State(initialValue: Calendar.current.date(byAdding: .month, value: 6, to: resolvedDue) ?? resolvedDue)
             _showEndDate = State(initialValue: false)
             _reminderOption = State(initialValue: .minutesBefore15)
-            _selectedAssigneeIds = State(initialValue: [])
-            _selectedTargetProfileIds = State(initialValue: [])
+            _selectedAssigneeIds = State(initialValue: initialAssigneeMembershipIds ?? [])
+            _selectedTargetProfileIds = State(initialValue: initialTargetProfileIds ?? [])
             _note = State(initialValue: initialNote ?? "")
             _financeDetailNote = State(initialValue: "")
-            _costInput = State(initialValue: "")
+            _costInput = State(initialValue: initialCostDisplay ?? "")
             _selectedBackgroundHex = State(initialValue: nil)
             _emergencyPhone = State(initialValue: "")
-            _formPriority = State(initialValue: .normal)
+            _formPriority = State(initialValue: initialPriorityUrgent == true ? .urgent : .normal)
             _locationName = State(initialValue: initialLocationName ?? "")
             _selectedImages = State(initialValue: initialAttachmentImages)
             _selectedAttachmentJPEGData = State(initialValue: initialAttachmentJPEGData)
@@ -2771,6 +2799,20 @@ private extension CreateTaskView {
 
     func resolvedRecurrenceIntervalForPayloadStrict() -> Int? {
         isFlexibleMode ? nil : resolvedRecurrenceIntervalForPayload()
+    }
+
+    static func resolvedInitialDurationMinutes(
+        dueDate: Date?,
+        endDatetime: Date?,
+        durationMinutes: Int?
+    ) -> Int {
+        if let dueDate, let endDatetime, endDatetime > dueDate {
+            return max(1, Int(endDatetime.timeIntervalSince(dueDate) / 60))
+        }
+        if let durationMinutes, durationMinutes > 0 {
+            return durationMinutes
+        }
+        return FamilyTask.defaultDurationMinutes
     }
 
     /// 新建任务默认执行时间：当前时刻 +30 分钟，四舍五入到最近的整点或半点。

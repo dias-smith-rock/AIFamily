@@ -5,21 +5,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 }
 
-const TASK_JSON_SCHEMA_PROMPT = `You must reply with a valid JSON object matching this exact schema:
+const TASK_JSON_SCHEMA_PROMPT = `You must reply with a valid JSON object matching this exact schema (use null for unknown fields, never omit keys):
 {
-  "title": "Short actionable task title (max 50 chars)",
-  "description": "Elaborated notes or item lists extracted from the image",
-  "due_date": "ISO8601 string if a date/time is explicitly found, otherwise null",
-  "spatial_keywords": "Any specific landmark/store name found (e.g., 'Costco', 'Target') for geofencing, otherwise null"
-}`
+  "title": "Short actionable task title in the image's primary language (max 50 chars)",
+  "description": "Detailed notes: item lists, instructions, phone numbers, class names, or full context from the image",
+  "due_date": "ISO8601 start datetime if a start/活动/集合/上课时间 is found, otherwise null",
+  "end_datetime": "ISO8601 end/deadline datetime if 截止/结束/下课/到期 is found, otherwise null",
+  "is_all_day": false,
+  "duration_minutes": "integer minutes if a duration like '2小时' is stated without explicit end time, otherwise null",
+  "amount_yuan": "number in major currency units (e.g. 128.5 for ¥128.50), otherwise null",
+  "spatial_keywords": "Store/venue/school landmark for geofencing (e.g. 'Costco', '旺角东地铁站'), otherwise null",
+  "location_address": "Full address string if visible, otherwise null",
+  "participant_hints": ["Names or roles mentioned: e.g. '小明', '爸爸', '妈妈', '全班' — plain strings only, no UUIDs"],
+  "priority": "low | normal | high | null",
+  "task_type_hint": "scheduled | flexible | null (flexible for 待办/缴费截止 without fixed start time)"
+}
 
-const SYSTEM_PROMPT = `You are an AI assistant tailored for the family task sharing app "WeSync".
-Analyze text extracted from a user photo (receipt, school notice, todo memo, handwritten note) and produce a structured family task.
-Current year base context: 2026.
+Rules:
+- Prefer concise title; put receipts line-items and notice body in description.
+- Resolve relative dates (明天/下周三/this Friday) against the reference date provided by the user.
+- If only a calendar day is visible without clock time, use 09:00 local implied time unless context suggests all-day.
+- amount_yuan: parse ￥/¥/HK$/元/港币; ignore thousand separators; 128元 → 128.
+- participant_hints: extract every person/role the task applies to; empty array if none.`
+
+const SYSTEM_PROMPT = `You are an AI assistant for the family task app "WeSync".
+Convert OCR text from photos (receipts, school notices, calendars, memos, bills, handwritten notes) into structured task JSON for creating a family task.
+Current year context: 2026. Timezone assumption: Asia/Hong_Kong unless the image clearly states otherwise.
 
 ${TASK_JSON_SCHEMA_PROMPT}`
 
-const OCR_USER_PROMPT = "Look at this school/family calendar image. Locate the grid box belonging to day '12' (which also has the printed lunar date '廿七'). Read the handwritten text inside that specific grid box very carefully. Transcribe the handwritten blue/black ink words into clear, standard Chinese characters. Do not get confused by the handwriting strokes; understand the context of school and classes (like '兴趣班', '最后一天', '全日制上课'). Output only the extracted text from day 12, do not chat."
+const DEFAULT_OCR_PROMPT = `Transcribe ALL legible text from this image accurately.
+Preserve line breaks, numbers, dates, times, currency amounts, names, and addresses.
+Output the raw transcription only — no commentary.
+If the image is a calendar, transcribe the focused day cell and any adjacent context that helps interpret dates.
+Correct obvious OCR confusions in Chinese handwriting when context is clear (e.g. 兴趣班, 缴费, 截止).`
 
 function jsonError(message: string, status = 400) {
   return new Response(JSON.stringify({ success: false, error: message }), {
@@ -38,6 +57,61 @@ type MultimodalChatMessage = {
   content: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>
 }
 
+type RecognitionRegion = {
+  top_left?: { x?: number; y?: number }
+  top_right?: { x?: number; y?: number }
+  bottom_left?: { x?: number; y?: number }
+  bottom_right?: { x?: number; y?: number }
+}
+
+type RequestBody = {
+  image_url?: string
+  target_date?: string
+  recognition_region?: RecognitionRegion
+}
+
+function buildOcrUserPrompt(body: RequestBody): string {
+  const parts: string[] = [DEFAULT_OCR_PROMPT]
+
+  const targetDate = body.target_date?.trim()
+  if (targetDate) {
+    parts.push(
+      `The user is creating a task for calendar day ${targetDate}. If this is a monthly calendar, focus on the cell for that day.`,
+    )
+  }
+
+  const region = body.recognition_region
+  if (region?.top_left && region?.top_right && region?.bottom_left && region?.bottom_right) {
+    const fmt = (p: { x?: number; y?: number }) =>
+      `(${(p.x ?? 0).toFixed(3)}, ${(p.y ?? 0).toFixed(3)})`
+    parts.push(
+      `Prioritize text inside the normalized image region with corners: `
+        + `top-left ${fmt(region.top_left)}, top-right ${fmt(region.top_right)}, `
+        + `bottom-left ${fmt(region.bottom_left)}, bottom-right ${fmt(region.bottom_right)} `
+        + `(coordinates 0–1 relative to image width/height).`,
+    )
+  }
+
+  return parts.join("\n\n")
+}
+
+function buildStructureUserPrompt(extractedText: string, body: RequestBody): string {
+  const targetDate = body.target_date?.trim()
+  const reference = targetDate
+    ? `Reference calendar day from the app: ${targetDate}. Resolve relative dates against this day.`
+    : "No reference day provided; infer dates from image context and assume year 2026 when the year is missing."
+
+  return [
+    "The following text was extracted from a user photo via OCR.",
+    reference,
+    "Produce the required structured family task JSON.",
+    "",
+    "--- OCR TEXT ---",
+    extractedText,
+    "--- END ---",
+  ].join("\n")
+}
+
 async function callChatCompletions(args: {
   baseUrl: string
   apiKey: string
@@ -50,15 +124,13 @@ async function callChatCompletions(args: {
 
   if (isGoogleNative) {
     const cleanModel = args.model.replace(/^models\//, "")
-    
-    // 🌟 终极安全升级：URL 保持绝对干净，不带任何问号或特殊转义字符
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent`
-    
-    let promptText = OCR_USER_PROMPT
+
+    let promptText = DEFAULT_OCR_PROMPT
     let base64Data = ""
     let mimeType = "image/jpeg"
 
-    const userMsg = args.messages.find(m => m.role === "user")
+    const userMsg = args.messages.find((m) => m.role === "user")
     if (userMsg && Array.isArray(userMsg.content)) {
       for (const item of userMsg.content) {
         if (item.type === "text" && item.text) promptText = item.text
@@ -77,10 +149,9 @@ async function callChatCompletions(args: {
 
     const response = await fetch(url, {
       method: "POST",
-      // 🌟 核心破局：利用官方标准的 x-goog-api-key 报头暗送密钥，安全防拦截
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": args.apiKey
+        "x-goog-api-key": args.apiKey,
       },
       body: JSON.stringify({
         contents: [
@@ -88,15 +159,15 @@ async function callChatCompletions(args: {
             role: "user",
             parts: [
               { text: promptText },
-              { inlineData: { mimeType: mimeType, data: base64Data } }
-            ]
-          }
+              { inlineData: { mimeType: mimeType, data: base64Data } },
+            ],
+          },
         ],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 1024
-        }
-      })
+          maxOutputTokens: 2048,
+        },
+      }),
     })
 
     const payload = await response.json().catch(() => null)
@@ -109,33 +180,32 @@ async function callChatCompletions(args: {
       throw new Error(`${args.label} Google API 返回空。可能是 Free Tier 遭到节点高并发限制，请等 5 秒重试。`)
     }
     return content.trim()
-
-  } else {
-    const url = `${args.baseUrl.replace(/\/$/, "")}/chat/completions`
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${args.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: args.model,
-        messages: args.messages,
-        ...(args.jsonMode ? { response_format: { type: "json_object" } } : {}),
-        temperature: 0.1,
-      }),
-    })
-
-    const payload = await response.json().catch(() => null)
-    if (!response.ok) {
-      const apiMessage = (payload as { error?: { message?: string } })?.error?.message ?? JSON.stringify(payload ?? {})
-      throw new Error(`${args.label} API ${response.status}: ${apiMessage}`)
-    }
-
-    const content = (payload as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content
-    if (!content?.trim()) throw new Error(`${args.label} returned empty content.`)
-    return content.trim()
   }
+
+  const url = `${args.baseUrl.replace(/\/$/, "")}/chat/completions`
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${args.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: args.model,
+      messages: args.messages,
+      ...(args.jsonMode ? { response_format: { type: "json_object" } } : {}),
+      temperature: 0.1,
+    }),
+  })
+
+  const payload = await response.json().catch(() => null)
+  if (!response.ok) {
+    const apiMessage = (payload as { error?: { message?: string } })?.error?.message ?? JSON.stringify(payload ?? {})
+    throw new Error(`${args.label} API ${response.status}: ${apiMessage}`)
+  }
+
+  const content = (payload as { choices?: { message?: { content?: string } }[] })?.choices?.[0]?.message?.content
+  if (!content?.trim()) throw new Error(`${args.label} returned empty content.`)
+  return content.trim()
 }
 
 function resolveOcrConfig(): { baseUrl: string; apiKey: string; model: string } {
@@ -213,12 +283,13 @@ async function fetchImageAsDataUrl(imageUrl: string): Promise<string> {
   return `data:${mime};base64,${btoa(binary)}`
 }
 
-async function ocrExtractFromImage(dataUrl: string): Promise<{
+async function ocrExtractFromImage(dataUrl: string, body: RequestBody): Promise<{
   text: string
   debug: OcrExtractPayload
 }> {
   const ocr = resolveOcrConfig()
-  console.log(`[parse-create-task-from-images] Launching Gemini Native Header Stage model=${ocr.model}`)
+  const ocrPrompt = buildOcrUserPrompt(body)
+  console.log(`[parse-create-task-from-images] Launching Gemini OCR model=${ocr.model}`)
 
   const extractedText = await callChatCompletions({
     baseUrl: ocr.baseUrl,
@@ -230,7 +301,7 @@ async function ocrExtractFromImage(dataUrl: string): Promise<{
         role: "user",
         content: [
           { type: "image_url", image_url: { url: dataUrl } },
-          { type: "text", text: OCR_USER_PROMPT },
+          { type: "text", text: ocrPrompt },
         ],
       },
     ],
@@ -241,7 +312,71 @@ async function ocrExtractFromImage(dataUrl: string): Promise<{
   return { text: extractedText, debug: payload }
 }
 
-async function deepSeekStructureTask(extractedText: string): Promise<string> {
+type StructuredTask = Record<string, unknown>
+
+function asTrimmedString(value: unknown, maxLen?: number): string | null {
+  if (typeof value !== "string") return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (maxLen && trimmed.length > maxLen) return trimmed.slice(0, maxLen)
+  return trimmed
+}
+
+function asNullableNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null
+  const n = typeof value === "number" ? value : Number(String(value).replace(/,/g, ""))
+  return Number.isFinite(n) ? n : null
+}
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter((item) => item.length > 0)
+}
+
+function normalizeStructuredTask(raw: StructuredTask): StructuredTask {
+  const title = asTrimmedString(raw.title, 50) ?? "New task"
+  const description = asTrimmedString(raw.description)
+  const spatialKeywords = asTrimmedString(raw.spatial_keywords)
+  const locationAddress = asTrimmedString(raw.location_address)
+  const participantHints = asStringArray(raw.participant_hints)
+
+  let mergedDescription = description
+  if (locationAddress) {
+    mergedDescription = mergedDescription
+      ? `${mergedDescription}\n\nAddr：${locationAddress}`
+      : `Addr：${locationAddress}`
+  }
+
+  const amountYuan = asNullableNumber(raw.amount_yuan)
+  const durationMinutes = asNullableNumber(raw.duration_minutes)
+  const isAllDay = raw.is_all_day === true
+
+  const priorityRaw = asTrimmedString(raw.priority)?.toLowerCase()
+  const priority = priorityRaw === "low" || priorityRaw === "normal" || priorityRaw === "high"
+    ? priorityRaw
+    : null
+
+  const taskTypeRaw = asTrimmedString(raw.task_type_hint)?.toLowerCase()
+  const taskTypeHint = taskTypeRaw === "scheduled" || taskTypeRaw === "flexible" ? taskTypeRaw : null
+
+  return {
+    title,
+    description: mergedDescription,
+    due_date: asTrimmedString(raw.due_date),
+    end_datetime: asTrimmedString(raw.end_datetime),
+    is_all_day: isAllDay,
+    duration_minutes: durationMinutes !== null ? Math.round(durationMinutes) : null,
+    amount_yuan: amountYuan,
+    spatial_keywords: spatialKeywords,
+    participant_hints: participantHints,
+    priority,
+    task_type_hint: taskTypeHint,
+  }
+}
+
+async function deepSeekStructureTask(extractedText: string, body: RequestBody): Promise<string> {
   const deepseek = resolveDeepSeekTextConfig()
   return await callChatCompletions({
     baseUrl: deepseek.baseUrl,
@@ -253,7 +388,7 @@ async function deepSeekStructureTask(extractedText: string): Promise<string> {
       { role: "system", content: SYSTEM_PROMPT },
       {
         role: "user",
-        content: `The following text was extracted from a calendar photo via Gemini. Turn it into our required structured family task JSON schema.\n\n---\n${extractedText}\n---`,
+        content: buildStructureUserPrompt(extractedText, body),
       },
     ],
   })
@@ -263,7 +398,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders })
 
   try {
-    let body: { image_url?: string }
+    let body: RequestBody
     try {
       body = await req.json()
     } catch {
@@ -275,18 +410,23 @@ serve(async (req) => {
 
     const dataUrl = await fetchImageAsDataUrl(imageUrl)
 
-    console.log("[parse-create-task-from-images] running pipeline: gemini_header_then_deepseek")
-    const ocrResult = await ocrExtractFromImage(dataUrl)
-    const rawJsonText = await deepSeekStructureTask(ocrResult.text)
+    console.log(
+      "[parse-create-task-from-images] pipeline=gemini_ocr+deepseek "
+        + `target_date=${body.target_date ?? "nil"} region=${body.recognition_region ? "yes" : "no"}`,
+    )
+    const ocrResult = await ocrExtractFromImage(dataUrl, body)
+    const rawJsonText = await deepSeekStructureTask(ocrResult.text, body)
 
-    let structuredTask: unknown
+    let structuredTask: StructuredTask
     try {
-      structuredTask = JSON.parse(rawJsonText)
+      structuredTask = JSON.parse(rawJsonText) as StructuredTask
     } catch {
       return jsonError(`Task JSON parse failed. Raw: ${rawJsonText.slice(0, 200)}`)
     }
 
-    return new Response(JSON.stringify({ success: true, task: structuredTask, ocr_extract: ocrResult.debug }), {
+    const normalizedTask = normalizeStructuredTask(structuredTask)
+
+    return new Response(JSON.stringify({ success: true, task: normalizedTask, ocr_extract: ocrResult.debug }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     })

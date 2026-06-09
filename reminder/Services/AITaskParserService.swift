@@ -8,13 +8,27 @@ struct AIParsedTaskPayload: Decodable, Sendable {
     let title: String
     let description: String?
     let dueDate: Date?
+    let endDatetime: Date?
+    let isAllDay: Bool
+    let durationMinutes: Int?
+    let amountYuan: Double?
     let spatialKeywords: String?
+    let participantHints: [String]
+    let priority: String?
+    let taskTypeHint: String?
 
     enum CodingKeys: String, CodingKey {
         case title
         case description
         case dueDate = "due_date"
+        case endDatetime = "end_datetime"
+        case isAllDay = "is_all_day"
+        case durationMinutes = "duration_minutes"
+        case amountYuan = "amount_yuan"
         case spatialKeywords = "spatial_keywords"
+        case participantHints = "participant_hints"
+        case priority
+        case taskTypeHint = "task_type_hint"
     }
 
     init(from decoder: Decoder) throws {
@@ -22,15 +36,59 @@ struct AIParsedTaskPayload: Decodable, Sendable {
         title = try container.decode(String.self, forKey: .title)
         description = try container.decodeIfPresent(String.self, forKey: .description)
         spatialKeywords = try container.decodeIfPresent(String.self, forKey: .spatialKeywords)
+        isAllDay = try container.decodeIfPresent(Bool.self, forKey: .isAllDay) ?? false
+        durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
+        amountYuan = Self.decodeAmountYuan(from: container)
+        participantHints = try container.decodeIfPresent([String].self, forKey: .participantHints) ?? []
+        priority = try container.decodeIfPresent(String.self, forKey: .priority)
+        taskTypeHint = try container.decodeIfPresent(String.self, forKey: .taskTypeHint)
+        dueDate = Self.decodeOptionalDate(from: container, forKey: .dueDate)
+        endDatetime = Self.decodeOptionalDate(from: container, forKey: .endDatetime)
+    }
 
-        if let date = try? container.decodeIfPresent(Date.self, forKey: .dueDate) {
-            dueDate = date
-        } else if let raw = try container.decodeIfPresent(String.self, forKey: .dueDate),
-                  raw.isEmpty == false {
-            dueDate = AIParsedTaskPayload.parseISO8601(raw)
-        } else {
-            dueDate = nil
+    var isPriorityUrgent: Bool {
+        guard let priority else { return false }
+        return priority.lowercased() == "high"
+    }
+
+    var prefersFlexibleTask: Bool {
+        taskTypeHint?.lowercased() == "flexible"
+    }
+
+    var costDisplayString: String? {
+        guard let amountYuan, amountYuan > 0 else { return nil }
+        if amountYuan.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0f", amountYuan)
         }
+        return String(format: "%.2f", amountYuan)
+    }
+
+    private static func decodeAmountYuan(from container: KeyedDecodingContainer<CodingKeys>) -> Double? {
+        if let value = try? container.decodeIfPresent(Double.self, forKey: .amountYuan) {
+            return value
+        }
+        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .amountYuan) {
+            return Double(intValue)
+        }
+        if let raw = try? container.decodeIfPresent(String.self, forKey: .amountYuan),
+           let value = Double(raw.replacingOccurrences(of: ",", with: "")) {
+            return value
+        }
+        return nil
+    }
+
+    private static func decodeOptionalDate(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Date? {
+        if let date = try? container.decodeIfPresent(Date.self, forKey: key) {
+            return date
+        }
+        if let raw = try? container.decodeIfPresent(String.self, forKey: key),
+           raw.isEmpty == false {
+            return parseISO8601(raw)
+        }
+        return nil
     }
 
     private static func parseISO8601(_ raw: String) -> Date? {

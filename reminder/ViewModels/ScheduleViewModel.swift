@@ -598,11 +598,25 @@ final class ScheduleViewModel: ObservableObject {
                 recognitionRegion: recognitionRegion
             )
 
+            let participantMatch = AIParticipantHintMatcher.match(
+                hints: parseResult.task.participantHints,
+                profiles: familyProfiles,
+                memberships: householdMembers
+            )
+
             prefilledTaskForAI = AIPrefilledTaskDraft(
                 title: parseResult.task.title.trimmingCharacters(in: .whitespacesAndNewlines),
                 description: parseResult.task.description?.trimmingCharacters(in: .whitespacesAndNewlines),
                 dueDate: parseResult.task.dueDate,
+                endDatetime: parseResult.task.endDatetime,
+                isAllDay: parseResult.task.isAllDay,
+                durationMinutes: parseResult.task.durationMinutes,
+                costDisplay: parseResult.task.costDisplayString,
                 locationName: parseResult.task.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
+                assigneeMembershipIds: participantMatch.assigneeMembershipIds,
+                targetProfileIds: participantMatch.targetProfileIds,
+                isPriorityUrgent: parseResult.task.isPriorityUrgent,
+                prefersFlexibleTask: parseResult.task.prefersFlexibleTask,
                 attachmentImage: attachmentImage,
                 attachmentJPEGData: imageJPEG
             )

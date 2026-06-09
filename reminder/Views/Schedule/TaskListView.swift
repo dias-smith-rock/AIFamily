@@ -84,15 +84,22 @@ struct TaskListView: View {
             }
             .sheet(item: $viewModel.prefilledTaskForAI) { draft in
                 EditTaskView(
-                    formMode: .scheduled,
+                    formMode: draft.prefersFlexibleTask ? .flexible : .scheduled,
                     initialTitle: draft.title,
                     initialNote: draft.description,
                     initialLocationName: draft.locationName,
                     initialDueDate: draft.dueDate,
+                    initialEndDatetime: draft.endDatetime,
+                    initialIsAllDay: draft.isAllDay,
+                    initialDurationMinutes: draft.durationMinutes,
+                    initialCostDisplay: draft.costDisplay,
+                    initialAssigneeMembershipIds: draft.assigneeMembershipIds,
+                    initialTargetProfileIds: draft.targetProfileIds,
+                    initialPriorityUrgent: draft.isPriorityUrgent,
                     initialAttachmentImages: [draft.attachmentImage],
                     initialAttachmentJPEGData: [draft.attachmentJPEGData],
                     defaultDueDate: draft.dueDate.map { dayID(for: $0) } ?? dayID(for: selectedDate),
-                    defaultAllDayForNewTask: false,
+                    defaultAllDayForNewTask: draft.isAllDay,
                     onSaveSuccess: { createdDueDate in
                         selectedDate = dayID(for: createdDueDate)
                         Task {
