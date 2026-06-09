@@ -627,7 +627,7 @@ final class ScheduleViewModel: ObservableObject {
             AIPhotoTaskCreationLogger.step(.flowSucceeded, source: source)
             AnalyticsManager.log(event: .aiPhotoTaskSucceeded)
         } catch {
-            aiProcessingError = error.localizedDescription
+            aiProcessingError = AITaskParserUserMessage.message(for: error)
             AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: source)
         }
     }

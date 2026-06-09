@@ -147,7 +147,7 @@ enum AITaskParserError: LocalizedError {
         case .invalidResponse:
             return String(localized: "AI 返回的数据无法解析，请重试。")
         case .serverError(let message):
-            return message
+            return AITaskParserUserMessage.mapServerRawText(message) ?? message
         }
     }
 }

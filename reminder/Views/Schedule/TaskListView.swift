@@ -145,7 +145,7 @@ struct TaskListView: View {
                 .ignoresSafeArea()
             }
             .alert("识图失败", isPresented: aiErrorAlertBinding) {
-                Button("好", role: .cancel) {
+                Button("好的", role: .cancel) {
                     viewModel.aiProcessingError = nil
                 }
             } message: {

@@ -98,7 +98,7 @@ enum LocationPersistPreferences {
             )
         }
         return String(
-            format: AppLocalized.string("%lld 分钟", locale: locale),
+            format: AppLocalized.string("%lld分钟", locale: locale),
             locale: locale,
             totalMinutes
         )

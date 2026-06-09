@@ -29,7 +29,7 @@ enum TaskReminderLabel {
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     default:
-                        Text("提前\(minutes)分钟")
+                        CustomReminderOffsetText(minutes: minutes)
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)
                     }
@@ -41,5 +41,20 @@ enum TaskReminderLabel {
         } else {
             Text("无")
         }
+    }
+}
+
+private struct CustomReminderOffsetText: View {
+    @Environment(\.locale) private var locale
+    let minutes: Int
+
+    var body: some View {
+        Text(
+            verbatim: String(
+                format: AppLocalized.string("提前%lld分钟", locale: locale),
+                locale: locale,
+                minutes
+            )
+        )
     }
 }

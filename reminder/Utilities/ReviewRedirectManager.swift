@@ -68,7 +68,7 @@ struct ReviewAlertModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(
-                "Enjoying WeSync?",
+                "喜欢同圈吗？",
                 isPresented: $manager.showReviewAlert
             ) {
                 Button("以后再说", role: .cancel) {}
