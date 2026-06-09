@@ -69,7 +69,7 @@ struct TaskAttachmentPreviewGallery: View {
             HStack {
                 Spacer()
                 Button {
-                    dismiss()
+                    closeGallery()
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.system(size: 28))
@@ -108,6 +108,19 @@ struct TaskAttachmentPreviewGallery: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 28)
+    }
+
+    private func closeGallery() {
+        #if canImport(UIKit)
+        TaskAttachmentGalleryDismissal.prepareForDismiss()
+        isCurrentImageZoomed = false
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 80_000_000)
+            dismiss()
+        }
+        #else
+        dismiss()
+        #endif
     }
 
     @ViewBuilder

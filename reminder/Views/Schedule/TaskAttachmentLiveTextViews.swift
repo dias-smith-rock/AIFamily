@@ -6,6 +6,17 @@ import UIKit
 #endif
 
 #if canImport(UIKit)
+/// 视图进入窗口后再安装 Live Text，避免 `makeUIView` 时 `window == nil` 导致交互未挂上。
+private final class LiveTextImageScrollView: UIScrollView {
+    var onDidEnterWindow: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard window != nil else { return }
+        onDidEnterWindow?()
+    }
+}
+
 /// 支持双指缩放与 Live Text 选字复制的全屏图片查看（`ImageAnalysisInteraction`）。
 struct LiveTextZoomableImageView: UIViewRepresentable {
     let image: UIImage
@@ -21,7 +32,7 @@ struct LiveTextZoomableImageView: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UIScrollView {
-        let scrollView = UIScrollView()
+        let scrollView = LiveTextImageScrollView()
         scrollView.delegate = context.coordinator
         scrollView.minimumZoomScale = 1
         scrollView.maximumZoomScale = 4
@@ -36,6 +47,8 @@ struct LiveTextZoomableImageView: UIViewRepresentable {
         imageView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(imageView)
         context.coordinator.imageView = imageView
+        context.coordinator.scrollView = scrollView
+        context.coordinator.currentImage = image
 
         NSLayoutConstraint.activate([
             imageView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
@@ -46,22 +59,43 @@ struct LiveTextZoomableImageView: UIViewRepresentable {
             imageView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor),
         ])
 
-        context.coordinator.attachLiveText(to: imageView, image: image)
+        scrollView.onDidEnterWindow = { [weak coordinator = context.coordinator] in
+            coordinator?.installLiveTextIfNeeded()
+        }
+        if scrollView.window != nil {
+            context.coordinator.installLiveTextIfNeeded()
+        }
+
         return scrollView
     }
 
     func updateUIView(_ scrollView: UIScrollView, context: Context) {
-        guard context.coordinator.imageView?.image !== image else { return }
+        context.coordinator.scrollView = scrollView
+        guard context.coordinator.isTearingDown == false else { return }
+
+        let imageChanged = context.coordinator.currentImage !== image
+        context.coordinator.currentImage = image
         context.coordinator.imageView?.image = image
-        scrollView.zoomScale = 1
-        scrollView.contentOffset = .zero
-        context.coordinator.attachLiveText(to: context.coordinator.imageView, image: image)
+
+        if imageChanged {
+            scrollView.zoomScale = 1
+            scrollView.contentOffset = .zero
+            context.coordinator.installLiveTextIfNeeded(force: true)
+        }
+    }
+
+    static func dismantleUIView(_ scrollView: UIScrollView, coordinator: Coordinator) {
+        coordinator.teardown(scrollView: scrollView)
     }
 
     final class Coordinator: NSObject, UIScrollViewDelegate {
         @Binding var isZoomed: Bool
+        weak var scrollView: UIScrollView?
         weak var imageView: UIImageView?
+        fileprivate var currentImage: UIImage?
+        fileprivate var isTearingDown = false
         private var analysisTask: Task<Void, Never>?
+        private var liveTextInteraction: ImageAnalysisInteraction?
 
         init(isZoomed: Binding<Bool>) {
             _isZoomed = isZoomed
@@ -72,34 +106,97 @@ struct LiveTextZoomableImageView: UIViewRepresentable {
         }
 
         func scrollViewDidZoom(_ scrollView: UIScrollView) {
-            isZoomed = scrollView.zoomScale > 1.01
+            guard isTearingDown == false, scrollView.window != nil else { return }
+            let scale = scrollView.zoomScale
+            guard scale.isFinite, scale > 0 else { return }
+            isZoomed = scale > 1.01
         }
 
-        func attachLiveText(to imageView: UIImageView?, image: UIImage) {
-            guard let imageView else { return }
+        func installLiveTextIfNeeded(force: Bool = false) {
+            guard isTearingDown == false else { return }
+            guard let imageView, let image = currentImage else { return }
+            if force == false, liveTextInteraction != nil, imageView.interactions.contains(where: { $0 === liveTextInteraction }) {
+                return
+            }
+            attachLiveText(to: imageView, image: image)
+        }
+
+        private func attachLiveText(to imageView: UIImageView, image: UIImage) {
+            removeLiveTextInteraction(from: imageView)
             analysisTask?.cancel()
-            imageView.interactions
-                .filter { $0 is ImageAnalysisInteraction }
-                .forEach { imageView.removeInteraction($0) }
+
+            let interaction = ImageAnalysisInteraction()
+            interaction.preferredInteractionTypes = [.textSelection]
+            imageView.addInteraction(interaction)
+            liveTextInteraction = interaction
 
             analysisTask = Task { @MainActor in
-                let interaction = ImageAnalysisInteraction()
-                interaction.preferredInteractionTypes = [.textSelection]
-                imageView.addInteraction(interaction)
-
                 let analyzer = ImageAnalyzer()
                 let configuration = ImageAnalyzer.Configuration([.text])
-                guard Task.isCancelled == false else { return }
-                if let analysis = try? await analyzer.analyze(
+                guard Task.isCancelled == false, isTearingDown == false else { return }
+                guard let analysis = try? await analyzer.analyze(
                     image,
                     orientation: image.imageOrientation,
                     configuration: configuration
-                ) {
-                    guard Task.isCancelled == false else { return }
-                    interaction.analysis = analysis
+                ) else {
+                    return
                 }
+                guard Task.isCancelled == false, isTearingDown == false else { return }
+                guard imageView.window != nil, liveTextInteraction === interaction else { return }
+                interaction.analysis = analysis
             }
         }
+
+        func teardown(scrollView: UIScrollView) {
+            isTearingDown = true
+            analysisTask?.cancel()
+            analysisTask = nil
+            scrollView.delegate = nil
+            (scrollView as? LiveTextImageScrollView)?.onDidEnterWindow = nil
+
+            if scrollView.zoomScale.isFinite, scrollView.zoomScale > 0 {
+                scrollView.setZoomScale(1, animated: false)
+            }
+            scrollView.contentOffset = .zero
+
+            if let imageView {
+                removeLiveTextInteraction(from: imageView)
+            }
+            liveTextInteraction = nil
+            imageView = nil
+            self.scrollView = nil
+            currentImage = nil
+            isZoomed = false
+        }
+
+        private func removeLiveTextInteraction(from imageView: UIImageView) {
+            if let liveTextInteraction {
+                liveTextInteraction.analysis = nil
+                imageView.removeInteraction(liveTextInteraction)
+                self.liveTextInteraction = nil
+            }
+            imageView.interactions
+                .filter { $0 is ImageAnalysisInteraction }
+                .forEach { interaction in
+                    if let textInteraction = interaction as? ImageAnalysisInteraction {
+                        textInteraction.analysis = nil
+                    }
+                    imageView.removeInteraction(interaction)
+                }
+        }
+    }
+}
+
+enum TaskAttachmentGalleryDismissal {
+    /// 关闭前结束 Live Text 选区与键盘，避免 `ImageAnalysisInteraction` 在 dismantle 时写出 NaN frame。
+    @MainActor
+    static func prepareForDismiss() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil,
+            from: nil,
+            for: nil
+        )
     }
 }
 
