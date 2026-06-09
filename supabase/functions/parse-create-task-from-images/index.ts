@@ -283,29 +283,49 @@ async function fetchImageAsDataUrl(imageUrl: string): Promise<string> {
   return `data:${mime};base64,${btoa(binary)}`
 }
 
-async function ocrExtractFromImage(dataUrl: string, body: RequestBody): Promise<{
+async function ocrExtractFromImage(dataUrl: string): Promise<{
   text: string
   debug: OcrExtractPayload
 }> {
   const ocr = resolveOcrConfig()
-  const ocrPrompt = buildOcrUserPrompt(body)
-  console.log(`[parse-create-task-from-images] Launching Gemini OCR model=${ocr.model}`)
+  
+  let extractedText = ""
+  const maxRetries = 3
+  let delay = 1000 // 初始等待 1 秒
 
-  const extractedText = await callChatCompletions({
-    baseUrl: ocr.baseUrl,
-    apiKey: ocr.apiKey,
-    model: ocr.model,
-    label: "OCR-Stage1-GeminiNative",
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "image_url", image_url: { url: dataUrl } },
-          { type: "text", text: ocrPrompt },
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`[parse-create-task-from-images] Gemini Native Stage Attempt ${i + 1}/${maxRetries}`)
+      
+      extractedText = await callChatCompletions({
+        baseUrl: ocr.baseUrl,
+        apiKey: ocr.apiKey,
+        model: ocr.model,
+        label: "OCR-Stage1-GeminiNative",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: dataUrl } },
+              { type: "text", text: OCR_USER_PROMPT },
+            ],
+          },
         ],
-      },
-    ],
-  })
+      })
+      
+      break // 🌟 成功拿到数据，立刻跳出循环
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      // 🌟 如果判定为 Google 503 或者是免费层频控，触发指数退避等待
+      if ((msg.includes("503") || msg.includes("UNAVAILABLE")) && i < maxRetries - 1) {
+        console.warn(`[Gemini 503 Overload] Server busy. Retrying in ${delay}ms...`)
+        await new Promise((resolve) => setTimeout(resolve, delay))
+        delay *= 2 // 延迟翻倍：1s -> 2s -> 4s
+      } else {
+        throw error // 其他致命错误（如 401 或最后一次失败）直接抛出
+      }
+    }
+  }
 
   const payload = buildOcrExtractPayload(extractedText, ocr)
   logOcrExtractResult(payload)
