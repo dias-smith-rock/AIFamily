@@ -33,19 +33,19 @@ actor GuestLocationStateDataService: LocationStateDataService {
         if let index = records.firstIndex(where: { $0.profileId == profileId }) {
             var row = records[index]
             if row.isGhostMode { return .skippedGhost }
-            if let current = row.currentLocation {
-                let moved = current.distanceMeters(to: coordinate)
-                if moved < minDistanceMeters {
-                    return .skippedWithinThreshold(distanceMeters: moved)
-                }
+            if let skipOutcome = LocationUpdateDistanceGate.skipOutcomeIfWithinThreshold(
+                newCoordinate: coordinate,
+                storedLocations: row.locations,
+                minDistanceMeters: minDistanceMeters
+            ) {
+                return skipOutcome
             }
-            row.historyLocation2 = row.historyLocation1
-            row.historyLocation1 = row.currentLocation
             let battery = DeviceBatteryMonitor.readSnapshot()
-            row.currentLocation = coordinate.stampingDeviceSnapshotIfNeeded(
+            let stamped = coordinate.stampingDeviceSnapshotIfNeeded(
                 batteryLevel: battery.level,
                 isCharging: battery.isCharging
             )
+            row.locations = LocationHistoryLimits.prepending(stamped, to: row.locations)
             row.updatedAt = Date()
             records[index] = row
             return .persisted
@@ -56,15 +56,15 @@ actor GuestLocationStateDataService: LocationStateDataService {
                 databaseId: UUID(),
                 householdId: householdId,
                 profileId: profileId,
-                currentLocation: {
+                locations: {
                     let battery = DeviceBatteryMonitor.readSnapshot()
-                    return coordinate.stampingDeviceSnapshotIfNeeded(
-                        batteryLevel: battery.level,
-                        isCharging: battery.isCharging
-                    )
+                    return [
+                        coordinate.stampingDeviceSnapshotIfNeeded(
+                            batteryLevel: battery.level,
+                            isCharging: battery.isCharging
+                        )
+                    ]
                 }(),
-                historyLocation1: nil,
-                historyLocation2: nil,
                 isGhostMode: false,
                 updatedAt: Date()
             )
@@ -91,9 +91,7 @@ actor GuestLocationStateDataService: LocationStateDataService {
             databaseId: UUID(),
             householdId: householdId,
             profileId: profileId,
-            currentLocation: nil,
-            historyLocation1: nil,
-            historyLocation2: nil,
+            locations: [],
             isGhostMode: isGhostMode,
             updatedAt: Date()
         )
@@ -127,14 +125,15 @@ actor GuestLocationStateDataService: LocationStateDataService {
         let templates = locationDemoTemplates()
         let now = Date()
         for template in templates {
+            let remapped = template.templateLocations.compactMap {
+                GuestLocationCoordinateMapper.remap($0, anchor: anchor)
+            }
             records.append(
                 LocationStateRecord(
                     databaseId: UUID(),
                     householdId: householdId,
                     profileId: template.profileId,
-                    currentLocation: GuestLocationCoordinateMapper.remap(template.current, anchor: anchor),
-                    historyLocation1: GuestLocationCoordinateMapper.remap(template.history1, anchor: anchor),
-                    historyLocation2: GuestLocationCoordinateMapper.remap(template.history2, anchor: anchor),
+                    locations: remapped,
                     isGhostMode: false,
                     updatedAt: now
                 )
@@ -169,9 +168,7 @@ actor GuestLocationStateDataService: LocationStateDataService {
 
     private struct LocationDemoTemplate {
         let profileId: UUID
-        let current: LocationPayload?
-        let history1: LocationPayload?
-        let history2: LocationPayload?
+        let templateLocations: [LocationPayload]
     }
 
     private func locationDemoTemplates() -> [LocationDemoTemplate] {
@@ -185,9 +182,7 @@ actor GuestLocationStateDataService: LocationStateDataService {
         return zip(demoIds, templateMembers).map { profileId, member in
             LocationDemoTemplate(
                 profileId: profileId,
-                current: member.currentLocation,
-                history1: member.historyLocation1,
-                history2: member.historyLocation2
+                templateLocations: member.locations
             )
         }
     }

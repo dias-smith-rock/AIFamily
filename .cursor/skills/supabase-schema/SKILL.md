@@ -50,23 +50,23 @@ description: >-
 
 | 数据库列 | Swift | 说明 |
 |----------|-------|------|
-| `id` | `LocationStateRecord.id` | UUID |
+| `id` | `LocationStateRecord.databaseId` | 可选；无 `id` 列时用 `profileId` 作 `Identifiable.id` |
 | `household_id` | `householdId` | **必填**；与 `entity_id` 联合唯一，禁止跨群组混读 |
-| `entity_id` | `membershipId`（Swift 属性名） | **`household_memberships.id`**，不是 user id；PostgREST 键为 `entity_id` |
-| `current_location` / `history_location_1` / `history_location_2` | `LocationPayload?` | 显式 `CodingKeys`：`lat`、`lng`、`address_name` |
+| `entity_id` | `profileId` | **`family_profiles.id`**，不是 user id / membership id |
+| `locations` | `locations: [LocationPayload]` | JSONB 数组，**newest-first**；最多 **20** 条（触发器 `location_states_cap_locations_trg`）；元素键 `lat`/`lng`/`address_name`/`recorded_at`/`battery_level`/`is_charging` |
 | `is_ghost_mode` | `isGhostMode` | 默认 `false`；仅「保持隐藏」写 `true` |
 | `updated_at` | `updatedAt` | |
 
 | RPC | 参数 | 客户端 |
 |-----|------|--------|
-| `push_entity_location` | `p_entity_id`, `p_household_id`, `p_new_location` | `PushEntityLocationParams`（`LocationStateRPC.swift`）；`p_entity_id` = **membership id**；`p_new_location` = `LocationPayload` JSONB |
+| `push_entity_location` | `p_entity_id`, `p_household_id`, `p_new_location`, `p_min_distance_meters` | `PushEntityLocationParams`（`LocationStateRPC.swift`）；`p_entity_id` = **`family_profiles.id`**；prepend 新点到 `locations` |
 
-- **读取**：`SupabaseLocationStateDataService.fetch*` 按 `household_id` 过滤。
-- **写入**：`reportCurrentLocationIfNeeded` → RPC；RPC 未部署时回退 PostgREST insert/update。
-- **展示态**：`UserLocationState` 含 `householdId`（合并自 `LocationMemberAssembler`）。
+- **读取**：`SupabaseLocationStateDataService.fetch*` 按 `household_id` 过滤；解码可兼容已废弃的 `current_location` / `history_location_*`（仅读）。
+- **写入**：`reportCurrentLocationIfNeeded` → RPC；RPC 未部署时 PostgREST upsert 写 `locations`。
+- **展示态**：`UserLocationState.locations`（`locations[0]` = 当前）；轨迹 `breadcrumbCoordinates` = 数组 reversed。
 - **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`20260602_live_huddle_realtime_rls.sql`。
 
-迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`、`20260602_location_states_rls.sql`、`20260602_location_states_entity_fk_membership.sql`（`entity_id` → `household_memberships.id`，修复 `fk_location_states_entity`）。
+迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`、`20260605_location_states_locations_array.sql`（三列 → `locations` 数组 + cap 触发器 + RPC 重写）。
 
 ### 写入路径
 

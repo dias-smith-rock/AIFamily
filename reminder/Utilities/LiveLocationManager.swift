@@ -1069,7 +1069,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
             for (membershipId, profileId) in profileByMembership {
                 guard livePeerLocations[membershipId] == nil else { continue }
                 guard let record = recordByProfileId[profileId],
-                      let payload = record.currentLocation else {
+                      let payload = record.latestLocation else {
                     liveLog("DB seed empty row membership=\(membershipId.uuidString.prefix(8))")
                     continue
                 }
@@ -1162,7 +1162,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 liveLog("DB upload skipped: ghost mode")
             case .skippedWithinThreshold(let distanceMeters):
                 liveLog(
-                    "DB upload skipped: db current_location moved=\(Int(distanceMeters))m "
+                    "DB upload skipped: db locations[0] moved=\(Int(distanceMeters))m "
                         + "need≥\(Int(minDistanceMeters))m"
                 )
             }

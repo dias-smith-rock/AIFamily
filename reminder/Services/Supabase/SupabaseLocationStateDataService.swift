@@ -17,7 +17,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
     private static let tableName = "location_states"
     /// 与线上一致：表可能无 `id` 列，仅选实际存在的字段。
     private static let selectColumns =
-        "household_id,entity_id,current_location,history_location_1,history_location_2,is_ghost_mode,updated_at"
+        "household_id,entity_id,locations,is_ghost_mode,updated_at"
 
     private let provider: SupabaseClientProviding
 
@@ -80,19 +80,26 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         }
 
         let movedMeters: Double?
-        if let current = existing?.currentLocation {
-            let moved = coordinate.distanceMeters(to: current)
-            movedMeters = moved
-            if moved < minDistanceMeters {
+        if let skipOutcome = LocationUpdateDistanceGate.skipOutcomeIfWithinThreshold(
+            newCoordinate: coordinate,
+            storedLocations: existing?.locations ?? [],
+            minDistanceMeters: minDistanceMeters
+        ) {
+            if case .skippedWithinThreshold(let moved) = skipOutcome {
                 print(
                     "[LocationPersist] skip write moved=\(String(format: "%.1f", moved))m "
                         + "need≥\(String(format: "%.0f", minDistanceMeters))m "
-                        + "(db current_location vs new) "
+                        + "(db locations[0] vs new) "
                         + String(format: "new lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
-                        + String(format: " db lat=%.6f lng=%.6f", current.latitude, current.longitude)
+                        + (existing?.latestLocation.map {
+                            String(format: " db lat=%.6f lng=%.6f", $0.latitude, $0.longitude)
+                        } ?? "")
                 )
-                return .skippedWithinThreshold(distanceMeters: moved)
             }
+            return skipOutcome
+        }
+        if let latest = existing?.latestLocation {
+            movedMeters = coordinate.distanceMeters(to: latest)
         } else {
             movedMeters = nil
         }
@@ -133,13 +140,21 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             guard LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) else {
                 throw error
             }
+            if let skipOutcome = LocationUpdateDistanceGate.skipOutcomeIfWithinThreshold(
+                newCoordinate: stampedCoordinate,
+                storedLocations: existing?.locations ?? [],
+                minDistanceMeters: minDistanceMeters
+            ) {
+                return skipOutcome
+            }
             let now = Date()
             let payload = LocationStateUpsertPayload(
                 householdId: householdId,
                 profileId: profileId,
-                currentLocation: stampedCoordinate,
-                historyLocation1: existing?.currentLocation,
-                historyLocation2: existing?.historyLocation1,
+                locations: LocationHistoryLimits.prepending(
+                    stampedCoordinate,
+                    to: existing?.locations ?? []
+                ),
                 isGhostMode: existing?.isGhostMode ?? false,
                 updatedAt: now
             )
@@ -197,9 +212,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                 LocationStateUpsertPayload(
                     householdId: householdId,
                     profileId: profileId,
-                    currentLocation: nil,
-                    historyLocation1: nil,
-                    historyLocation2: nil,
+                    locations: [],
                     isGhostMode: isGhostMode,
                     updatedAt: Date()
                 )
@@ -284,43 +297,16 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
 private struct LocationStateUpsertPayload: Encodable {
     let householdId: UUID
     let profileId: UUID
-    let currentLocation: LocationPayload?
-    let historyLocation1: LocationPayload?
-    let historyLocation2: LocationPayload?
+    let locations: [LocationPayload]
     let isGhostMode: Bool
     let updatedAt: Date
 
     enum CodingKeys: String, CodingKey {
         case householdId = "household_id"
         case profileId = "entity_id"
-        case currentLocation = "current_location"
-        case historyLocation1 = "history_location_1"
-        case historyLocation2 = "history_location_2"
+        case locations
         case isGhostMode = "is_ghost_mode"
         case updatedAt = "updated_at"
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(householdId, forKey: .householdId)
-        try container.encode(profileId, forKey: .profileId)
-        if let currentLocation {
-            try container.encode(currentLocation, forKey: .currentLocation)
-        } else {
-            try container.encodeNil(forKey: .currentLocation)
-        }
-        if let historyLocation1 {
-            try container.encode(historyLocation1, forKey: .historyLocation1)
-        } else {
-            try container.encodeNil(forKey: .historyLocation1)
-        }
-        if let historyLocation2 {
-            try container.encode(historyLocation2, forKey: .historyLocation2)
-        } else {
-            try container.encodeNil(forKey: .historyLocation2)
-        }
-        try container.encode(isGhostMode, forKey: .isGhostMode)
-        try container.encode(updatedAt, forKey: .updatedAt)
     }
 }
 

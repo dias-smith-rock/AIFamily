@@ -196,7 +196,7 @@ final class LocationMainViewModel: ObservableObject {
             do {
                 locationRecords = try await locationStateService.fetchLocationStates(in: householdId)
                 #if DEBUG
-                let withCoordinates = locationRecords.filter { $0.currentLocation != nil }.count
+                let withCoordinates = locationRecords.filter { $0.latestLocation != nil }.count
                 print(
                     "[LocationMainViewModel] location_states rows=\(locationRecords.count) "
                         + "withCoordinates=\(withCoordinates) household=\(householdId.uuidString.prefix(8))"

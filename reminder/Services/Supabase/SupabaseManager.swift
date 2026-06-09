@@ -60,7 +60,7 @@ enum SupabaseCodec {
         return decoder
     }
 
-    /// 模型 `CodingKeys` 已写 PostgREST 列名字面量（如 `history_location_1`）时使用，避免 snake 策略冲突。
+    /// 模型 `CodingKeys` 已写 PostgREST 列名字面量（如 `locations`）时使用，避免 snake 策略冲突。
     static func makeLiteralColumnDecoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .useDefaultKeys

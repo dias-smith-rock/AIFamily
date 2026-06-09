@@ -8,14 +8,33 @@ struct LocationStateRecord: Identifiable, Equatable, Sendable {
     let householdId: UUID
     /// 库列 `entity_id`（family_profiles 主键）。
     let profileId: UUID
-    var currentLocation: LocationPayload?
-    var historyLocation1: LocationPayload?
-    var historyLocation2: LocationPayload?
+    /// newest-first；`locations[0]` 为最新位置。
+    var locations: [LocationPayload]
     /// 默认 `false`：仅用户选择「保持隐藏」后为 `true`。
     var isGhostMode: Bool
     var updatedAt: Date
 
     var id: UUID { databaseId ?? profileId }
+
+    var latestLocation: LocationPayload? { locations.first }
+
+    var locationHistoryOldestFirst: [LocationPayload] { locations.reversed() }
+
+    init(
+        databaseId: UUID?,
+        householdId: UUID,
+        profileId: UUID,
+        locations: [LocationPayload] = [],
+        isGhostMode: Bool = false,
+        updatedAt: Date = Date()
+    ) {
+        self.databaseId = databaseId
+        self.householdId = householdId
+        self.profileId = profileId
+        self.locations = locations
+        self.isGhostMode = isGhostMode
+        self.updatedAt = updatedAt
+    }
 }
 
 extension LocationStateRecord: Codable {
@@ -24,6 +43,7 @@ extension LocationStateRecord: Codable {
         case databaseId = "id"
         case householdId = "household_id"
         case entityId = "entity_id"
+        case locations
         case currentLocation = "current_location"
         case historyLocation1 = "history_location_1"
         case historyLocation2 = "history_location_2"
@@ -36,9 +56,15 @@ extension LocationStateRecord: Codable {
         databaseId = Self.decodeOptionalUUID(from: container, forKey: .databaseId)
         householdId = try Self.decodeRequiredUUID(from: container, forKey: .householdId)
         profileId = try Self.decodeRequiredUUID(from: container, forKey: .entityId)
-        currentLocation = Self.decodeLenientLocation(from: container, forKey: .currentLocation)
-        historyLocation1 = Self.decodeLenientLocation(from: container, forKey: .historyLocation1)
-        historyLocation2 = Self.decodeLenientLocation(from: container, forKey: .historyLocation2)
+        locations = (try? container.decode([LocationPayload].self, forKey: .locations)) ?? []
+        if locations.isEmpty {
+            let legacy = [
+                Self.decodeLenientLocation(from: container, forKey: .currentLocation),
+                Self.decodeLenientLocation(from: container, forKey: .historyLocation1),
+                Self.decodeLenientLocation(from: container, forKey: .historyLocation2),
+            ].compactMap { $0 }
+            locations = legacy
+        }
         isGhostMode = (try? container.decode(Bool.self, forKey: .isGhostMode)) ?? false
         updatedAt = (try? container.decode(Date.self, forKey: .updatedAt)) ?? Date.distantPast
     }
@@ -48,9 +74,7 @@ extension LocationStateRecord: Codable {
         try container.encodeIfPresent(databaseId, forKey: .databaseId)
         try container.encode(householdId, forKey: .householdId)
         try container.encode(profileId, forKey: .entityId)
-        try container.encodeIfPresent(currentLocation, forKey: .currentLocation)
-        try container.encodeIfPresent(historyLocation1, forKey: .historyLocation1)
-        try container.encodeIfPresent(historyLocation2, forKey: .historyLocation2)
+        try container.encode(locations, forKey: .locations)
         try container.encode(isGhostMode, forKey: .isGhostMode)
         try container.encode(updatedAt, forKey: .updatedAt)
     }

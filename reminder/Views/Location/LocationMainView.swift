@@ -340,42 +340,31 @@ struct LocationMainView: View {
                 }
             }
 
-            if let history2 = member.historyLocation2 {
-                let showsInfoBadge = history2.batteryLevel != nil || history2.recordedAt != nil
+            let history = Array(member.locations.dropFirst())
+            ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
+                let rank = history.count - 1 - index
+                let showsInfoBadge = historyPoint.batteryLevel != nil || historyPoint.recordedAt != nil
+                let dotDiameter = history.count > 1
+                    ? 8.0 + (Double(rank) / Double(history.count - 1)) * 2.0
+                    : 9.0
                 Annotation(
                     "",
-                    coordinate: history2.coordinate,
+                    coordinate: historyPoint.coordinate,
                     anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(
-                        dotDiameter: 8,
+                        dotDiameter: dotDiameter,
                         showsInfoBadge: showsInfoBadge
                     )
                 ) {
                     MapHistoryTrajectoryMarker(
-                        dotDiameter: 8,
-                        dotColor: LocationMemberMapColors.historyDot(for: member.id, rank: 0),
-                        batteryLevel: history2.clampedBatteryLevel,
-                        isCharging: history2.isCharging ?? false,
-                        recordedAt: history2.recordedAt
-                    )
-                }
-            }
-
-            if let history1 = member.historyLocation1 {
-                let showsInfoBadge = history1.batteryLevel != nil || history1.recordedAt != nil
-                Annotation(
-                    "",
-                    coordinate: history1.coordinate,
-                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(
-                        dotDiameter: 9,
-                        showsInfoBadge: showsInfoBadge
-                    )
-                ) {
-                    MapHistoryTrajectoryMarker(
-                        dotDiameter: 9,
-                        dotColor: LocationMemberMapColors.historyDot(for: member.id, rank: 1),
-                        batteryLevel: history1.clampedBatteryLevel,
-                        isCharging: history1.isCharging ?? false,
-                        recordedAt: history1.recordedAt
+                        dotDiameter: dotDiameter,
+                        dotColor: LocationMemberMapColors.historyDot(
+                            for: member.id,
+                            rank: rank,
+                            totalHistoryCount: history.count
+                        ),
+                        batteryLevel: historyPoint.clampedBatteryLevel,
+                        isCharging: historyPoint.isCharging ?? false,
+                        recordedAt: historyPoint.recordedAt
                     )
                 }
             }

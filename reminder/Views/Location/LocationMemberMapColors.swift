@@ -30,14 +30,15 @@ enum LocationMemberMapColors {
         return base.opacity(0.32 + (0.68 * progress))
     }
 
-    /// 历史点：`rank` 0 = 最旧（history_2），1 = history_1。
-    static func historyDot(for memberId: UUID, rank: Int) -> Color {
-        let opacity: Double
-        switch rank {
-        case 0: opacity = 0.38
-        case 1: opacity = 0.58
-        default: opacity = 0.75
+    /// 历史点：`rank` 0 = 最旧，递增到最新历史点。
+    static func historyDot(for memberId: UUID, rank: Int, totalHistoryCount: Int = 2) -> Color {
+        let progress: Double
+        if totalHistoryCount > 1 {
+            progress = Double(rank) / Double(totalHistoryCount - 1)
+        } else {
+            progress = 1
         }
+        let opacity = 0.38 + (0.37 * progress)
         return accent(for: memberId).opacity(opacity)
     }
 

@@ -3,7 +3,7 @@ import Foundation
 protocol LocationStateDataService: Sendable {
     func fetchLocationStates(in householdId: UUID) async throws -> [LocationStateRecord]
     func fetchLocationState(householdId: UUID, profileId: UUID) async throws -> LocationStateRecord?
-    /// 非隐身且与现位距离 ≥ `minDistanceMeters` 时写入；过近则跳过。
+    /// 非隐身且与 `locations[0]` 距离 ≥ `minDistanceMeters` 时写入；过近则跳过。
     @discardableResult
     func reportCurrentLocationIfNeeded(
         householdId: UUID,

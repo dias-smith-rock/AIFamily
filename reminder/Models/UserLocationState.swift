@@ -11,14 +11,30 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
     /// 无账号虚拟档案（`family_profiles`，无 `household_memberships` 行）。
     var isVirtualMember: Bool
     var isGhostMode: Bool
-    var currentLocation: LocationPayload?
-    var historyLocation1: LocationPayload?
-    var historyLocation2: LocationPayload?
+    /// newest-first；`locations[0]` 为最新位置。
+    var locations: [LocationPayload]
     var addressDescription: String?
     var lastUpdatedAt: Date?
     var batteryLevel: Int
     var isCharging: Bool
     var isCurrentUser: Bool
+
+    var currentLocation: LocationPayload? {
+        get { locations.first }
+        set {
+            guard let newValue else {
+                if locations.isEmpty == false {
+                    locations.removeFirst()
+                }
+                return
+            }
+            if locations.isEmpty {
+                locations = [newValue]
+            } else {
+                locations[0] = newValue
+            }
+        }
+    }
 
     var isVisibleOnMap: Bool {
         isGhostMode == false && currentLocation != nil
@@ -31,8 +47,7 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
 
     /// 时间顺序：最旧 → 最新（用于轨迹与渐变折线）。
     var breadcrumbCoordinates: [CLLocationCoordinate2D] {
-        [historyLocation2, historyLocation1, currentLocation]
-            .compactMap { $0?.coordinate }
+        locations.reversed().map(\.coordinate)
     }
 
     var clampedBatteryLevel: Int {
@@ -48,6 +63,14 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
 extension UserLocationState {
     static let previewHouseholdId = UUID(uuidString: "B2000000-0000-4000-8000-000000000099") ?? UUID()
 
+    private static func previewLocations(
+        current: LocationPayload,
+        history1: LocationPayload?,
+        history2: LocationPayload?
+    ) -> [LocationPayload] {
+        [current, history1, history2].compactMap { $0 }
+    }
+
     static let previewHousehold: [UserLocationState] = [
         UserLocationState(
             id: UUID(uuidString: "A1000001-0000-4000-8000-000000000001") ?? UUID(),
@@ -55,26 +78,28 @@ extension UserLocationState {
             displayName: "王晓明",
             isVirtualMember: false,
             isGhostMode: false,
-            currentLocation: LocationPayload(
-                latitude: 31.2304,
-                longitude: 121.4737,
-                recordedAt: Date().addingTimeInterval(-12 * 60),
-                batteryLevel: 78,
-                isCharging: false
-            ),
-            historyLocation1: LocationPayload(
-                latitude: 31.2289,
-                longitude: 121.4698,
-                recordedAt: Date().addingTimeInterval(-38 * 60),
-                batteryLevel: 82,
-                isCharging: false
-            ),
-            historyLocation2: LocationPayload(
-                latitude: 31.2265,
-                longitude: 121.4652,
-                recordedAt: Date().addingTimeInterval(-72 * 60),
-                batteryLevel: 88,
-                isCharging: false
+            locations: previewLocations(
+                current: LocationPayload(
+                    latitude: 31.2304,
+                    longitude: 121.4737,
+                    recordedAt: Date().addingTimeInterval(-12 * 60),
+                    batteryLevel: 78,
+                    isCharging: false
+                ),
+                history1: LocationPayload(
+                    latitude: 31.2289,
+                    longitude: 121.4698,
+                    recordedAt: Date().addingTimeInterval(-38 * 60),
+                    batteryLevel: 82,
+                    isCharging: false
+                ),
+                history2: LocationPayload(
+                    latitude: 31.2265,
+                    longitude: 121.4652,
+                    recordedAt: Date().addingTimeInterval(-72 * 60),
+                    batteryLevel: 88,
+                    isCharging: false
+                )
             ),
             addressDescription: "上海市黄浦区外滩",
             lastUpdatedAt: Date().addingTimeInterval(-12 * 60),
@@ -88,26 +113,28 @@ extension UserLocationState {
             displayName: "李雨桐",
             isVirtualMember: false,
             isGhostMode: false,
-            currentLocation: LocationPayload(
-                latitude: 31.2240,
-                longitude: 121.4805,
-                recordedAt: Date().addingTimeInterval(-4 * 60),
-                batteryLevel: 19,
-                isCharging: false
-            ),
-            historyLocation1: LocationPayload(
-                latitude: 31.2218,
-                longitude: 121.4770,
-                recordedAt: Date().addingTimeInterval(-28 * 60),
-                batteryLevel: 24,
-                isCharging: false
-            ),
-            historyLocation2: LocationPayload(
-                latitude: 31.2195,
-                longitude: 121.4720,
-                recordedAt: Date().addingTimeInterval(-55 * 60),
-                batteryLevel: 31,
-                isCharging: false
+            locations: previewLocations(
+                current: LocationPayload(
+                    latitude: 31.2240,
+                    longitude: 121.4805,
+                    recordedAt: Date().addingTimeInterval(-4 * 60),
+                    batteryLevel: 19,
+                    isCharging: false
+                ),
+                history1: LocationPayload(
+                    latitude: 31.2218,
+                    longitude: 121.4770,
+                    recordedAt: Date().addingTimeInterval(-28 * 60),
+                    batteryLevel: 24,
+                    isCharging: false
+                ),
+                history2: LocationPayload(
+                    latitude: 31.2195,
+                    longitude: 121.4720,
+                    recordedAt: Date().addingTimeInterval(-55 * 60),
+                    batteryLevel: 31,
+                    isCharging: false
+                )
             ),
             addressDescription: "上海市浦东新区陆家嘴",
             lastUpdatedAt: Date().addingTimeInterval(-4 * 60),
@@ -121,9 +148,7 @@ extension UserLocationState {
             displayName: "陈奶奶",
             isVirtualMember: false,
             isGhostMode: true,
-            currentLocation: LocationPayload(latitude: 31.2180, longitude: 121.4600),
-            historyLocation1: nil,
-            historyLocation2: nil,
+            locations: [LocationPayload(latitude: 31.2180, longitude: 121.4600)],
             addressDescription: nil,
             lastUpdatedAt: Date().addingTimeInterval(-90 * 60),
             batteryLevel: 54,
@@ -136,9 +161,7 @@ extension UserLocationState {
             displayName: "小宝（档案）",
             isVirtualMember: true,
             isGhostMode: false,
-            currentLocation: nil,
-            historyLocation1: nil,
-            historyLocation2: nil,
+            locations: [],
             addressDescription: nil,
             lastUpdatedAt: nil,
             batteryLevel: 100,

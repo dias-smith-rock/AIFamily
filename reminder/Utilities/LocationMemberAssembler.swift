@@ -172,7 +172,7 @@ enum LocationMemberAssembler {
         let memberProfileIds = Set(roster.memberships.compactMap(\.profileId))
         for record in recordsByProfile.values {
             guard servedLocationProfileIds.contains(record.profileId) == false else { continue }
-            guard record.currentLocation != nil else { continue }
+            guard record.latestLocation != nil else { continue }
 
             if let membership = roster.memberships.first(where: { $0.profileId == record.profileId }) {
                 if let index = members.firstIndex(where: { $0.id == membership.id }) {
@@ -247,7 +247,7 @@ enum LocationMemberAssembler {
         let avatarURLString = profile?.avatarUrl?.trimmingCharacters(in: .whitespacesAndNewlines)
         let avatarURL = avatarURLString.flatMap { URL(string: $0) }
 
-        let address = record?.currentLocation?.addressName?
+        let address = record?.latestLocation?.addressName?
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         return UserLocationState(
@@ -257,9 +257,7 @@ enum LocationMemberAssembler {
             avatarURL: avatarURL,
             isVirtualMember: isVirtualMember,
             isGhostMode: isGhost,
-            currentLocation: record?.currentLocation,
-            historyLocation1: record?.historyLocation1,
-            historyLocation2: record?.historyLocation2,
+            locations: record?.locations ?? [],
             addressDescription: address?.isEmpty == false ? address : nil,
             lastUpdatedAt: record?.updatedAt,
             batteryLevel: 100,
