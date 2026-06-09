@@ -6,14 +6,8 @@ import Supabase
 #endif
 
 struct SupabaseLocationStateDataService: LocationStateDataService {
-    /// Release：500m；Debug：0m，便于验证入库链路。
-    static let defaultMinUpdateDistanceMeters: Double = {
-        #if DEBUG
-        return 0
-        #else
-        return 500
-        #endif
-    }()
+    /// 与库中 `locations[0]` 比较；移动不足此距离时不写入（Debug / Release 一致）。
+    static let defaultMinUpdateDistanceMeters: Double = 500
     private static let tableName = "location_states"
     /// 与线上一致：表可能无 `id` 列，仅选实际存在的字段。
     private static let selectColumns =

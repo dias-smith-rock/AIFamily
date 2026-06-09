@@ -1,6 +1,6 @@
 import Foundation
 
-/// 后台定位关闭时：应用保持在前台期间定时尝试位置入库（Release 5 分钟，Debug 10 秒）。
+/// 后台定位关闭时：应用保持在前台期间定时尝试位置入库（Release 5 分钟，Debug 15 秒；仍受 500m 距离门禁约束）。
 @MainActor
 final class ForegroundLocationPersistScheduler {
     static let shared = ForegroundLocationPersistScheduler()
