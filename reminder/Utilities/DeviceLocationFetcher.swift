@@ -2,7 +2,7 @@ import CoreLocation
 import Foundation
 
 enum DeviceLocationFetcher {
-    /// 单次读取设备坐标；授权失败或定位失败时返回 `nil`（DEBUG 模拟器回退香港随机点）。
+    /// 单次读取设备坐标；授权失败或定位失败时返回 `nil`（模拟器回退香港固定默认点）。
     static func currentCoordinate(timeoutSeconds: TimeInterval? = nil) async -> CLLocationCoordinate2D? {
         guard let timeoutSeconds, timeoutSeconds > 0 else {
             return await OneShotCoordinateFetcher().fetch()
@@ -20,29 +20,6 @@ enum DeviceLocationFetcher {
         }
     }
 }
-
-#if DEBUG
-private enum SimulatorHongKongFallback {
-    /// 香港市区大致包络（九龙 / 港岛 / 新界南），每次调用独立随机。
-    private static let latitudeRange = 22.26...22.45
-    private static let longitudeRange = 114.00...114.25
-
-    static var isEnabled: Bool {
-        #if targetEnvironment(simulator)
-        true
-        #else
-        false
-        #endif
-    }
-
-    static func randomCoordinate() -> CLLocationCoordinate2D {
-        CLLocationCoordinate2D(
-            latitude: Double.random(in: latitudeRange),
-            longitude: Double.random(in: longitudeRange)
-        )
-    }
-}
-#endif
 
 @MainActor
 private final class OneShotCoordinateFetcher: NSObject, CLLocationManagerDelegate {
@@ -80,17 +57,17 @@ private final class OneShotCoordinateFetcher: NSObject, CLLocationManagerDelegat
     }
 
     private func resolveCoordinate(_ coordinate: CLLocationCoordinate2D?) -> CLLocationCoordinate2D? {
-        if let coordinate {
-            return coordinate
-        }
+        let resolved = SimulatorLocationSupport.normalized(coordinate)
         #if DEBUG
-        guard SimulatorHongKongFallback.isEnabled else { return nil }
-        let fallback = SimulatorHongKongFallback.randomCoordinate()
-        print("[DeviceLocationFetcher] simulator fallback → \(fallback.latitude), \(fallback.longitude)")
-        return fallback
-        #else
-        return nil
+        if SimulatorLocationSupport.isRunningOnSimulator, let resolved {
+            if coordinate == nil {
+                print("[DeviceLocationFetcher] simulator fallback → \(resolved.latitude), \(resolved.longitude)")
+            } else if let coordinate, !SimulatorLocationSupport.isWithinHongKong(coordinate) {
+                print("[DeviceLocationFetcher] simulator clamped → \(resolved.latitude), \(resolved.longitude)")
+            }
+        }
         #endif
+        return resolved
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {

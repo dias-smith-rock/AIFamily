@@ -1222,13 +1222,14 @@ extension LiveLocationManager: CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        let normalized = SimulatorLocationSupport.normalized(location)
         Task { @MainActor in
-            LastKnownDeviceLocation.record(location)
-            noteMovementIfSignificant(location)
+            LastKnownDeviceLocation.record(normalized)
+            noteMovementIfSignificant(normalized)
             if isLiveModeActive {
-                await sendLiveBroadcast(location)
+                await sendLiveBroadcast(normalized)
             }
-            await uploadToDatabaseIfNeeded(location)
+            await uploadToDatabaseIfNeeded(normalized)
         }
     }
 

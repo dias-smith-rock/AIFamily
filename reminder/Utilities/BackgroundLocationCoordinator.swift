@@ -181,9 +181,10 @@ extension BackgroundLocationCoordinator: CLLocationManagerDelegate {
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        let normalized = SimulatorLocationSupport.normalized(location)
         Task { @MainActor in
-            LastKnownDeviceLocation.record(location)
-            await reportIfNeeded(location)
+            LastKnownDeviceLocation.record(normalized)
+            await reportIfNeeded(normalized)
         }
     }
 

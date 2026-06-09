@@ -8,12 +8,13 @@ enum LastKnownDeviceLocation {
     private static var recordedAt: Date?
 
     static func record(_ location: CLLocation) {
-        coordinate = location.coordinate
+        coordinate = SimulatorLocationSupport.normalized(location).coordinate
         recordedAt = Date()
     }
 
     static func record(latitude: Double, longitude: Double) {
-        coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        let raw = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        coordinate = SimulatorLocationSupport.normalized(raw) ?? raw
         recordedAt = Date()
     }
 
