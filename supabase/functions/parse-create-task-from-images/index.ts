@@ -283,12 +283,13 @@ async function fetchImageAsDataUrl(imageUrl: string): Promise<string> {
   return `data:${mime};base64,${btoa(binary)}`
 }
 
-async function ocrExtractFromImage(dataUrl: string): Promise<{
+async function ocrExtractFromImage(dataUrl: string, body: RequestBody): Promise<{
   text: string
   debug: OcrExtractPayload
 }> {
   const ocr = resolveOcrConfig()
-  
+  const ocrPrompt = buildOcrUserPrompt(body)
+
   let extractedText = ""
   const maxRetries = 3
   let delay = 1000 // 初始等待 1 秒
@@ -296,7 +297,7 @@ async function ocrExtractFromImage(dataUrl: string): Promise<{
   for (let i = 0; i < maxRetries; i++) {
     try {
       console.log(`[parse-create-task-from-images] Gemini Native Stage Attempt ${i + 1}/${maxRetries}`)
-      
+
       extractedText = await callChatCompletions({
         baseUrl: ocr.baseUrl,
         apiKey: ocr.apiKey,
@@ -307,7 +308,7 @@ async function ocrExtractFromImage(dataUrl: string): Promise<{
             role: "user",
             content: [
               { type: "image_url", image_url: { url: dataUrl } },
-              { type: "text", text: OCR_USER_PROMPT },
+              { type: "text", text: ocrPrompt },
             ],
           },
         ],
