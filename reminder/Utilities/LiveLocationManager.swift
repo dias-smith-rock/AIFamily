@@ -1146,8 +1146,8 @@ final class LiveLocationManager: NSObject, ObservableObject {
             latitude: location.coordinate.latitude,
             longitude: location.coordinate.longitude
         )
-        let minDistanceMeters = SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
-        let minIntervalSeconds = SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
+        let minDistanceMeters = LocationPersistPreferences.minUpdateDistanceMeters
+        let minIntervalSeconds = LocationPersistPreferences.minUpdateIntervalSeconds
 
         do {
             let outcome = try await locationStateService.reportCurrentLocationIfNeeded(

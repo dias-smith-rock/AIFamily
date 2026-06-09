@@ -1094,6 +1094,121 @@ NEW_KEYS: dict[str, dict[str, str]] = {
         "hi": "पृष्ठभूमि में अपडेट के लिए सेटिंग्स में स्थान को «हमेशा» चुनें।",
         "ta": "பின்னணியில் புதுப்பிக்க அமைப்புகளில் «எப்போதும்» என தேர்ந்தெடுக்கவும்.",
     },
+    "位置上报": {
+        "en": "Location reporting",
+        "zh-Hans": "位置上报",
+        "zh-Hant": "位置上報",
+        "es": "Informe de ubicación",
+        "pt": "Relatório de localização",
+        "fr": "Signalement de position",
+        "ar": "إبلاغ الموقع",
+        "hi": "स्थान रिपोर्टिंग",
+        "ta": "இருப்பிட அறிக்கை",
+    },
+    "位移阈值": {
+        "en": "Movement threshold",
+        "zh-Hans": "位移阈值",
+        "zh-Hant": "位移閾值",
+        "es": "Umbral de desplazamiento",
+        "pt": "Limite de deslocamento",
+        "fr": "Seuil de déplacement",
+        "ar": "حد الإزاحة",
+        "hi": "स्थानांतरण सीमा",
+        "ta": "இடப்பெயர்வு வரம்பு",
+    },
+    "上报间隔": {
+        "en": "Report interval",
+        "zh-Hans": "上报间隔",
+        "zh-Hant": "上報間隔",
+        "es": "Intervalo de informe",
+        "pt": "Intervalo de relatório",
+        "fr": "Intervalle de signalement",
+        "ar": "فترة الإبلاغ",
+        "hi": "रिपोर्ट अंतराल",
+        "ta": "அறிக்கை இடைவெளி",
+    },
+    "移动超过此距离后，才可能写入云端位置。": {
+        "en": "Your location is saved only after you move beyond this distance.",
+        "zh-Hans": "移动超过此距离后，才可能写入云端位置。",
+        "zh-Hant": "移動超過此距離後，才可能寫入雲端位置。",
+        "es": "Tu ubicación solo se guarda después de moverte más allá de esta distancia.",
+        "pt": "Sua localização só é salva depois que você se desloca além desta distância.",
+        "fr": "Votre position n'est enregistrée qu'après avoir dépassé cette distance.",
+        "ar": "يُحفظ موقعك في السحابة فقط بعد تجاوز هذه المسافة.",
+        "hi": "इस दूरी से अधिक चलने के बाद ही आपका स्थान क्लाउड में सहेजा जाता है।",
+        "ta": "இந்த தூரத்தைக் கடந்து நகர்ந்த பிறகே உங்கள் இருப்பிடம் கிளவுடில் சேமிக்கப்படும்.",
+    },
+    "仅当位移超过所选阈值，且距上次上报超过所选间隔时，才会写入云端位置。": {
+        "en": "Your location is saved only when both the movement threshold and report interval are met.",
+        "zh-Hans": "仅当位移超过所选阈值，且距上次上报超过所选间隔时，才会写入云端位置。",
+        "zh-Hant": "僅當位移超過所選閾值，且距上次上報超過所選間隔時，才會寫入雲端位置。",
+        "es": "Tu ubicación solo se guarda cuando se cumplen el umbral de desplazamiento y el intervalo de informe.",
+        "pt": "Sua localização só é salva quando o limite de deslocamento e o intervalo de relatório são atendidos.",
+        "fr": "Votre position n'est enregistrée que lorsque le seuil de déplacement et l'intervalle sont respectés.",
+        "ar": "يُحفظ موقعك في السحابة فقط عند تحقق حد الإزاحة وفترة الإبلاغ معًا.",
+        "hi": "स्थान तभी क्लाउड में सहेजा जाता है जब स्थानांतरण सीमा और रिपोर्ट अंतराल दोनों पूरे हों।",
+        "ta": "இடப்பெயர்வு வரம்பும் அறிக்கை இடைவெளியும் பூர்த்தியாகும்போது மட்டுமே இருப்பிடம் கிளவுடில் சேமிக்கப்படும்.",
+    },
+    "100 米": {
+        "en": "100 m", "zh-Hans": "100 米", "zh-Hant": "100 公尺", "es": "100 m", "pt": "100 m",
+        "fr": "100 m", "ar": "100 م", "hi": "100 मी", "ta": "100 மீ",
+    },
+    "200 米": {
+        "en": "200 m", "zh-Hans": "200 米", "zh-Hant": "200 公尺", "es": "200 m", "pt": "200 m",
+        "fr": "200 m", "ar": "200 م", "hi": "200 मी", "ta": "200 மீ",
+    },
+    "300 米": {
+        "en": "300 m", "zh-Hans": "300 米", "zh-Hant": "300 公尺", "es": "300 m", "pt": "300 m",
+        "fr": "300 m", "ar": "300 م", "hi": "300 मी", "ta": "300 மீ",
+    },
+    "500 米": {
+        "en": "500 m", "zh-Hans": "500 米", "zh-Hant": "500 公尺", "es": "500 m", "pt": "500 m",
+        "fr": "500 m", "ar": "500 م", "hi": "500 मी", "ta": "500 மீ",
+    },
+    "1 千米": {
+        "en": "1 km", "zh-Hans": "1 千米", "zh-Hant": "1 公里", "es": "1 km", "pt": "1 km",
+        "fr": "1 km", "ar": "1 كم", "hi": "1 किमी", "ta": "1 கி.மீ",
+    },
+    "2 千米": {
+        "en": "2 km", "zh-Hans": "2 千米", "zh-Hant": "2 公里", "es": "2 km", "pt": "2 km",
+        "fr": "2 km", "ar": "2 كم", "hi": "2 किमी", "ta": "2 கி.மீ",
+    },
+    "5 分钟": {
+        "en": "5 min", "zh-Hans": "5 分钟", "zh-Hant": "5 分鐘", "es": "5 min", "pt": "5 min",
+        "fr": "5 min", "ar": "5 دقائق", "hi": "5 मिनट", "ta": "5 நிமி",
+    },
+    "10 分钟": {
+        "en": "10 min", "zh-Hans": "10 分钟", "zh-Hant": "10 分鐘", "es": "10 min", "pt": "10 min",
+        "fr": "10 min", "ar": "10 دقائق", "hi": "10 मिनट", "ta": "10 நிமி",
+    },
+    "15 分钟": {
+        "en": "15 min", "zh-Hans": "15 分钟", "zh-Hant": "15 分鐘", "es": "15 min", "pt": "15 min",
+        "fr": "15 min", "ar": "15 دقيقة", "hi": "15 मिनट", "ta": "15 நிமி",
+    },
+    "30 分钟": {
+        "en": "30 min", "zh-Hans": "30 分钟", "zh-Hant": "30 分鐘", "es": "30 min", "pt": "30 min",
+        "fr": "30 min", "ar": "30 دقيقة", "hi": "30 मिनट", "ta": "30 நிமி",
+    },
+    "1 小时": {
+        "en": "1 hour", "zh-Hans": "1 小时", "zh-Hant": "1 小時", "es": "1 h", "pt": "1 h",
+        "fr": "1 h", "ar": "1 ساعة", "hi": "1 घंटा", "ta": "1 மணி",
+    },
+    "%lld 米": {
+        "en": "%lld m", "zh-Hans": "%lld 米", "zh-Hant": "%lld 公尺", "es": "%lld m", "pt": "%lld m",
+        "fr": "%lld m", "ar": "%lld م", "hi": "%lld मी", "ta": "%lld மீ",
+    },
+    "%lld 千米": {
+        "en": "%lld km", "zh-Hans": "%lld 千米", "zh-Hant": "%lld 公里", "es": "%lld km", "pt": "%lld km",
+        "fr": "%lld km", "ar": "%lld كم", "hi": "%lld किमी", "ta": "%lld கி.மீ",
+    },
+    "%lld 分钟": {
+        "en": "%lld min", "zh-Hans": "%lld 分钟", "zh-Hant": "%lld 分鐘", "es": "%lld min", "pt": "%lld min",
+        "fr": "%lld min", "ar": "%lld دقيقة", "hi": "%lld मिनट", "ta": "%lld நிமி",
+    },
+    "%lld 小时": {
+        "en": "%lld hours", "zh-Hans": "%lld 小时", "zh-Hant": "%lld 小時", "es": "%lld h", "pt": "%lld h",
+        "fr": "%lld h", "ar": "%lld ساعة", "hi": "%lld घंटे", "ta": "%lld மணி",
+    },
 }
 
 

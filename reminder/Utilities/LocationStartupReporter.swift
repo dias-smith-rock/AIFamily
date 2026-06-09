@@ -111,8 +111,8 @@ enum LocationStartupReporter {
                 householdId: householdId,
                 profileId: profileId,
                 coordinate: payload,
-                minDistanceMeters: SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters,
-                minIntervalSeconds: SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
+                minDistanceMeters: LocationPersistPreferences.minUpdateDistanceMeters,
+                minIntervalSeconds: LocationPersistPreferences.minUpdateIntervalSeconds
             )
             let entry = LocationPersistLogEntry(
                 trigger: trigger,
@@ -248,13 +248,13 @@ struct LocationPersistLogEntry: Sendable {
             result = String(
                 format: "outcome=skipped threshold moved=%.0fm need≥%.0fm",
                 distanceMeters,
-                SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
+                LocationPersistPreferences.minUpdateDistanceMeters
             )
         case .skippedWithinInterval(let elapsedSeconds):
             result = String(
                 format: "outcome=skipped interval elapsed=%.0fs need≥%.0fs",
                 elapsedSeconds,
-                SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
+                LocationPersistPreferences.minUpdateIntervalSeconds
             )
         case .failed(let reason):
             result = "outcome=failed \(reason)"

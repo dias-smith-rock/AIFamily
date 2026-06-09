@@ -6,15 +6,13 @@ import Supabase
 #endif
 
 struct SupabaseLocationStateDataService: LocationStateDataService {
-    /// 与库中 `locations[0]` 比较；移动不足此距离时不写入（Debug / Release 一致）。
-    static let defaultMinUpdateDistanceMeters: Double = 500
-    /// 与 `locations[0].recorded_at`（或行 `updated_at`）比较；间隔不足时不写入。
+    /// 与库中 `locations[0]` 比较时的默认位移阈值（用户可在设置中修改）。
+    static var defaultMinUpdateDistanceMeters: Double {
+        LocationPersistPreferences.defaultMinUpdateDistanceMeters
+    }
+    /// 与 `locations[0].recorded_at` 比较时的默认上报间隔（用户可在设置中修改）。
     static var defaultMinUpdateIntervalSeconds: TimeInterval {
-        #if DEBUG
-        return 10
-        #else
-        return 15 * 60
-        #endif
+        LocationPersistPreferences.defaultMinUpdateIntervalSeconds
     }
     private static let tableName = "location_states"
     /// 与线上一致：表可能无 `id` 列，仅选实际存在的字段。

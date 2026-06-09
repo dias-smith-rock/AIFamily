@@ -20,7 +20,7 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        manager.distanceFilter = SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
+        manager.distanceFilter = LocationPersistPreferences.minUpdateDistanceMeters
         manager.pausesLocationUpdatesAutomatically = false
         manager.activityType = .other
         manager.showsBackgroundLocationIndicator = true
@@ -76,6 +76,14 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         @unknown default:
             stopMonitoring()
         }
+    }
+
+    func applyPersistPreferences() {
+        manager.distanceFilter = LocationPersistPreferences.minUpdateDistanceMeters
+        print(
+            "[LocationPersist] backgroundCoordinator distanceFilter="
+                + "\(Int(LocationPersistPreferences.minUpdateDistanceMeters))m"
+        )
     }
 
     func stop() {

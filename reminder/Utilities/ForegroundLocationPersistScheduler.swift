@@ -1,11 +1,11 @@
 import Foundation
 
-/// 后台定位关闭时：应用保持在前台期间定时尝试位置入库（间隔与 `defaultMinUpdateIntervalSeconds` 一致；入库仍须同时满足 500m 距离门禁）。
+/// 后台定位关闭时：应用保持在前台期间定时尝试位置入库（间隔与用户设置一致；入库仍须同时满足位移阈值）。
 @MainActor
 final class ForegroundLocationPersistScheduler {
     static let shared = ForegroundLocationPersistScheduler()
     static var refreshIntervalSeconds: UInt64 {
-        UInt64(SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds)
+        UInt64(LocationPersistPreferences.minUpdateIntervalSeconds)
     }
 
     private var refreshTask: Task<Void, Never>?
@@ -42,6 +42,12 @@ final class ForegroundLocationPersistScheduler {
         #if DEBUG
         print("[LocationPersist] scheduler started interval=\(Self.refreshIntervalSeconds)s")
         #endif
+    }
+
+    func restartIfRunning() {
+        guard refreshTask != nil else { return }
+        stop(reason: "preferencesChanged")
+        startIfNeeded()
     }
 
     func stop(reason: String = "manual") {

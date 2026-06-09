@@ -305,6 +305,18 @@ struct MineView: View {
                         await backgroundLocationCoordinator.setEnabled(enabled)
                     }
                 }
+
+                NavigationLink {
+                    LocationPersistSettingsView()
+                } label: {
+                    SettingsRowView(
+                        title: "位置上报",
+                        systemImage: "mappin.and.ellipse",
+                        iconTint: .teal,
+                        value: LocationPersistPreferences.summaryValue(locale: locale),
+                        showsChevron: false
+                    )
+                }
             } header: {
                 mineSectionHeader("应用设置")
             }
