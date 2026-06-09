@@ -43,7 +43,7 @@ struct TaskAttachmentThumbnailView: View {
     }
 }
 
-/// 全屏画廊使用的原图（点击后加载，与缩略图分缓存）；支持双指缩放、拖动与双击放大。
+/// 全屏画廊使用的原图；支持双指缩放与 Live Text 选字复制。
 struct TaskAttachmentFullImageView: View {
     let url: URL
     @Binding var isZoomed: Bool
@@ -54,28 +54,11 @@ struct TaskAttachmentFullImageView: View {
     }
 
     var body: some View {
-        AttachmentImageZoomContainer(isZoomed: $isZoomed) {
-            KFImage.url(url)
-                .cacheOriginalImage(true)
-                .backgroundDecode(true)
-                .placeholder {
-                    ProgressView()
-                        .tint(.white)
-                }
-                .onFailureView {
-                    VStack(spacing: 12) {
-                        Image(systemName: "photo.badge.exclamationmark")
-                            .font(.system(size: 40))
-                            .foregroundStyle(.white.opacity(0.6))
-                        Text("图片加载中")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.7))
-                    }
-                }
-                .fade(duration: 0.2)
-                .resizable()
-                .scaledToFit()
-        }
+        #if canImport(UIKit)
+        LiveTextZoomableRemoteImageView(url: url, isZoomed: $isZoomed)
+        #else
+        ProgressView()
+        #endif
     }
 }
 

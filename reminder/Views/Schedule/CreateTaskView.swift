@@ -295,6 +295,7 @@ struct CreateTaskView: View {
     @State private var isPresentingPhotoLibrary = false
     @State private var isPresentingCamera = false
     @State private var showGuestSignInRequiredAlert = false
+    @State private var attachmentPreviewPresentation: AttachmentPreviewPresentation?
 
     private let editingTask: FamilyTask?
     private let formMode: EditTaskViewModel.TaskMode
@@ -713,6 +714,12 @@ struct CreateTaskView: View {
             )
             .ignoresSafeArea()
         }
+        .fullScreenCover(item: $attachmentPreviewPresentation) { presentation in
+            TaskAttachmentPreviewGallery(
+                items: attachmentPreviewItems,
+                startIndex: presentation.startIndex
+            )
+        }
         .guestSignInRequiredAlert(isPresented: $showGuestSignInRequiredAlert)
     }
 
@@ -1074,6 +1081,41 @@ struct CreateTaskView: View {
         totalAttachmentCount < maxTaskAttachments
     }
 
+    private var attachmentPreviewItems: [TaskAttachmentPreviewItem] {
+        var items: [TaskAttachmentPreviewItem] = []
+        for attachment in existingAttachments {
+            guard let url = attachment.displayImageURL else { continue }
+            items.append(TaskAttachmentPreviewItem(id: attachment.id, source: .remote(url)))
+        }
+        for image in selectedImages {
+            items.append(TaskAttachmentPreviewItem(id: UUID(), source: .local(image)))
+        }
+        return items
+    }
+
+    private var remoteAttachmentPreviewCount: Int {
+        existingAttachments.filter { $0.displayImageURL != nil }.count
+    }
+
+    private func presentAttachmentPreview(startIndex: Int) {
+        guard attachmentPreviewItems.isEmpty == false else { return }
+        attachmentPreviewPresentation = AttachmentPreviewPresentation(startIndex: startIndex)
+    }
+
+    private func galleryIndexForExistingAttachment(at offset: Int) -> Int? {
+        guard existingAttachments.indices.contains(offset) else { return nil }
+        guard existingAttachments[offset].displayImageURL != nil else { return nil }
+        var index = 0
+        for i in 0..<offset where existingAttachments[i].displayImageURL != nil {
+            index += 1
+        }
+        return index
+    }
+
+    private func galleryIndexForLocalAttachment(at offset: Int) -> Int {
+        remoteAttachmentPreviewCount + offset
+    }
+
     private var taskAttachmentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
@@ -1109,8 +1151,8 @@ struct CreateTaskView: View {
     private var attachmentThumbnailStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(existingAttachments) { attachment in
-                    existingAttachmentThumbnail(attachment)
+                ForEach(Array(existingAttachments.enumerated()), id: \.element.id) { offset, attachment in
+                    existingAttachmentThumbnail(attachment, listOffset: offset)
                 }
                 ForEach(selectedImages.indices, id: \.self) { index in
                     attachmentThumbnail(image: selectedImages[index], index: index)
@@ -1121,11 +1163,19 @@ struct CreateTaskView: View {
         }
     }
 
-    private func existingAttachmentThumbnail(_ attachment: TaskAttachment) -> some View {
+    private func existingAttachmentThumbnail(_ attachment: TaskAttachment, listOffset: Int) -> some View {
         ZStack(alignment: .topTrailing) {
             Group {
                 if let url = attachment.displayImageURL {
-                    TaskAttachmentThumbnailView(url: url)
+                    Button {
+                        if let galleryIndex = galleryIndexForExistingAttachment(at: listOffset) {
+                            presentAttachmentPreview(startIndex: galleryIndex)
+                        }
+                    } label: {
+                        TaskAttachmentThumbnailView(url: url)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("预览附件")
                 } else {
                     existingAttachmentPlaceholder(systemName: "photo")
                 }
@@ -1164,11 +1214,17 @@ struct CreateTaskView: View {
 
     private func attachmentThumbnail(image: UIImage, index: Int) -> some View {
         ZStack(alignment: .topTrailing) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 80, height: 80)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            Button {
+                presentAttachmentPreview(startIndex: galleryIndexForLocalAttachment(at: index))
+            } label: {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 80, height: 80)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("预览附件")
 
             Button {
                 removeAttachment(at: index)
@@ -2475,6 +2531,11 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         }
         self = .minutesBefore15
     }
+}
+
+private struct AttachmentPreviewPresentation: Identifiable {
+    let id = UUID()
+    let startIndex: Int
 }
 
 private struct AssigneeOption: Identifiable, Equatable {

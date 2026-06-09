@@ -36,6 +36,22 @@ enum TaskAttachmentImageLoading {
         ImagePrefetcher(urls: urls, options: thumbnailOptions).start()
     }
 
+    #if canImport(UIKit)
+    /// 全屏 Live Text 预览用原图（优先 Kingfisher 缓存）。
+    static func loadFullImage(from url: URL) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            KingfisherManager.shared.retrieveImage(with: url, options: [.backgroundDecode]) { result in
+                switch result {
+                case .success(let value):
+                    continuation.resume(returning: value.image)
+                case .failure:
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+    #endif
+
     private static var thumbnailPixelSize: CGSize {
         let side = thumbnailLength * displayScale
         return CGSize(width: side, height: side)

@@ -78,11 +78,14 @@ struct TaskAttachmentImageGallery: View {
 
     private var bottomBar: some View {
         ZStack {
-            if currentImageURL != nil {
-                HStack {
+            HStack {
+                if currentImageURL != nil {
                     saveToAlbumButton
-                    Spacer()
                 }
+                Text("拖选文字后可复制")
+                    .font(.footnote)
+                    .foregroundStyle(.white.opacity(0.75))
+                Spacer()
             }
 
             if attachments.count > 1 {
