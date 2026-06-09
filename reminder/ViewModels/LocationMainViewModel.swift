@@ -145,7 +145,8 @@ final class LocationMainViewModel: ObservableObject {
                 householdId: householdId,
                 profileId: currentProfileId,
                 coordinate: payload,
-                minDistanceMeters: SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
+                minDistanceMeters: SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters,
+                minIntervalSeconds: SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
             )
         } catch {
             #if DEBUG

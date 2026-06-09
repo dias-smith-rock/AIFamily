@@ -5,6 +5,7 @@ enum LocationPersistOutcome: Sendable, Equatable {
     case persisted
     case skippedGhost
     case skippedWithinThreshold(distanceMeters: Double)
+    case skippedWithinInterval(elapsedSeconds: Double)
 }
 
 enum LocationPersistTrigger: String, Sendable {

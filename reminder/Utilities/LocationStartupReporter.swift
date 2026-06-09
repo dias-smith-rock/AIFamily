@@ -111,7 +111,8 @@ enum LocationStartupReporter {
                 householdId: householdId,
                 profileId: profileId,
                 coordinate: payload,
-                minDistanceMeters: SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
+                minDistanceMeters: SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters,
+                minIntervalSeconds: SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
             )
             let entry = LocationPersistLogEntry(
                 trigger: trigger,
@@ -207,6 +208,7 @@ struct LocationPersistLogEntry: Sendable {
         case persisted
         case skippedGhost
         case skippedWithinThreshold(distanceMeters: Double)
+        case skippedWithinInterval(elapsedSeconds: Double)
         case failed(reason: String)
 
         static func fromService(_ outcome: LocationPersistOutcome) -> DisplayOutcome {
@@ -217,6 +219,8 @@ struct LocationPersistLogEntry: Sendable {
                 return .skippedGhost
             case .skippedWithinThreshold(let distanceMeters):
                 return .skippedWithinThreshold(distanceMeters: distanceMeters)
+            case .skippedWithinInterval(let elapsedSeconds):
+                return .skippedWithinInterval(elapsedSeconds: elapsedSeconds)
             }
         }
     }
@@ -245,6 +249,12 @@ struct LocationPersistLogEntry: Sendable {
                 format: "outcome=skipped threshold moved=%.0fm need≥%.0fm",
                 distanceMeters,
                 SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
+            )
+        case .skippedWithinInterval(let elapsedSeconds):
+            result = String(
+                format: "outcome=skipped interval elapsed=%.0fs need≥%.0fs",
+                elapsedSeconds,
+                SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
             )
         case .failed(let reason):
             result = "outcome=failed \(reason)"

@@ -1147,13 +1147,15 @@ final class LiveLocationManager: NSObject, ObservableObject {
             longitude: location.coordinate.longitude
         )
         let minDistanceMeters = SupabaseLocationStateDataService.defaultMinUpdateDistanceMeters
+        let minIntervalSeconds = SupabaseLocationStateDataService.defaultMinUpdateIntervalSeconds
 
         do {
             let outcome = try await locationStateService.reportCurrentLocationIfNeeded(
                 householdId: householdId,
                 profileId: currentProfileId,
                 coordinate: payload,
-                minDistanceMeters: minDistanceMeters
+                minDistanceMeters: minDistanceMeters,
+                minIntervalSeconds: minIntervalSeconds
             )
             switch outcome {
             case .persisted:
@@ -1164,6 +1166,11 @@ final class LiveLocationManager: NSObject, ObservableObject {
                 liveLog(
                     "DB upload skipped: db locations[0] moved=\(Int(distanceMeters))m "
                         + "need≥\(Int(minDistanceMeters))m"
+                )
+            case .skippedWithinInterval(let elapsedSeconds):
+                liveLog(
+                    "DB upload skipped: elapsed=\(Int(elapsedSeconds))s "
+                        + "need≥\(Int(minIntervalSeconds))s"
                 )
             }
         } catch {

@@ -8,6 +8,14 @@ import Supabase
 struct SupabaseLocationStateDataService: LocationStateDataService {
     /// 与库中 `locations[0]` 比较；移动不足此距离时不写入（Debug / Release 一致）。
     static let defaultMinUpdateDistanceMeters: Double = 500
+    /// 与 `locations[0].recorded_at`（或行 `updated_at`）比较；间隔不足时不写入。
+    static var defaultMinUpdateIntervalSeconds: TimeInterval {
+        #if DEBUG
+        return 10
+        #else
+        return 15 * 60
+        #endif
+    }
     private static let tableName = "location_states"
     /// 与线上一致：表可能无 `id` 列，仅选实际存在的字段。
     private static let selectColumns =
@@ -56,7 +64,8 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         householdId: UUID,
         profileId: UUID,
         coordinate: LocationPayload,
-        minDistanceMeters: Double
+        minDistanceMeters: Double,
+        minIntervalSeconds: TimeInterval
     ) async throws -> LocationPersistOutcome {
         let existing = try await fetchLocationStateForReport(
             householdId: householdId,
@@ -74,22 +83,20 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         }
 
         let movedMeters: Double?
-        if let skipOutcome = LocationUpdateDistanceGate.skipOutcomeIfWithinThreshold(
+        if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
             newCoordinate: coordinate,
             storedLocations: existing?.locations ?? [],
-            minDistanceMeters: minDistanceMeters
+            lastRecordUpdatedAt: existing?.updatedAt,
+            minDistanceMeters: minDistanceMeters,
+            minIntervalSeconds: minIntervalSeconds
         ) {
-            if case .skippedWithinThreshold(let moved) = skipOutcome {
-                print(
-                    "[LocationPersist] skip write moved=\(String(format: "%.1f", moved))m "
-                        + "need≥\(String(format: "%.0f", minDistanceMeters))m "
-                        + "(db locations[0] vs new) "
-                        + String(format: "new lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
-                        + (existing?.latestLocation.map {
-                            String(format: " db lat=%.6f lng=%.6f", $0.latitude, $0.longitude)
-                        } ?? "")
-                )
-            }
+            logLocationPersistSkip(
+                skipOutcome,
+                coordinate: coordinate,
+                existing: existing,
+                minDistanceMeters: minDistanceMeters,
+                minIntervalSeconds: minIntervalSeconds
+            )
             return skipOutcome
         }
         if let latest = existing?.latestLocation {
@@ -117,7 +124,8 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             pEntityId: profileId,
             pHouseholdId: householdId,
             pNewLocation: stampedCoordinate,
-            pMinDistanceMeters: minDistanceMeters
+            pMinDistanceMeters: minDistanceMeters,
+            pMinIntervalSeconds: minIntervalSeconds
         )
         do {
             _ = try await provider.client
@@ -134,10 +142,12 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             guard LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) else {
                 throw error
             }
-            if let skipOutcome = LocationUpdateDistanceGate.skipOutcomeIfWithinThreshold(
+            if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
                 newCoordinate: stampedCoordinate,
                 storedLocations: existing?.locations ?? [],
-                minDistanceMeters: minDistanceMeters
+                lastRecordUpdatedAt: existing?.updatedAt,
+                minDistanceMeters: minDistanceMeters,
+                minIntervalSeconds: minIntervalSeconds
             ) {
                 return skipOutcome
             }
@@ -225,6 +235,37 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         _ = isGhostMode
         throw SupabaseServiceError.sdkUnavailable
         #endif
+    }
+
+    private func logLocationPersistSkip(
+        _ skipOutcome: LocationPersistOutcome,
+        coordinate: LocationPayload,
+        existing: LocationStateRecord?,
+        minDistanceMeters: Double,
+        minIntervalSeconds: TimeInterval
+    ) {
+        let coordSuffix = String(format: "new lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+            + (existing?.latestLocation.map {
+                String(format: " db lat=%.6f lng=%.6f", $0.latitude, $0.longitude)
+            } ?? "")
+        switch skipOutcome {
+        case .skippedWithinThreshold(let moved):
+            print(
+                "[LocationPersist] skip write moved=\(String(format: "%.1f", moved))m "
+                    + "need≥\(String(format: "%.0f", minDistanceMeters))m "
+                    + "(db locations[0] vs new) "
+                    + coordSuffix
+            )
+        case .skippedWithinInterval(let elapsed):
+            print(
+                "[LocationPersist] skip write elapsed=\(String(format: "%.0f", elapsed))s "
+                    + "need≥\(String(format: "%.0f", minIntervalSeconds))s "
+                    + "(db locations[0] recorded_at) "
+                    + coordSuffix
+            )
+        case .persisted, .skippedGhost:
+            break
+        }
     }
 
     /// 读库失败（常见：未执行 GRANT/RLS 迁移）时返回 `nil`，写入改走 `push_entity_location`。

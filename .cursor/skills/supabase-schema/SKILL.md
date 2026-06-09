@@ -59,14 +59,14 @@ description: >-
 
 | RPC | 参数 | 客户端 |
 |-----|------|--------|
-| `push_entity_location` | `p_entity_id`, `p_household_id`, `p_new_location`, `p_min_distance_meters` | `PushEntityLocationParams`（`LocationStateRPC.swift`）；`p_entity_id` = **`family_profiles.id`**；prepend 新点到 `locations` |
+| `push_entity_location` | `p_entity_id`, `p_household_id`, `p_new_location`, `p_min_distance_meters`, `p_min_interval_seconds` | `PushEntityLocationParams`（`LocationStateRPC.swift`）；`p_entity_id` = **`family_profiles.id`**；prepend 新点到 `locations`；服务端须**同时**满足距离 ≥ 500m 与间隔 ≥ 客户端传入秒数（默认 Release 900 / Debug 10） |
 
 - **读取**：`SupabaseLocationStateDataService.fetch*` 按 `household_id` 过滤；解码可兼容已废弃的 `current_location` / `history_location_*`（仅读）。
-- **写入**：`reportCurrentLocationIfNeeded` → RPC；RPC 未部署时 PostgREST upsert 写 `locations`。
+- **写入**：`reportCurrentLocationIfNeeded` → `LocationPersistWriteGate`（距离 + 时间双门禁）→ RPC；RPC 未部署时 PostgREST upsert 写 `locations`。
 - **展示态**：`UserLocationState.locations`（`locations[0]` = 当前）；轨迹 `breadcrumbCoordinates` = 数组 reversed。
 - **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`20260602_live_huddle_realtime_rls.sql`。
 
-迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`、`20260605_location_states_locations_array.sql`（三列 → `locations` 数组 + cap 触发器 + RPC 重写）。
+迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`、`20260605_location_states_locations_array.sql`（三列 → `locations` 数组 + cap 触发器 + RPC 重写）、`20260609_location_states_min_distance_floor.sql`、`20260610_location_states_min_interval_gate.sql`。
 
 ### 写入路径
 

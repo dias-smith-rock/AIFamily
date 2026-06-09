@@ -34,15 +34,18 @@ actor MockLocationStateDataService: LocationStateDataService {
         householdId: UUID,
         profileId: UUID,
         coordinate: LocationPayload,
-        minDistanceMeters: Double
+        minDistanceMeters: Double,
+        minIntervalSeconds: TimeInterval
     ) async throws -> LocationPersistOutcome {
         if let index = records.firstIndex(where: { $0.profileId == profileId }) {
             var row = records[index]
             if row.isGhostMode { return .skippedGhost }
-            if let skipOutcome = LocationUpdateDistanceGate.skipOutcomeIfWithinThreshold(
+            if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
                 newCoordinate: coordinate,
                 storedLocations: row.locations,
-                minDistanceMeters: minDistanceMeters
+                lastRecordUpdatedAt: row.updatedAt,
+                minDistanceMeters: minDistanceMeters,
+                minIntervalSeconds: minIntervalSeconds
             ) {
                 return skipOutcome
             }
