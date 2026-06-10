@@ -6,7 +6,7 @@ enum PremiumLimits {
     static let freeMaxMembersPerHousehold = 2
     static let freeMaxTaskAttachments = 1
     static let proMaxTaskAttachments = 10
-    /// 免费版地图最多展示 3 个历史点；Pro 可选 1～10 个。
+    /// 免费版地图最多展示 3 个历史点；Pro 最高可选 20 个。
     static let freeMaxMapHistoryDisplayCount = 3
 
     static func canCreateOrJoinAnotherHousehold(currentCount: Int, hasPremium: Bool) -> Bool {

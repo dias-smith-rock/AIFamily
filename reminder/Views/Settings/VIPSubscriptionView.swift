@@ -1,28 +1,28 @@
 import SwiftUI
 
-/// Pro 订阅页：MVP 阶段「创世用户限时免费领取 1 年 Pro」增长策略。
+/// Pro 订阅页：方案选择、权益说明与 App Store 订阅入口。
 struct VIPSubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeVIPSubscriptionViewModel()
-    @State private var showClaimSuccessAlert = false
-
-    private var claimSuccessMessage: String {
-        guard let expiry = viewModel.claimedExpiryDate else {
-            return String(localized: "领取成功！您的 Pro 权益已激活至 2027 年。")
-        }
-        let year = Calendar.current.component(.year, from: expiry)
-        return String(
-            format: String(localized: "领取成功！您的 Pro 权益已激活至 %lld 年。"),
-            year
-        )
-    }
+    @State private var showPrivacySheet = false
+    @State private var showTermsSheet = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 heroSection
-                featureCardsSection
+
+                if appRouter.hasPremiumAccess == false {
+                    planPickerSection
+                }
+
+                benefitsSection
+
+                if appRouter.hasPremiumAccess == false {
+                    subscriptionLegalNote
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
@@ -35,7 +35,7 @@ struct VIPSubscriptionView: View {
             if appRouter.hasPremiumAccess {
                 activeProStatusBar
             } else {
-                claimButtonBar
+                subscribeButtonBar
             }
         }
         .onAppear {
@@ -49,9 +49,16 @@ struct VIPSubscriptionView: View {
         } message: {
             Text(verbatim: viewModel.errorMessage ?? "")
         }
-        .alert(claimSuccessMessage, isPresented: $showClaimSuccessAlert) {
-            Button("好的", role: .cancel) {
-                dismiss()
+        .sheet(isPresented: $showPrivacySheet) {
+            if let url = SupportLegalLinks.privacyPolicyEnglish {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
+        .sheet(isPresented: $showTermsSheet) {
+            if let url = SupportLegalLinks.termsOfServiceEnglish {
+                SafariView(url: url)
+                    .ignoresSafeArea()
             }
         }
     }
@@ -78,19 +85,17 @@ struct VIPSubscriptionView: View {
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
-            if appRouter.hasPremiumAccess {
-                Text(proActiveDetailText)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-            } else {
-                Text("🚀 创世用户福利：限时免费领取 1 年 Pro 权益！")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.orange)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
+            Group {
+                if appRouter.hasPremiumAccess {
+                    Text(proActiveDetailText)
+                } else {
+                    Text("解锁全组高级特权，一人续费全组共享")
+                }
             }
+            .font(.subheadline.weight(.medium))
+            .foregroundStyle(appRouter.hasPremiumAccess ? Color.secondary : Color.orange)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 8)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -100,62 +105,133 @@ struct VIPSubscriptionView: View {
         .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
     }
 
-    // MARK: - Feature cards
+    // MARK: - Plan picker
 
-    private var featureCardsSection: some View {
-        VStack(spacing: 12) {
-            VIPFeatureComparisonCard(
-                systemImage: "person.3.fill",
-                iconTint: .blue,
-                title: "群组与协作人数",
-                freeDescription: "最多 1 个群组，每组上限 2 人。",
-                proDescription: "👑 无限创建与加入群组，无限成员人数。"
-            )
+    private var planPickerSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("选择订阅方案")
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .padding(.leading, 4)
 
-            VIPFeatureComparisonCard(
-                systemImage: "photo.stack.fill",
-                iconTint: .purple,
-                title: "任务附件与媒体库",
-                freeDescription: "每任务限 1 张压缩图片。",
-                proDescription: "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。"
-            )
-
-            VIPFeatureComparisonCard(
-                systemImage: "location.fill",
-                iconTint: .green,
-                title: "位置隐私与轨迹",
-                freeDescription: "地图最多显示 3 个历史位置点，不支持位置隐身。",
-                proDescription: "👑 自定义历史轨迹数量，开启位置隐身不上报新坐标。"
-            )
-
-            VIPFeatureComparisonCard(
-                systemImage: "camera.viewfinder",
-                iconTint: .cyan,
-                title: "AI 智能识图",
-                freeDescription: "不支持拍照或相册识图创建任务。",
-                proDescription: "👑 拍照或选图，自动识别并预填任务。"
-            )
-
-            VIPFeatureComingSoonCard(
-                systemImage: "sparkles",
-                iconTint: .orange,
-                title: "敬请期待",
-                description: "AI 语音极速建任务、群组智能周报、高阶提醒规则等更多专属功能即将上线。"
-            )
+            HStack(spacing: 12) {
+                ForEach(VIPBillingPlan.allCases) { plan in
+                    VIPPlanOptionCard(
+                        plan: plan,
+                        isSelected: viewModel.selectedPlan == plan
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.selectedPlan = plan
+                        }
+                    }
+                }
+            }
         }
     }
 
-    // MARK: - CTA
+    // MARK: - Benefits
+
+    private var benefitsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Premium 特权")
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .padding(.leading, 4)
+
+            VStack(spacing: 0) {
+                VIPPremiumBenefitRow(
+                    systemImage: "person.2.badge.gearshape.fill",
+                    iconTint: .orange,
+                    title: "一人付费，全组 VIP",
+                    description: "一人续费承包全组，群组成员无缝共享全部高级特权。",
+                    showsDivider: true
+                )
+
+                VIPPremiumBenefitRow(
+                    systemImage: "person.3.fill",
+                    iconTint: .blue,
+                    title: "无限群组与成员",
+                    description: "打破建群上限，支持容纳无限成员，连接你的多重生活圈。",
+                    showsDivider: true
+                )
+
+                VIPPremiumBenefitRow(
+                    systemImage: "camera.viewfinder",
+                    iconTint: .cyan,
+                    title: "AI 智能读图建任务",
+                    description: "随手拍照即可提取核心日程，让科技为你精简群组组织成本。",
+                    showsDivider: true
+                )
+
+                VIPPremiumBenefitRow(
+                    systemImage: "point.topleft.down.to.point.bottomright.filled.curvepath",
+                    iconTint: .green,
+                    title: "20 条位置历史轨迹",
+                    description: "解锁更长、更细腻的动态足迹线，全天安全动向一手掌握。",
+                    showsDivider: true
+                )
+
+                VIPPremiumBenefitRow(
+                    systemImage: "location.slash.fill",
+                    iconTint: .purple,
+                    title: "隐私隐身模式",
+                    description: "自由掌控位置共享时机，一键开启，随时切换独立隐私。",
+                    showsDivider: false
+                )
+            }
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        }
+    }
+
+    private var subscriptionLegalNote: some View {
+        VStack(spacing: 8) {
+            Text("订阅将自动续费，可随时在 App Store 账户设置中取消。")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+
+            HStack(spacing: 4) {
+                legalLinkButton("隐私政策") {
+                    showPrivacySheet = true
+                }
+                Text("·")
+                    .foregroundStyle(.tertiary)
+                legalLinkButton("用户协议") {
+                    showTermsSheet = true
+                }
+            }
+            .font(.caption)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+    }
+
+    private func legalLinkButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .underline()
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Footer
 
     private var proActiveDetailText: String {
         if let expiry = appRouter.userEntitlement?.proExpiresAt, appRouter.userEntitlement?.isActive == true {
             let year = Calendar.current.component(.year, from: expiry)
-            return String(format: String(localized: "个人权益有效期至 %lld 年"), year)
+            return String(
+                format: AppLocalized.string("个人权益有效期至 %lld 年", locale: locale),
+                locale: locale,
+                year
+            )
         }
         if appRouter.selectedHouseholdIsPremium {
-            return String(localized: "当前群组已继承 Pro 权益")
+            return AppLocalized.string("当前群组已继承 Pro 权益", locale: locale)
         }
-        return String(localized: "感谢您的支持，尽情使用 Pro 功能吧。")
+        return AppLocalized.string("感谢您的支持，尽情使用 Pro 功能吧。", locale: locale)
     }
 
     private var activeProStatusBar: some View {
@@ -175,29 +251,32 @@ struct VIPSubscriptionView: View {
         }
     }
 
-    private var claimButtonBar: some View {
-        VStack(spacing: 0) {
+    private var subscribeButtonBar: some View {
+        VStack(spacing: 10) {
             Divider()
+
             Button {
                 Task {
-                    let success = await viewModel.claimFreeProTrial(appRouter: appRouter)
-                    if success {
-                        showClaimSuccessAlert = true
-                    }
+                    await viewModel.purchaseSubscription(appRouter: appRouter)
                 }
             } label: {
                 Group {
-                    if viewModel.isClaiming {
+                    if viewModel.isPurchasing {
                         ProgressView()
                             .tint(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
                     } else {
-                        Text("免费领取 1 年 Pro 权益")
-                            .font(.headline.weight(.bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
+                        VStack(spacing: 4) {
+                            Text("订阅 Pro")
+                                .font(.headline.weight(.bold))
+                            Text(subscribePriceCaption)
+                                .font(.subheadline.weight(.medium))
+                                .opacity(0.92)
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                     }
                 }
                 .background(
@@ -210,112 +289,181 @@ struct VIPSubscriptionView: View {
                 )
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isClaiming)
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-            .background(Color(.systemGroupedBackground))
+            .disabled(viewModel.isPurchasing)
+
+            Button {
+                Task {
+                    await viewModel.restorePurchases(appRouter: appRouter)
+                }
+            } label: {
+                Text("恢复购买")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .disabled(viewModel.isPurchasing)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(Color(.systemGroupedBackground))
+    }
+
+    private var subscribePriceCaption: String {
+        let plan = viewModel.selectedPlan
+        switch plan {
+        case .monthly:
+            return String(
+                format: AppLocalized.string("%@/月", locale: locale),
+                locale: locale,
+                plan.priceText
+            )
+        case .yearly:
+            return String(
+                format: AppLocalized.string("%@/年", locale: locale),
+                locale: locale,
+                plan.priceText
+            )
         }
     }
 }
 
-// MARK: - Feature comparison card
+// MARK: - Plan card
 
-private struct VIPFeatureComparisonCard: View {
-    let systemImage: String
-    let iconTint: Color
-    let title: LocalizedStringKey
-    let freeDescription: LocalizedStringKey
-    let proDescription: LocalizedStringKey
+private struct VIPPlanOptionCard: View {
+    let plan: VIPBillingPlan
+    let isSelected: Bool
+    let onSelect: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(iconTint)
-                    .frame(width: 32, height: 32)
-                    .background(iconTint.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-            }
-
+        Button(action: onSelect) {
             VStack(alignment: .leading, spacing: 10) {
-                tierRow(label: "免费版", description: freeDescription, accent: .secondary)
-                tierRow(label: "Pro 版", description: proDescription, accent: .orange)
+                HStack {
+                    Text(plan.planTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Spacer(minLength: 4)
+
+                    if plan.isRecommended {
+                        Text("推荐")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.orange, in: Capsule())
+                    }
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(plan.priceText)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                    Text(plan.periodLabel)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+
+                if let savingsBadge = plan.savingsBadge {
+                    Text(savingsBadge)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.12), in: Capsule())
+                } else {
+                    Text(" ")
+                        .font(.caption)
+                        .padding(.vertical, 4)
+                        .opacity(0)
+                }
             }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(
+                        isSelected
+                            ? AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [.orange, .yellow.opacity(0.9)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            : AnyShapeStyle(Color(.separator).opacity(0.35)),
+                        lineWidth: isSelected ? 2 : 1
+                    )
+            }
+            .shadow(
+                color: isSelected ? Color.orange.opacity(0.18) : Color.black.opacity(0.04),
+                radius: isSelected ? 8 : 4,
+                x: 0,
+                y: isSelected ? 3 : 1
+            )
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
-    }
-
-    private func tierRow(
-        label: LocalizedStringKey,
-        description: LocalizedStringKey,
-        accent: Color
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(accent)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(accent.opacity(0.12), in: Capsule())
-
-            Text(description)
-                .font(.subheadline)
-                .foregroundStyle(.primary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-// MARK: - Coming soon card
+// MARK: - Benefit row
 
-private struct VIPFeatureComingSoonCard: View {
+private struct VIPPremiumBenefitRow: View {
     let systemImage: String
     let iconTint: Color
     let title: LocalizedStringKey
     let description: LocalizedStringKey
+    let showsDivider: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
+        VStack(spacing: 0) {
+            HStack(alignment: .top, spacing: 14) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(iconTint)
-                    .frame(width: 32, height: 32)
+                    .frame(width: 36, height: 36)
                     .background(iconTint.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
 
-                Text(title)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(description)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
 
-            Text(description)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if showsDivider {
+                Divider()
+                    .padding(.leading, 66)
+            }
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
     }
 }
 
-#Preview {
+#Preview("未订阅") {
     NavigationStack {
         VIPSubscriptionView()
             .environmentObject(AppRouter())
+    }
+}
+
+#Preview("已订阅") {
+    NavigationStack {
+        VIPSubscriptionView()
+            .environmentObject({
+                let router = AppRouter()
+                return router
+            }())
     }
 }

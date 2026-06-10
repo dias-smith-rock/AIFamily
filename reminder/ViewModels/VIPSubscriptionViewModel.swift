@@ -1,36 +1,73 @@
 import Combine
 import Foundation
+import SwiftUI
+
+enum VIPBillingPlan: String, CaseIterable, Identifiable {
+    case monthly
+    case yearly
+
+    var id: String { rawValue }
+
+    var subscriptionPlan: SubscriptionPlan {
+        switch self {
+        case .monthly: .proMonthly
+        case .yearly: .proYearly
+        }
+    }
+
+    var priceText: String {
+        switch self {
+        case .monthly: "$4.99"
+        case .yearly: "$39.99"
+        }
+    }
+
+    var periodLabel: LocalizedStringKey {
+        switch self {
+        case .monthly: "每月"
+        case .yearly: "每年"
+        }
+    }
+
+    var planTitle: LocalizedStringKey {
+        switch self {
+        case .monthly: "月付"
+        case .yearly: "年付"
+        }
+    }
+
+    var isRecommended: Bool {
+        self == .yearly
+    }
+
+    var savingsBadge: LocalizedStringKey? {
+        isRecommended ? "省 33%" : nil
+    }
+}
 
 @MainActor
 final class VIPSubscriptionViewModel: ObservableObject {
-    @Published private(set) var isClaiming = false
+    @Published var selectedPlan: VIPBillingPlan = .yearly
+    @Published private(set) var isPurchasing = false
     @Published var errorMessage: String?
-    @Published private(set) var claimedExpiryDate: Date?
 
-    func claimFreeProTrial(appRouter: AppRouter) async -> Bool {
-        #if canImport(Supabase)
+    func purchaseSubscription(appRouter: AppRouter) async {
         guard appRouter.hasPremiumAccess == false else {
-            errorMessage = String(localized: "您已是 Pro 会员。")
-            return false
+            errorMessage = AppLocalized.localized("您已是 Pro 会员。")
+            return
         }
-        guard isClaiming == false else { return false }
-        isClaiming = true
-        errorMessage = nil
-        defer { isClaiming = false }
+        guard isPurchasing == false else { return }
 
-        do {
-            let expiry = try await SubscriptionSupabaseSupport.claimFreeProTrialForCurrentUser()
-            claimedExpiryDate = expiry
-            AnalyticsManager.log(event: .vipClaimed)
-            await appRouter.refreshPremiumStateAfterClaim()
-            return true
-        } catch {
-            errorMessage = error.localizedDescription
-            return false
-        }
-        #else
-        errorMessage = String(localized: "当前构建环境未包含 Supabase SDK。")
-        return false
-        #endif
+        isPurchasing = true
+        errorMessage = nil
+        defer { isPurchasing = false }
+
+        // TODO: StoreKit 2 — 按 selectedPlan.subscriptionPlan 发起内购并回写 Supabase
+        errorMessage = AppLocalized.localized("App Store 订阅功能即将上线，敬请期待。")
+    }
+
+    func restorePurchases(appRouter: AppRouter) async {
+        guard appRouter.hasPremiumAccess == false else { return }
+        errorMessage = AppLocalized.localized("App Store 订阅功能即将上线，敬请期待。")
     }
 }

@@ -47,4 +47,8 @@ enum SupportMailHelper {
 enum SupportLegalLinks {
     static let termsOfService = URL(string: "https://www.wefamily.ai/terms")
     static let privacyPolicy = URL(string: "https://www.wefamily.ai/privacy")
+
+    /// 固定英文版（避免按系统语言重定向到 `/zh-CN/...`）。
+    static let termsOfServiceEnglish = URL(string: "https://www.wefamily.ai/en/terms")
+    static let privacyPolicyEnglish = URL(string: "https://www.wefamily.ai/en/privacy")
 }

@@ -681,7 +681,7 @@ final class FamilyViewModel: ObservableObject {
             currentActiveCount: activeMemberCount,
             hasPremium: hasPremiumAccess
         ) else {
-            return String(localized: "免费版每组最多 2 名成员，升级 Pro 后可添加更多。")
+            return AppLocalized.localized("免费版每组最多 2 名成员，升级 Pro 后可添加更多。")
         }
         let idsBeforeCreate = Set(profiles.map(\.id))
         var normalizedDraft = draft

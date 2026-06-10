@@ -774,12 +774,16 @@ struct MineView: View {
     private var vipActiveSubtitle: String {
         if let expiry = appRouter.userEntitlement?.proExpiresAt, appRouter.userEntitlement?.isActive == true {
             let year = Calendar.current.component(.year, from: expiry)
-            return String(format: String(localized: "已激活至 %lld 年"), year)
+            return String(
+                format: AppLocalized.string("已激活至 %lld 年", locale: locale),
+                locale: locale,
+                year
+            )
         }
         if appRouter.selectedHouseholdIsPremium {
-            return String(localized: "当前群组已享 Pro 权益")
+            return AppLocalized.string("当前群组已享 Pro 权益", locale: locale)
         }
-        return String(localized: "Pro 会员已激活")
+        return AppLocalized.string("Pro 会员已激活", locale: locale)
     }
 
     private func retryGuestMigration() async {
