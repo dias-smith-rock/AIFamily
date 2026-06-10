@@ -159,7 +159,7 @@ private struct TaskModeListMinimalRow: View {
                 .frame(width: 10, height: 10)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(displayTitle)
+                Text(cardTitleText)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
@@ -194,6 +194,11 @@ private struct TaskModeListMinimalRow: View {
 
     private var rowFill: Color {
         Color(.secondarySystemBackground)
+    }
+
+    private var cardTitleText: String {
+        guard task.status == .completed else { return displayTitle }
+        return "✅ \(displayTitle)"
     }
 
     private var timeRangeLabel: String {

@@ -19,7 +19,7 @@ struct AllDayTaskRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(displayTitle)
+            Text(cardTitleText)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -55,6 +55,11 @@ struct AllDayTaskRowView: View {
         }
         .clipShape(RoundedRectangle(cornerRadius: 10))
         .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
+    }
+
+    private var cardTitleText: String {
+        guard task.status == .completed else { return displayTitle }
+        return "✅ \(displayTitle)"
     }
 
     private func microAvatar(source: TaskCardAvatarSource) -> some View {

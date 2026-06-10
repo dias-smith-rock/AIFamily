@@ -112,12 +112,17 @@ struct TaskCardView: View {
     // MARK: - Header
 
     private var headerRow: some View {
-        Text(displayTitle)
+        Text(cardTitleText)
             .font(.headline)
             .foregroundStyle(.primary)
             .multilineTextAlignment(.leading)
             .lineLimit(2)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var cardTitleText: String {
+        guard task.status == .completed else { return displayTitle }
+        return "✅ \(displayTitle)"
     }
 
     // MARK: - Meta
