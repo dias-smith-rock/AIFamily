@@ -268,14 +268,6 @@ struct VIPSubscriptionView: View {
         VStack(spacing: 10) {
             Divider()
 
-            if storeKit.hasUnlinkedDeviceSubscription {
-                Text("检测到本机有订阅记录，请使用「恢复购买」绑定到当前账号。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity)
-            }
-
             Button {
                 Task {
                     let success = await viewModel.purchaseSubscription(appRouter: appRouter)
