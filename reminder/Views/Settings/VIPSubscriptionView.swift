@@ -6,8 +6,10 @@ struct VIPSubscriptionView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeVIPSubscriptionViewModel()
+    @ObservedObject private var storeKit = StoreKitSubscriptionService.shared
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
+    @State private var showPurchaseSuccessAlert = false
 
     var body: some View {
         ScrollView {
@@ -38,8 +40,16 @@ struct VIPSubscriptionView: View {
                 subscribeButtonBar
             }
         }
-        .onAppear {
+        .task {
             AnalyticsManager.log(event: .vipPageViewed)
+            await viewModel.loadProducts()
+        }
+        .alert("订阅成功", isPresented: $showPurchaseSuccessAlert) {
+            Button("好的", role: .cancel) {
+                dismiss()
+            }
+        } message: {
+            Text("Pro 会员已激活，尽情使用高级功能吧。")
         }
         .alert("提示", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
@@ -118,6 +128,7 @@ struct VIPSubscriptionView: View {
                 ForEach(VIPBillingPlan.allCases) { plan in
                     VIPPlanOptionCard(
                         plan: plan,
+                        priceText: storeKit.displayPrice(for: plan) ?? plan.fallbackPriceText,
                         isSelected: viewModel.selectedPlan == plan
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -257,7 +268,10 @@ struct VIPSubscriptionView: View {
 
             Button {
                 Task {
-                    await viewModel.purchaseSubscription(appRouter: appRouter)
+                    let success = await viewModel.purchaseSubscription(appRouter: appRouter)
+                    if success {
+                        showPurchaseSuccessAlert = true
+                    }
                 }
             } label: {
                 Group {
@@ -293,7 +307,10 @@ struct VIPSubscriptionView: View {
 
             Button {
                 Task {
-                    await viewModel.restorePurchases(appRouter: appRouter)
+                    let success = await viewModel.restorePurchases(appRouter: appRouter)
+                    if success {
+                        showPurchaseSuccessAlert = true
+                    }
                 }
             } label: {
                 Text("恢复购买")
@@ -311,18 +328,19 @@ struct VIPSubscriptionView: View {
 
     private var subscribePriceCaption: String {
         let plan = viewModel.selectedPlan
+        let price = viewModel.displayPrice(for: plan)
         switch plan {
         case .monthly:
             return String(
                 format: AppLocalized.string("%@/月", locale: locale),
                 locale: locale,
-                plan.priceText
+                price
             )
         case .yearly:
             return String(
                 format: AppLocalized.string("%@/年", locale: locale),
                 locale: locale,
-                plan.priceText
+                price
             )
         }
     }
@@ -332,6 +350,7 @@ struct VIPSubscriptionView: View {
 
 private struct VIPPlanOptionCard: View {
     let plan: VIPBillingPlan
+    let priceText: String
     let isSelected: Bool
     let onSelect: () -> Void
 
@@ -356,7 +375,7 @@ private struct VIPPlanOptionCard: View {
                 }
 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(plan.priceText)
+                    Text(priceText)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                     Text(plan.periodLabel)

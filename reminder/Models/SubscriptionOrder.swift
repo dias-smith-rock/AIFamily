@@ -29,6 +29,7 @@ struct SubscriptionOrderInsertPayload: Encodable, Equatable, Sendable {
     var environment: String
     var expiresAt: Date?
     var paidAt: Date?
+    var externalTransactionId: String?
 
     init(
         payerId: UUID,
@@ -39,7 +40,8 @@ struct SubscriptionOrderInsertPayload: Encodable, Equatable, Sendable {
         status: String = OrderStatus.completed.rawValue,
         environment: String = "production",
         expiresAt: Date? = nil,
-        paidAt: Date? = Date()
+        paidAt: Date? = Date(),
+        externalTransactionId: String? = nil
     ) {
         self.payerId = payerId
         self.planPurchased = planPurchased
@@ -50,5 +52,6 @@ struct SubscriptionOrderInsertPayload: Encodable, Equatable, Sendable {
         self.environment = environment
         self.expiresAt = expiresAt
         self.paidAt = paidAt
+        self.externalTransactionId = externalTransactionId
     }
 }

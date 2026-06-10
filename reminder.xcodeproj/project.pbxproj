@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		DD169C502FB2A667007D6B54 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = DD169C4F2FB2A667007D6B54 /* Kingfisher */; };
+		DD3C1F7C2FD9037500B8AC17 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */; };
 		DDC2AF702F9F860600D9A032 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = DDC2AF6F2F9F860600D9A032 /* Supabase */; };
 		DDD16A062FC91B21009FE64F /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A052FC91B21009FE64F /* FirebaseAI */; };
 		DDD16A082FC91B21009FE64F /* FirebaseAILogic in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A072FC91B21009FE64F /* FirebaseAILogic */; };
@@ -19,6 +20,7 @@
 
 /* Begin PBXFileReference section */
 		DD17A5EF2F9F4E500059AE67 /* WeSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -47,6 +49,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DD3C1F7C2FD9037500B8AC17 /* StoreKit.framework in Frameworks */,
 				DDD16A082FC91B21009FE64F /* FirebaseAILogic in Frameworks */,
 				DDD16A0C2FC91B21009FE64F /* FirebaseAnalyticsCore in Frameworks */,
 				DD169C502FB2A667007D6B54 /* Kingfisher in Frameworks */,
@@ -65,6 +68,7 @@
 			isa = PBXGroup;
 			children = (
 				DD17A5F12F9F4E500059AE67 /* reminder */,
+				DD3C1F7A2FD9037500B8AC17 /* Frameworks */,
 				DD17A5F02F9F4E500059AE67 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -75,6 +79,14 @@
 				DD17A5EF2F9F4E500059AE67 /* WeSync.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DD3C1F7A2FD9037500B8AC17 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

@@ -93,7 +93,9 @@ description: >-
 | `feedbacks` | `Feedback` |
 | `task_attachments` | `TaskAttachment` |
 | `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `current_location` / `history_location_*` → `LocationPayload`（`lat`/`lng`/`address_name`） |
-| `subscription_orders` / `user_entitlement` | `SubscriptionSupabaseSupport` |
+| `subscription_orders` | `SubscriptionOrder` / `SubscriptionOrderInsertPayload`；IAP 写入 `external_transaction_id`、`plan_purchased`（`pro_monthly`/`pro_yearly`） |
+| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；IAP 后 upsert |
+| `households.is_premium` | 付费用户作为 `creator_id`（**auth user id**）的群组批量设为 `true` |
 | `invite_link_nonces` | `InviteLinkNonce` |
 
 ## 编解码

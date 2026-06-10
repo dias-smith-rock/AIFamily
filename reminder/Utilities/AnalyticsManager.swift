@@ -22,6 +22,7 @@ enum AnalyticsManager {
         case taskCompleted(taskId: UUID)
         case vipPageViewed
         case vipClaimed
+        case vipPurchased(plan: String)
         case aiPhotoTaskFailed(step: String, message: String, detail: String)
         case aiPhotoTaskSucceeded
         case guestStarted
@@ -128,6 +129,9 @@ enum AnalyticsManager {
         case .vipClaimed:
             return ("vip_claimed", nil)
 
+        case .vipPurchased(let plan):
+            return ("vip_purchased", ["plan": plan])
+
         case .aiPhotoTaskFailed(let step, let message, let detail):
             return (
                 "ai_photo_task_failed",
@@ -190,6 +194,8 @@ enum AnalyticsManager {
             return "vip_page_viewed"
         case .vipClaimed:
             return "vip_claimed"
+        case .vipPurchased(let plan):
+            return "vip_purchased plan=\(plan)"
         case .aiPhotoTaskFailed(let step, let message, let detail):
             return "ai_photo_task_failed step=\(step) error=\(message) \(detail)"
         case .aiPhotoTaskSucceeded:

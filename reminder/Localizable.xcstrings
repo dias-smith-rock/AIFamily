@@ -3930,6 +3930,7 @@
       }
     },
     "App Store 订阅功能即将上线，敬请期待。" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -5096,6 +5097,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pro 會員已啟用"
+          }
+        }
+      }
+    },
+    "Pro 会员已激活，尽情使用高级功能吧。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم تفعيل Pro. استمتع بجميع المزايا المميزة!"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro is active. Enjoy all premium features!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro activado. ¡Disfruta de todas las funciones premium!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro activé. Profitez de toutes les fonctionnalités premium !"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro सक्रिय है। सभी प्रीमियम सुविधाओं का आनंद लें!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro ativado. Aproveite todos os recursos premium!"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro செயலில் உள்ளது. அனைத்து பிரீமியம் அம்சங்களையும் அனுபவியுங்கள்!"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro 会员已激活，尽情使用高级功能吧。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pro 會員已啟用，盡情使用高級功能吧。"
           }
         }
       }
@@ -19443,6 +19502,64 @@
         }
       }
     },
+    "恢复购买失败，请稍后重试。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فشلت الاستعادة. يرجى المحاولة لاحقًا."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restore failed. Please try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al restaurar. Inténtalo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec de la restauration. Réessayez plus tard."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पुनर्स्थापना विफल। बाद में पुनः प्रयास करें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha ao restaurar. Tente novamente mais tarde."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "மீட்டமைப்பு தோல்வி. பின்னர் முயற்சிக்கவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢复购买失败，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "恢復購買失敗，請稍後重試。"
+          }
+        }
+      }
+    },
     "您已成为「%@」的创建者，拥有该群组的最高管理权限。" : {
       "localizations" : {
         "ar" : {
@@ -27183,6 +27300,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未填寫"
+          }
+        }
+      }
+    },
+    "未找到可恢复的订阅。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لم يتم العثور على اشتراك لاستعادته."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No subscription found to restore."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontró ninguna suscripción para restaurar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun abonnement à restaurer."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पुनर्स्थापित करने के लिए कोई सब्सक्रिप्शन नहीं मिला।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nenhuma assinatura encontrada para restaurar."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "மீட்டமைக்க சந்தா கிடைக்கவில்லை."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到可恢复的订阅。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未找到可恢復的訂閱。"
           }
         }
       }
@@ -38256,6 +38431,64 @@
         }
       }
     },
+    "订阅商品加载失败，请稍后重试。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذر تحميل منتجات الاشتراك. يرجى المحاولة لاحقًا."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to load subscription products. Please try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudieron cargar los productos de suscripción. Inténtalo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec du chargement des abonnements. Réessayez plus tard."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सब्सक्रिप्शन उत्पाद लोड नहीं हो सके। बाद में पुनः प्रयास करें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha ao carregar produtos de assinatura. Tente novamente mais tarde."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "சந்தா தயாரிப்புகளை ஏற்ற முடியவில்லை. பின்னர் முயற்சிக்கவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "订阅商品加载失败，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱商品載入失敗，請稍後重試。"
+          }
+        }
+      }
+    },
     "订阅将自动续费，可随时在 App Store 账户设置中取消。" : {
       "localizations" : {
         "ar" : {
@@ -38310,6 +38543,64 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "訂閱將自動續費，可隨時在 App Store 帳戶設定中取消。"
+          }
+        }
+      }
+    },
+    "订阅成功" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم الاشتراك بنجاح"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Subscription successful"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suscripción exitosa"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abonnement réussi"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सब्सक्रिप्शन सफल"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assinatura concluída"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "சந்தா வெற்றி"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "订阅成功"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "訂閱成功"
           }
         }
       }
@@ -41219,6 +41510,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "購買 %@ 的生日禮物"
+          }
+        }
+      }
+    },
+    "购买失败，请稍后重试。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فشل الشراء. يرجى المحاولة لاحقًا."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase failed. Please try again later."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compra falló. Inténtalo más tarde."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec de l'achat. Réessayez plus tard."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खरीद विफल। बाद में पुनः प्रयास करें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A compra falhou. Tente novamente mais tarde."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "வாங்கல் தோல்வி. பின்னர் முயற்சிக்கவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "购买失败，请稍后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購買失敗，請稍後重試。"
+          }
+        }
+      }
+    },
+    "购买正在处理中，请稍后在 App Store 账户中查看。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الشراء قيد المعالجة. تحقق من حساب App Store لاحقًا."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase is pending. Check your App Store account shortly."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La compra está pendiente. Revisa tu cuenta de App Store en breve."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Achat en attente. Vérifiez votre compte App Store sous peu."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खरीद प्रक्रिया में है। बाद में App Store खाता देखें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A compra está pendente. Verifique sua conta da App Store em breve."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "வாங்கல் நிலுவையில் உள்ளது. பின்னர் App Store கணக்கைப் பார்க்கவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "购买正在处理中，请稍后在 App Store 账户中查看。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購買正在處理中，請稍後在 App Store 帳戶中查看。"
+          }
+        }
+      }
+    },
+    "购买验证失败，请重试或联系支持。" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فشل التحقق من الشراء. أعد المحاولة أو اتصل بالدعم."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purchase verification failed. Please retry or contact support."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Error al verificar la compra. Reintenta o contacta con soporte."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Échec de la vérification d'achat. Réessayez ou contactez le support."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "खरीद सत्यापन विफल। पुनः प्रयास करें या सहायता से संपर्क करें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Falha na verificação da compra. Tente novamente ou contate o suporte."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "வாங்கல் சரிபார்ப்பு தோல்வி. மீண்டும் முயற்சிக்கவும் அல்லது ஆதரவை தொடர்பு கொள்ளவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "购买验证失败，请重试或联系支持。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "購買驗證失敗，請重試或聯絡支援。"
           }
         }
       }

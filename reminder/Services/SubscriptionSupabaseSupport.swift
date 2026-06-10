@@ -24,6 +24,29 @@ enum SubscriptionSupabaseSupport {
         #endif
     }
 
+    /// App Store 购买/恢复/续订：写入订单、个人权益，并将用户作为创建者的群组标记为 Premium。
+    @MainActor
+    static func activatePremiumFromApplePurchase(
+        userId: UUID,
+        purchase: VerifiedApplePurchase
+    ) async throws {
+        let orderPayload = SubscriptionOrderInsertPayload(
+            payerId: userId,
+            planPurchased: purchase.plan.rawValue,
+            amount: purchase.amount,
+            currency: purchase.currency,
+            environment: purchase.environment,
+            expiresAt: purchase.expiresAt,
+            externalTransactionId: purchase.transactionId
+        )
+        try await activatePremium(
+            userId: userId,
+            expiresAt: purchase.expiresAt,
+            orderPayload: orderPayload,
+            externalTransactionId: purchase.transactionId
+        )
+    }
+
     /// 创世用户福利：写入订单、个人权益，并将用户作为创建者的群组标记为 Premium。
     @MainActor
     static func claimFreeProTrialForCurrentUser() async throws -> Date {
@@ -41,23 +64,58 @@ enum SubscriptionSupabaseSupport {
         let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: Date())
             ?? Date().addingTimeInterval(365 * 24 * 60 * 60)
 
-        #if canImport(Supabase)
-        let client = SupabaseManager.shared.client
-
         let orderPayload = SubscriptionOrderInsertPayload(
             payerId: userId,
             planPurchased: SubscriptionPlan.proOneYearFree.rawValue,
             expiresAt: oneYearLater
         )
-        try await client
-            .from("subscription_orders")
-            .insert(orderPayload)
-            .execute()
+        try await activatePremium(
+            userId: userId,
+            expiresAt: oneYearLater,
+            orderPayload: orderPayload,
+            externalTransactionId: nil
+        )
+        return oneYearLater
+    }
+
+    // MARK: - Private
+
+    @MainActor
+    private static func activatePremium(
+        userId: UUID,
+        expiresAt: Date?,
+        orderPayload: SubscriptionOrderInsertPayload,
+        externalTransactionId: String?
+    ) async throws {
+        #if canImport(Supabase)
+        let client = SupabaseManager.shared.client
+
+        if let externalTransactionId {
+            let existing: [SubscriptionOrderIdRow] = try await client
+                .from("subscription_orders")
+                .select("id")
+                .eq("external_transaction_id", value: externalTransactionId)
+                .limit(1)
+                .execute()
+                .value
+
+            if existing.isEmpty {
+                try await client
+                    .from("subscription_orders")
+                    .insert(orderPayload)
+                    .execute()
+            }
+        } else {
+            try await client
+                .from("subscription_orders")
+                .insert(orderPayload)
+                .execute()
+        }
 
         let entitlementPayload = UserEntitlementUpsertPayload(
             userId: userId,
             isPro: true,
-            proExpiresAt: oneYearLater
+            proExpiresAt: expiresAt
         )
         try await client
             .from("user_entitlements")
@@ -70,13 +128,18 @@ enum SubscriptionSupabaseSupport {
             .update(groupUpdate)
             .eq("creator_id", value: userId.uuidString.lowercased())
             .execute()
-
-        return oneYearLater
         #else
         _ = userId
+        _ = expiresAt
+        _ = orderPayload
+        _ = externalTransactionId
         throw SubscriptionSupabaseError.sdkUnavailable
         #endif
     }
+}
+
+private struct SubscriptionOrderIdRow: Decodable {
+    let id: UUID
 }
 
 struct UserEntitlementUpsertPayload: Encodable, Equatable, Sendable {

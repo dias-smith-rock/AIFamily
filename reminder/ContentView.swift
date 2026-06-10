@@ -135,8 +135,17 @@ struct ContentView: View {
         .onChange(of: appRouter.appState) { _, _ in
             reconcileStaleLoginSession()
         }
-        .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, _ in
+        .onAppear {
+            StoreKitSubscriptionService.shared.configure(appRouter: appRouter)
+            StoreKitSubscriptionService.shared.startTransactionListener()
+        }
+        .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, completed in
             reconcileStaleLoginSession()
+            if completed, isUserLoggedIn, isGuestMode == false {
+                Task {
+                    await StoreKitSubscriptionService.shared.syncEntitlementsOnLaunch()
+                }
+            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
