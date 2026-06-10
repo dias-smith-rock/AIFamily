@@ -27,9 +27,16 @@ enum TaskAttachmentSupabaseSupport {
 
     /// 并发上传 JPEG 至 `task_attachments` 桶。
     @MainActor
-    static func uploadImages(_ images: [UIImage], householdId: UUID) async throws -> [UploadedFile] {
-        let payloads = images.compactMap { image in
-            image.jpegData(compressionQuality: 0.7)
+    static func uploadImages(
+        _ images: [UIImage],
+        householdId: UUID,
+        usePremiumQuality: Bool = false
+    ) async throws -> [UploadedFile] {
+        let payloads = images.compactMap { image -> Data? in
+            if usePremiumQuality {
+                return CameraImageCompression.compressForUploadPremium(image)
+            }
+            return CameraImageCompression.compressForUpload(image)
         }
         guard payloads.count == images.count else {
             throw TaskAttachmentSupabaseError.imageEncodingFailed

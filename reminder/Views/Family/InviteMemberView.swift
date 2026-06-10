@@ -13,6 +13,8 @@ struct InviteMemberView: View {
 
     let currentHouseholdId: UUID?
     let creatorMembershipId: UUID?
+    let activeMemberCount: Int
+    let hasPremiumAccess: Bool
 
     @State private var inviteCode: String?
     @State private var isLoading = true
@@ -176,6 +178,14 @@ struct InviteMemberView: View {
             return
         }
 
+        guard PremiumLimits.canAddHouseholdMember(
+            currentActiveCount: activeMemberCount,
+            hasPremium: hasPremiumAccess
+        ) else {
+            errorMessage = String(localized: "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。")
+            return
+        }
+
         #if canImport(Supabase)
         do {
             let creatorMembershipId = try resolveCreatorMembershipId()
@@ -240,6 +250,8 @@ struct InviteMemberView: View {
 #Preview {
     InviteMemberView(
         currentHouseholdId: UUID(),
-        creatorMembershipId: UUID()
+        creatorMembershipId: UUID(),
+        activeMemberCount: 1,
+        hasPremiumAccess: false
     )
 }

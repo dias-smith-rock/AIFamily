@@ -100,7 +100,7 @@ struct SwitchGroupSheetView: View {
                     if isGuestMode {
                         showsGuestSignInAlert = true
                     } else {
-                        coordinator.presentCreateOrganizationAfterDismiss()
+                        coordinator.presentCreateOrganizationAfterDismiss(appRouter: appRouter)
                     }
                 } label: {
                     HStack(spacing: 10) {
@@ -119,7 +119,7 @@ struct SwitchGroupSheetView: View {
                     if isGuestMode {
                         showsGuestSignInAlert = true
                     } else {
-                        coordinator.presentJoinGroupAfterDismiss()
+                        coordinator.presentJoinGroupAfterDismiss(appRouter: appRouter)
                     }
                 } label: {
                     HStack(spacing: 10) {
@@ -140,6 +140,10 @@ struct SwitchGroupSheetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemGroupedBackground))
         .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
+        .premiumUpgradeAlert(
+            isPresented: $coordinator.showPremiumHouseholdLimitAlert,
+            message: "免费版最多加入 1 个群组，升级 Pro 后可无限创建与加入。"
+        )
     }
 }
 

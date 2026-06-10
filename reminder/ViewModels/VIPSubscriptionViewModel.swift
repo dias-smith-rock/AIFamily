@@ -9,6 +9,10 @@ final class VIPSubscriptionViewModel: ObservableObject {
 
     func claimFreeProTrial(appRouter: AppRouter) async -> Bool {
         #if canImport(Supabase)
+        guard appRouter.hasPremiumAccess == false else {
+            errorMessage = String(localized: "您已是 Pro 会员。")
+            return false
+        }
         guard isClaiming == false else { return false }
         isClaiming = true
         errorMessage = nil

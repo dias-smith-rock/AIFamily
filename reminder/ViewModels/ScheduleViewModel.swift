@@ -546,7 +546,8 @@ final class ScheduleViewModel: ObservableObject {
         normalizedQuad: NormalizedCropQuad,
         image: UIImage,
         source: AIPhotoTaskCreationLogger.CaptureSource,
-        targetDate: Date
+        targetDate: Date,
+        usePremiumQuality: Bool = false
     ) {
         pendingCropContext = nil
 
@@ -555,7 +556,13 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
 
-        guard let compressed = CameraImageCompression.compressForUpload(image) else {
+        let compressed: Data?
+        if usePremiumQuality {
+            compressed = CameraImageCompression.compressForUploadPremium(image)
+        } else {
+            compressed = CameraImageCompression.compressForUpload(image)
+        }
+        guard let compressed else {
             aiProcessingError = String(localized: "图片处理失败，请重试。")
             return
         }

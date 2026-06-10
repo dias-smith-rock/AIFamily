@@ -134,7 +134,8 @@ struct TaskListView: View {
                             normalizedQuad: normalizedQuad,
                             image: context.image,
                             source: context.source,
-                            targetDate: dayID(for: selectedDate)
+                            targetDate: dayID(for: selectedDate),
+                            usePremiumQuality: appRouter.hasPremiumAccess
                         )
                     },
                     onRetake: {

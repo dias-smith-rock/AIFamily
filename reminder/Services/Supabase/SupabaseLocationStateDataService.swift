@@ -77,41 +77,43 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             return .skippedGhost
         }
 
-        let movedMeters: Double?
-        if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
+        let decision = LocationPersistWriteGate.writeDecision(
             newCoordinate: coordinate,
             storedLocations: existing?.locations ?? [],
             lastRecordUpdatedAt: existing?.updatedAt,
             minDistanceMeters: minDistanceMeters,
             minIntervalSeconds: minIntervalSeconds
-        ) {
-            logLocationPersistSkip(
-                skipOutcome,
-                coordinate: coordinate,
-                existing: existing,
-                minDistanceMeters: minDistanceMeters,
-                minIntervalSeconds: minIntervalSeconds
-            )
-            return skipOutcome
-        }
-        if let latest = existing?.latestLocation {
-            movedMeters = coordinate.distanceMeters(to: latest)
-        } else {
-            movedMeters = nil
-        }
-
-        print(
-            "[LocationPersist] writing to database "
-                + "profile=\(profileId.uuidString.prefix(8)) "
-                + "household=\(householdId.uuidString.prefix(8)) "
-                + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
-                + (movedMeters.map { " moved=\(String(format: "%.1f", $0))m" } ?? " moved=first_write")
         )
+        guard case .write(let writeMode) = decision else {
+            if case .skip(let skipOutcome) = decision {
+                logLocationPersistSkip(
+                    skipOutcome,
+                    coordinate: coordinate,
+                    existing: existing,
+                    minDistanceMeters: minDistanceMeters,
+                    minIntervalSeconds: minIntervalSeconds
+                )
+                return skipOutcome
+            }
+            return .skippedWithinInterval(elapsedSeconds: 0)
+        }
 
         let battery = DeviceBatteryMonitor.readSnapshot()
         let stampedCoordinate = coordinate.stampingDeviceSnapshotIfNeeded(
             batteryLevel: battery.level,
             isCharging: battery.isCharging
+        )
+        let movedMeters = existing?.latestLocation.map {
+            coordinate.distanceMeters(to: $0)
+        }
+        let writeAction = writeMode == .prependNewPoint ? "prepend" : "replace_latest"
+        print(
+            "[LocationPersist] writing to database "
+                + "profile=\(profileId.uuidString.prefix(8)) "
+                + "household=\(householdId.uuidString.prefix(8)) "
+                + "action=\(writeAction) "
+                + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+                + (movedMeters.map { " moved=\(String(format: "%.1f", $0))m" } ?? " moved=first_write")
         )
 
         #if canImport(Supabase)
@@ -137,22 +139,27 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             guard LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) else {
                 throw error
             }
-            if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
+            let fallbackDecision = LocationPersistWriteGate.writeDecision(
                 newCoordinate: stampedCoordinate,
                 storedLocations: existing?.locations ?? [],
                 lastRecordUpdatedAt: existing?.updatedAt,
                 minDistanceMeters: minDistanceMeters,
                 minIntervalSeconds: minIntervalSeconds
-            ) {
-                return skipOutcome
+            )
+            guard case .write(let fallbackWriteMode) = fallbackDecision else {
+                if case .skip(let skipOutcome) = fallbackDecision {
+                    return skipOutcome
+                }
+                return .skippedWithinInterval(elapsedSeconds: 0)
             }
             let now = Date()
             let payload = LocationStateUpsertPayload(
                 householdId: householdId,
                 profileId: profileId,
-                locations: LocationHistoryLimits.prepending(
+                locations: LocationHistoryLimits.applyingWrite(
                     stampedCoordinate,
-                    to: existing?.locations ?? []
+                    to: existing?.locations ?? [],
+                    mode: fallbackWriteMode
                 ),
                 isGhostMode: existing?.isGhostMode ?? false,
                 updatedAt: now

@@ -42,21 +42,28 @@ actor MockLocationStateDataService: LocationStateDataService {
             if LocationGhostPreferences.shouldSkipLocationUpload(householdId: householdId, profileId: profileId) {
                 return .skippedGhost
             }
-            if let skipOutcome = LocationPersistWriteGate.skipOutcomeIfNotEligible(
+            let decision = LocationPersistWriteGate.writeDecision(
                 newCoordinate: coordinate,
                 storedLocations: row.locations,
                 lastRecordUpdatedAt: row.updatedAt,
                 minDistanceMeters: minDistanceMeters,
                 minIntervalSeconds: minIntervalSeconds
-            ) {
-                return skipOutcome
-            }
-            let battery = DeviceBatteryMonitor.readSnapshot()
-            let stamped = coordinate.stampingDeviceSnapshotIfNeeded(
-                batteryLevel: battery.level,
-                isCharging: battery.isCharging
             )
-            row.locations = LocationHistoryLimits.prepending(stamped, to: row.locations)
+            switch decision {
+            case .skip(let skipOutcome):
+                return skipOutcome
+            case .write(let writeMode):
+                let battery = DeviceBatteryMonitor.readSnapshot()
+                let stamped = coordinate.stampingDeviceSnapshotIfNeeded(
+                    batteryLevel: battery.level,
+                    isCharging: battery.isCharging
+                )
+                row.locations = LocationHistoryLimits.applyingWrite(
+                    stamped,
+                    to: row.locations,
+                    mode: writeMode
+                )
+            }
             row.updatedAt = Date()
             records[index] = row
             return .persisted

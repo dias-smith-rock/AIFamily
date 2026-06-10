@@ -672,7 +672,17 @@ final class FamilyViewModel: ObservableObject {
         }
     }
 
-    func createLocalProfile(householdId: UUID, draft: LocalProfileDraft) async -> String? {
+    func createLocalProfile(
+        householdId: UUID,
+        draft: LocalProfileDraft,
+        hasPremiumAccess: Bool
+    ) async -> String? {
+        guard PremiumLimits.canAddHouseholdMember(
+            currentActiveCount: activeMemberCount,
+            hasPremium: hasPremiumAccess
+        ) else {
+            return String(localized: "免费版每组最多 2 名成员，升级 Pro 后可添加更多。")
+        }
         let idsBeforeCreate = Set(profiles.map(\.id))
         var normalizedDraft = draft
         let stableName = String(draft.name)
@@ -1200,6 +1210,17 @@ final class FamilyViewModel: ObservableObject {
 
     private func activeAdminCount() -> Int {
         members.filter { $0.isActiveMembership() && $0.hasRole(.admin) }.count
+    }
+
+    var activeMemberCount: Int {
+        members.filter { $0.isActiveMembership() }.count
+    }
+
+    func canAddMember(hasPremiumAccess: Bool) -> Bool {
+        PremiumLimits.canAddHouseholdMember(
+            currentActiveCount: activeMemberCount,
+            hasPremium: hasPremiumAccess
+        )
     }
 
     private func persistOrder(for others: [FamilyProfile]) {

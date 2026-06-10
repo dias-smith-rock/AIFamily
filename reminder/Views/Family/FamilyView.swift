@@ -29,6 +29,7 @@ struct FamilyView: View {
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
     @State private var showsGuestSignInAlert = false
+    @State private var showPremiumMemberLimitAlert = false
 
     var body: some View {
         NavigationStack {
@@ -102,9 +103,21 @@ struct FamilyView: View {
             case .entry:
                 AddFamilyMemberEntrySheet(
                     canCreateProfileWithoutAccount: canCreateVirtualProfile,
-                    onChooseInvite: { addMemberRoute = .invite },
+                    onChooseInvite: {
+                        guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
+                            addMemberRoute = nil
+                            showPremiumMemberLimitAlert = true
+                            return
+                        }
+                        addMemberRoute = .invite
+                    },
                     onChooseCreateProfile: {
                         guard canCreateVirtualProfile else { return }
+                        guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
+                            addMemberRoute = nil
+                            showPremiumMemberLimitAlert = true
+                            return
+                        }
                         Task { @MainActor in
                             addMemberRoute = nil
                             await Task.yield()
@@ -117,7 +130,9 @@ struct FamilyView: View {
             case .invite:
                 InviteMemberView(
                     currentHouseholdId: appRouter.selectedHouseholdId,
-                    creatorMembershipId: appRouter.selectedMembershipId
+                    creatorMembershipId: appRouter.selectedMembershipId,
+                    activeMemberCount: viewModel.activeMemberCount,
+                    hasPremiumAccess: appRouter.hasPremiumAccess
                 )
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -135,7 +150,11 @@ struct FamilyView: View {
                     return await viewModel.uploadAvatar(data: data, profileId: profileId)
                 },
                 onSave: { householdId, draft in
-                    let result = await viewModel.createLocalProfile(householdId: householdId, draft: draft)
+                    let result = await viewModel.createLocalProfile(
+                        householdId: householdId,
+                        draft: draft,
+                        hasPremiumAccess: appRouter.hasPremiumAccess
+                    )
                     if result == nil {
                         ReviewRedirectManager.shared.checkAndTriggerAlert(for: .virtualMember)
                     }
@@ -226,6 +245,10 @@ struct FamilyView: View {
             Text(viewModel.leaveErrorMessage ?? "请稍后重试。")
         }
         .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
+        .premiumUpgradeAlert(
+            isPresented: $showPremiumMemberLimitAlert,
+            message: "免费版每组最多 2 名成员，升级 Pro 后可添加更多。"
+        )
     }
 
     private var leaveErrorAlertBinding: Binding<Bool> {
@@ -367,6 +390,10 @@ struct FamilyView: View {
     private func presentAddMemberFlow() {
         if isGuestMode {
             showsGuestSignInAlert = true
+            return
+        }
+        guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
+            showPremiumMemberLimitAlert = true
             return
         }
         addMemberRoute = .entry

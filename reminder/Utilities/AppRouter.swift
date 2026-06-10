@@ -40,6 +40,9 @@ final class AppRouter: ObservableObject {
     /// 「我的」页创建者无法注销时，请求打开当前群组的群组设置页。
     @Published var pendingOpenGroupSettings = false
 
+    /// 全局 VIP 升级页（免费版触达配额上限时由各处 `.alert` 触发）。
+    @Published var isPresentingVIPUpgrade = false
+
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的群组）。
     private var pendingPreferredHouseholdId: UUID?
 
@@ -69,6 +72,18 @@ final class AppRouter: ObservableObject {
         )
     }
 
+    /// 免费版群组数校验：取已同步列表与 onboarding 拉取结果的较大值。
+    func resolvedHouseholdCount(fallbackJoinedCount: Int = 0) -> Int {
+        max(selectableHouseholds.count, fallbackJoinedCount)
+    }
+
+    func canCreateOrJoinAnotherHousehold(fallbackJoinedCount: Int = 0) -> Bool {
+        PremiumLimits.canCreateOrJoinAnotherHousehold(
+            currentCount: resolvedHouseholdCount(fallbackJoinedCount: fallbackJoinedCount),
+            hasPremium: hasPremiumAccess
+        )
+    }
+
     func preferHouseholdOnNextRefresh(_ householdId: UUID) {
         pendingPreferredHouseholdId = householdId
     }
@@ -79,6 +94,10 @@ final class AppRouter: ObservableObject {
 
     func requestOpenGroupSettings() {
         pendingOpenGroupSettings = true
+    }
+
+    func presentPremiumUpgrade() {
+        isPresentingVIPUpgrade = true
     }
 
     func consumePendingOpenGroupSettingsRequest() {

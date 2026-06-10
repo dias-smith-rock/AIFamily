@@ -79,6 +79,18 @@ struct ContentView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $appRouter.isPresentingVIPUpgrade) {
+            NavigationStack {
+                VIPSubscriptionView()
+            }
+            .environmentObject(appRouter)
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
+        }
+        .premiumUpgradeAlert(
+            isPresented: $groupSwitcher.showPremiumHouseholdLimitAlert,
+            message: "免费版最多加入 1 个群组，升级 Pro 后可无限创建与加入。"
+        )
         .task(id: appRouter.appState) {
             if isUserLoggedIn && biometricManager.isUnlocked {
                 _ = await NotificationManager.shared.requestAuthorizationIfNeeded()

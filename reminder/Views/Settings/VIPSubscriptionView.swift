@@ -29,10 +29,14 @@ struct VIPSubscriptionView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("升级 VIP")
+        .navigationTitle(appRouter.hasPremiumAccess ? "Pro 会员" : "升级 VIP")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            claimButtonBar
+            if appRouter.hasPremiumAccess {
+                activeProStatusBar
+            } else {
+                claimButtonBar
+            }
         }
         .onAppear {
             AnalyticsManager.log(event: .vipPageViewed)
@@ -69,16 +73,24 @@ struct VIPSubscriptionView: View {
                 )
                 .padding(.top, 8)
 
-            Text("升级至 Pro 高级版")
+            Text(appRouter.hasPremiumAccess ? "Pro 会员已激活" : "升级至 Pro 高级版")
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
-            Text("🚀 创世用户福利：限时免费领取 1 年 Pro 权益！")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.orange)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
+            if appRouter.hasPremiumAccess {
+                Text(proActiveDetailText)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            } else {
+                Text("🚀 创世用户福利：限时免费领取 1 年 Pro 权益！")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -118,6 +130,34 @@ struct VIPSubscriptionView: View {
     }
 
     // MARK: - CTA
+
+    private var proActiveDetailText: String {
+        if let expiry = appRouter.userEntitlement?.proExpiresAt, appRouter.userEntitlement?.isActive == true {
+            let year = Calendar.current.component(.year, from: expiry)
+            return String(format: String(localized: "个人权益有效期至 %lld 年"), year)
+        }
+        if appRouter.selectedHouseholdIsPremium {
+            return String(localized: "当前群组已继承 Pro 权益")
+        }
+        return String(localized: "感谢您的支持，尽情使用 Pro 功能吧。")
+    }
+
+    private var activeProStatusBar: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.seal.fill")
+                    .foregroundStyle(.orange)
+                Text("Pro 会员已激活")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
+            .background(Color(.systemGroupedBackground))
+        }
+    }
 
     private var claimButtonBar: some View {
         VStack(spacing: 0) {

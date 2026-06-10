@@ -1,12 +1,12 @@
 import Foundation
 
-/// 用户可配置的位置入库门禁：位移阈值与上报间隔（须同时满足才写入 `location_states`）。
+/// 用户可配置的位置入库门禁：位移阈值与上报间隔；间隔到达但位移未达阈值时仅刷新 `locations[0]`。
 enum LocationPersistPreferences {
     static let distanceStorageKey = "locationPersistMinDistanceMeters"
     static let intervalStorageKey = "locationPersistMinIntervalSeconds"
 
     static let defaultMinUpdateDistanceMeters: Double = 500
-    static let defaultMinUpdateIntervalSeconds: TimeInterval = 15 * 60
+    static let defaultMinUpdateIntervalSeconds: TimeInterval = 5 * 60
 
     /// 设置页与服务端 RPC 允许的最低位移（米）。
     static let minimumConfigurableDistanceMeters: Double = 100

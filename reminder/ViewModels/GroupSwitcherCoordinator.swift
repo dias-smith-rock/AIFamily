@@ -13,6 +13,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
     @Published var showJoinGroupSheet = false
     @Published var joinCode = ""
     @Published var joinInputError: String?
+    @Published var showPremiumHouseholdLimitAlert = false
 
     let orgRoutingViewModel: OrgRoutingViewModel
 
@@ -34,6 +35,10 @@ final class GroupSwitcherCoordinator: ObservableObject {
 
     func submitCreateOrganization(appRouter: AppRouter) async {
         createOrganizationError = nil
+        guard appRouter.canCreateOrJoinAnotherHousehold() else {
+            showPremiumHouseholdLimitAlert = true
+            return
+        }
         let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
             createOrganizationError = String(localized: "请输入群组名称。")
@@ -61,6 +66,10 @@ final class GroupSwitcherCoordinator: ObservableObject {
 
     func submitJoinGroup(appRouter: AppRouter, locale: Locale) async {
         joinInputError = nil
+        guard appRouter.canCreateOrJoinAnotherHousehold() else {
+            showPremiumHouseholdLimitAlert = true
+            return
+        }
         guard isInviteCodeValid else {
             joinInputError = String(localized: "邀请码格式无效：必须为 6 位字母或数字。")
             return
@@ -86,7 +95,11 @@ final class GroupSwitcherCoordinator: ObservableObject {
         return String(text[range])
     }
 
-    func presentCreateOrganizationAfterDismiss() {
+    func presentCreateOrganizationAfterDismiss(appRouter: AppRouter) {
+        guard appRouter.canCreateOrJoinAnotherHousehold() else {
+            showPremiumHouseholdLimitAlert = true
+            return
+        }
         showSwitchGroupDialog = false
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(100))
@@ -94,7 +107,11 @@ final class GroupSwitcherCoordinator: ObservableObject {
         }
     }
 
-    func presentJoinGroupAfterDismiss() {
+    func presentJoinGroupAfterDismiss(appRouter: AppRouter) {
+        guard appRouter.canCreateOrJoinAnotherHousehold() else {
+            showPremiumHouseholdLimitAlert = true
+            return
+        }
         showSwitchGroupDialog = false
         joinInputError = nil
         Task { @MainActor in

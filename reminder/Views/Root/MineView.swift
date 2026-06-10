@@ -27,8 +27,12 @@ struct MineView: View {
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
 
     private enum FeatureVisibility {
-        static let showsVIPEntry = false
+        static let showsVIPEntry = true
         static let showsIntegrationsSection = false
+    }
+
+    private var showsVIPEntryForCurrentUser: Bool {
+        FeatureVisibility.showsVIPEntry && isUserLoggedIn && isGuestMode == false
     }
 
     var body: some View {
@@ -189,7 +193,7 @@ struct MineView: View {
             }
             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
 
-            if FeatureVisibility.showsVIPEntry {
+            if showsVIPEntryForCurrentUser {
                 Section {
                     NavigationLink {
                         VIPSubscriptionView()
@@ -739,12 +743,21 @@ struct MineView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("升级 VIP")
-                    .font(AppTheme.FontToken.bodyStrong)
-                    .foregroundStyle(.primary)
-                Text("解锁高级功能")
-                    .font(AppTheme.FontToken.caption)
-                    .foregroundStyle(.secondary)
+                if appRouter.hasPremiumAccess {
+                    Text("Pro 会员")
+                        .font(AppTheme.FontToken.bodyStrong)
+                        .foregroundStyle(.primary)
+                    Text(vipActiveSubtitle)
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("升级 VIP")
+                        .font(AppTheme.FontToken.bodyStrong)
+                        .foregroundStyle(.primary)
+                    Text("解锁高级功能")
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -756,6 +769,17 @@ struct MineView: View {
                 .background(Color.orange, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
         }
         .contentShape(Rectangle())
+    }
+
+    private var vipActiveSubtitle: String {
+        if let expiry = appRouter.userEntitlement?.proExpiresAt, appRouter.userEntitlement?.isActive == true {
+            let year = Calendar.current.component(.year, from: expiry)
+            return String(format: String(localized: "已激活至 %lld 年"), year)
+        }
+        if appRouter.selectedHouseholdIsPremium {
+            return String(localized: "当前群组已享 Pro 权益")
+        }
+        return String(localized: "Pro 会员已激活")
     }
 
     private func retryGuestMigration() async {

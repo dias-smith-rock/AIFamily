@@ -54,7 +54,7 @@ struct LocationPersistSettingsView: View {
             } header: {
                 Text("上报间隔")
             } footer: {
-                Text("仅当位移超过所选阈值，且距上次上报超过所选间隔时，才会写入云端位置。")
+                Text("位移与间隔均达标时会新增一条位置记录；仅间隔到达而位移未达阈值时，会更新最近一条位置记录。")
             }
         }
         .navigationTitle("位置上报")
@@ -183,7 +183,7 @@ struct LocationPersistSettingsView: View {
         case 900: "15 分钟"
         case 1_800: "30 分钟"
         case 3_600: "1 小时"
-        default: "15 分钟"
+        default: "5 分钟"
         }
     }
 

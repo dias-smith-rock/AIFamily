@@ -37,21 +37,35 @@ enum CameraImageCompression {
 
     /// 将相机原图（含 HEIC）缩放并压缩为 JPEG，目标小于 400KB。
     static func compressForUpload(_ image: UIImage) -> Data? {
-        var working = downscaleIfNeeded(image, maxPixel: 2048)
-        if let data = jpegData(for: working, quality: initialJPEGQuality),
+        compress(image, maxPixel: 2048, maxByteCount: maxByteCount, initialQuality: initialJPEGQuality)
+    }
+
+    /// Pro 上传：更高分辨率与 JPEG 质量，目标小于 2MB。
+    static func compressForUploadPremium(_ image: UIImage) -> Data? {
+        compress(image, maxPixel: 4096, maxByteCount: 2 * 1024 * 1024, initialQuality: 0.85)
+    }
+
+    private static func compress(
+        _ image: UIImage,
+        maxPixel: CGFloat,
+        maxByteCount: Int,
+        initialQuality: CGFloat
+    ) -> Data? {
+        var working = downscaleIfNeeded(image, maxPixel: maxPixel)
+        if let data = jpegData(for: working, quality: initialQuality),
            data.count <= maxByteCount {
             return data
         }
 
-        for maxPixel in [1600.0, 1280.0, 1024.0, 800.0] {
-            working = downscaleIfNeeded(image, maxPixel: maxPixel)
-            if let data = jpegData(for: working, quality: initialJPEGQuality),
+        for scaledMaxPixel in [maxPixel * 0.75, maxPixel * 0.5, maxPixel * 0.35] {
+            working = downscaleIfNeeded(image, maxPixel: scaledMaxPixel)
+            if let data = jpegData(for: working, quality: initialQuality),
                data.count <= maxByteCount {
                 return data
             }
         }
 
-        var quality = initialJPEGQuality
+        var quality = initialQuality
         while quality > 0.1 {
             quality -= 0.05
             if let data = jpegData(for: working, quality: quality),
