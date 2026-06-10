@@ -243,8 +243,10 @@ final class StoreKitSubscriptionService: ObservableObject {
             return "sandbox"
         case .production:
             return "production"
+        case .xcode:
+            return "xcode"
         default:
-            return "production"
+            return "sandbox"
         }
     }
 

@@ -205,6 +205,22 @@ update households set is_premium = true where creator_id = auth.uid();
 
 ---
 
+### 症状 C2：Edge Function 500 — `plan_purchased` is of type subscription_plan but expression is of type text
+
+**原因：** RPC 将 `text` 直接写入 `subscription_orders.plan_purchased`（枚举列）。
+
+**处理：** 在 Supabase SQL Editor 执行 `20260611_fix_activate_premium_plan_cast.sql`（或 `supabase db push`）。
+
+---
+
+### 症状 C3：Edge Function 500 — `invalid input value for enum order_status: "completed"`
+
+**原因：** 库表 `order_status` 枚举值为 `success`，不是 `completed`。
+
+**处理：** 执行 `20260612_fix_activate_premium_order_status.sql`（或 `supabase db push`）。
+
+---
+
 ### 症状 C：Edge Function 500 — `function activate_premium_from_apple does not exist`
 
 **原因：** SQL 迁移未执行。
@@ -233,12 +249,15 @@ grant execute on function public.activate_premium_from_apple(
 
 | 可能原因 | 处理 |
 |----------|------|
-| `environment` 不匹配 | Sandbox 购买须传 `environment: "sandbox"`（App 已自动传） |
+| `environment` 不匹配 | Sandbox 购买须传 `environment: "sandbox"`；Xcode `.storekit` 本地测试为 `xcode`（x5c 仅 1 张证书） |
+| `Invalid x5c certificate chain` | 多为 Xcode StoreKit 测试；须 deploy 含 Xcode 单证书验签的版本，且 App 传 `environment: "xcode"` |
 | Production 缺 `APP_APPLE_ID` | `supabase secrets set APP_APPLE_ID=<数字 ID>` |
 | Bundle ID 不一致 | Connect / Xcode 须为 `com.aifamilygroup.reminder` |
 | 无法拉取 Apple 根证书 | Edge Function 需出网访问 `apple.com` |
+| `Buffer is not defined` / `crypto.X509Certificate` | 官方 `@apple/app-store-server-library` 不兼容 Deno；当前函数使用 `jose` + `@peculiar/x509` 验签，须重新 deploy |
+| `function activate_premium_from_apple does not exist` | 未执行 SQL 迁移 |
 
-常见错误文案：`Verification failed`、`JWS signature` 相关。
+常见错误文案：`Verification failed`、`JWS signature`、`X509Certificate` 相关。Xcode DEBUG 控制台会显示服务端 `error` 字段（不再只有 generic 500）。
 
 ---
 

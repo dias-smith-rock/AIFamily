@@ -43,16 +43,8 @@ enum SubscriptionSupabaseSupport {
                 verifyAppleSubscriptionFunction,
                 options: FunctionInvokeOptions(body: request)
             )
-        } catch let error as FunctionsError {
-            if case .httpError(_, let data) = error,
-               let parsed = try? JSONDecoder().decode(VerifyAppleSubscriptionErrorBody.self, from: data),
-               let message = parsed.error?.trimmingCharacters(in: .whitespacesAndNewlines),
-               message.isEmpty == false {
-                throw SubscriptionSupabaseError.serverError(message)
-            }
-            throw SubscriptionSupabaseError.serverError(error.localizedDescription)
         } catch {
-            throw SubscriptionSupabaseError.serverError(error.localizedDescription)
+            throw SubscriptionSupabaseError.serverError(Self.serverErrorMessage(from: error))
         }
         #else
         _ = signedTransactionInfo
@@ -62,6 +54,31 @@ enum SubscriptionSupabaseSupport {
     }
 
     /// 创世用户福利：已禁用客户端直写，须通过服务端发放。
+    #if canImport(Supabase)
+    private static func serverErrorMessage(from error: Error) -> String {
+        if let functionsError = error as? FunctionsError,
+           case .httpError(let code, let data) = functionsError {
+            let bodyText = String(data: data, encoding: .utf8) ?? ""
+            if let parsed = try? JSONDecoder().decode(VerifyAppleSubscriptionErrorBody.self, from: data),
+               let message = parsed.error?.trimmingCharacters(in: .whitespacesAndNewlines),
+               message.isEmpty == false {
+                #if DEBUG
+                if let step = parsed.step?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   step.isEmpty == false {
+                    return "[\(step)] \(message)"
+                }
+                #endif
+                return message
+            }
+            if bodyText.isEmpty == false {
+                return bodyText
+            }
+            return "Edge Function HTTP \(code)"
+        }
+        return error.localizedDescription
+    }
+    #endif
+
     @MainActor
     static func claimFreeProTrialForCurrentUser() async throws -> Date {
         throw SubscriptionSupabaseError.promotionalGrantDisabled
@@ -89,6 +106,7 @@ struct VerifyAppleSubscriptionResponse: Decodable, Sendable, Equatable {
 
 private struct VerifyAppleSubscriptionErrorBody: Decodable {
     var error: String?
+    var step: String?
 }
 
 enum SubscriptionSupabaseError: LocalizedError {

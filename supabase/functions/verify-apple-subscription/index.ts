@@ -1,8 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  Environment,
-  SignedDataVerifier,
-} from "@apple/app-store-server-library";
+  normalizeAppleEnvironment,
+  verifyAppleTransactionJws,
+} from "./apple_jws_verify.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +17,7 @@ const PRODUCT_PLAN: Record<string, string> = {
 
 type VerifyAppleSubscriptionRequest = {
   signedTransactionInfo: string;
-  environment?: "sandbox" | "production";
+  environment?: "sandbox" | "production" | "xcode";
 };
 
 type ActivatePremiumRpcResult = {
@@ -37,30 +37,48 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
-async function loadAppleRootCAs(): Promise<Buffer[]> {
+async function loadAppleRootCAs(): Promise<Uint8Array[]> {
   const urls = [
     "https://www.apple.com/appleca/AppleIncRootCertificate.cer",
     "https://www.apple.com/certificateauthority/AppleRootCA-G3.cer",
   ];
-  const buffers: Buffer[] = [];
+  const certificates: Uint8Array[] = [];
   for (const url of urls) {
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Failed to fetch Apple root CA: ${url}`);
     }
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    buffers.push(Buffer.from(bytes));
+    certificates.push(new Uint8Array(await response.arrayBuffer()));
   }
-  return buffers;
-}
-
-function toEnvironment(value?: string): Environment {
-  return value === "sandbox" ? Environment.SANDBOX : Environment.PRODUCTION;
+  return certificates;
 }
 
 function millisToIso(value?: number | null): string | null {
   if (value == null || Number.isNaN(value)) return null;
   return new Date(value).toISOString();
+}
+
+function environmentLabelFromPayload(value?: string): string {
+  return normalizeAppleEnvironment(value);
+}
+
+function environmentMatchesRequest(
+  payloadEnvironment: string | undefined,
+  requested?: VerifyAppleSubscriptionRequest["environment"],
+): boolean {
+  if (!requested) return true;
+
+  const payload = normalizeAppleEnvironment(payloadEnvironment);
+  const request = normalizeAppleEnvironment(requested);
+
+  if (payload === request) return true;
+
+  // Xcode StoreKit 本地测试：客户端可能上报 sandbox，JWS payload 为 Xcode。
+  if (payload === "xcode" && (request === "xcode" || request === "sandbox")) {
+    return true;
+  }
+
+  return false;
 }
 
 Deno.serve(async (req) => {
@@ -75,7 +93,6 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-    const appAppleIdRaw = Deno.env.get("APP_APPLE_ID") ?? "6775353963";
 
     if (!supabaseUrl || !anonKey || !serviceRoleKey) {
       return jsonResponse({ error: "Missing Supabase environment variables" }, 500);
@@ -100,18 +117,19 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    const environment = toEnvironment(body.environment);
-    const appAppleId = appAppleIdRaw ? Number(appAppleIdRaw) : undefined;
     const rootCAs = await loadAppleRootCAs();
-    const verifier = new SignedDataVerifier(
-      rootCAs,
-      true,
-      environment,
-      BUNDLE_ID,
-      appAppleId,
-    );
+    const decoded = await verifyAppleTransactionJws(body.signedTransactionInfo, rootCAs);
 
-    const decoded = await verifier.verifyAndDecodeTransaction(body.signedTransactionInfo);
+    if (decoded.bundleId && decoded.bundleId !== BUNDLE_ID) {
+      return jsonResponse({ error: "Bundle id mismatch" }, 400);
+    }
+
+    if (!environmentMatchesRequest(decoded.environment, body.environment)) {
+      return jsonResponse({
+        error: `Environment mismatch: payload=${decoded.environment ?? "unknown"}, request=${body.environment ?? "unknown"}`,
+      }, 400);
+    }
+
     const productId = decoded.productId ?? "";
     const planPurchased = PRODUCT_PLAN[productId];
     if (!planPurchased) {
@@ -128,14 +146,10 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Missing transaction id in signed payload" }, 400);
     }
 
-    if (decoded.bundleId && decoded.bundleId !== BUNDLE_ID) {
-      return jsonResponse({ error: "Bundle id mismatch" }, 400);
-    }
-
     const paidAt = millisToIso(decoded.purchaseDate) ?? new Date().toISOString();
-    const amount = decoded.price ?? 0;
+    const amount = Number(decoded.price ?? 0);
     const currency = decoded.currency ?? "USD";
-    const environmentLabel = environment === Environment.SANDBOX ? "sandbox" : "production";
+    const environmentLabel = environmentLabelFromPayload(decoded.environment);
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: rpcData, error: rpcError } = await adminClient.rpc(
@@ -154,7 +168,7 @@ Deno.serve(async (req) => {
 
     if (rpcError) {
       console.error("activate_premium_from_apple", rpcError);
-      return jsonResponse({ error: rpcError.message }, 500);
+      return jsonResponse({ error: rpcError.message, step: "activate_premium" }, 500);
     }
 
     const activation = rpcData as ActivatePremiumRpcResult;
@@ -169,6 +183,6 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("verify-apple-subscription", error);
     const message = error instanceof Error ? error.message : "Unknown error";
-    return jsonResponse({ error: message }, 500);
+    return jsonResponse({ error: message, step: "apple_verify" }, 500);
   }
 });

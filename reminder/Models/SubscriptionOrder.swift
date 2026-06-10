@@ -37,7 +37,7 @@ struct SubscriptionOrderInsertPayload: Encodable, Equatable, Sendable {
         amount: Int = 0,
         currency: String = "USD",
         paymentMethod: String = PaymentMethod.appleIAP.rawValue,
-        status: String = OrderStatus.completed.rawValue,
+        status: String = OrderStatus.success.rawValue,
         environment: String = "production",
         expiresAt: Date? = nil,
         paidAt: Date? = Date(),
