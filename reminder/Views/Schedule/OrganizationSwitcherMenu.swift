@@ -28,7 +28,7 @@ enum GroupSwitcherData {
                 membershipId: membershipId,
                 profileId: appRouter.selectedProfileId,
                 name: name.isEmpty ? "未命名群组" : GuestSessionStore.displayHouseholdName(name),
-                isPremium: appRouter.selectedHouseholdIsPremium,
+                creatorHasActivePro: appRouter.selectedHouseholdCreatorHasActivePro,
                 description: appRouter.selectedHouseholdDescription
             )
         ]

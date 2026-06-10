@@ -239,7 +239,7 @@ struct VIPSubscriptionView: View {
                 year
             )
         }
-        if appRouter.selectedHouseholdIsPremium {
+        if appRouter.hasInheritedPremiumOnly {
             return AppLocalized.string("当前群组已继承 Pro 权益", locale: locale)
         }
         return AppLocalized.string("感谢您的支持，尽情使用 Pro 功能吧。", locale: locale)

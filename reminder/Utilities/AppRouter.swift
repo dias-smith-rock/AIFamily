@@ -29,7 +29,7 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedHouseholdName: String?
     @Published private(set) var selectedHouseholdDescription: String = ""
     @Published private(set) var userEntitlement: UserEntitlement?
-    @Published private(set) var selectedHouseholdIsPremium = false
+    @Published private(set) var selectedHouseholdCreatorHasActivePro = false
 
     @Published var showNewCreatorAlert = false
     @Published var newlyAssignedHousehold: JoinedHousehold?
@@ -52,7 +52,7 @@ final class AppRouter: ObservableObject {
         let profileId: UUID?
         let householdName: String?
         let householdDescription: String
-        let householdIsPremium: Bool
+        let creatorHasActivePro: Bool
     }
 
     struct HouseholdOption: Identifiable, Equatable {
@@ -60,15 +60,34 @@ final class AppRouter: ObservableObject {
         let membershipId: UUID
         let profileId: UUID?
         let name: String
-        var isPremium: Bool
+        /// 该组织创建者是否享有有效 Pro（用于组织内继承判断）。
+        var creatorHasActivePro: Bool
         var description: String
+
+        func hasPremiumAccess(userEntitlement: UserEntitlement?) -> Bool {
+            PremiumAccess.hasPremiumAccess(
+                userEntitlement: userEntitlement,
+                creatorHasActivePro: creatorHasActivePro
+            )
+        }
     }
 
-    /// 当前上下文是否享有 Pro / Premium 能力（个人权益或群组继承）。
+    /// 当前上下文是否享有 Pro / Premium 能力（个人权益或当前组织创建者继承）。
     var hasPremiumAccess: Bool {
-        PremiumAccess.hasPremiumAccess(
+        if GuestSessionStore.isGuestMode {
+            return true
+        }
+        return PremiumAccess.hasPremiumAccess(
             userEntitlement: userEntitlement,
-            householdIsPremium: selectedHouseholdIsPremium
+            creatorHasActivePro: selectedHouseholdCreatorHasActivePro
+        )
+    }
+
+    /// 当前 Pro 是否仅来自组织创建者继承（非个人 VIP）。
+    var hasInheritedPremiumOnly: Bool {
+        PremiumAccess.hasInheritedPremiumOnly(
+            userEntitlement: userEntitlement,
+            creatorHasActivePro: selectedHouseholdCreatorHasActivePro
         )
     }
 
@@ -120,7 +139,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = snapshot.profileId
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
-        selectedHouseholdIsPremium = snapshot.householdIsPremium
+        selectedHouseholdCreatorHasActivePro = snapshot.creatorHasActivePro
         appState = .activeMember
         return true
     }
@@ -192,7 +211,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = nil
                 selectedHouseholdName = nil
                 selectedHouseholdDescription = ""
-                selectedHouseholdIsPremium = false
+                selectedHouseholdCreatorHasActivePro = false
                 return
             }
 
@@ -233,7 +252,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = nil
             selectedHouseholdName = nil
             selectedHouseholdDescription = ""
-            selectedHouseholdIsPremium = false
+            selectedHouseholdCreatorHasActivePro = false
             appState = .householdSelection
             debugLog("route.householdSelection reason=multiple_households options=\(options.count)")
         } catch {
@@ -249,7 +268,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = nil
                 selectedHouseholdName = nil
                 selectedHouseholdDescription = ""
-                selectedHouseholdIsPremium = false
+                selectedHouseholdCreatorHasActivePro = false
                 debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
                 // 已有会话但拉取组织状态失败时，至少进入组织路由页，避免卡在登录页死循环。
@@ -269,7 +288,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
-        selectedHouseholdIsPremium = false
+        selectedHouseholdCreatorHasActivePro = false
         userEntitlement = nil
         selectableHouseholds = []
         recentHouseholds = []
@@ -294,7 +313,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
-        selectedHouseholdIsPremium = false
+        selectedHouseholdCreatorHasActivePro = false
     }
 
     func goToActiveMember() {
@@ -308,7 +327,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = snapshot.profileId
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
-        selectedHouseholdIsPremium = false
+        selectedHouseholdCreatorHasActivePro = false
         userEntitlement = nil
         selectableHouseholds = [
             HouseholdOption(
@@ -316,7 +335,7 @@ final class AppRouter: ObservableObject {
                 membershipId: snapshot.membershipId,
                 profileId: snapshot.profileId,
                 name: snapshot.householdName,
-                isPremium: false,
+                creatorHasActivePro: false,
                 description: snapshot.householdDescription
             )
         ]
@@ -332,7 +351,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = nil
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
-        selectedHouseholdIsPremium = false
+        selectedHouseholdCreatorHasActivePro = false
         userEntitlement = nil
         selectableHouseholds = []
         recentHouseholds = []
@@ -380,15 +399,32 @@ final class AppRouter: ObservableObject {
     }
 
     func chooseJoinedHousehold(_ joined: JoinedHousehold) {
+        #if canImport(Supabase)
+        Task {
+            let creatorHasActivePro = (try? await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
+                householdId: joined.householdId
+            )) ?? false
+            let option = HouseholdOption(
+                id: joined.householdId,
+                membershipId: joined.id,
+                profileId: joined.profileId,
+                name: joined.displayHouseholdName,
+                creatorHasActivePro: creatorHasActivePro,
+                description: ""
+            )
+            chooseHousehold(option)
+        }
+        #else
         let option = HouseholdOption(
             id: joined.householdId,
             membershipId: joined.id,
             profileId: joined.profileId,
             name: joined.displayHouseholdName,
-            isPremium: joined.household?.isPremium == true,
+            creatorHasActivePro: false,
             description: ""
         )
         chooseHousehold(option)
+        #endif
     }
 
     /// 领取 Pro 后刷新个人权益、群组 Premium 标记与组织列表。
@@ -398,7 +434,7 @@ final class AppRouter: ObservableObject {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
             await loadUserEntitlement(userId: userId)
             if let householdId = selectedHouseholdId {
-                await refreshHouseholdPremiumFlag(householdId: householdId)
+                await refreshSelectedHouseholdCreatorPro(householdId: householdId)
             }
             await refreshStateFromBackend()
         } catch {
@@ -466,7 +502,6 @@ final class AppRouter: ObservableObject {
         let id: UUID
         let name: String
         let description: String?
-        let isPremium: Bool?
     }
 
     private func loadUserEntitlement(userId: UUID) async {
@@ -484,7 +519,7 @@ final class AppRouter: ObservableObject {
         do {
             let rows: [HouseholdRow] = try await SupabaseManager.shared.client
                 .from("households")
-                .select("id,name,description,is_premium")
+                .select("id,name,description")
                 .eq("id", value: householdId.uuidString.lowercased())
                 .limit(1)
                 .execute()
@@ -492,15 +527,21 @@ final class AppRouter: ObservableObject {
             guard let household = rows.first else { return }
             selectedHouseholdName = household.name
             selectedHouseholdDescription = household.description ?? ""
-            selectedHouseholdIsPremium = household.isPremium == true
+            await refreshSelectedHouseholdCreatorPro(householdId: householdId)
         } catch {
             debugLog("refreshSelectedHouseholdSnapshot.error \(error.localizedDescription)")
         }
         #endif
     }
 
-    private func refreshHouseholdPremiumFlag(householdId: UUID) async {
-        await refreshSelectedHouseholdSnapshot()
+    private func refreshSelectedHouseholdCreatorPro(householdId: UUID) async {
+        do {
+            selectedHouseholdCreatorHasActivePro = try await SubscriptionSupabaseSupport
+                .fetchHouseholdCreatorHasActivePro(householdId: householdId)
+        } catch {
+            debugLog("refreshSelectedHouseholdCreatorPro.error \(error.localizedDescription)")
+            selectedHouseholdCreatorHasActivePro = false
+        }
     }
 
     private func fetchMemberships(client: SupabaseClient, userId: UUID) async throws -> [MembershipRow] {
@@ -527,11 +568,15 @@ final class AppRouter: ObservableObject {
             debugLog("query.household_by_id.start household=\(householdID.uuidString)")
             let rows: [HouseholdRow] = try await client
                 .from("households")
-                .select("id,name,description,is_premium")
+                .select("id,name,description")
                 .eq("id", value: householdID.uuidString)
                 .limit(1)
                 .execute()
                 .value
+
+            let creatorHasActivePro = (try? await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
+                householdId: householdID
+            )) ?? false
 
             if let household = rows.first {
                 debugLog("query.household_by_id.hit household=\(household.id.uuidString) name=\(household.name)")
@@ -541,7 +586,7 @@ final class AppRouter: ObservableObject {
                         membershipId: membership.id,
                         profileId: membership.profileId,
                         name: household.name,
-                        isPremium: household.isPremium == true,
+                        creatorHasActivePro: creatorHasActivePro,
                         description: household.description ?? ""
                     )
                 )
@@ -553,7 +598,7 @@ final class AppRouter: ObservableObject {
                         membershipId: membership.id,
                         profileId: membership.profileId,
                         name: "群组 \(householdID.uuidString.prefix(6))",
-                        isPremium: false,
+                        creatorHasActivePro: false,
                         description: ""
                     )
                 )
@@ -574,7 +619,7 @@ final class AppRouter: ObservableObject {
         selectedProfileId = option.profileId
         selectedHouseholdName = option.name
         selectedHouseholdDescription = option.description
-        selectedHouseholdIsPremium = option.isPremium
+        selectedHouseholdCreatorHasActivePro = option.creatorHasActivePro
         saveLastHouseholdId(option.id, for: userId)
         saveRecentHouseholdId(option.id, for: userId)
         saveOfflineHouseholdSnapshot(option: option)
@@ -596,7 +641,7 @@ final class AppRouter: ObservableObject {
             profileId: option.profileId,
             householdName: option.name,
             householdDescription: option.description,
-            householdIsPremium: option.isPremium
+            creatorHasActivePro: option.creatorHasActivePro
         )
         if let data = try? JSONEncoder().encode(snapshot) {
             UserDefaults.standard.set(data, forKey: Self.offlineHouseholdSnapshotKey)

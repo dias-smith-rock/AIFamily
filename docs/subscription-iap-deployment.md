@@ -20,10 +20,13 @@
 
 ### Step 1 — 执行 SQL 迁移
 
-**文件：**
+**文件（按顺序）：**
 
 - `reminder/Services/Supabase/migrations/20260610_subscription_server_rls.sql`
-- 或 `supabase/migrations/20260610120000_subscription_server_rls.sql`
+- `reminder/Services/Supabase/migrations/20260611_fix_activate_premium_plan_cast.sql`
+- `reminder/Services/Supabase/migrations/20260612_fix_activate_premium_order_status.sql`
+- `reminder/Services/Supabase/migrations/20260613_household_creator_has_active_pro.sql`
+- 或 `supabase db push` 同步 `supabase/migrations/` 下对应文件
 
 **方式 A：Supabase Dashboard**
 
@@ -351,7 +354,8 @@ curl -s -X POST \
 复制到 PR / 发布单逐项勾选：
 
 ```
-[ ] SQL 迁移已在生产 Supabase 执行
+[ ] SQL 迁移已在生产 Supabase 执行（含 household_creator_has_active_pro RPC）
+[ ] VIP 权限：个人 Pro OR 当前组织创建者 Pro（非 households.is_premium 缓存）
 [ ] activate_premium_from_apple RPC 存在且仅 service_role 可执行
 [ ] subscription_orders / user_entitlements RLS 已开启
 [ ] households is_premium 触发器已创建

@@ -9,6 +9,23 @@ enum SubscriptionSupabaseSupport {
     private static let verifyAppleSubscriptionFunction = "verify-apple-subscription"
 
     @MainActor
+    static func fetchHouseholdCreatorHasActivePro(householdId: UUID) async throws -> Bool {
+        #if canImport(Supabase)
+        let value: Bool = try await SupabaseManager.shared.client
+            .rpc(
+                "household_creator_has_active_pro",
+                params: HouseholdCreatorHasActiveProParams(pHouseholdId: householdId)
+            )
+            .execute()
+            .value
+        return value
+        #else
+        _ = householdId
+        throw SubscriptionSupabaseError.sdkUnavailable
+        #endif
+    }
+
+    @MainActor
     static func fetchUserEntitlement(userId: UUID) async throws -> UserEntitlement? {
         #if canImport(Supabase)
         let rows: [UserEntitlement] = try await SupabaseManager.shared.client
@@ -88,6 +105,19 @@ enum SubscriptionSupabaseSupport {
     static func claimFreeProTrial(userId: UUID) async throws -> Date {
         _ = userId
         throw SubscriptionSupabaseError.promotionalGrantDisabled
+    }
+}
+
+struct HouseholdCreatorHasActiveProParams: Encodable, Sendable {
+    var pHouseholdId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case pHouseholdId = "p_household_id"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(pHouseholdId.uuidString.lowercased(), forKey: .pHouseholdId)
     }
 }
 

@@ -780,7 +780,7 @@ struct MineView: View {
                 year
             )
         }
-        if appRouter.selectedHouseholdIsPremium {
+        if appRouter.hasInheritedPremiumOnly {
             return AppLocalized.string("当前群组已享 Pro 权益", locale: locale)
         }
         return AppLocalized.string("Pro 会员已激活", locale: locale)
