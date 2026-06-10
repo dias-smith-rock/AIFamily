@@ -128,6 +128,14 @@ struct VIPSubscriptionView: View {
                 proDescription: "👑 自定义历史轨迹数量，开启位置隐身不上报新坐标。"
             )
 
+            VIPFeatureComparisonCard(
+                systemImage: "camera.viewfinder",
+                iconTint: .cyan,
+                title: "AI 智能识图",
+                freeDescription: "不支持拍照或相册识图创建任务。",
+                proDescription: "👑 拍照或选图，自动识别并预填任务。"
+            )
+
             VIPFeatureComingSoonCard(
                 systemImage: "sparkles",
                 iconTint: .orange,

@@ -130,11 +130,18 @@ struct TaskListView: View {
                 AIPhotoCropSheet(
                     image: context.image,
                     onConfirm: { normalizedQuad in
+                        guard PremiumLimits.canUseAIPhotoTaskCreation(
+                            hasPremium: appRouter.hasPremiumAccess
+                        ) else {
+                            appRouter.presentPremiumUpgrade()
+                            return
+                        }
                         viewModel.confirmCrop(
                             normalizedQuad: normalizedQuad,
                             image: context.image,
                             source: context.source,
                             targetDate: dayID(for: selectedDate),
+                            hasPremiumAccess: appRouter.hasPremiumAccess,
                             usePremiumQuality: appRouter.hasPremiumAccess
                         )
                     },
@@ -208,6 +215,7 @@ struct TaskListView: View {
             .onChange(of: viewModel.prefilledTaskForAI?.id) { _, _ in
                 aiPrefillFormInstanceID = UUID()
             }
+            .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
             .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
                 openPendingScheduledTaskIfNeeded()
             }
@@ -263,7 +271,7 @@ struct TaskListView: View {
                 .submitLabel(.done)
                 .onSubmit(submitQuickTaskInput)
 
-            Button(action: openCameraIfAvailable) {
+            Button(action: openAIPhotoTaskCreationFlow) {
                 Image(systemName: "camera.fill")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(AppTheme.ColorToken.accent)
@@ -318,7 +326,11 @@ struct TaskListView: View {
         openCreateTask(prefill: trimmed)
     }
 
-    private func openCameraIfAvailable() {
+    private func openAIPhotoTaskCreationFlow() {
+        if isGuestMode {
+            showsGuestSignInAlert = true
+            return
+        }
         viewModel.isShowingCamera = true
     }
 

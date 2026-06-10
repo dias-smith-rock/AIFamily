@@ -36,4 +36,8 @@ enum PremiumLimits {
     static func canEnableLocationGhostMode(hasPremium: Bool) -> Bool {
         hasPremium
     }
+
+    static func canUseAIPhotoTaskCreation(hasPremium: Bool) -> Bool {
+        hasPremium
+    }
 }

@@ -547,6 +547,7 @@ final class ScheduleViewModel: ObservableObject {
         image: UIImage,
         source: AIPhotoTaskCreationLogger.CaptureSource,
         targetDate: Date,
+        hasPremiumAccess: Bool,
         usePremiumQuality: Bool = false
     ) {
         pendingCropContext = nil
@@ -575,7 +576,8 @@ final class ScheduleViewModel: ObservableObject {
                 attachmentImage: attachmentImage,
                 recognitionRegion: normalizedQuad,
                 source: source,
-                targetDate: targetDate
+                targetDate: targetDate,
+                hasPremiumAccess: hasPremiumAccess
             )
         }
     }
@@ -585,10 +587,15 @@ final class ScheduleViewModel: ObservableObject {
         attachmentImage: UIImage,
         recognitionRegion: NormalizedCropQuad,
         source: AIPhotoTaskCreationLogger.CaptureSource,
-        targetDate: Date
+        targetDate: Date,
+        hasPremiumAccess: Bool
     ) async {
         if GuestSessionStore.isGuestMode {
             aiProcessingError = String(localized: "登录后可使用拍照识图功能。")
+            return
+        }
+
+        guard PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: hasPremiumAccess) else {
             return
         }
 
