@@ -9,6 +9,8 @@ struct LocationPersistSettingsView: View {
     private var distanceMeters = LocationPersistPreferences.defaultMinUpdateDistanceMeters
     @AppStorage(LocationPersistPreferences.intervalStorageKey)
     private var intervalSeconds = LocationPersistPreferences.defaultMinUpdateIntervalSeconds
+    @AppStorage(LocationMapDisplayPreferences.displayCountStorageKey)
+    private var mapHistoryDisplayCount = LocationMapDisplayPreferences.defaultHistoryDisplayCount
 
     @State private var isLocationGhostMode = false
 
@@ -56,6 +58,32 @@ struct LocationPersistSettingsView: View {
             } footer: {
                 Text("位移与间隔均达标时会新增一条位置记录；仅间隔到达而位移未达阈值时，会更新最近一条位置记录。")
             }
+
+            Section {
+                ForEach(LocationMapDisplayPreferences.historyDisplayCountOptions, id: \.self) { count in
+                    optionRow(
+                        title: historyDisplayCountLabel(for: count),
+                        isSelected: normalizedMapHistoryDisplayCount == count,
+                        showsProBadge: PremiumLimits.canSetMapHistoryDisplayCount(
+                            count,
+                            hasPremium: appRouter.hasPremiumAccess
+                        ) == false
+                    ) {
+                        guard PremiumLimits.canSetMapHistoryDisplayCount(
+                            count,
+                            hasPremium: appRouter.hasPremiumAccess
+                        ) else {
+                            appRouter.presentPremiumUpgrade()
+                            return
+                        }
+                        mapHistoryDisplayCount = count
+                    }
+                }
+            } header: {
+                Text("历史位置数量")
+            } footer: {
+                Text("仅影响地图上显示的轨迹与历史点数量，不会改变云端存储的位置记录。")
+            }
         }
         .navigationTitle("位置上报")
         .navigationBarTitleDisplayMode(.inline)
@@ -63,7 +91,11 @@ struct LocationPersistSettingsView: View {
         .onAppear {
             distanceMeters = LocationPersistPreferences.normalizedDistance(distanceMeters)
             intervalSeconds = LocationPersistPreferences.normalizedInterval(intervalSeconds)
+            clampMapHistoryDisplayCountForCurrentTier()
             syncGhostModeFromPreferences()
+        }
+        .onChange(of: appRouter.hasPremiumAccess) { _, _ in
+            clampMapHistoryDisplayCountForCurrentTier()
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             syncGhostModeFromPreferences()
@@ -90,6 +122,10 @@ struct LocationPersistSettingsView: View {
         LocationPersistPreferences.normalizedInterval(intervalSeconds)
     }
 
+    private var normalizedMapHistoryDisplayCount: Int {
+        LocationMapDisplayPreferences.normalizedCount(mapHistoryDisplayCount)
+    }
+
     private func syncGhostModeFromPreferences() {
         guard let householdId = appRouter.selectedHouseholdId,
               let profileId = appRouter.selectedProfileId else {
@@ -106,6 +142,11 @@ struct LocationPersistSettingsView: View {
         guard let householdId = appRouter.selectedHouseholdId,
               let profileId = appRouter.selectedProfileId else { return }
         guard isLocationGhostMode != enabled else { return }
+
+        if enabled, PremiumLimits.canEnableLocationGhostMode(hasPremium: appRouter.hasPremiumAccess) == false {
+            appRouter.presentPremiumUpgrade()
+            return
+        }
 
         LocationGhostPreferences.setEnabled(enabled, householdId: householdId, profileId: profileId)
         isLocationGhostMode = enabled
@@ -143,15 +184,32 @@ struct LocationPersistSettingsView: View {
         }
     }
 
+    private func clampMapHistoryDisplayCountForCurrentTier() {
+        let clamped = PremiumLimits.clampedMapHistoryDisplayCount(
+            mapHistoryDisplayCount,
+            hasPremium: appRouter.hasPremiumAccess
+        )
+        mapHistoryDisplayCount = clamped
+    }
+
     private func optionRow(
         title: LocalizedStringKey,
         isSelected: Bool,
+        showsProBadge: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             HStack {
                 Text(title)
                     .foregroundStyle(.primary)
+                if showsProBadge {
+                    Text("Pro")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.orange, in: Capsule())
+                }
                 Spacer()
                 if isSelected {
                     Image(systemName: "checkmark")
@@ -184,6 +242,16 @@ struct LocationPersistSettingsView: View {
         case 1_800: "30 分钟"
         case 3_600: "1 小时"
         default: "5 分钟"
+        }
+    }
+
+    private func historyDisplayCountLabel(for count: Int) -> LocalizedStringKey {
+        switch count {
+        case 3: "3 个"
+        case 5: "5 个"
+        case 10: "10 个"
+        case 20: "20 个"
+        default: "3 个"
         }
     }
 

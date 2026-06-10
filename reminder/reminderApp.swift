@@ -26,6 +26,7 @@ struct WeFamilyApp: App {
     init() {
         BackgroundLocationPreferences.registerDefaults()
         LocationPersistPreferences.registerDefaults()
+        LocationMapDisplayPreferences.registerDefaults()
         FirebaseAppDelegate.configureFirebaseIfNeeded()
         UNUserNotificationCenter.current().delegate = TaskReminderNotificationDelegate.shared
     }

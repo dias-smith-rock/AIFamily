@@ -13,7 +13,6 @@ final class GroupSwitcherCoordinator: ObservableObject {
     @Published var showJoinGroupSheet = false
     @Published var joinCode = ""
     @Published var joinInputError: String?
-    @Published var showPremiumHouseholdLimitAlert = false
 
     let orgRoutingViewModel: OrgRoutingViewModel
 
@@ -36,7 +35,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
     func submitCreateOrganization(appRouter: AppRouter) async {
         createOrganizationError = nil
         guard appRouter.canCreateOrJoinAnotherHousehold() else {
-            showPremiumHouseholdLimitAlert = true
+            presentPremiumUpgradeAfterDismiss(appRouter: appRouter)
             return
         }
         let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -67,7 +66,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
     func submitJoinGroup(appRouter: AppRouter, locale: Locale) async {
         joinInputError = nil
         guard appRouter.canCreateOrJoinAnotherHousehold() else {
-            showPremiumHouseholdLimitAlert = true
+            presentPremiumUpgradeAfterDismiss(appRouter: appRouter)
             return
         }
         guard isInviteCodeValid else {
@@ -97,7 +96,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
 
     func presentCreateOrganizationAfterDismiss(appRouter: AppRouter) {
         guard appRouter.canCreateOrJoinAnotherHousehold() else {
-            showPremiumHouseholdLimitAlert = true
+            presentPremiumUpgradeAfterDismiss(appRouter: appRouter)
             return
         }
         showSwitchGroupDialog = false
@@ -109,7 +108,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
 
     func presentJoinGroupAfterDismiss(appRouter: AppRouter) {
         guard appRouter.canCreateOrJoinAnotherHousehold() else {
-            showPremiumHouseholdLimitAlert = true
+            presentPremiumUpgradeAfterDismiss(appRouter: appRouter)
             return
         }
         showSwitchGroupDialog = false
@@ -117,6 +116,17 @@ final class GroupSwitcherCoordinator: ObservableObject {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(100))
             showJoinGroupSheet = true
+        }
+    }
+
+    /// 关闭群组相关 Sheet 后，在根视图直接弹出 VIP 订阅页。
+    private func presentPremiumUpgradeAfterDismiss(appRouter: AppRouter) {
+        showSwitchGroupDialog = false
+        isShowingCreateOrganizationSheet = false
+        showJoinGroupSheet = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            appRouter.presentPremiumUpgrade()
         }
     }
 }

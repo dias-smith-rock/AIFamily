@@ -30,7 +30,6 @@ struct HouseholdSelectionView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isDecodingPhoto = false
     @State private var isJoiningFullScreenLoading = false
-    @State private var showPremiumHouseholdLimitAlert = false
 
     var body: some View {
         NavigationStack {
@@ -124,10 +123,6 @@ struct HouseholdSelectionView: View {
         } message: {
             Text(viewModel.authErrorMessage ?? "请稍后重试。")
         }
-        .premiumUpgradeAlert(
-            isPresented: $showPremiumHouseholdLimitAlert,
-            message: "免费版最多加入 1 个群组，升级 Pro 后可无限创建与加入。"
-        )
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
                 householdName: $householdName,
@@ -383,7 +378,7 @@ struct HouseholdSelectionView: View {
         guard appRouter.canCreateOrJoinAnotherHousehold(
             fallbackJoinedCount: viewModel.joinedHouseholds.count
         ) else {
-            showPremiumHouseholdLimitAlert = true
+            appRouter.presentPremiumUpgrade()
             return
         }
         let trimmedDescription = householdDescription
@@ -410,7 +405,7 @@ struct HouseholdSelectionView: View {
         guard appRouter.canCreateOrJoinAnotherHousehold(
             fallbackJoinedCount: viewModel.joinedHouseholds.count
         ) else {
-            showPremiumHouseholdLimitAlert = true
+            appRouter.presentPremiumUpgrade()
             return
         }
         guard isJoiningFullScreenLoading == false else { return }

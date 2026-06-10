@@ -120,6 +120,14 @@ struct VIPSubscriptionView: View {
                 proDescription: "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。"
             )
 
+            VIPFeatureComparisonCard(
+                systemImage: "location.fill",
+                iconTint: .green,
+                title: "位置隐私与轨迹",
+                freeDescription: "地图最多显示 3 个历史位置点，不支持位置隐身。",
+                proDescription: "👑 自定义历史轨迹数量，开启位置隐身不上报新坐标。"
+            )
+
             VIPFeatureComingSoonCard(
                 systemImage: "sparkles",
                 iconTint: .orange,

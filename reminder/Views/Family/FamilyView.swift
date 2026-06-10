@@ -29,7 +29,6 @@ struct FamilyView: View {
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
     @State private var showsGuestSignInAlert = false
-    @State private var showPremiumMemberLimitAlert = false
 
     var body: some View {
         NavigationStack {
@@ -106,7 +105,7 @@ struct FamilyView: View {
                     onChooseInvite: {
                         guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
                             addMemberRoute = nil
-                            showPremiumMemberLimitAlert = true
+                            appRouter.presentPremiumUpgrade()
                             return
                         }
                         addMemberRoute = .invite
@@ -115,7 +114,7 @@ struct FamilyView: View {
                         guard canCreateVirtualProfile else { return }
                         guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
                             addMemberRoute = nil
-                            showPremiumMemberLimitAlert = true
+                            appRouter.presentPremiumUpgrade()
                             return
                         }
                         Task { @MainActor in
@@ -245,10 +244,6 @@ struct FamilyView: View {
             Text(viewModel.leaveErrorMessage ?? "请稍后重试。")
         }
         .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
-        .premiumUpgradeAlert(
-            isPresented: $showPremiumMemberLimitAlert,
-            message: "免费版每组最多 2 名成员，升级 Pro 后可添加更多。"
-        )
     }
 
     private var leaveErrorAlertBinding: Binding<Bool> {
@@ -393,7 +388,7 @@ struct FamilyView: View {
             return
         }
         guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
-            showPremiumMemberLimitAlert = true
+            appRouter.presentPremiumUpgrade()
             return
         }
         addMemberRoute = .entry

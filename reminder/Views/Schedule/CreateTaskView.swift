@@ -295,7 +295,6 @@ struct CreateTaskView: View {
     @State private var isPresentingPhotoLibrary = false
     @State private var isPresentingCamera = false
     @State private var showGuestSignInRequiredAlert = false
-    @State private var showPremiumAttachmentLimitAlert = false
     @State private var attachmentPreviewPresentation: AttachmentPreviewPresentation?
 
     private let editingTask: FamilyTask?
@@ -722,10 +721,6 @@ struct CreateTaskView: View {
             )
         }
         .guestSignInRequiredAlert(isPresented: $showGuestSignInRequiredAlert)
-        .premiumUpgradeAlert(
-            isPresented: $showPremiumAttachmentLimitAlert,
-            message: "免费版每任务仅支持 1 张压缩图片，升级 Pro 后可添加更多并支持更高画质。"
-        )
     }
 
     private func dismissKeyboard() {
@@ -1139,7 +1134,7 @@ struct CreateTaskView: View {
                     if appRouter.hasPremiumAccess {
                         errorMessage = String(localized: "附件数量已达上限。", locale: locale)
                     } else {
-                        showPremiumAttachmentLimitAlert = true
+                        appRouter.presentPremiumUpgrade()
                     }
                     return
                 }

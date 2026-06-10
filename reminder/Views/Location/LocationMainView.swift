@@ -19,6 +19,15 @@ struct LocationMainView: View {
     @State private var isLiveSharingPanelExpanded = false
     @State private var fitCameraTask: Task<Void, Never>?
     @State private var showGuestSignInRequiredAlert = false
+    @AppStorage(LocationMapDisplayPreferences.displayCountStorageKey)
+    private var mapHistoryDisplayCount = LocationMapDisplayPreferences.defaultHistoryDisplayCount
+
+    private var effectiveMapHistoryDisplayCount: Int {
+        PremiumLimits.clampedMapHistoryDisplayCount(
+            mapHistoryDisplayCount,
+            hasPremium: appRouter.hasPremiumAccess
+        )
+    }
 
     init(
         isTabActive: Bool = true,
@@ -321,7 +330,9 @@ struct LocationMainView: View {
 
     @MapContentBuilder
     private func memberMapContent(for member: UserLocationState) -> some MapContent {
-        let coordinates = member.breadcrumbCoordinates
+        let displayCount = effectiveMapHistoryDisplayCount
+        let visibleLocations = member.mapVisibleLocations(displayCount: displayCount)
+        let coordinates = member.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
         let accent = LocationMemberMapColors.accent(for: member.id)
         let segmentCount = max(0, coordinates.count - 1)
 
@@ -340,7 +351,7 @@ struct LocationMainView: View {
                 }
             }
 
-            let history = Array(member.locations.dropFirst())
+            let history = Array(visibleLocations.dropFirst())
             ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
                 let rank = history.count - 1 - index
                 let showsInfoBadge = historyPoint.batteryLevel != nil || historyPoint.recordedAt != nil
@@ -369,7 +380,7 @@ struct LocationMainView: View {
                 }
             }
 
-            if let current = member.currentLocation?.coordinate {
+            if let current = visibleLocations.first?.coordinate {
                 Annotation(
                     member.displayName,
                     coordinate: current,
@@ -726,6 +737,10 @@ struct LocationMainView: View {
         Binding(
             get: { viewModel.isLocationGhostModeEnabled },
             set: { newValue in
+                if newValue, PremiumLimits.canEnableLocationGhostMode(hasPremium: appRouter.hasPremiumAccess) == false {
+                    appRouter.presentPremiumUpgrade()
+                    return
+                }
                 Task { await viewModel.setLocationGhostMode(newValue) }
             }
         )
@@ -873,7 +888,10 @@ struct LocationMainView: View {
         if liveManager.isLiveModeActive {
             coordinates = liveHuddleMapAnnotations.map(\.coordinate)
         } else {
-            coordinates = viewModel.mapDisplayedMembers.flatMap(\.breadcrumbCoordinates)
+            let displayCount = effectiveMapHistoryDisplayCount
+            coordinates = viewModel.mapDisplayedMembers.flatMap {
+                $0.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
+            }
         }
         guard let first = coordinates.first else {
             cameraPosition = .automatic

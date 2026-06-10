@@ -10,6 +10,7 @@ import Supabase
 struct InviteMemberView: View {
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var appRouter: AppRouter
 
     let currentHouseholdId: UUID?
     let creatorMembershipId: UUID?
@@ -182,7 +183,8 @@ struct InviteMemberView: View {
             currentActiveCount: activeMemberCount,
             hasPremium: hasPremiumAccess
         ) else {
-            errorMessage = String(localized: "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。")
+            dismiss()
+            appRouter.presentPremiumUpgrade()
             return
         }
 
@@ -254,4 +256,5 @@ struct InviteMemberView: View {
         activeMemberCount: 1,
         hasPremiumAccess: false
     )
+    .environmentObject(AppRouter())
 }
