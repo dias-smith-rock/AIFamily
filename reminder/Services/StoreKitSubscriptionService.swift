@@ -64,9 +64,16 @@ final class StoreKitSubscriptionService: ObservableObject {
 
     @Published private(set) var productsByPlan: [VIPBillingPlan: Product] = [:]
     @Published private(set) var isLoadingProducts = false
+    /// 当前 App 账号在 StoreKit 中绑定的有效订阅（`appAccountToken` 须与登录用户一致）。
+    @Published private(set) var hasLocalActiveSubscription = false
+    @Published private(set) var localSubscriptionExpiresAt: Date?
+    /// 本机 Apple ID 有有效订阅，但未绑定到当前 App 账号（常见于切换账号后）。
+    @Published private(set) var hasUnlinkedDeviceSubscription = false
 
     private var transactionListenerTask: Task<Void, Never>?
     private weak var appRouter: AppRouter?
+    /// 本会话内服务端已确认归属当前用户的购买（沙盒常不回填 `appAccountToken`）。
+    private var sessionConfirmedUserId: UUID?
 
     private init() {}
 
@@ -103,11 +110,83 @@ final class StoreKitSubscriptionService: ObservableObject {
         } catch {
             productsByPlan = [:]
         }
+        await refreshLocalEntitlements(for: appRouter?.authUserId)
     }
 
-    func purchase(plan: VIPBillingPlan) async throws -> PendingStorePurchase? {
+    /// 本人 VIP：云端权益，或本机 StoreKit 订阅且 `appAccountToken` 与当前用户一致。
+    func isPersonalSubscriber(userEntitlement: UserEntitlement?) -> Bool {
+        userEntitlement?.isActive == true || hasLocalActiveSubscription
+    }
+
+    func personalSubscriptionExpiry(userEntitlement: UserEntitlement?) -> Date? {
+        if userEntitlement?.isActive == true {
+            return userEntitlement?.proExpiresAt
+        }
+        return localSubscriptionExpiresAt
+    }
+
+    func refreshLocalEntitlements(for userId: UUID? = nil) async {
+        guard let userId else {
+            clearSessionSubscriptionState()
+            return
+        }
+
+        var hasActiveForUser = false
+        var latestExpiryForUser: Date?
+        var hasAnyDeviceActive = false
+
+        for await verification in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = verification else { continue }
+            guard StoreKitProductCatalog.subscriptionPlan(for: transaction.productID) != nil else { continue }
+            guard isActiveSubscription(transaction) else { continue }
+
+            hasAnyDeviceActive = true
+            guard transaction.appAccountToken == userId else { continue }
+
+            hasActiveForUser = true
+            if let expiration = transaction.expirationDate {
+                if let latestExpiryForUser, expiration <= latestExpiryForUser {
+                    continue
+                }
+                latestExpiryForUser = expiration
+            }
+        }
+
+        if hasActiveForUser {
+            hasLocalActiveSubscription = true
+            localSubscriptionExpiresAt = latestExpiryForUser
+            hasUnlinkedDeviceSubscription = false
+        } else if sessionConfirmedUserId == userId {
+            // 沙盒 / StoreKit 测试常延迟回填 appAccountToken；保留本会话内已确认的订阅状态。
+            hasUnlinkedDeviceSubscription = hasAnyDeviceActive && !hasLocalActiveSubscription
+        } else {
+            hasLocalActiveSubscription = false
+            localSubscriptionExpiresAt = nil
+            hasUnlinkedDeviceSubscription = hasAnyDeviceActive
+        }
+        appRouter?.objectWillChange.send()
+    }
+
+    func clearSessionSubscriptionState() {
+        sessionConfirmedUserId = nil
+        hasLocalActiveSubscription = false
+        localSubscriptionExpiresAt = nil
+        hasUnlinkedDeviceSubscription = false
+        appRouter?.objectWillChange.send()
+    }
+
+    /// 服务端已校验购买/恢复成功后，立即标记本机会话内的本人订阅（避免 UI 等待 StoreKit 回填）。
+    func confirmLocalSubscription(for userId: UUID, expiresAt: Date?) {
+        sessionConfirmedUserId = userId
+        hasLocalActiveSubscription = true
+        localSubscriptionExpiresAt = expiresAt
+        hasUnlinkedDeviceSubscription = false
+        appRouter?.objectWillChange.send()
+    }
+
+    func purchase(plan: VIPBillingPlan, appAccountToken: UUID) async throws -> PendingStorePurchase? {
         let product = try await resolvedProduct(for: plan)
-        let result = try await product.purchase()
+        let result = try await product.purchase(options: [.appAccountToken(appAccountToken)])
 
         switch result {
         case .success(let verification):
@@ -132,34 +211,14 @@ final class StoreKitSubscriptionService: ObservableObject {
         return latest
     }
 
-    func syncEntitlementsOnLaunch() async {
-        #if canImport(Supabase)
-        guard let appRouter else { return }
-        do {
-            let purchases = try await pendingPurchasesFromCurrentEntitlements(finishable: false)
-            guard let latest = purchases.max(by: { lhs, rhs in
-                expiryRank(lhs.expiresAt) < expiryRank(rhs.expiresAt)
-            }) else { return }
-
-            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                signedTransactionInfo: latest.signedTransactionInfo,
-                environment: latest.environment
-            )
-            await latest.finishIfNeeded()
-            await appRouter.refreshPremiumStateAfterClaim()
-        } catch {
-            #if DEBUG
-            print("[StoreKit] syncEntitlementsOnLaunch error: \(error.localizedDescription)")
-            #endif
-        }
-        #endif
-    }
-
     // MARK: - Transaction updates
 
     private func handleTransactionUpdate(_ result: VerificationResult<Transaction>) async {
         #if canImport(Supabase)
         do {
+            let transaction = try checkVerified(result)
+            guard await shouldActivateForCurrentUser(transaction) else { return }
+
             guard let pending = try await makePendingPurchase(from: result, finishable: true) else {
                 return
             }
@@ -252,6 +311,20 @@ final class StoreKitSubscriptionService: ObservableObject {
 
     private func expiryRank(_ date: Date?) -> TimeInterval {
         date?.timeIntervalSince1970 ?? .greatestFiniteMagnitude
+    }
+
+    private func shouldActivateForCurrentUser(_ transaction: Transaction) async -> Bool {
+        #if canImport(Supabase)
+        guard let currentUserId = try? await SupabaseManager.shared.client.auth.session.user.id else {
+            return false
+        }
+        guard let token = transaction.appAccountToken else {
+            return false
+        }
+        return token == currentUserId
+        #else
+        return false
+        #endif
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {

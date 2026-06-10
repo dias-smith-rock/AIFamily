@@ -73,6 +73,8 @@ enum OAuthSessionCoordinator {
         await appRouter.refreshStateFromBackend()
         if appRouter.appState == .unauthenticated {
             appRouter.goToOrgRouting()
+        } else {
+            appRouter.logVIPAccessState(trigger: "用户登录后")
         }
         AnalyticsManager.logAuthSessionSucceeded()
         return migrationFailed

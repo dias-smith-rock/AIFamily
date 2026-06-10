@@ -8,6 +8,7 @@ struct MineView: View {
     @Environment(\.locale) private var locale
     @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
+    @ObservedObject private var storeKit = StoreKitSubscriptionService.shared
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
@@ -733,6 +734,10 @@ struct MineView: View {
 
     // MARK: - VIP
 
+    private var showsPersonalVIP: Bool {
+        appRouter.showsPersonalVIP
+    }
+
     private var vipUpgradeRowLabel: some View {
         HStack(spacing: 12) {
             Image(systemName: "crown.fill")
@@ -743,7 +748,7 @@ struct MineView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
-                if appRouter.hasPremiumAccess {
+                if showsPersonalVIP {
                     Text("Pro 会员")
                         .font(AppTheme.FontToken.bodyStrong)
                         .foregroundStyle(.primary)
@@ -751,37 +756,40 @@ struct MineView: View {
                         .font(AppTheme.FontToken.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("升级 VIP")
+                    Text("升级 Pro")
                         .font(AppTheme.FontToken.bodyStrong)
                         .foregroundStyle(.primary)
-                    Text("解锁高级功能")
+                    Text("一人付费，全组 VIP")
                         .font(AppTheme.FontToken.caption)
                         .foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("Pro")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.orange, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            if showsPersonalVIP {
+                Text("已订阅")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.orange, in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+            }
         }
         .contentShape(Rectangle())
+        .task {
+            await storeKit.refreshLocalEntitlements(for: appRouter.authUserId)
+        }
     }
 
     private var vipActiveSubtitle: String {
-        if let expiry = appRouter.userEntitlement?.proExpiresAt, appRouter.userEntitlement?.isActive == true {
+        if let expiry = storeKit.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement),
+           appRouter.showsPersonalVIP {
             let year = Calendar.current.component(.year, from: expiry)
             return String(
                 format: AppLocalized.string("已激活至 %lld 年", locale: locale),
                 locale: locale,
                 year
             )
-        }
-        if appRouter.hasInheritedPremiumOnly {
-            return AppLocalized.string("当前群组已享 Pro 权益", locale: locale)
         }
         return AppLocalized.string("Pro 会员已激活", locale: locale)
     }

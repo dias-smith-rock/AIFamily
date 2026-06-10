@@ -303,6 +303,7 @@ struct OrgRoutingView: View {
         defer { isSigningOut = false }
 
         AuthSessionGuard.shared.beginLoggingOut()
+        appRouter.logVIPAccessState(trigger: "用户退出前")
         #if canImport(Supabase)
         do {
             try await SupabaseManager.shared.client.auth.signOut()

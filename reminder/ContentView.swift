@@ -112,7 +112,7 @@ struct ContentView: View {
                 }
                 return
             }
-            await runForegroundLocationBootstrap()
+            await runForegroundLocationBootstrap(vipLogTrigger: "用户登录后")
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -141,11 +141,6 @@ struct ContentView: View {
         }
         .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, completed in
             reconcileStaleLoginSession()
-            if completed, isUserLoggedIn, isGuestMode == false {
-                Task {
-                    await StoreKitSubscriptionService.shared.syncEntitlementsOnLaunch()
-                }
-            }
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -154,7 +149,7 @@ struct ContentView: View {
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
                     guard isUserLoggedIn else { return }
-                    await runForegroundLocationBootstrap()
+                    await runForegroundLocationBootstrap(vipLogTrigger: "App回到前台")
                 }
             } else if newPhase == .inactive {
                 ForegroundLocationPersistScheduler.shared.stop(reason: "sceneInactive")
@@ -315,12 +310,15 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func runForegroundLocationBootstrap() async {
+    private func runForegroundLocationBootstrap(vipLogTrigger: String? = nil) async {
         _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
         refreshForegroundLocationSchedulerContext()
         await AuthSessionRefresher.refreshOnForegroundIfNeeded()
         await appRouter.refreshStateFromBackend()
         await fetchHouseholdsAndCheckCreatorRole()
+        if let vipLogTrigger {
+            appRouter.logVIPAccessState(trigger: vipLogTrigger)
+        }
         guard await NetworkMonitor.shared.isConnected else { return }
         await reportLocationWhenEnteringForeground()
         await syncBackgroundLocationService()

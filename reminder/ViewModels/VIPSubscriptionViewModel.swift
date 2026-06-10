@@ -68,7 +68,7 @@ final class VIPSubscriptionViewModel: ObservableObject {
     }
 
     func purchaseSubscription(appRouter: AppRouter) async -> Bool {
-        guard appRouter.hasPremiumAccess == false else {
+        guard storeKit.isPersonalSubscriber(userEntitlement: appRouter.userEntitlement) == false else {
             errorMessage = AppLocalized.localized("您已是 Pro 会员。")
             return false
         }
@@ -81,14 +81,23 @@ final class VIPSubscriptionViewModel: ObservableObject {
 
         #if canImport(Supabase)
         do {
-            guard let pending = try await storeKit.purchase(plan: selectedPlan) else {
+            guard let userId = await appRouter.resolveAuthUserId() else {
+                errorMessage = AppLocalized.localized("请先登录后再订阅。")
+                return false
+            }
+            guard let pending = try await storeKit.purchase(plan: selectedPlan, appAccountToken: userId) else {
                 return false
             }
 
-            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+            let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
                 signedTransactionInfo: pending.signedTransactionInfo,
                 environment: pending.environment
             )
+            let expiresAt = Self.parseSubscriptionExpiry(
+                serverExpiresAt: response.expiresAt,
+                fallback: pending.expiresAt
+            )
+            appRouter.applyOptimisticPersonalEntitlement(userId: userId, expiresAt: expiresAt)
             await pending.finishIfNeeded()
             AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
             await appRouter.refreshPremiumStateAfterClaim()
@@ -113,7 +122,9 @@ final class VIPSubscriptionViewModel: ObservableObject {
     }
 
     func restorePurchases(appRouter: AppRouter) async -> Bool {
-        guard appRouter.hasPremiumAccess == false else { return false }
+        guard storeKit.isPersonalSubscriber(userEntitlement: appRouter.userEntitlement) == false else {
+            return false
+        }
         guard isPurchasing == false else { return false }
 
         isPurchasing = true
@@ -127,10 +138,18 @@ final class VIPSubscriptionViewModel: ObservableObject {
                 throw StoreKitSubscriptionError.noActiveSubscription
             }
 
-            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+            let userId = await appRouter.resolveAuthUserId()
+            let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
                 signedTransactionInfo: pending.signedTransactionInfo,
                 environment: pending.environment
             )
+            if let userId {
+                let expiresAt = Self.parseSubscriptionExpiry(
+                    serverExpiresAt: response.expiresAt,
+                    fallback: pending.expiresAt
+                )
+                appRouter.applyOptimisticPersonalEntitlement(userId: userId, expiresAt: expiresAt)
+            }
             await pending.finishIfNeeded()
             AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
             await appRouter.refreshPremiumStateAfterClaim()
@@ -150,5 +169,22 @@ final class VIPSubscriptionViewModel: ObservableObject {
         errorMessage = AppLocalized.localized("当前构建环境未包含 Supabase SDK。")
         return false
         #endif
+    }
+
+    private static func parseSubscriptionExpiry(serverExpiresAt: String?, fallback: Date?) -> Date? {
+        if let serverExpiresAt,
+           serverExpiresAt.isEmpty == false,
+           let parsed = ISO8601DateFormatter().date(from: serverExpiresAt) {
+            return parsed
+        }
+        if let serverExpiresAt,
+           serverExpiresAt.isEmpty == false {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let parsed = formatter.date(from: serverExpiresAt) {
+                return parsed
+            }
+        }
+        return fallback
     }
 }

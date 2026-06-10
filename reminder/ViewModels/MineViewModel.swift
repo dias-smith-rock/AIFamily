@@ -59,6 +59,7 @@ final class MineViewModel: ObservableObject {
         defer { isSigningOut = false }
 
         AuthSessionGuard.shared.beginLoggingOut()
+        appRouter.logVIPAccessState(trigger: "用户退出前")
         do {
             try await authService.signOut()
             UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
@@ -78,6 +79,7 @@ final class MineViewModel: ObservableObject {
         defer { isDeletingAccount = false }
 
         AuthSessionGuard.shared.beginLoggingOut()
+        appRouter.logVIPAccessState(trigger: "用户退出前")
         do {
             // 预留：接入 delete-account Edge Function / RPC 后在此调用
             // try await supabase.functions.invoke("delete-account")

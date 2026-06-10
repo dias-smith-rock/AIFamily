@@ -387,11 +387,13 @@ struct FamilyView: View {
             showsGuestSignInAlert = true
             return
         }
-        guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
-            appRouter.presentPremiumUpgrade()
-            return
+        Task { @MainActor in
+            guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
+                appRouter.presentPremiumUpgrade()
+                return
+            }
+            addMemberRoute = .entry
         }
-        addMemberRoute = .entry
     }
 
     private var profilesEmptyState: some View {

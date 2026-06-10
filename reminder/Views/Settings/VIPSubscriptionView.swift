@@ -11,18 +11,22 @@ struct VIPSubscriptionView: View {
     @State private var showTermsSheet = false
     @State private var showPurchaseSuccessAlert = false
 
+    private var showsPersonalVIP: Bool {
+        appRouter.showsPersonalVIP
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 heroSection
 
-                if appRouter.hasPremiumAccess == false {
+                if showsPersonalVIP == false {
                     planPickerSection
                 }
 
                 benefitsSection
 
-                if appRouter.hasPremiumAccess == false {
+                if showsPersonalVIP == false {
                     subscriptionLegalNote
                 }
             }
@@ -31,10 +35,10 @@ struct VIPSubscriptionView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(appRouter.hasPremiumAccess ? "Pro 会员" : "升级 VIP")
+        .navigationTitle(showsPersonalVIP ? "Pro 会员" : "升级 VIP")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if appRouter.hasPremiumAccess {
+            if showsPersonalVIP {
                 activeProStatusBar
             } else {
                 subscribeButtonBar
@@ -43,6 +47,7 @@ struct VIPSubscriptionView: View {
         .task {
             AnalyticsManager.log(event: .vipPageViewed)
             await viewModel.loadProducts()
+            await storeKit.refreshLocalEntitlements(for: appRouter.authUserId)
         }
         .alert("订阅成功", isPresented: $showPurchaseSuccessAlert) {
             Button("好的", role: .cancel) {
@@ -90,20 +95,20 @@ struct VIPSubscriptionView: View {
                 )
                 .padding(.top, 8)
 
-            Text(appRouter.hasPremiumAccess ? "Pro 会员已激活" : "升级至 Pro 高级版")
+            Text(showsPersonalVIP ? "Pro 会员已激活" : "升级至 Pro 高级版")
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
             Group {
-                if appRouter.hasPremiumAccess {
+                if showsPersonalVIP {
                     Text(proActiveDetailText)
                 } else {
                     Text("解锁全组高级特权，一人续费全组共享")
                 }
             }
             .font(.subheadline.weight(.medium))
-            .foregroundStyle(appRouter.hasPremiumAccess ? Color.secondary : Color.orange)
+            .foregroundStyle(showsPersonalVIP ? Color.secondary : Color.orange)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 8)
         }
@@ -231,16 +236,13 @@ struct VIPSubscriptionView: View {
     // MARK: - Footer
 
     private var proActiveDetailText: String {
-        if let expiry = appRouter.userEntitlement?.proExpiresAt, appRouter.userEntitlement?.isActive == true {
+        if let expiry = storeKit.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement) {
             let year = Calendar.current.component(.year, from: expiry)
             return String(
                 format: AppLocalized.string("个人权益有效期至 %lld 年", locale: locale),
                 locale: locale,
                 year
             )
-        }
-        if appRouter.hasInheritedPremiumOnly {
-            return AppLocalized.string("当前群组已继承 Pro 权益", locale: locale)
         }
         return AppLocalized.string("感谢您的支持，尽情使用 Pro 功能吧。", locale: locale)
     }
@@ -265,6 +267,14 @@ struct VIPSubscriptionView: View {
     private var subscribeButtonBar: some View {
         VStack(spacing: 10) {
             Divider()
+
+            if storeKit.hasUnlinkedDeviceSubscription {
+                Text("检测到本机有订阅记录，请使用「恢复购买」绑定到当前账号。")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+            }
 
             Button {
                 Task {

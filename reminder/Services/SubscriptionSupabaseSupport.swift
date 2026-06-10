@@ -8,17 +8,38 @@ enum SubscriptionSupabaseSupport {
     private static let entitlementColumns = "user_id,is_pro,pro_expires_at"
     private static let verifyAppleSubscriptionFunction = "verify-apple-subscription"
 
+    /// 最近一次 `household_creator_has_active_pro` 拉取结果，供 VIP 诊断日志使用。
+    @MainActor
+    private(set) static var lastCreatorProFetchDiagnostics = CreatorProFetchDiagnostics()
+
     @MainActor
     static func fetchHouseholdCreatorHasActivePro(householdId: UUID) async throws -> Bool {
         #if canImport(Supabase)
-        let value: Bool = try await SupabaseManager.shared.client
-            .rpc(
-                "household_creator_has_active_pro",
-                params: HouseholdCreatorHasActiveProParams(pHouseholdId: householdId)
+        do {
+            let value: Bool = try await SupabaseManager.shared.client
+                .rpc(
+                    "household_creator_has_active_pro",
+                    params: HouseholdCreatorHasActiveProParams(pHouseholdId: householdId)
+                )
+                .execute()
+                .value
+            lastCreatorProFetchDiagnostics = CreatorProFetchDiagnostics(
+                householdId: householdId,
+                result: value,
+                errorMessage: nil,
+                fetchedAt: Date()
             )
-            .execute()
-            .value
-        return value
+            return value
+        } catch {
+            let message = error.localizedDescription
+            lastCreatorProFetchDiagnostics = CreatorProFetchDiagnostics(
+                householdId: householdId,
+                result: nil,
+                errorMessage: message,
+                fetchedAt: Date()
+            )
+            throw error
+        }
         #else
         _ = householdId
         throw SubscriptionSupabaseError.sdkUnavailable
@@ -105,6 +126,24 @@ enum SubscriptionSupabaseSupport {
     static func claimFreeProTrial(userId: UUID) async throws -> Date {
         _ = userId
         throw SubscriptionSupabaseError.promotionalGrantDisabled
+    }
+}
+
+struct CreatorProFetchDiagnostics: Equatable, Sendable {
+    var householdId: UUID?
+    var result: Bool?
+    var errorMessage: String?
+    var fetchedAt: Date?
+
+    var summaryForLog: String {
+        if let errorMessage, errorMessage.isEmpty == false {
+            return "RPC失败: \(errorMessage)"
+        }
+        if let result {
+            let idPrefix = householdId.map { String($0.uuidString.prefix(8)) } ?? "nil"
+            return "RPC成功 household=\(idPrefix) result=\(result)"
+        }
+        return "RPC未调用"
     }
 }
 

@@ -29,6 +29,7 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedHouseholdName: String?
     @Published private(set) var selectedHouseholdDescription: String = ""
     @Published private(set) var userEntitlement: UserEntitlement?
+    @Published private(set) var authUserId: UUID?
     @Published private(set) var selectedHouseholdCreatorHasActivePro = false
 
     @Published var showNewCreatorAlert = false
@@ -80,7 +81,22 @@ final class AppRouter: ObservableObject {
         return PremiumAccess.hasPremiumAccess(
             userEntitlement: userEntitlement,
             creatorHasActivePro: selectedHouseholdCreatorHasActivePro
-        )
+        ) || StoreKitSubscriptionService.shared.hasLocalActiveSubscription
+    }
+
+    /// 本人是否享有 Pro（仅 `user_entitlements`，不含组织继承与游客放行）。
+    var hasPersonalPremiumAccess: Bool {
+        userEntitlement?.isActive == true
+    }
+
+    /// 设置页 / 订阅页是否展示「本人已订阅」（云端权益或本会话已确认的本机订阅）。
+    var showsPersonalVIP: Bool {
+        StoreKitSubscriptionService.shared.isPersonalSubscriber(userEntitlement: userEntitlement)
+    }
+
+    /// 输出 VIP 三元诊断日志（创建者 VIP / 本人 VIP / 当前组织内 VIP）。
+    func logVIPAccessState(trigger: String) {
+        PremiumAccessDiagnostics.log(appRouter: self, trigger: trigger)
     }
 
     /// 当前 Pro 是否仅来自组织创建者继承（非个人 VIP）。
@@ -193,7 +209,9 @@ final class AppRouter: ObservableObject {
                 client: client,
                 memberships: activeMemberships
             )
+            authUserId = userId
             await loadUserEntitlement(userId: userId)
+            await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: userId)
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
@@ -225,6 +243,7 @@ final class AppRouter: ObservableObject {
                     option: preferredOption,
                     userId: userId
                 )
+                await refreshSelectedHouseholdCreatorPro(householdId: preferredOption.id)
                 return
             }
 
@@ -234,6 +253,7 @@ final class AppRouter: ObservableObject {
                     option: onlyOption,
                     userId: userId
                 )
+                await refreshSelectedHouseholdCreatorPro(householdId: onlyOption.id)
                 return
             }
 
@@ -244,6 +264,7 @@ final class AppRouter: ObservableObject {
                     option: lastOption,
                     userId: userId
                 )
+                await refreshSelectedHouseholdCreatorPro(householdId: lastOption.id)
                 return
             }
 
@@ -269,6 +290,7 @@ final class AppRouter: ObservableObject {
                 selectedHouseholdName = nil
                 selectedHouseholdDescription = ""
                 selectedHouseholdCreatorHasActivePro = false
+                resetAuthenticatedPremiumState()
                 debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
                 // 已有会话但拉取组织状态失败时，至少进入组织路由页，避免卡在登录页死循环。
@@ -289,7 +311,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectedHouseholdCreatorHasActivePro = false
-        userEntitlement = nil
+        resetAuthenticatedPremiumState()
         selectableHouseholds = []
         recentHouseholds = []
     }
@@ -328,7 +350,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
         selectedHouseholdCreatorHasActivePro = false
-        userEntitlement = nil
+        resetAuthenticatedPremiumState()
         selectableHouseholds = [
             HouseholdOption(
                 id: snapshot.householdId,
@@ -352,7 +374,7 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectedHouseholdCreatorHasActivePro = false
-        userEntitlement = nil
+        resetAuthenticatedPremiumState()
         selectableHouseholds = []
         recentHouseholds = []
         appState = .unauthenticated
@@ -401,9 +423,20 @@ final class AppRouter: ObservableObject {
     func chooseJoinedHousehold(_ joined: JoinedHousehold) {
         #if canImport(Supabase)
         Task {
-            let creatorHasActivePro = (try? await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
-                householdId: joined.householdId
-            )) ?? false
+            let creatorHasActivePro: Bool
+            do {
+                creatorHasActivePro = try await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
+                    householdId: joined.householdId
+                )
+            } catch {
+                debugLog(
+                    "fetchHouseholdCreatorHasActivePro.error household=\(joined.householdId.uuidString) \(error.localizedDescription)"
+                )
+                print(
+                    "[VIPAccess] household_creator_has_active_pro 失败 household=\(joined.householdId.uuidString.prefix(8)) error=\(error.localizedDescription)"
+                )
+                creatorHasActivePro = false
+            }
             let option = HouseholdOption(
                 id: joined.householdId,
                 membershipId: joined.id,
@@ -427,12 +460,39 @@ final class AppRouter: ObservableObject {
         #endif
     }
 
+    /// 购买/恢复服务端校验通过后，先乐观更新本人权益，再拉取云端真相。
+    func applyOptimisticPersonalEntitlement(userId: UUID, expiresAt: Date?) {
+        authUserId = userId
+        userEntitlement = UserEntitlement(userId: userId, isPro: true, proExpiresAt: expiresAt)
+        StoreKitSubscriptionService.shared.confirmLocalSubscription(for: userId, expiresAt: expiresAt)
+    }
+
+    /// 解析当前登录用户 ID（bootstrap 未完成时从 session 补全）。
+    func resolveAuthUserId() async -> UUID? {
+        if let authUserId {
+            return authUserId
+        }
+        #if canImport(Supabase)
+        do {
+            let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            authUserId = userId
+            return userId
+        } catch {
+            return nil
+        }
+        #else
+        return nil
+        #endif
+    }
+
     /// 领取 Pro 后刷新个人权益、群组 Premium 标记与组织列表。
     func refreshPremiumStateAfterClaim() async {
         #if canImport(Supabase)
         do {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
+            authUserId = userId
             await loadUserEntitlement(userId: userId)
+            await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: userId)
             if let householdId = selectedHouseholdId {
                 await refreshSelectedHouseholdCreatorPro(householdId: householdId)
             }
@@ -441,6 +501,12 @@ final class AppRouter: ObservableObject {
             debugLog("refreshPremiumStateAfterClaim.error \(error.localizedDescription)")
         }
         #endif
+    }
+
+    private func resetAuthenticatedPremiumState() {
+        authUserId = nil
+        userEntitlement = nil
+        StoreKitSubscriptionService.shared.clearSessionSubscriptionState()
     }
 
     func dismissNewCreatorAlert() {
@@ -479,6 +545,10 @@ final class AppRouter: ObservableObject {
                         userId: userId
                     )
                 }
+                await self.refreshSelectedHouseholdCreatorPro(householdId: option.id)
+                await MainActor.run {
+                    self.logVIPAccessState(trigger: "切换组织")
+                }
             } catch {
                 await MainActor.run {
                     self.appState = .unauthenticated
@@ -506,7 +576,9 @@ final class AppRouter: ObservableObject {
 
     private func loadUserEntitlement(userId: UUID) async {
         do {
-            userEntitlement = try await SubscriptionSupabaseSupport.fetchUserEntitlement(userId: userId)
+            if let fetched = try await SubscriptionSupabaseSupport.fetchUserEntitlement(userId: userId) {
+                userEntitlement = fetched
+            }
         } catch {
             debugLog("loadUserEntitlement.error \(error.localizedDescription)")
         }
@@ -538,9 +610,31 @@ final class AppRouter: ObservableObject {
         do {
             selectedHouseholdCreatorHasActivePro = try await SubscriptionSupabaseSupport
                 .fetchHouseholdCreatorHasActivePro(householdId: householdId)
+            syncCreatorHasActiveProInHouseholdLists(householdId: householdId)
         } catch {
-            debugLog("refreshSelectedHouseholdCreatorPro.error \(error.localizedDescription)")
+            debugLog(
+                "refreshSelectedHouseholdCreatorPro.error household=\(householdId.uuidString) \(error.localizedDescription)"
+            )
+            print(
+                "[VIPAccess] refreshSelectedHouseholdCreatorPro 失败 household=\(householdId.uuidString.prefix(8)) error=\(error.localizedDescription)"
+            )
             selectedHouseholdCreatorHasActivePro = false
+        }
+    }
+
+    private func syncCreatorHasActiveProInHouseholdLists(householdId: UUID) {
+        let value = selectedHouseholdCreatorHasActivePro
+        selectableHouseholds = selectableHouseholds.map { option in
+            guard option.id == householdId else { return option }
+            var updated = option
+            updated.creatorHasActivePro = value
+            return updated
+        }
+        recentHouseholds = recentHouseholds.map { option in
+            guard option.id == householdId else { return option }
+            var updated = option
+            updated.creatorHasActivePro = value
+            return updated
         }
     }
 
@@ -574,9 +668,20 @@ final class AppRouter: ObservableObject {
                 .execute()
                 .value
 
-            let creatorHasActivePro = (try? await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
-                householdId: householdID
-            )) ?? false
+            let creatorHasActivePro: Bool
+            do {
+                creatorHasActivePro = try await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
+                    householdId: householdID
+                )
+            } catch {
+                debugLog(
+                    "fetchHouseholdCreatorHasActivePro.error household=\(householdID.uuidString) \(error.localizedDescription)"
+                )
+                print(
+                    "[VIPAccess] household_creator_has_active_pro 失败 household=\(householdID.uuidString.prefix(8)) error=\(error.localizedDescription)"
+                )
+                creatorHasActivePro = false
+            }
 
             if let household = rows.first {
                 debugLog("query.household_by_id.hit household=\(household.id.uuidString) name=\(household.name)")
