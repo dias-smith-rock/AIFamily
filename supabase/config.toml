@@ -423,6 +423,12 @@ entrypoint = "./functions/send-huddle-flare/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-huddle-flare/*.html" ]
 
+[functions.verify-apple-subscription]
+enabled = true
+verify_jwt = true
+import_map = "./functions/verify-apple-subscription/deno.json"
+entrypoint = "./functions/verify-apple-subscription/index.ts"
+
 [functions.parse-create-task-from-images]
 enabled = true
 verify_jwt = true

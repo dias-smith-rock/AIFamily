@@ -2,10 +2,6 @@ import Combine
 import Foundation
 import SwiftUI
 
-#if canImport(Supabase)
-import Supabase
-#endif
-
 enum VIPBillingPlan: String, CaseIterable, Identifiable {
     case monthly
     case yearly
@@ -89,13 +85,12 @@ final class VIPSubscriptionViewModel: ObservableObject {
                 return false
             }
 
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                userId: userId,
-                purchase: pending.verified
+            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                signedTransactionInfo: pending.signedTransactionInfo,
+                environment: pending.environment
             )
-            await pending.finish()
-            AnalyticsManager.log(event: .vipPurchased(plan: pending.verified.plan.rawValue))
+            await pending.finishIfNeeded()
+            AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
             await appRouter.refreshPremiumStateAfterClaim()
             purchaseSucceeded = true
             return true
@@ -103,6 +98,9 @@ final class VIPSubscriptionViewModel: ObservableObject {
             if let message = error.errorDescription {
                 errorMessage = message
             }
+            return false
+        } catch let error as SubscriptionSupabaseError {
+            errorMessage = error.errorDescription
             return false
         } catch {
             errorMessage = AppLocalized.localized("购买失败，请稍后重试。")
@@ -129,18 +127,20 @@ final class VIPSubscriptionViewModel: ObservableObject {
                 throw StoreKitSubscriptionError.noActiveSubscription
             }
 
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-            try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                userId: userId,
-                purchase: pending.verified
+            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                signedTransactionInfo: pending.signedTransactionInfo,
+                environment: pending.environment
             )
-            await pending.finish()
-            AnalyticsManager.log(event: .vipPurchased(plan: pending.verified.plan.rawValue))
+            await pending.finishIfNeeded()
+            AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
             await appRouter.refreshPremiumStateAfterClaim()
             purchaseSucceeded = true
             return true
         } catch let error as StoreKitSubscriptionError {
             errorMessage = error.errorDescription ?? AppLocalized.localized("未找到可恢复的订阅。")
+            return false
+        } catch let error as SubscriptionSupabaseError {
+            errorMessage = error.errorDescription
             return false
         } catch {
             errorMessage = AppLocalized.localized("恢复购买失败，请稍后重试。")

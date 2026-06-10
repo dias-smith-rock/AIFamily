@@ -29,18 +29,32 @@ enum StoreKitSubscriptionError: LocalizedError {
     }
 }
 
-/// 待 finish 的交易（Supabase 回写成功后再调用 `finish()`）。
+/// 待服务端激活并 finish 的交易。
 struct PendingStorePurchase: Sendable {
-    let verified: VerifiedApplePurchase
-    private let transaction: Transaction
+    let signedTransactionInfo: String
+    let environment: String
+    let plan: SubscriptionPlan
+    let expiresAt: Date?
+    private let transaction: Transaction?
 
-    init(verified: VerifiedApplePurchase, transaction: Transaction) {
-        self.verified = verified
+    init(
+        signedTransactionInfo: String,
+        environment: String,
+        plan: SubscriptionPlan,
+        expiresAt: Date?,
+        transaction: Transaction?
+    ) {
+        self.signedTransactionInfo = signedTransactionInfo
+        self.environment = environment
+        self.plan = plan
+        self.expiresAt = expiresAt
         self.transaction = transaction
     }
 
-    func finish() async {
-        await transaction.finish()
+    func finishIfNeeded() async {
+        if let transaction {
+            await transaction.finish()
+        }
     }
 }
 
@@ -97,9 +111,7 @@ final class StoreKitSubscriptionService: ObservableObject {
 
         switch result {
         case .success(let verification):
-            let transaction = try checkVerified(verification)
-            let verified = makeVerifiedPurchase(from: transaction, product: product)
-            return PendingStorePurchase(verified: verified, transaction: transaction)
+            return try await makePendingPurchase(from: verification, finishable: true)
         case .userCancelled:
             return nil
         case .pending:
@@ -111,9 +123,9 @@ final class StoreKitSubscriptionService: ObservableObject {
 
     func restorePurchases() async throws -> PendingStorePurchase? {
         try await AppStore.sync()
-        let purchases = try await pendingPurchasesFromCurrentEntitlements()
+        let purchases = try await pendingPurchasesFromCurrentEntitlements(finishable: false)
         guard let latest = purchases.max(by: { lhs, rhs in
-            (lhs.verified.expiresAt ?? .distantFuture) < (rhs.verified.expiresAt ?? .distantFuture)
+            expiryRank(lhs.expiresAt) < expiryRank(rhs.expiresAt)
         }) else {
             throw StoreKitSubscriptionError.noActiveSubscription
         }
@@ -124,16 +136,16 @@ final class StoreKitSubscriptionService: ObservableObject {
         #if canImport(Supabase)
         guard let appRouter else { return }
         do {
-            let session = try await SupabaseManager.shared.client.auth.session
-            let purchases = try await verifiedPurchasesFromCurrentEntitlements()
+            let purchases = try await pendingPurchasesFromCurrentEntitlements(finishable: false)
             guard let latest = purchases.max(by: { lhs, rhs in
-                (lhs.expiresAt ?? .distantFuture) < (rhs.expiresAt ?? .distantFuture)
+                expiryRank(lhs.expiresAt) < expiryRank(rhs.expiresAt)
             }) else { return }
 
-            try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                userId: session.user.id,
-                purchase: latest
+            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                signedTransactionInfo: latest.signedTransactionInfo,
+                environment: latest.environment
             )
+            await latest.finishIfNeeded()
             await appRouter.refreshPremiumStateAfterClaim()
         } catch {
             #if DEBUG
@@ -148,23 +160,17 @@ final class StoreKitSubscriptionService: ObservableObject {
     private func handleTransactionUpdate(_ result: VerificationResult<Transaction>) async {
         #if canImport(Supabase)
         do {
-            let transaction = try checkVerified(result)
-            guard let plan = StoreKitProductCatalog.subscriptionPlan(for: transaction.productID) else {
-                await transaction.finish()
+            guard let pending = try await makePendingPurchase(from: result, finishable: true) else {
                 return
             }
 
-            let product = productsByPlan.values.first { $0.id == transaction.productID }
-            let verified = makeVerifiedPurchase(from: transaction, product: product)
-            let userId = try await SupabaseManager.shared.client.auth.session.user.id
-
-            try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                userId: userId,
-                purchase: verified
+            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                signedTransactionInfo: pending.signedTransactionInfo,
+                environment: pending.environment
             )
-            await transaction.finish()
+            await pending.finishIfNeeded()
             await appRouter?.refreshPremiumStateAfterClaim()
-            AnalyticsManager.log(event: .vipPurchased(plan: plan.rawValue))
+            AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
         } catch {
             #if DEBUG
             print("[StoreKit] transaction update error: \(error.localizedDescription)")
@@ -187,20 +193,38 @@ final class StoreKitSubscriptionService: ObservableObject {
         return product
     }
 
-    private func pendingPurchasesFromCurrentEntitlements() async throws -> [PendingStorePurchase] {
+    private func pendingPurchasesFromCurrentEntitlements(finishable: Bool) async throws -> [PendingStorePurchase] {
         var results: [PendingStorePurchase] = []
         for await verification in Transaction.currentEntitlements {
-            let transaction = try checkVerified(verification)
-            guard isActiveSubscription(transaction) else { continue }
-            let product = productsByPlan.values.first { $0.id == transaction.productID }
-            let verified = makeVerifiedPurchase(from: transaction, product: product)
-            results.append(PendingStorePurchase(verified: verified, transaction: transaction))
+            if let pending = try await makePendingPurchase(from: verification, finishable: finishable) {
+                results.append(pending)
+            }
         }
         return results
     }
 
-    private func verifiedPurchasesFromCurrentEntitlements() async throws -> [VerifiedApplePurchase] {
-        try await pendingPurchasesFromCurrentEntitlements().map(\.verified)
+    private func makePendingPurchase(
+        from verification: VerificationResult<Transaction>,
+        finishable: Bool
+    ) async throws -> PendingStorePurchase? {
+        let transaction = try checkVerified(verification)
+        guard let plan = StoreKitProductCatalog.subscriptionPlan(for: transaction.productID) else {
+            if finishable {
+                await transaction.finish()
+            }
+            return nil
+        }
+        guard isActiveSubscription(transaction) else {
+            return nil
+        }
+
+        return PendingStorePurchase(
+            signedTransactionInfo: verification.jwsRepresentation,
+            environment: environmentLabel(for: transaction),
+            plan: plan,
+            expiresAt: transaction.expirationDate,
+            transaction: finishable ? transaction : nil
+        )
     }
 
     private func isActiveSubscription(_ transaction: Transaction) -> Bool {
@@ -213,6 +237,21 @@ final class StoreKitSubscriptionService: ObservableObject {
         return true
     }
 
+    private func environmentLabel(for transaction: Transaction) -> String {
+        switch transaction.environment {
+        case .sandbox:
+            return "sandbox"
+        case .production:
+            return "production"
+        default:
+            return "production"
+        }
+    }
+
+    private func expiryRank(_ date: Date?) -> TimeInterval {
+        date?.timeIntervalSince1970 ?? .greatestFiniteMagnitude
+    }
+
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
         case .unverified:
@@ -220,44 +259,5 @@ final class StoreKitSubscriptionService: ObservableObject {
         case .verified(let safe):
             return safe
         }
-    }
-
-    private func makeVerifiedPurchase(from transaction: Transaction, product: Product?) -> VerifiedApplePurchase {
-        let plan = StoreKitProductCatalog.subscriptionPlan(for: transaction.productID) ?? .proMonthly
-        let environment: String
-        switch transaction.environment {
-        case .sandbox:
-            environment = "sandbox"
-        case .production:
-            environment = "production"
-        default:
-            environment = "production"
-        }
-
-        let amount: Int
-        let currency: String
-        if let product {
-            amount = priceInMinorUnits(product)
-            currency = "USD"
-        } else {
-            amount = 0
-            currency = "USD"
-        }
-
-        return VerifiedApplePurchase(
-            transactionId: String(transaction.id),
-            productId: transaction.productID,
-            plan: plan,
-            expiresAt: transaction.expirationDate,
-            purchaseDate: transaction.purchaseDate,
-            environment: environment,
-            amount: amount,
-            currency: currency
-        )
-    }
-
-    private func priceInMinorUnits(_ product: Product) -> Int {
-        let decimal = product.price as NSDecimalNumber
-        return decimal.multiplying(by: 100).intValue
     }
 }

@@ -6,6 +6,7 @@ import Supabase
 
 enum SubscriptionSupabaseSupport {
     private static let entitlementColumns = "user_id,is_pro,pro_expires_at"
+    private static let verifyAppleSubscriptionFunction = "verify-apple-subscription"
 
     @MainActor
     static func fetchUserEntitlement(userId: UUID) async throws -> UserEntitlement? {
@@ -24,147 +25,85 @@ enum SubscriptionSupabaseSupport {
         #endif
     }
 
-    /// App Store 购买/恢复/续订：写入订单、个人权益，并将用户作为创建者的群组标记为 Premium。
+    /// App Store 购买/恢复/续订：服务端校验 JWS 后由 Edge Function 写入订单与权益。
     @MainActor
     static func activatePremiumFromApplePurchase(
-        userId: UUID,
-        purchase: VerifiedApplePurchase
-    ) async throws {
-        let orderPayload = SubscriptionOrderInsertPayload(
-            payerId: userId,
-            planPurchased: purchase.plan.rawValue,
-            amount: purchase.amount,
-            currency: purchase.currency,
-            environment: purchase.environment,
-            expiresAt: purchase.expiresAt,
-            externalTransactionId: purchase.transactionId
-        )
-        try await activatePremium(
-            userId: userId,
-            expiresAt: purchase.expiresAt,
-            orderPayload: orderPayload,
-            externalTransactionId: purchase.transactionId
-        )
-    }
-
-    /// 创世用户福利：写入订单、个人权益，并将用户作为创建者的群组标记为 Premium。
-    @MainActor
-    static func claimFreeProTrialForCurrentUser() async throws -> Date {
+        signedTransactionInfo: String,
+        environment: String
+    ) async throws -> VerifyAppleSubscriptionResponse {
         #if canImport(Supabase)
-        let session = try await SupabaseManager.shared.client.auth.session
-        let userId = session.user.id
-        return try await claimFreeProTrial(userId: userId)
+        let client = SupabaseManager.shared.client
+        let request = VerifyAppleSubscriptionRequest(
+            signedTransactionInfo: signedTransactionInfo,
+            environment: environment
+        )
+
+        do {
+            return try await client.functions.invoke(
+                verifyAppleSubscriptionFunction,
+                options: FunctionInvokeOptions(body: request)
+            )
+        } catch let error as FunctionsError {
+            if case .httpError(_, let data) = error,
+               let parsed = try? JSONDecoder().decode(VerifyAppleSubscriptionErrorBody.self, from: data),
+               let message = parsed.error?.trimmingCharacters(in: .whitespacesAndNewlines),
+               message.isEmpty == false {
+                throw SubscriptionSupabaseError.serverError(message)
+            }
+            throw SubscriptionSupabaseError.serverError(error.localizedDescription)
+        } catch {
+            throw SubscriptionSupabaseError.serverError(error.localizedDescription)
+        }
         #else
+        _ = signedTransactionInfo
+        _ = environment
         throw SubscriptionSupabaseError.sdkUnavailable
         #endif
+    }
+
+    /// 创世用户福利：已禁用客户端直写，须通过服务端发放。
+    @MainActor
+    static func claimFreeProTrialForCurrentUser() async throws -> Date {
+        throw SubscriptionSupabaseError.promotionalGrantDisabled
     }
 
     @MainActor
     static func claimFreeProTrial(userId: UUID) async throws -> Date {
-        let oneYearLater = Calendar.current.date(byAdding: .year, value: 1, to: Date())
-            ?? Date().addingTimeInterval(365 * 24 * 60 * 60)
-
-        let orderPayload = SubscriptionOrderInsertPayload(
-            payerId: userId,
-            planPurchased: SubscriptionPlan.proOneYearFree.rawValue,
-            expiresAt: oneYearLater
-        )
-        try await activatePremium(
-            userId: userId,
-            expiresAt: oneYearLater,
-            orderPayload: orderPayload,
-            externalTransactionId: nil
-        )
-        return oneYearLater
-    }
-
-    // MARK: - Private
-
-    @MainActor
-    private static func activatePremium(
-        userId: UUID,
-        expiresAt: Date?,
-        orderPayload: SubscriptionOrderInsertPayload,
-        externalTransactionId: String?
-    ) async throws {
-        #if canImport(Supabase)
-        let client = SupabaseManager.shared.client
-
-        if let externalTransactionId {
-            let existing: [SubscriptionOrderIdRow] = try await client
-                .from("subscription_orders")
-                .select("id")
-                .eq("external_transaction_id", value: externalTransactionId)
-                .limit(1)
-                .execute()
-                .value
-
-            if existing.isEmpty {
-                try await client
-                    .from("subscription_orders")
-                    .insert(orderPayload)
-                    .execute()
-            }
-        } else {
-            try await client
-                .from("subscription_orders")
-                .insert(orderPayload)
-                .execute()
-        }
-
-        let entitlementPayload = UserEntitlementUpsertPayload(
-            userId: userId,
-            isPro: true,
-            proExpiresAt: expiresAt
-        )
-        try await client
-            .from("user_entitlements")
-            .upsert(entitlementPayload)
-            .execute()
-
-        let groupUpdate = HouseholdPremiumPatch(isPremium: true)
-        try await client
-            .from("households")
-            .update(groupUpdate)
-            .eq("creator_id", value: userId.uuidString.lowercased())
-            .execute()
-        #else
         _ = userId
-        _ = expiresAt
-        _ = orderPayload
-        _ = externalTransactionId
-        throw SubscriptionSupabaseError.sdkUnavailable
-        #endif
+        throw SubscriptionSupabaseError.promotionalGrantDisabled
     }
 }
 
-private struct SubscriptionOrderIdRow: Decodable {
-    let id: UUID
+struct VerifyAppleSubscriptionRequest: Encodable, Sendable {
+    var signedTransactionInfo: String
+    var environment: String
 }
 
-struct UserEntitlementUpsertPayload: Encodable, Equatable, Sendable {
-    var userId: UUID
-    var isPro: Bool
-    var proExpiresAt: Date?
-
-    init(userId: UUID, isPro: Bool, proExpiresAt: Date?) {
-        self.userId = userId
-        self.isPro = isPro
-        self.proExpiresAt = proExpiresAt
-    }
+struct VerifyAppleSubscriptionResponse: Decodable, Sendable, Equatable {
+    var success: Bool?
+    var plan: String?
+    var productId: String?
+    var transactionId: String?
+    var expiresAt: String?
 }
 
-private struct HouseholdPremiumPatch: Encodable {
-    var isPremium: Bool
+private struct VerifyAppleSubscriptionErrorBody: Decodable {
+    var error: String?
 }
 
 enum SubscriptionSupabaseError: LocalizedError {
     case sdkUnavailable
+    case serverError(String)
+    case promotionalGrantDisabled
 
     var errorDescription: String? {
         switch self {
         case .sdkUnavailable:
             return String(localized: "当前构建环境未包含 Supabase SDK。")
+        case .serverError(let message):
+            return message
+        case .promotionalGrantDisabled:
+            return String(localized: "促销权益须由服务端发放，客户端无法直接领取。")
         }
     }
 }
