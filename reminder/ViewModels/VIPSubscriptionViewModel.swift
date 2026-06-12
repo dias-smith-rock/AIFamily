@@ -58,6 +58,10 @@ final class VIPSubscriptionViewModel: ObservableObject {
         revenueCat.isLoadingProducts
     }
 
+    var canPurchaseSelectedPlan: Bool {
+        revenueCat.canPurchase(plan: selectedPlan)
+    }
+
     func loadProducts() async {
         await revenueCat.loadOfferings()
         objectWillChange.send()

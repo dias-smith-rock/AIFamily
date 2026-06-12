@@ -311,7 +311,7 @@ struct VIPSubscriptionView: View {
                 )
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isPurchasing)
+            .disabled(viewModel.isPurchasing || viewModel.isLoadingProducts || viewModel.canPurchaseSelectedPlan == false)
 
             Button {
                 Task {

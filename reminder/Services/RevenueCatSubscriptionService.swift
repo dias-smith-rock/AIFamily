@@ -34,6 +34,7 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
     static let shared = RevenueCatSubscriptionService()
 
     @Published private(set) var packagesByPlan: [VIPBillingPlan: Package] = [:]
+    @Published private(set) var storeProductsByPlan: [VIPBillingPlan: StoreProduct] = [:]
     @Published private(set) var isLoadingProducts = false
     @Published private(set) var hasActiveProEntitlement = false
     @Published private(set) var proExpiresAt: Date?
@@ -66,12 +67,18 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         isConfigured = true
 
         Task {
+            await loadOfferings()
             await refreshCustomerInfo()
         }
     }
 
+    func canPurchase(plan: VIPBillingPlan) -> Bool {
+        packagesByPlan[plan] != nil || storeProductsByPlan[plan] != nil
+    }
+
     func displayPrice(for plan: VIPBillingPlan) -> String? {
         packagesByPlan[plan]?.localizedPriceString
+            ?? storeProductsByPlan[plan]?.localizedPriceString
     }
 
     func isPersonalSubscriber(userEntitlement: UserEntitlement?) -> Bool {
@@ -90,23 +97,52 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         isLoadingProducts = true
         defer { isLoadingProducts = false }
 
+        var packageMap: [VIPBillingPlan: Package] = [:]
         do {
             let offerings = try await Purchases.shared.offerings()
-            var map: [VIPBillingPlan: Package] = [:]
-            let packages = offerings.current?.availablePackages ?? []
-            for package in packages {
-                let productId = package.storeProduct.productIdentifier
-                if let plan = StoreKitProductCatalog.billingPlan(for: productId) {
-                    map[plan] = package
-                }
+            let packages = collectPackages(from: offerings)
+            packageMap = mapPackages(packages)
+
+            #if DEBUG
+            if packageMap.isEmpty {
+                let productIds = packages.map(\.storeProduct.productIdentifier)
+                print("[RevenueCat] offerings loaded but no plan match. current=\(offerings.current?.identifier ?? "nil") productIds=\(productIds)")
             }
-            packagesByPlan = map
+            #endif
         } catch {
-            packagesByPlan = [:]
             #if DEBUG
             print("[RevenueCat] loadOfferings error: \(error.localizedDescription)")
             #endif
         }
+
+        packagesByPlan = packageMap
+
+        var productMap = packageMap.reduce(into: [VIPBillingPlan: StoreProduct]()) { partial, entry in
+            partial[entry.key] = entry.value.storeProduct
+        }
+        let missingPlans = VIPBillingPlan.allCases.filter { productMap[$0] == nil }
+        if missingPlans.isEmpty == false {
+            do {
+                let productIds = missingPlans.map { StoreKitProductCatalog.productID(for: $0) }
+                let products = try await Purchases.shared.products(productIds)
+                for product in products {
+                    if let plan = StoreKitProductCatalog.billingPlan(for: product.productIdentifier) {
+                        productMap[plan] = product
+                    }
+                }
+                #if DEBUG
+                if missingPlans.contains(where: { productMap[$0] == nil }) {
+                    let found = products.map(\.productIdentifier)
+                    print("[RevenueCat] StoreKit products fallback incomplete. requested=\(productIds) found=\(found)")
+                }
+                #endif
+            } catch {
+                #if DEBUG
+                print("[RevenueCat] products fallback error: \(error.localizedDescription)")
+                #endif
+            }
+        }
+        storeProductsByPlan = productMap
         await refreshCustomerInfo()
     }
 
@@ -151,17 +187,21 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
 
     func purchase(plan: VIPBillingPlan) async throws -> Bool {
         guard isConfigured else { throw RevenueCatSubscriptionError.notConfigured }
-        let package: Package
-        if let cached = packagesByPlan[plan] {
-            package = cached
-        } else if let resolved = await resolvePackage(for: plan) {
-            package = resolved
-        } else {
-            throw RevenueCatSubscriptionError.productNotFound
+
+        if packagesByPlan[plan] == nil, storeProductsByPlan[plan] == nil {
+            await loadOfferings()
         }
 
         do {
-            let result = try await Purchases.shared.purchase(package: package)
+            let result: PurchaseResultData
+            if let package = packagesByPlan[plan] {
+                result = try await Purchases.shared.purchase(package: package)
+            } else if let product = storeProductsByPlan[plan] {
+                result = try await Purchases.shared.purchase(product: product)
+            } else {
+                throw RevenueCatSubscriptionError.productNotFound
+            }
+
             if result.userCancelled {
                 return false
             }
@@ -212,9 +252,34 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         #endif
     }
 
-    private func resolvePackage(for plan: VIPBillingPlan) async -> Package? {
-        await loadOfferings()
-        return packagesByPlan[plan]
+    private func collectPackages(from offerings: Offerings) -> [Package] {
+        if let current = offerings.current {
+            return current.availablePackages
+        }
+        return offerings.all.values.flatMap(\.availablePackages)
+    }
+
+    private func mapPackages(_ packages: [Package]) -> [VIPBillingPlan: Package] {
+        var map: [VIPBillingPlan: Package] = [:]
+        for package in packages {
+            let productId = package.storeProduct.productIdentifier
+            if let plan = StoreKitProductCatalog.billingPlan(for: productId) {
+                map[plan] = package
+                continue
+            }
+            if let plan = billingPlan(for: package.packageType), map[plan] == nil {
+                map[plan] = package
+            }
+        }
+        return map
+    }
+
+    private func billingPlan(for packageType: PackageType) -> VIPBillingPlan? {
+        switch packageType {
+        case .monthly: .monthly
+        case .annual: .yearly
+        default: nil
+        }
     }
 
     private func applyCustomerInfo(_ info: CustomerInfo) {
