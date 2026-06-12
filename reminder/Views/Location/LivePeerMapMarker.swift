@@ -359,7 +359,7 @@ struct LiveTrackingBadge: View {
     @State private var glow = false
 
     var body: some View {
-        Text("LIVE")
+        Text(L10n.Common.live2.localized)
             .font(.caption2.weight(.heavy))
             .foregroundStyle(.white)
             .padding(.horizontal, 8)

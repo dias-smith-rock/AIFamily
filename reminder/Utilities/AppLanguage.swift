@@ -17,7 +17,7 @@ enum AppLanguage: String, CaseIterable, Identifiable {
 
     var nativeName: String {
         switch self {
-        case .system: return String(localized: "跟随系统")
+        case .system: return L10n.Common.followSystem.string()
         case .english: return "English"
         case .simplifiedChinese: return "简体中文"
         case .traditionalChinese: return "繁體中文"

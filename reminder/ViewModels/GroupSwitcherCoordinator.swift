@@ -40,7 +40,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
         }
         let normalizedName = newOrganizationName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalizedName.isEmpty == false else {
-            createOrganizationError = String(localized: "请输入群组名称。")
+            createOrganizationError = L10n.Family.pleaseEnterAGroupName.string()
             return
         }
         let trimmedDescription = newOrganizationDescription
@@ -70,7 +70,7 @@ final class GroupSwitcherCoordinator: ObservableObject {
             return
         }
         guard isInviteCodeValid else {
-            joinInputError = String(localized: "邀请码格式无效：必须为 6 位字母或数字。")
+            joinInputError = L10n.Family.invalidInviteCodeFormatMustBe6LettersOr.string()
             return
         }
         let success = await orgRoutingViewModel.joinGroup(code: normalizedInviteCode)

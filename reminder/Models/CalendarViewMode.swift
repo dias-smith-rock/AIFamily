@@ -15,12 +15,12 @@ enum CalendarViewMode: String, CaseIterable {
 
     var menuTitleKey: LocalizedStringKey {
         switch self {
-        case .list: return "列表"
-        case .day: return "日"
-        case .threeDay: return "3 天"
-        case .week: return "周"
-        case .month: return "月"
-        case .year: return "年"
+        case .list: return L10n.Common.list.localized
+        case .day: return L10n.Common.day.localized
+        case .threeDay: return L10n.Common.n3Day.localized
+        case .week: return L10n.Common.week.localized
+        case .month: return L10n.Common.month.localized
+        case .year: return L10n.Common.year.localized
         }
     }
 }

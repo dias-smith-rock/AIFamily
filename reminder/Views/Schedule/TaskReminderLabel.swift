@@ -4,13 +4,13 @@ import SwiftUI
 enum TaskReminderLabel {
     static func titleKey(forMinutes minutes: Int) -> LocalizedStringKey {
         switch minutes {
-        case 0: "准时"
-        case 5: "提前5分钟"
-        case 10: "提前10分钟"
-        case 15: "提前15分钟"
-        case 30: "提前30分钟"
-        case 60: "提前1小时"
-        default: "提前%lld分钟"
+        case 0: L10n.Common.onTime.localized
+        case 5: L10n.Common.n5MinutesBefore.localized
+        case 10: L10n.Common.n10MinutesBefore.localized
+        case 15: L10n.Common.n15MinutesBefore.localized
+        case 30: L10n.Common.n30MinutesBefore.localized
+        case 60: L10n.Common.n1HourBefore.localized
+        default: L10n.Common.lldMinutesBefore.localized
         }
     }
 
@@ -21,7 +21,7 @@ enum TaskReminderLabel {
             HStack(spacing: 0) {
                 ForEach(Array(sorted.enumerated()), id: \.offset) { index, minutes in
                     if index > 0 {
-                        Text(", ")
+                        Text(L10n.Common.text.localized)
                     }
                     switch minutes {
                     case 0, 5, 10, 15, 30, 60:
@@ -39,7 +39,7 @@ enum TaskReminderLabel {
             .minimumScaleFactor(0.8)
             .fixedSize(horizontal: true, vertical: false)
         } else {
-            Text("无")
+            Text(L10n.Common.none.localized)
         }
     }
 }
@@ -51,7 +51,7 @@ private struct CustomReminderOffsetText: View {
     var body: some View {
         Text(
             verbatim: String(
-                format: AppLocalized.string("提前%lld分钟", locale: locale),
+                format: AppLocalized.string(L10n.Common.lldMinutesBefore, locale: locale),
                 locale: locale,
                 minutes
             )

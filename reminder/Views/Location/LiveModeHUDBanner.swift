@@ -17,7 +17,7 @@ struct LiveHuddleHUDBanner: View {
                     .foregroundStyle(Color.green)
                     .symbolEffect(.pulse, options: .repeating, value: radarPulse)
 
-                Text("⚡️ 实时位置 · \(participants.count) 人在线")
+                Text(L10n.Common.liveHudOnlineCount.formatted(locale: locale, participants.count))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -92,7 +92,7 @@ struct LiveHuddleHUDBanner: View {
 #Preview {
     LiveHuddleHUDBanner(
         participants: UserLocationState.previewHousehold,
-        exitButtonTitle: "离开",
+        exitButtonTitle: L10n.Common.leave,
         isDestructiveExit: false
     ) {}
     .padding()

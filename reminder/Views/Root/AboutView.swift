@@ -14,10 +14,10 @@ struct AboutView: View {
                     .shadow(color: .black.opacity(0.08), radius: 12, y: 4)
 
                 VStack(spacing: 8) {
-                    Text("从混乱到清晰。")
+                    Text(L10n.Common.fromChaosToClarity.localized)
                         .font(.title3.weight(.semibold))
                         .multilineTextAlignment(.center)
-                    Text("一起，完美同步。")
+                    Text(L10n.Common.togetherPerfectlySynced.localized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -40,7 +40,7 @@ struct AboutView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("关于同圈")
+        .navigationTitle(L10n.Common.aboutWesync.localized)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

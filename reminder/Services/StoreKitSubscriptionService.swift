@@ -16,15 +16,15 @@ enum StoreKitSubscriptionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .productNotFound:
-            return String(localized: "订阅商品加载失败，请稍后重试。")
+            return L10n.Common.failedToLoadSubscriptionProductsPleaseTry.string()
         case .userCancelled:
             return nil
         case .pending:
-            return String(localized: "购买正在处理中，请稍后在 App Store 账户中查看。")
+            return L10n.Common.purchaseIsPendingCheckYourAppStoreAccount.string()
         case .unverifiedTransaction:
-            return String(localized: "购买验证失败，请重试或联系支持。")
+            return L10n.Common.purchaseVerificationFailedPleaseRetryOrCon.string()
         case .noActiveSubscription:
-            return String(localized: "未找到可恢复的订阅。")
+            return L10n.Common.noSubscriptionFoundToRestore.string()
         }
     }
 }

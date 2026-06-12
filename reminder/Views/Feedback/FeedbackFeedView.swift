@@ -6,18 +6,25 @@ struct FeedbackFeedView: View {
     @StateObject private var viewModel = AppViewModels.makeFeedbackFeedViewModel()
     @State private var filter: FeedbackFilter = .all
 
-    private enum FeedbackFilter: String, CaseIterable, Identifiable {
-        case all = "全部"
-        case unread = "未读"
+    private enum FeedbackFilter: CaseIterable, Identifiable {
+        case all
+        case unread
 
-        var id: String { rawValue }
+        var id: Self { self }
+
+        var label: LocalizedStringKey {
+            switch self {
+            case .all: L10n.Feedback.filterAll.localized
+            case .unread: L10n.Feedback.filterUnread.localized
+            }
+        }
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
-                    Text("消息")
+                    Text(L10n.Common.information.localized)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 } trailing: {
@@ -29,7 +36,7 @@ struct FeedbackFeedView: View {
                             .foregroundStyle(AppTheme.ColorToken.accent)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("全部已读")
+                    .accessibilityLabel(L10n.Common.allRead)
                 }
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
@@ -70,7 +77,7 @@ struct FeedbackFeedView: View {
                 Button {
                     filter = option
                 } label: {
-                    Text(option.rawValue)
+                    Text(option.label)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(filter == option ? .blue : .secondary)
                         .frame(maxWidth: .infinity)
@@ -104,7 +111,7 @@ struct FeedbackFeedView: View {
                 )
             }
         } label: {
-            Label("模拟执行端语音回传", systemImage: "waveform.badge.mic")
+            Label(L10n.Assistant.simulationExecutionEndVoiceReturn.localized, systemImage: "waveform.badge.mic")
                 .font(.system(size: 13, weight: .semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
@@ -117,15 +124,15 @@ struct FeedbackFeedView: View {
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-            ProgressView("正在加载反馈...")
+            ProgressView(L10n.Common.loadingFeedback.localized)
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else if let errorMessage = viewModel.errorMessage {
             ContentUnavailableView {
-                Label("加载中", systemImage: "exclamationmark.triangle")
+                Label(L10n.Common.loading.localized, systemImage: "exclamationmark.triangle")
             } description: {
                 Text(errorMessage)
             } actions: {
-                Button("重新加载") {
+                Button(L10n.Common.reload) {
                     Task {
                         await viewModel.loadFeedbacks()
                     }
@@ -154,7 +161,7 @@ struct FeedbackFeedView: View {
         case .all:
             return viewModel.feedbacks
         case .unread:
-            // 当前阅读者粗略以"是否在 readBy 数组里"判断；先用第一个 mock 成员作为占位的"我"。
+            // 当前阅读者粗略以"是否在 readBy 数组里"判断；先用第一个 mock 成员作为占位的L10n.Common.me。
             let me = HouseholdMembership.mockMembers.first?.id
             return viewModel.feedbacks.filter { feedback in
                 guard let me else { return true }
@@ -167,11 +174,11 @@ struct FeedbackFeedView: View {
         let isFirstEmpty = viewModel.feedbacks.isEmpty
         return EmptyStateView(
             systemImage: isFirstEmpty ? "bubble.left.and.bubble.right" : "line.3.horizontal.decrease.circle",
-            title: isFirstEmpty ? "还没有反馈消息" : "筛选后暂无消息",
+            title: isFirstEmpty ? L10n.Feedback.noMessagesYet.localized : L10n.Feedback.noFilteredMessages.localized,
             message: isFirstEmpty
-                ? "成员提交语音反馈后会出现在这里。"
-                : "当前筛选条件下没有匹配项，试试切换到“全部”。",
-            primaryActionTitle: isFirstEmpty ? "重新加载" : "查看全部消息",
+                ? L10n.Feedback.voiceMessagesAppearHere.localized
+                : L10n.Feedback.trySwitchToAllFilter.localized,
+            primaryActionTitle: isFirstEmpty ? L10n.Common.reload.localized : L10n.Feedback.viewAllMessages.localized,
             primaryAction: {
                 if isFirstEmpty {
                     Task {
@@ -181,7 +188,7 @@ struct FeedbackFeedView: View {
                     filter = .all
                 }
             },
-            secondaryActionTitle: isFirstEmpty ? nil : "仅看未读",
+            secondaryActionTitle: isFirstEmpty ? nil : L10n.Feedback.unreadOnly.localized,
             secondaryAction: isFirstEmpty ? nil : {
                 filter = .unread
             }
@@ -192,6 +199,7 @@ struct FeedbackFeedView: View {
 // MARK: - Card
 
 private struct FeedbackCardView: View {
+    @Environment(\.locale) private var locale
     let feedback: Feedback
     let task: FamilyTask?
     let showTranscription: Bool
@@ -205,12 +213,12 @@ private struct FeedbackCardView: View {
     }
 
     private var senderName: String {
-        guard let senderId = feedback.senderId else { return "系统" }
+        guard let senderId = feedback.senderId else { return L10n.Common.system }
         return MemberDisplayName.displayName(
             forMembershipId: senderId,
             members: HouseholdMembership.mockMembers,
             profiles: FamilyProfile.mockProfiles
-        ) ?? "成员"
+        ) ?? L10n.Common.member
     }
 
     private var taskScheduledAt: Date? {
@@ -224,7 +232,7 @@ private struct FeedbackCardView: View {
     var body: some View {
         Group {
             if feedback.isSystemMessage {
-                Text(feedback.content ?? "系统消息")
+                Text(feedback.content ?? L10n.Feedback.systemMessage.string(locale: locale))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)
@@ -239,7 +247,7 @@ private struct FeedbackCardView: View {
         VStack(alignment: .leading, spacing: 12) {
             if let task {
                 VStack(alignment: .leading, spacing: 4) {
-                    Label("引用任务", systemImage: "quote.opening")
+                    Label(L10n.Schedule.referenceTasks.localized, systemImage: "quote.opening")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
                     HStack(spacing: 6) {
@@ -249,7 +257,7 @@ private struct FeedbackCardView: View {
                         Text(task.title)
                     }
                     .font(.system(size: 20, weight: .semibold))
-                    Text(taskLocationLabel ?? "未设置地点")
+                    Text(taskLocationLabel ?? L10n.Feedback.locationNotSet.string(locale: locale))
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -270,7 +278,7 @@ private struct FeedbackCardView: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.secondary)
                         if feedback.showsEditedBadge {
-                            Text("(已编辑)")
+                            Text(L10n.Common.edited.localized)
                                 .font(.system(size: 10))
                                 .foregroundStyle(.gray.opacity(0.6))
                         }
@@ -301,7 +309,7 @@ private struct FeedbackCardView: View {
                                 .animation(.linear(duration: 0.15), value: progress)
                         }
 
-                    Text("语音")
+                    Text(L10n.Assistant.voice.localized)
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                 }

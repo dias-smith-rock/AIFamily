@@ -69,7 +69,7 @@ final class TodoListViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else {
             flexibleTasks = []
             completedTasks = []
-            errorMessage = AppLocalized.localized("当前未选择群组。")
+            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
             return
         }
 
@@ -86,7 +86,7 @@ final class TodoListViewModel: ObservableObject {
             completedTasks = []
             loadedHouseholdId = nil
             if !silent {
-                errorMessage = AppLocalized.localized("当前未选择群组。")
+                errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
             }
             return
         }
@@ -191,10 +191,10 @@ final class TodoListViewModel: ObservableObject {
 
         var titleKey: LocalizedStringKey {
             switch self {
-            case .overdue: "已逾期"
-            case .today: "今天截止"
-            case .thisWeek: "本周截止"
-            case .later: "以后"
+            case .overdue: L10n.Common.overdue.localized
+            case .today: L10n.Common.dueToday.localized
+            case .thisWeek: L10n.Common.dueThisWeek.localized
+            case .later: L10n.Common.later.localized
             }
         }
     }

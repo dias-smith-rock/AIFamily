@@ -74,11 +74,11 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     var body: some View {
         VStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 14) {
-                Text("时间设置")
+                Text(L10n.Common.timeSetting.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                Toggle("全天", isOn: $isAllDay)
+                Toggle(L10n.Common.allDay, isOn: $isAllDay)
 
                 if isAllDay {
                     executionDateRow
@@ -92,7 +92,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .center, spacing: 12) {
-                    Text("重复设置")
+                    Text(L10n.Common.repeat.localized)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
@@ -115,19 +115,19 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                         }
                         .foregroundStyle(Color.accentColor)
                     }
-                    .accessibilityLabel("重复")
+                    .accessibilityLabel(L10n.Common.repeat2)
                 }
 
                 if selectedRecurrence == .custom {
                     Stepper(value: $recurrenceInterval, in: 2 ... 365) {
-                        Text("每隔 \(recurrenceInterval) 天")
+                        Text(L10n.Schedule.recurrenceEveryNDays.formatted(locale: locale, recurrenceInterval))
                     }
                 }
 
                 if selectedRecurrence != .none {
-                    Toggle("指定重复结束日期", isOn: $showEndDate)
+                    Toggle(L10n.Common.specifyEndDate, isOn: $showEndDate)
                     if showEndDate {
-                        DatePicker("结束重复", selection: $recurrenceEndDate, displayedComponents: .date)
+                        DatePicker(L10n.Common.end, selection: $recurrenceEndDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
                 }
@@ -155,7 +155,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
     private var executionDateRow: some View {
         HStack(alignment: .center, spacing: 12) {
-            timeSettingLabel("执行日期", systemImage: "calendar")
+            timeSettingLabel(L10n.Common.date.localized, systemImage: "calendar")
 
             Spacer(minLength: 8)
 
@@ -166,13 +166,13 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             )
             .labelsHidden()
             .datePickerStyle(.compact)
-            .accessibilityLabel("执行日期")
+            .accessibilityLabel(L10n.Common.date)
         }
     }
 
     private var executionTimeRow: some View {
         HStack(alignment: .center, spacing: 12) {
-            timeSettingLabel("执行时间", systemImage: "calendar")
+            timeSettingLabel(L10n.Common.executionTime.localized, systemImage: "calendar")
 
             Spacer(minLength: 8)
 
@@ -184,7 +184,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                 )
                 .labelsHidden()
                 .datePickerStyle(.compact)
-                .accessibilityLabel("执行日期")
+                .accessibilityLabel(L10n.Common.date)
 
                 DatePicker(
                     "",
@@ -194,7 +194,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                 .labelsHidden()
                 .datePickerStyle(.compact)
                 .environment(\.locale, ScheduleTimeFormatting.twentyFourHourLocale(basedOn: locale))
-                .accessibilityLabel("执行时间")
+                .accessibilityLabel(L10n.Common.executionTime)
             }
             .layoutPriority(0)
         }
@@ -202,7 +202,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
     private var taskDurationRow: some View {
         HStack(alignment: .center, spacing: 12) {
-            timeSettingLabel("任务时长", systemImage: "hourglass")
+            timeSettingLabel(L10n.Schedule.duration.localized, systemImage: "hourglass")
 
             Spacer(minLength: 8)
 
@@ -215,7 +215,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             .datePickerStyle(.compact)
             // 时长是“持续时间”而不是一天中的时间点，统一使用 24 小时制避免 AM/PM 歧义。
             .environment(\.locale, ScheduleTimeFormatting.twentyFourHourLocale(basedOn: locale))
-            .accessibilityLabel("任务时长")
+            .accessibilityLabel(L10n.Schedule.duration)
             .layoutPriority(0)
         }
     }
@@ -483,7 +483,7 @@ struct CreateTaskView: View {
         Group {
             if isFlexibleMode {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("在这之前完成")
+                    Text(L10n.Common.completeBefore.localized)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
 
@@ -518,7 +518,7 @@ struct CreateTaskView: View {
 
     private var flexibleDueByDateRow: some View {
         HStack(alignment: .center, spacing: 12) {
-            Label("截止期限", systemImage: "flag")
+            Label(L10n.Common.dueBy.localized, systemImage: "flag")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .labelStyle(.titleAndIcon)
@@ -533,15 +533,15 @@ struct CreateTaskView: View {
             )
             .labelsHidden()
             .datePickerStyle(.compact)
-            .accessibilityLabel("截止期限")
+            .accessibilityLabel(L10n.Common.dueBy)
         }
     }
 
     private var formNavigationTitle: LocalizedStringKey {
         if editingTask != nil {
-            return isFlexibleMode ? "编辑待办" : "编辑日程"
+            return isFlexibleMode ? L10n.Common.editToDo : L10n.Common.editEvent
         }
-        return isFlexibleMode ? "新建待办" : "新建日程"
+        return isFlexibleMode ? L10n.Common.newToDo : L10n.Schedule.newEvent
     }
 
     private var formAccentTint: Color {
@@ -605,13 +605,13 @@ struct CreateTaskView: View {
             .tint(formAccentTint)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") {
+                    Button(L10n.Common.cancel) {
                         dismiss()
                     }
                     .disabled(isSaving)
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("保存") {
+                    Button(L10n.Common.save) {
                         Task {
                             await saveTask()
                         }
@@ -621,7 +621,7 @@ struct CreateTaskView: View {
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
-                    Button("完成") {
+                    Button(L10n.Common.finish) {
                         dismissKeyboard()
                     }
                 }
@@ -644,11 +644,11 @@ struct CreateTaskView: View {
             await loadAssignees()
         }
         .confirmationDialog(
-            "这是循环任务",
+            L10n.Schedule.thisIsARecurringTask,
             isPresented: $isShowingRecurringUpdateScopeDialog,
             titleVisibility: .visible
         ) {
-            Button("仅修改此任务") {
+            Button(L10n.Schedule.onlyModifyThisTask) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
@@ -659,7 +659,7 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            Button("修改此任务及以后", role: .destructive) {
+            Button(L10n.Common.modifyThisTaskAndBeyond, role: .destructive) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
@@ -670,23 +670,23 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            Button("取消", role: .cancel) {
+            Button(L10n.Common.cancel, role: .cancel) {
                 pendingRecurringUpdateTask = nil
             }
         } message: {
-            Text("请选择修改范围。")
+            Text(L10n.Common.pleaseSelectAModificationScope.localized)
         }
         .forcesNonPopoverDialogPresentation()
-        .confirmationDialog("添加附件", isPresented: $showAttachmentOptions, titleVisibility: .visible) {
-            Button("照片图库") {
+        .confirmationDialog(L10n.Common.addAttachment, isPresented: $showAttachmentOptions, titleVisibility: .visible) {
+            Button(L10n.Common.photoLibrary) {
                 isPresentingPhotoLibrary = true
             }
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button("拍照") {
+                Button(L10n.Common.takePhoto) {
                     isPresentingCamera = true
                 }
             }
-            Button("取消", role: .cancel) {}
+            Button(L10n.Common.cancel, role: .cancel) {}
         }
         .forcesNonPopoverDialogPresentation()
         .photosPicker(
@@ -822,8 +822,8 @@ struct CreateTaskView: View {
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("语音输入")
-                    .accessibilityHint("功能即将推出")
+                    .accessibilityLabel(L10n.Assistant.voiceInput)
+                    .accessibilityHint(L10n.Common.featureComingSoon)
                 }
             }
         }
@@ -833,16 +833,16 @@ struct CreateTaskView: View {
     @ViewBuilder
     private var titlePlaceholder: some View {
         if isShowingMoreOptions {
-            Text("准备做什么？可以说：明天下午花 500 港币带老大去洗牙……")
+            Text(L10n.Common.whatWouldYouLikeToDoForExampleTomorrowA.localized)
         } else {
-            Text("准备做什么？")
+            Text(L10n.Common.whatWouldYouLikeToDo.localized)
         }
     }
 
     private var forWhomCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("为了谁 (FOR)")
+                Text(L10n.Common.forWhomFor.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 forWhomChipsRow
@@ -854,7 +854,7 @@ struct CreateTaskView: View {
         sheetCard {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .center, spacing: 12) {
-                    Text("提醒")
+                    Text(L10n.Schedule.remind.localized)
                         .font(.body)
                         .layoutPriority(1)
 
@@ -880,7 +880,7 @@ struct CreateTaskView: View {
                         }
                         .foregroundStyle(Color.accentColor)
                     }
-                    .accessibilityLabel("提醒")
+                    .accessibilityLabel(L10n.Schedule.remind)
                     .layoutPriority(0)
                 }
                 .padding(.vertical, 4)
@@ -888,12 +888,12 @@ struct CreateTaskView: View {
                 Divider().padding(.vertical, 6)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("任务优先级")
+                    Text(L10n.Schedule.taskPriority.localized)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Picker("", selection: $formPriority) {
-                        Text("紧急").tag(TaskPriority.urgent)
-                        Text("一般").tag(TaskPriority.normal)
+                        Text(L10n.Common.urgent.localized).tag(TaskPriority.urgent)
+                        Text(L10n.Common.generally.localized).tag(TaskPriority.normal)
                     }
                     .pickerStyle(.segmented)
                 }
@@ -905,12 +905,12 @@ struct CreateTaskView: View {
     private var emergencyContactCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("紧急联系号码 / 会议链接")
+                Text(L10n.Common.emergencyContactNumberMeetingLink.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
                 HStack(alignment: .center, spacing: 10) {
-                    TextField("输入号码或链接", text: $emergencyPhone)
+                    TextField(L10n.Common.enterNumberOrLink.localized, text: $emergencyPhone)
                         .font(.body)
                         .keyboardType(.phonePad)
                         .textContentType(.telephoneNumber)
@@ -924,8 +924,8 @@ struct CreateTaskView: View {
                             .foregroundStyle(.tint)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("从通讯录选择")
-                    .accessibilityHint("功能即将推出")
+                    .accessibilityLabel(L10n.Common.selectFromAddressBook)
+                    .accessibilityHint(L10n.Common.featureComingSoon)
                 }
             }
         }
@@ -934,7 +934,7 @@ struct CreateTaskView: View {
     private var assigneeWhoDoesCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("谁去办 (Assignee)")
+                Text(L10n.Common.assignee.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
@@ -955,7 +955,7 @@ struct CreateTaskView: View {
                 Image(systemName: "mappin.and.ellipse")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.secondary)
-                TextField("搜索或添加位置", text: $locationName)
+                TextField(L10n.Location.searchOrAddALocation.localized, text: $locationName)
                     .font(.body)
                     .focused($focusedField, equals: .locationSearch)
                 Image(systemName: "chevron.right")
@@ -974,7 +974,7 @@ struct CreateTaskView: View {
     private var moreDetailsCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 8) {
-                Text("更多细节")
+                Text(L10n.Common.moreDetails.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 moreDetailNoteEditor
@@ -985,7 +985,7 @@ struct CreateTaskView: View {
     private var financeCard: some View {
         sheetCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("财务与备注")
+                Text(L10n.Common.financeAndNotes.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                 financeAndNotesSectionContent
@@ -1001,7 +1001,7 @@ struct CreateTaskView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text(isShowingMoreOptions ? "收起更多选项" : "显示更多选项")
+                Text(isShowingMoreOptions ? L10n.Common.collapseMoreOptions : L10n.Common.showMoreOptions)
                     .font(.subheadline.weight(.semibold))
                 Image(systemName: isShowingMoreOptions ? "chevron.up" : "chevron.down")
                     .font(.footnote.weight(.bold))
@@ -1132,7 +1132,7 @@ struct CreateTaskView: View {
                 }
                 guard canAddMoreAttachments else {
                     if appRouter.hasPremiumAccess {
-                        errorMessage = String(localized: "附件数量已达上限。", locale: locale)
+                        errorMessage = L10n.Common.attachmentLimitReached.string(locale: locale)
                     } else {
                         appRouter.presentPremiumUpgrade()
                     }
@@ -1143,13 +1143,13 @@ struct CreateTaskView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "paperclip")
                         .font(.body.weight(.semibold))
-                    Text("添加附件")
+                    Text(L10n.Common.addAttachment.localized)
                         .font(.subheadline.weight(.semibold))
                 }
                 .foregroundStyle(.tint)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("添加附件")
+            .accessibilityLabel(L10n.Common.addAttachment)
 
             if existingAttachments.isEmpty == false || selectedImages.isEmpty == false {
                 attachmentThumbnailStrip
@@ -1185,7 +1185,7 @@ struct CreateTaskView: View {
                         TaskAttachmentThumbnailView(url: url)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel("预览附件")
+                    .accessibilityLabel(L10n.Common.previewAttachment)
                 } else {
                     existingAttachmentPlaceholder(systemName: "photo")
                 }
@@ -1202,7 +1202,7 @@ struct CreateTaskView: View {
             }
             .buttonStyle(.plain)
             .padding(2)
-            .accessibilityLabel("移除附件")
+            .accessibilityLabel(L10n.Common.removeAttachment)
         }
         .frame(width: 80, height: 80)
     }
@@ -1234,7 +1234,7 @@ struct CreateTaskView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("预览附件")
+            .accessibilityLabel(L10n.Common.previewAttachment)
 
             Button {
                 removeAttachment(at: index)
@@ -1247,7 +1247,7 @@ struct CreateTaskView: View {
             }
             .buttonStyle(.plain)
             .padding(2)
-            .accessibilityLabel("移除附件")
+            .accessibilityLabel(L10n.Common.removeAttachment)
         }
         .frame(width: 80, height: 80)
     }
@@ -1286,7 +1286,7 @@ struct CreateTaskView: View {
                 .focused($focusedField, equals: .note)
 
             if note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text("添加备注...")
+                Text(L10n.Common.addNote.localized)
                     .font(AppTheme.FontToken.body)
                     .foregroundStyle(.tertiary)
                     .padding(.top, 8)
@@ -1303,14 +1303,14 @@ struct CreateTaskView: View {
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .accessibilityHidden(true)
-            Text("预计开销")
+            Text(L10n.Common.expenses.localized)
                 .font(.body)
             Spacer(minLength: 12)
             HStack(spacing: 6) {
                 Text(currencySymbol)
                     .font(.body)
                     .foregroundStyle(.secondary)
-                TextField("0", text: costInputBinding)
+                TextField(L10n.Common.n0.localized, text: costInputBinding)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .font(.body.weight(.medium))
@@ -1325,7 +1325,7 @@ struct CreateTaskView: View {
 
     private var financeDetailNoteEditor: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("详细说明")
+            Text(L10n.Common.detailedDescription.localized)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             ZStack(alignment: .topLeading) {
@@ -1336,7 +1336,7 @@ struct CreateTaskView: View {
                     .focused($focusedField, equals: .financeDetailNote)
 
                 if financeDetailNote.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("可填写开支明细、支付方式等…")
+                    Text(L10n.Common.youCanFillInExpenseDetailsPaymentMethods.localized)
                         .font(AppTheme.FontToken.body)
                         .foregroundStyle(.tertiary)
                         .padding(.top, 8)
@@ -1348,13 +1348,13 @@ struct CreateTaskView: View {
     }
 
     private var assigneeChipAll: some View {
-        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: "指派给所有人") {
+        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: L10n.Common.assignToEveryone) {
             selectedAssigneeIds = []
         }
     }
 
     private var forWhomChipAll: some View {
-        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: "为了谁：全体成员") {
+        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: L10n.Common.forWhomAllMembers) {
             selectedTargetProfileIds = []
         }
     }
@@ -1378,7 +1378,7 @@ struct CreateTaskView: View {
                     }
                 }
                 .frame(width: 60, height: 60)
-                Text("所有人")
+                Text(L10n.Common.everyone.localized)
                     .font(.caption)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -1539,15 +1539,15 @@ struct CreateTaskView: View {
 
     private func saveTask() async {
         guard normalizedTitle.isEmpty == false else {
-            errorMessage = String(localized: "请先填写任务标题", locale: locale)
+            errorMessage = L10n.Schedule.pleaseEnterATaskTitleFirst.string(locale: locale)
             return
         }
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = String(localized: "当前未选择群组。", locale: locale)
+            errorMessage = L10n.Common.noGroupIsCurrentlySelected.string(locale: locale)
             return
         }
         guard let creatorMembershipId = appRouter.selectedMembershipId else {
-            errorMessage = String(localized: "当前成员身份无效，请重新进入群组后再试。", locale: locale)
+            errorMessage = L10n.Family.currentMembershipIsInvalidReEnterTheGroup.string(locale: locale)
             return
         }
 
@@ -1579,7 +1579,7 @@ struct CreateTaskView: View {
         _ = creatorMembershipId
         await performCreate(householdId: householdId, creatorMembershipId: creatorMembershipId)
         #else
-        errorMessage = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
+        errorMessage = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
         #endif
     }
 
@@ -1640,7 +1640,7 @@ struct CreateTaskView: View {
 
         let recurrence = resolvedRecurrenceRuleForPayload()
         if isFlexibleMode, recurrence != nil {
-            errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+            errorMessage = L10n.Common.flexibleToDosDonTSupportRecurrence.string(locale: locale)
             return
         }
 
@@ -1731,7 +1731,7 @@ struct CreateTaskView: View {
             dismiss()
         } catch {
             errorMessage = String(
-                format: String(localized: "任务保存失败：%@", locale: locale),
+                format: L10n.Schedule.taskSaveFailed.string(locale: locale),
                 error.localizedDescription
             )
         }
@@ -1745,7 +1745,7 @@ struct CreateTaskView: View {
             return
         }
         if isFlexibleMode, resolvedRecurrenceRuleForPayload() != nil {
-            errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+            errorMessage = L10n.Common.flexibleToDosDonTSupportRecurrence.string(locale: locale)
             return
         }
 
@@ -1802,7 +1802,7 @@ struct CreateTaskView: View {
             dismiss()
         } catch {
             errorMessage = String(
-                format: String(localized: "任务保存失败：%@", locale: locale),
+                format: L10n.Schedule.taskSaveFailed.string(locale: locale),
                 error.localizedDescription
             )
         }
@@ -1860,19 +1860,19 @@ struct CreateTaskView: View {
             return
         }
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = String(localized: "当前未选择群组。", locale: locale)
+            errorMessage = L10n.Common.noGroupIsCurrentlySelected.string(locale: locale)
             return
         }
         guard existing.householdId == householdId else {
-            errorMessage = String(localized: "当前群组与任务不一致，无法保存。", locale: locale)
+            errorMessage = L10n.Schedule.theCurrentGroupDoesNotMatchThisTaskSave.string(locale: locale)
             return
         }
         if isFlexibleMode, scope == .thisAndFuture {
-            errorMessage = String(localized: "灵活待办不支持批量更新重复任务。", locale: locale)
+            errorMessage = L10n.Schedule.flexibleToDosCanTBeBatchUpdatedAsARecu.string(locale: locale)
             return
         }
         if isFlexibleMode, resolvedRecurrenceRuleForPayload() != nil {
-            errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+            errorMessage = L10n.Common.flexibleToDosDonTSupportRecurrence.string(locale: locale)
             return
         }
 
@@ -1935,7 +1935,7 @@ struct CreateTaskView: View {
 
             case .thisAndFuture:
                 guard let grouping = existing.seriesGrouping else {
-                    errorMessage = String(localized: "无法解析重复任务分组。", locale: locale)
+                    errorMessage = L10n.Schedule.couldNotResolveTheRecurringTaskGroup.string(locale: locale)
                     return
                 }
                 let cutoff = existing.dueDate ?? .distantPast
@@ -1945,7 +1945,7 @@ struct CreateTaskView: View {
                     dueOnOrAfter: cutoff
                 )
                 guard rows.isEmpty == false else {
-                    errorMessage = String(localized: "没有找到需要更新的任务。", locale: locale)
+                    errorMessage = L10n.Common.noTasksWereFoundToUpdate.string(locale: locale)
                     return
                 }
 
@@ -2041,7 +2041,7 @@ struct CreateTaskView: View {
                 }
 
                 guard let resolved = refreshedCurrent else {
-                    errorMessage = String(localized: "批量更新后未能定位当前任务。", locale: locale)
+                    errorMessage = L10n.Schedule.couldNotLocateTheCurrentTaskAfterBulkUpd.string(locale: locale)
                     return
                 }
                 updated = resolved
@@ -2078,12 +2078,12 @@ struct CreateTaskView: View {
             print("[CreateTaskView] performUpdate failed: \(error.localizedDescription)")
             #endif
             errorMessage = String(
-                format: String(localized: "任务更新失败：%@", locale: locale),
+                format: L10n.Schedule.taskUpdateFailed.string(locale: locale),
                 error.localizedDescription
             )
         }
         #else
-        errorMessage = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
+        errorMessage = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
         #endif
     }
 
@@ -2221,7 +2221,7 @@ struct CreateTaskView: View {
             let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
             let recurrence = resolvedRecurrenceRuleForPayload()
             if isFlexibleMode, recurrence != nil {
-                errorMessage = String(localized: "灵活待办不支持重复规则。", locale: locale)
+                errorMessage = L10n.Common.flexibleToDosDonTSupportRecurrence.string(locale: locale)
                 return
             }
 
@@ -2435,14 +2435,14 @@ struct CreateTaskView: View {
             dismiss()
         } catch {
             errorMessage = String(
-                format: String(localized: "任务保存失败：%@", locale: locale),
+                format: L10n.Schedule.taskSaveFailed.string(locale: locale),
                 error.localizedDescription
             )
         }
         #else
         _ = householdId
         _ = creatorMembershipId
-        errorMessage = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
+        errorMessage = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
         #endif
     }
 
@@ -2489,12 +2489,12 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
 
     var titleKey: LocalizedStringKey {
         switch self {
-        case .none: "无"
-        case .atTimeOfEvent: "准时"
-        case .minutesBefore5: "提前5分钟"
-        case .minutesBefore15: "提前15分钟"
-        case .minutesBefore30: "提前30分钟"
-        case .hourBefore1: "提前1小时"
+        case .none: L10n.Common.none.localized
+        case .atTimeOfEvent: L10n.Common.onTime.localized
+        case .minutesBefore5: L10n.Common.n5MinutesBefore.localized
+        case .minutesBefore15: L10n.Common.n15MinutesBefore.localized
+        case .minutesBefore30: L10n.Common.n30MinutesBefore.localized
+        case .hourBefore1: L10n.Common.n1HourBefore.localized
         }
     }
 
@@ -3024,7 +3024,7 @@ private extension CreateTaskView {
         var output = ""
         var sawDot = false
         for ch in raw {
-            if ("0" ... "9").contains(ch) {
+            if (L10n.Common.n0 ... "9").contains(ch) {
                 output.append(ch)
             } else if ch == "." || ch == "," {
                 if sawDot == false {

@@ -5,7 +5,7 @@ enum LocationRelativeTimeFormatting {
     static func mapBadgeText(since date: Date, relativeTo now: Date = Date(), locale: Locale = .current) -> String {
         let interval = max(0, now.timeIntervalSince(date))
         if interval < 45 {
-            return String(localized: "刚刚", locale: locale)
+            return L10n.Common.justNow.string(locale: locale)
         }
 
         let formatter = RelativeDateTimeFormatter()

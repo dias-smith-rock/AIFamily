@@ -14,9 +14,9 @@ enum PhotoLibrarySaving {
         var errorDescription: String? {
             switch self {
             case .accessDenied:
-                AppLocalized.localizedSync("无法访问相册，请在系统设置中允许保存照片。")
+                AppLocalized.localizedSync(L10n.Common.canTAccessPhotosAllowSavingInSettings)
             case .imageUnavailable:
-                AppLocalized.localizedSync("图片尚未加载完成，请稍后再试。")
+                AppLocalized.localizedSync(L10n.Common.theImageIsnTReadyYetTryAgainInAMoment)
             case .system(let error):
                 error.localizedDescription
             }

@@ -207,18 +207,18 @@ struct TaskModeDayView: View {
         Group {
             if viewModel.isLoading {
                 pullToRefreshScrollContainer(minHeight: 360) {
-                    ProgressView(AppLocalized.string("正在加载任务...", locale: locale))
+                    ProgressView(AppLocalized.string(L10n.Common.loadingTasks, locale: locale))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 120)
                 }
             } else if let errorMessage = viewModel.errorMessage {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label(AppLocalized.string("加载中", locale: locale), systemImage: "exclamationmark.triangle")
+                        Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(errorMessage)
                     } actions: {
-                        Button(AppLocalized.string("重新加载", locale: locale)) {
+                        Button(AppLocalized.string(L10n.Common.reload, locale: locale)) {
                             Task {
                                 await refreshTasks()
                             }
@@ -362,7 +362,7 @@ struct TaskModeDayView: View {
     /// 左侧「全天」与时间列同宽左对齐；卡片宽度与锚点行右侧任务卡一致（随 ScrollView 可视宽度）。
     private var allDayTasksPinnedStrip: some View {
         HStack(alignment: .top, spacing: ScheduleTimelineMetrics.rowSpacing) {
-            Text("全天")
+            Text(L10n.Common.allDay.localized)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(width: ScheduleTimelineMetrics.timeColumnWidth, alignment: .trailing)
@@ -446,19 +446,19 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 8) {
-                Text("今天没有安排任务")
+                Text(L10n.Common.noTasksScheduledToday.localized)
                     .font(.title3.bold())
                     .foregroundStyle(.primary)
-                Text("享受共同时光，或者计划一些新的事情。")
+                Text(L10n.Common.enjoyYourTimeTogetherOrPlanSomethingNew.localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", titleKey: "一起晚餐", dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", titleKey: "杂货清单", dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", titleKey: "儿童活动", dueDateKind: .nextSaturdayFromSelected)
+                actionChip(emoji: "✨", titleKey: L10n.Common.dinnerTogether, dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", titleKey: L10n.Common.groceryList, dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", titleKey: L10n.Common.kidsActivity, dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

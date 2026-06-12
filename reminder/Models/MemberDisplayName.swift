@@ -2,7 +2,7 @@ import Foundation
 
 /// 成员展示名解析：千组织千面 — 有 membership 用 `nickname`，无 membership 用 `family_profiles.name`。
 enum MemberDisplayName {
-    static let unknownFallback = String(localized: "未知成员")
+    static let unknownFallback = L10n.Family.unknownMember.string()
 
     static func profile(
         for membership: HouseholdMembership,

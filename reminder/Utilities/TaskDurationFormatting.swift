@@ -5,20 +5,20 @@ enum TaskDurationFormatting {
     static func readableDuration(minutes: Int, locale: Locale) -> String {
         let total = max(0, minutes)
         if total == 0 {
-            return AppLocalized.string("0分钟", locale: locale)
+            return AppLocalized.string(L10n.Common.n0Min, locale: locale)
         }
 
         let hours = total / 60
         let remainder = total % 60
 
         if hours == 0 {
-            return String(format: AppLocalized.string("%lld分钟", locale: locale), remainder)
+            return String(format: AppLocalized.string(L10n.Common.lldMin, locale: locale), remainder)
         }
         if remainder == 0 {
-            return String(format: AppLocalized.string("%lld小时", locale: locale), hours)
+            return String(format: AppLocalized.string(L10n.Common.lldHr, locale: locale), hours)
         }
         return String(
-            format: AppLocalized.string("%lld小时%lld分钟", locale: locale),
+            format: AppLocalized.string(L10n.Common.lldHrLldMin, locale: locale),
             hours,
             remainder
         )

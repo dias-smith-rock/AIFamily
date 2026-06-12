@@ -25,7 +25,7 @@ struct AllDayTaskRowView: View {
                 .lineLimit(1)
 
             HStack(spacing: 8) {
-                Text("为了谁")
+                Text(L10n.Common.for.localized)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
 
@@ -38,7 +38,7 @@ struct AllDayTaskRowView: View {
                         }
                     }
                 } else {
-                    Text("—")
+                    Text(L10n.Common.text4.localized)
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }

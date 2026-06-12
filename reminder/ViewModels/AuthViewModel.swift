@@ -15,7 +15,7 @@ final class AuthViewModel: ObservableObject {
     @Published var email = ""
     @Published var phone = ""
     @Published private(set) var isLoading = false
-    @Published private(set) var statusText = AppLocalized.localized("请先登录以启用云端同步")
+    @Published private(set) var statusText = AppLocalized.localized(L10n.Auth.signInToEnableCloudSync)
     @Published private(set) var isLoggedIn = false
 
     private let authService: AuthService
@@ -27,7 +27,7 @@ final class AuthViewModel: ObservableObject {
     func refreshSessionState() async {
         isLoggedIn = await authService.hasValidSession()
         if isLoggedIn {
-            statusText = AppLocalized.localized("已检测到有效登录会话")
+            statusText = AppLocalized.localized(L10n.Auth.aValidSignInSessionWasDetected)
             UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
         }
     }
@@ -47,8 +47,8 @@ final class AuthViewModel: ObservableObject {
                 )
                 isLoggedIn = await authService.hasValidSession()
                 statusText = isLoggedIn
-                    ? AppLocalized.localized("Apple 登录成功")
-                    : AppLocalized.localized("登录请求已发送，请完成授权后重试")
+                    ? AppLocalized.localized(L10n.Auth.signedInWithApple)
+                    : AppLocalized.localized(L10n.Auth.signInRequestSentCompleteAuthorizationAnd)
                 if isLoggedIn {
                     UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
                     AnalyticsManager.logAuthSessionSucceeded()
@@ -57,8 +57,8 @@ final class AuthViewModel: ObservableObject {
                 try await authService.sendMagicLink(email: email)
                 isLoggedIn = await authService.hasValidSession()
                 statusText = isLoggedIn
-                    ? AppLocalized.localized("登录成功")
-                    : AppLocalized.localized("登录链接已发送，请检查邮箱并回到 App")
+                    ? AppLocalized.localized(L10n.Auth.signedInSuccessfully)
+                    : AppLocalized.localized(L10n.Auth.signInLinkSentCheckYourEmailAndReturnTo)
                 if isLoggedIn {
                     UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
                     AnalyticsManager.logAuthSessionSucceeded()
@@ -67,8 +67,8 @@ final class AuthViewModel: ObservableObject {
                 try await authService.sendPhoneOTP(phoneNumber: phone)
                 isLoggedIn = await authService.hasValidSession()
                 statusText = isLoggedIn
-                    ? AppLocalized.localized("登录成功")
-                    : AppLocalized.localized("验证码已发送，请完成验证后重试")
+                    ? AppLocalized.localized(L10n.Auth.signedInSuccessfully)
+                    : AppLocalized.localized(L10n.Common.verificationCodeSentCompleteVerificationAnd)
                 if isLoggedIn {
                     UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
                     AnalyticsManager.logAuthSessionSucceeded()

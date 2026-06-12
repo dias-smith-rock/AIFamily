@@ -35,14 +35,14 @@ struct OrgRoutingView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text(AppLocalized.string("请选择一种方式继续", locale: locale))
+                    Text(AppLocalized.string(L10n.Common.pleaseChooseAWayToContinue, locale: locale))
                         .font(AppTheme.FontToken.subtitle)
                         .foregroundStyle(AppTheme.ColorToken.textSecondary)
 
                     RouteActionCard(
                         icon: "house.fill",
-                        title: AppLocalized.string("我是家长", locale: locale),
-                        subtitle: AppLocalized.string("创建一个全新的群组空间", locale: locale),
+                        title: AppLocalized.string(L10n.Family.iAmAParent, locale: locale),
+                        subtitle: AppLocalized.string(L10n.Common.createBrandNewGroupSpace, locale: locale),
                         backgroundColor: Color.orange.opacity(0.12)
                     ) {
                         createInputError = nil
@@ -51,8 +51,8 @@ struct OrgRoutingView: View {
 
                     RouteActionCard(
                         icon: "qrcode.viewfinder",
-                        title: AppLocalized.string("加入群组", locale: locale),
-                        subtitle: AppLocalized.string("通过扫码或邀请码加入", locale: locale),
+                        title: AppLocalized.string(L10n.Common.joinGroup, locale: locale),
+                        subtitle: AppLocalized.string(L10n.Common.joinViaScanOrInviteCode, locale: locale),
                         backgroundColor: Color.green.opacity(0.12)
                     ) {
                         joinInputError = nil
@@ -62,7 +62,7 @@ struct OrgRoutingView: View {
                 .padding(20)
             }
             .background(AppTheme.ColorToken.background)
-            .navigationTitle(AppLocalized.string("欢迎来到同圈", locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Common.welcomeToWesync, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -72,7 +72,7 @@ struct OrgRoutingView: View {
                         if isSigningOut {
                             ProgressView()
                         } else {
-                            Text(AppLocalized.string("退出登录", locale: locale))
+                            Text(AppLocalized.string(L10n.Auth.logOut, locale: locale))
                                 .foregroundStyle(.secondary)
                         }
                     }
@@ -86,12 +86,12 @@ struct OrgRoutingView: View {
                 showErrorAlert = true
             }
         }
-        .alert("操作失败", isPresented: $showErrorAlert) {
-            Button("知道了", role: .cancel) {
+        .alert(L10n.Common.operationFailed, isPresented: $showErrorAlert) {
+            Button(L10n.Common.gotIt, role: .cancel) {
                 viewModel.acknowledgeError()
             }
         } message: {
-            Text(localErrorMessage ?? "请稍后重试。")
+            Text(localErrorMessage ?? L10n.Common.pleaseTryAgainLater)
         }
         .sheet(isPresented: $showCreateSheet) {
             CreateHouseholdSheet(
@@ -122,14 +122,14 @@ struct OrgRoutingView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
-        .confirmationDialog("选择识别方式", isPresented: $showScanOptions, titleVisibility: .visible) {
-            Button("相机扫码") {
+        .confirmationDialog(L10n.Common.selectIdentificationMethod, isPresented: $showScanOptions, titleVisibility: .visible) {
+            Button(L10n.Common.cameraScanCode) {
                 showCameraScanner = true
             }
-            Button("相册") {
+            Button(L10n.Common.library) {
                 showPhotoPicker = true
             }
-            Button("取消", role: .cancel) {}
+            Button(L10n.Common.cancel, role: .cancel) {}
         }
         .forcesNonPopoverDialogPresentation()
         .sheet(isPresented: $showCameraScanner) {
@@ -161,7 +161,7 @@ struct OrgRoutingView: View {
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.2)
-                        Text(AppLocalized.string("正在加入群组…", locale: locale))
+                        Text(AppLocalized.string(L10n.Common.joiningGroup, locale: locale))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
                     }
@@ -189,7 +189,7 @@ struct OrgRoutingView: View {
 
     private func handleRecognizedCode(_ raw: String) {
         guard let code = firstInviteCode(from: raw.uppercased()) else {
-            joinInputError = AppLocalized.string("未识别到有效邀请码，请重试。", locale: locale)
+            joinInputError = AppLocalized.string(L10n.Common.noValidInviteCodeDetected, locale: locale)
             return
         }
         inviteCode = code
@@ -223,7 +223,7 @@ struct OrgRoutingView: View {
             guard let data = try await item.loadTransferable(type: Data.self),
                   let ciImage = CIImage(data: data) else {
                 await MainActor.run {
-                    joinInputError = AppLocalized.string("图片读取失败，请换一张清晰二维码图片。", locale: locale)
+                    joinInputError = AppLocalized.string(L10n.Family.qrImageReadFailed, locale: locale)
                 }
                 return
             }
@@ -241,7 +241,7 @@ struct OrgRoutingView: View {
             }
         } catch {
             await MainActor.run {
-                joinInputError = AppLocalized.string("二维码识别失败，请重试。", locale: locale)
+                joinInputError = AppLocalized.string(L10n.Common.qrRecognitionFailedRetry, locale: locale)
             }
         }
     }
@@ -249,7 +249,7 @@ struct OrgRoutingView: View {
     private func submitCreate() async {
         createInputError = nil
         guard normalizedHouseholdName.isEmpty == false else {
-            createInputError = AppLocalized.string("请输入群组名称。", locale: locale)
+            createInputError = AppLocalized.string(L10n.Family.pleaseEnterAGroupName, locale: locale)
             return
         }
         guard appRouter.canCreateOrJoinAnotherHousehold(
@@ -275,7 +275,7 @@ struct OrgRoutingView: View {
     private func submitJoin() async {
         joinInputError = nil
         guard isInviteCodeValid else {
-            joinInputError = String(localized: "邀请码格式无效：必须为 6 位字母或数字。")
+            joinInputError = L10n.Family.invalidInviteCodeFormatMustBe6LettersOr.string()
             return
         }
         guard appRouter.canCreateOrJoinAnotherHousehold(
@@ -368,19 +368,19 @@ private struct CreateHouseholdSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                Text(AppLocalized.string("请输入群组名称", locale: locale))
+                Text(AppLocalized.string(L10n.Family.pleaseEnterAGroupName2, locale: locale))
                     .font(.system(size: 15, weight: .semibold))
-                TextField(AppLocalized.string("例如：王家小院", locale: locale), text: $householdName)
+                TextField(AppLocalized.string(L10n.Common.forExampleWangGroupCourtyard, locale: locale), text: $householdName)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 11)
                     .background(Color(.secondarySystemGroupedBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text(AppLocalized.string("输入群组描述（选填）", locale: locale))
+                Text(AppLocalized.string(L10n.Family.groupDescriptionOptional, locale: locale))
                     .font(.system(size: 15, weight: .semibold))
                 TextField(
-                    AppLocalized.string("输入群组描述（选填）…", locale: locale),
+                    AppLocalized.string(L10n.Family.enterGroupDescriptionOptional, locale: locale),
                     text: $householdDescription,
                     axis: .vertical
                 )
@@ -405,7 +405,7 @@ private struct CreateHouseholdSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     } else {
-                        Text(AppLocalized.string("确认创建", locale: locale))
+                        Text(AppLocalized.string(L10n.Common.confirmCreation, locale: locale))
                             .font(.system(size: 17, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -417,11 +417,11 @@ private struct CreateHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string("创建群组", locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Common.createGroup, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppLocalized.string("关闭", locale: locale)) { dismiss() }
+                    Button(AppLocalized.string(L10n.Common.close, locale: locale)) { dismiss() }
                 }
             }
         }
@@ -445,7 +445,7 @@ private struct JoinHouseholdSheet: View {
                     HStack(spacing: 8) {
                         Image(systemName: "qrcode.viewfinder")
                             .font(.system(size: 18, weight: .semibold))
-                        Text(AppLocalized.string("扫一扫加入", locale: locale))
+                        Text(AppLocalized.string(L10n.Common.scanToJoin, locale: locale))
                             .font(.system(size: 20, weight: .bold))
                     }
                     .foregroundStyle(.white)
@@ -461,7 +461,7 @@ private struct JoinHouseholdSheet: View {
                     Rectangle()
                         .fill(Color(.separator))
                         .frame(height: 1)
-                    Text(AppLocalized.string("或", locale: locale))
+                    Text(AppLocalized.string(L10n.Common.or, locale: locale))
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.secondary)
                     Rectangle()
@@ -469,7 +469,7 @@ private struct JoinHouseholdSheet: View {
                         .frame(height: 1)
                 }
 
-                TextField(AppLocalized.string("输入 6 位邀请码", locale: locale), text: $inviteCode)
+                TextField(AppLocalized.string(L10n.Family.enterThe6DigitInvitationCode, locale: locale), text: $inviteCode)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
                     .font(.system(size: 22, weight: .semibold, design: .monospaced))
@@ -486,7 +486,7 @@ private struct JoinHouseholdSheet: View {
                 }
 
                 if isDecodingPhoto {
-                    Label(AppLocalized.string("正在识别图片中的邀请码…", locale: locale), systemImage: "photo")
+                    Label(AppLocalized.string(L10n.Family.recognizingTheInvitationCodeInThePicture, locale: locale), systemImage: "photo")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -499,7 +499,7 @@ private struct JoinHouseholdSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     } else {
-                        Text(AppLocalized.string("确认加入", locale: locale))
+                        Text(AppLocalized.string(L10n.Common.confirmToJoin, locale: locale))
                             .font(.system(size: 17, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -511,11 +511,11 @@ private struct JoinHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string("加入群组", locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Common.joinGroup, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppLocalized.string("关闭", locale: locale)) { dismiss() }
+                    Button(AppLocalized.string(L10n.Common.close, locale: locale)) { dismiss() }
                 }
             }
         }
@@ -528,11 +528,11 @@ private struct QRScannerSheet: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIViewController {
         guard DataScannerViewController.isSupported else {
-            onError(AppLocalized.string("当前设备不支持相机扫码。", locale: .current))
+            onError(AppLocalized.string(L10n.Common.cameraScanUnavailable, locale: .current))
             return UIViewController()
         }
         guard DataScannerViewController.isAvailable else {
-            onError(AppLocalized.string("相机当前不可用，请检查权限后重试。", locale: .current))
+            onError(AppLocalized.string(L10n.Common.cameraUnavailableCheckPermission, locale: .current))
             return UIViewController()
         }
 
@@ -549,7 +549,7 @@ private struct QRScannerSheet: UIViewControllerRepresentable {
         do {
             try scanner.startScanning()
         } catch {
-            onError(String(localized: "无法启动扫描仪。请稍后重试。"))
+            onError(L10n.Common.couldNotStartScannerPleaseTryAgainLater.string())
         }
         return scanner
     }

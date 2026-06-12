@@ -47,10 +47,10 @@ struct CameraPicker: View {
                 Image(systemName: "camera.fill")
                     .font(.system(size: 40))
                     .foregroundStyle(.secondary)
-                Text("此设备无法使用相机")
+                Text(L10n.Common.cameraIsNotAvailableOnThisDevice.localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("请从下方相册选择图片")
+                Text(L10n.Common.chooseAnImageFromTheLibraryBelow.localized)
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
             }
@@ -62,7 +62,7 @@ struct CameraPicker: View {
             HStack(spacing: 8) {
                 Image(systemName: "photo.on.rectangle")
                     .font(.body.weight(.semibold))
-                Text("相册")
+                Text(L10n.Common.library.localized)
                     .font(.body.weight(.semibold))
             }
             .foregroundStyle(.primary)
@@ -74,7 +74,7 @@ struct CameraPicker: View {
                     .strokeBorder(.white.opacity(0.25), lineWidth: 0.5)
             }
         }
-        .accessibilityLabel("相册")
+        .accessibilityLabel(L10n.Common.library)
     }
 
     @MainActor

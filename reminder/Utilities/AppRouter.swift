@@ -215,7 +215,7 @@ final class AppRouter: ObservableObject {
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
-                if memberships.contains(where: { ["invited", "pending"].contains(normalizeStatus($0.status)) }) {
+                if memberships.contains(where: { ["invitedL10n.Common.textpending"].contains(normalizeStatus($0.status)) }) {
                     appState = .pendingApproval
                     debugLog("route.pendingApproval reason=no_active_membership")
                 } else {
@@ -547,7 +547,7 @@ final class AppRouter: ObservableObject {
                 }
                 await self.refreshSelectedHouseholdCreatorPro(householdId: option.id)
                 await MainActor.run {
-                    self.logVIPAccessState(trigger: "切换组织")
+                    self.logVIPAccessState(trigger: L10n.Family.switchOrganization)
                 }
             } catch {
                 await MainActor.run {
@@ -702,7 +702,7 @@ final class AppRouter: ObservableObject {
                         id: householdID,
                         membershipId: membership.id,
                         profileId: membership.profileId,
-                        name: "群组 \(householdID.uuidString.prefix(6))",
+                        name: "Group \(householdID.uuidString.prefix(6))",
                         creatorHasActivePro: false,
                         description: ""
                     )

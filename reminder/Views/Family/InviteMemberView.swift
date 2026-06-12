@@ -28,10 +28,10 @@ struct InviteMemberView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 10) {
-                    Text(AppLocalized.string("邀请成员加入", locale: locale))
+                    Text(AppLocalized.string(L10n.Family.inviteMembersToJoin, locale: locale))
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
-                    Text("让对方使用同圈 App 扫码，或输入下方邀请码即可加入。")
+                    Text(L10n.Family.askTheOtherPartyToUseTheWesyncAppToSca.localized)
                         .font(.system(size: 15, weight: .medium))
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -42,7 +42,7 @@ struct InviteMemberView: View {
                 Spacer()
 
                 if isLoading {
-                    ProgressView(AppLocalized.string("正在生成专属邀请码...", locale: locale))
+                    ProgressView(AppLocalized.string(L10n.Family.generatingExclusiveInvitationCode, locale: locale))
                         .font(.system(size: 15, weight: .medium))
                 } else if let inviteCode {
                     VStack(spacing: 16) {
@@ -56,7 +56,7 @@ struct InviteMemberView: View {
                         Image(systemName: "exclamationmark.triangle")
                             .font(.system(size: 28, weight: .semibold))
                             .foregroundStyle(.orange)
-                        Text(errorMessage ?? AppLocalized.string("邀请码生成失败，请稍后重试。", locale: locale))
+                        Text(errorMessage ?? AppLocalized.string(L10n.Family.inviteCodeGenerationFailed, locale: locale))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -73,7 +73,7 @@ struct InviteMemberView: View {
                         HStack(spacing: 8) {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 17, weight: .semibold))
-                            Text(AppLocalized.string("分享邀请链接", locale: locale))
+                            Text(AppLocalized.string(L10n.Family.shareInvitationLink, locale: locale))
                                 .font(.system(size: 17, weight: .semibold))
                         }
                         .foregroundStyle(.white)
@@ -91,7 +91,7 @@ struct InviteMemberView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(AppLocalized.string("完成", locale: locale)) {
+                    Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
                         dismiss()
                     }
                 }
@@ -153,7 +153,7 @@ struct InviteMemberView: View {
 
     private func inviteShareText(for inviteCode: String) -> String {
         let format = String(
-            localized: "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。"
+            localized: L10n.Family.youReInvitedToJoinAWesyncGroupCopyThis
         )
         return String(format: format, inviteCode)
     }
@@ -165,7 +165,7 @@ struct InviteMemberView: View {
         throw NSError(
             domain: "InviteMemberView",
             code: -1,
-            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("当前成员身份无效，请先重新进入该群组后重试。", locale: locale)]
+            userInfo: [NSLocalizedDescriptionKey: AppLocalized.string(L10n.Family.currentMembershipIsInvalidPleaseReEnterTh, locale: locale)]
         )
     }
 
@@ -175,7 +175,7 @@ struct InviteMemberView: View {
         defer { isLoading = false }
 
         guard let currentHouseholdId else {
-            errorMessage = AppLocalized.string("当前未选择群组。", locale: locale)
+            errorMessage = AppLocalized.string(L10n.Common.noGroupIsCurrentlySelected, locale: locale)
             return
         }
 
@@ -207,21 +207,21 @@ struct InviteMemberView: View {
                 throw NSError(
                     domain: "InviteMemberView",
                     code: -3,
-                    userInfo: [NSLocalizedDescriptionKey: AppLocalized.string("邀请码生成失败，请稍后重试。", locale: locale)]
+                    userInfo: [NSLocalizedDescriptionKey: AppLocalized.string(L10n.Family.inviteCodeGenerationFailed, locale: locale)]
                 )
             }
             inviteCode = code
         } catch {
             if isMissingGetOrCreateInviteNonceRPC(error) {
-                errorMessage = AppLocalized.string("后端尚未完成升级，请先创建 get_or_create_invite_nonce RPC 后重试。", locale: locale)
+                errorMessage = AppLocalized.string(L10n.Family.backendInviteRpcMissing, locale: locale)
             } else if isForbiddenError(error) {
-                errorMessage = AppLocalized.string("仅创建者或管理员可生成邀请二维码。", locale: locale)
+                errorMessage = AppLocalized.string(L10n.Family.onlyAdminCanGenerateInviteQr, locale: locale)
             } else {
                 errorMessage = error.localizedDescription
             }
         }
         #else
-        errorMessage = AppLocalized.string("当前构建环境未包含 Supabase SDK。", locale: locale)
+        errorMessage = AppLocalized.string(L10n.Common.supabaseSdkIsNotAvailableInThisBuild, locale: locale)
         #endif
     }
 

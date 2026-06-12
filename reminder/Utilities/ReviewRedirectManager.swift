@@ -68,15 +68,15 @@ struct ReviewAlertModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(
-                "喜欢同圈吗？",
+                L10n.Common.enjoyingWesync,
                 isPresented: $manager.showReviewAlert
             ) {
-                Button("以后再说", role: .cancel) {}
-                Button("去评分") {
+                Button(L10n.Common.maybeLater, role: .cancel) {}
+                Button(L10n.Common.writeAReview) {
                     openReviewPage()
                 }
             } message: {
-                Text("您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？")
+                Text(L10n.Family.yourFeedbackHelpsUsImproveTheAppForGroup.localized)
             }
     }
 

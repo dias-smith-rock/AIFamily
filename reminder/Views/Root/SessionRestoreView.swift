@@ -20,7 +20,7 @@ struct SessionRestoreView: View {
                         .easeInOut(duration: 1.1).repeatForever(autoreverses: true),
                         value: isLogoPulsing
                     )
-                Text("从混乱到清晰。\n一起，完美同步。")
+                Text(L10n.Auth.taglineFull.localized)
                     .font(AppTheme.FontToken.subtitle)
                     .foregroundStyle(.white.opacity(0.82))
                     .multilineTextAlignment(.center)
@@ -32,7 +32,7 @@ struct SessionRestoreView: View {
                 ProgressView()
                     .tint(.white)
                     .scaleEffect(1.1)
-                Text(AppLocalized.string("正在登录…", locale: locale))
+                Text(AppLocalized.string(L10n.Auth.signingIn, locale: locale))
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
             }

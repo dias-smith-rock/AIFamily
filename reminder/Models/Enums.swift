@@ -28,18 +28,18 @@ enum MembershipRole: String, Codable, Equatable {
     /// 列表副标题、详情等用的简短中文标签（非 SwiftUI 上下文可用）。
     var displayTitle: String {
         switch self {
-        case .creator: return String(localized: "创建者")
-        case .admin: return String(localized: "管理员")
-        case .member: return String(localized: "成员")
+        case .creator: return L10n.Common.creator.string()
+        case .admin: return L10n.Common.admin.string()
+        case .member: return L10n.Common.member.string()
         }
     }
 
     /// UI 展示用（键与 `Localizable.xcstrings` 一致）。
     var localizedName: LocalizedStringKey {
         switch self {
-        case .creator: "创建者"
-        case .admin: "管理员"
-        case .member: "成员"
+        case .creator: L10n.Common.creator.localized
+        case .admin: L10n.Common.admin.localized
+        case .member: L10n.Common.member.localized
         }
     }
 }
@@ -71,14 +71,14 @@ enum TaskStatus: String, Codable, Equatable, Sendable {
     /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
     var localizedName: LocalizedStringKey {
         switch self {
-        case .new: "待接受"
-        case .accepted: "已接受"
-        case .inProgress: "进行中"
-        case .completed: "已完成"
-        case .issue: "遇到问题"
-        case .failed: "执行失败"
-        case .expired: "已过期"
-        case .cancelled: "已取消"
+        case .new: L10n.Common.pending.localized
+        case .accepted: L10n.Common.accepted.localized
+        case .inProgress: L10n.Common.inProgress.localized
+        case .completed: L10n.Common.completed.localized
+        case .issue: L10n.Common.encounteredAProblem.localized
+        case .failed: L10n.Common.failed.localized
+        case .expired: L10n.Common.expired.localized
+        case .cancelled: L10n.Common.cancelled.localized
         }
     }
 }
@@ -91,8 +91,8 @@ enum TaskPriority: String, Codable, Equatable, CaseIterable {
 
     var localizedName: LocalizedStringKey {
         switch self {
-        case .urgent, .high: "🔴 紧急"
-        case .normal, .low: "🟢 一般"
+        case .urgent, .high: L10n.Common.urgent.localized
+        case .normal, .low: L10n.Common.normal.localized
         }
     }
 }

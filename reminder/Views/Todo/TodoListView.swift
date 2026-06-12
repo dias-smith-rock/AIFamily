@@ -25,26 +25,26 @@ struct TodoListView: View {
         NavigationStack {
             Group {
                 if viewModel.isLoading {
-                    ProgressView("正在加载任务...")
+                    ProgressView(L10n.Common.loadingTasks.localized)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let message = viewModel.errorMessage {
                     ContentUnavailableView {
-                        Label("加载中", systemImage: "exclamationmark.triangle")
+                        Label(L10n.Common.loading.localized, systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                     } actions: {
-                        Button("重新加载") {
+                        Button(L10n.Common.reload) {
                             Task { await viewModel.loadTasks(force: true) }
                         }
                     }
                 } else if viewModel.hasOpenFlexibleTasks == false {
                     if viewModel.completedTasks.isEmpty {
                         ContentUnavailableView {
-                            Label("暂无待办", systemImage: "checklist")
+                            Label(L10n.Common.noToDosYet.localized, systemImage: "checklist")
                         } description: {
-                            Text("添加没有具体开始时间的任务，在截止日前完成即可。")
+                            Text(L10n.Schedule.addTasksWithoutASetStartTimeCompleteThem.localized)
                         } actions: {
-                            Button("新建待办") {
+                            Button(L10n.Common.newToDo) {
                                 presentCreateFlexible()
                             }
                         }
@@ -56,7 +56,7 @@ struct TodoListView: View {
                 }
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .navigationTitle("待办")
+            .navigationTitle(L10n.Common.toDos.localized)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     groupSwitcherMenuButton
@@ -70,7 +70,7 @@ struct TodoListView: View {
                             .symbolRenderingMode(.palette)
                             .foregroundStyle(.white, Color.accentColor)
                     }
-                    .accessibilityLabel("新建待办")
+                    .accessibilityLabel(L10n.Common.newToDo)
                 }
             }
             .sheet(isPresented: $showCompletedSheet) {
@@ -225,9 +225,9 @@ struct TodoListView: View {
         ScrollView {
             VStack(spacing: 20) {
                 ContentUnavailableView {
-                    Label("暂无待办", systemImage: "checklist")
+                    Label(L10n.Common.noToDosYet.localized, systemImage: "checklist")
                 } description: {
-                    Text("进行中的待办都已完成，可在下方查看记录。")
+                    Text(L10n.Common.allActiveToDosAreDoneViewYourHistoryBel.localized)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 24)
@@ -254,13 +254,13 @@ struct TodoListView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(
                         String(
-                            format: AppLocalized.string("%lld 个待办已完成", locale: locale),
+                            format: AppLocalized.string(L10n.Common.lldToDoSCompleted, locale: locale),
                             Int64(viewModel.completedTasks.count)
                         )
                     )
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
-                    Text("点击查看已完成记录")
+                    Text(L10n.Common.tapToViewCompletedItems.localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -281,14 +281,14 @@ struct TodoListView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("查看已完成待办")
+        .accessibilityLabel(L10n.Common.viewCompletedToDos)
     }
 
     private var overdueOnlyPlaceholderContent: some View {
         ContentUnavailableView {
-            Label("暂无即将到期", systemImage: "checklist")
+            Label(L10n.Common.nothingDueSoon.localized, systemImage: "checklist")
         } description: {
-            Text("当前待办均已逾期，请点击上方横幅查看。")
+            Text(L10n.Common.allOpenToDosAreOverdueTapTheBannerAbove.localized)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 32)
@@ -305,10 +305,10 @@ struct TodoListView: View {
                     .font(.body)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("\(viewModel.overdueTasks.count) 个待办已过期")
+                    Text(L10n.Common.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
-                    Text("点击查看并调整时间")
+                    Text(L10n.Common.tapToReviewAndAdjustDeadlines.localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -329,7 +329,7 @@ struct TodoListView: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("查看已逾期任务")
+        .accessibilityLabel(L10n.Schedule.viewOverdueTasks)
     }
 
     private var groupSwitcherMenuButton: some View {
@@ -344,7 +344,7 @@ struct TodoListView: View {
                     .font(.caption2.weight(.semibold))
             }
         }
-        .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
+        .accessibilityLabel(L10n.Family.groupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
     }
 
     private func presentCreateFlexible() {
@@ -411,14 +411,14 @@ struct TodoListView: View {
                 .locale(locale)
         )
         return String(
-            format: AppLocalized.string("已于 %@ 完成", locale: locale),
+            format: AppLocalized.string(L10n.Common.completedOn, locale: locale),
             fmt
         )
     }
 
     private func deadlineLabel(for task: FamilyTask) -> String {
         guard let day = task.flexibleDeadlineDay else {
-            return AppLocalized.string("未设截止日", locale: locale)
+            return AppLocalized.string(L10n.Common.noDueDate, locale: locale)
         }
         let fmt = day.formatted(
             .dateTime
@@ -428,7 +428,7 @@ struct TodoListView: View {
                 .locale(locale)
         )
         return String(
-            format: AppLocalized.string("%@前", locale: locale),
+            format: AppLocalized.string(L10n.Common.dueBy, locale: locale),
             fmt
         )
     }
@@ -450,9 +450,9 @@ private struct CompletedTasksListView: View {
             Group {
                 if tasks.isEmpty {
                     ContentUnavailableView {
-                        Label("暂无已完成待办", systemImage: "checkmark.circle")
+                        Label(L10n.Common.noCompletedToDos.localized, systemImage: "checkmark.circle")
                     } description: {
-                        Text("完成待办后会显示在这里。")
+                        Text(L10n.Common.completedToDosWillAppearHere.localized)
                     }
                 } else {
                     List {
@@ -479,11 +479,11 @@ private struct CompletedTasksListView: View {
                 }
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .navigationTitle("已完成")
+            .navigationTitle(L10n.Common.completed.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") {
+                    Button(L10n.Common.close) {
                         dismiss()
                     }
                 }
@@ -527,11 +527,11 @@ private struct OverdueTasksListView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .navigationTitle("已逾期")
+            .navigationTitle(L10n.Common.overdue.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") {
+                    Button(L10n.Common.close) {
                         dismiss()
                     }
                 }

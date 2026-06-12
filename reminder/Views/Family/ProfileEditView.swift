@@ -87,14 +87,14 @@ struct ProfileEditView: View {
                     HStack(spacing: 14) {
                         avatarView
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("成员头像")
+                            Text(L10n.Family.profilePhoto.localized)
                                 .font(.headline)
                             PhotosPicker(selection: $avatarPickerItem, matching: .images) {
                                 Group {
                                     if isUploadingAvatar {
-                                        Text("上传中...")
+                                        Text(L10n.Common.uploading.localized)
                                     } else {
-                                        Text("选择头像")
+                                        Text(L10n.Common.choosePhoto.localized)
                                     }
                                 }
                                 .font(.subheadline.weight(.semibold))
@@ -105,49 +105,49 @@ struct ProfileEditView: View {
                     .padding(.vertical, 4)
                 }
 
-                Section("基础信息") {
-                    TextField("称呼 (如：大宝、旺财) *", text: $name)
-                    Picker("性别", selection: $gender) {
+                Section(L10n.Common.basicInfo) {
+                    TextField(L10n.Common.nicknameSuchAsMum.localized, text: $name)
+                    Picker(L10n.Common.gender, selection: $gender) {
                         ForEach(ProfileDraftGender.allCases) { item in
                             Text(item.localizedName).tag(item)
                         }
                     }
                     .pickerStyle(.segmented)
 
-                    Toggle("设置生日", isOn: $shouldSetBirthDate)
+                    Toggle(L10n.Common.setBirthday, isOn: $shouldSetBirthDate)
                     if shouldSetBirthDate {
-                        DatePicker("生日", selection: $birthDate, displayedComponents: .date)
+                        DatePicker(L10n.Common.birthday, selection: $birthDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
                 }
 
-                Section("联系方式") {
-                    TextField("邮箱", text: $email)
+                Section(L10n.Common.contactInformation) {
+                    TextField(L10n.Common.mail.localized, text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    TextField("手机号", text: $mainPhone)
+                    TextField(L10n.Common.phoneNumber.localized, text: $mainPhone)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
-                    TextField("备用手机号", text: $secondPhone)
+                    TextField(L10n.Common.alternatePhone.localized, text: $secondPhone)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
                 }
 
-                Section("成长数据") {
-                    TextField("身高 (cm)", text: $height)
+                Section(L10n.Common.growthData) {
+                    TextField(L10n.Common.heightCm.localized, text: $height)
                         .keyboardType(.decimalPad)
-                    TextField("体重 (kg)", text: $weight)
+                    TextField(L10n.Common.weightKg.localized, text: $weight)
                         .keyboardType(.decimalPad)
                 }
 
-                Section("教育与证件") {
-                    TextField("就读学校", text: $school)
-                    TextField("当前年级", text: $grade)
-                    TextField("身份证件号码", text: $idCardNum)
-                    TextField("护照号", text: $passportNum)
-                    TextField("旅行证 / 回乡证号", text: $permitNum)
+                Section(L10n.Common.educationAndDocuments) {
+                    TextField(L10n.Common.attendSchool.localized, text: $school)
+                    TextField(L10n.Common.currentGrade.localized, text: $grade)
+                    TextField(L10n.Common.idNumber.localized, text: $idCardNum)
+                    TextField(L10n.Common.passportNo.localized, text: $passportNum)
+                    TextField(L10n.Common.travelPermitReturnPermitNumber.localized, text: $permitNum)
                 }
 
                 if let adminRoleToggle {
@@ -202,13 +202,13 @@ struct ProfileEditView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") { dismiss() }
+                    Button(L10n.Common.cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         submit()
                     } label: {
-                        if isSaving { ProgressView() } else { Text("保存") }
+                        if isSaving { ProgressView() } else { Text(L10n.Common.save.localized) }
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty || canEdit == false || isSaving || isUploadingAvatar)
                 }
@@ -218,23 +218,23 @@ struct ProfileEditView: View {
                 avatarSelectionNonce += 1
                 uploadSelectedAvatar(newItem, nonce: avatarSelectionNonce)
             }
-            .alert("确定要执行此操作吗？", isPresented: $showDeleteAlert) {
-                Button("取消", role: .cancel) {}
-                Button("确定", role: .destructive) {
+            .alert(L10n.Common.areYouSureYouWantToContinue, isPresented: $showDeleteAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.ok, role: .destructive) {
                     performMemberRemoval()
                 }
             } message: {
                 if let memberRemoval {
                     Text(
                         memberRemoval.isVirtualMember
-                            ? "删除后该虚拟成员的所有信息将不可恢复。"
-                            : "移出后，该成员将无法再访问本群组的任务与信息。"
+                            ? L10n.Family.thisVirtualMemberProfileCannotBeRecovered
+                            : L10n.Schedule.afterRemovalTheyCanNoLongerAccessThisGro
                     )
                 }
             }
             .alert(adminToggleAlertTitle, isPresented: $showAdminToggleAlert) {
-                Button("取消", role: .cancel) {}
-                Button("确定") {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.ok) {
                     performAdminRoleToggle()
                 }
             } message: {
@@ -244,15 +244,15 @@ struct ProfileEditView: View {
     }
 
     private var adminToggleAlertTitle: LocalizedStringKey {
-        guard let adminRoleToggle else { return "确定要执行此操作吗？" }
-        return adminRoleToggle.isPromoting ? "确认将该成员设为管理员？" : "确认移除该成员的管理员权限？"
+        guard let adminRoleToggle else { return L10n.Common.areYouSureYouWantToContinue }
+        return adminRoleToggle.isPromoting ? L10n.Family.makeThisMemberAnAdmin : L10n.Family.removeThisMemberSAdminRole
     }
 
     private var adminToggleAlertMessage: LocalizedStringKey {
         guard let adminRoleToggle else { return "" }
         return adminRoleToggle.isPromoting
-            ? "设为管理员后，该成员可以协助管理群组成员与设置。"
-            : "移除后，该成员将恢复为普通成员权限。"
+            ? L10n.Common.adminsCanHelpManageGroupMembersAndSetting
+            : L10n.Family.theyWillReturnToRegularMemberPermissions
     }
 
     private func performAdminRoleToggle() {
@@ -323,14 +323,14 @@ struct ProfileEditView: View {
                 print("⏳ [FamilyDebug] 开始从相册读取图片...")
                 #endif
                 guard let rawData = try await item.loadTransferable(type: Data.self) else {
-                    errorMessage = AppLocalized.localized("未能读取图片数据，请重新选择。")
+                    errorMessage = AppLocalized.localized(L10n.Common.couldNotReadImageDataPleaseChooseAgain)
                     #if DEBUG
                     print("❌ [FamilyDebug] 读取失败：无法提取原始数据")
                     #endif
                     return
                 }
                 guard rawData.isEmpty == false else {
-                    errorMessage = AppLocalized.localized("读取到原始图片数据为空，请重新选择。")
+                    errorMessage = AppLocalized.localized(L10n.Common.imageDataWasEmptyPleaseChooseAgain)
                     #if DEBUG
                     print("❌ [FamilyDebug] 原始数据为空（0 bytes）")
                     #endif
@@ -338,7 +338,7 @@ struct ProfileEditView: View {
                 }
 
                 guard let image = UIImage(data: rawData) else {
-                    errorMessage = AppLocalized.localized("图片格式解析失败，请换一张图片重试。")
+                    errorMessage = AppLocalized.localized(L10n.Common.unsupportedImageFormatPleaseTryAnotherPhot)
                     #if DEBUG
                     print("❌ [FamilyDebug] 转换失败：原始数据无法渲染为 UIImage")
                     #endif
@@ -346,7 +346,7 @@ struct ProfileEditView: View {
                 }
 
                 guard let jpegData = image.jpegData(compressionQuality: 0.7) else {
-                    errorMessage = AppLocalized.localized("图片压缩失败，请重试。")
+                    errorMessage = AppLocalized.localized(L10n.Common.imageCompressionFailedPleaseTryAgain)
                     #if DEBUG
                     print("❌ [FamilyDebug] 压缩失败：无法生成 JPEG 数据")
                     #endif
@@ -354,7 +354,7 @@ struct ProfileEditView: View {
                 }
 
                 guard jpegData.isEmpty == false else {
-                    errorMessage = AppLocalized.localized("压缩后图片数据为空，请重试。")
+                    errorMessage = AppLocalized.localized(L10n.Common.compressedImageDataWasEmptyPleaseTryAgain)
                     #if DEBUG
                     print("❌ [FamilyDebug] 校验失败：JPEG 数据为 0 字节")
                     #endif
@@ -378,7 +378,7 @@ struct ProfileEditView: View {
                 if let url {
                     avatarURL = url
                 } else {
-                    errorMessage = errorMessage ?? AppLocalized.localized("头像上传失败，请稍后再试。")
+                    errorMessage = errorMessage ?? AppLocalized.localized(L10n.Common.avatarUploadFailedPleaseTryAgainLater)
                 }
             } catch {
                 errorMessage = error.localizedDescription
@@ -388,11 +388,11 @@ struct ProfileEditView: View {
 
     private func submit() {
         guard canEdit else {
-            errorMessage = AppLocalized.localized("当前没有权限编辑该资料。")
+            errorMessage = AppLocalized.localized(L10n.Common.youDoNotHavePermissionToEditThisProfile)
             return
         }
         guard let householdId else {
-            errorMessage = AppLocalized.localized("当前未选择群组。")
+            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
             return
         }
 
@@ -413,7 +413,7 @@ struct ProfileEditView: View {
             secondPhone: trimmedOrNil(secondPhone)
         )
         guard draft.name.isEmpty == false else {
-            errorMessage = AppLocalized.localized("称呼不能为空。")
+            errorMessage = AppLocalized.localized(L10n.Common.nameCannotBeEmpty)
             return
         }
 
@@ -484,8 +484,8 @@ extension ProfileEditView {
 
         var navigationTitleKey: LocalizedStringKey {
             switch self {
-            case .createLocalProfile: "创建成员档案"
-            case .edit: "编辑资料"
+            case .createLocalProfile: L10n.Common.createMemberProfile.localized
+            case .edit: L10n.Common.editProfile.localized
             }
         }
     }
@@ -508,9 +508,9 @@ enum ProfileDraftGender: String, CaseIterable, Identifiable {
 
     var localizedName: LocalizedStringKey {
         switch self {
-        case .unspecified: "未设置"
-        case .male: "男"
-        case .female: "女"
+        case .unspecified: L10n.Common.notSet.localized
+        case .male: L10n.Common.male.localized
+        case .female: L10n.Common.female.localized
         }
     }
 

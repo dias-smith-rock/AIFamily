@@ -28,10 +28,10 @@ struct AppearanceSettingsView: View {
                     .buttonStyle(.plain)
                 }
             } footer: {
-                Text("更改主题后，应用会立即切换显示模式。")
+                Text(L10n.Common.afterChangingTheThemeTheAppSwitchesDispla.localized)
             }
         }
-        .navigationTitle("主题")
+        .navigationTitle(L10n.Common.theme.localized)
         .navigationBarTitleDisplayMode(.inline)
     }
 }

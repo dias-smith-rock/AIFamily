@@ -10,10 +10,10 @@ struct LockScreenView: View {
                 .font(.system(size: 48, weight: .semibold))
                 .foregroundStyle(.secondary)
 
-            Text("已锁定")
+            Text(L10n.Common.locked.localized)
                 .font(.title2.weight(.semibold))
 
-            Text("使用 Face ID 解锁后继续访问你的群组日程与任务。")
+            Text(L10n.Schedule.useFaceIdToUnlockAndContinueToYourGroup.localized)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -27,7 +27,7 @@ struct LockScreenView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                 } else {
-                    Label("使用 Face ID 解锁", systemImage: "faceid")
+                    Label(L10n.Common.unlockWithFaceId.localized, systemImage: "faceid")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)

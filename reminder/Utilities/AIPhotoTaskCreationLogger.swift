@@ -65,7 +65,7 @@ enum AIPhotoTaskCreationLogger {
         source: CaptureSource? = nil,
         detail: String = ""
     ) {
-        var parts: [String] = ["step=\(step.rawValue)", "error=\(error.localizedDescription)"]
+        var parts: [String] = ["step=\(step.rawValue)L10n.Common.text4error=\(error.localizedDescription)"]
         if let source { parts.append("source=\(source.rawValue)") }
         if detail.isEmpty == false { parts.append("detail=\(detail)") }
         let message = parts.joined(separator: " ")

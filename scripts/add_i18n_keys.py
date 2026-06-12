@@ -1,3 +1,5 @@
+"""Deprecated: prefer scripts/add_missing_i18n_entries.py + localization/keys.json."""
+
 #!/usr/bin/env python3
 """Add missing String Catalog entries for recent i18n keys."""
 

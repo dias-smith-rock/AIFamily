@@ -136,16 +136,16 @@ enum AITaskParserError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sdkUnavailable:
-            return String(localized: "当前构建环境未包含 Supabase SDK。")
+            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
         case .notAuthenticated:
-            return String(localized: "请先登录后再使用 AI 识图创建任务。")
+            return L10n.Auth.pleaseLogInFirstBeforeUsingAiToCreateA.string()
         case .uploadFailed(_, let isStorageRLS):
             if isStorageRLS {
-                return String(localized: "图片上传失败，服务器存储权限未配置。请联系管理员在 Supabase 为 create-task-from-images 桶添加写入策略。")
+                return L10n.Common.uploadFailedStoragePermissionsAreNotConfig.string()
             }
-            return String(localized: "图片上传失败，请检查网络后重试。")
+            return L10n.Common.imageUploadFailedPleaseCheckTheNetworkAnd.string()
         case .invalidResponse:
-            return String(localized: "AI 返回的数据无法解析，请重试。")
+            return L10n.Common.couldNotParseTheDataReturnedByAiPleaseT.string()
         case .serverError(let message):
             return AITaskParserUserMessage.mapServerRawText(message) ?? message
         }
@@ -299,7 +299,7 @@ struct AITaskParserService: Sendable {
         }
 
         guard response.success, let task = response.task else {
-            let message = response.error ?? String(localized: "图片识别失败，请重试。")
+            let message = response.error ?? L10n.Common.imageRecognitionFailedPleaseTryAgain.string()
             AIPhotoTaskCreationLogger.failure(
                 step: .parseResponseInvalid,
                 error: AITaskParserError.serverError(message),

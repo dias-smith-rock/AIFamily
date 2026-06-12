@@ -21,11 +21,11 @@ struct PendingView: View {
                 .scaleEffect(breathing ? 1.06 : 0.94)
                 .animation(.easeInOut(duration: 1.3).repeatForever(autoreverses: true), value: breathing)
 
-            Text(AppLocalized.string("已敲门，等待管理员批准...", locale: locale))
+            Text(AppLocalized.string(L10n.Common.knockedOnTheDoorWaitingForAdministratorAp, locale: locale))
                 .font(.system(size: 26, weight: .bold))
                 .multilineTextAlignment(.center)
 
-            Text(AppLocalized.string("批准后你会自动进入群组主界面。", locale: locale))
+            Text(AppLocalized.string(L10n.Family.afterApprovalYouWillAutomaticallyEnterThe, locale: locale))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
 
@@ -36,7 +36,7 @@ struct PendingView: View {
                     showToast = false
                 }
             } label: {
-                Text(AppLocalized.string("提醒他快一点", locale: locale))
+                Text(AppLocalized.string(L10n.Schedule.remindHimToHurryUp, locale: locale))
                     .font(.system(size: 16, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -52,7 +52,7 @@ struct PendingView: View {
             Button {
                 appRouter.goToOrgRouting()
             } label: {
-                Text(AppLocalized.string("这不是我家？重新输入", locale: locale))
+                Text(AppLocalized.string(L10n.Common.thisIsNotMyHomeReEnter, locale: locale))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 10)
@@ -63,7 +63,7 @@ struct PendingView: View {
         .background(Color(.systemGroupedBackground))
         .overlay(alignment: .top) {
             if showToast {
-                Text(AppLocalized.string("已催办，管理员会收到提醒", locale: locale))
+                Text(AppLocalized.string(L10n.Schedule.itHasBeenUrgedAndTheAdministratorWillRec, locale: locale))
                     .font(.system(size: 14, weight: .semibold))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)

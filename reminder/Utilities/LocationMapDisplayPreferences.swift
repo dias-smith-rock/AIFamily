@@ -31,10 +31,13 @@ enum LocationMapDisplayPreferences {
     }
 
     static func formattedCount(_ count: Int, locale: Locale) -> String {
-        String(
-            format: AppLocalized.string("%lld 个", locale: locale),
-            locale: locale,
-            normalizedCount(count)
-        )
+        let entry: L10n.Entry = switch normalizedCount(count) {
+        case 3: L10n.Common.count3
+        case 5: L10n.Common.count5
+        case 10: L10n.Common.count10
+        case 20: L10n.Common.count20
+        default: L10n.Common.count3
+        }
+        return entry.string(locale: locale)
     }
 }

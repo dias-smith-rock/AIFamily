@@ -16,14 +16,14 @@ enum TaskRecurrenceRule: String, CaseIterable, Identifiable, Sendable, Equatable
 
     var titleKey: LocalizedStringKey {
         switch self {
-        case .none: "不重复"
-        case .daily: "每天"
-        case .weekdays: "工作日"
-        case .weekends: "周末"
-        case .weekly: "每周"
-        case .monthly: "每月"
-        case .yearly: "每年"
-        case .custom: "每隔几天"
+        case .none: L10n.Common.doesNotRepeat.localized
+        case .daily: L10n.Common.daily.localized
+        case .weekdays: L10n.Common.weekdays.localized
+        case .weekends: L10n.Common.weekends.localized
+        case .weekly: L10n.Common.weekly.localized
+        case .monthly: L10n.Common.monthly2.localized
+        case .yearly: L10n.Common.yearly2.localized
+        case .custom: L10n.Common.everyFewDays.localized
         }
     }
 

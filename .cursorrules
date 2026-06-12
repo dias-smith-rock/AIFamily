@@ -17,6 +17,7 @@
 - **ViewModels:** 负责所有业务逻辑、数据转换和网络交互。必须使用 `@MainActor` 确保 UI 更新在主线程。
 
 # UI 与设计系统规范
+- **本地化（英文 Key，分表 Catalog）：** UI 文案使用 `L10n.{Table}.{property}.localized`（View）或 `AppLocalized.localized(L10n.…)`（ViewModel）；Key 为 snake_case，写入 `reminder/Localization/{Table}.xcstrings` 与 `localization/keys.json`。细则见 **`.cursor/skills/english-localization-keys/SKILL.md`**；提交前运行 `python3 scripts/lint_i18n_keys.py`。
 - **弹窗（非气泡，强制）：** 确认/删除/多选操作仅用 SwiftUI `.alert` 或 `.confirmationDialog`；**禁止** `.popover` 与自定义气泡式浮层。`confirmationDialog` 须链式调用 `.forcesNonPopoverDialogPresentation()`（见 `reminder/Utilities/NativeDialogPresentation.swift`）。细则见 **`.cursor/rules/native-dialogs.mdc`** 与 **`.cursor/skills/native-dialogs/SKILL.md`**。
 - **图标:** 全局强制且仅使用 Apple 官方的 SF Symbols。禁止使用第三方图标库或提示我导入本地切图。
 - **布局:** 熟练运用 `VStack`, `HStack`, `ZStack`，并配合 `padding`, `spacing`, `frame` 进行精准布局。

@@ -24,15 +24,15 @@ enum VIPBillingPlan: String, CaseIterable, Identifiable {
 
     var periodLabel: LocalizedStringKey {
         switch self {
-        case .monthly: "每月"
-        case .yearly: "每年"
+        case .monthly: L10n.Common.monthly2.localized
+        case .yearly: L10n.Common.yearly2.localized
         }
     }
 
     var planTitle: LocalizedStringKey {
         switch self {
-        case .monthly: "月付"
-        case .yearly: "年付"
+        case .monthly: L10n.Common.monthly.localized
+        case .yearly: L10n.Common.yearly.localized
         }
     }
 
@@ -41,7 +41,7 @@ enum VIPBillingPlan: String, CaseIterable, Identifiable {
     }
 
     var savingsBadge: LocalizedStringKey? {
-        isRecommended ? "省 33%" : nil
+        isRecommended ? L10n.Common.save33 : nil
     }
 }
 
@@ -69,7 +69,7 @@ final class VIPSubscriptionViewModel: ObservableObject {
 
     func purchaseSubscription(appRouter: AppRouter) async -> Bool {
         guard storeKit.isPersonalSubscriber(userEntitlement: appRouter.userEntitlement) == false else {
-            errorMessage = AppLocalized.localized("您已是 Pro 会员。")
+            errorMessage = AppLocalized.localized(L10n.VIP.youAlreadyHaveProMembership)
             return false
         }
         guard isPurchasing == false else { return false }
@@ -82,7 +82,7 @@ final class VIPSubscriptionViewModel: ObservableObject {
         #if canImport(Supabase)
         do {
             guard let userId = await appRouter.resolveAuthUserId() else {
-                errorMessage = AppLocalized.localized("请先登录后再订阅。")
+                errorMessage = AppLocalized.localized(L10n.VIP.signInBeforeSubscribe)
                 return false
             }
             guard let pending = try await storeKit.purchase(plan: selectedPlan, appAccountToken: userId) else {
@@ -112,11 +112,11 @@ final class VIPSubscriptionViewModel: ObservableObject {
             errorMessage = error.errorDescription
             return false
         } catch {
-            errorMessage = AppLocalized.localized("购买失败，请稍后重试。")
+            errorMessage = AppLocalized.localized(L10n.Common.purchaseFailedPleaseTryAgainLater)
             return false
         }
         #else
-        errorMessage = AppLocalized.localized("当前构建环境未包含 Supabase SDK。")
+        errorMessage = AppLocalized.localized(L10n.Common.supabaseSdkIsNotAvailableInThisBuild)
         return false
         #endif
     }
@@ -156,17 +156,17 @@ final class VIPSubscriptionViewModel: ObservableObject {
             purchaseSucceeded = true
             return true
         } catch let error as StoreKitSubscriptionError {
-            errorMessage = error.errorDescription ?? AppLocalized.localized("未找到可恢复的订阅。")
+            errorMessage = error.errorDescription ?? AppLocalized.localized(L10n.Common.noSubscriptionFoundToRestore)
             return false
         } catch let error as SubscriptionSupabaseError {
             errorMessage = error.errorDescription
             return false
         } catch {
-            errorMessage = AppLocalized.localized("恢复购买失败，请稍后重试。")
+            errorMessage = AppLocalized.localized(L10n.Common.restoreFailedPleaseTryAgainLater)
             return false
         }
         #else
-        errorMessage = AppLocalized.localized("当前构建环境未包含 Supabase SDK。")
+        errorMessage = AppLocalized.localized(L10n.Common.supabaseSdkIsNotAvailableInThisBuild)
         return false
         #endif
     }

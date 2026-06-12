@@ -23,18 +23,18 @@ struct ContentView: View {
         .animation(.easeInOut, value: biometricManager.isUnlocked)
         .animation(.easeInOut, value: appRouter.appState)
         .animation(.easeInOut, value: appRouter.selectedHouseholdId)
-        .alert("权限变更通知", isPresented: newCreatorAlertBinding) {
-            Button("立即查看") {
+        .alert(L10n.Common.permissionChangeNotification, isPresented: newCreatorAlertBinding) {
+            Button(L10n.Common.viewNow) {
                 appRouter.enterNewlyAssignedCreatorHousehold()
             }
-            Button("关闭", role: .cancel) {
+            Button(L10n.Common.close, role: .cancel) {
                 appRouter.dismissNewCreatorAlert()
             }
         } message: {
             if let household = appRouter.newlyAssignedHousehold {
                 Text(
                     String(
-                        format: String(localized: "您已成为「%@」的创建者，拥有该群组的最高管理权限。"),
+                        format: L10n.Family.youHaveBecomeTheCreatorOfAndHaveTheHigh.string(),
                         household.displayHouseholdName
                     )
                 )

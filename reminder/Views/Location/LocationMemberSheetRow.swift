@@ -66,14 +66,14 @@ struct LocationMemberSheetRow: View {
     private var titleLine: String {
         if isInLiveHuddle {
             return String(
-                format: String(localized: "%@ · LIVE", locale: locale),
+                format: L10n.Common.live.string(locale: locale),
                 locale: locale,
                 member.displayName
             )
         }
         if member.isGhostMode {
             return String(
-                format: String(localized: "%@ · 👻 位置已隐藏", locale: locale),
+                format: L10n.Location.locationHidden.string(locale: locale),
                 locale: locale,
                 member.displayName
             )
@@ -85,14 +85,14 @@ struct LocationMemberSheetRow: View {
         if member.isVirtualMember {
             if member.currentLocation != nil {
                 return String(
-                    format: String(localized: "%@，已选中时在地图上显示", locale: locale),
+                    format: L10n.Location.shownOnTheMapWhenSelected.string(locale: locale),
                     locale: locale,
                     member.displayName
                 )
             }
             return String(
                 format: String(
-                    localized: "%@，暂无位置，勾选后将在有定位数据时显示",
+                    localized: L10n.Common.noLocationYetWillAppearOnTheMapWhenLoca,
                     locale: locale
                 ),
                 locale: locale,
@@ -101,7 +101,7 @@ struct LocationMemberSheetRow: View {
         }
         if member.isGhostMode {
             return String(
-                format: String(localized: "%@，位置已隐藏", locale: locale),
+                format: L10n.Location.locationHidden2.string(locale: locale),
                 locale: locale,
                 member.displayName
             )
@@ -115,7 +115,7 @@ struct LocationMemberSheetRow: View {
         }
         parts.append(
             String(
-                format: String(localized: "电量 %lld%%", locale: locale),
+                format: L10n.Common.batteryLld.string(locale: locale),
                 locale: locale,
                 member.clampedBatteryLevel
             )
@@ -135,7 +135,7 @@ struct LocationMemberSheetRow: View {
                 .font(.system(size: 24))
                 .foregroundStyle(Color.blue)
                 .frame(width: 28, height: 28)
-                .accessibilityLabel(String(localized: "当前用户，始终在地图上显示", locale: locale))
+                .accessibilityLabel(L10n.Location.currentUserAlwaysShownOnTheMap.string(locale: locale))
         } else {
             memberSelectionToggle
         }
@@ -165,15 +165,15 @@ struct LocationMemberSheetRow: View {
         .buttonStyle(.plain)
         .accessibilityLabel(
             isSelected
-                ? String(localized: "已选中", locale: locale)
-                : String(localized: "未选中", locale: locale)
+                ? L10n.Common.selected.string(locale: locale)
+                : L10n.Common.notSelected.string(locale: locale)
         )
     }
 
     private func lastUpdatedText(since date: Date) -> String {
         let minutes = max(1, Int(Date().timeIntervalSince(date) / 60))
         let format = String(
-            localized: "%lld 分钟前更新",
+            localized: L10n.Common.updatedLldMinAgo,
             locale: locale
         )
         return String(format: format, locale: locale, minutes)

@@ -36,7 +36,7 @@ enum AITaskParserUserMessage {
             return mapped
         }
 
-        return String(localized: "识图失败，请稍后再试。")
+        return L10n.Common.photoRecognitionFailedPleaseTryAgainLater.string()
     }
 
     static func mapServerRawText(_ raw: String) -> String? {
@@ -46,29 +46,29 @@ enum AITaskParserUserMessage {
         let lower = trimmed.lowercased()
 
         if isModelUnavailable(lower) {
-            return String(localized: "AI 识图服务暂时不可用，请稍后再试。")
+            return L10n.Common.aiPhotoRecognitionIsTemporarilyUnavailable.string()
         }
         if isRateLimited(lower) {
-            return String(localized: "请求过于频繁，请稍后再试。")
+            return L10n.Common.tooManyRequestsPleaseTryAgainLater.string()
         }
         if isServiceMisconfigured(lower) {
-            return String(localized: "AI 识图服务暂未完成配置，请稍后再试或联系管理员。")
+            return L10n.Common.aiPhotoRecognitionIsNotFullySetUpYetTry.string()
         }
         if isTaskExtractionFailure(lower) {
-            return String(localized: "未能从图片中提取有效任务信息，请换一张更清晰的照片或手动创建。")
+            return L10n.Schedule.couldnTExtractAValidTaskFromThePhotoTry.string()
         }
         if isUploadParameterFailure(lower) {
-            return String(localized: "图片上传异常，请重试。")
+            return L10n.Common.thereWasAProblemUploadingThePhotoPleaseT.string()
         }
         if isNetworkFailure(lower) {
-            return String(localized: "网络连接异常，请检查网络后重试。")
+            return L10n.Common.networkConnectionIssueCheckYourConnectionA.string()
         }
         if isAuthFailure(lower) {
-            return String(localized: "登录状态已失效，请重新登录后再试。")
+            return L10n.Auth.yourSignInSessionExpiredPleaseSignInAgai.string()
         }
 
         if looksLikeTechnicalError(trimmed) {
-            return String(localized: "识图失败，请稍后再试。")
+            return L10n.Common.photoRecognitionFailedPleaseTryAgainLater.string()
         }
 
         return nil
@@ -77,13 +77,13 @@ enum AITaskParserUserMessage {
     private static func message(forHTTPStatus code: Int) -> String {
         switch code {
         case 502, 503, 504:
-            return String(localized: "AI 识图服务暂时不可用，请稍后再试。")
+            return L10n.Common.aiPhotoRecognitionIsTemporarilyUnavailable.string()
         case 429:
-            return String(localized: "请求过于频繁，请稍后再试。")
+            return L10n.Common.tooManyRequestsPleaseTryAgainLater.string()
         case 401, 403:
-            return String(localized: "登录状态已失效，请重新登录后再试。")
+            return L10n.Auth.yourSignInSessionExpiredPleaseSignInAgai.string()
         default:
-            return String(localized: "识图失败，请稍后再试。")
+            return L10n.Common.photoRecognitionFailedPleaseTryAgainLater.string()
         }
     }
 
@@ -95,9 +95,9 @@ enum AITaskParserUserMessage {
              .cannotFindHost,
              .cannotConnectToHost,
              .dnsLookupFailed:
-            return String(localized: "网络连接异常，请检查网络后重试。")
+            return L10n.Common.networkConnectionIssueCheckYourConnectionA.string()
         default:
-            return String(localized: "识图失败，请稍后再试。")
+            return L10n.Common.photoRecognitionFailedPleaseTryAgainLater.string()
         }
     }
 
@@ -174,19 +174,19 @@ extension AITaskParserError {
     var userFacingMessage: String {
         switch self {
         case .sdkUnavailable:
-            return String(localized: "当前构建环境未包含 Supabase SDK。")
+            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
         case .notAuthenticated:
-            return String(localized: "请先登录后再使用 AI 识图创建任务。")
+            return L10n.Auth.pleaseLogInFirstBeforeUsingAiToCreateA.string()
         case .uploadFailed(_, let isStorageRLS):
             if isStorageRLS {
-                return String(localized: "图片上传失败，服务器存储权限未配置。请联系管理员在 Supabase 为 create-task-from-images 桶添加写入策略。")
+                return L10n.Common.uploadFailedStoragePermissionsAreNotConfig.string()
             }
-            return String(localized: "图片上传失败，请检查网络后重试。")
+            return L10n.Common.imageUploadFailedPleaseCheckTheNetworkAnd.string()
         case .invalidResponse:
-            return String(localized: "AI 返回的数据无法解析，请重试。")
+            return L10n.Common.couldNotParseTheDataReturnedByAiPleaseT.string()
         case .serverError(let message):
             return AITaskParserUserMessage.mapServerRawText(message)
-                ?? String(localized: "识图失败，请稍后再试。")
+                ?? L10n.Common.photoRecognitionFailedPleaseTryAgainLater.string()
         }
     }
 }

@@ -11,7 +11,7 @@ struct ProfileDetailRowView: View {
                 Text(display)
                     .foregroundStyle(.secondary)
             } else {
-                Text("未填写")
+                Text(L10n.Common.notProvided.localized)
                     .foregroundStyle(.secondary)
             }
         } label: {
@@ -46,7 +46,7 @@ struct ProfileDetailSensitiveRowView: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                Text("未填写")
+                Text(L10n.Common.notProvided.localized)
                     .foregroundStyle(.secondary)
             }
         }

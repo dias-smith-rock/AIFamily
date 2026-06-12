@@ -11,6 +11,7 @@ struct TaskAttachmentImageGallery: View {
     @State private var saveErrorMessage = ""
     @State private var isClosing = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     init(attachments: [TaskAttachment], startIndex: Int) {
         self.attachments = attachments
@@ -44,11 +45,11 @@ struct TaskAttachmentImageGallery: View {
             }
         }
         .interactiveDismissDisabled(true)
-        .alert("已保存到相册", isPresented: $isShowingSaveSuccessAlert) {
-            Button("好的", role: .cancel) {}
+        .alert(L10n.Common.savedToPhotos, isPresented: $isShowingSaveSuccessAlert) {
+            Button(L10n.Common.ok, role: .cancel) {}
         }
-        .alert("保存失败", isPresented: $isShowingSaveErrorAlert) {
-            Button("好的", role: .cancel) {}
+        .alert(L10n.Common.couldnTSave, isPresented: $isShowingSaveErrorAlert) {
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(saveErrorMessage)
         }
@@ -71,7 +72,7 @@ struct TaskAttachmentImageGallery: View {
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.white.opacity(0.95), .white.opacity(0.25))
                 }
-                .accessibilityLabel("关闭")
+                .accessibilityLabel(L10n.Common.close)
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -88,7 +89,7 @@ struct TaskAttachmentImageGallery: View {
                 if currentImageURL != nil {
                     saveToAlbumButton
                 }
-                Text("拖选文字后可复制")
+                Text(L10n.Common.dragAndSelectTextToCopy.localized)
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.75))
                 Spacer()
@@ -102,7 +103,7 @@ struct TaskAttachmentImageGallery: View {
                     .padding(.vertical, 6)
                     .background(.white.opacity(0.12), in: Capsule())
                     .accessibilityLabel(
-                        "第 \(currentIndex + 1) 张，共 \(attachments.count) 张"
+                        L10n.Schedule.attachmentPageIndicator.formatted(locale: locale, currentIndex + 1, attachments.count)
                     )
             }
         }
@@ -141,7 +142,7 @@ struct TaskAttachmentImageGallery: View {
             .foregroundStyle(.white)
         }
         .disabled(isSavingToAlbum)
-        .accessibilityLabel("保存到相册")
+        .accessibilityLabel(L10n.Common.saveToPhotos)
     }
 
     private func saveCurrentImageToAlbum() {
@@ -180,7 +181,7 @@ struct TaskAttachmentImageGallery: View {
             Image(systemName: "photo.badge.exclamationmark")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.6))
-            Text("图片加载中")
+            Text(L10n.Common.loadingImage.localized)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
         }

@@ -255,7 +255,7 @@ struct LiveTextZoomableRemoteImageView: View {
             Image(systemName: "photo.badge.exclamationmark")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.6))
-            Text("图片加载失败")
+            Text(L10n.Common.imageLoadingFailed.localized)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
         }

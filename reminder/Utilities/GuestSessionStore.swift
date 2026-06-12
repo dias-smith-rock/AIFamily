@@ -17,15 +17,15 @@ enum GuestSessionStore {
     static let snapshotCacheKey = "guest.workspace.snapshot"
     static let isGuestModeKey = "isGuestMode"
     /// String Catalog Key；游客默认群组名持久化用此固定键，展示时按当前语言解析。
-    static let defaultHouseholdNameCatalogKey = "我的空间"
+    static let defaultHouseholdNameCatalogKey = L10n.Common.mySpace
     /// String Catalog Key；游客默认自称（档案名 / nickname）持久化用此固定键。
-    static let defaultSelfDisplayNameCatalogKey = "我"
+    static let defaultSelfDisplayNameCatalogKey = L10n.Common.me
 
     /// 游客位置 Tab 演示用虚拟成员（稳定 ID，便于与模拟坐标对齐）。
     static let locationDemoProfile1Id = UUID(uuidString: "D1000001-0000-4000-8000-000000000001") ?? UUID()
     static let locationDemoProfile2Id = UUID(uuidString: "D1000002-0000-4000-8000-000000000002") ?? UUID()
-    static let locationDemoProfile1NameKey = "王晓明"
-    static let locationDemoProfile2NameKey = "李雨桐"
+    static let locationDemoProfile1NameKey = "Alex"
+    static let locationDemoProfile2NameKey = "Jordan"
 
     static func locationDemoProfiles(householdId: UUID) -> [FamilyProfile] {
         [

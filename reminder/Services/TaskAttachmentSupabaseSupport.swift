@@ -219,13 +219,13 @@ enum TaskAttachmentSupabaseError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .imageEncodingFailed:
-            return String(localized: "图片压缩失败，请重试。")
+            return L10n.Common.imageCompressionFailedPleaseTryAgain.string()
         case .sdkUnavailable:
-            return String(localized: "当前构建环境未包含 Supabase SDK。")
+            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
         case .taskPayloadAssemblyFailed:
-            return String(localized: "任务数据组装失败，请重试。")
+            return L10n.Common.failedToPrepareTaskDataPleaseTryAgain.string()
         case .uploadFailed:
-            return String(localized: "附件上传失败，请稍后重试。")
+            return L10n.Common.attachmentUploadFailedPleaseTryAgainLater.string()
         }
     }
 }

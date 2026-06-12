@@ -75,13 +75,13 @@ enum LocationPersistPreferences {
         if meters >= 1_000, meters.truncatingRemainder(dividingBy: 1_000) == 0 {
             let kilometers = Int(meters / 1_000)
             return String(
-                format: AppLocalized.string("%lld 千米", locale: locale),
+                format: AppLocalized.string(L10n.Common.lldKm, locale: locale),
                 locale: locale,
                 kilometers
             )
         }
         return String(
-            format: AppLocalized.string("%lld 米", locale: locale),
+            format: AppLocalized.string(L10n.Common.lldM, locale: locale),
             locale: locale,
             Int(meters)
         )
@@ -92,13 +92,13 @@ enum LocationPersistPreferences {
         if totalMinutes >= 60, totalMinutes % 60 == 0 {
             let hours = totalMinutes / 60
             return String(
-                format: AppLocalized.string("%lld 小时", locale: locale),
+                format: AppLocalized.string(L10n.Common.lldHours, locale: locale),
                 locale: locale,
                 hours
             )
         }
         return String(
-            format: AppLocalized.string("%lld分钟", locale: locale),
+            format: AppLocalized.string(L10n.Common.lldMin, locale: locale),
             locale: locale,
             totalMinutes
         )

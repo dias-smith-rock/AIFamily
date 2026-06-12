@@ -7,13 +7,13 @@ struct LegalConsentFooterView: View {
 
     var body: some View {
         VStack(spacing: 6) {
-            Text("登录即表示您同意本 App 的")
+            Text(L10n.Auth.bySigningInYouAgreeToThisAppS.localized)
                 .foregroundStyle(secondaryText)
             HStack(spacing: 4) {
-                linkButton("隐私政策", action: onPrivacy)
-                Text("和")
+                linkButton(L10n.Common.privacyPolicy, action: onPrivacy)
+                Text(L10n.Common.and.localized)
                     .foregroundStyle(secondaryText)
-                linkButton("用户协议", action: onTerms)
+                linkButton(L10n.Common.termsOfService, action: onTerms)
             }
         }
         .font(.system(size: 12, weight: .regular))

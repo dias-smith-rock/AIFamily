@@ -15,68 +15,68 @@ struct ProfileDetailView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("成员信息") {
-                    ProfileDetailRowView(title: "称呼", value: profile.displayName)
+                Section(L10n.Common.memberInfo) {
+                    ProfileDetailRowView(title: L10n.Common.name, value: profile.displayName)
                     LabeledContent {
                         Text(roleLabel)
                             .foregroundStyle(.secondary)
                     } label: {
-                        Text("角色")
+                        Text(L10n.Common.role.localized)
                     }
                     if let gender = profile.gender, gender.isEmpty == false {
                         LabeledContent {
                             Text(ProfileDraftGender(databaseValue: gender).localizedName)
                                 .foregroundStyle(.secondary)
                         } label: {
-                            Text("性别")
+                            Text(L10n.Common.gender.localized)
                         }
                     }
                     if let birthDate = profile.birthDate, birthDate.isEmpty == false {
-                        ProfileDetailRowView(title: "生日", value: birthDate)
+                        ProfileDetailRowView(title: L10n.Common.birthday, value: birthDate)
                     }
                 }
 
-                Section("联系方式") {
-                    ProfileDetailRowView(title: "邮箱", value: profile.email)
-                    ProfileDetailRowView(title: "手机号", value: profile.mainPhone)
-                    ProfileDetailRowView(title: "备用手机号", value: profile.secondPhone)
+                Section(L10n.Common.contactInformation) {
+                    ProfileDetailRowView(title: L10n.Common.mail, value: profile.email)
+                    ProfileDetailRowView(title: L10n.Common.phoneNumber, value: profile.mainPhone)
+                    ProfileDetailRowView(title: L10n.Common.alternatePhone, value: profile.secondPhone)
                 }
 
-                Section("证件信息") {
+                Section(L10n.Common.idInformation) {
                     ProfileDetailSensitiveRowView(
-                        title: "身份证",
+                        title: L10n.Common.idCard,
                         value: profile.idCardNum,
                         reveals: $showIdCard
                     )
                     ProfileDetailSensitiveRowView(
-                        title: "护照号",
+                        title: L10n.Common.passportNo,
                         value: profile.passportNum,
                         reveals: $showPassport
                     )
                     ProfileDetailSensitiveRowView(
-                        title: "旅行证/回乡证号",
+                        title: L10n.Common.travelPermitHomeReturnPermit,
                         value: profile.permitNum,
                         reveals: $showPermit
                     )
                 }
 
-                Section("补充资料") {
-                    ProfileDetailRowView(title: "身高", value: profile.height.map { "\($0) cm" })
-                    ProfileDetailRowView(title: "体重", value: profile.weight.map { "\($0) kg" })
-                    ProfileDetailRowView(title: "学校", value: profile.school)
-                    ProfileDetailRowView(title: "年级", value: profile.grade)
+                Section(L10n.Common.additionalInfo) {
+                    ProfileDetailRowView(title: L10n.Common.height, value: profile.height.map { "\($0) cm" })
+                    ProfileDetailRowView(title: L10n.Common.weight, value: profile.weight.map { "\($0) kg" })
+                    ProfileDetailRowView(title: L10n.Common.school, value: profile.school)
+                    ProfileDetailRowView(title: L10n.Common.grade, value: profile.grade)
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle("成员详情")
+            .navigationTitle(L10n.Common.memberDetails.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("关闭") { dismiss() }
+                    Button(L10n.Common.close) { dismiss() }
                 }
                 if canEdit {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("编辑") {
+                        Button(L10n.Common.edit) {
                             onEdit()
                         }
                     }

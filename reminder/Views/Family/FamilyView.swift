@@ -35,7 +35,7 @@ struct FamilyView: View {
             VStack(spacing: 0) {
                 GlobalHeaderView(
                     leading: {
-                        Text("群组")
+                        Text(L10n.Family.groups.localized)
                             .font(.title2.weight(.bold))
                             .foregroundStyle(.primary)
                     },
@@ -56,7 +56,7 @@ struct FamilyView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(viewModel.isLeaving)
-                            .accessibilityLabel(AppLocalized.string("退出群组", locale: locale))
+                            .accessibilityLabel(AppLocalized.string(L10n.Common.leaveGroup, locale: locale))
                         } else {
                             EmptyView()
                         }
@@ -216,32 +216,32 @@ struct FamilyView: View {
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
         }
-        .alert("提示", isPresented: transferSuccessToastBinding) {
-            Button("好的", role: .cancel) {
+        .alert(L10n.Common.notice, isPresented: transferSuccessToastBinding) {
+            Button(L10n.Common.ok, role: .cancel) {
                 viewModel.acknowledgeTransferSuccessToast()
             }
         } message: {
             Text(viewModel.transferSuccessToastMessage ?? "")
         }
-        .alert("确定要退出该群组吗？", isPresented: $viewModel.showLeaveConfirmation) {
-            Button("取消", role: .cancel) {}
-            Button("退出群组", role: .destructive) {
+        .alert(L10n.Family.areYouSureYouWantToLeaveThisGroup, isPresented: $viewModel.showLeaveConfirmation) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Common.leaveGroup, role: .destructive) {
                 Task { await submitLeaveHousehold() }
             }
         } message: {
-            Text("退出后您将无法查看群内的任务和消息。")
+            Text(L10n.Schedule.afterLoggingOutYouWillNotBeAbleToViewT.localized)
         }
-        .alert("提示", isPresented: $viewModel.showCreatorBlockAlert) {
-            Button("知道了", role: .cancel) {}
+        .alert(L10n.Common.notice, isPresented: $viewModel.showCreatorBlockAlert) {
+            Button(L10n.Common.gotIt, role: .cancel) {}
         } message: {
-            Text("您是此群组的创建者。退出前请先转移所有权或解散群组。")
+            Text(L10n.Family.youAreTheCreatorOfThisGroupTransferOwner.localized)
         }
-        .alert("退出群组失败", isPresented: leaveErrorAlertBinding) {
-            Button("知道了", role: .cancel) {
+        .alert(L10n.Family.couldNotLeaveGroup, isPresented: leaveErrorAlertBinding) {
+            Button(L10n.Common.gotIt, role: .cancel) {
                 viewModel.acknowledgeLeaveError()
             }
         } message: {
-            Text(viewModel.leaveErrorMessage ?? "请稍后重试。")
+            Text(viewModel.leaveErrorMessage ?? L10n.Common.pleaseTryAgainLater)
         }
         .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
     }
@@ -274,16 +274,16 @@ struct FamilyView: View {
     private var familyListBody: some View {
         List {
             if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-                ProgressView(AppLocalized.string("正在加载成员档案…", locale: locale))
+                ProgressView(AppLocalized.string(L10n.Common.loadingMemberProfiles, locale: locale))
                     .frame(maxWidth: .infinity, minHeight: 220)
                     .listRowBackground(Color.clear)
             } else if let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView {
-                    Label(AppLocalized.string("加载中", locale: locale), systemImage: "exclamationmark.triangle")
+                    Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
                 } description: {
                     Text(errorMessage)
                 } actions: {
-                    Button(AppLocalized.string("重新加载", locale: locale)) {
+                    Button(AppLocalized.string(L10n.Common.reload, locale: locale)) {
                         Task {
                             await viewModel.loadMembers()
                         }
@@ -368,10 +368,10 @@ struct FamilyView: View {
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
 
-            Text("暂无其他成员")
+            Text(L10n.Common.noOtherMembersYet.localized)
                 .foregroundStyle(.secondary)
 
-            Button("添加群组成员") {
+            Button(L10n.Family.addGroupMembers) {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -402,14 +402,14 @@ struct FamilyView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text("还没有成员档案")
+            Text(L10n.Common.noMemberProfileYet.localized)
                 .font(.headline)
-            Text("添加第一位成员，一起分工协作、温柔提醒每一天。")
+            Text(L10n.Schedule.addTheFirstMemberToShareTasksAndGentleD.localized)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
-            Button("添加群组成员") {
+            Button(L10n.Family.addGroupMembers) {
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -473,14 +473,14 @@ struct FamilyView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("切换群组")
+            .accessibilityLabel(L10n.Family.switchGroup)
         }
         .padding(.vertical, 6)
     }
 
     private var currentOrganizationDisplayName: String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if trimmed.isEmpty { return String(localized: "未命名群组") }
+        if trimmed.isEmpty { return L10n.Family.unnamedGroup.string() }
         return GuestSessionStore.displayHouseholdName(trimmed)
     }
 
@@ -520,7 +520,7 @@ struct FamilyView: View {
 
     private var otherMembersSectionHeader: some View {
         HStack(spacing: 16) {
-            Text("群组成员")
+            Text(L10n.Family.groupMembers.localized)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -539,8 +539,8 @@ struct FamilyView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(
                     isSortingMembers
-                        ? AppLocalized.string("完成排序", locale: locale)
-                        : AppLocalized.string("排序群组成员", locale: locale)
+                        ? AppLocalized.string(L10n.Common.completeSorting, locale: locale)
+                        : AppLocalized.string(L10n.Family.sortGroupMembers, locale: locale)
                 )
             }
 
@@ -553,7 +553,7 @@ struct FamilyView: View {
                         .foregroundStyle(.blue)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(AppLocalized.string("添加群组成员", locale: locale))
+                .accessibilityLabel(AppLocalized.string(L10n.Family.addGroupMembers, locale: locale))
             }
         }
         .textCase(nil)
@@ -614,13 +614,13 @@ struct FamilyView: View {
     /// 详情页「角色」一行：使用 `LocalizedStringKey`，由详情页 `\.locale` 驱动翻译。
     private func detailRoleLabel(for profile: FamilyProfile) -> LocalizedStringKey {
         if profile.isVirtualUser {
-            return "成员档案"
+            return L10n.Common.memberProfile.localized
         }
         if let membership = resolvedMembership(for: profile),
            let role = membership.parsedRole {
             return role.localizedName
         }
-        return "群组成员"
+        return L10n.Family.groupMembers.localized
     }
 
     private var canManageHousehold: Bool {
@@ -657,7 +657,7 @@ struct FamilyView: View {
     private func renameCurrentHousehold(to newName: String, description: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
-            renameErrorMessage = AppLocalized.localized("当前未选择群组。")
+            renameErrorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
             return
         }
 
@@ -831,11 +831,11 @@ private struct OrganizationSettingsSheet: View {
             .onAppear {
                 groupDescription = initialDescription
             }
-            .navigationTitle("群组设置")
+            .navigationTitle(L10n.Family.groupSettings2.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") {
+                    Button(L10n.Common.close) {
                         dismiss()
                     }
                     .disabled(isSubmitting || isDisbanding)
@@ -859,7 +859,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var organizationNameField: some View {
-        TextField("输入群组名称…", text: $name)
+        TextField(L10n.Family.enterGroupName.localized, text: $name)
             .textInputAutocapitalization(.words)
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
@@ -869,7 +869,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var organizationDescriptionField: some View {
-        TextField("输入群组描述（选填）…", text: $groupDescription, axis: .vertical)
+        TextField(L10n.Family.enterGroupDescriptionOptional.localized, text: $groupDescription, axis: .vertical)
             .lineLimit(3 ... 6)
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
@@ -891,7 +891,7 @@ private struct OrganizationSettingsSheet: View {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Text("保存更改")
+                    Text(L10n.Common.saveChanges.localized)
                         .font(.body.weight(.semibold))
                 }
             }
@@ -916,7 +916,7 @@ private struct OrganizationSettingsSheet: View {
             .environment(\.layoutDirection, appSettings.layoutDirection)
         } label: {
             settingsNavigationRow(
-                title: "移交群主",
+                title: L10n.Common.transferOwnership,
                 systemImage: "person.2.badge.gearshape"
             )
         }
@@ -926,7 +926,7 @@ private struct OrganizationSettingsSheet: View {
 
     private var disbandHouseholdSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("危险操作")
+            Text(L10n.Common.dangerZone.localized)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.red)
                 .textCase(.uppercase)
@@ -937,7 +937,7 @@ private struct OrganizationSettingsSheet: View {
                 HStack(spacing: 12) {
                     Image(systemName: "trash.fill")
                         .font(.body)
-                    Text("解散群组")
+                    Text(L10n.Family.dismissGroup.localized)
                         .font(.body.weight(.semibold))
                     Spacer(minLength: 8)
                 }
@@ -949,7 +949,7 @@ private struct OrganizationSettingsSheet: View {
             .buttonStyle(.plain)
             .disabled(isSubmitting || isDisbanding || familyViewModel.isLeaving)
 
-            Text("解散后所有成员将被移除，任务与邀请码将被永久清空。此操作不可撤销。")
+            Text(L10n.Schedule.uponDismissalAllMembersWillBeRemovedAndT.localized)
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -968,7 +968,7 @@ private struct OrganizationSettingsSheet: View {
                     } else {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .font(.body)
-                        Text("退出群组")
+                        Text(L10n.Common.leaveGroup.localized)
                             .font(.body.weight(.semibold))
                     }
                     Spacer(minLength: 8)
@@ -1036,15 +1036,15 @@ private struct DisbandHouseholdConfirmationSheet: View {
         NavigationStack {
             ZStack {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("解散群组操作不可逆")
+                    Text(L10n.Family.disbandingCannotBeUndone.localized)
                         .font(.headline)
 
-                    Text("此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前群组名称「\(householdName)」以确认解散。")
+                    Text(L10n.Family.disbandConfirmMessage.formatted(locale: locale, householdName))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    TextField("请输入群组名称以确认", text: $disbandInputName)
+                    TextField(L10n.Family.enterGroupNameToConfirm.localized, text: $disbandInputName)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled(true)
                         .textFieldStyle(.roundedBorder)
@@ -1063,7 +1063,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                                 ProgressView()
                                     .tint(.white)
                             } else {
-                                Text("确认解散")
+                                Text(L10n.Common.confirmDismiss.localized)
                                     .font(.body.weight(.semibold))
                             }
                         }
@@ -1086,7 +1086,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     VStack(spacing: 10) {
                         ProgressView()
                             .scaleEffect(1.1)
-                        Text("正在解散群组，请稍候…")
+                        Text(L10n.Family.dismissingGroupPleaseWait.localized)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -1097,18 +1097,18 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     .shadow(radius: 10)
                 }
             }
-            .navigationTitle("确认解散群组")
+            .navigationTitle(L10n.Common.confirmDismissGroup.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("取消") { dismiss() }
+                    Button(L10n.Common.cancel) { dismiss() }
                         .disabled(familyViewModel.isDisbanding)
                 }
             }
-            .alert("解散失败", isPresented: $familyViewModel.showDisbandErrorAlert) {
-                Button("我知道了", role: .cancel) {}
+            .alert(L10n.Common.dismissFailed, isPresented: $familyViewModel.showDisbandErrorAlert) {
+                Button(L10n.Common.gotIt, role: .cancel) {}
             } message: {
-                Text(familyViewModel.disbandError ?? "未知错误，请重试")
+                Text(familyViewModel.disbandError ?? L10n.Common.unknownErrorPleaseTryAgain)
             }
         }
     }

@@ -3,6 +3,7 @@ import Kingfisher
 
 struct TransferOwnershipView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
     @ObservedObject var familyViewModel: FamilyViewModel
     @StateObject private var viewModel: TransferOwnershipViewModel
     let onCompleted: (() -> Void)?
@@ -27,15 +28,15 @@ struct TransferOwnershipView: View {
                     if viewModel.eligibleMembers.isEmpty {
                         Section {
                             ContentUnavailableView {
-                                Label("暂无可选成员", systemImage: "person.crop.circle.badge.questionmark")
+                                Label(L10n.Common.noEligibleMembers.localized, systemImage: "person.crop.circle.badge.questionmark")
                             } description: {
-                                Text("当前没有其他可接收权限的有效账号成员。")
+                                Text(L10n.Family.thereAreNoOtherActiveAccountMembersWhoCa.localized)
                             }
                             .frame(maxWidth: .infinity, minHeight: 180)
                             .listRowBackground(Color.clear)
                         }
                     } else {
-                        Section("选择接收者") {
+                        Section(L10n.Common.chooseRecipient) {
                             ForEach(viewModel.eligibleMembers) { member in
                                 Button {
                                     viewModel.selectedMember = member
@@ -58,7 +59,7 @@ struct TransferOwnershipView: View {
                 .listStyle(.insetGrouped)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("移交群主")
+            .navigationTitle(L10n.Common.transferOwnership.localized)
             .navigationBarTitleDisplayMode(.inline)
             .disabled(viewModel.isTransferring)
             .confirmationDialog(
@@ -66,7 +67,7 @@ struct TransferOwnershipView: View {
                 isPresented: selectedMemberBinding,
                 titleVisibility: .visible
             ) {
-                Button("确认转移", role: .destructive) {
+                Button(L10n.Common.confirmTransfer, role: .destructive) {
                     guard let member = viewModel.selectedMember else { return }
                     Task {
                         let succeeded = await viewModel.confirmTransfer(
@@ -80,11 +81,11 @@ struct TransferOwnershipView: View {
                         onCompleted?()
                     }
                 }
-                Button("取消", role: .cancel) {
+                Button(L10n.Common.cancel, role: .cancel) {
                     viewModel.selectedMember = nil
                 }
             } message: {
-                Text("此操作不可撤销。确认后您将立即失去创建者权限。")
+                Text(L10n.Common.thisCannotBeUndoneYouWillImmediatelyLose.localized)
             }
             .forcesNonPopoverDialogPresentation()
 
@@ -94,7 +95,7 @@ struct TransferOwnershipView: View {
                 VStack(spacing: 10) {
                     ProgressView()
                         .scaleEffect(1.1)
-                    Text("正在转移权限…")
+                    Text(L10n.Common.transferringOwnership.localized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -108,7 +109,7 @@ struct TransferOwnershipView: View {
     }
 
     private var hintBanner: some View {
-        Text("转移后，您将降级为普通成员。被转移方会自动成为创建者，无需确认。请谨慎选择。")
+        Text(L10n.Family.afterTransferYouWillBecomeARegularMember.localized)
             .font(.subheadline)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.leading)
@@ -122,9 +123,11 @@ struct TransferOwnershipView: View {
 
     private var confirmationTitleKey: LocalizedStringKey {
         if let name = viewModel.selectedMember?.nickname {
-            return "确定要将创建者权限转移给「\(name)」吗？"
+            return LocalizedStringKey(
+                L10n.Common.transferCreatorPermissionTo.formatted(locale: locale, name)
+            )
         }
-        return "确定要转移创建者权限吗？"
+        return L10n.Common.transferCreatorPermission.localized
     }
 
     private var selectedMemberBinding: Binding<Bool> {

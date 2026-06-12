@@ -167,22 +167,22 @@ final class OrgRoutingViewModel: ObservableObject {
     }
 
     private enum Copy {
-        static let networkError = String(localized: "网络连接错误。请检查您的连接并重试。")
-        static let createHouseholdFailed = String(localized: "创建群组失败，请稍后重试。")
-        static let joinHouseholdFailed = String(localized: "加入群组失败，请稍后重试或联系群组创建者。")
-        static let emptyHouseholdName = String(localized: "群组名称不能为空，请输入后再创建。")
-        static let invalidInviteCode = String(localized: "邀请码无效。请检查并重试。")
-        static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
-        static let forbidden = String(localized: "您无权执行此操作。")
-        static let householdNotFound = String(localized: "群组不存在或已被删除，请刷新后重试。")
-        static let backendMigrationRequired = String(localized: "需要后端升级。请应用最新的 Supabase 迁移并重试。")
-        static let alreadyMember = String(localized: "您已经加入了该群组，无需重复添加。")
-        static let joinRequestPending = String(localized: "您的加入请求已提交。请等待管理员批准。")
-        static let inviteCodeExpired = String(localized: "该邀请码已过期。请创建者分享一个新的。")
-        static let inviteLinkUsed = String(localized: "该邀请链接已被使用。请向管理员询问新的。")
-        static let householdNameMismatch = String(localized: "群组名称不匹配，请重新输入。")
-        static let disbandUnauthorized = String(localized: "只有创建者才能解散该群组。")
-        static let unknownError = String(localized: "出了点问题。请稍后重试。")
+        static let networkError = L10n.Common.networkConnectionErrorPleaseCheckYourConne.string()
+        static let createHouseholdFailed = L10n.Common.failedToCreateGroupPleaseTryAgainLater.string()
+        static let joinHouseholdFailed = L10n.Family.couldNotJoinTheGroupPleaseTryAgainLater.string()
+        static let emptyHouseholdName = L10n.Family.groupNameCannotBeEmptyPleaseEnterANameB.string()
+        static let invalidInviteCode = L10n.Family.invalidInviteCodePleaseCheckAndTryAgain.string()
+        static let sessionExpired = L10n.Auth.yourSignInSessionHasExpiredPleaseSignIn.string()
+        static let forbidden = L10n.Common.youDonTHavePermissionToPerformThisAction.string()
+        static let householdNotFound = L10n.Family.thisGroupDoesNotExistOrHasBeenDeletedPl.string()
+        static let backendMigrationRequired = L10n.Common.backendUpgradeRequiredPleaseApplyTheLatest2.string()
+        static let alreadyMember = L10n.Family.youAreAlreadyAMemberOfThisGroup.string()
+        static let joinRequestPending = L10n.Common.yourJoinRequestHasBeenSubmittedPleaseWait.string()
+        static let inviteCodeExpired = L10n.Family.thisInviteCodeHasExpiredPleaseAskTheCrea.string()
+        static let inviteLinkUsed = L10n.Family.thisInviteLinkHasAlreadyBeenUsedPleaseAs.string()
+        static let householdNameMismatch = L10n.Family.groupNameDoesNotMatchPleaseEnterItAgain.string()
+        static let disbandUnauthorized = L10n.Family.onlyTheCreatorCanDisbandThisGroup.string()
+        static let unknownError = L10n.Common.somethingWentWrongPleaseTryAgainLater.string()
     }
 
     private func mapErrorMessage(_ error: Error, action: ActionType) -> String {
@@ -235,7 +235,7 @@ final class OrgRoutingViewModel: ObservableObject {
         case .disbandUnauthorized:
             return Copy.disbandUnauthorized
         case .creatorCannotLeave:
-            return String(localized: "您是此群组的创建者。退出前请先转移所有权或解散群组。")
+            return L10n.Family.youAreTheCreatorOfThisGroupTransferOwner.string()
         case .transferUnauthorized, .transferInvalidTarget:
             return Copy.unknownError
         case .unknown:

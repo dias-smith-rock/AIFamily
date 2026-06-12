@@ -1,11 +1,12 @@
 import SwiftUI
 
-/// 任务时长胶囊标签（卡片 / 详情复用）。
+/// Task duration capsule badge (shared by cards and detail views).
 struct TaskDurationBadge: View {
+    @Environment(\.locale) private var locale
     let minutes: Int
 
     var body: some View {
-        Text(minutes.taskDurationLocalizedKey)
+        Text(TaskDurationFormatting.readableDuration(minutes: minutes, locale: locale))
             .font(.caption)
             .foregroundStyle(.secondary)
             .padding(.horizontal, 8)

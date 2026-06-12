@@ -1,0 +1,5868 @@
+[
+  {
+    "legacy_key": "This event was synced from an external calendar and cannot be edited in the app.",
+    "new_key": "common_this_event_was_synced_from_an_external_calendar",
+    "table": "Common",
+    "swift_property": "thisEventWasSyncedFromAnExternalCalendar",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片上传失败，服务器存储权限未配置。请联系管理员在 Supabase 为 create-task-from-images 桶添加写入策略。",
+    "new_key": "common_upload_failed_storage_permissions_are_not_config",
+    "table": "Common",
+    "swift_property": "uploadFailedStoragePermissionsAreNotConfig",
+    "orphan": true
+  },
+  {
+    "legacy_key": "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。",
+    "new_key": "vip_unlimited_images_per_task_original_quality_plus",
+    "table": "VIP",
+    "swift_property": "unlimitedImagesPerTaskOriginalQualityPlus",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。",
+    "new_key": "family_this_operation_will_permanently_delete_your_acco",
+    "table": "Family",
+    "swift_property": "thisOperationWillPermanentlyDeleteYourAcco",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前群组名称「%@」以确认解散。",
+    "new_key": "schedule_this_operation_is_irreversible_all_members_will",
+    "table": "Schedule",
+    "swift_property": "thisOperationIsIrreversibleAllMembersWill",
+    "orphan": true
+  },
+  {
+    "legacy_key": "粘贴 sig 后调用 consume-invite-link，快速验证 200/409/410 状态。",
+    "new_key": "common_after_pasting_sig_call_consume_invite_link_to_qu",
+    "table": "Common",
+    "swift_property": "afterPastingSigCallConsumeInviteLinkToQu",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前设备未配置邮件账户，请发送邮件至 music.player.250617@gmail.com。",
+    "new_key": "common_no_mail_account_is_configured_on_this_device_ple",
+    "table": "Common",
+    "swift_property": "noMailAccountIsConfiguredOnThisDevicePle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "位移与间隔均达标时会新增一条位置记录；仅间隔到达而位移未达阈值时，会更新最近一条位置记录。",
+    "new_key": "settings_location_reporting_interval_footer",
+    "table": "Settings",
+    "swift_property": "locationReportingIntervalFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "免费版每任务仅支持 1 张压缩图片，升级 Pro 后可添加更多并支持更高画质。",
+    "new_key": "vip_free_plan_allows_1_compressed_image_per_task_upg",
+    "table": "VIP",
+    "swift_property": "freePlanAllows1CompressedImagePerTaskUpg",
+    "orphan": true
+  },
+  {
+    "legacy_key": "后端尚未完成升级，请先执行最新 Supabase migration 后重试。",
+    "new_key": "common_backend_upgrade_required_please_apply_the_latest",
+    "table": "Common",
+    "swift_property": "backendUpgradeRequiredPleaseApplyTheLatest",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您是「%@」等 %lld 个群组的创建者，请先转移权限或解散群组后再注销账户。",
+    "new_key": "family_you_are_the_creator_of_2_lld_group_s_including_1",
+    "table": "Family",
+    "swift_property": "youAreTheCreatorOf2LldGroupSIncluding1",
+    "orphan": true
+  },
+  {
+    "legacy_key": "转移后，您将降级为普通成员。被转移方会自动成为创建者，无需确认。请谨慎选择。",
+    "new_key": "family_after_transfer_you_will_become_a_regular_member",
+    "table": "Family",
+    "swift_property": "afterTransferYouWillBecomeARegularMember",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。",
+    "new_key": "family_you_re_invited_to_join_a_wesync_group_copy_this",
+    "table": "Family",
+    "swift_property": "youReInvitedToJoinAWesyncGroupCopyThis",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 语音极速建任务、群组智能周报、高阶提醒规则等更多专属功能即将上线。",
+    "new_key": "schedule_ai_voice_task_creation_group_smart_weekly_report",
+    "table": "Schedule",
+    "swift_property": "aiVoiceTaskCreationGroupSmartWeeklyReport",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您的反馈能帮助我们为群组和团队把应用做得更好。愿意花一点时间留个评价吗？",
+    "new_key": "family_your_feedback_helps_us_improve_the_app_for_group",
+    "table": "Family",
+    "swift_property": "yourFeedbackHelpsUsImproveTheAppForGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "隐身期间，群组成员无法在地图上看到你的位置，且不会向服务器上报新坐标。",
+    "new_key": "family_while_hidden_group_members_cannot_see_your_locat",
+    "table": "Family",
+    "swift_property": "whileHiddenGroupMembersCannotSeeYourLocat",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Supabase 配置无效，请检查 URL 与 Anon Key。",
+    "new_key": "common_invalid_supabase_configuration_please_check_the",
+    "table": "Common",
+    "swift_property": "invalidSupabaseConfigurationPleaseCheckThe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解散后所有成员将被移除，任务与邀请码将被永久清空。此操作不可撤销。",
+    "new_key": "schedule_upon_dismissal_all_members_will_be_removed_and_t",
+    "table": "Schedule",
+    "swift_property": "uponDismissalAllMembersWillBeRemovedAndT",
+    "orphan": true
+  },
+  {
+    "legacy_key": "隐身期间不会向服务器上报新坐标，群组成员仍可看到您上次上报的位置。",
+    "new_key": "settings_location_ghost_footer",
+    "table": "Settings",
+    "swift_property": "locationGhostFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "仅影响地图上显示的轨迹与历史点数量，不会改变云端存储的位置记录。",
+    "new_key": "settings_location_reporting_history_count_footer",
+    "table": "Settings",
+    "swift_property": "locationReportingHistoryCountFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "免费版最多加入 1 个群组，升级 Pro 后可无限创建与加入。",
+    "new_key": "vip_free_plan_allows_1_group_upgrade_to_pro_for_unli",
+    "table": "VIP",
+    "swift_property": "freePlanAllows1GroupUpgradeToProForUnli",
+    "orphan": true
+  },
+  {
+    "legacy_key": "免费版每任务仅支持 1 张图片，升级 Pro 可上传更多附件。",
+    "new_key": "vip_free_plan_allows_1_compressed_image_per_task_upg_2",
+    "table": "VIP",
+    "swift_property": "freePlanAllows1CompressedImagePerTaskUpg2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未能从图片中提取有效任务信息，请换一张更清晰的照片或手动创建。",
+    "new_key": "schedule_couldn_t_extract_a_valid_task_from_the_photo_try",
+    "table": "Schedule",
+    "swift_property": "couldnTExtractAValidTaskFromThePhotoTry",
+    "orphan": true
+  },
+  {
+    "legacy_key": "订阅将自动续费，可随时在 App Store 账户设置中取消。",
+    "new_key": "vip_subscription_renews_automatically_cancel_anytime",
+    "table": "VIP",
+    "swift_property": "subscriptionRenewsAutomaticallyCancelAnytime",
+    "orphan": true
+  },
+  {
+    "legacy_key": "准备做什么？可以说：明天下午花 500 港币带老大去洗牙……",
+    "new_key": "common_what_would_you_like_to_do_for_example_tomorrow_a",
+    "table": "Common",
+    "swift_property": "whatWouldYouLikeToDoForExampleTomorrowA",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无需手机号，由您直接替 Ta 记录任务（适合小孩子或长辈）。",
+    "new_key": "schedule_no_phone_number_needed_you_can_record_tasks_on_t",
+    "table": "Schedule",
+    "swift_property": "noPhoneNumberNeededYouCanRecordTasksOnT",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Display name cannot be empty.",
+    "new_key": "common_display_name_cannot_be_empty",
+    "table": "Common",
+    "swift_property": "displayNameCannotBeEmpty",
+    "orphan": true
+  },
+  {
+    "legacy_key": "支持 Apple、Magic Link、Phone OTP",
+    "new_key": "common_support_apple_magic_link_phone_otp",
+    "table": "Common",
+    "swift_property": "supportAppleMagicLinkPhoneOtp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "记得在周六上午检查冰箱库存，并同步更新本周的共享购物清单。",
+    "new_key": "common_remember_to_check_your_refrigerator_inventory_on",
+    "table": "Common",
+    "swift_property": "rememberToCheckYourRefrigeratorInventoryOn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "购买正在处理中，请稍后在 App Store 账户中查看。",
+    "new_key": "common_purchase_is_pending_check_your_app_store_account",
+    "table": "Common",
+    "swift_property": "purchaseIsPendingCheckYourAppStoreAccount",
+    "orphan": true
+  },
+  {
+    "legacy_key": "需要后端升级。请应用最新的 Supabase 迁移并重试。",
+    "new_key": "common_backend_upgrade_required_please_apply_the_latest_2",
+    "table": "Common",
+    "swift_property": "backendUpgradeRequiredPleaseApplyTheLatest2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "使用 Face ID 解锁后继续访问你的群组日程与任务。",
+    "new_key": "schedule_use_face_id_to_unlock_and_continue_to_your_group",
+    "table": "Schedule",
+    "swift_property": "useFaceIdToUnlockAndContinueToYourGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "免费版每组最多 2 名成员，升级 Pro 后可添加更多。",
+    "new_key": "vip_free_plan_allows_2_members_per_group_upgrade_to",
+    "table": "VIP",
+    "swift_property": "freePlanAllows2MembersPerGroupUpgradeTo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。",
+    "new_key": "vip_free_plan_allows_2_members_per_group_upgrade_to_2",
+    "table": "VIP",
+    "swift_property": "freePlanAllows2MembersPerGroupUpgradeTo2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前数据仅保存在本机。登录后可同步到云端，并与家人协作。",
+    "new_key": "auth_your_data_is_stored_on_this_device_only_sign_in",
+    "table": "Auth",
+    "swift_property": "yourDataIsStoredOnThisDeviceOnlySignIn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。",
+    "new_key": "family_ask_the_other_party_to_use_the_wesync_app_to_sca",
+    "table": "Family",
+    "swift_property": "askTheOtherPartyToUseTheWesyncAppToSca",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请在系统设置中将位置设为「始终」，才能在后台更新位置。",
+    "new_key": "location_set_location_to_always_in_settings_to_update_you",
+    "table": "Location",
+    "swift_property": "setLocationToAlwaysInSettingsToUpdateYou",
+    "orphan": true
+  },
+  {
+    "legacy_key": "随手拍照即可提取核心日程，让科技为你精简群组组织成本。",
+    "new_key": "schedule_snap_a_photo_to_extract_key_schedules_and_simpli",
+    "table": "Schedule",
+    "swift_property": "snapAPhotoToExtractKeySchedulesAndSimpli",
+    "orphan": true
+  },
+  {
+    "legacy_key": "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！",
+    "new_key": "vip_founding_member_offer_claim_1_year_of_pro_free_f",
+    "table": "VIP",
+    "swift_property": "foundingMemberOfferClaim1YearOfProFreeF",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 识图服务暂未完成配置，请稍后再试或联系管理员。",
+    "new_key": "common_ai_photo_recognition_is_not_fully_set_up_yet_try",
+    "table": "Common",
+    "swift_property": "aiPhotoRecognitionIsNotFullySetUpYetTry",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您已成为「%@」的创建者，拥有该群组的最高管理权限。",
+    "new_key": "family_you_have_become_the_creator_of_and_have_the_high",
+    "table": "Family",
+    "swift_property": "youHaveBecomeTheCreatorOfAndHaveTheHigh",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您是此群组的创建者。退出前请先转移所有权或解散群组。",
+    "new_key": "family_you_are_the_creator_of_this_group_transfer_owner",
+    "table": "Family",
+    "swift_property": "youAreTheCreatorOfThisGroupTransferOwner",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您是该群组的创建者，请先转移权限或解散群组后再退出。",
+    "new_key": "family_you_are_the_creator_of_this_group_please_transfe",
+    "table": "Family",
+    "swift_property": "youAreTheCreatorOfThisGroupPleaseTransfe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "打破建群上限，支持容纳无限成员，连接你的多重生活圈。",
+    "new_key": "family_no_group_caps_connect_every_circle_of_your_life",
+    "table": "Family",
+    "swift_property": "noGroupCapsConnectEveryCircleOfYourLife",
+    "orphan": true
+  },
+  {
+    "legacy_key": "有一则全天任务将于约定日期到来，请在日程中查看标题。",
+    "new_key": "schedule_an_all_day_task_is_due_on_the_scheduled_date_ope",
+    "table": "Schedule",
+    "swift_property": "anAllDayTaskIsDueOnTheScheduledDateOpe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解锁更长、更细腻的动态足迹线，全天安全动向一手掌握。",
+    "new_key": "common_richer_movement_trails_so_you_can_track_safety_a",
+    "table": "Common",
+    "swift_property": "richerMovementTrailsSoYouCanTrackSafetyA",
+    "orphan": true
+  },
+  {
+    "legacy_key": "领取成功！您的 Pro 权益已激活至 %lld 年。",
+    "new_key": "vip_success_your_pro_benefits_are_active_until_lld",
+    "table": "VIP",
+    "swift_property": "successYourProBenefitsAreActiveUntilLld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "领取成功！您的 Pro 权益已激活至 2027 年。",
+    "new_key": "vip_success_your_pro_benefits_are_active_until_2027",
+    "table": "VIP",
+    "swift_property": "successYourProBenefitsAreActiveUntil2027",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Supabase SDK 尚未接入，请先添加依赖。",
+    "new_key": "common_supabase_sdk_is_not_available_in_this_build_plea",
+    "table": "Common",
+    "swift_property": "supabaseSdkIsNotAvailableInThisBuildPlea",
+    "orphan": true
+  },
+  {
+    "legacy_key": "自由掌控位置共享时机，一键开启，随时切换独立隐私。",
+    "new_key": "location_control_when_you_share_location_toggle_ghost_mod",
+    "table": "Location",
+    "swift_property": "controlWhenYouShareLocationToggleGhostMod",
+    "orphan": true
+  },
+  {
+    "legacy_key": "👑 自定义历史轨迹数量，开启位置隐身不上报新坐标。",
+    "new_key": "vip_customize_history_trail_count_and_enable_ghost_m",
+    "table": "VIP",
+    "swift_property": "customizeHistoryTrailCountAndEnableGhostM",
+    "orphan": true
+  },
+  {
+    "legacy_key": "App Store 订阅功能即将上线，敬请期待。",
+    "new_key": "vip_app_store_subscriptions_are_coming_soon_stay_tun",
+    "table": "VIP",
+    "swift_property": "appStoreSubscriptionsAreComingSoonStayTun",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Live Huddle 已因长时间无活动自动结束",
+    "new_key": "common_live_location_sharing_ended_automatically_due_to",
+    "table": "Common",
+    "swift_property": "liveLocationSharingEndedAutomaticallyDueTo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "一人续费承包全组，群组成员无缝共享全部高级特权。",
+    "new_key": "family_one_renewal_covers_everyone_group_members_seamle",
+    "table": "Family",
+    "swift_property": "oneRenewalCoversEveryoneGroupMembersSeamle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "地图最多显示 3 个历史位置点，不支持位置隐身。",
+    "new_key": "location_map_shows_up_to_3_history_points_ghost_mode_unav",
+    "table": "Location",
+    "swift_property": "mapShowsUpTo3HistoryPointsGhostModeUnav",
+    "orphan": true
+  },
+  {
+    "legacy_key": "检测到你加入了多个群组，请选择本次要进入的群组。",
+    "new_key": "family_it_is_detected_that_you_have_joined_multiple_gro",
+    "table": "Family",
+    "swift_property": "itIsDetectedThatYouHaveJoinedMultipleGro",
+    "orphan": true
+  },
+  {
+    "legacy_key": "添加没有具体开始时间的任务，在截止日前完成即可。",
+    "new_key": "schedule_add_tasks_without_a_set_start_time_complete_them",
+    "table": "Schedule",
+    "swift_property": "addTasksWithoutASetStartTimeCompleteThem",
+    "orphan": true
+  },
+  {
+    "legacy_key": "设为管理员后，该成员可以协助管理群组成员与设置。",
+    "new_key": "family_admins_can_help_manage_group_members_and_setting",
+    "table": "Family",
+    "swift_property": "adminsCanHelpManageGroupMembersAndSetting",
+    "orphan": true
+  },
+  {
+    "legacy_key": "发送邀请链接，对方可使用自己的手机登录并互动。",
+    "new_key": "auth_send_an_invite_link_so_they_can_sign_in_on_their",
+    "table": "Auth",
+    "swift_property": "sendAnInviteLinkSoTheyCanSignInOnTheir",
+    "orphan": true
+  },
+  {
+    "legacy_key": "地图仅显示最新 1 个位置点，不支持位置隐身。",
+    "new_key": "location_map_shows_only_the_latest_location_point_ghost_m",
+    "table": "Location",
+    "swift_property": "mapShowsOnlyTheLatestLocationPointGhostM",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前构建环境未包含 Supabase SDK。",
+    "new_key": "common_supabase_sdk_is_not_available_in_this_build",
+    "table": "Common",
+    "swift_property": "supabaseSdkIsNotAvailableInThisBuild",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此操作不可撤销。确认后您将立即失去创建者权限。",
+    "new_key": "common_this_cannot_be_undone_you_will_immediately_lose",
+    "table": "Common",
+    "swift_property": "thisCannotBeUndoneYouWillImmediatelyLose",
+    "orphan": true
+  },
+  {
+    "legacy_key": "添加第一位成员，一起分工协作、温柔提醒每一天。",
+    "new_key": "schedule_add_the_first_member_to_share_tasks_and_gentle_d",
+    "table": "Schedule",
+    "swift_property": "addTheFirstMemberToShareTasksAndGentleD",
+    "orphan": true
+  },
+  {
+    "legacy_key": "移出后，该成员将无法再访问本群组的任务与信息。",
+    "new_key": "schedule_after_removal_they_can_no_longer_access_this_gro",
+    "table": "Schedule",
+    "swift_property": "afterRemovalTheyCanNoLongerAccessThisGro",
+    "orphan": true
+  },
+  {
+    "legacy_key": "促销权益须由服务端发放，客户端无法直接领取。",
+    "new_key": "common_promotional_benefits_must_be_granted_by_the_serv",
+    "table": "Common",
+    "swift_property": "promotionalBenefitsMustBeGrantedByTheServ",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建新群组，或通过邀请码加入他人已有的空间。",
+    "new_key": "family_create_a_new_group_or_join_someone_else_s_existi",
+    "table": "Family",
+    "swift_property": "createANewGroupOrJoinSomeoneElseSExisti",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前成员身份无效，请先重新进入该群组后重试。",
+    "new_key": "family_current_membership_is_invalid_please_re_enter_th",
+    "table": "Family",
+    "swift_property": "currentMembershipIsInvalidPleaseReEnterTh",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前设备未配置邮件账户，请发送邮件至 %@。",
+    "new_key": "common_no_mail_account_is_configured_please_email",
+    "table": "Common",
+    "swift_property": "noMailAccountIsConfiguredPleaseEmail",
+    "orphan": true
+  },
+  {
+    "legacy_key": "检测到当前会话无效，请先登录再加载群组成员。",
+    "new_key": "auth_it_is_detected_that_the_current_session_is_inval",
+    "table": "Auth",
+    "swift_property": "itIsDetectedThatTheCurrentSessionIsInval",
+    "orphan": true
+  },
+  {
+    "legacy_key": "调整字体大小后，应用内文字会同步放大或缩小。",
+    "new_key": "common_after_adjusting_the_font_size_the_text_in_the_ap",
+    "table": "Common",
+    "swift_property": "afterAdjustingTheFontSizeTheTextInTheAp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@，暂无位置，勾选后将在有定位数据时显示",
+    "new_key": "location_no_location_yet_will_appear_on_the_map_when_loca",
+    "table": "Location",
+    "swift_property": "noLocationYetWillAppearOnTheMapWhenLoca",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Invite member to join",
+    "new_key": "common_invite_member_to_join",
+    "table": "Common",
+    "swift_property": "inviteMemberToJoin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "No group is selected.",
+    "new_key": "common_no_group_is_selected",
+    "table": "Common",
+    "swift_property": "noGroupIsSelected",
+    "orphan": true
+  },
+  {
+    "legacy_key": "加入群组失败，请稍后重试或联系群组创建者。",
+    "new_key": "family_could_not_join_the_group_please_try_again_later",
+    "table": "Family",
+    "swift_property": "couldNotJoinTheGroupPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "所选成员不符合接收权限的条件，请重新选择。",
+    "new_key": "family_the_selected_member_cannot_receive_ownership_ple",
+    "table": "Family",
+    "swift_property": "theSelectedMemberCannotReceiveOwnershipPle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法访问相册，请在系统设置中允许保存照片。",
+    "new_key": "common_can_t_access_photos_allow_saving_in_settings",
+    "table": "Common",
+    "swift_property": "canTAccessPhotosAllowSavingInSettings",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邀请码格式无效：必须为 6 位字母或数字。",
+    "new_key": "family_invalid_invite_code_format_must_be_6_letters_or",
+    "table": "Family",
+    "swift_property": "invalidInviteCodeFormatMustBe6LettersOr",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Pro 会员已激活，尽情使用高级功能吧。",
+    "new_key": "vip_pro_is_active_enjoy_all_premium_features",
+    "table": "VIP",
+    "swift_property": "proIsActiveEnjoyAllPremiumFeatures",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前成员身份无效，请重新进入群组后再试。",
+    "new_key": "family_current_membership_is_invalid_re_enter_the_group",
+    "table": "Family",
+    "swift_property": "currentMembershipIsInvalidReEnterTheGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "感谢您的支持，尽情使用 Pro 功能吧。",
+    "new_key": "vip_thank_you_for_your_support_enjoy_pro_features",
+    "table": "VIP",
+    "swift_property": "thankYouForYourSupportEnjoyProFeatures",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录链接已发送，请检查邮箱并回到 App",
+    "new_key": "auth_sign_in_link_sent_check_your_email_and_return_to",
+    "table": "Auth",
+    "swift_property": "signInLinkSentCheckYourEmailAndReturnTo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该邀请链接已被使用。请向管理员询问新的。",
+    "new_key": "family_this_invite_link_has_already_been_used_please_as",
+    "table": "Family",
+    "swift_property": "thisInviteLinkHasAlreadyBeenUsedPleaseAs",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请验证身份以访问同圈中的群组日程与任务。",
+    "new_key": "schedule_verify_your_identity_to_access_group_schedules_a",
+    "table": "Schedule",
+    "swift_property": "verifyYourIdentityToAccessGroupSchedulesA",
+    "orphan": true
+  },
+  {
+    "legacy_key": "迁移后未能获取群组成员身份，请稍后重试。",
+    "new_key": "family_could_not_load_membership_after_migration_please",
+    "table": "Family",
+    "swift_property": "couldNotLoadMembershipAfterMigrationPlease",
+    "orphan": true
+  },
+  {
+    "legacy_key": "进行中的待办都已完成，可在下方查看记录。",
+    "new_key": "common_all_active_to_dos_are_done_view_your_history_bel",
+    "table": "Common",
+    "swift_property": "allActiveToDosAreDoneViewYourHistoryBel",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出后，群组将不再接收你的秒级位置更新。",
+    "new_key": "family_after_you_leave_the_group_will_no_longer_receive",
+    "table": "Family",
+    "swift_property": "afterYouLeaveTheGroupWillNoLongerReceive",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 识图服务暂时不可用，请稍后再试。",
+    "new_key": "common_ai_photo_recognition_is_temporarily_unavailable",
+    "table": "Common",
+    "swift_property": "aiPhotoRecognitionIsTemporarilyUnavailable",
+    "orphan": true
+  },
+  {
+    "legacy_key": "你好!我可以帮你快速创建任务。你可以：",
+    "new_key": "schedule_hello_i_can_help_you_create_tasks_quickly_you_ca",
+    "table": "Schedule",
+    "swift_property": "helloICanHelpYouCreateTasksQuicklyYouCa",
+    "orphan": true
+  },
+  {
+    "legacy_key": "删除后该虚拟成员的所有信息将不可恢复。",
+    "new_key": "family_this_virtual_member_profile_cannot_be_recovered",
+    "table": "Family",
+    "swift_property": "thisVirtualMemberProfileCannotBeRecovered",
+    "orphan": true
+  },
+  {
+    "legacy_key": "客户端鉴权失败，请检查 apikey。",
+    "new_key": "common_client_authentication_failed_please_check_the_ap",
+    "table": "Common",
+    "swift_property": "clientAuthenticationFailedPleaseCheckTheAp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前待办均已逾期，请从右上角入口查看。",
+    "new_key": "common_all_open_to_dos_are_overdue_tap_the_button_at_th",
+    "table": "Common",
+    "swift_property": "allOpenToDosAreOverdueTapTheButtonAtTh",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前待办均已逾期，请点击上方横幅查看。",
+    "new_key": "common_all_open_to_dos_are_overdue_tap_the_banner_above",
+    "table": "Common",
+    "swift_property": "allOpenToDosAreOverdueTapTheBannerAbove",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前没有其他可接收权限的有效账号成员。",
+    "new_key": "family_there_are_no_other_active_account_members_who_ca",
+    "table": "Family",
+    "swift_property": "thereAreNoOtherActiveAccountMembersWhoCa",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您的加入请求已提交。请等待管理员批准。",
+    "new_key": "common_your_join_request_has_been_submitted_please_wait",
+    "table": "Common",
+    "swift_property": "yourJoinRequestHasBeenSubmittedPleaseWait",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前 %lld 分钟 · 任务即将开始",
+    "new_key": "schedule_lld_min_before_task_starting_soon",
+    "table": "Schedule",
+    "swift_property": "lldMinBeforeTaskStartingSoon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此日程由外部同步，暂不支持在应用内修改",
+    "new_key": "schedule_this_schedule_is_synchronized_externally_and_doe",
+    "table": "Schedule",
+    "swift_property": "thisScheduleIsSynchronizedExternallyAndDoe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录后可使用云端功能，并同步本地数据。",
+    "new_key": "auth_sign_in_to_use_cloud_features_and_sync_your_loca",
+    "table": "Auth",
+    "swift_property": "signInToUseCloudFeaturesAndSyncYourLoca",
+    "orphan": true
+  },
+  {
+    "legacy_key": "移动超过此距离后，才可能写入云端位置。",
+    "new_key": "settings_location_reporting_distance_footer",
+    "table": "Settings",
+    "swift_property": "locationReportingDistanceFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "自然语言修正：例如“时间改成明天下午”",
+    "new_key": "common_natural_language_correction_e_g_change_the_time",
+    "table": "Common",
+    "swift_property": "naturalLanguageCorrectionEGChangeTheTime",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该邀请码已过期。请创建者分享一个新的。",
+    "new_key": "family_this_invite_code_has_expired_please_ask_the_crea",
+    "table": "Family",
+    "swift_property": "thisInviteCodeHasExpiredPleaseAskTheCrea",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请先登录后再使用 AI 识图创建任务。",
+    "new_key": "auth_please_log_in_first_before_using_ai_to_create_a",
+    "table": "Auth",
+    "swift_property": "pleaseLogInFirstBeforeUsingAiToCreateA",
+    "orphan": true
+  },
+  {
+    "legacy_key": "👑 无限创建与加入群组，无限成员人数。",
+    "new_key": "vip_unlimited_groups_to_create_and_join_unlimited_me",
+    "table": "VIP",
+    "swift_property": "unlimitedGroupsToCreateAndJoinUnlimitedMe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Pending acceptance",
+    "new_key": "common_pending_acceptance",
+    "table": "Common",
+    "swift_property": "pendingAcceptance",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Transfer ownership",
+    "new_key": "common_transfer_ownership",
+    "table": "Common",
+    "swift_property": "transferOwnership",
+    "orphan": true
+  },
+  {
+    "legacy_key": "⚡️ 实时位置 · %lld 人在线",
+    "new_key": "location_live_location_lld_online",
+    "table": "Location",
+    "swift_property": "liveLocationLldOnline",
+    "orphan": true
+  },
+  {
+    "legacy_key": "⚡️ 实时位置进行中（%lld 人）",
+    "new_key": "location_live_location_active_lld_people",
+    "table": "Location",
+    "swift_property": "liveLocationActiveLldPeople",
+    "orphan": true
+  },
+  {
+    "legacy_key": "享受共同时光，或者计划一些新的事情。",
+    "new_key": "common_enjoy_your_time_together_or_plan_something_new",
+    "table": "Common",
+    "swift_property": "enjoyYourTimeTogetherOrPlanSomethingNew",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建云端群组失败，请检查网络后重试。",
+    "new_key": "family_failed_to_create_cloud_group_check_your_network",
+    "table": "Family",
+    "swift_property": "failedToCreateCloudGroupCheckYourNetwork",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片格式解析失败，请换一张图片重试。",
+    "new_key": "common_unsupported_image_format_please_try_another_phot",
+    "table": "Common",
+    "swift_property": "unsupportedImageFormatPleaseTryAnotherPhot",
+    "orphan": true
+  },
+  {
+    "legacy_key": "头像数据为空，请重新选择图片后再试。",
+    "new_key": "common_avatar_data_is_empty_please_choose_another_photo",
+    "table": "Common",
+    "swift_property": "avatarDataIsEmptyPleaseChooseAnotherPhoto",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前没有权限修改该成员的管理员身份。",
+    "new_key": "family_you_don_t_have_permission_to_change_this_member",
+    "table": "Family",
+    "swift_property": "youDonTHavePermissionToChangeThisMember",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法解析重复任务分组，无法批量删除。",
+    "new_key": "schedule_could_not_resolve_the_recurring_series_group_bul",
+    "table": "Schedule",
+    "swift_property": "couldNotResolveTheRecurringSeriesGroupBul",
+    "orphan": true
+  },
+  {
+    "legacy_key": "更改主题后，应用会立即切换显示模式。",
+    "new_key": "common_after_changing_the_theme_the_app_switches_displa",
+    "table": "Common",
+    "swift_property": "afterChangingTheThemeTheAppSwitchesDispla",
+    "orphan": true
+  },
+  {
+    "legacy_key": "更改语言后，应用会立即切换显示语言。",
+    "new_key": "common_language_changes_apply_instantly_across_the_app",
+    "table": "Common",
+    "swift_property": "languageChangesApplyInstantlyAcrossTheApp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "最多 1 个群组，每组上限 2 人。",
+    "new_key": "family_up_to_1_group_2_members_per_group",
+    "table": "Family",
+    "swift_property": "upTo1Group2MembersPerGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "消费成功：链接有效且已标记一次性使用",
+    "new_key": "common_success_link_is_valid_and_marked_as_one_time_use",
+    "table": "Common",
+    "swift_property": "successLinkIsValidAndMarkedAsOneTimeUse",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录后可使用此功能，并同步本地数据。",
+    "new_key": "auth_sign_in_to_use_this_feature_and_sync_your_local",
+    "table": "Auth",
+    "swift_property": "signInToUseThisFeatureAndSyncYourLocal",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确定要将创建者权限转移给「%@」吗？",
+    "new_key": "common_transfer_creator_permission_to",
+    "table": "Common",
+    "swift_property": "transferCreatorPermissionTo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "移除后，该成员将恢复为普通成员权限。",
+    "new_key": "family_they_will_return_to_regular_member_permissions",
+    "table": "Family",
+    "swift_property": "theyWillReturnToRegularMemberPermissions",
+    "orphan": true
+  },
+  {
+    "legacy_key": "网络连接错误。请检查您的连接并重试。",
+    "new_key": "common_network_connection_error_please_check_your_conne",
+    "table": "Common",
+    "swift_property": "networkConnectionErrorPleaseCheckYourConne",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组不存在或已被删除，请刷新后重试。",
+    "new_key": "family_this_group_does_not_exist_or_has_been_deleted_pl",
+    "table": "Family",
+    "swift_property": "thisGroupDoesNotExistOrHasBeenDeletedPl",
+    "orphan": true
+  },
+  {
+    "legacy_key": "读取到原始图片数据为空，请重新选择。",
+    "new_key": "common_image_data_was_empty_please_choose_again",
+    "table": "Common",
+    "swift_property": "imageDataWasEmptyPleaseChooseAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出后您将无法查看群内的任务和消息。",
+    "new_key": "schedule_after_logging_out_you_will_not_be_able_to_view_t",
+    "table": "Schedule",
+    "swift_property": "afterLoggingOutYouWillNotBeAbleToViewT",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择外观后，应用会立即切换显示模式。",
+    "new_key": "common_once_you_select_a_look_and_feel_the_app_immediat",
+    "table": "Common",
+    "swift_property": "onceYouSelectALookAndFeelTheAppImmediat",
+    "orphan": true
+  },
+  {
+    "legacy_key": "👑 拍照或选图，自动识别并预填任务。",
+    "new_key": "vip_take_or_pick_a_photo_to_auto_fill_tasks",
+    "table": "VIP",
+    "swift_property": "takeOrPickAPhotoToAutoFillTasks",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 返回的数据无法解析，请重试。",
+    "new_key": "common_could_not_parse_the_data_returned_by_ai_please_t",
+    "table": "Common",
+    "swift_property": "couldNotParseTheDataReturnedByAiPleaseT",
+    "orphan": true
+  },
+  {
+    "legacy_key": "FaceTime、WhatsApp",
+    "new_key": "common_facetime_whatsapp",
+    "table": "Common",
+    "swift_property": "facetimeWhatsapp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "仅创建者或管理员可以修改群组名称。",
+    "new_key": "family_only_the_creator_or_an_admin_can_rename_the_grou",
+    "table": "Family",
+    "swift_property": "onlyTheCreatorOrAnAdminCanRenameTheGrou",
+    "orphan": true
+  },
+  {
+    "legacy_key": "只有当前群组的创建者才能转移权限。",
+    "new_key": "family_only_the_current_group_creator_can_transfer_owne",
+    "table": "Family",
+    "swift_property": "onlyTheCurrentGroupCreatorCanTransferOwne",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您已经加入了该群组，无需重复添加。",
+    "new_key": "family_you_are_already_a_member_of_this_group",
+    "table": "Family",
+    "swift_property": "youAreAlreadyAMemberOfThisGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录状态已失效，请重新登录后再试。",
+    "new_key": "auth_your_sign_in_session_expired_please_sign_in_agai",
+    "table": "Auth",
+    "swift_property": "yourSignInSessionExpiredPleaseSignInAgai",
+    "orphan": true
+  },
+  {
+    "legacy_key": "第 %lld 张，共 %lld 张",
+    "new_key": "common_1_lld_2_lld",
+    "table": "Common",
+    "swift_property": "1Lld2Lld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组名称不能为空，请输入后再创建。",
+    "new_key": "family_group_name_cannot_be_empty_please_enter_a_name_b",
+    "table": "Family",
+    "swift_property": "groupNameCannotBeEmptyPleaseEnterANameB",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组管理员人数已达上限（3 人）。",
+    "new_key": "family_this_group_already_has_the_maximum_of_3_admins",
+    "table": "Family",
+    "swift_property": "thisGroupAlreadyHasTheMaximumOf3Admins",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解锁全组高级特权，一人续费全组共享",
+    "new_key": "common_unlock_premium_for_the_whole_group_one_subscript",
+    "table": "Common",
+    "swift_property": "unlockPremiumForTheWholeGroupOneSubscript",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该群组名称已被占用，请换一个名称。",
+    "new_key": "family_this_group_name_is_already_taken_please_choose_a",
+    "table": "Family",
+    "swift_property": "thisGroupNameIsAlreadyTakenPleaseChooseA",
+    "orphan": true
+  },
+  {
+    "legacy_key": "从混乱到清晰。\n一起，完美同步。",
+    "new_key": "common_from_chaos_to_clarity_together_perfectly_synced",
+    "table": "Common",
+    "swift_property": "fromChaosToClarityTogetherPerfectlySynced",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务写入失败：群组上下文不一致。",
+    "new_key": "schedule_failed_to_save_task_inconsistent_group_context",
+    "table": "Schedule",
+    "swift_property": "failedToSaveTaskInconsistentGroupContext",
+    "orphan": true
+  },
+  {
+    "legacy_key": "反馈写入失败：群组上下文不一致。",
+    "new_key": "family_failed_to_save_feedback_inconsistent_group_conte",
+    "table": "Family",
+    "swift_property": "failedToSaveFeedbackInconsistentGroupConte",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片上传失败，请检查网络后重试。",
+    "new_key": "common_image_upload_failed_please_check_the_network_and",
+    "table": "Common",
+    "swift_property": "imageUploadFailedPleaseCheckTheNetworkAnd",
+    "orphan": true
+  },
+  {
+    "legacy_key": "将删除本机试用数据，且无法恢复。",
+    "new_key": "common_trial_data_on_this_device_will_be_deleted_and_ca",
+    "table": "Common",
+    "swift_property": "trialDataOnThisDeviceWillBeDeletedAndCa",
+    "orphan": true
+  },
+  {
+    "legacy_key": "布置现场并取回 %@ 的生日蛋糕",
+    "new_key": "common_decorate_venue_and_pick_up_birthday_cake_for",
+    "table": "Common",
+    "swift_property": "decorateVenueAndPickUpBirthdayCakeFor",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前群组与任务不一致，无法保存。",
+    "new_key": "schedule_the_current_group_does_not_match_this_task_save",
+    "table": "Schedule",
+    "swift_property": "theCurrentGroupDoesNotMatchThisTaskSave",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您的登录会话已过期。请重新登录。",
+    "new_key": "auth_your_sign_in_session_has_expired_please_sign_in",
+    "table": "Auth",
+    "swift_property": "yourSignInSessionHasExpiredPleaseSignIn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员创建失败：群组上下文不一致。",
+    "new_key": "family_failed_to_create_member_inconsistent_group_conte",
+    "table": "Family",
+    "swift_property": "failedToCreateMemberInconsistentGroupConte",
+    "orphan": true
+  },
+  {
+    "legacy_key": "灵活待办不支持批量更新重复任务。",
+    "new_key": "schedule_flexible_to_dos_can_t_be_batch_updated_as_a_recu",
+    "table": "Schedule",
+    "swift_property": "flexibleToDosCanTBeBatchUpdatedAsARecu",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录后可与群组成员共享实时位置。",
+    "new_key": "auth_sign_in_to_share_live_location_with_group_member",
+    "table": "Auth",
+    "swift_property": "signInToShareLiveLocationWithGroupMember",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录请求已发送，请完成授权后重试",
+    "new_key": "auth_sign_in_request_sent_complete_authorization_and",
+    "table": "Auth",
+    "swift_property": "signInRequestSentCompleteAuthorizationAnd",
+    "orphan": true
+  },
+  {
+    "legacy_key": "网络连接异常，请检查网络后重试。",
+    "new_key": "common_network_connection_issue_check_your_connection_a",
+    "table": "Common",
+    "swift_property": "networkConnectionIssueCheckYourConnectionA",
+    "orphan": true
+  },
+  {
+    "legacy_key": "识别区域无效，请调整红框后重试。",
+    "new_key": "common_invalid_recognition_area_adjust_the_red_box_and",
+    "table": "Common",
+    "swift_property": "invalidRecognitionAreaAdjustTheRedBoxAnd",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请输入分享链接中的 sig 参数",
+    "new_key": "common_enter_the_sig_parameter_from_the_share_link",
+    "table": "Common",
+    "swift_property": "enterTheSigParameterFromTheShareLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "购买验证失败，请重试或联系支持。",
+    "new_key": "common_purchase_verification_failed_please_retry_or_con",
+    "table": "Common",
+    "swift_property": "purchaseVerificationFailedPleaseRetryOrCon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "不支持拍照或相册识图创建任务。",
+    "new_key": "schedule_photo_and_album_recognition_for_tasks_is_not_ava",
+    "table": "Schedule",
+    "swift_property": "photoAndAlbumRecognitionForTasksIsNotAva",
+    "orphan": true
+  },
+  {
+    "legacy_key": "个人权益有效期至 %lld 年",
+    "new_key": "common_personal_benefits_valid_until_lld",
+    "table": "Common",
+    "swift_property": "personalBenefitsValidUntilLld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "免费领取 1 年 Pro 权益",
+    "new_key": "vip_claim_1_year_pro_for_free",
+    "table": "VIP",
+    "swift_property": "claim1YearProForFree",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片尚未加载完成，请稍后再试。",
+    "new_key": "common_the_image_isn_t_ready_yet_try_again_in_a_moment",
+    "table": "Common",
+    "swift_property": "theImageIsnTReadyYetTryAgainInAMoment",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前没有权限移出或删除该成员。",
+    "new_key": "family_you_don_t_have_permission_to_remove_or_delete_th",
+    "table": "Family",
+    "swift_property": "youDonTHavePermissionToRemoveOrDeleteTh",
+    "orphan": true
+  },
+  {
+    "legacy_key": "批准后你会自动进入群组主界面。",
+    "new_key": "family_after_approval_you_will_automatically_enter_the",
+    "table": "Family",
+    "swift_property": "afterApprovalYouWillAutomaticallyEnterThe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法创建支持邮件，请稍后重试。",
+    "new_key": "common_unable_to_open_support_email_please_try_again_la",
+    "table": "Common",
+    "swift_property": "unableToOpenSupportEmailPleaseTryAgainLa",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未能读取图片数据，请重新选择。",
+    "new_key": "common_could_not_read_image_data_please_choose_again",
+    "table": "Common",
+    "swift_property": "couldNotReadImageDataPleaseChooseAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此设备没有相机或相机访问受限。",
+    "new_key": "common_this_device_has_no_camera_or_camera_access_is_re",
+    "table": "Common",
+    "swift_property": "thisDeviceHasNoCameraOrCameraAccessIsRe",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录会话尚未就绪，请稍后重试。",
+    "new_key": "auth_the_login_session_is_not_ready_yet_please_try_ag",
+    "table": "Auth",
+    "swift_property": "theLoginSessionIsNotReadyYetPleaseTryAg",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录即表示您同意本 App 的",
+    "new_key": "auth_by_signing_in_you_agree_to_this_app_s",
+    "table": "Auth",
+    "swift_property": "bySigningInYouAgreeToThisAppS",
+    "orphan": true
+  },
+  {
+    "legacy_key": "订阅商品加载失败，请稍后重试。",
+    "new_key": "vip_failed_to_load_subscription_products_please_try",
+    "table": "VIP",
+    "swift_property": "failedToLoadSubscriptionProductsPleaseTry",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该邀请链接已被使用（409）。",
+    "new_key": "family_this_invite_link_has_already_been_used_409",
+    "table": "Family",
+    "swift_property": "thisInviteLinkHasAlreadyBeenUsed409",
+    "orphan": true
+  },
+  {
+    "legacy_key": "轻点以全屏查看，可左右滑动切换",
+    "new_key": "common_double_tap_for_full_screen_swipe_left_or_right_t",
+    "table": "Common",
+    "swift_property": "doubleTapForFullScreenSwipeLeftOrRightT",
+    "orphan": true
+  },
+  {
+    "legacy_key": "轻点重试，将试用数据写入云端。",
+    "new_key": "common_tap_to_retry_and_upload_trial_data_to_the_cloud",
+    "table": "Common",
+    "swift_property": "tapToRetryAndUploadTrialDataToTheCloud",
+    "orphan": true
+  },
+  {
+    "legacy_key": "验证码已发送，请完成验证后重试",
+    "new_key": "common_verification_code_sent_complete_verification_and",
+    "table": "Common",
+    "swift_property": "verificationCodeSentCompleteVerificationAnd",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 正在阅读您的图片...",
+    "new_key": "common_ai_is_reading_your_image",
+    "table": "Common",
+    "swift_property": "aiIsReadingYourImage",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Issue reported",
+    "new_key": "common_issue_reported",
+    "table": "Common",
+    "swift_property": "issueReported",
+    "orphan": true
+  },
+  {
+    "legacy_key": "为 %@ 预订生日餐厅/场地",
+    "new_key": "common_book_birthday_restaurant_venue_for",
+    "table": "Common",
+    "swift_property": "bookBirthdayRestaurantVenueFor",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务已写入日程，可返回查看。",
+    "new_key": "schedule_the_task_has_been_written_into_the_schedule_and",
+    "table": "Schedule",
+    "swift_property": "theTaskHasBeenWrittenIntoTheScheduleAnd",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建者权限已转移给「%@」。",
+    "new_key": "common_creator_permissions_have_been_transferred_to",
+    "table": "Common",
+    "swift_property": "creatorPermissionsHaveBeenTransferredTo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "压缩后图片数据为空，请重试。",
+    "new_key": "common_compressed_image_data_was_empty_please_try_again",
+    "table": "Common",
+    "swift_property": "compressedImageDataWasEmptyPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "可填写开支明细、支付方式等…",
+    "new_key": "common_you_can_fill_in_expense_details_payment_methods",
+    "table": "Common",
+    "swift_property": "youCanFillInExpenseDetailsPaymentMethods",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已敲门，等待管理员批准...",
+    "new_key": "common_knocked_on_the_door_waiting_for_administrator_ap",
+    "table": "Common",
+    "swift_property": "knockedOnTheDoorWaitingForAdministratorAp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前没有权限修改该成员资料。",
+    "new_key": "family_you_do_not_have_permission_to_edit_this_member_p",
+    "table": "Family",
+    "swift_property": "youDoNotHavePermissionToEditThisMemberP",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前群组已继承 Pro 权益",
+    "new_key": "vip_current_group_inherits_pro_benefits",
+    "table": "VIP",
+    "swift_property": "currentGroupInheritsProBenefits",
+    "orphan": true
+  },
+  {
+    "legacy_key": "批量更新后未能定位当前任务。",
+    "new_key": "schedule_could_not_locate_the_current_task_after_bulk_upd",
+    "table": "Schedule",
+    "swift_property": "couldNotLocateTheCurrentTaskAfterBulkUpd",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法启动扫描仪。请稍后重试。",
+    "new_key": "common_could_not_start_scanner_please_try_again_later",
+    "table": "Common",
+    "swift_property": "couldNotStartScannerPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认移除该成员的管理员权限？",
+    "new_key": "family_remove_this_member_s_admin_role",
+    "table": "Family",
+    "swift_property": "removeThisMemberSAdminRole",
+    "orphan": true
+  },
+  {
+    "legacy_key": "称呼 (如：大宝、旺财) *",
+    "new_key": "common_nickname_such_as_mum",
+    "table": "Common",
+    "swift_property": "nicknameSuchAsMum",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组名称不匹配，请重新输入。",
+    "new_key": "family_group_name_does_not_match_please_enter_it_again",
+    "table": "Family",
+    "swift_property": "groupNameDoesNotMatchPleaseEnterItAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该邀请链接已过期（410）。",
+    "new_key": "family_this_invite_link_has_expired_410",
+    "table": "Family",
+    "swift_property": "thisInviteLinkHasExpired410",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请输入角色称呼（不能为空）。",
+    "new_key": "common_please_enter_a_role_name_cannot_be_empty",
+    "table": "Common",
+    "swift_property": "pleaseEnterARoleNameCannotBeEmpty",
+    "orphan": true
+  },
+  {
+    "legacy_key": "谁去办 (Assignee)",
+    "new_key": "common_assignee",
+    "table": "Common",
+    "swift_property": "assignee",
+    "orphan": true
+  },
+  {
+    "legacy_key": "重命名群组失败，请稍后重试。",
+    "new_key": "family_failed_to_rename_the_group_please_try_again_late",
+    "table": "Family",
+    "swift_property": "failedToRenameTheGroupPleaseTryAgainLate",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@，已选中时在地图上显示",
+    "new_key": "location_shown_on_the_map_when_selected",
+    "table": "Location",
+    "swift_property": "shownOnTheMapWhenSelected",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务数据组装失败，请重试。",
+    "new_key": "schedule_failed_to_prepare_task_data_please_try_again",
+    "table": "Schedule",
+    "swift_property": "failedToPrepareTaskDataPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "使用 Face ID 解锁",
+    "new_key": "common_unlock_with_face_id",
+    "table": "Common",
+    "swift_property": "unlockWithFaceId",
+    "orphan": true
+  },
+  {
+    "legacy_key": "准备 %@ 的生日愿望清单",
+    "new_key": "common_prepare_birthday_wish_list_for",
+    "table": "Common",
+    "swift_property": "prepareBirthdayWishListFor",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建任务后将显示在此列表。",
+    "new_key": "schedule_after_the_task_is_created_it_will_appear_in_this",
+    "table": "Schedule",
+    "swift_property": "afterTheTaskIsCreatedItWillAppearInThis",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建群组失败，请稍后重试。",
+    "new_key": "family_failed_to_create_group_please_try_again_later",
+    "table": "Family",
+    "swift_property": "failedToCreateGroupPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "只有创建者才能解散该群组。",
+    "new_key": "family_only_the_creator_can_disband_this_group",
+    "table": "Family",
+    "swift_property": "onlyTheCreatorCanDisbandThisGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "头像上传失败，请稍后再试。",
+    "new_key": "common_avatar_upload_failed_please_try_again_later",
+    "table": "Common",
+    "swift_property": "avatarUploadFailedPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前用户，始终在地图上显示",
+    "new_key": "location_current_user_always_shown_on_the_map",
+    "table": "Location",
+    "swift_property": "currentUserAlwaysShownOnTheMap",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前群组已享 Pro 权益",
+    "new_key": "vip_current_group_has_pro_benefits",
+    "table": "VIP",
+    "swift_property": "currentGroupHasProBenefits",
+    "orphan": true
+  },
+  {
+    "legacy_key": "恢复购买失败，请稍后重试。",
+    "new_key": "common_restore_failed_please_try_again_later",
+    "table": "Common",
+    "swift_property": "restoreFailedPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "权限转移失败，请稍后重试。",
+    "new_key": "common_failed_to_transfer_ownership_please_try_again_la",
+    "table": "Common",
+    "swift_property": "failedToTransferOwnershipPleaseTryAgainLa",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每任务限 1 张压缩图片。",
+    "new_key": "schedule_n_1_compressed_image_per_task",
+    "table": "Schedule",
+    "swift_property": "n1CompressedImagePerTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录后可使用拍照识图功能。",
+    "new_key": "auth_sign_in_to_use_photo_recognition_for_tasks",
+    "table": "Auth",
+    "swift_property": "signInToUsePhotoRecognitionForTasks",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认 %@ 的生日蛋糕预订",
+    "new_key": "common_confirm_birthday_cake_reservation_for",
+    "table": "Common",
+    "swift_property": "confirmBirthdayCakeReservationFor",
+    "orphan": true
+  },
+  {
+    "legacy_key": "紧急联系号码 / 会议链接",
+    "new_key": "common_emergency_contact_number_meeting_link",
+    "table": "Common",
+    "swift_property": "emergencyContactNumberMeetingLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请求过于频繁，请稍后再试。",
+    "new_key": "common_too_many_requests_please_try_again_later",
+    "table": "Common",
+    "swift_property": "tooManyRequestsPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请验证身份以开启面部解锁。",
+    "new_key": "common_verify_your_identity_to_enable_face_id_unlock",
+    "table": "Common",
+    "swift_property": "verifyYourIdentityToEnableFaceIdUnlock",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出群组失败，请稍后重试。",
+    "new_key": "family_could_not_leave_the_group_please_try_again_later",
+    "table": "Family",
+    "swift_property": "couldNotLeaveTheGroupPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邀请码无效。请检查并重试。",
+    "new_key": "family_invalid_invite_code_please_check_and_try_again",
+    "table": "Family",
+    "swift_property": "invalidInviteCodePleaseCheckAndTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "附件上传失败，请稍后重试。",
+    "new_key": "common_attachment_upload_failed_please_try_again_later",
+    "table": "Common",
+    "swift_property": "attachmentUploadFailedPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@ · 👻 位置已隐藏",
+    "new_key": "location_location_hidden",
+    "table": "Location",
+    "swift_property": "locationHidden",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld小时%lld分钟",
+    "new_key": "common_lld_hr_lld_min",
+    "table": "Common",
+    "swift_property": "lldHrLldMin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "使用 Google 同步",
+    "new_key": "common_sync_with_google",
+    "table": "Common",
+    "swift_property": "syncWithGoogle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "使用 Google 继续",
+    "new_key": "common_continue_with_google",
+    "table": "Common",
+    "swift_property": "continueWithGoogle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "出了点问题。请稍后重试。",
+    "new_key": "common_something_went_wrong_please_try_again_later",
+    "table": "Common",
+    "swift_property": "somethingWentWrongPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "在此之前任意时间完成即可",
+    "new_key": "common_can_be_completed_anytime_before_this_date",
+    "table": "Common",
+    "swift_property": "canBeCompletedAnytimeBeforeThisDate",
+    "orphan": true
+  },
+  {
+    "legacy_key": "完成待办后会显示在这里。",
+    "new_key": "common_completed_to_dos_will_appear_here",
+    "table": "Common",
+    "swift_property": "completedToDosWillAppearHere",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已催办，管理员会收到提醒",
+    "new_key": "schedule_it_has_been_urged_and_the_administrator_will_rec",
+    "table": "Schedule",
+    "swift_property": "itHasBeenUrgedAndTheAdministratorWillRec",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前没有权限编辑该资料。",
+    "new_key": "common_you_do_not_have_permission_to_edit_this_profile",
+    "table": "Common",
+    "swift_property": "youDoNotHavePermissionToEditThisProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在生成专属邀请码...",
+    "new_key": "family_generating_exclusive_invitation_code",
+    "table": "Family",
+    "swift_property": "generatingExclusiveInvitationCode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在识别图片中的邀请码…",
+    "new_key": "family_recognizing_the_invitation_code_in_the_picture",
+    "table": "Family",
+    "swift_property": "recognizingTheInvitationCodeInThePicture",
+    "orphan": true
+  },
+  {
+    "legacy_key": "没有找到需要更新的任务。",
+    "new_key": "schedule_no_tasks_were_found_to_update",
+    "table": "Schedule",
+    "swift_property": "noTasksWereFoundToUpdate",
+    "orphan": true
+  },
+  {
+    "legacy_key": "灵活待办不支持重复规则。",
+    "new_key": "common_flexible_to_dos_don_t_support_recurrence",
+    "table": "Common",
+    "swift_property": "flexibleToDosDonTSupportRecurrence",
+    "orphan": true
+  },
+  {
+    "legacy_key": "生日自动任务（年度循环）",
+    "new_key": "schedule_birthday_auto_task_yearly_recurrence",
+    "table": "Schedule",
+    "swift_property": "birthdayAutoTaskYearlyRecurrence",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确定要转移创建者权限吗？",
+    "new_key": "common_transfer_creator_permission",
+    "table": "Common",
+    "swift_property": "transferCreatorPermission",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认将该成员设为管理员？",
+    "new_key": "family_make_this_member_an_admin",
+    "table": "Family",
+    "swift_property": "makeThisMemberAnAdmin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该群组不存在或已被删除。",
+    "new_key": "family_this_group_does_not_exist_or_has_been_deleted",
+    "table": "Family",
+    "swift_property": "thisGroupDoesNotExistOrHasBeenDeleted",
+    "orphan": true
+  },
+  {
+    "legacy_key": "轻点两下以拨打或打开链接",
+    "new_key": "common_double_tap_to_call_or_open_the_link",
+    "table": "Common",
+    "swift_property": "doubleTapToCallOrOpenTheLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邀请链接无效或已被篡改。",
+    "new_key": "family_invite_link_is_invalid_or_has_been_tampered_with",
+    "table": "Family",
+    "swift_property": "inviteLinkIsInvalidOrHasBeenTamperedWith",
+    "orphan": true
+  },
+  {
+    "legacy_key": "陪伴 %@，祝生日快乐！",
+    "new_key": "common_spend_time_with_and_wish_a_happy_birthday",
+    "table": "Common",
+    "swift_property": "spendTimeWithAndWishAHappyBirthday",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld / %lld",
+    "new_key": "common_lld_lld",
+    "table": "Common",
+    "swift_property": "lldLld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 个待办已完成",
+    "new_key": "common_lld_to_do_s_completed",
+    "table": "Common",
+    "swift_property": "lldToDoSCompleted",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 个待办已过期",
+    "new_key": "common_lld_to_do_s_overdue",
+    "table": "Common",
+    "swift_property": "lldToDoSOverdue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Extra Large",
+    "new_key": "common_extra_large",
+    "table": "Common",
+    "swift_property": "extraLarge",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Extra Small",
+    "new_key": "common_extra_small",
+    "table": "Common",
+    "swift_property": "extraSmall",
+    "orphan": true
+  },
+  {
+    "legacy_key": "VIP 权益即将开放。",
+    "new_key": "vip_vip_benefits_coming_soon",
+    "table": "VIP",
+    "swift_property": "vipBenefitsComingSoon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "channel: %@",
+    "new_key": "common_channel",
+    "table": "Common",
+    "swift_property": "channel",
+    "orphan": true
+  },
+  {
+    "legacy_key": "一人付费，全组 VIP",
+    "new_key": "vip_one_payer_whole_group_vip",
+    "table": "VIP",
+    "swift_property": "onePayerWholeGroupVip",
+    "orphan": true
+  },
+  {
+    "legacy_key": "升级至 Pro 高级版",
+    "new_key": "vip_upgrade_to_pro",
+    "table": "VIP",
+    "swift_property": "upgradeToPro",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片上传异常，请重试。",
+    "new_key": "common_there_was_a_problem_uploading_the_photo_please_t",
+    "table": "Common",
+    "swift_property": "thereWasAProblemUploadingThePhotoPleaseT",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片压缩失败，请重试。",
+    "new_key": "common_image_compression_failed_please_try_again",
+    "table": "Common",
+    "swift_property": "imageCompressionFailedPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片处理失败，请重试。",
+    "new_key": "common_image_processing_failed_please_try_again",
+    "table": "Common",
+    "swift_property": "imageProcessingFailedPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片识别失败，请重试。",
+    "new_key": "common_image_recognition_failed_please_try_again",
+    "table": "Common",
+    "swift_property": "imageRecognitionFailedPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已激活至 %lld 年",
+    "new_key": "common_active_until_lld",
+    "table": "Common",
+    "swift_property": "activeUntilLld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您已是 Pro 会员。",
+    "new_key": "vip_you_already_have_pro_membership",
+    "table": "VIP",
+    "swift_property": "youAlreadyHaveProMembership",
+    "orphan": true
+  },
+  {
+    "legacy_key": "操作失败，请稍后重试。",
+    "new_key": "common_action_failed_please_try_again_later",
+    "table": "Common",
+    "swift_property": "actionFailedPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法解析重复任务分组。",
+    "new_key": "schedule_could_not_resolve_the_recurring_task_group",
+    "table": "Schedule",
+    "swift_property": "couldNotResolveTheRecurringTaskGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在加载群组列表...",
+    "new_key": "family_loading_group_list",
+    "table": "Family",
+    "swift_property": "loadingGroupList",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在解散群组，请稍候…",
+    "new_key": "family_dismissing_group_please_wait",
+    "table": "Family",
+    "swift_property": "dismissingGroupPleaseWait",
+    "orphan": true
+  },
+  {
+    "legacy_key": "消费邀请链接失败：%@",
+    "new_key": "family_failed_to_consume_invite_link",
+    "table": "Family",
+    "swift_property": "failedToConsumeInviteLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确定要退出当前账号吗？",
+    "new_key": "common_are_you_sure_you_want_to_log_out_of_your_current",
+    "table": "Common",
+    "swift_property": "areYouSureYouWantToLogOutOfYourCurrent",
+    "orphan": true
+  },
+  {
+    "legacy_key": "识图失败，请稍后再试。",
+    "new_key": "common_photo_recognition_failed_please_try_again_later",
+    "table": "Common",
+    "swift_property": "photoRecognitionFailedPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请先登录以启用云端同步",
+    "new_key": "auth_sign_in_to_enable_cloud_sync",
+    "table": "Auth",
+    "swift_property": "signInToEnableCloudSync",
+    "orphan": true
+  },
+  {
+    "legacy_key": "购买 %@ 的生日礼物",
+    "new_key": "common_buy_birthday_gift_for",
+    "table": "Common",
+    "swift_property": "buyBirthdayGiftFor",
+    "orphan": true
+  },
+  {
+    "legacy_key": "购买失败，请稍后重试。",
+    "new_key": "common_purchase_failed_please_try_again_later",
+    "table": "Common",
+    "swift_property": "purchaseFailedPleaseTryAgainLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入群组描述（选填）…",
+    "new_key": "family_enter_group_description_optional",
+    "table": "Family",
+    "swift_property": "enterGroupDescriptionOptional",
+    "orphan": true
+  },
+  {
+    "legacy_key": "通过 Apple 同步",
+    "new_key": "common_sync_with_apple",
+    "table": "Common",
+    "swift_property": "syncWithApple",
+    "orphan": true
+  },
+  {
+    "legacy_key": "通过 Apple 登录",
+    "new_key": "auth_continue_with_apple",
+    "table": "Auth",
+    "swift_property": "continueWithApple",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邀请链接缺少签名参数。",
+    "new_key": "family_invite_link_is_missing_the_signature_parameter",
+    "table": "Family",
+    "swift_property": "inviteLinkIsMissingTheSignatureParameter",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 分钟前更新",
+    "new_key": "common_updated_lld_min_ago",
+    "table": "Common",
+    "swift_property": "updatedLldMinAgo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "20 条位置历史轨迹",
+    "new_key": "location_n_20_location_history_points",
+    "table": "Location",
+    "swift_property": "n20LocationHistoryPoints",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 智能读图建任务",
+    "new_key": "schedule_ai_photo_to_task",
+    "table": "Schedule",
+    "swift_property": "aiPhotoToTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Apple 登录成功",
+    "new_key": "auth_signed_in_with_apple",
+    "table": "Auth",
+    "swift_property": "signedInWithApple",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Premium 特权",
+    "new_key": "common_premium_benefits",
+    "table": "Common",
+    "swift_property": "premiumBenefits",
+    "orphan": true
+  },
+  {
+    "legacy_key": "• 上传学校通知截图",
+    "new_key": "common_upload_screenshots_of_school_notifications",
+    "table": "Common",
+    "swift_property": "uploadScreenshotsOfSchoolNotifications",
+    "orphan": true
+  },
+  {
+    "legacy_key": "• 直接语音说出需求",
+    "new_key": "assistant_speak_the_requirements_directly_by_voice",
+    "table": "Assistant",
+    "swift_property": "speakTheRequirementsDirectlyByVoice",
+    "orphan": true
+  },
+  {
+    "legacy_key": "• 粘贴微信通知文字",
+    "new_key": "common_paste_wechat_notification_text",
+    "table": "Common",
+    "swift_property": "pasteWechatNotificationText",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已检测到有效登录会话",
+    "new_key": "auth_a_valid_sign_in_session_was_detected",
+    "table": "Auth",
+    "swift_property": "aValidSignInSessionWasDetected",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您还没有加入任何群组",
+    "new_key": "family_you_haven_t_joined_any_groups_yet",
+    "table": "Family",
+    "swift_property": "youHavenTJoinedAnyGroupsYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "扫码 / 邀请码加入",
+    "new_key": "family_scan_code_invite_code_to_join",
+    "table": "Family",
+    "swift_property": "scanCodeInviteCodeToJoin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "旅行证 / 回乡证号",
+    "new_key": "common_travel_permit_return_permit_number",
+    "table": "Common",
+    "swift_property": "travelPermitReturnPermitNumber",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未找到可恢复的订阅。",
+    "new_key": "vip_no_subscription_found_to_restore",
+    "table": "VIP",
+    "swift_property": "noSubscriptionFoundToRestore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "本地数据已同步到云端",
+    "new_key": "common_local_data_synced_to_the_cloud",
+    "table": "Common",
+    "swift_property": "localDataSyncedToTheCloud",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确定要执行此操作吗？",
+    "new_key": "common_are_you_sure_you_want_to_continue",
+    "table": "Common",
+    "swift_property": "areYouSureYouWantToContinue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确定要退出该群组吗？",
+    "new_key": "family_are_you_sure_you_want_to_leave_this_group",
+    "table": "Family",
+    "swift_property": "areYouSureYouWantToLeaveThisGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "等 %lld 个群组",
+    "new_key": "family_and_lld_other_groups",
+    "table": "Family",
+    "swift_property": "andLldOtherGroups",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请从下方相册选择图片",
+    "new_key": "common_choose_an_image_from_the_library_below",
+    "table": "Common",
+    "swift_property": "chooseAnImageFromTheLibraryBelow",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请发送邮件至 %@。",
+    "new_key": "common_please_email",
+    "table": "Common",
+    "swift_property": "pleaseEmail",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请输入群组名称以确认",
+    "new_key": "family_enter_group_name_to_confirm",
+    "table": "Family",
+    "swift_property": "enterGroupNameToConfirm",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请选择您要进入的群组",
+    "new_key": "family_choose_a_group_to_open",
+    "table": "Family",
+    "swift_property": "chooseAGroupToOpen",
+    "orphan": true
+  },
+  {
+    "legacy_key": "轻点以拨打或打开链接",
+    "new_key": "common_tap_to_dial_or_open_link",
+    "table": "Common",
+    "swift_property": "tapToDialOrOpenLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入群组描述（选填）",
+    "new_key": "family_group_description_optional",
+    "table": "Family",
+    "swift_property": "groupDescriptionOptional",
+    "orphan": true
+  },
+  {
+    "legacy_key": "这不是我家？重新输入",
+    "new_key": "common_this_is_not_my_home_re_enter",
+    "table": "Common",
+    "swift_property": "thisIsNotMyHomeReEnter",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@ · LIVE",
+    "new_key": "common_live",
+    "table": "Common",
+    "swift_property": "live",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Pro 会员已激活",
+    "new_key": "vip_pro_membership_active",
+    "table": "VIP",
+    "swift_property": "proMembershipActive",
+    "orphan": true
+  },
+  {
+    "legacy_key": "nonce: %@",
+    "new_key": "common_nonce",
+    "table": "Common",
+    "swift_property": "nonce",
+    "orphan": true
+  },
+  {
+    "legacy_key": "token: %@",
+    "new_key": "common_token",
+    "table": "Common",
+    "swift_property": "token",
+    "orphan": true
+  },
+  {
+    "legacy_key": "valid: %@",
+    "new_key": "common_valid",
+    "table": "Common",
+    "swift_property": "valid",
+    "orphan": true
+  },
+  {
+    "legacy_key": "为了谁 (FOR)",
+    "new_key": "common_for_whom_for",
+    "table": "Common",
+    "swift_property": "forWhomFor",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务保存失败：%@",
+    "new_key": "schedule_task_save_failed",
+    "table": "Schedule",
+    "swift_property": "taskSaveFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务更新失败：%@",
+    "new_key": "schedule_task_update_failed",
+    "table": "Schedule",
+    "swift_property": "taskUpdateFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "同步日历和公共假期",
+    "new_key": "common_sync_calendar_public_holidays",
+    "table": "Common",
+    "swift_property": "syncCalendarPublicHolidays",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前操作尚未实现。",
+    "new_key": "common_this_operation_is_not_implemented_yet",
+    "table": "Common",
+    "swift_property": "thisOperationIsNotImplementedYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您无权执行此操作。",
+    "new_key": "common_you_don_t_have_permission_to_perform_this_action",
+    "table": "Common",
+    "swift_property": "youDonTHavePermissionToPerformThisAction",
+    "orphan": true
+  },
+  {
+    "legacy_key": "服务返回数据异常。",
+    "new_key": "common_unexpected_response_from_the_server",
+    "table": "Common",
+    "swift_property": "unexpectedResponseFromTheServer",
+    "orphan": true
+  },
+  {
+    "legacy_key": "模拟执行端语音回传",
+    "new_key": "assistant_simulation_execution_end_voice_return",
+    "table": "Assistant",
+    "swift_property": "simulationExecutionEndVoiceReturn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在写入任务...",
+    "new_key": "schedule_writing_task",
+    "table": "Schedule",
+    "swift_property": "writingTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在加载任务...",
+    "new_key": "schedule_loading_tasks",
+    "table": "Schedule",
+    "swift_property": "loadingTasks",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在加载反馈...",
+    "new_key": "feedback_loading_feedback",
+    "table": "Feedback",
+    "swift_property": "loadingFeedback",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在加载您的群组…",
+    "new_key": "family_loading_your_groups",
+    "table": "Family",
+    "swift_property": "loadingYourGroups",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在加载成员档案…",
+    "new_key": "family_loading_member_profiles",
+    "table": "Family",
+    "swift_property": "loadingMemberProfiles",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在处理账号操作…",
+    "new_key": "common_processing_account_operations",
+    "table": "Common",
+    "swift_property": "processingAccountOperations",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在解析任务...",
+    "new_key": "schedule_parsing_task",
+    "table": "Schedule",
+    "swift_property": "parsingTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此设备无法使用相机",
+    "new_key": "common_camera_is_not_available_on_this_device",
+    "table": "Common",
+    "swift_property": "cameraIsNotAvailableOnThisDevice",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每隔 %lld 天",
+    "new_key": "common_every_lld_days",
+    "table": "Common",
+    "swift_property": "everyLldDays",
+    "orphan": true
+  },
+  {
+    "legacy_key": "点击查看已完成记录",
+    "new_key": "common_tap_to_view_completed_items",
+    "table": "Common",
+    "swift_property": "tapToViewCompletedItems",
+    "orphan": true
+  },
+  {
+    "legacy_key": "点击查看并调整时间",
+    "new_key": "common_tap_to_review_and_adjust_deadlines",
+    "table": "Common",
+    "swift_property": "tapToReviewAndAdjustDeadlines",
+    "orphan": true
+  },
+  {
+    "legacy_key": "用红框标记识别区域",
+    "new_key": "common_mark_area_with_red_box",
+    "table": "Common",
+    "swift_property": "markAreaWithRedBox",
+    "orphan": true
+  },
+  {
+    "legacy_key": "电量 %lld%%",
+    "new_key": "common_battery_lld",
+    "table": "Common",
+    "swift_property": "batteryLld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "粘贴通知或说出需求",
+    "new_key": "common_paste_a_notification_or_say_a_request",
+    "table": "Common",
+    "swift_property": "pasteANotificationOrSayARequest",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组名称不能为空。",
+    "new_key": "family_group_name_cannot_be_empty",
+    "table": "Family",
+    "swift_property": "groupNameCannotBeEmpty",
+    "orphan": true
+  },
+  {
+    "legacy_key": "裁剪失败，请重试。",
+    "new_key": "common_crop_failed_please_try_again",
+    "table": "Common",
+    "swift_property": "cropFailedPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解散群组操作不可逆",
+    "new_key": "family_disbanding_cannot_be_undone",
+    "table": "Family",
+    "swift_property": "disbandingCannotBeUndone",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请选择一种方式继续",
+    "new_key": "common_please_choose_a_way_to_continue",
+    "table": "Common",
+    "swift_property": "pleaseChooseAWayToContinue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入 6 位邀请码",
+    "new_key": "family_enter_the_6_digit_invitation_code",
+    "table": "Family",
+    "swift_property": "enterThe6DigitInvitationCode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择隐藏位置的时长",
+    "new_key": "location_choose_how_long_to_hide_your_location",
+    "table": "Location",
+    "swift_property": "chooseHowLongToHideYourLocation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "附件数量已达上限。",
+    "new_key": "common_attachment_limit_reached",
+    "table": "Common",
+    "swift_property": "attachmentLimitReached",
+    "orphan": true
+  },
+  {
+    "legacy_key": "需要 Pro 会员",
+    "new_key": "vip_pro_membership_required",
+    "table": "VIP",
+    "swift_property": "proMembershipRequired",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@ 即将推出。",
+    "new_key": "common_coming_soon",
+    "table": "Common",
+    "swift_property": "comingSoon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@，位置已隐藏",
+    "new_key": "location_location_hidden_2",
+    "table": "Location",
+    "swift_property": "locationHidden2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Everyone",
+    "new_key": "common_everyone",
+    "table": "Common",
+    "swift_property": "everyone",
+    "orphan": true
+  },
+  {
+    "legacy_key": "✅ 该任务已完结",
+    "new_key": "schedule_this_task_has_been_completed",
+    "table": "Schedule",
+    "swift_property": "thisTaskHasBeenCompleted",
+    "orphan": true
+  },
+  {
+    "legacy_key": "一起，完美同步。",
+    "new_key": "common_together_perfectly_synced",
+    "table": "Common",
+    "swift_property": "togetherPerfectlySynced",
+    "orphan": true
+  },
+  {
+    "legacy_key": "为了谁：全体成员",
+    "new_key": "family_for_whom_all_members",
+    "table": "Family",
+    "swift_property": "forWhomAllMembers",
+    "orphan": true
+  },
+  {
+    "legacy_key": "今天没有安排任务",
+    "new_key": "schedule_no_tasks_scheduled_today",
+    "table": "Schedule",
+    "swift_property": "noTasksScheduledToday",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务优先级：%@",
+    "new_key": "schedule_task_priority",
+    "table": "Schedule",
+    "swift_property": "taskPriority",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务确认预检卡片",
+    "new_key": "schedule_task_confirmation_preflight_card",
+    "table": "Schedule",
+    "swift_property": "taskConfirmationPreflightCard",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务附件与媒体库",
+    "new_key": "schedule_task_attachments_media",
+    "table": "Schedule",
+    "swift_property": "taskAttachmentsMedia",
+    "orphan": true
+  },
+  {
+    "legacy_key": "使用设备密码解锁",
+    "new_key": "common_unlock_with_device_passcode",
+    "table": "Common",
+    "swift_property": "unlockWithDevicePasscode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "修改此任务及以后",
+    "new_key": "schedule_modify_this_task_and_beyond",
+    "table": "Schedule",
+    "swift_property": "modifyThisTaskAndBeyond",
+    "orphan": true
+  },
+  {
+    "legacy_key": "删除此任务及以后",
+    "new_key": "schedule_delete_this_task_and_later",
+    "table": "Schedule",
+    "swift_property": "deleteThisTaskAndLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "将该成员移出群组",
+    "new_key": "family_remove_from_group",
+    "table": "Family",
+    "swift_property": "removeFromGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "展开群组成员列表",
+    "new_key": "family_expand_group_member_list",
+    "table": "Family",
+    "swift_property": "expandGroupMemberList",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已于 %@ 完成",
+    "new_key": "common_completed_on",
+    "table": "Common",
+    "swift_property": "completedOn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已逾期 %lld",
+    "new_key": "common_lld_overdue",
+    "table": "Common",
+    "swift_property": "lldOverdue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前未选择群组。",
+    "new_key": "family_no_group_is_currently_selected",
+    "table": "Family",
+    "swift_property": "noGroupIsCurrentlySelected",
+    "orphan": true
+  },
+  {
+    "legacy_key": "您有一个待办任务",
+    "new_key": "schedule_you_have_a_pending_task",
+    "table": "Schedule",
+    "swift_property": "youHaveAPendingTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "拖选文字后可复制",
+    "new_key": "common_drag_and_select_text_to_copy",
+    "table": "Common",
+    "swift_property": "dragAndSelectTextToCopy",
+    "orphan": true
+  },
+  {
+    "legacy_key": "指定重复结束日期",
+    "new_key": "common_specify_end_date",
+    "table": "Common",
+    "swift_property": "specifyEndDate",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前%lld分钟",
+    "new_key": "common_lld_minutes_before",
+    "table": "Common",
+    "swift_property": "lldMinutesBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "收起群组成员列表",
+    "new_key": "family_collapse_group_member_list",
+    "table": "Family",
+    "swift_property": "collapseGroupMemberList",
+    "orphan": true
+  },
+  {
+    "legacy_key": "数据仅保存在本机",
+    "new_key": "common_data_stored_on_this_device_only",
+    "table": "Common",
+    "swift_property": "dataStoredOnThisDeviceOnly",
+    "orphan": true
+  },
+  {
+    "legacy_key": "旅行证/回乡证号",
+    "new_key": "common_travel_permit_home_return_permit",
+    "table": "Common",
+    "swift_property": "travelPermitHomeReturnPermit",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂不登录，先试用",
+    "new_key": "auth_try_without_signing_in",
+    "table": "Auth",
+    "swift_property": "tryWithoutSigningIn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未知错误，请重试",
+    "new_key": "common_unknown_error_please_try_again",
+    "table": "Common",
+    "swift_property": "unknownErrorPleaseTryAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "本地数据尚未同步",
+    "new_key": "common_local_data_not_synced_yet",
+    "table": "Common",
+    "swift_property": "localDataNotSyncedYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "框选要识别的区域",
+    "new_key": "common_select_the_area_to_recognize",
+    "table": "Common",
+    "swift_property": "selectTheAreaToRecognize",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此操作不可撤销。",
+    "new_key": "common_this_action_cannot_be_undone",
+    "table": "Common",
+    "swift_property": "thisActionCannotBeUndone",
+    "orphan": true
+  },
+  {
+    "legacy_key": "此操作无法撤销。",
+    "new_key": "common_this_action_cannot_be_undone_2",
+    "table": "Common",
+    "swift_property": "thisActionCannotBeUndone2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "没有可预览的附件",
+    "new_key": "common_no_attachments_available_for_preview",
+    "table": "Common",
+    "swift_property": "noAttachmentsAvailableForPreview",
+    "orphan": true
+  },
+  {
+    "legacy_key": "组织，%@，菜单",
+    "new_key": "family_organization_menu",
+    "table": "Family",
+    "swift_property": "organizationMenu",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑我的群组档案",
+    "new_key": "family_edit_my_group_profile",
+    "table": "Family",
+    "swift_property": "editMyGroupProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请先填写任务标题",
+    "new_key": "schedule_please_enter_a_task_title_first",
+    "table": "Schedule",
+    "swift_property": "pleaseEnterATaskTitleFirst",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请输入群组名称。",
+    "new_key": "family_please_enter_a_group_name",
+    "table": "Family",
+    "swift_property": "pleaseEnterAGroupName",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请选择修改范围。",
+    "new_key": "common_please_select_a_modification_scope",
+    "table": "Common",
+    "swift_property": "pleaseSelectAModificationScope",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请选择删除范围。",
+    "new_key": "common_please_select_a_scope_to_delete",
+    "table": "Common",
+    "swift_property": "pleaseSelectAScopeToDelete",
+    "orphan": true
+  },
+  {
+    "legacy_key": "进入实时位置模式",
+    "new_key": "location_enter_live_location_mode",
+    "table": "Location",
+    "swift_property": "enterLiveLocationMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出实时位置模式",
+    "new_key": "location_exit_live_location_mode",
+    "table": "Location",
+    "swift_property": "exitLiveLocationMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 千米",
+    "new_key": "common_lld_km",
+    "table": "Common",
+    "swift_property": "lldKm",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 小时",
+    "new_key": "common_lld_hours",
+    "table": "Common",
+    "swift_property": "lldHours",
+    "orphan": true
+  },
+  {
+    "legacy_key": "AI 智能识图",
+    "new_key": "common_ai_photo_recognition",
+    "table": "Common",
+    "swift_property": "aiPhotoRecognition",
+    "orphan": true
+  },
+  {
+    "legacy_key": "交美术课材料费",
+    "new_key": "common_pay_art_class_material_fee",
+    "table": "Common",
+    "swift_property": "payArtClassMaterialFee",
+    "orphan": true
+  },
+  {
+    "legacy_key": "从混乱到清晰。",
+    "new_key": "common_from_chaos_to_clarity",
+    "table": "Common",
+    "swift_property": "fromChaosToClarity",
+    "orphan": true
+  },
+  {
+    "legacy_key": "位置隐私与轨迹",
+    "new_key": "location_location_privacy_trail",
+    "table": "Location",
+    "swift_property": "locationPrivacyTrail",
+    "orphan": true
+  },
+  {
+    "legacy_key": "体重 (kg)",
+    "new_key": "common_weight_kg",
+    "table": "Common",
+    "swift_property": "weightKg",
+    "orphan": true
+  },
+  {
+    "legacy_key": "例如：王家小院",
+    "new_key": "common_for_example_wang_group_courtyard",
+    "table": "Common",
+    "swift_property": "forExampleWangGroupCourtyard",
+    "orphan": true
+  },
+  {
+    "legacy_key": "保存失败：%@",
+    "new_key": "common_save_failed",
+    "table": "Common",
+    "swift_property": "saveFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "切换群组，%@",
+    "new_key": "family_switch_groups",
+    "table": "Family",
+    "swift_property": "switchGroups",
+    "orphan": true
+  },
+  {
+    "legacy_key": "删除失败：%@",
+    "new_key": "common_delete_failed",
+    "table": "Common",
+    "swift_property": "deleteFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "删除该成员档案",
+    "new_key": "family_delete_member_profile",
+    "table": "Family",
+    "swift_property": "deleteMemberProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片预览不可用",
+    "new_key": "common_image_preview_unavailable",
+    "table": "Common",
+    "swift_property": "imagePreviewUnavailable",
+    "orphan": true
+  },
+  {
+    "legacy_key": "定位到我的位置",
+    "new_key": "location_locate_my_location",
+    "table": "Location",
+    "swift_property": "locateMyLocation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "执行端调试入口",
+    "new_key": "common_execution_side_debugging_entrance",
+    "table": "Common",
+    "swift_property": "executionSideDebuggingEntrance",
+    "orphan": true
+  },
+  {
+    "legacy_key": "搜索或添加位置",
+    "new_key": "location_search_or_add_a_location",
+    "table": "Location",
+    "swift_property": "searchOrAddALocation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无限群组与成员",
+    "new_key": "family_unlimited_groups_members",
+    "table": "Family",
+    "swift_property": "unlimitedGroupsMembers",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂停 1 小时",
+    "new_key": "common_pause_for_1_hour",
+    "table": "Common",
+    "swift_property": "pauseFor1Hour",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无已完成待办",
+    "new_key": "common_no_completed_to_dos",
+    "table": "Common",
+    "swift_property": "noCompletedToDos",
+    "orphan": true
+  },
+  {
+    "legacy_key": "权限已成功转移",
+    "new_key": "common_ownership_transferred_successfully",
+    "table": "Common",
+    "swift_property": "ownershipTransferredSuccessfully",
+    "orphan": true
+  },
+  {
+    "legacy_key": "查看已完成待办",
+    "new_key": "common_view_completed_to_dos",
+    "table": "Common",
+    "swift_property": "viewCompletedToDos",
+    "orphan": true
+  },
+  {
+    "legacy_key": "查看已逾期任务",
+    "new_key": "schedule_view_overdue_tasks",
+    "table": "Schedule",
+    "swift_property": "viewOverdueTasks",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在加入群组…",
+    "new_key": "family_joining_group",
+    "table": "Family",
+    "swift_property": "joiningGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在转移权限…",
+    "new_key": "common_transferring_ownership",
+    "table": "Common",
+    "swift_property": "transferringOwnership",
+    "orphan": true
+  },
+  {
+    "legacy_key": "添加备注...",
+    "new_key": "common_add_note",
+    "table": "Common",
+    "swift_property": "addNote",
+    "orphan": true
+  },
+  {
+    "legacy_key": "称呼不能为空。",
+    "new_key": "common_name_cannot_be_empty",
+    "table": "Common",
+    "swift_property": "nameCannotBeEmpty",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组与协作人数",
+    "new_key": "family_groups_collaboration",
+    "table": "Family",
+    "swift_property": "groupsCollaboration",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请输入群组名称",
+    "new_key": "family_please_enter_a_group_name_2",
+    "table": "Family",
+    "swift_property": "pleaseEnterAGroupName2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "身高 (cm)",
+    "new_key": "common_height_cm",
+    "table": "Common",
+    "swift_property": "heightCm",
+    "orphan": true
+  },
+  {
+    "legacy_key": "轻点以切换群组",
+    "new_key": "family_double_tap_to_switch_group",
+    "table": "Family",
+    "swift_property": "doubleTapToSwitchGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入任务标题…",
+    "new_key": "schedule_enter_task_title",
+    "table": "Schedule",
+    "swift_property": "enterTaskTitle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入号码或链接",
+    "new_key": "common_enter_number_or_link",
+    "table": "Common",
+    "swift_property": "enterNumberOrLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入组织名称…",
+    "new_key": "family_enter_organization_name",
+    "table": "Family",
+    "swift_property": "enterOrganizationName",
+    "orphan": true
+  },
+  {
+    "legacy_key": "输入群组名称…",
+    "new_key": "family_enter_group_name",
+    "table": "Family",
+    "swift_property": "enterGroupName",
+    "orphan": true
+  },
+  {
+    "legacy_key": "还没有成员档案",
+    "new_key": "family_no_member_profile_yet",
+    "table": "Family",
+    "swift_property": "noMemberProfileYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 人",
+    "new_key": "common_lld_people",
+    "table": "Common",
+    "swift_property": "lldPeople",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld 米",
+    "new_key": "common_lld_m",
+    "table": "Common",
+    "swift_property": "lldM",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld%%",
+    "new_key": "common_lld",
+    "table": "Common",
+    "swift_property": "lld",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld分钟",
+    "new_key": "common_lld_min",
+    "table": "Common",
+    "swift_property": "lldMin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld小时",
+    "new_key": "common_lld_hr",
+    "table": "Common",
+    "swift_property": "lldHr",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Pro 会员",
+    "new_key": "vip_pro_membership",
+    "table": "VIP",
+    "swift_property": "proMembership",
+    "orphan": true
+  },
+  {
+    "legacy_key": "WeSync",
+    "new_key": "common_wesync",
+    "table": "Common",
+    "swift_property": "wesync",
+    "orphan": true
+  },
+  {
+    "legacy_key": "上传中...",
+    "new_key": "common_uploading",
+    "table": "Common",
+    "swift_property": "uploading",
+    "orphan": true
+  },
+  {
+    "legacy_key": "仅修改此任务",
+    "new_key": "schedule_only_modify_this_task",
+    "table": "Schedule",
+    "swift_property": "onlyModifyThisTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "仅删除此任务",
+    "new_key": "schedule_delete_this_task_only",
+    "table": "Schedule",
+    "swift_property": "deleteThisTaskOnly",
+    "orphan": true
+  },
+  {
+    "legacy_key": "从通讯录选择",
+    "new_key": "common_select_from_address_book",
+    "table": "Common",
+    "swift_property": "selectFromAddressBook",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务即将开始",
+    "new_key": "schedule_task_starting_soon",
+    "table": "Schedule",
+    "swift_property": "taskStartingSoon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "全天任务提醒",
+    "new_key": "schedule_all_day_task_reminder",
+    "table": "Schedule",
+    "swift_property": "allDayTaskReminder",
+    "orphan": true
+  },
+  {
+    "legacy_key": "准备做什么？",
+    "new_key": "common_what_would_you_like_to_do",
+    "table": "Common",
+    "swift_property": "whatWouldYouLikeToDo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "分享邀请链接",
+    "new_key": "family_share_invitation_link",
+    "table": "Family",
+    "swift_property": "shareInvitationLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建成员档案",
+    "new_key": "family_create_member_profile",
+    "table": "Family",
+    "swift_property": "createMemberProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "刷新会话状态",
+    "new_key": "auth_refresh_session_state",
+    "table": "Auth",
+    "swift_property": "refreshSessionState",
+    "orphan": true
+  },
+  {
+    "legacy_key": "功能即将推出",
+    "new_key": "common_feature_coming_soon",
+    "table": "Common",
+    "swift_property": "featureComingSoon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "加入已有群组",
+    "new_key": "family_join_a_group",
+    "table": "Family",
+    "swift_property": "joinAGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "升级 Pro",
+    "new_key": "vip_upgrade_to_pro_2",
+    "table": "VIP",
+    "swift_property": "upgradeToPro2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "升级 VIP",
+    "new_key": "vip_upgrade_to_vip",
+    "table": "VIP",
+    "swift_property": "upgradeToVip",
+    "orphan": true
+  },
+  {
+    "legacy_key": "历史位置数量",
+    "new_key": "settings_location_reporting_history_count_section",
+    "table": "Settings",
+    "swift_property": "locationReportingHistoryCountSection",
+    "orphan": false
+  },
+  {
+    "legacy_key": "右上角控制点",
+    "new_key": "common_upper_right_corner_control_point",
+    "table": "Common",
+    "swift_property": "upperRightCornerControlPoint",
+    "orphan": true
+  },
+  {
+    "legacy_key": "右下角控制点",
+    "new_key": "common_lower_right_corner_control_point",
+    "table": "Common",
+    "swift_property": "lowerRightCornerControlPoint",
+    "orphan": true
+  },
+  {
+    "legacy_key": "周末采购清单",
+    "new_key": "common_weekend_shopping_list",
+    "table": "Common",
+    "swift_property": "weekendShoppingList",
+    "orphan": true
+  },
+  {
+    "legacy_key": "喜欢同圈吗？",
+    "new_key": "common_enjoying_wesync",
+    "table": "Common",
+    "swift_property": "enjoyingWesync",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片加载失败",
+    "new_key": "common_image_loading_failed",
+    "table": "Common",
+    "swift_property": "imageLoadingFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "在这之前完成",
+    "new_key": "common_complete_before",
+    "table": "Common",
+    "swift_property": "completeBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "尚未添加位置",
+    "new_key": "location_location_not_added",
+    "table": "Location",
+    "swift_property": "locationNotAdded",
+    "orphan": true
+  },
+  {
+    "legacy_key": "展开位置共享",
+    "new_key": "location_expand_location_sharing",
+    "table": "Location",
+    "swift_property": "expandLocationSharing",
+    "orphan": true
+  },
+  {
+    "legacy_key": "左上角控制点",
+    "new_key": "common_upper_left_control_point",
+    "table": "Common",
+    "swift_property": "upperLeftControlPoint",
+    "orphan": true
+  },
+  {
+    "legacy_key": "左下角控制点",
+    "new_key": "common_lower_left_corner_control_point",
+    "table": "Common",
+    "swift_property": "lowerLeftCornerControlPoint",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已保存到相册",
+    "new_key": "common_saved_to_photos",
+    "table": "Common",
+    "swift_property": "savedToPhotos",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已发送：%@",
+    "new_key": "common_sent",
+    "table": "Common",
+    "swift_property": "sent",
+    "orphan": true
+  },
+  {
+    "legacy_key": "开发中...",
+    "new_key": "common_under_development",
+    "table": "Common",
+    "swift_property": "underDevelopment",
+    "orphan": true
+  },
+  {
+    "legacy_key": "开启面部解锁",
+    "new_key": "common_require_face_id",
+    "table": "Common",
+    "swift_property": "requireFaceId",
+    "orphan": true
+  },
+  {
+    "legacy_key": "拍照创建任务",
+    "new_key": "schedule_create_task_from_photo",
+    "table": "Schedule",
+    "swift_property": "createTaskFromPhoto",
+    "orphan": true
+  },
+  {
+    "legacy_key": "指派给所有人",
+    "new_key": "common_assign_to_everyone",
+    "table": "Common",
+    "swift_property": "assignToEveryone",
+    "orphan": true
+  },
+  {
+    "legacy_key": "排序群组成员",
+    "new_key": "family_sort_group_members",
+    "table": "Family",
+    "swift_property": "sortGroupMembers",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前10分钟",
+    "new_key": "common_n_10_minutes_before",
+    "table": "Common",
+    "swift_property": "n10MinutesBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前15分钟",
+    "new_key": "common_n_15_minutes_before",
+    "table": "Common",
+    "swift_property": "n15MinutesBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前30分钟",
+    "new_key": "common_n_30_minutes_before",
+    "table": "Common",
+    "swift_property": "n30MinutesBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提醒他快一点",
+    "new_key": "schedule_remind_him_to_hurry_up",
+    "table": "Schedule",
+    "swift_property": "remindHimToHurryUp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "收起位置共享",
+    "new_key": "location_collapse_location_sharing",
+    "table": "Location",
+    "swift_property": "collapseLocationSharing",
+    "orphan": true
+  },
+  {
+    "legacy_key": "收起更多选项",
+    "new_key": "common_collapse_more_options",
+    "table": "Common",
+    "swift_property": "collapseMoreOptions",
+    "orphan": true
+  },
+  {
+    "legacy_key": "放弃本地数据",
+    "new_key": "common_discard_local_data",
+    "table": "Common",
+    "swift_property": "discardLocalData",
+    "orphan": true
+  },
+  {
+    "legacy_key": "新建任务 ✨",
+    "new_key": "schedule_create_new_task",
+    "table": "Schedule",
+    "swift_property": "createNewTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法使用相机",
+    "new_key": "common_camera_unavailable",
+    "table": "Common",
+    "swift_property": "cameraUnavailable",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法完成登录",
+    "new_key": "auth_unable_to_complete_login",
+    "table": "Auth",
+    "swift_property": "unableToCompleteLogin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无法直接注销",
+    "new_key": "common_cannot_delete_account",
+    "table": "Common",
+    "swift_property": "cannotDeleteAccount",
+    "orphan": true
+  },
+  {
+    "legacy_key": "显示更多选项",
+    "new_key": "common_show_more_options",
+    "table": "Common",
+    "swift_property": "showMoreOptions",
+    "orphan": true
+  },
+  {
+    "legacy_key": "智能解析任务",
+    "new_key": "schedule_intelligent_parsing_tasks",
+    "table": "Schedule",
+    "swift_property": "intelligentParsingTasks",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无共享成员",
+    "new_key": "family_no_members_sharing_location",
+    "table": "Family",
+    "swift_property": "noMembersSharingLocation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无其他成员",
+    "new_key": "family_no_other_members_yet",
+    "table": "Family",
+    "swift_property": "noOtherMembersYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无即将到期",
+    "new_key": "common_nothing_due_soon",
+    "table": "Common",
+    "swift_property": "nothingDueSoon",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无可选成员",
+    "new_key": "family_no_eligible_members",
+    "table": "Family",
+    "swift_property": "noEligibleMembers",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无群组成员",
+    "new_key": "family_no_group_members_yet",
+    "table": "Family",
+    "swift_property": "noGroupMembersYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无联系方式",
+    "new_key": "common_no_contact_info",
+    "table": "Common",
+    "swift_property": "noContactInfo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "服务响应异常",
+    "new_key": "common_unexpected_server_response",
+    "table": "Common",
+    "swift_property": "unexpectedServerResponse",
+    "orphan": true
+  },
+  {
+    "legacy_key": "权限变更通知",
+    "new_key": "common_permission_change_notification",
+    "table": "Common",
+    "swift_property": "permissionChangeNotification",
+    "orphan": true
+  },
+  {
+    "legacy_key": "欢迎来到同圈",
+    "new_key": "common_welcome_to_wesync",
+    "table": "Common",
+    "swift_property": "welcomeToWesync",
+    "orphan": true
+  },
+  {
+    "legacy_key": "消费邀请链接",
+    "new_key": "family_consumption_invitation_link",
+    "table": "Family",
+    "swift_property": "consumptionInvitationLink",
+    "orphan": true
+  },
+  {
+    "legacy_key": "添加群组成员",
+    "new_key": "family_add_group_members",
+    "table": "Family",
+    "swift_property": "addGroupMembers",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认解散群组",
+    "new_key": "family_confirm_dismiss_group",
+    "table": "Family",
+    "swift_property": "confirmDismissGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解散当前群组",
+    "new_key": "family_dismiss_current_group",
+    "table": "Family",
+    "swift_property": "dismissCurrentGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解锁高级功能",
+    "new_key": "common_unlock_premium_features",
+    "table": "Common",
+    "swift_property": "unlockPremiumFeatures",
+    "orphan": true
+  },
+  {
+    "legacy_key": "订阅 Pro",
+    "new_key": "vip_subscribe_to_pro",
+    "table": "VIP",
+    "swift_property": "subscribeToPro",
+    "orphan": true
+  },
+  {
+    "legacy_key": "该任务已完结",
+    "new_key": "schedule_this_task_has_been_completed_2",
+    "table": "Schedule",
+    "swift_property": "thisTaskHasBeenCompleted2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "请稍后重试。",
+    "new_key": "common_please_try_again_later",
+    "table": "Common",
+    "swift_property": "pleaseTryAgainLater",
+    "orphan": false
+  },
+  {
+    "legacy_key": "账号操作失败",
+    "new_key": "common_account_operation_failed",
+    "table": "Common",
+    "swift_property": "accountOperationFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "身份证件号码",
+    "new_key": "common_id_number",
+    "table": "Common",
+    "swift_property": "idNumber",
+    "orphan": true
+  },
+  {
+    "legacy_key": "这是循环任务",
+    "new_key": "schedule_this_is_a_recurring_task",
+    "table": "Schedule",
+    "swift_property": "thisIsARecurringTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出实时模式",
+    "new_key": "common_exit_live_mode",
+    "table": "Common",
+    "swift_property": "exitLiveMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出群组失败",
+    "new_key": "family_could_not_leave_group",
+    "table": "Family",
+    "swift_property": "couldNotLeaveGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择订阅方案",
+    "new_key": "vip_choose_a_plan",
+    "table": "VIP",
+    "swift_property": "chooseAPlan",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择识别方式",
+    "new_key": "common_select_identification_method",
+    "table": "Common",
+    "swift_property": "selectIdentificationMethod",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邀请成员加入",
+    "new_key": "family_invite_members_to_join",
+    "table": "Family",
+    "swift_property": "inviteMembersToJoin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "隐私隐身模式",
+    "new_key": "location_privacy_ghost_mode",
+    "table": "Location",
+    "swift_property": "privacyGhostMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@ %@",
+    "new_key": "common_text",
+    "table": "Common",
+    "swift_property": "text",
+    "orphan": true
+  },
+  {
+    "legacy_key": "(已编辑)",
+    "new_key": "common_edited",
+    "table": "Common",
+    "swift_property": "edited",
+    "orphan": true
+  },
+  {
+    "legacy_key": "10 分钟",
+    "new_key": "common_duration_10min",
+    "table": "Common",
+    "swift_property": "duration10min",
+    "orphan": false
+  },
+  {
+    "legacy_key": "100 米",
+    "new_key": "common_distance_100m",
+    "table": "Common",
+    "swift_property": "distance100m",
+    "orphan": false
+  },
+  {
+    "legacy_key": "15 分钟",
+    "new_key": "common_duration_15min",
+    "table": "Common",
+    "swift_property": "duration15min",
+    "orphan": false
+  },
+  {
+    "legacy_key": "200 米",
+    "new_key": "common_distance_200m",
+    "table": "Common",
+    "swift_property": "distance200m",
+    "orphan": false
+  },
+  {
+    "legacy_key": "30 分钟",
+    "new_key": "common_duration_30min",
+    "table": "Common",
+    "swift_property": "duration30min",
+    "orphan": false
+  },
+  {
+    "legacy_key": "300 米",
+    "new_key": "common_distance_300m",
+    "table": "Common",
+    "swift_property": "distance300m",
+    "orphan": false
+  },
+  {
+    "legacy_key": "500 米",
+    "new_key": "common_distance_500m",
+    "table": "Common",
+    "swift_property": "distance500m",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Pro 版",
+    "new_key": "vip_pro",
+    "table": "VIP",
+    "swift_property": "pro",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务优先级",
+    "new_key": "schedule_task_priority_2",
+    "table": "Schedule",
+    "swift_property": "taskPriority2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "保存到相册",
+    "new_key": "common_save_to_photos",
+    "table": "Common",
+    "swift_property": "saveToPhotos",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建新组织",
+    "new_key": "family_create_new_organization",
+    "table": "Family",
+    "swift_property": "createNewOrganization",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建新群组",
+    "new_key": "family_create_new_group",
+    "table": "Family",
+    "swift_property": "createNewGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "反馈与法律",
+    "new_key": "feedback_feedback_legal",
+    "table": "Feedback",
+    "swift_property": "feedbackLegal",
+    "orphan": true
+  },
+  {
+    "legacy_key": "图片加载中",
+    "new_key": "common_loading_image",
+    "table": "Common",
+    "swift_property": "loadingImage",
+    "orphan": true
+  },
+  {
+    "legacy_key": "备用手机号",
+    "new_key": "common_alternate_phone",
+    "table": "Common",
+    "swift_property": "alternatePhone",
+    "orphan": true
+  },
+  {
+    "legacy_key": "总花费时间",
+    "new_key": "common_total_duration",
+    "table": "Common",
+    "swift_property": "totalDuration",
+    "orphan": true
+  },
+  {
+    "legacy_key": "恢复为待办",
+    "new_key": "common_mark_as_to_do_again",
+    "table": "Common",
+    "swift_property": "markAsToDoAgain",
+    "orphan": true
+  },
+  {
+    "legacy_key": "扫一扫加入",
+    "new_key": "common_scan_to_join",
+    "table": "Common",
+    "swift_property": "scanToJoin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "推动和声音",
+    "new_key": "common_push_sounds",
+    "table": "Common",
+    "swift_property": "pushSounds",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前1小时",
+    "new_key": "common_n_1_hour_before",
+    "table": "Common",
+    "swift_property": "n1HourBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提前5分钟",
+    "new_key": "common_n_5_minutes_before",
+    "table": "Common",
+    "swift_property": "n5MinutesBefore",
+    "orphan": true
+  },
+  {
+    "legacy_key": "支持与法律",
+    "new_key": "common_support_legal",
+    "table": "Common",
+    "swift_property": "supportLegal",
+    "orphan": true
+  },
+  {
+    "legacy_key": "教育与证件",
+    "new_key": "common_education_and_documents",
+    "table": "Common",
+    "swift_property": "educationAndDocuments",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未命名成员",
+    "new_key": "family_unnamed_member",
+    "table": "Family",
+    "swift_property": "unnamedMember",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未命名组织",
+    "new_key": "family_untitled_organization",
+    "table": "Family",
+    "swift_property": "untitledOrganization",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未命名群组",
+    "new_key": "family_unnamed_group",
+    "table": "Family",
+    "swift_property": "unnamedGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未设截止日",
+    "new_key": "common_no_due_date",
+    "table": "Common",
+    "swift_property": "noDueDate",
+    "orphan": true
+  },
+  {
+    "legacy_key": "标记为完成",
+    "new_key": "common_mark_as_complete",
+    "table": "Common",
+    "swift_property": "markAsComplete",
+    "orphan": true
+  },
+  {
+    "legacy_key": "正在登录…",
+    "new_key": "auth_signing_in",
+    "table": "Auth",
+    "swift_property": "signingIn",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录并继续",
+    "new_key": "auth_log_in_and_continue",
+    "table": "Auth",
+    "swift_property": "logInAndContinue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "省 33%",
+    "new_key": "common_save_33",
+    "table": "Common",
+    "swift_property": "save33",
+    "orphan": true
+  },
+  {
+    "legacy_key": "移除管理员",
+    "new_key": "common_remove_admin",
+    "table": "Common",
+    "swift_property": "removeAdmin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组，%@",
+    "new_key": "family_group",
+    "table": "Family",
+    "swift_property": "group",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组：%@",
+    "new_key": "family_group_2",
+    "table": "Family",
+    "swift_property": "group2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "设为管理员",
+    "new_key": "common_make_admin",
+    "table": "Common",
+    "swift_property": "makeAdmin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "识别此区域",
+    "new_key": "common_recognize_this_area",
+    "table": "Common",
+    "swift_property": "recognizeThisArea",
+    "orphan": true
+  },
+  {
+    "legacy_key": "财务与备注",
+    "new_key": "common_finance_and_notes",
+    "table": "Common",
+    "swift_property": "financeAndNotes",
+    "orphan": true
+  },
+  {
+    "legacy_key": "转移所有权",
+    "new_key": "common_transfer_ownership_2",
+    "table": "Common",
+    "swift_property": "transferOwnership2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出该群组",
+    "new_key": "family_leave_this_group",
+    "table": "Family",
+    "swift_property": "leaveThisGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择接收者",
+    "new_key": "common_choose_recipient",
+    "table": "Common",
+    "swift_property": "chooseRecipient",
+    "orphan": true
+  },
+  {
+    "legacy_key": "集成和数据",
+    "new_key": "common_integrations_data",
+    "table": "Common",
+    "swift_property": "integrationsData",
+    "orphan": true
+  },
+  {
+    "legacy_key": "需要先登录",
+    "new_key": "auth_need_to_log_in_first",
+    "table": "Auth",
+    "swift_property": "needToLogInFirst",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@/年",
+    "new_key": "common_yr",
+    "table": "Common",
+    "swift_property": "yr",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@/月",
+    "new_key": "common_mo",
+    "table": "Common",
+    "swift_property": "mo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%lld",
+    "new_key": "common_lld_2",
+    "table": "Common",
+    "swift_property": "lld2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "1 千米",
+    "new_key": "common_distance_1km",
+    "table": "Common",
+    "swift_property": "distance1km",
+    "orphan": false
+  },
+  {
+    "legacy_key": "1 小时",
+    "new_key": "common_duration_1hour",
+    "table": "Common",
+    "swift_property": "duration1hour",
+    "orphan": false
+  },
+  {
+    "legacy_key": "10 个",
+    "new_key": "common_count_10",
+    "table": "Common",
+    "swift_property": "count10",
+    "orphan": false
+  },
+  {
+    "legacy_key": "2 千米",
+    "new_key": "common_distance_2km",
+    "table": "Common",
+    "swift_property": "distance2km",
+    "orphan": false
+  },
+  {
+    "legacy_key": "20 个",
+    "new_key": "common_count_20",
+    "table": "Common",
+    "swift_property": "count20",
+    "orphan": false
+  },
+  {
+    "legacy_key": "5 分钟",
+    "new_key": "common_duration_5min",
+    "table": "Common",
+    "swift_property": "duration5min",
+    "orphan": false
+  },
+  {
+    "legacy_key": "AI助理",
+    "new_key": "common_ai_assistant",
+    "table": "Common",
+    "swift_property": "aiAssistant",
+    "orphan": true
+  },
+  {
+    "legacy_key": "LIVE",
+    "new_key": "common_live_2",
+    "table": "Common",
+    "swift_property": "live2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "None",
+    "new_key": "common_none",
+    "table": "Common",
+    "swift_property": "none",
+    "orphan": true
+  },
+  {
+    "legacy_key": "一起晚餐",
+    "new_key": "common_dinner_together",
+    "table": "Common",
+    "swift_property": "dinnerTogether",
+    "orphan": true
+  },
+  {
+    "legacy_key": "上报间隔",
+    "new_key": "settings_location_reporting_interval_section",
+    "table": "Settings",
+    "swift_property": "locationReportingIntervalSection",
+    "orphan": false
+  },
+  {
+    "legacy_key": "今天截止",
+    "new_key": "common_due_today",
+    "table": "Common",
+    "swift_property": "dueToday",
+    "orphan": true
+  },
+  {
+    "legacy_key": "以后再说",
+    "new_key": "common_maybe_later",
+    "table": "Common",
+    "swift_property": "maybeLater",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务时长",
+    "new_key": "schedule_duration",
+    "table": "Schedule",
+    "swift_property": "duration",
+    "orphan": true
+  },
+  {
+    "legacy_key": "任务详情",
+    "new_key": "schedule_mission_details",
+    "table": "Schedule",
+    "swift_property": "missionDetails",
+    "orphan": true
+  },
+  {
+    "legacy_key": "会话校验",
+    "new_key": "auth_session_verification",
+    "table": "Auth",
+    "swift_property": "sessionVerification",
+    "orphan": true
+  },
+  {
+    "legacy_key": "位移阈值",
+    "new_key": "settings_location_reporting_distance_section",
+    "table": "Settings",
+    "swift_property": "locationReportingDistanceSection",
+    "orphan": false
+  },
+  {
+    "legacy_key": "位置上报",
+    "new_key": "settings_location_reporting_nav_title",
+    "table": "Settings",
+    "swift_property": "locationReportingNavTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "位置共享",
+    "new_key": "settings_location_sharing_section",
+    "table": "Settings",
+    "swift_property": "locationSharingSection",
+    "orphan": false
+  },
+  {
+    "legacy_key": "位置隐身",
+    "new_key": "settings_location_ghost_toggle",
+    "table": "Settings",
+    "swift_property": "locationGhostToggle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "体检复查",
+    "new_key": "common_physical_examination_review",
+    "table": "Common",
+    "swift_property": "physicalExaminationReview",
+    "orphan": true
+  },
+  {
+    "legacy_key": "保存失败",
+    "new_key": "common_couldn_t_save",
+    "table": "Common",
+    "swift_property": "couldnTSave",
+    "orphan": true
+  },
+  {
+    "legacy_key": "保存更改",
+    "new_key": "common_save_changes",
+    "table": "Common",
+    "swift_property": "saveChanges",
+    "orphan": true
+  },
+  {
+    "legacy_key": "保持隐藏",
+    "new_key": "common_keep_hidden",
+    "table": "Common",
+    "swift_property": "keepHidden",
+    "orphan": true
+  },
+  {
+    "legacy_key": "停止隐藏",
+    "new_key": "common_stop_hiding",
+    "table": "Common",
+    "swift_property": "stopHiding",
+    "orphan": true
+  },
+  {
+    "legacy_key": "儿童活动",
+    "new_key": "common_kids_activity",
+    "table": "Common",
+    "swift_property": "kidsActivity",
+    "orphan": true
+  },
+  {
+    "legacy_key": "全部已读",
+    "new_key": "common_all_read",
+    "table": "Common",
+    "swift_property": "allRead",
+    "orphan": true
+  },
+  {
+    "legacy_key": "关于同圈",
+    "new_key": "common_about_wesync",
+    "table": "Common",
+    "swift_property": "aboutWesync",
+    "orphan": true
+  },
+  {
+    "legacy_key": "切换组织",
+    "new_key": "family_switch_organization",
+    "table": "Family",
+    "swift_property": "switchOrganization",
+    "orphan": true
+  },
+  {
+    "legacy_key": "切换群组",
+    "new_key": "family_switch_group",
+    "table": "Family",
+    "swift_property": "switchGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建组织",
+    "new_key": "family_create_organization",
+    "table": "Family",
+    "swift_property": "createOrganization",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建群组",
+    "new_key": "family_create_group",
+    "table": "Family",
+    "swift_property": "createGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "删除任务",
+    "new_key": "schedule_delete_task",
+    "table": "Schedule",
+    "swift_property": "deleteTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "刷新位置",
+    "new_key": "location_refresh_locations",
+    "table": "Location",
+    "swift_property": "refreshLocations",
+    "orphan": true
+  },
+  {
+    "legacy_key": "加入群组",
+    "new_key": "family_join_group",
+    "table": "Family",
+    "swift_property": "joinGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "危险操作",
+    "new_key": "common_danger_zone",
+    "table": "Common",
+    "swift_property": "dangerZone",
+    "orphan": true
+  },
+  {
+    "legacy_key": "后台定位",
+    "new_key": "common_background_location",
+    "table": "Common",
+    "swift_property": "backgroundLocation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "地理位置",
+    "new_key": "location_location",
+    "table": "Location",
+    "swift_property": "location",
+    "orphan": true
+  },
+  {
+    "legacy_key": "基础信息",
+    "new_key": "common_basic_info",
+    "table": "Common",
+    "swift_property": "basicInfo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "字体大小",
+    "new_key": "common_font_size",
+    "table": "Common",
+    "swift_property": "fontSize",
+    "orphan": true
+  },
+  {
+    "legacy_key": "完成任务",
+    "new_key": "schedule_complete_the_task",
+    "table": "Schedule",
+    "swift_property": "completeTheTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "完成排序",
+    "new_key": "common_complete_sorting",
+    "table": "Common",
+    "swift_property": "completeSorting",
+    "orphan": true
+  },
+  {
+    "legacy_key": "导入日程",
+    "new_key": "schedule_import_events",
+    "table": "Schedule",
+    "swift_property": "importEvents",
+    "orphan": true
+  },
+  {
+    "legacy_key": "就读学校",
+    "new_key": "common_attend_school",
+    "table": "Common",
+    "swift_property": "attendSchool",
+    "orphan": true
+  },
+  {
+    "legacy_key": "应用修正",
+    "new_key": "common_apply_correction",
+    "table": "Common",
+    "swift_property": "applyCorrection",
+    "orphan": true
+  },
+  {
+    "legacy_key": "应用设置",
+    "new_key": "common_app_settings",
+    "table": "Common",
+    "swift_property": "appSettings",
+    "orphan": true
+  },
+  {
+    "legacy_key": "开始时间",
+    "new_key": "common_start_time",
+    "table": "Common",
+    "swift_property": "startTime",
+    "orphan": true
+  },
+  {
+    "legacy_key": "开始消费",
+    "new_key": "common_start_consuming",
+    "table": "Common",
+    "swift_property": "startConsuming",
+    "orphan": true
+  },
+  {
+    "legacy_key": "引用任务",
+    "new_key": "schedule_reference_tasks",
+    "table": "Schedule",
+    "swift_property": "referenceTasks",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前年级",
+    "new_key": "common_current_grade",
+    "table": "Common",
+    "swift_property": "currentGrade",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前状态",
+    "new_key": "common_current_status",
+    "table": "Common",
+    "swift_property": "currentStatus",
+    "orphan": true
+  },
+  {
+    "legacy_key": "当前群组",
+    "new_key": "family_current_group",
+    "table": "Family",
+    "swift_property": "currentGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "恢复购买",
+    "new_key": "common_restore_purchases",
+    "table": "Common",
+    "swift_property": "restorePurchases",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员信息",
+    "new_key": "family_member_info",
+    "table": "Family",
+    "swift_property": "memberInfo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员头像",
+    "new_key": "family_profile_photo",
+    "table": "Family",
+    "swift_property": "profilePhoto",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员操作",
+    "new_key": "family_member_operations",
+    "table": "Family",
+    "swift_property": "memberOperations",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员档案",
+    "new_key": "family_member_profile",
+    "table": "Family",
+    "swift_property": "memberProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员详情",
+    "new_key": "family_member_details",
+    "table": "Family",
+    "swift_property": "memberDetails",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成长数据",
+    "new_key": "common_growth_data",
+    "table": "Common",
+    "swift_property": "growthData",
+    "orphan": true
+  },
+  {
+    "legacy_key": "我的空间",
+    "new_key": "common_my_space",
+    "table": "Common",
+    "swift_property": "mySpace",
+    "orphan": true
+  },
+  {
+    "legacy_key": "我的群组",
+    "new_key": "family_my_groups",
+    "table": "Family",
+    "swift_property": "myGroups",
+    "orphan": true
+  },
+  {
+    "legacy_key": "我知道了",
+    "new_key": "common_got_it",
+    "table": "Common",
+    "swift_property": "gotIt",
+    "orphan": true
+  },
+  {
+    "legacy_key": "截止日期",
+    "new_key": "common_due_date",
+    "table": "Common",
+    "swift_property": "dueDate",
+    "orphan": true
+  },
+  {
+    "legacy_key": "截止期限",
+    "new_key": "common_due_by",
+    "table": "Common",
+    "swift_property": "dueBy",
+    "orphan": true
+  },
+  {
+    "legacy_key": "执行失败",
+    "new_key": "common_failed",
+    "table": "Common",
+    "swift_property": "failed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "执行日期",
+    "new_key": "common_date",
+    "table": "Common",
+    "swift_property": "date",
+    "orphan": true
+  },
+  {
+    "legacy_key": "执行时间",
+    "new_key": "common_execution_time",
+    "table": "Common",
+    "swift_property": "executionTime",
+    "orphan": true
+  },
+  {
+    "legacy_key": "接受任务",
+    "new_key": "schedule_accept_task",
+    "table": "Schedule",
+    "swift_property": "acceptTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "接补习班",
+    "new_key": "common_take_cram_school",
+    "table": "Common",
+    "swift_property": "takeCramSchool",
+    "orphan": true
+  },
+  {
+    "legacy_key": "操作失败",
+    "new_key": "common_operation_failed",
+    "table": "Common",
+    "swift_property": "operationFailed",
+    "orphan": false
+  },
+  {
+    "legacy_key": "支持我们",
+    "new_key": "common_support_us",
+    "table": "Common",
+    "swift_property": "supportUs",
+    "orphan": true
+  },
+  {
+    "legacy_key": "敬请期待",
+    "new_key": "common_coming_soon_2",
+    "table": "Common",
+    "swift_property": "comingSoon2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "文字大小",
+    "new_key": "common_text_size",
+    "table": "Common",
+    "swift_property": "textSize",
+    "orphan": true
+  },
+  {
+    "legacy_key": "新建待办",
+    "new_key": "common_new_to_do",
+    "table": "Common",
+    "swift_property": "newToDo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "新建日程",
+    "new_key": "schedule_new_event",
+    "table": "Schedule",
+    "swift_property": "newEvent",
+    "orphan": true
+  },
+  {
+    "legacy_key": "新建群组",
+    "new_key": "family_create_new_group_2",
+    "table": "Family",
+    "swift_property": "createNewGroup2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "时间规划",
+    "new_key": "common_time",
+    "table": "Common",
+    "swift_property": "time",
+    "orphan": true
+  },
+  {
+    "legacy_key": "时间设置",
+    "new_key": "common_time_setting",
+    "table": "Common",
+    "swift_property": "timeSetting",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无任务",
+    "new_key": "schedule_no_tasks_yet",
+    "table": "Schedule",
+    "swift_property": "noTasksYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无备注",
+    "new_key": "common_no_notes_yet",
+    "table": "Common",
+    "swift_property": "noNotesYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "暂无待办",
+    "new_key": "common_no_to_dos_yet",
+    "table": "Common",
+    "swift_property": "noToDosYet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "更多细节",
+    "new_key": "common_more_details",
+    "table": "Common",
+    "swift_property": "moreDetails",
+    "orphan": true
+  },
+  {
+    "legacy_key": "服务条款",
+    "new_key": "common_terms_of_service",
+    "table": "Common",
+    "swift_property": "termsOfService",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未知成员",
+    "new_key": "family_unknown_member",
+    "table": "Family",
+    "swift_property": "unknownMember",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未知群组",
+    "new_key": "family_unknown_group",
+    "table": "Family",
+    "swift_property": "unknownGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未知错误",
+    "new_key": "common_unknown_error",
+    "table": "Common",
+    "swift_property": "unknownError",
+    "orphan": true
+  },
+  {
+    "legacy_key": "本周截止",
+    "new_key": "common_due_this_week",
+    "table": "Common",
+    "swift_property": "dueThisWeek",
+    "orphan": true
+  },
+  {
+    "legacy_key": "杂货清单",
+    "new_key": "common_grocery_list",
+    "table": "Common",
+    "swift_property": "groceryList",
+    "orphan": true
+  },
+  {
+    "legacy_key": "查看附件",
+    "new_key": "common_view_attachment",
+    "table": "Common",
+    "swift_property": "viewAttachment",
+    "orphan": true
+  },
+  {
+    "legacy_key": "档案成员",
+    "new_key": "family_profile_member",
+    "table": "Family",
+    "swift_property": "profileMember",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每隔几天",
+    "new_key": "common_every_few_days",
+    "table": "Common",
+    "swift_property": "everyFewDays",
+    "orphan": true
+  },
+  {
+    "legacy_key": "注销失败",
+    "new_key": "common_account_deletion_failed",
+    "table": "Common",
+    "swift_property": "accountDeletionFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "注销账号",
+    "new_key": "common_delete_account",
+    "table": "Common",
+    "swift_property": "deleteAccount",
+    "orphan": true
+  },
+  {
+    "legacy_key": "浅色模式",
+    "new_key": "common_light_mode",
+    "table": "Common",
+    "swift_property": "lightMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "深色模式",
+    "new_key": "common_dark_mode",
+    "table": "Common",
+    "swift_property": "darkMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "添加附件",
+    "new_key": "common_add_attachment",
+    "table": "Common",
+    "swift_property": "addAttachment",
+    "orphan": true
+  },
+  {
+    "legacy_key": "照片图库",
+    "new_key": "common_photo_library",
+    "table": "Common",
+    "swift_property": "photoLibrary",
+    "orphan": true
+  },
+  {
+    "legacy_key": "用户协议",
+    "new_key": "common_terms_of_service_2",
+    "table": "Common",
+    "swift_property": "termsOfService2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录同圈",
+    "new_key": "auth_sign_in_to_wesync",
+    "table": "Auth",
+    "swift_property": "signInToWesync",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录成功",
+    "new_key": "auth_signed_in_successfully",
+    "table": "Auth",
+    "swift_property": "signedInSuccessfully",
+    "orphan": true
+  },
+  {
+    "legacy_key": "登录方式",
+    "new_key": "auth_login_method",
+    "table": "Auth",
+    "swift_property": "loginMethod",
+    "orphan": true
+  },
+  {
+    "legacy_key": "直到今晚",
+    "new_key": "common_until_tonight",
+    "table": "Common",
+    "swift_property": "untilTonight",
+    "orphan": true
+  },
+  {
+    "legacy_key": "相机扫码",
+    "new_key": "common_camera_scan_code",
+    "table": "Common",
+    "swift_property": "cameraScanCode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认创建",
+    "new_key": "common_confirm_creation",
+    "table": "Common",
+    "swift_property": "confirmCreation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认加入",
+    "new_key": "common_confirm_to_join",
+    "table": "Common",
+    "swift_property": "confirmToJoin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认发送",
+    "new_key": "common_confirm_sending",
+    "table": "Common",
+    "swift_property": "confirmSending",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认注销",
+    "new_key": "common_delete_account_2",
+    "table": "Common",
+    "swift_property": "deleteAccount2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认解散",
+    "new_key": "common_confirm_dismiss",
+    "table": "Common",
+    "swift_property": "confirmDismiss",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确认转移",
+    "new_key": "common_confirm_transfer",
+    "table": "Common",
+    "swift_property": "confirmTransfer",
+    "orphan": true
+  },
+  {
+    "legacy_key": "移交群主",
+    "new_key": "common_transfer_ownership_3",
+    "table": "Common",
+    "swift_property": "transferOwnership3",
+    "orphan": true
+  },
+  {
+    "legacy_key": "移除附件",
+    "new_key": "common_remove_attachment",
+    "table": "Common",
+    "swift_property": "removeAttachment",
+    "orphan": true
+  },
+  {
+    "legacy_key": "立即查看",
+    "new_key": "common_view_now",
+    "table": "Common",
+    "swift_property": "viewNow",
+    "orphan": true
+  },
+  {
+    "legacy_key": "组织资料",
+    "new_key": "family_organization_profile",
+    "table": "Family",
+    "swift_property": "organizationProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "结束共享",
+    "new_key": "common_end_sharing",
+    "table": "Common",
+    "swift_property": "endSharing",
+    "orphan": true
+  },
+  {
+    "legacy_key": "结束时间",
+    "new_key": "common_end_time",
+    "table": "Common",
+    "swift_property": "endTime",
+    "orphan": true
+  },
+  {
+    "legacy_key": "结束重复",
+    "new_key": "common_end",
+    "table": "Common",
+    "swift_property": "end",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑任务",
+    "new_key": "schedule_edit_task",
+    "table": "Schedule",
+    "swift_property": "editTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑头像",
+    "new_key": "common_edit_avatar",
+    "table": "Common",
+    "swift_property": "editAvatar",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑待办",
+    "new_key": "common_edit_to_do",
+    "table": "Common",
+    "swift_property": "editToDo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑日程",
+    "new_key": "schedule_edit_event",
+    "table": "Schedule",
+    "swift_property": "editEvent",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑资料",
+    "new_key": "common_edit_profile",
+    "table": "Common",
+    "swift_property": "editProfile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组任务",
+    "new_key": "schedule_group_task",
+    "table": "Schedule",
+    "swift_property": "groupTask",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组位置",
+    "new_key": "family_group_locations",
+    "table": "Family",
+    "swift_property": "groupLocations",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组成员",
+    "new_key": "family_group_members",
+    "table": "Family",
+    "swift_property": "groupMembers",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组管理",
+    "new_key": "family_group_settings",
+    "table": "Family",
+    "swift_property": "groupSettings",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组设置",
+    "new_key": "family_group_settings_2",
+    "table": "Family",
+    "swift_property": "groupSettings2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "联系方式",
+    "new_key": "common_contact_information",
+    "table": "Common",
+    "swift_property": "contactInformation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "补充资料",
+    "new_key": "common_additional_info",
+    "table": "Common",
+    "swift_property": "additionalInfo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解散失败",
+    "new_key": "common_dismiss_failed",
+    "table": "Common",
+    "swift_property": "dismissFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解散群组",
+    "new_key": "family_dismiss_group",
+    "table": "Family",
+    "swift_property": "dismissGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "解析失败",
+    "new_key": "common_parsing_failed",
+    "table": "Common",
+    "swift_property": "parsingFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "订阅成功",
+    "new_key": "vip_subscription_successful",
+    "table": "VIP",
+    "swift_property": "subscriptionSuccessful",
+    "orphan": true
+  },
+  {
+    "legacy_key": "设置生日",
+    "new_key": "common_set_birthday",
+    "table": "Common",
+    "swift_property": "setBirthday",
+    "orphan": true
+  },
+  {
+    "legacy_key": "证件信息",
+    "new_key": "common_id_information",
+    "table": "Common",
+    "swift_property": "idInformation",
+    "orphan": true
+  },
+  {
+    "legacy_key": "识图失败",
+    "new_key": "common_image_recognition_failed",
+    "table": "Common",
+    "swift_property": "imageRecognitionFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "试用模式",
+    "new_key": "common_trial_mode",
+    "table": "Common",
+    "swift_property": "trialMode",
+    "orphan": true
+  },
+  {
+    "legacy_key": "试用用户",
+    "new_key": "common_trial_user",
+    "table": "Common",
+    "swift_property": "trialUser",
+    "orphan": true
+  },
+  {
+    "legacy_key": "详细说明",
+    "new_key": "common_detailed_description",
+    "table": "Common",
+    "swift_property": "detailedDescription",
+    "orphan": true
+  },
+  {
+    "legacy_key": "语音输入",
+    "new_key": "assistant_voice_input",
+    "table": "Assistant",
+    "swift_property": "voiceInput",
+    "orphan": true
+  },
+  {
+    "legacy_key": "调用状态",
+    "new_key": "common_call_status",
+    "table": "Common",
+    "swift_property": "callStatus",
+    "orphan": true
+  },
+  {
+    "legacy_key": "跟随系统",
+    "new_key": "common_follow_system",
+    "table": "Common",
+    "swift_property": "followSystem",
+    "orphan": false
+  },
+  {
+    "legacy_key": "返回结果",
+    "new_key": "common_return_results",
+    "table": "Common",
+    "swift_property": "returnResults",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出失败",
+    "new_key": "common_exit_failed",
+    "table": "Common",
+    "swift_property": "exitFailed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出登录",
+    "new_key": "auth_log_out",
+    "table": "Auth",
+    "swift_property": "logOut",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出群组",
+    "new_key": "family_leave_group",
+    "table": "Family",
+    "swift_property": "leaveGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出试用",
+    "new_key": "common_exit_trial",
+    "table": "Common",
+    "swift_property": "exitTrial",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择头像",
+    "new_key": "common_choose_photo",
+    "table": "Common",
+    "swift_property": "choosePhoto",
+    "orphan": true
+  },
+  {
+    "legacy_key": "选择群组",
+    "new_key": "family_select_group",
+    "table": "Family",
+    "swift_property": "selectGroup",
+    "orphan": true
+  },
+  {
+    "legacy_key": "遇到问题",
+    "new_key": "common_encountered_a_problem",
+    "table": "Common",
+    "swift_property": "encounteredAProblem",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邮箱地址",
+    "new_key": "common_email_address",
+    "table": "Common",
+    "swift_property": "emailAddress",
+    "orphan": true
+  },
+  {
+    "legacy_key": "重复设置",
+    "new_key": "common_repeat",
+    "table": "Common",
+    "swift_property": "repeat",
+    "orphan": true
+  },
+  {
+    "legacy_key": "重新加载",
+    "new_key": "common_reload",
+    "table": "Common",
+    "swift_property": "reload",
+    "orphan": true
+  },
+  {
+    "legacy_key": "隐私政策",
+    "new_key": "common_privacy_policy",
+    "table": "Common",
+    "swift_property": "privacyPolicy",
+    "orphan": true
+  },
+  {
+    "legacy_key": "需要登录",
+    "new_key": "auth_sign_in_required",
+    "table": "Auth",
+    "swift_property": "signInRequired",
+    "orphan": true
+  },
+  {
+    "legacy_key": "预览附件",
+    "new_key": "common_preview_attachment",
+    "table": "Common",
+    "swift_property": "previewAttachment",
+    "orphan": true
+  },
+  {
+    "legacy_key": "预计开销",
+    "new_key": "common_expenses",
+    "table": "Common",
+    "swift_property": "expenses",
+    "orphan": true
+  },
+  {
+    "legacy_key": "🔴 紧急",
+    "new_key": "common_urgent",
+    "table": "Common",
+    "swift_property": "urgent",
+    "orphan": true
+  },
+  {
+    "legacy_key": "🟢 一般",
+    "new_key": "common_normal",
+    "table": "Common",
+    "swift_property": "normal",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@:",
+    "new_key": "common_text_2",
+    "table": "Common",
+    "swift_property": "text2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@前",
+    "new_key": "common_due_by_2",
+    "table": "Common",
+    "swift_property": "dueBy2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "%@：",
+    "new_key": "common_text_3",
+    "table": "Common",
+    "swift_property": "text3",
+    "orphan": true
+  },
+  {
+    "legacy_key": "0分钟",
+    "new_key": "common_n_0_min",
+    "table": "Common",
+    "swift_property": "n0Min",
+    "orphan": true
+  },
+  {
+    "legacy_key": "3 个",
+    "new_key": "common_count_3",
+    "table": "Common",
+    "swift_property": "count3",
+    "orphan": false
+  },
+  {
+    "legacy_key": "3 天",
+    "new_key": "common_n_3_day",
+    "table": "Common",
+    "swift_property": "n3Day",
+    "orphan": true
+  },
+  {
+    "legacy_key": "5 个",
+    "new_key": "common_count_5",
+    "table": "Common",
+    "swift_property": "count5",
+    "orphan": false
+  },
+  {
+    "legacy_key": "不重复",
+    "new_key": "common_does_not_repeat",
+    "table": "Common",
+    "swift_property": "doesNotRepeat",
+    "orphan": true
+  },
+  {
+    "legacy_key": "为了谁",
+    "new_key": "common_for",
+    "table": "Common",
+    "swift_property": "for",
+    "orphan": true
+  },
+  {
+    "legacy_key": "免费版",
+    "new_key": "common_free",
+    "table": "Common",
+    "swift_property": "free",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建者",
+    "new_key": "common_creator",
+    "table": "Common",
+    "swift_property": "creator",
+    "orphan": true
+  },
+  {
+    "legacy_key": "加载中",
+    "new_key": "common_loading",
+    "table": "Common",
+    "swift_property": "loading",
+    "orphan": true
+  },
+  {
+    "legacy_key": "去评分",
+    "new_key": "common_write_a_review",
+    "table": "Common",
+    "swift_property": "writeAReview",
+    "orphan": true
+  },
+  {
+    "legacy_key": "工作日",
+    "new_key": "common_weekdays",
+    "table": "Common",
+    "swift_property": "weekdays",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已取消",
+    "new_key": "common_cancelled",
+    "table": "Common",
+    "swift_property": "cancelled",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已完成",
+    "new_key": "common_completed",
+    "table": "Common",
+    "swift_property": "completed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已接受",
+    "new_key": "common_accepted",
+    "table": "Common",
+    "swift_property": "accepted",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已订阅",
+    "new_key": "vip_subscribed",
+    "table": "VIP",
+    "swift_property": "subscribed",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已过期",
+    "new_key": "common_expired",
+    "table": "Common",
+    "swift_property": "expired",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已选中",
+    "new_key": "common_selected",
+    "table": "Common",
+    "swift_property": "selected",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已逾期",
+    "new_key": "common_overdue",
+    "table": "Common",
+    "swift_property": "overdue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "已锁定",
+    "new_key": "common_locked",
+    "table": "Common",
+    "swift_property": "locked",
+    "orphan": true
+  },
+  {
+    "legacy_key": "待接受",
+    "new_key": "common_pending",
+    "table": "Common",
+    "swift_property": "pending",
+    "orphan": true
+  },
+  {
+    "legacy_key": "我自己",
+    "new_key": "common_myself",
+    "table": "Common",
+    "swift_property": "myself",
+    "orphan": true
+  },
+  {
+    "legacy_key": "所有人",
+    "new_key": "common_everyone_2",
+    "table": "Common",
+    "swift_property": "everyone2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "手机号",
+    "new_key": "common_phone_number",
+    "table": "Common",
+    "swift_property": "phoneNumber",
+    "orphan": true
+  },
+  {
+    "legacy_key": "护照号",
+    "new_key": "common_passport_no",
+    "table": "Common",
+    "swift_property": "passportNo",
+    "orphan": true
+  },
+  {
+    "legacy_key": "接放学",
+    "new_key": "common_pick_up_and_drop_off_from_school",
+    "table": "Common",
+    "swift_property": "pickUpAndDropOffFromSchool",
+    "orphan": true
+  },
+  {
+    "legacy_key": "日程表",
+    "new_key": "schedule_schedule",
+    "table": "Schedule",
+    "swift_property": "schedule",
+    "orphan": true
+  },
+  {
+    "legacy_key": "有问题",
+    "new_key": "common_issue",
+    "table": "Common",
+    "swift_property": "issue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未分配",
+    "new_key": "common_unassigned",
+    "table": "Common",
+    "swift_property": "unassigned",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未填写",
+    "new_key": "common_not_provided",
+    "table": "Common",
+    "swift_property": "notProvided",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未设置",
+    "new_key": "common_not_set",
+    "table": "Common",
+    "swift_property": "notSet",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未选中",
+    "new_key": "common_not_selected",
+    "table": "Common",
+    "swift_property": "notSelected",
+    "orphan": true
+  },
+  {
+    "legacy_key": "知道了",
+    "new_key": "common_got_it",
+    "table": "Common",
+    "swift_property": "gotIt",
+    "orphan": false
+  },
+  {
+    "legacy_key": "管理员",
+    "new_key": "common_admin",
+    "table": "Common",
+    "swift_property": "admin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "自定义",
+    "new_key": "common_custom",
+    "table": "Common",
+    "swift_property": "custom",
+    "orphan": true
+  },
+  {
+    "legacy_key": "身份证",
+    "new_key": "common_id_card",
+    "table": "Common",
+    "swift_property": "idCard",
+    "orphan": true
+  },
+  {
+    "legacy_key": "进行中",
+    "new_key": "common_in_progress",
+    "table": "Common",
+    "swift_property": "inProgress",
+    "orphan": true
+  },
+  {
+    "legacy_key": ", ",
+    "new_key": "common_text_4",
+    "table": "Common",
+    "swift_property": "text4",
+    "orphan": true
+  },
+  {
+    "legacy_key": "一般",
+    "new_key": "common_generally",
+    "table": "Common",
+    "swift_property": "generally",
+    "orphan": true
+  },
+  {
+    "legacy_key": "主题",
+    "new_key": "common_theme",
+    "table": "Common",
+    "swift_property": "theme",
+    "orphan": true
+  },
+  {
+    "legacy_key": "今天",
+    "new_key": "common_today",
+    "table": "Common",
+    "swift_property": "today",
+    "orphan": false
+  },
+  {
+    "legacy_key": "以后",
+    "new_key": "common_later",
+    "table": "Common",
+    "swift_property": "later",
+    "orphan": true
+  },
+  {
+    "legacy_key": "位置",
+    "new_key": "location_location_2",
+    "table": "Location",
+    "swift_property": "location2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "体重",
+    "new_key": "common_weight",
+    "table": "Common",
+    "swift_property": "weight",
+    "orphan": true
+  },
+  {
+    "legacy_key": "保存",
+    "new_key": "common_save",
+    "table": "Common",
+    "swift_property": "save",
+    "orphan": false
+  },
+  {
+    "legacy_key": "全天",
+    "new_key": "common_all_day",
+    "table": "Common",
+    "swift_property": "allDay",
+    "orphan": true
+  },
+  {
+    "legacy_key": "关闭",
+    "new_key": "common_close",
+    "table": "Common",
+    "swift_property": "close",
+    "orphan": false
+  },
+  {
+    "legacy_key": "准时",
+    "new_key": "common_on_time",
+    "table": "Common",
+    "swift_property": "onTime",
+    "orphan": true
+  },
+  {
+    "legacy_key": "列表",
+    "new_key": "common_list",
+    "table": "Common",
+    "swift_property": "list",
+    "orphan": true
+  },
+  {
+    "legacy_key": "刚刚",
+    "new_key": "common_just_now",
+    "table": "Common",
+    "swift_property": "justNow",
+    "orphan": true
+  },
+  {
+    "legacy_key": "创建",
+    "new_key": "common_create",
+    "table": "Common",
+    "swift_property": "create",
+    "orphan": false
+  },
+  {
+    "legacy_key": "加入",
+    "new_key": "common_join",
+    "table": "Common",
+    "swift_property": "join",
+    "orphan": true
+  },
+  {
+    "legacy_key": "反馈",
+    "new_key": "feedback_feedback",
+    "table": "Feedback",
+    "swift_property": "feedback",
+    "orphan": true
+  },
+  {
+    "legacy_key": "取消",
+    "new_key": "common_cancel",
+    "table": "Common",
+    "swift_property": "cancel",
+    "orphan": false
+  },
+  {
+    "legacy_key": "周末",
+    "new_key": "common_weekends",
+    "table": "Common",
+    "swift_property": "weekends",
+    "orphan": true
+  },
+  {
+    "legacy_key": "外观",
+    "new_key": "common_appearance",
+    "table": "Common",
+    "swift_property": "appearance",
+    "orphan": true
+  },
+  {
+    "legacy_key": "好的",
+    "new_key": "common_ok",
+    "table": "Common",
+    "swift_property": "ok",
+    "orphan": true
+  },
+  {
+    "legacy_key": "学校",
+    "new_key": "common_school",
+    "table": "Common",
+    "swift_property": "school",
+    "orphan": true
+  },
+  {
+    "legacy_key": "完成",
+    "new_key": "common_finish",
+    "table": "Common",
+    "swift_property": "finish",
+    "orphan": false
+  },
+  {
+    "legacy_key": "年付",
+    "new_key": "common_yearly",
+    "table": "Common",
+    "swift_property": "yearly",
+    "orphan": true
+  },
+  {
+    "legacy_key": "年级",
+    "new_key": "common_grade",
+    "table": "Common",
+    "swift_property": "grade",
+    "orphan": true
+  },
+  {
+    "legacy_key": "待办",
+    "new_key": "common_to_dos",
+    "table": "Common",
+    "swift_property": "toDos",
+    "orphan": true
+  },
+  {
+    "legacy_key": "性别",
+    "new_key": "common_gender",
+    "table": "Common",
+    "swift_property": "gender",
+    "orphan": true
+  },
+  {
+    "legacy_key": "成员",
+    "new_key": "family_member",
+    "table": "Family",
+    "swift_property": "member",
+    "orphan": true
+  },
+  {
+    "legacy_key": "我的",
+    "new_key": "common_mine",
+    "table": "Common",
+    "swift_property": "mine",
+    "orphan": true
+  },
+  {
+    "legacy_key": "拍照",
+    "new_key": "common_take_photo",
+    "table": "Common",
+    "swift_property": "takePhoto",
+    "orphan": true
+  },
+  {
+    "legacy_key": "推荐",
+    "new_key": "common_recommended",
+    "table": "Common",
+    "swift_property": "recommended",
+    "orphan": true
+  },
+  {
+    "legacy_key": "提示",
+    "new_key": "common_notice",
+    "table": "Common",
+    "swift_property": "notice",
+    "orphan": false
+  },
+  {
+    "legacy_key": "提醒",
+    "new_key": "schedule_remind",
+    "table": "Schedule",
+    "swift_property": "remind",
+    "orphan": true
+  },
+  {
+    "legacy_key": "支持",
+    "new_key": "common_support",
+    "table": "Common",
+    "swift_property": "support",
+    "orphan": true
+  },
+  {
+    "legacy_key": "放弃",
+    "new_key": "common_give_up",
+    "table": "Common",
+    "swift_property": "giveUp",
+    "orphan": true
+  },
+  {
+    "legacy_key": "时间",
+    "new_key": "common_time_2",
+    "table": "Common",
+    "swift_property": "time2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "更多",
+    "new_key": "common_more",
+    "table": "Common",
+    "swift_property": "more",
+    "orphan": false
+  },
+  {
+    "legacy_key": "最大",
+    "new_key": "common_maximum",
+    "table": "Common",
+    "swift_property": "maximum",
+    "orphan": true
+  },
+  {
+    "legacy_key": "月付",
+    "new_key": "common_monthly",
+    "table": "Common",
+    "swift_property": "monthly",
+    "orphan": true
+  },
+  {
+    "legacy_key": "极小",
+    "new_key": "common_tiny",
+    "table": "Common",
+    "swift_property": "tiny",
+    "orphan": true
+  },
+  {
+    "legacy_key": "标准",
+    "new_key": "common_standard",
+    "table": "Common",
+    "swift_property": "standard",
+    "orphan": true
+  },
+  {
+    "legacy_key": "档案",
+    "new_key": "common_profile",
+    "table": "Common",
+    "swift_property": "profile",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每周",
+    "new_key": "common_weekly",
+    "table": "Common",
+    "swift_property": "weekly",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每天",
+    "new_key": "common_daily",
+    "table": "Common",
+    "swift_property": "daily",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每年",
+    "new_key": "common_yearly_2",
+    "table": "Common",
+    "swift_property": "yearly2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "每月",
+    "new_key": "common_monthly_2",
+    "table": "Common",
+    "swift_property": "monthly2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "永不",
+    "new_key": "common_never",
+    "table": "Common",
+    "swift_property": "never",
+    "orphan": true
+  },
+  {
+    "legacy_key": "浅色",
+    "new_key": "common_light",
+    "table": "Common",
+    "swift_property": "light",
+    "orphan": true
+  },
+  {
+    "legacy_key": "消息",
+    "new_key": "common_information",
+    "table": "Common",
+    "swift_property": "information",
+    "orphan": true
+  },
+  {
+    "legacy_key": "深色",
+    "new_key": "common_dark",
+    "table": "Common",
+    "swift_property": "dark",
+    "orphan": true
+  },
+  {
+    "legacy_key": "特大",
+    "new_key": "common_huge",
+    "table": "Common",
+    "swift_property": "huge",
+    "orphan": true
+  },
+  {
+    "legacy_key": "生日",
+    "new_key": "common_birthday",
+    "table": "Common",
+    "swift_property": "birthday",
+    "orphan": true
+  },
+  {
+    "legacy_key": "相册",
+    "new_key": "common_library",
+    "table": "Common",
+    "swift_property": "library",
+    "orphan": true
+  },
+  {
+    "legacy_key": "确定",
+    "new_key": "common_ok_2",
+    "table": "Common",
+    "swift_property": "ok2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "离开",
+    "new_key": "common_leave",
+    "table": "Common",
+    "swift_property": "leave",
+    "orphan": true
+  },
+  {
+    "legacy_key": "称呼",
+    "new_key": "common_name",
+    "table": "Common",
+    "swift_property": "name",
+    "orphan": true
+  },
+  {
+    "legacy_key": "稍后",
+    "new_key": "common_later_2",
+    "table": "Common",
+    "swift_property": "later2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "系统",
+    "new_key": "common_system",
+    "table": "Common",
+    "swift_property": "system",
+    "orphan": true
+  },
+  {
+    "legacy_key": "紧急",
+    "new_key": "common_urgent_2",
+    "table": "Common",
+    "swift_property": "urgent2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "继续",
+    "new_key": "common_continue",
+    "table": "Common",
+    "swift_property": "continue",
+    "orphan": true
+  },
+  {
+    "legacy_key": "编辑",
+    "new_key": "common_edit",
+    "table": "Common",
+    "swift_property": "edit",
+    "orphan": true
+  },
+  {
+    "legacy_key": "群组",
+    "new_key": "family_groups",
+    "table": "Family",
+    "swift_property": "groups",
+    "orphan": true
+  },
+  {
+    "legacy_key": "角色",
+    "new_key": "common_role",
+    "table": "Common",
+    "swift_property": "role",
+    "orphan": true
+  },
+  {
+    "legacy_key": "语言",
+    "new_key": "common_language",
+    "table": "Common",
+    "swift_property": "language",
+    "orphan": true
+  },
+  {
+    "legacy_key": "语音",
+    "new_key": "assistant_voice",
+    "table": "Assistant",
+    "swift_property": "voice",
+    "orphan": true
+  },
+  {
+    "legacy_key": "账户",
+    "new_key": "common_account",
+    "table": "Common",
+    "swift_property": "account",
+    "orphan": true
+  },
+  {
+    "legacy_key": "身高",
+    "new_key": "common_height",
+    "table": "Common",
+    "swift_property": "height",
+    "orphan": true
+  },
+  {
+    "legacy_key": "较大",
+    "new_key": "common_large",
+    "table": "Common",
+    "swift_property": "large",
+    "orphan": true
+  },
+  {
+    "legacy_key": "较小",
+    "new_key": "common_small",
+    "table": "Common",
+    "swift_property": "small",
+    "orphan": true
+  },
+  {
+    "legacy_key": "退出",
+    "new_key": "common_quit",
+    "table": "Common",
+    "swift_property": "quit",
+    "orphan": true
+  },
+  {
+    "legacy_key": "通知",
+    "new_key": "common_notifications",
+    "table": "Common",
+    "swift_property": "notifications",
+    "orphan": true
+  },
+  {
+    "legacy_key": "邮箱",
+    "new_key": "common_mail",
+    "table": "Common",
+    "swift_property": "mail",
+    "orphan": true
+  },
+  {
+    "legacy_key": "重复",
+    "new_key": "common_repeat_2",
+    "table": "Common",
+    "swift_property": "repeat2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "重拍",
+    "new_key": "common_retake",
+    "table": "Common",
+    "swift_property": "retake",
+    "orphan": true
+  },
+  {
+    "legacy_key": "重置",
+    "new_key": "common_reset",
+    "table": "Common",
+    "swift_property": "reset",
+    "orphan": true
+  },
+  {
+    "legacy_key": "附件",
+    "new_key": "common_attachments",
+    "table": "Common",
+    "swift_property": "attachments",
+    "orphan": true
+  },
+  {
+    "legacy_key": "集成",
+    "new_key": "common_integrations",
+    "table": "Common",
+    "swift_property": "integrations",
+    "orphan": true
+  },
+  {
+    "legacy_key": "预览",
+    "new_key": "common_preview",
+    "table": "Common",
+    "swift_property": "preview",
+    "orphan": true
+  },
+  {
+    "legacy_key": "0",
+    "new_key": "common_n_0",
+    "table": "Common",
+    "swift_property": "n0",
+    "orphan": true
+  },
+  {
+    "legacy_key": "˄",
+    "new_key": "common_text_5",
+    "table": "Common",
+    "swift_property": "text5",
+    "orphan": true
+  },
+  {
+    "legacy_key": "˅",
+    "new_key": "common_text_6",
+    "table": "Common",
+    "swift_property": "text6",
+    "orphan": true
+  },
+  {
+    "legacy_key": "—",
+    "new_key": "common_text_7",
+    "table": "Common",
+    "swift_property": "text7",
+    "orphan": true
+  },
+  {
+    "legacy_key": "、",
+    "new_key": "common_text_8",
+    "table": "Common",
+    "swift_property": "text8",
+    "orphan": true
+  },
+  {
+    "legacy_key": "否",
+    "new_key": "common_no",
+    "table": "Common",
+    "swift_property": "no",
+    "orphan": true
+  },
+  {
+    "legacy_key": "周",
+    "new_key": "common_week",
+    "table": "Common",
+    "swift_property": "week",
+    "orphan": true
+  },
+  {
+    "legacy_key": "和",
+    "new_key": "common_and",
+    "table": "Common",
+    "swift_property": "and",
+    "orphan": true
+  },
+  {
+    "legacy_key": "女",
+    "new_key": "common_female",
+    "table": "Common",
+    "swift_property": "female",
+    "orphan": true
+  },
+  {
+    "legacy_key": "年",
+    "new_key": "common_year",
+    "table": "Common",
+    "swift_property": "year",
+    "orphan": true
+  },
+  {
+    "legacy_key": "我",
+    "new_key": "common_me",
+    "table": "Common",
+    "swift_property": "me",
+    "orphan": true
+  },
+  {
+    "legacy_key": "或",
+    "new_key": "common_or",
+    "table": "Common",
+    "swift_property": "or",
+    "orphan": true
+  },
+  {
+    "legacy_key": "无",
+    "new_key": "common_none_2",
+    "table": "Common",
+    "swift_property": "none2",
+    "orphan": true
+  },
+  {
+    "legacy_key": "日",
+    "new_key": "common_day",
+    "table": "Common",
+    "swift_property": "day",
+    "orphan": true
+  },
+  {
+    "legacy_key": "是",
+    "new_key": "common_yes",
+    "table": "Common",
+    "swift_property": "yes",
+    "orphan": true
+  },
+  {
+    "legacy_key": "月",
+    "new_key": "common_month",
+    "table": "Common",
+    "swift_property": "month",
+    "orphan": true
+  },
+  {
+    "legacy_key": "男",
+    "new_key": "common_male",
+    "table": "Common",
+    "swift_property": "male",
+    "orphan": true
+  },
+  {
+    "legacy_key": "未能读取 Apple 登录凭证。",
+    "new_key": "auth_apple_credential_read_failed",
+    "table": "Auth",
+    "swift_property": "appleCredentialReadFailed",
+    "orphan": false
+  },
+  {
+    "legacy_key": "未能获取 Apple identity token。",
+    "new_key": "auth_apple_identity_token_failed",
+    "table": "Auth",
+    "swift_property": "appleIdentityTokenFailed",
+    "orphan": false
+  },
+  {
+    "legacy_key": "登录状态异常，请重试。",
+    "new_key": "auth_session_abnormal_retry",
+    "table": "Auth",
+    "swift_property": "sessionAbnormalRetry",
+    "orphan": false
+  },
+  {
+    "legacy_key": "当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。",
+    "new_key": "auth_apple_supabase_unavailable_use_google",
+    "table": "Auth",
+    "swift_property": "appleSupabaseUnavailableUseGoogle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。",
+    "new_key": "settings_profile_not_loaded_in_group",
+    "table": "Settings",
+    "swift_property": "profileNotLoadedInGroup",
+    "orphan": false
+  },
+  {
+    "legacy_key": "二维码识别失败，请重试。",
+    "new_key": "common_qr_recognition_failed_retry",
+    "table": "Common",
+    "swift_property": "qrRecognitionFailedRetry",
+    "orphan": false
+  },
+  {
+    "legacy_key": "当前设备不支持相机扫码。",
+    "new_key": "common_camera_scan_unavailable",
+    "table": "Common",
+    "swift_property": "cameraScanUnavailable",
+    "orphan": false
+  },
+  {
+    "legacy_key": "相机当前不可用，请检查权限后重试。",
+    "new_key": "common_camera_unavailable_check_permission",
+    "table": "Common",
+    "swift_property": "cameraUnavailableCheckPermission",
+    "orphan": false
+  },
+  {
+    "legacy_key": "邀请码生成失败，请稍后重试。",
+    "new_key": "family_invite_code_generation_failed",
+    "table": "Family",
+    "swift_property": "inviteCodeGenerationFailed",
+    "orphan": false
+  },
+  {
+    "legacy_key": "后端尚未完成升级，请先创建 get_or_create_invite_nonce RPC 后重试。",
+    "new_key": "family_backend_invite_rpc_missing",
+    "table": "Family",
+    "swift_property": "backendInviteRpcMissing",
+    "orphan": false
+  },
+  {
+    "legacy_key": "仅创建者或管理员可生成邀请二维码。",
+    "new_key": "family_only_admin_can_generate_invite_qr",
+    "table": "Family",
+    "swift_property": "onlyAdminCanGenerateInviteQr",
+    "orphan": false
+  },
+  {
+    "legacy_key": "未识别到有效邀请码，请重试。",
+    "new_key": "family_no_valid_invite_code_detected",
+    "table": "Family",
+    "swift_property": "noValidInviteCodeDetected",
+    "orphan": false
+  },
+  {
+    "legacy_key": "图片读取失败，请换一张清晰二维码图片。",
+    "new_key": "family_qr_image_read_failed",
+    "table": "Family",
+    "swift_property": "qrImageReadFailed",
+    "orphan": false
+  },
+  {
+    "legacy_key": "我是家长",
+    "new_key": "family_i_am_a_parent",
+    "table": "Family",
+    "swift_property": "iAmAParent",
+    "orphan": false
+  },
+  {
+    "legacy_key": "创建一个全新的群组空间",
+    "new_key": "family_create_brand_new_group_space",
+    "table": "Family",
+    "swift_property": "createBrandNewGroupSpace",
+    "orphan": false
+  },
+  {
+    "legacy_key": "通过扫码或邀请码加入",
+    "new_key": "family_join_via_scan_or_invite_code",
+    "table": "Family",
+    "swift_property": "joinViaScanOrInviteCode",
+    "orphan": false
+  },
+  {
+    "legacy_key": "全部",
+    "new_key": "feedback_filter_all",
+    "table": "Feedback",
+    "swift_property": "filterAll",
+    "orphan": false
+  },
+  {
+    "legacy_key": "未读",
+    "new_key": "feedback_filter_unread",
+    "table": "Feedback",
+    "swift_property": "filterUnread",
+    "orphan": false
+  },
+  {
+    "legacy_key": "还没有反馈消息",
+    "new_key": "feedback_no_messages_yet",
+    "table": "Feedback",
+    "swift_property": "noMessagesYet",
+    "orphan": false
+  },
+  {
+    "legacy_key": "筛选后暂无消息",
+    "new_key": "feedback_no_filtered_messages",
+    "table": "Feedback",
+    "swift_property": "noFilteredMessages",
+    "orphan": false
+  },
+  {
+    "legacy_key": "成员提交语音反馈后会出现在这里。",
+    "new_key": "feedback_voice_messages_appear_here",
+    "table": "Feedback",
+    "swift_property": "voiceMessagesAppearHere",
+    "orphan": false
+  },
+  {
+    "legacy_key": "当前筛选条件下没有匹配项，试试切换到“全部”。",
+    "new_key": "feedback_try_switch_to_all_filter",
+    "table": "Feedback",
+    "swift_property": "trySwitchToAllFilter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "查看全部消息",
+    "new_key": "feedback_view_all_messages",
+    "table": "Feedback",
+    "swift_property": "viewAllMessages",
+    "orphan": false
+  },
+  {
+    "legacy_key": "仅看未读",
+    "new_key": "feedback_unread_only",
+    "table": "Feedback",
+    "swift_property": "unreadOnly",
+    "orphan": false
+  },
+  {
+    "legacy_key": "系统消息",
+    "new_key": "feedback_system_message",
+    "table": "Feedback",
+    "swift_property": "systemMessage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "未设置地点",
+    "new_key": "feedback_location_not_set",
+    "table": "Feedback",
+    "swift_property": "locationNotSet",
+    "orphan": false
+  },
+  {
+    "legacy_key": "请先登录后再订阅。",
+    "new_key": "vip_sign_in_before_subscribe",
+    "table": "VIP",
+    "swift_property": "signInBeforeSubscribe",
+    "orphan": false
+  },
+  {
+    "legacy_key": "未进入组织",
+    "new_key": "common_not_in_organization",
+    "table": "Common",
+    "swift_property": "notInOrganization",
+    "orphan": false
+  },
+  {
+    "legacy_key": "可以让 AI 帮你快速创建一条群组任务。",
+    "new_key": "schedule_ai_create_task_hint",
+    "table": "Schedule",
+    "swift_property": "aiCreateTaskHint",
+    "orphan": false
+  },
+  {
+    "legacy_key": "让 AI 帮我创建",
+    "new_key": "schedule_let_ai_create_for_me",
+    "table": "Schedule",
+    "swift_property": "letAiCreateForMe",
+    "orphan": false
+  },
+  {
+    "legacy_key": "手动新建",
+    "new_key": "schedule_create_manually",
+    "table": "Schedule",
+    "swift_property": "createManually",
+    "orphan": false
+  }
+]

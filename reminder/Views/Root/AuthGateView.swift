@@ -18,13 +18,13 @@ struct AuthGateView: View {
     private var loginView: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text(AppLocalized.string("登录同圈", locale: locale))
+                Text(AppLocalized.string(L10n.Auth.signInToWesync, locale: locale))
                     .font(.system(size: 32, weight: .bold))
-                Text(AppLocalized.string("支持 Apple、Magic Link、Phone OTP", locale: locale))
+                Text(AppLocalized.string(L10n.Common.supportAppleMagicLinkPhoneOtp, locale: locale))
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.secondary)
 
-                Picker(AppLocalized.string("登录方式", locale: locale), selection: $viewModel.selectedMethod) {
+                Picker(AppLocalized.string(L10n.Auth.loginMethod, locale: locale), selection: $viewModel.selectedMethod) {
                     ForEach(AuthViewModel.LoginMethod.allCases) { method in
                         Text(method.rawValue).tag(method)
                     }
@@ -32,12 +32,12 @@ struct AuthGateView: View {
                 .pickerStyle(.segmented)
 
                 if viewModel.selectedMethod == .magicLink {
-                    TextField(AppLocalized.string("邮箱地址", locale: locale), text: $viewModel.email)
+                    TextField(AppLocalized.string(L10n.Common.emailAddress, locale: locale), text: $viewModel.email)
                         .textFieldStyle(.roundedBorder)
                 }
 
                 if viewModel.selectedMethod == .phoneOTP {
-                    TextField(AppLocalized.string("手机号", locale: locale), text: $viewModel.phone)
+                    TextField(AppLocalized.string(L10n.Common.phoneNumber, locale: locale), text: $viewModel.phone)
                         .keyboardType(.phonePad)
                         .textFieldStyle(.roundedBorder)
                 }
@@ -51,7 +51,7 @@ struct AuthGateView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text(AppLocalized.string("继续", locale: locale))
+                        Text(AppLocalized.string(L10n.Common.continue, locale: locale))
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
                     }

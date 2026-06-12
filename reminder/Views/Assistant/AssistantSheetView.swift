@@ -1,10 +1,11 @@
 import SwiftUI
 
 struct AssistantSheetView: View {
-    /// 与日程周历当前选中日对齐（`startOfDay`），用于解析「明天」等相对日期。
+    /// Aligns with the schedule week calendar anchor day (`startOfDay`) for parsing relative dates like "tomorrow".
     let scheduleAnchorDay: Date
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeAssistantViewModel()
     @FocusState private var isComposerFocused: Bool
@@ -48,9 +49,9 @@ struct AssistantSheetView: View {
                     )
                     .clipShape(Circle())
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("AI助理")
+                    Text(L10n.Common.aiAssistant.localized)
                         .font(.title2.weight(.bold))
-                    Text("智能解析任务")
+                    Text(L10n.Schedule.intelligentParsingTasks.localized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -84,10 +85,10 @@ struct AssistantSheetView: View {
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("你好!我可以帮你快速创建任务。你可以：")
-                Text("• 粘贴微信通知文字")
-                Text("• 上传学校通知截图")
-                Text("• 直接语音说出需求")
+                Text(L10n.Schedule.helloICanHelpYouCreateTasksQuicklyYouCa.localized)
+                Text(L10n.Common.pasteWechatNotificationText.localized)
+                Text(L10n.Common.uploadScreenshotsOfSchoolNotifications.localized)
+                Text(L10n.Assistant.speakTheRequirementsDirectlyByVoice.localized)
             }
             .font(.headline)
             .foregroundStyle(.primary)
@@ -107,7 +108,7 @@ struct AssistantSheetView: View {
         case .idle:
             EmptyView()
         case .parsing:
-            ProgressView("正在解析任务...")
+            ProgressView(L10n.Schedule.parsingTask.localized)
                 .padding(12)
         case let .preview(draft):
             TaskPreviewCard(
@@ -130,17 +131,19 @@ struct AssistantSheetView: View {
                 }
             )
         case .sending:
-            ProgressView("正在写入任务...")
+            ProgressView(L10n.Schedule.writingTask.localized)
                 .padding(12)
         case let .sent(task):
-            ContentUnavailableView(
-                "已发送：\(task.title)",
-                systemImage: "checkmark.circle.fill",
-                description: Text("任务已写入日程，可返回查看。")
-            )
+            ContentUnavailableView {
+                Text(L10n.Common.sent.formatted(locale: locale, task.title))
+            } description: {
+                Text(L10n.Schedule.theTaskHasBeenWrittenIntoTheScheduleAnd.localized)
+            } icon: {
+                Image(systemName: "checkmark.circle.fill")
+            }
         case let .failed(message):
             ContentUnavailableView(
-                "解析失败",
+                L10n.Common.parsingFailed,
                 systemImage: "exclamationmark.triangle",
                 description: Text(message)
             )
@@ -152,7 +155,7 @@ struct AssistantSheetView: View {
             iconButton("photo.badge.plus")
             iconButton("mic")
 
-            TextField("粘贴通知或说出需求", text: $viewModel.inputText)
+            TextField(L10n.Common.pasteANotificationOrSayARequest.localized, text: $viewModel.inputText)
                 .textFieldStyle(.plain)
                 .focused($isComposerFocused)
                 .clipboardPasteOnFocus(when: isComposerFocused, text: $viewModel.inputText)
@@ -202,7 +205,7 @@ private struct TaskPreviewCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("任务确认预检卡片")
+            Text(L10n.Schedule.taskConfirmationPreflightCard.localized)
                 .font(.system(size: 16, weight: .bold))
             Label(draft.title, systemImage: "checklist")
             Label(
@@ -215,19 +218,19 @@ private struct TaskPreviewCard: View {
             if let profileIds = draft.targetProfileIds, profileIds.isEmpty == false {
                 Label("\(profileIds.count)", systemImage: "person")
             }
-            TextField("自然语言修正：例如“时间改成明天下午”", text: $correction)
+            TextField(L10n.Common.naturalLanguageCorrectionEGChangeTheTime.localized, text: $correction)
                 .textFieldStyle(.roundedBorder)
                 .focused($isCorrectionFocused)
                 .clipboardPasteOnFocus(when: isCorrectionFocused, text: $correction)
             HStack {
-                Button("应用修正") {
+                Button(L10n.Common.applyCorrection) {
                     Task {
                         await onCorrection(correction)
                     }
                 }
                 .buttonStyle(.bordered)
 
-                Button("确认发送") {
+                Button(L10n.Common.confirmSending) {
                     Task {
                         await onConfirm()
                     }

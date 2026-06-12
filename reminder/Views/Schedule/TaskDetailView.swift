@@ -110,12 +110,12 @@ struct TaskDetailView: View {
             .padding(.bottom, bottomScrollPadding)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("任务详情")
+        .navigationTitle(L10n.Schedule.missionDetails.localized)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button("关闭") {
+                Button(L10n.Common.close) {
                     dismiss()
                 }
                 .fontWeight(.medium)
@@ -128,7 +128,7 @@ struct TaskDetailView: View {
                             Button {
                                 showingEditSheet = true
                             } label: {
-                                Text("编辑")
+                                Text(L10n.Common.edit.localized)
                                     .fontWeight(.semibold)
                             }
                             .disabled(isUpdatingStatus || isDeletingTask)
@@ -181,22 +181,22 @@ struct TaskDetailView: View {
             await loadSeriesRecurrenceIfNeeded()
             await taskDetailViewModel.loadAttachments(taskId: task.id)
         }
-        .alert("删除任务", isPresented: $isShowingDeleteAlert) {
+        .alert(L10n.Schedule.deleteTask, isPresented: $isShowingDeleteAlert) {
             if task.seriesGrouping == nil {
-                Button("仅删除此任务", role: .destructive) {
+                Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
             } else {
-                Button("仅删除此任务", role: .destructive) {
+                Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive) {
                     Task { await performDelete(scope: .singleOnly) }
                 }
-                Button("删除此任务及以后", role: .destructive) {
+                Button(L10n.Schedule.deleteThisTaskAndLater, role: .destructive) {
                     Task { await performDelete(scope: .thisAndFuture) }
                 }
             }
-            Button("取消", role: .cancel) { }
+            Button(L10n.Common.cancel, role: .cancel) { }
         } message: {
-            Text(task.seriesGrouping == nil ? "此操作无法撤销。" : "请选择删除范围。")
+            Text(task.seriesGrouping == nil ? L10n.Common.thisActionCannotBeUndone2 : L10n.Common.pleaseSelectAScopeToDelete)
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -227,7 +227,7 @@ struct TaskDetailView: View {
             Image(systemName: "calendar.badge.lock")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Text("此日程由外部同步，暂不支持在应用内修改")
+            Text(L10n.Schedule.thisScheduleIsSynchronizedExternallyAndDoe.localized)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -242,15 +242,15 @@ struct TaskDetailView: View {
 
     private var coreInfoCard: some View {
         VStack(spacing: 0) {
-            TaskDetailRowView(systemImage: "repeat", label: "重复") {
+            TaskDetailRowView(systemImage: "repeat", label: L10n.Common.repeat2) {
                 Text(inferredRecurrenceRule.titleKey)
             }
             cardDivider
-            TaskDetailRowView(systemImage: "bell", label: "提醒") {
+            TaskDetailRowView(systemImage: "bell", label: L10n.Schedule.remind) {
                 TaskReminderLabel.valueView(offsets: task.reminderOffsets)
             }
             cardDivider
-            TaskDetailRowView(systemImage: "person", label: "谁去办 (Assignee)") {
+            TaskDetailRowView(systemImage: "person", label: L10n.Common.assignee) {
                 TaskAssigneeLabelView(
                     task: task,
                     members: scheduleViewModel.householdMembers,
@@ -261,7 +261,7 @@ struct TaskDetailView: View {
             cardDivider
             TaskDetailRowView(
                 systemImage: "banknote",
-                label: "预计开销",
+                label: L10n.Common.expenses,
                 valueIsPlaceholder: costIsEmpty
             ) {
                 costValueView
@@ -269,7 +269,7 @@ struct TaskDetailView: View {
             cardDivider
             TaskDetailRowView(
                 systemImage: "tag",
-                label: "当前状态",
+                label: L10n.Common.currentStatus,
                 valueAccent: task.status == .new
             ) {
                 Text(task.status.localizedName)
@@ -355,33 +355,33 @@ struct TaskDetailView: View {
                 Image(systemName: "clock")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("时间规划")
+                Text(L10n.Common.time.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
 
             VStack(alignment: .leading, spacing: 10) {
                 if task.isFlexibleTodo {
-                    timePlanningLine(label: "截止日期") {
+                    timePlanningLine(label: L10n.Common.dueDate) {
                         Text(flexibleDeadlineDetailText)
                     }
-                    Text("在此之前任意时间完成即可")
+                    Text(L10n.Common.canBeCompletedAnytimeBeforeThisDate.localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if task.isAllDay {
-                    timePlanningLine(label: "时间") {
-                        Text("全天")
+                    timePlanningLine(label: L10n.Common.time2) {
+                        Text(L10n.Common.allDay.localized)
                     }
                 } else {
-                    timePlanningLine(label: "开始时间") {
+                    timePlanningLine(label: L10n.Common.startTime) {
                         Text(timePlanningStartText)
                     }
                     if let endText = timePlanningEndText {
-                        timePlanningLine(label: "结束时间") {
+                        timePlanningLine(label: L10n.Common.endTime) {
                             Text(endText)
                         }
                     }
-                    timePlanningLine(label: "总花费时间") {
+                    timePlanningLine(label: L10n.Common.totalDuration) {
                         TaskDurationText(minutes: task.durationMinutes)
                     }
                 }
@@ -422,7 +422,7 @@ struct TaskDetailView: View {
                 Image(systemName: "paperclip")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("附件")
+                Text(L10n.Common.attachments.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -437,8 +437,8 @@ struct TaskDetailView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(attachment.displayImageURL == nil)
-                        .accessibilityLabel("查看附件")
-                        .accessibilityHint("轻点以全屏查看，可左右滑动切换")
+                        .accessibilityLabel(L10n.Common.viewAttachment)
+                        .accessibilityHint(L10n.Common.doubleTapForFullScreenSwipeLeftOrRightT)
                     }
                 }
                 .padding(.vertical, 4)
@@ -478,7 +478,7 @@ struct TaskDetailView: View {
                 Image(systemName: "person.3")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text("为了谁")
+                Text(L10n.Common.for.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -523,13 +523,13 @@ struct TaskDetailView: View {
                 }
             }
             .frame(width: 60, height: 60)
-            Text("所有人")
+            Text(L10n.Common.everyone.localized)
                 .font(.caption)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("为了谁：全体成员")
+        .accessibilityLabel(L10n.Common.forWhomAllMembers)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -623,9 +623,9 @@ struct TaskDetailView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text("显示更多选项")
+                Text(L10n.Common.showMoreOptions.localized)
                     .font(.subheadline.weight(.semibold))
-                Text("˅")
+                Text(L10n.Common.text3.localized)
                     .font(.subheadline.weight(.bold))
             }
             .foregroundStyle(.tint)
@@ -642,9 +642,9 @@ struct TaskDetailView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text("收起更多选项")
+                Text(L10n.Common.collapseMoreOptions.localized)
                     .font(.subheadline.weight(.semibold))
-                Text("˄")
+                Text(L10n.Common.text2.localized)
                     .font(.subheadline.weight(.bold))
             }
             .foregroundStyle(.tint)
@@ -658,29 +658,29 @@ struct TaskDetailView: View {
 
     private var expandedReadonlySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            expandedCard(title: "任务优先级") {
+            expandedCard(title: L10n.Schedule.taskPriority) {
                 priorityReadonlySegmentVisual
             }
 
-            expandedCard(title: "紧急联系号码 / 会议链接") {
+            expandedCard(title: L10n.Common.emergencyContactNumberMeetingLink) {
                 emergencyReadonlyBlock
             }
 
-            expandedCard(title: "地理位置") {
+            expandedCard(title: L10n.Location.locationAlt) {
                 locationReadonlyRow
             }
 
-            expandedCard(title: "更多细节") {
+            expandedCard(title: L10n.Common.moreDetails) {
                 readonlyMultilineBlock(
                     text: descriptionMoreDetailsPart,
-                    emptyPlaceholder: "暂无备注"
+                    emptyPlaceholder: L10n.Common.noNotesYet
                 )
             }
 
-            expandedCard(title: "财务与备注") {
+            expandedCard(title: L10n.Common.financeAndNotes) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
-                        Text("预计开销")
+                        Text(L10n.Common.expenses.localized)
                             .font(.body)
                             .foregroundStyle(.primary)
                         Spacer(minLength: 12)
@@ -691,12 +691,12 @@ struct TaskDetailView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("详细说明")
+                        Text(L10n.Common.detailedDescription.localized)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                         readonlyMultilineBlock(
                             text: descriptionFinancePart,
-                            emptyPlaceholder: "可填写开支明细、支付方式等…",
+                            emptyPlaceholder: L10n.Common.youCanFillInExpenseDetailsPaymentMethods,
                             emptyAsCaptionHint: true
                         )
                     }
@@ -734,14 +734,14 @@ struct TaskDetailView: View {
     private var priorityReadonlySegmentVisual: some View {
         let isUrgent = (task.priority == .urgent || task.priority == .high)
         return HStack(spacing: 0) {
-            Text("紧急")
+            Text(L10n.Common.urgent.localized)
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
                 .foregroundStyle(isUrgent ? Color.accentColor : Color.secondary)
                 .background(isUrgent ? Color.accentColor.opacity(0.18) : Color.clear)
 
-            Text("一般")
+            Text(L10n.Common.generally.localized)
                 .font(.subheadline.weight(.semibold))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
@@ -751,7 +751,7 @@ struct TaskDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("任务优先级")
+        .accessibilityLabel(L10n.Schedule.taskPriority)
         .accessibilityValue(task.priority.localizedName)
     }
 
@@ -760,7 +760,7 @@ struct TaskDetailView: View {
         return HStack(alignment: .center, spacing: 10) {
             Group {
                 if trimmed.isEmpty {
-                    Text("无")
+                    Text(L10n.Common.none.localized)
                         .font(.body)
                         .foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -789,7 +789,7 @@ struct TaskDetailView: View {
                 if has, let line = locationLine {
                     Text(verbatim: line)
                 } else {
-                    Text("尚未添加位置")
+                    Text(L10n.Location.locationNotAdded.localized)
                 }
             }
                 .font(.body)
@@ -860,7 +860,7 @@ struct TaskDetailView: View {
                 .onTapGesture {
                     openURL(url)
                 }
-                .accessibilityHint("轻点两下以拨打或打开链接")
+                .accessibilityHint(L10n.Common.doubleTapToCallOrOpenTheLink)
         } else {
             Text(raw)
                 .font(.body)
@@ -940,11 +940,11 @@ struct TaskDetailView: View {
     @ViewBuilder
     private var costValueView: some View {
         if costIsEmpty {
-            Text("无")
+            Text(L10n.Common.none.localized)
         } else if let minor = task.estimatedCost {
             Text(verbatim: formattedCostAmount(minorUnits: minor))
         } else {
-            Text("无")
+            Text(L10n.Common.none.localized)
         }
     }
 
@@ -1039,22 +1039,22 @@ struct TaskDetailView: View {
                 switch task.status {
                 case .new:
                     if task.isFlexibleTodo {
-                        statusFooterPrimaryButton("完成任务", tint: .green) {
+                        statusFooterPrimaryButton(L10n.Schedule.completeTheTask, tint: .green) {
                             Task { await updateTaskStatus(to: .completed) }
                         }
                     } else {
-                        statusFooterPrimaryButton("接受任务", tint: .orange) {
+                        statusFooterPrimaryButton(L10n.Schedule.acceptTask, tint: .orange) {
                             Task { await updateTaskStatus(to: .accepted) }
                         }
                     }
 
                 case .accepted:
-                    statusFooterPrimaryButton("完成任务", tint: .green) {
+                    statusFooterPrimaryButton(L10n.Schedule.completeTheTask, tint: .green) {
                         Task { await updateTaskStatus(to: .completed) }
                     }
 
                 case .inProgress:
-                    statusFooterPrimaryButton("标记为完成", tint: .green) {
+                    statusFooterPrimaryButton(L10n.Common.markAsComplete, tint: .green) {
                         Task { await updateTaskStatus(to: .completed) }
                     }
 
@@ -1062,7 +1062,7 @@ struct TaskDetailView: View {
                     completedStatusFooter
 
                 default:
-                    Text("该任务已完结")
+                    Text(L10n.Schedule.thisTaskHasBeenCompleted.localized)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.tertiary)
                         .multilineTextAlignment(.center)
@@ -1116,7 +1116,7 @@ struct TaskDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isUpdatingStatus)
-                .accessibilityLabel("恢复为待办")
+                .accessibilityLabel(L10n.Common.markAsToDoAgain)
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 32))
@@ -1124,7 +1124,7 @@ struct TaskDetailView: View {
                     .accessibilityHidden(true)
             }
 
-            Text("该任务已完结")
+            Text(L10n.Schedule.thisTaskHasBeenCompleted.localized)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.leading)
@@ -1197,7 +1197,7 @@ struct TaskDetailView: View {
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
                     statusError = String(
-                        localized: "无法解析重复任务分组，无法批量删除。",
+                        localized: L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul,
                         locale: locale
                     )
                     return
@@ -1219,20 +1219,20 @@ struct TaskDetailView: View {
             dismiss()
         } catch {
             statusError = String(
-                format: String(localized: "删除失败：%@", locale: locale),
+                format: L10n.Common.deleteFailed.string(locale: locale),
                 error.localizedDescription
             )
         }
         #else
         _ = scope
-        statusError = String(localized: "当前构建环境未包含 Supabase SDK。", locale: locale)
+        statusError = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
         #endif
     }
 
     private func performGuestSeriesDelete() async {
         guard let grouping = task.seriesGrouping else {
             statusError = String(
-                localized: "无法解析重复任务分组，无法批量删除。",
+                localized: L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul,
                 locale: locale
             )
             return

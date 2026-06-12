@@ -132,13 +132,13 @@ struct EditTaskView: View {
     }
 }
 
-#Preview("新建日程") {
+#Preview(L10n.Schedule.newEvent) {
     EditTaskView(formMode: .scheduled)
         .environmentObject(AppRouter())
         .environmentObject(AppBootstrap())
 }
 
-#Preview("编辑") {
+#Preview(L10n.Common.edit) {
     EditTaskView(
         task: FamilyTask.mockTasks[1],
         onUpdateSuccess: { _ in }

@@ -1024,7 +1024,7 @@ extension SupabaseHouseholdRoutingService {
 
         if let rows = json as? [[String: Any]] {
             for row in rows {
-                for key in ["household_id", "v_household_id", "id"] {
+                for key in ["household_idL10n.Common.textv_household_idL10n.Common.textid"] {
                     if let raw = row[key] as? String, let uuid = UUID(uuidString: raw) {
                         return uuid
                     }
@@ -1067,7 +1067,7 @@ extension SupabaseHouseholdRoutingService {
         if let email = user.email, email.isEmpty == false {
             return email
         }
-        return "管理员"
+        return L10n.Common.admin.localized
     }
 }
 

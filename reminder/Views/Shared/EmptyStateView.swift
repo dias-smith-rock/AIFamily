@@ -2,20 +2,20 @@ import SwiftUI
 
 struct EmptyStateView: View {
     let systemImage: String
-    let title: String
-    let message: String
-    let primaryActionTitle: String
+    let title: LocalizedStringKey
+    let message: LocalizedStringKey
+    let primaryActionTitle: LocalizedStringKey
     let primaryAction: () -> Void
-    let secondaryActionTitle: String?
+    let secondaryActionTitle: LocalizedStringKey?
     let secondaryAction: (() -> Void)?
 
     init(
         systemImage: String,
-        title: String,
-        message: String,
-        primaryActionTitle: String,
+        title: LocalizedStringKey,
+        message: LocalizedStringKey,
+        primaryActionTitle: LocalizedStringKey,
         primaryAction: @escaping () -> Void,
-        secondaryActionTitle: String? = nil,
+        secondaryActionTitle: LocalizedStringKey? = nil,
         secondaryAction: (() -> Void)? = nil
     ) {
         self.systemImage = systemImage
@@ -72,11 +72,11 @@ struct EmptyStateView: View {
 #Preview {
     EmptyStateView(
         systemImage: "calendar.badge.exclamationmark",
-        title: "暂无任务",
-        message: "可以让 AI 帮你快速创建一条群组任务。",
-        primaryActionTitle: "让 AI 帮我创建",
+        title: L10n.Common.noTasksYet,
+        message: L10n.Schedule.aiCreateTaskHint,
+        primaryActionTitle: L10n.Schedule.letAiCreateForMe,
         primaryAction: {},
-        secondaryActionTitle: "手动新建",
+        secondaryActionTitle: L10n.Schedule.createManually,
         secondaryAction: {}
     )
     .padding()

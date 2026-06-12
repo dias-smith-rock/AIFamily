@@ -18,13 +18,13 @@ struct LocationPersistSettingsView: View {
         List {
             Section {
                 Toggle(isOn: locationGhostModeBinding) {
-                    Text("位置隐身")
+                    Text(L10n.Settings.locationGhostToggle.localized)
                 }
                 .disabled(appRouter.selectedHouseholdId == nil || appRouter.selectedProfileId == nil)
             } header: {
-                Text("位置共享")
+                Text(L10n.Settings.locationSharingSection.localized)
             } footer: {
-                Text("隐身期间不会向服务器上报新坐标，群组成员仍可看到您上次上报的位置。")
+                Text(L10n.Settings.locationGhostFooter.localized)
             }
 
             Section {
@@ -38,9 +38,9 @@ struct LocationPersistSettingsView: View {
                     }
                 }
             } header: {
-                Text("位移阈值")
+                Text(L10n.Settings.locationReportingDistanceSection.localized)
             } footer: {
-                Text("移动超过此距离后，才可能写入云端位置。")
+                Text(L10n.Settings.locationReportingDistanceFooter.localized)
             }
 
             Section {
@@ -54,9 +54,9 @@ struct LocationPersistSettingsView: View {
                     }
                 }
             } header: {
-                Text("上报间隔")
+                Text(L10n.Settings.locationReportingIntervalSection.localized)
             } footer: {
-                Text("位移与间隔均达标时会新增一条位置记录；仅间隔到达而位移未达阈值时，会更新最近一条位置记录。")
+                Text(L10n.Settings.locationReportingIntervalFooter.localized)
             }
 
             Section {
@@ -80,12 +80,12 @@ struct LocationPersistSettingsView: View {
                     }
                 }
             } header: {
-                Text("历史位置数量")
+                Text(L10n.Settings.locationReportingHistoryCountSection.localized)
             } footer: {
-                Text("仅影响地图上显示的轨迹与历史点数量，不会改变云端存储的位置记录。")
+                Text(L10n.Settings.locationReportingHistoryCountFooter.localized)
             }
         }
-        .navigationTitle("位置上报")
+        .navigationTitle(L10n.Settings.locationReportingNavTitle.localized)
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.locale, appSettings.appLocale)
         .onAppear {
@@ -224,34 +224,34 @@ struct LocationPersistSettingsView: View {
 
     private func distanceLabel(for meters: Double) -> LocalizedStringKey {
         switch Int(meters) {
-        case 100: "100 米"
-        case 200: "200 米"
-        case 300: "300 米"
-        case 500: "500 米"
-        case 1_000: "1 千米"
-        case 2_000: "2 千米"
-        default: "500 米"
+        case 100: L10n.Common.distance100m.localized
+        case 200: L10n.Common.distance200m.localized
+        case 300: L10n.Common.distance300m.localized
+        case 500: L10n.Common.distance500m.localized
+        case 1_000: L10n.Common.distance1km.localized
+        case 2_000: L10n.Common.distance2km.localized
+        default: L10n.Common.distance500m.localized
         }
     }
 
     private func intervalLabel(for seconds: TimeInterval) -> LocalizedStringKey {
         switch Int(seconds) {
-        case 300: "5 分钟"
-        case 600: "10 分钟"
-        case 900: "15 分钟"
-        case 1_800: "30 分钟"
-        case 3_600: "1 小时"
-        default: "5 分钟"
+        case 300: L10n.Common.duration5min.localized
+        case 600: L10n.Common.duration10min.localized
+        case 900: L10n.Common.duration15min.localized
+        case 1_800: L10n.Common.duration30min.localized
+        case 3_600: L10n.Common.duration1hour.localized
+        default: L10n.Common.duration5min.localized
         }
     }
 
     private func historyDisplayCountLabel(for count: Int) -> LocalizedStringKey {
         switch count {
-        case 3: "3 个"
-        case 5: "5 个"
-        case 10: "10 个"
-        case 20: "20 个"
-        default: "3 个"
+        case 3: L10n.Common.count3.localized
+        case 5: L10n.Common.count5.localized
+        case 10: L10n.Common.count10.localized
+        case 20: L10n.Common.count20.localized
+        default: L10n.Common.count3.localized
         }
     }
 

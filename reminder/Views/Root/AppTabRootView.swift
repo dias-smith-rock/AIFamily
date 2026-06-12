@@ -14,11 +14,11 @@ struct AppTabRootView: View {
 
         var titleKey: LocalizedStringKey {
             switch self {
-            case .schedule: "日程表"
-            case .todos: "待办"
-            case .location: "位置"
-            case .family: "群组"
-            case .personalSettings: "我的"
+            case .schedule: L10n.Schedule.schedule.localized
+            case .todos: L10n.Common.toDos.localized
+            case .location: L10n.Location.location.localized
+            case .family: L10n.Family.groups.localized
+            case .personalSettings: L10n.Common.mine.localized
             }
         }
 

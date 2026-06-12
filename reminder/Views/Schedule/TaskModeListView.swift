@@ -27,14 +27,14 @@ struct TaskModeListView: View {
         Group {
             if viewModel.isLoading {
                 pullToRefreshScrollContainer(minHeight: 360) {
-                    ProgressView(AppLocalized.string("正在加载任务...", locale: locale))
+                    ProgressView(AppLocalized.string(L10n.Common.loadingTasks, locale: locale))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 120)
                 }
             } else if let message = viewModel.errorMessage {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label(AppLocalized.string("加载中", locale: locale), systemImage: "exclamationmark.triangle")
+                        Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
                     } description: {
                         Text(message)
                     }
@@ -42,9 +42,9 @@ struct TaskModeListView: View {
             } else if viewModel.scheduledTasks.isEmpty {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
-                        Label(AppLocalized.string("暂无任务", locale: locale), systemImage: "checklist")
+                        Label(AppLocalized.string(L10n.Common.noTasksYet, locale: locale), systemImage: "checklist")
                     } description: {
-                        Text(AppLocalized.string("创建任务后将显示在此列表。", locale: locale))
+                        Text(AppLocalized.string(L10n.Schedule.afterTheTaskIsCreatedItWillAppearInThis, locale: locale))
                     }
                 }
             } else {
@@ -203,7 +203,7 @@ private struct TaskModeListMinimalRow: View {
 
     private var timeRangeLabel: String {
         if task.isAllDay {
-            return AppLocalized.string("全天", locale: locale)
+            return AppLocalized.string(L10n.Common.allDay, locale: locale)
         }
         return ScheduleTimeFormatting.timelineClockRange(
             start: task.scheduleStartDate,

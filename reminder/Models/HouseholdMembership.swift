@@ -246,7 +246,7 @@ extension HouseholdMembership {
         }
         if let linkedProfile {
             let profileName = linkedProfile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            if profileName.isEmpty == false, profileName != String(localized: "未命名成员") {
+            if profileName.isEmpty == false, profileName != L10n.Family.unnamedMember.string() {
                 return GuestSessionStore.displaySelfName(profileName)
             }
         }

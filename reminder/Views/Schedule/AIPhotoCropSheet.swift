@@ -135,17 +135,17 @@ struct AIPhotoCropSheet: View {
                 .coordinateSpace(name: "cropSpace")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationTitle("用红框标记识别区域")
+            .navigationTitle(L10n.Common.markAreaWithRedBox.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(Color.black.opacity(0.85), for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("重拍", action: onRetake)
+                    Button(L10n.Common.retake, action: onRetake)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("识别此区域", action: confirmSelection)
+                    Button(L10n.Common.recognizeThisArea, action: confirmSelection)
                         .fontWeight(.semibold)
                         .disabled(cropQuad.isValidRegion == false)
                 }
@@ -294,10 +294,10 @@ struct AIPhotoCropSheet: View {
 
     private func cornerAccessibilityLabel(_ corner: CropCorner) -> String {
         switch corner {
-        case .topLeft: "左上角控制点"
-        case .topRight: "右上角控制点"
-        case .bottomLeft: "左下角控制点"
-        case .bottomRight: "右下角控制点"
+        case .topLeft: L10n.Common.upperLeftControlPoint.localized
+        case .topRight: L10n.Common.upperRightCornerControlPoint.localized
+        case .bottomLeft: L10n.Common.lowerLeftCornerControlPoint.localized
+        case .bottomRight: L10n.Common.lowerRightCornerControlPoint.localized
         }
     }
 

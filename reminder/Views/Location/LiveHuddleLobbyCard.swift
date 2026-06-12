@@ -12,7 +12,7 @@ struct LiveHuddleLobbyCard: View {
             avatarStack
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("⚡️ 实时位置进行中（\(participants.count) 人）")
+                Text(L10n.Common.liveOngoingCount.formatted(locale: locale, participants.count))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
@@ -24,7 +24,7 @@ struct LiveHuddleLobbyCard: View {
                 joinTapToken += 1
                 onJoin()
             } label: {
-                Text("加入")
+                Text(L10n.Common.join.localized)
                     .font(.subheadline.weight(.bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)

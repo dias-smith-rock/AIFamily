@@ -27,7 +27,7 @@ enum GroupSwitcherData {
                 id: householdId,
                 membershipId: membershipId,
                 profileId: appRouter.selectedProfileId,
-                name: name.isEmpty ? "未命名群组" : GuestSessionStore.displayHouseholdName(name),
+                name: name.isEmpty ? L10n.Family.unnamedGroup : GuestSessionStore.displayHouseholdName(name),
                 creatorHasActivePro: appRouter.selectedHouseholdCreatorHasActivePro,
                 description: appRouter.selectedHouseholdDescription
             )
@@ -36,7 +36,7 @@ enum GroupSwitcherData {
 
     static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if trimmed.isEmpty { return String(localized: "未命名群组") }
+        if trimmed.isEmpty { return L10n.Family.unnamedGroup.string() }
         return GuestSessionStore.displayHouseholdName(trimmed)
     }
 }
@@ -55,7 +55,7 @@ struct SwitchGroupSheetView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("切换群组")
+            Text(L10n.Family.switchGroup.localized)
                 .font(.headline)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
@@ -105,7 +105,7 @@ struct SwitchGroupSheetView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
-                        Text("新建群组")
+                        Text(L10n.Common.createNewGroup2.localized)
                     }
                     .foregroundStyle(.blue)
                     .padding(.horizontal, 20)
@@ -124,7 +124,7 @@ struct SwitchGroupSheetView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "person.badge.plus")
-                        Text("加入已有群组")
+                        Text(L10n.Common.joinAGroup.localized)
                     }
                     .foregroundStyle(.blue)
                     .padding(.horizontal, 20)
@@ -158,12 +158,12 @@ struct CreateOrganizationSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    TextField("输入群组名称…", text: $organizationName)
+                    TextField(L10n.Family.enterGroupName.localized, text: $organizationName)
                         .textInputAutocapitalization(.words)
                         .disabled(isSubmitting)
                         .createGroupFieldStyle()
 
-                    TextField("输入群组描述（选填）…", text: $organizationDescription, axis: .vertical)
+                    TextField(L10n.Family.enterGroupDescriptionOptional.localized, text: $organizationDescription, axis: .vertical)
                         .lineLimit(3 ... 6)
                         .disabled(isSubmitting)
                         .createGroupFieldStyle()
@@ -178,11 +178,11 @@ struct CreateOrganizationSheet: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
-            .navigationTitle("创建群组")
+            .navigationTitle(L10n.Common.createGroup.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
+                    Button(L10n.Common.cancel) {
                         dismiss()
                     }
                     .disabled(isSubmitting)
@@ -191,7 +191,7 @@ struct CreateOrganizationSheet: View {
                     if isSubmitting {
                         ProgressView()
                     } else {
-                        Button("创建") {
+                        Button(L10n.Common.create) {
                             Task { await onSubmit() }
                         }
                         .disabled(
@@ -233,7 +233,7 @@ struct JoinExistingGroupSheet: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 14) {
-                TextField(AppLocalized.string("输入 6 位邀请码", locale: locale), text: $inviteCode)
+                TextField(AppLocalized.string(L10n.Family.enterThe6DigitInvitationCode, locale: locale), text: $inviteCode)
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled(true)
                     .font(.system(size: 20, weight: .semibold, design: .monospaced))
@@ -246,7 +246,7 @@ struct JoinExistingGroupSheet: View {
                 Button {
                     showScanner = true
                 } label: {
-                    Label("相机扫码", systemImage: "qrcode.viewfinder")
+                    Label(L10n.Common.cameraScanCode.localized, systemImage: "qrcode.viewfinder")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
@@ -265,7 +265,7 @@ struct JoinExistingGroupSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     } else {
-                        Text("确认加入")
+                        Text(L10n.Common.confirmToJoin.localized)
                             .font(.system(size: 17, weight: .semibold))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
@@ -277,11 +277,11 @@ struct JoinExistingGroupSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(16)
-            .navigationTitle("加入已有群组")
+            .navigationTitle(L10n.Common.joinAGroup.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
+                    Button(L10n.Common.cancel) { dismiss() }
                         .disabled(isSubmitting)
                 }
             }
@@ -292,7 +292,7 @@ struct JoinExistingGroupSheet: View {
                         inputError = nil
                     } else {
                         inputError = AppLocalized.string(
-                            "未识别到有效邀请码，请重试。",
+                            L10n.Common.noValidInviteCodeDetected,
                             locale: locale
                         )
                     }
@@ -329,7 +329,7 @@ struct OrganizationJoinQRScannerContainer: View {
             }
             .padding(.top, 12)
             .padding(.leading, 16)
-            .accessibilityLabel(Text("关闭"))
+            .accessibilityLabel(Text(L10n.Common.close.localized))
         }
     }
 }
@@ -340,11 +340,11 @@ struct OrganizationJoinQRScannerSheet: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIViewController {
         guard DataScannerViewController.isSupported else {
-            onError(AppLocalized.string("当前设备不支持相机扫码。", locale: .current))
+            onError(AppLocalized.string(L10n.Common.cameraScanUnavailable, locale: .current))
             return UIViewController()
         }
         guard DataScannerViewController.isAvailable else {
-            onError(AppLocalized.string("相机当前不可用，请检查权限后重试。", locale: .current))
+            onError(AppLocalized.string(L10n.Common.cameraUnavailableCheckPermission, locale: .current))
             return UIViewController()
         }
 
@@ -361,7 +361,7 @@ struct OrganizationJoinQRScannerSheet: UIViewControllerRepresentable {
         do {
             try scanner.startScanning()
         } catch {
-            onError(String(localized: "无法启动扫描仪。请稍后重试。"))
+            onError(L10n.Common.couldNotStartScannerPleaseTryAgainLater.string())
         }
         return scanner
     }

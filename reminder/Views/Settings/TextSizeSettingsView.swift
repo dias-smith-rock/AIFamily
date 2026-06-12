@@ -12,7 +12,7 @@ struct TextSizeSettingsView: View {
             Section {
                 previewCard
             } header: {
-                Text("预览")
+                Text(L10n.Common.preview.localized)
             }
 
             Section {
@@ -39,25 +39,25 @@ struct TextSizeSettingsView: View {
                         in: 0...sliderUpperBound,
                         step: 1
                     )
-                    .accessibilityLabel("字体大小")
+                    .accessibilityLabel(L10n.Common.fontSize)
                     .accessibilityValue(appSettings.appTextSize.accessibilityTitle(locale: appSettings.appLocale))
                 }
                 .padding(.vertical, 4)
             } footer: {
-                Text("调整字体大小后，应用内文字会同步放大或缩小。")
+                Text(L10n.Common.afterAdjustingTheFontSizeTheTextInTheAp.localized)
             }
         }
-        .navigationTitle("文字大小")
+        .navigationTitle(L10n.Common.textSize.localized)
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.locale, appSettings.appLocale)
     }
 
     private var previewCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("周末采购清单")
+            Text(L10n.Common.weekendShoppingList.localized)
                 .font(.headline)
 
-            Text("记得在周六上午检查冰箱库存，并同步更新本周的共享购物清单。")
+            Text(L10n.Common.rememberToCheckYourRefrigeratorInventoryOn.localized)
                 .font(.body)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

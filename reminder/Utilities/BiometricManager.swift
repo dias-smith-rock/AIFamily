@@ -21,8 +21,8 @@ final class BiometricManager: ObservableObject {
         Task {
             defer { isAuthenticating = false }
             let context = LAContext()
-            context.localizedCancelTitle = String(localized: "稍后")
-            let reason = String(localized: "请验证身份以访问同圈中的群组日程与任务。")
+            context.localizedCancelTitle = L10n.Common.later.string()
+            let reason = L10n.Schedule.verifyYourIdentityToAccessGroupSchedulesA.string()
             let policy: LAPolicy = .deviceOwnerAuthentication
 
             var authError: NSError?

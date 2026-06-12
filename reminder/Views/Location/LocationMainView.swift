@@ -9,6 +9,7 @@ struct LocationMainView: View {
     var isTabActive: Bool = true
 
     @Environment(\.isGuestMode) private var isGuestMode
+    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel: LocationMainViewModel
@@ -93,13 +94,13 @@ struct LocationMainView: View {
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
         .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)
         .animation(.easeInOut(duration: 0.3), value: liveManager.activeParticipants.count)
-        .alert("退出实时位置模式", isPresented: $isExitLiveModeAlertPresented) {
-            Button("退出实时模式", role: .destructive) {
+        .alert(L10n.Location.exitLiveLocationMode, isPresented: $isExitLiveModeAlertPresented) {
+            Button(L10n.Common.exitLiveMode, role: .destructive) {
                 Task { await liveManager.leaveLiveSession() }
             }
-            Button("取消", role: .cancel) {}
+            Button(L10n.Common.cancel, role: .cancel) {}
         } message: {
-            Text("退出后，群组将不再接收你的秒级位置更新。")
+            Text(L10n.Family.afterYouLeaveTheGroupWillNoLongerReceive.localized)
         }
         .task(id: locationRefreshToken) {
             guard isTabActive else { return }
@@ -188,10 +189,10 @@ struct LocationMainView: View {
         HStack(spacing: 10) {
             Image(systemName: "moon.zzz.fill")
                 .foregroundStyle(.secondary)
-            Text("Live Huddle 已因长时间无活动自动结束")
+            Text(L10n.Common.liveLocationSharingEndedAutomaticallyDueTo.localized)
                 .font(.subheadline.weight(.medium))
             Spacer(minLength: 0)
-            Button("知道了") {
+            Button(L10n.Common.gotIt) {
                 withAnimation(.easeInOut(duration: 0.25)) {
                     liveManager.dismissInactivityNotice()
                 }
@@ -240,7 +241,7 @@ struct LocationMainView: View {
                 isLiveSharingPanelExpanded = false
                 liveManager.recordUserInteraction()
             }
-            .accessibilityLabel("收起群组成员列表")
+            .accessibilityLabel(L10n.Family.collapseGroupMemberList)
             .accessibilityAddTraits(.isButton)
     }
 
@@ -307,7 +308,7 @@ struct LocationMainView: View {
                 : liveManager.livePeerHeadings[membershipId]
             return LiveMapAnnotationItem(
                 id: membershipId,
-                displayName: member?.displayName ?? String(localized: "群组成员"),
+                displayName: member?.displayName ?? L10n.Family.groupMembers.string(),
                 coordinate: coordinate,
                 headingDegrees: heading,
                 batteryLevel: battery.level,
@@ -448,7 +449,11 @@ struct LocationMainView: View {
                     }
                 }
         }
-        .accessibilityLabel(liveManager.isLiveModeActive ? "退出实时位置模式" : "进入实时位置模式")
+        .accessibilityLabel(
+            liveManager.isLiveModeActive
+                ? L10n.Location.exitLiveLocationMode.string(locale: locale)
+                : L10n.Location.enterLiveLocationMode.string(locale: locale)
+        )
         .animation(.easeInOut(duration: 0.25), value: liveManager.isLiveModeActive)
     }
 
@@ -482,7 +487,7 @@ struct LocationMainView: View {
             .mapFloatingControlPlate()
         }
         .disabled(isRefreshingMapLocations)
-        .accessibilityLabel("刷新位置")
+        .accessibilityLabel(L10n.Location.refreshLocations)
     }
 
     private var mapRecenterControl: some View {
@@ -496,7 +501,7 @@ struct LocationMainView: View {
                 .foregroundStyle(Color.blue)
                 .mapFloatingControlPlate()
         }
-        .accessibilityLabel("定位到我的位置")
+        .accessibilityLabel(L10n.Location.locateMyLocation)
     }
 
     // MARK: - Live sharing panel
@@ -542,19 +547,19 @@ struct LocationMainView: View {
                 }
             }
         }
-        .accessibilityLabel(isLiveSharingPanelExpanded ? "收起位置共享" : "展开位置共享")
+        .accessibilityLabel(isLiveSharingPanelExpanded ? L10n.Location.collapseLocationSharing : L10n.Location.expandLocationSharing)
     }
 
     private var expandedLiveSharingPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("位置共享")
+            Text(L10n.Settings.locationSharingSection.localized)
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
                 .padding(.bottom, 10)
 
             if liveSharingMembers.isEmpty {
-                Text("暂无共享成员")
+                Text(L10n.Common.noMembersSharingLocation.localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -642,12 +647,12 @@ struct LocationMainView: View {
                 }
             }
         }
-        .accessibilityLabel(viewModel.isMemberListExpanded ? "收起群组成员列表" : "展开群组成员列表")
+        .accessibilityLabel(viewModel.isMemberListExpanded ? L10n.Family.collapseGroupMemberList : L10n.Family.expandGroupMemberList)
     }
 
     private var expandedMemberPanel: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("群组位置")
+            Text(L10n.Family.groupLocations.localized)
                 .font(.headline)
                 .padding(.horizontal, 16)
                 .padding(.top, 14)
@@ -681,7 +686,7 @@ struct LocationMainView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             } else if viewModel.members.isEmpty, viewModel.isLoading == false {
-                Text("暂无群组成员")
+                Text(L10n.Common.noGroupMembersYet.localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -726,11 +731,11 @@ struct LocationMainView: View {
 
     private var locationGhostToggleRow: some View {
         Toggle(isOn: locationGhostModeBinding) {
-            Text("位置隐身")
+            Text(L10n.Settings.locationGhostToggle.localized)
                 .font(.subheadline)
         }
         .disabled(isGuestMode || liveManager.isLiveModeActive)
-        .accessibilityLabel("位置隐身")
+        .accessibilityLabel(L10n.Settings.locationGhostToggle)
     }
 
     private var locationGhostModeBinding: Binding<Bool> {
@@ -757,7 +762,7 @@ struct LocationMainView: View {
                         .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("当前群组")
+                        Text(L10n.Family.currentGroup.localized)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Text(GroupSwitcherData.currentName(for: appRouter))
@@ -771,7 +776,7 @@ struct LocationMainView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
+                .accessibilityLabel(L10n.Family.groupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
             } else {
                 Button {
                     liveManager.recordUserInteraction()
@@ -785,7 +790,7 @@ struct LocationMainView: View {
                             .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("当前群组")
+                            Text(L10n.Family.currentGroup.localized)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text(GroupSwitcherData.currentName(for: appRouter))
@@ -805,7 +810,7 @@ struct LocationMainView: View {
                     .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("切换群组，\(GroupSwitcherData.currentName(for: appRouter))")
+                .accessibilityLabel(L10n.Family.switchGroupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
             }
         }
     }

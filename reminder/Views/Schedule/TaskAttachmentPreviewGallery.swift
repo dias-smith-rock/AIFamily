@@ -20,6 +20,7 @@ struct TaskAttachmentPreviewGallery: View {
     @State private var isCurrentImageZoomed = false
     @State private var isClosing = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     init(items: [TaskAttachmentPreviewItem], startIndex: Int) {
         self.items = items
@@ -62,7 +63,7 @@ struct TaskAttachmentPreviewGallery: View {
             Image(systemName: "photo")
                 .font(.system(size: 40))
                 .foregroundStyle(.white.opacity(0.6))
-            Text("没有可预览的附件")
+            Text(L10n.Common.noAttachmentsAvailableForPreview.localized)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.7))
         }
@@ -80,7 +81,7 @@ struct TaskAttachmentPreviewGallery: View {
                         .symbolRenderingMode(.palette)
                         .foregroundStyle(.white.opacity(0.95), .white.opacity(0.25))
                 }
-                .accessibilityLabel("关闭")
+                .accessibilityLabel(L10n.Common.close)
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
@@ -94,7 +95,7 @@ struct TaskAttachmentPreviewGallery: View {
     private var bottomBar: some View {
         ZStack {
             HStack {
-                Text("拖选文字后可复制")
+                Text(L10n.Common.dragAndSelectTextToCopy.localized)
                     .font(.footnote)
                     .foregroundStyle(.white.opacity(0.75))
                 Spacer()
@@ -107,7 +108,7 @@ struct TaskAttachmentPreviewGallery: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 6)
                     .background(.white.opacity(0.12), in: Capsule())
-                    .accessibilityLabel("第 \(currentIndex + 1) 张，共 \(items.count) 张")
+                    .accessibilityLabel(L10n.Schedule.attachmentPageIndicator.formatted(locale: locale, currentIndex + 1, items.count))
             }
         }
         .padding(.horizontal, 20)
@@ -147,7 +148,7 @@ struct TaskAttachmentPreviewGallery: View {
             .padding(.vertical, 48)
         }
         #else
-        Text("图片预览不可用")
+        Text(L10n.Common.imagePreviewUnavailable.localized)
             .foregroundStyle(.white.opacity(0.7))
         #endif
     }

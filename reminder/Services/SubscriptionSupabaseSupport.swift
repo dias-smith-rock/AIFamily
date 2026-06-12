@@ -186,11 +186,11 @@ enum SubscriptionSupabaseError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sdkUnavailable:
-            return String(localized: "当前构建环境未包含 Supabase SDK。")
+            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
         case .serverError(let message):
             return message
         case .promotionalGrantDisabled:
-            return String(localized: "促销权益须由服务端发放，客户端无法直接领取。")
+            return L10n.Common.promotionalBenefitsMustBeGrantedByTheServ.string()
         }
     }
 }

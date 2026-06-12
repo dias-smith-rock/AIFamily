@@ -12,7 +12,7 @@ enum OAuthSessionCoordinator {
         var errorDescription: String? {
             switch self {
             case .sessionNotReady:
-                "登录会话尚未就绪，请稍后重试。"
+                L10n.Auth.theLoginSessionIsNotReadyYetPleaseTryAg
             }
         }
     }

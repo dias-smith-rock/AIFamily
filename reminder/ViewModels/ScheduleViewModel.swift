@@ -106,7 +106,7 @@ final class ScheduleViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else {
             tasks = []
             if !silent {
-                errorMessage = AppLocalized.localized("当前未选择群组。")
+                errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
             }
             return
         }
@@ -277,11 +277,11 @@ final class ScheduleViewModel: ObservableObject {
 
     func createTask(_ task: FamilyTask) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = AppLocalized.localized("当前未选择群组。")
+            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
             return
         }
         guard task.householdId == householdId else {
-            errorMessage = AppLocalized.localized("任务写入失败：群组上下文不一致。")
+            errorMessage = AppLocalized.localized(L10n.Common.failedToSaveTaskInconsistentGroupContext)
             return
         }
 
@@ -420,10 +420,10 @@ final class ScheduleViewModel: ObservableObject {
 
     func assigneeLabel(for task: FamilyTask, locale: Locale) -> String {
         if task.involvesWholeHousehold {
-            return AppLocalized.string("所有人", locale: locale)
+            return AppLocalized.string(L10n.Common.everyone, locale: locale)
         }
         guard let ids = task.involvedMemberIds, ids.isEmpty == false else {
-            return AppLocalized.string("所有人", locale: locale)
+            return AppLocalized.string(L10n.Common.everyone, locale: locale)
         }
         let names = ids.compactMap { id in
             MemberDisplayName.displayName(
@@ -434,14 +434,14 @@ final class ScheduleViewModel: ObservableObject {
         }
         if names.isEmpty {
             if ids.count == 1 {
-                return AppLocalized.string("成员", locale: locale)
+                return AppLocalized.string(L10n.Common.member, locale: locale)
             }
             return String(
-                format: AppLocalized.string("%lld 人", locale: locale),
+                format: AppLocalized.string(L10n.Common.lldPeople, locale: locale),
                 ids.count
             )
         }
-        return names.joined(separator: AppLocalized.string(", ", locale: locale))
+        return names.joined(separator: AppLocalized.string(L10n.Common.text, locale: locale))
     }
 
     func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {
@@ -553,7 +553,7 @@ final class ScheduleViewModel: ObservableObject {
         pendingCropContext = nil
 
         guard normalizedQuad.isValidRegion else {
-            aiProcessingError = String(localized: "识别区域无效，请调整红框后重试。")
+            aiProcessingError = L10n.Common.invalidRecognitionAreaAdjustTheRedBoxAnd.string()
             return
         }
 
@@ -564,7 +564,7 @@ final class ScheduleViewModel: ObservableObject {
             compressed = CameraImageCompression.compressForUpload(image)
         }
         guard let compressed else {
-            aiProcessingError = String(localized: "图片处理失败，请重试。")
+            aiProcessingError = L10n.Common.imageProcessingFailedPleaseTryAgain.string()
             return
         }
 
@@ -591,7 +591,7 @@ final class ScheduleViewModel: ObservableObject {
         hasPremiumAccess: Bool
     ) async {
         if GuestSessionStore.isGuestMode {
-            aiProcessingError = String(localized: "登录后可使用拍照识图功能。")
+            aiProcessingError = L10n.Auth.signInToUsePhotoRecognitionForTasks.string()
             return
         }
 

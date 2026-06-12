@@ -18,15 +18,15 @@ enum InviteConsumeError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingSignature:
-            return AppLocalized.localizedSync("邀请链接缺少签名参数。")
+            return AppLocalized.localizedSync(L10n.Family.inviteLinkIsMissingTheSignatureParameter)
         case .alreadyConsumed:
-            return AppLocalized.localizedSync("该邀请链接已被使用（409）。")
+            return AppLocalized.localizedSync(L10n.Family.thisInviteLinkHasAlreadyBeenUsed409)
         case .expired:
-            return AppLocalized.localizedSync("该邀请链接已过期（410）。")
+            return AppLocalized.localizedSync(L10n.Family.thisInviteLinkHasExpired410)
         case .invalidOrTampered:
-            return AppLocalized.localizedSync("邀请链接无效或已被篡改。")
+            return AppLocalized.localizedSync(L10n.Family.inviteLinkIsInvalidOrHasBeenTamperedWith)
         case .unauthorized:
-            return AppLocalized.localizedSync("客户端鉴权失败，请检查 apikey。")
+            return AppLocalized.localizedSync(L10n.Common.clientAuthenticationFailedPleaseCheckTheAp)
         case let .serverError(message):
             return message
         }
@@ -60,7 +60,7 @@ struct InviteLinkConsumeClient {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
-            throw InviteConsumeError.serverError(AppLocalized.localizedSync("服务响应异常"))
+            throw InviteConsumeError.serverError(AppLocalized.localizedSync(L10n.Common.unexpectedServerResponse))
         }
 
         switch http.statusCode {
@@ -75,9 +75,12 @@ struct InviteLinkConsumeClient {
         case 410:
             throw InviteConsumeError.expired
         default:
-            let message = String(data: data, encoding: .utf8) ?? AppLocalized.localizedSync("未知错误")
+            let message = String(data: data, encoding: .utf8) ?? AppLocalized.localizedSync(L10n.Common.unknownError)
             throw InviteConsumeError.serverError(
-                AppLocalized.localizedSync("消费邀请链接失败：\(message)")
+                String(
+                    format: AppLocalized.localizedSync(L10n.Family.failedToConsumeInviteLink),
+                    message
+                )
             )
         }
     }

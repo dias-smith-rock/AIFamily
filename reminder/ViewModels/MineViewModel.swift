@@ -124,7 +124,7 @@ final class MineViewModel: ObservableObject {
             } else {
                 let groupName: String = {
                     guard let first = names.first, first.isEmpty == false else {
-                        return String(localized: "未知群组", locale: AppSettingsManager.shared.appLocale)
+                        return L10n.Family.unknownGroup.string(locale: AppSettingsManager.shared.appLocale)
                     }
                     return first
                 }()
@@ -145,22 +145,22 @@ final class MineViewModel: ObservableObject {
 
     func contactSupport() async {
         guard let url = await SupportMailHelper.makeSupportMailURL() else {
-            presentToast(AppLocalized.localized("无法创建支持邮件，请稍后重试。"))
+            presentToast(AppLocalized.localized(L10n.Common.unableToOpenSupportEmailPleaseTryAgainLa))
             return
         }
         #if canImport(UIKit)
         guard UIApplication.shared.canOpenURL(url) else {
-            presentToast(AppLocalized.localized("当前设备未配置邮件账户，请发送邮件至 music.player.250617@gmail.com。"))
+            presentToast(AppLocalized.localized(L10n.Common.noMailAccountIsConfiguredOnThisDevicePle))
             return
         }
         await UIApplication.shared.open(url)
         #else
-        presentToast(AppLocalized.localized("请发送邮件至 \(SupportMailHelper.supportEmail)。"))
+        presentToast(AppLocalized.localized(L10n.Common.pleaseEmail.formatted(SupportMailHelper.supportEmail)))
         #endif
     }
 
     func tapRow(feature: String) {
-        presentToast(AppLocalized.localized("\(feature) 即将推出。"))
+        presentToast(AppLocalized.localized(L10n.Common.comingSoon.formatted(feature)))
     }
 
     func showToast(_ message: String) {

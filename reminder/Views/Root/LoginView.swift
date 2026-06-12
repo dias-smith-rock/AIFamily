@@ -65,11 +65,11 @@ struct LoginView: View {
                     .ignoresSafeArea()
             }
         }
-        .alert("无法完成登录", isPresented: Binding(
+        .alert(L10n.Auth.unableToCompleteLogin, isPresented: Binding(
             get: { loginErrorAlert != nil },
             set: { if $0 == false { loginErrorAlert = nil } }
         )) {
-            Button("好的", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(loginErrorAlert ?? "")
         }
@@ -86,7 +86,7 @@ struct LoginView: View {
                 .scaledToFit()
                 .frame(width: 82, height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
-            Text("从混乱到清晰。\n一起，完美同步。")
+            Text(L10n.Auth.taglineFull.localized)
                 .font(AppTheme.FontToken.subtitle)
                 .foregroundStyle(.white.opacity(0.82))
                 .multilineTextAlignment(.center)
@@ -96,7 +96,7 @@ struct LoginView: View {
     private var actionSection: some View {
         VStack(spacing: 12) {
             OAuthGoogleSignInButton(
-                title: "使用 Google 继续",
+                title: L10n.Common.continueWithGoogle,
                 isLoading: loadingProvider == .google,
                 action: triggerGoogleLogin
             )
@@ -104,13 +104,13 @@ struct LoginView: View {
 
             #if canImport(Supabase) && canImport(AuthenticationServices)
             OAuthAppleSignInButton(
-                title: "通过 Apple 登录",
+                title: L10n.Common.continueWithApple,
                 isLoading: loadingProvider == .apple,
                 action: triggerAppleSignIn
             )
             .disabled(loadingProvider != nil)
             #else
-            Text(AppLocalized.string("当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。", locale: locale))
+            Text(AppLocalized.string(L10n.Auth.appleSupabaseUnavailableUseGoogle, locale: locale))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
@@ -119,7 +119,7 @@ struct LoginView: View {
             Button {
                 startGuestMode()
             } label: {
-                Text("暂不登录，先试用")
+                Text(L10n.Auth.tryWithoutSigningIn.localized)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
                     .frame(maxWidth: .infinity)
@@ -135,7 +135,7 @@ struct LoginView: View {
         Button {
             // 预留更多登录方式入口
         } label: {
-            Text("更多")
+            Text(L10n.Common.more.localized)
                 .font(.system(size: 31 / 2, weight: .medium))
                 .foregroundStyle(.white.opacity(0.8))
         }
@@ -200,7 +200,7 @@ struct LoginView: View {
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
                 await MainActor.run {
-                    loginErrorAlert = AppLocalized.string("未能读取 Apple 登录凭证。", locale: locale)
+                    loginErrorAlert = AppLocalized.string(L10n.Auth.appleCredentialReadFailed, locale: locale)
                 }
                 return
             }
@@ -208,13 +208,13 @@ struct LoginView: View {
                   let idTokenString = String(data: tokenData, encoding: .utf8)
             else {
                 await MainActor.run {
-                    loginErrorAlert = AppLocalized.string("未能获取 Apple identity token。", locale: locale)
+                    loginErrorAlert = AppLocalized.string(L10n.Auth.appleIdentityTokenFailed, locale: locale)
                 }
                 return
             }
             guard let rawNonce = appleSignInPresenter.currentRawNonce else {
                 await MainActor.run {
-                    loginErrorAlert = AppLocalized.string("登录状态异常，请重试。", locale: locale)
+                    loginErrorAlert = AppLocalized.string(L10n.Auth.sessionAbnormalRetry, locale: locale)
                 }
                 return
             }
@@ -250,7 +250,7 @@ struct LoginView: View {
         try await OAuthSignInSupport.signInWithGoogleOAuth()
     }
 
-    /// 用户在 Safari View 卡片里点了"取消"会抛 `ASWebAuthenticationSessionError.canceledLogin`，
+    /// 用户在 Safari View 卡片里点了L10n.Common.cancel会抛 `ASWebAuthenticationSessionError.canceledLogin`，
     /// 这是正常交互而非错误，不要把它显示成红字提示。
     private func isUserCancelled(_ error: Error) -> Bool {
         OAuthSignInSupport.isUserCancelled(error)

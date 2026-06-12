@@ -212,7 +212,7 @@ enum LocationMemberAssembler {
                 memberState(
                     id: record.profileId,
                     householdId: householdId,
-                    displayName: profile?.displayName ?? String(localized: "群组成员"),
+                    displayName: profile?.displayName ?? L10n.Family.groupMembers.string(),
                     profile: profile,
                     record: record,
                     isVirtualMember: profile?.isVirtualUser == true,

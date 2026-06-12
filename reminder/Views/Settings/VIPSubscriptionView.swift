@@ -35,7 +35,7 @@ struct VIPSubscriptionView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(showsPersonalVIP ? "Pro 会员" : "升级 VIP")
+        .navigationTitle(showsPersonalVIP ? L10n.VIP.proMembership : L10n.VIP.upgradeToVip)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if showsPersonalVIP {
@@ -49,18 +49,18 @@ struct VIPSubscriptionView: View {
             await viewModel.loadProducts()
             await storeKit.refreshLocalEntitlements(for: appRouter.authUserId)
         }
-        .alert("订阅成功", isPresented: $showPurchaseSuccessAlert) {
-            Button("好的", role: .cancel) {
+        .alert(L10n.VIP.subscriptionSuccessful, isPresented: $showPurchaseSuccessAlert) {
+            Button(L10n.Common.ok, role: .cancel) {
                 dismiss()
             }
         } message: {
-            Text("Pro 会员已激活，尽情使用高级功能吧。")
+            Text(L10n.VIP.proIsActiveEnjoyAllPremiumFeatures.localized)
         }
-        .alert("提示", isPresented: Binding(
+        .alert(L10n.Common.notice, isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if $0 == false { viewModel.errorMessage = nil } }
         )) {
-            Button("好的", role: .cancel) { viewModel.errorMessage = nil }
+            Button(L10n.Common.ok, role: .cancel) { viewModel.errorMessage = nil }
         } message: {
             Text(verbatim: viewModel.errorMessage ?? "")
         }
@@ -95,7 +95,7 @@ struct VIPSubscriptionView: View {
                 )
                 .padding(.top, 8)
 
-            Text(showsPersonalVIP ? "Pro 会员已激活" : "升级至 Pro 高级版")
+            Text(showsPersonalVIP ? L10n.VIP.proMembershipActive : L10n.VIP.upgradeToPro)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
@@ -104,7 +104,7 @@ struct VIPSubscriptionView: View {
                 if showsPersonalVIP {
                     Text(proActiveDetailText)
                 } else {
-                    Text("解锁全组高级特权，一人续费全组共享")
+                    Text(L10n.Common.unlockPremiumForTheWholeGroupOneSubscript.localized)
                 }
             }
             .font(.subheadline.weight(.medium))
@@ -124,7 +124,7 @@ struct VIPSubscriptionView: View {
 
     private var planPickerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("选择订阅方案")
+            Text(L10n.VIP.chooseAPlan.localized)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .padding(.leading, 4)
@@ -149,7 +149,7 @@ struct VIPSubscriptionView: View {
 
     private var benefitsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Premium 特权")
+            Text(L10n.Common.premiumBenefits.localized)
                 .font(.headline)
                 .foregroundStyle(.primary)
                 .padding(.leading, 4)
@@ -158,40 +158,40 @@ struct VIPSubscriptionView: View {
                 VIPPremiumBenefitRow(
                     systemImage: "person.2.badge.gearshape.fill",
                     iconTint: .orange,
-                    title: "一人付费，全组 VIP",
-                    description: "一人续费承包全组，群组成员无缝共享全部高级特权。",
+                    title: L10n.VIP.onePayerWholeGroupVip,
+                    description: L10n.Family.oneRenewalCoversEveryoneGroupMembersSeamle,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "person.3.fill",
                     iconTint: .blue,
-                    title: "无限群组与成员",
-                    description: "打破建群上限，支持容纳无限成员，连接你的多重生活圈。",
+                    title: L10n.Family.unlimitedGroupsMembers,
+                    description: L10n.Common.noGroupCapsConnectEveryCircleOfYourLife,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "camera.viewfinder",
                     iconTint: .cyan,
-                    title: "AI 智能读图建任务",
-                    description: "随手拍照即可提取核心日程，让科技为你精简群组组织成本。",
+                    title: L10n.Schedule.aiPhotoToTask,
+                    description: L10n.Schedule.snapAPhotoToExtractKeySchedulesAndSimpli,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "point.topleft.down.to.point.bottomright.filled.curvepath",
                     iconTint: .green,
-                    title: "20 条位置历史轨迹",
-                    description: "解锁更长、更细腻的动态足迹线，全天安全动向一手掌握。",
+                    title: L10n.Location.n20LocationHistoryPoints,
+                    description: L10n.Common.richerMovementTrailsSoYouCanTrackSafetyA,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "location.slash.fill",
                     iconTint: .purple,
-                    title: "隐私隐身模式",
-                    description: "自由掌控位置共享时机，一键开启，随时切换独立隐私。",
+                    title: L10n.Location.privacyGhostMode,
+                    description: L10n.Location.controlWhenYouShareLocationToggleGhostMod,
                     showsDivider: false
                 )
             }
@@ -203,18 +203,18 @@ struct VIPSubscriptionView: View {
 
     private var subscriptionLegalNote: some View {
         VStack(spacing: 8) {
-            Text("订阅将自动续费，可随时在 App Store 账户设置中取消。")
+            Text(L10n.VIP.subscriptionRenewsAutomaticallyCancelAnytime.localized)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 4) {
-                legalLinkButton("隐私政策") {
+                legalLinkButton(L10n.Common.privacyPolicy) {
                     showPrivacySheet = true
                 }
                 Text("·")
                     .foregroundStyle(.tertiary)
-                legalLinkButton("用户协议") {
+                legalLinkButton(L10n.Common.termsOfService) {
                     showTermsSheet = true
                 }
             }
@@ -239,12 +239,12 @@ struct VIPSubscriptionView: View {
         if let expiry = storeKit.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement) {
             let year = Calendar.current.component(.year, from: expiry)
             return String(
-                format: AppLocalized.string("个人权益有效期至 %lld 年", locale: locale),
+                format: AppLocalized.string(L10n.Common.personalBenefitsValidUntilLld, locale: locale),
                 locale: locale,
                 year
             )
         }
-        return AppLocalized.string("感谢您的支持，尽情使用 Pro 功能吧。", locale: locale)
+        return AppLocalized.string(L10n.VIP.thankYouForYourSupportEnjoyProFeatures, locale: locale)
     }
 
     private var activeProStatusBar: some View {
@@ -253,7 +253,7 @@ struct VIPSubscriptionView: View {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.seal.fill")
                     .foregroundStyle(.orange)
-                Text("Pro 会员已激活")
+                Text(L10n.VIP.proMembershipActive.localized)
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.primary)
             }
@@ -284,7 +284,7 @@ struct VIPSubscriptionView: View {
                             .padding(.vertical, 16)
                     } else {
                         VStack(spacing: 4) {
-                            Text("订阅 Pro")
+                            Text(L10n.VIP.subscribeToPro.localized)
                                 .font(.headline.weight(.bold))
                             Text(subscribePriceCaption)
                                 .font(.subheadline.weight(.medium))
@@ -315,7 +315,7 @@ struct VIPSubscriptionView: View {
                     }
                 }
             } label: {
-                Text("恢复购买")
+                Text(L10n.Common.restorePurchases.localized)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
             }
@@ -334,13 +334,13 @@ struct VIPSubscriptionView: View {
         switch plan {
         case .monthly:
             return String(
-                format: AppLocalized.string("%@/月", locale: locale),
+                format: AppLocalized.string(L10n.Common.mo, locale: locale),
                 locale: locale,
                 price
             )
         case .yearly:
             return String(
-                format: AppLocalized.string("%@/年", locale: locale),
+                format: AppLocalized.string(L10n.Common.yr, locale: locale),
                 locale: locale,
                 price
             )
@@ -367,7 +367,7 @@ private struct VIPPlanOptionCard: View {
                     Spacer(minLength: 4)
 
                     if plan.isRecommended {
-                        Text("推荐")
+                        Text(L10n.Common.recommended.localized)
                             .font(.caption2.weight(.bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 8)
@@ -479,7 +479,7 @@ private struct VIPPremiumBenefitRow: View {
     }
 }
 
-#Preview("已订阅") {
+#Preview(L10n.VIP.subscribed) {
     NavigationStack {
         VIPSubscriptionView()
             .environmentObject({

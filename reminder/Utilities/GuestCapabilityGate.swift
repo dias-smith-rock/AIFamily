@@ -6,7 +6,7 @@ enum GuestCapabilityError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .requiresSignIn:
-            String(localized: "登录后可使用此功能，并同步本地数据。")
+            L10n.Auth.signInToUseThisFeatureAndSyncYourLocal.string()
         }
     }
 }
@@ -24,10 +24,10 @@ extension EnvironmentValues {
 
 extension View {
     func guestSignInRequiredAlert(isPresented: Binding<Bool>) -> some View {
-        alert("需要登录", isPresented: isPresented) {
-            Button("好的", role: .cancel) {}
+        alert(L10n.Auth.signInRequired, isPresented: isPresented) {
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
-            Text("登录后可使用云端功能，并同步本地数据。")
+            Text(L10n.Auth.signInToUseCloudFeaturesAndSyncYourLoca.localized)
         }
     }
 }

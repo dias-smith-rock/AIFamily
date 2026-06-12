@@ -9,13 +9,13 @@ enum SupabaseServiceError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .sdkUnavailable:
-            return AppLocalized.localizedSync("Supabase SDK 尚未接入，请先添加依赖。")
+            return AppLocalized.localizedSync(L10n.Common.supabaseSdkIsNotAvailableInThisBuildPlea)
         case .invalidConfiguration:
-            return AppLocalized.localizedSync("Supabase 配置无效，请检查 URL 与 Anon Key。")
+            return AppLocalized.localizedSync(L10n.Common.invalidSupabaseConfigurationPleaseCheckThe)
         case .invalidResponse:
-            return AppLocalized.localizedSync("服务返回数据异常。")
+            return AppLocalized.localizedSync(L10n.Common.unexpectedResponseFromTheServer)
         case .unsupportedOperation:
-            return AppLocalized.localizedSync("当前操作尚未实现。")
+            return AppLocalized.localizedSync(L10n.Common.thisOperationIsNotImplementedYet)
         }
     }
 }

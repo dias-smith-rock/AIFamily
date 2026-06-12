@@ -10,9 +10,9 @@ enum GuestDataMigrationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingMembershipContext:
-            String(localized: "迁移后未能获取群组成员身份，请稍后重试。")
+            L10n.Family.couldNotLoadMembershipAfterMigrationPlease.string()
         case .householdCreationFailed:
-            String(localized: "创建云端群组失败，请检查网络后重试。")
+            L10n.Common.failedToCreateCloudGroupCheckYourNetwork.string()
         }
     }
 }

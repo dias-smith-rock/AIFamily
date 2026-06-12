@@ -40,7 +40,7 @@ struct MineView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
-                    Text("我的")
+                    Text(L10n.Common.mine.localized)
                         .font(.title2.weight(.bold))
                         .foregroundStyle(.primary)
                 }
@@ -91,25 +91,25 @@ struct MineView: View {
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
         }
-        .alert("提示", isPresented: Binding(
+        .alert(L10n.Common.notice, isPresented: Binding(
             get: { viewModel.toastMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeToast() } }
         )) {
-            Button("好的", role: .cancel) { viewModel.acknowledgeToast() }
+            Button(L10n.Common.ok, role: .cancel) { viewModel.acknowledgeToast() }
         } message: {
             Text(verbatim: viewModel.toastMessage ?? "")
         }
-        .alert("退出失败", isPresented: Binding(
+        .alert(L10n.Common.exitFailed, isPresented: Binding(
             get: { viewModel.signOutErrorMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeSignOutError() } }
         )) {
-            Button("我知道了", role: .cancel) { viewModel.acknowledgeSignOutError() }
+            Button(L10n.Common.gotIt, role: .cancel) { viewModel.acknowledgeSignOutError() }
         } message: {
             Text(viewModel.signOutErrorMessage ?? "")
         }
-        .alert("注销账号", isPresented: $viewModel.showDeleteAccountAlert) {
-            Button("取消", role: .cancel) {}
-            Button("确认注销", role: .destructive) {
+        .alert(L10n.Common.deleteAccount, isPresented: $viewModel.showDeleteAccountAlert) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Common.deleteAccount2, role: .destructive) {
                 Task {
                     authSessionGuard.beginLoggingOut()
                     familyViewModel.prepareForSignOut()
@@ -117,21 +117,21 @@ struct MineView: View {
                 }
             }
         } message: {
-            Text("此操作将永久删除您的账号及所有个人数据（创建的群组会被解散，加入的群组会被移出）。该操作不可逆，请谨慎确认。")
+            Text(L10n.Family.thisOperationWillPermanentlyDeleteYourAcco.localized)
         }
-        .alert("无法直接注销", isPresented: $viewModel.showCreatorBlockAlert) {
-            Button("我知道了", role: .cancel) {}
-            Button("群组管理") {
+        .alert(L10n.Common.cannotDeleteAccount, isPresented: $viewModel.showCreatorBlockAlert) {
+            Button(L10n.Common.gotIt, role: .cancel) {}
+            Button(L10n.Family.groupSettings) {
                 appRouter.requestOpenGroupSettings()
             }
         } message: {
-            Text("您是「\(viewModel.creatorBlockGroupName)」等 \(viewModel.creatorBlockGroupCount) 个群组的创建者，请先转移权限或解散群组后再注销账户。")
+            Text(L10n.Common.deleteAccountCreatorBlock.formatted(locale: locale, viewModel.creatorBlockGroupName, viewModel.creatorBlockGroupCount))
         }
-        .alert("注销失败", isPresented: Binding(
+        .alert(L10n.Common.accountDeletionFailed, isPresented: Binding(
             get: { viewModel.deleteAccountErrorMessage != nil },
             set: { if $0 == false { viewModel.acknowledgeDeleteAccountError() } }
         )) {
-            Button("我知道了", role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
+            Button(L10n.Common.gotIt, role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
         } message: {
             Text(viewModel.deleteAccountErrorMessage ?? "")
         }
@@ -147,14 +147,14 @@ struct MineView: View {
                     .ignoresSafeArea()
             }
         }
-        .alert("放弃本地数据", isPresented: $showDiscardGuestDataAlert) {
-            Button("取消", role: .cancel) {}
-            Button("放弃", role: .destructive) {
+        .alert(L10n.Common.discardLocalData, isPresented: $showDiscardGuestDataAlert) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Common.giveUp, role: .destructive) {
                 GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
                 isGuestModeStorage = false
             }
         } message: {
-            Text("将删除本机试用数据，且无法恢复。")
+            Text(L10n.Common.trialDataOnThisDeviceWillBeDeletedAndCa.localized)
         }
     }
 
@@ -176,9 +176,9 @@ struct MineView: View {
                         Task { await retryGuestMigration() }
                     } label: {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("本地数据尚未同步")
+                            Text(L10n.Common.localDataNotSyncedYet.localized)
                                 .font(.headline)
-                            Text("轻点重试，将试用数据写入云端。")
+                            Text(L10n.Common.tapToRetryAndUploadTrialDataToTheCloud.localized)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
@@ -209,7 +209,7 @@ struct MineView: View {
                     LanguageSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "语言",
+                        title: L10n.Common.language,
                         systemImage: "globe",
                         iconTint: .blue,
                         value: appSettings.selectedLanguage.nativeName,
@@ -223,10 +223,10 @@ struct MineView: View {
                     #endif
                 } label: {
                     SettingsRowView(
-                        title: "通知",
+                        title: L10n.Common.notifications,
                         systemImage: "bell.badge.fill",
                         iconTint: .red,
-                        subtitle: "推动和声音"
+                        subtitle: L10n.Common.pushSounds
                     )
                 }
                 .buttonStyle(.plain)
@@ -235,7 +235,7 @@ struct MineView: View {
                     AppearanceSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "主题",
+                        title: L10n.Common.theme,
                         systemImage: "moon.fill",
                         iconTint: .purple,
                         valueKey: appSettings.appearance.localizedName,
@@ -247,7 +247,7 @@ struct MineView: View {
                     TextSizeSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "文字大小",
+                        title: L10n.Common.textSize,
                         systemImage: "textformat.size",
                         iconTint: .blue,
                         showsValue: false,
@@ -263,7 +263,7 @@ struct MineView: View {
                         .background(Color.mint.opacity(0.15))
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                    Text("开启面部解锁")
+                    Text(L10n.Common.requireFaceId.localized)
                         .font(AppTheme.FontToken.bodyStrong)
                         .foregroundStyle(.primary)
 
@@ -274,7 +274,7 @@ struct MineView: View {
                 }
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .combine)
-                .accessibilityLabel(AppLocalized.string("开启面部解锁", locale: locale))
+                .accessibilityLabel(AppLocalized.string(L10n.Common.requireFaceId, locale: locale))
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 12) {
@@ -285,7 +285,7 @@ struct MineView: View {
                             .background(Color.blue.opacity(0.15))
                             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                        Text("后台定位")
+                        Text(L10n.Common.backgroundLocation.localized)
                             .font(AppTheme.FontToken.bodyStrong)
                             .foregroundStyle(.primary)
 
@@ -296,10 +296,10 @@ struct MineView: View {
                     }
                     .contentShape(Rectangle())
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel(AppLocalized.string("后台定位", locale: locale))
+                    .accessibilityLabel(AppLocalized.string(L10n.Common.backgroundLocation, locale: locale))
 
                     if backgroundLocationEnabled, backgroundLocationCoordinator.needsAlwaysPermission {
-                        Text("请在系统设置中将位置设为「始终」，才能在后台更新位置。")
+                        Text(L10n.Location.setLocationToAlwaysInSettingsToUpdateYou.localized)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .padding(.leading, 42)
@@ -315,7 +315,7 @@ struct MineView: View {
                     LocationPersistSettingsView()
                 } label: {
                     SettingsRowView(
-                        title: "位置上报",
+                        title: L10n.Settings.locationReportingNavTitle,
                         systemImage: "mappin.and.ellipse",
                         iconTint: .teal,
                         value: LocationPersistPreferences.summaryValue(locale: locale),
@@ -323,29 +323,29 @@ struct MineView: View {
                     )
                 }
             } header: {
-                mineSectionHeader("应用设置")
+                mineSectionHeader(L10n.Common.appSettings)
             }
 
             if FeatureVisibility.showsIntegrationsSection {
                 Section {
                     mineNavigationRow(
-                        title: "集成",
+                        title: L10n.Common.integrations,
                         systemImage: "link",
                         iconTint: .orange,
-                        subtitle: "FaceTime、WhatsApp"
+                        subtitle: L10n.Common.facetimeWhatsapp
                     ) {
-                        viewModel.tapRow(feature: AppLocalized.string("集成", locale: locale))
+                        viewModel.tapRow(feature: AppLocalized.string(L10n.Common.integrations, locale: locale))
                     }
                     mineNavigationRow(
-                        title: "导入日程",
+                        title: L10n.Schedule.importEvents,
                         systemImage: "calendar",
                         iconTint: .green,
-                        subtitle: "同步日历和公共假期"
+                        subtitle: L10n.Common.syncCalendarPublicHolidays
                     ) {
-                        viewModel.tapRow(feature: AppLocalized.string("导入日程", locale: locale))
+                        viewModel.tapRow(feature: AppLocalized.string(L10n.Schedule.importEvents, locale: locale))
                     }
                 } header: {
-                    mineSectionHeader("集成和数据")
+                    mineSectionHeader(L10n.Common.integrationsData)
                 }
             }
 
@@ -354,7 +354,7 @@ struct MineView: View {
                     Task { await viewModel.contactSupport() }
                 } label: {
                     SettingsRowView(
-                        title: "支持",
+                        title: L10n.Common.support,
                         systemImage: "lifepreserver.circle.fill",
                         iconTint: .cyan
                     )
@@ -365,7 +365,7 @@ struct MineView: View {
                     showTermsSheet = true
                 } label: {
                     SettingsRowView(
-                        title: "服务条款",
+                        title: L10n.Common.termsOfService,
                         systemImage: "doc.text",
                         iconTint: Color.primary.opacity(0.55)
                     )
@@ -376,7 +376,7 @@ struct MineView: View {
                     showPrivacySheet = true
                 } label: {
                     SettingsRowView(
-                        title: "隐私政策",
+                        title: L10n.Common.privacyPolicy,
                         systemImage: "shield",
                         iconTint: .blue
                     )
@@ -387,14 +387,14 @@ struct MineView: View {
                     AboutView()
                 } label: {
                     SettingsRowView(
-                        title: "关于同圈",
+                        title: L10n.Common.aboutWesync,
                         systemImage: "info.circle",
                         iconTint: .purple,
                         showsChevron: false
                     )
                 }
             } header: {
-                mineSectionHeader("支持与法律")
+                mineSectionHeader(L10n.Common.supportLegal)
             }
 
             Section {
@@ -404,7 +404,7 @@ struct MineView: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Text("放弃本地数据")
+                            Text(L10n.Common.discardLocalData.localized)
                                 .font(AppTheme.FontToken.bodyStrong)
                             Spacer()
                         }
@@ -433,7 +433,7 @@ struct MineView: View {
                         if viewModel.isSigningOut {
                             ProgressView()
                         } else {
-                            Text(isGuestMode ? "退出试用" : "退出登录")
+                            Text(isGuestMode ? L10n.Common.exitTrial : L10n.Auth.logOut)
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()
@@ -455,12 +455,12 @@ struct MineView: View {
                         if viewModel.isCheckingCreatorStatus {
                             ProgressView()
                                 .padding(.trailing, 4)
-                            Text("注销账号")
+                            Text(L10n.Common.deleteAccount.localized)
                                 .font(AppTheme.FontToken.bodyStrong)
                         } else if viewModel.isDeletingAccount {
                             ProgressView()
                         } else {
-                            Text("注销账号")
+                            Text(L10n.Common.deleteAccount.localized)
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()
@@ -474,7 +474,7 @@ struct MineView: View {
                 .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
                 }
             } header: {
-                mineSectionHeader("账户")
+                mineSectionHeader(L10n.Common.account)
             }
         }
         .listStyle(.insetGrouped)
@@ -528,21 +528,21 @@ struct MineView: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint(AppLocalized.string("编辑我的群组档案", locale: locale))
+            .accessibilityHint(AppLocalized.string(L10n.Common.editMyGroupProfile, locale: locale))
         }
     }
 
     private var mineHeaderMainTitle: String {
         if isGuestMode {
             return familyViewModel.currentUserProfile?.displayName
-                ?? AppLocalized.string("试用用户", locale: locale)
+                ?? AppLocalized.string(L10n.Common.trialUser, locale: locale)
         }
         return familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
     }
 
     private var mineHeaderSubtitle: String {
         if isGuestMode {
-            return AppLocalized.string("数据仅保存在本机", locale: locale)
+            return AppLocalized.string(L10n.Common.dataStoredOnThisDeviceOnly, locale: locale)
         }
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.email
@@ -558,7 +558,7 @@ struct MineView: View {
 
     private func openSelfProfileEditor() {
         guard let profile = familyViewModel.currentUserProfile else {
-            viewModel.showToast(AppLocalized.string("尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。", locale: locale))
+            viewModel.showToast(AppLocalized.string(L10n.Settings.profileNotLoadedInGroup, locale: locale))
             return
         }
         editingSelfProfile = profile
@@ -581,7 +581,7 @@ struct MineView: View {
             }
             .buttonStyle(.plain)
             .offset(x: 4, y: 4)
-            .accessibilityLabel(AppLocalized.string("编辑头像", locale: locale))
+            .accessibilityLabel(AppLocalized.string(L10n.Common.editAvatar, locale: locale))
         }
     }
 
@@ -634,18 +634,18 @@ struct MineView: View {
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
-            return AppLocalized.string("群组成员", locale: locale)
+            return AppLocalized.string(L10n.Family.groupMembers, locale: locale)
         }
         switch membership.parsedRole {
         case .creator, .admin:
             return contactSubtitleLine(for: profile)
         case .member:
-            return membership.parsedRole?.displayTitle ?? AppLocalized.string("成员", locale: locale)
+            return membership.parsedRole?.displayTitle ?? AppLocalized.string(L10n.Common.member, locale: locale)
         case .none:
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
             }
-            return AppLocalized.string("群组成员", locale: locale)
+            return AppLocalized.string(L10n.Family.groupMembers, locale: locale)
         }
     }
 
@@ -695,11 +695,11 @@ struct MineView: View {
         HStack(spacing: 4) {
             Image(systemName: "icloud")
                 .font(.caption2.weight(.medium))
-            Text(AppLocalized.string("档案", locale: locale))
+            Text(AppLocalized.string(L10n.Common.profile, locale: locale))
                 .font(.caption2.weight(.medium))
         }
         .foregroundStyle(.tertiary)
-        .accessibilityLabel(AppLocalized.string("档案成员", locale: locale))
+        .accessibilityLabel(AppLocalized.string(L10n.Family.profileMember, locale: locale))
     }
 
     private enum MineAvatarPalette {
@@ -749,17 +749,17 @@ struct MineView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 if showsPersonalVIP {
-                    Text("Pro 会员")
+                    Text(L10n.VIP.proMembership.localized)
                         .font(AppTheme.FontToken.bodyStrong)
                         .foregroundStyle(.primary)
                     Text(vipActiveSubtitle)
                         .font(AppTheme.FontToken.caption)
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("升级 Pro")
+                    Text(L10n.VIP.upgradeToPro.localized)
                         .font(AppTheme.FontToken.bodyStrong)
                         .foregroundStyle(.primary)
-                    Text("一人付费，全组 VIP")
+                    Text(L10n.VIP.onePayerWholeGroupVip.localized)
                         .font(AppTheme.FontToken.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -767,7 +767,7 @@ struct MineView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if showsPersonalVIP {
-                Text("已订阅")
+                Text(L10n.VIP.subscribed.localized)
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
@@ -786,12 +786,12 @@ struct MineView: View {
            appRouter.showsPersonalVIP {
             let year = Calendar.current.component(.year, from: expiry)
             return String(
-                format: AppLocalized.string("已激活至 %lld 年", locale: locale),
+                format: AppLocalized.string(L10n.Common.activeUntilLld, locale: locale),
                 locale: locale,
                 year
             )
         }
-        return AppLocalized.string("Pro 会员已激活", locale: locale)
+        return AppLocalized.string(L10n.VIP.proMembershipActive, locale: locale)
     }
 
     private func retryGuestMigration() async {
@@ -810,7 +810,7 @@ struct MineView: View {
             _ = try await GuestDataMigrationService.migrate(snapshot: snapshot, appRouter: appRouter)
             isGuestModeStorage = false
             await appRouter.refreshStateFromBackend()
-            viewModel.toastMessage = AppLocalized.string("本地数据已同步到云端", locale: locale)
+            viewModel.toastMessage = AppLocalized.string(L10n.Common.localDataSyncedToTheCloud, locale: locale)
         } catch {
             viewModel.toastMessage = error.localizedDescription
         }

@@ -31,7 +31,7 @@ struct FamilyMemberRowView: View {
     @ViewBuilder
     private var titleView: some View {
         if isCurrentUser {
-            Text("我自己")
+            Text(L10n.Common.myself.localized)
         } else {
             Text(verbatim: mainTitle)
         }
@@ -168,7 +168,7 @@ struct FamilyMemberRowView: View {
                     .lineLimit(1)
             }
         } else {
-            Text("暂无联系方式")
+            Text(L10n.Common.noContactInfo.localized)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
@@ -179,11 +179,11 @@ struct FamilyMemberRowView: View {
         HStack(spacing: 4) {
             Image(systemName: "icloud")
                 .font(.caption2.weight(.medium))
-            Text("档案")
+            Text(L10n.Common.profile.localized)
                 .font(.caption2.weight(.medium))
         }
         .foregroundStyle(.tertiary)
-        .accessibilityLabel("档案成员")
+        .accessibilityLabel(L10n.Family.profileMember)
     }
 
     @ViewBuilder

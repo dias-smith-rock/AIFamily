@@ -37,16 +37,16 @@ enum PremiumAccessDiagnostics {
     @MainActor
     private static func resolvedHouseholdLabel(appRouter: AppRouter) -> String {
         guard let householdId = appRouter.selectedHouseholdId else {
-            return "未进入组织"
+            return L10n.Common.notInOrganization.string()
         }
         let name = appRouter.selectedHouseholdName?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = (name?.isEmpty == false) ? name! : "未命名群组"
+        let displayName = (name?.isEmpty == false) ? name! : L10n.Family.unnamedGroup
         let shortId = householdId.uuidString.prefix(8)
         return "\(displayName)(\(shortId))"
     }
 
     private static func boolText(_ value: Bool) -> String {
-        value ? "是" : "否"
+        value ? L10n.Common.yes : L10n.Common.no
     }
 }

@@ -9,11 +9,11 @@ struct TaskAssigneeLabelView: View {
 
     var body: some View {
         if task.involvesWholeHousehold {
-            Text("所有人")
+            Text(L10n.Common.everyone.localized)
         } else if let ids = task.involvedMemberIds, ids.isEmpty == false {
             assigneeText(for: ids)
         } else {
-            Text("所有人")
+            Text(L10n.Common.everyone.localized)
         }
     }
 
@@ -29,12 +29,12 @@ struct TaskAssigneeLabelView: View {
 
         if names.isEmpty {
             if ids.count == 1 {
-                Text("成员")
+                Text(L10n.Common.member.localized)
             } else {
                 Text("\(ids.count) people")
             }
         } else {
-            Text(verbatim: names.joined(separator: ", "))
+            Text(verbatim: names.joined(separator: L10n.Common.text))
         }
     }
 }

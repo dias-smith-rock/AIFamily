@@ -25,15 +25,15 @@ struct GuestAccountLinkCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("试用模式")
+            Text(L10n.Common.trialMode.localized)
                 .font(.headline)
-            Text("当前数据仅保存在本机。登录后可同步到云端，并与家人协作。")
+            Text(L10n.Auth.yourDataIsStoredOnThisDeviceOnlySignIn.localized)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
             VStack(spacing: 12) {
                 OAuthGoogleSignInButton(
-                    title: "使用 Google 同步",
+                    title: L10n.Common.syncWithGoogle,
                     isLoading: loadingProvider == .google,
                     action: triggerGoogleLogin
                 )
@@ -41,7 +41,7 @@ struct GuestAccountLinkCard: View {
 
                 #if canImport(Supabase) && canImport(AuthenticationServices)
                 OAuthAppleSignInButton(
-                    title: "通过 Apple 同步",
+                    title: L10n.Common.syncWithApple,
                     isLoading: loadingProvider == .apple,
                     action: triggerAppleSignIn
                 )
@@ -53,11 +53,11 @@ struct GuestAccountLinkCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .alert("无法完成登录", isPresented: Binding(
+        .alert(L10n.Auth.unableToCompleteLogin, isPresented: Binding(
             get: { errorMessage != nil },
             set: { if $0 == false { errorMessage = nil } }
         )) {
-            Button("好的", role: .cancel) {}
+            Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
         }
@@ -87,17 +87,17 @@ struct GuestAccountLinkCard: View {
             }
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else {
-                errorMessage = AppLocalized.string("未能读取 Apple 登录凭证。", locale: locale)
+                errorMessage = AppLocalized.string(L10n.Auth.appleCredentialReadFailed, locale: locale)
                 return
             }
             guard let tokenData = credential.identityToken,
                   let idTokenString = String(data: tokenData, encoding: .utf8)
             else {
-                errorMessage = AppLocalized.string("未能获取 Apple identity token。", locale: locale)
+                errorMessage = AppLocalized.string(L10n.Auth.appleIdentityTokenFailed, locale: locale)
                 return
             }
             guard let rawNonce = appleSignInPresenter.currentRawNonce else {
-                errorMessage = AppLocalized.string("登录状态异常，请重试。", locale: locale)
+                errorMessage = AppLocalized.string(L10n.Auth.sessionAbnormalRetry, locale: locale)
                 return
             }
 

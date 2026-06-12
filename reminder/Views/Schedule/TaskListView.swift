@@ -152,8 +152,8 @@ struct TaskListView: View {
                 )
                 .ignoresSafeArea()
             }
-            .alert("识图失败", isPresented: aiErrorAlertBinding) {
-                Button("好的", role: .cancel) {
+            .alert(L10n.Common.imageRecognitionFailed, isPresented: aiErrorAlertBinding) {
+                Button(L10n.Common.ok, role: .cancel) {
                     viewModel.aiProcessingError = nil
                 }
             } message: {
@@ -253,7 +253,7 @@ struct TaskListView: View {
                         onRefresh: refreshTasks
                     )
                 case .threeDay, .week, .month, .year:
-                    Text(AppLocalized.string("开发中...", locale: locale))
+                    Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -266,7 +266,7 @@ struct TaskListView: View {
 
     private var quickTaskInputBar: some View {
         HStack(spacing: 10) {
-            TextField("输入任务标题…", text: $quickTaskInput)
+            TextField(L10n.Schedule.enterTaskTitle.localized, text: $quickTaskInput)
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.done)
                 .onSubmit(submitQuickTaskInput)
@@ -280,7 +280,7 @@ struct TaskListView: View {
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isAIProcessing)
-            .accessibilityLabel("拍照创建任务")
+            .accessibilityLabel(L10n.Common.createTaskFromPhoto)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -296,7 +296,7 @@ struct TaskListView: View {
                 ProgressView()
                     .controlSize(.large)
                     .tint(.white)
-                Text("AI 正在阅读您的图片...")
+                Text(L10n.Common.aiIsReadingYourImage.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
@@ -407,8 +407,8 @@ struct TaskListView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("群组，\(GroupSwitcherData.currentName(for: appRouter))")
-                        .accessibilityHint("轻点以切换群组")
+                        .accessibilityLabel(L10n.Family.groupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+                        .accessibilityHint(L10n.Family.doubleTapToSwitchGroup)
                     }
                 }
 

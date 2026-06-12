@@ -20,9 +20,9 @@ struct HouseholdPickerView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(AppLocalized.string("选择群组", locale: locale))
+            Text(AppLocalized.string(L10n.Family.selectGroup, locale: locale))
                 .font(.system(size: 32, weight: .bold))
-            Text(AppLocalized.string("检测到你加入了多个群组，请选择本次要进入的群组。", locale: locale))
+            Text(AppLocalized.string(L10n.Family.itIsDetectedThatYouHaveJoinedMultipleGro, locale: locale))
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.secondary)
         }
@@ -31,7 +31,7 @@ struct HouseholdPickerView: View {
     @ViewBuilder
     private var optionsList: some View {
         if appRouter.selectableHouseholds.isEmpty {
-            ProgressView(AppLocalized.string("正在加载群组列表...", locale: locale))
+            ProgressView(AppLocalized.string(L10n.Common.loadingGroupList, locale: locale))
                 .frame(maxWidth: .infinity, minHeight: 180)
         } else {
             VStack(spacing: 10) {

@@ -70,7 +70,7 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func showTransferSuccessToast() {
-        transferSuccessToastMessage = AppLocalized.localized("权限已成功转移")
+        transferSuccessToastMessage = AppLocalized.localized(L10n.Common.ownershipTransferredSuccessfully)
     }
 
     func acknowledgeTransferSuccessToast() {
@@ -203,12 +203,12 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private enum LeaveCopy {
-        static let creatorCannotLeave = String(localized: "您是此群组的创建者。退出前请先转移所有权或解散群组。")
-        static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
-        static let householdNotFound = String(localized: "该群组不存在或已被删除。")
-        static let backendMigrationRequired = String(localized: "需要后端升级。请应用最新的 Supabase 迁移并重试。")
-        static let forbidden = String(localized: "您无权执行此操作。")
-        static let leaveFailed = String(localized: "退出群组失败，请稍后重试。")
+        static let creatorCannotLeave = L10n.Family.youAreTheCreatorOfThisGroupTransferOwner.string()
+        static let sessionExpired = L10n.Auth.yourSignInSessionHasExpiredPleaseSignIn.string()
+        static let householdNotFound = L10n.Family.thisGroupDoesNotExistOrHasBeenDeleted.string()
+        static let backendMigrationRequired = L10n.Common.backendUpgradeRequiredPleaseApplyTheLatest2.string()
+        static let forbidden = L10n.Common.youDonTHavePermissionToPerformThisAction.string()
+        static let leaveFailed = L10n.Family.couldNotLeaveTheGroupPleaseTryAgainLater.string()
     }
 
     private func mapLeaveErrorMessage(_ error: Error) -> String {
@@ -250,29 +250,29 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private enum ProfileManagementCopy {
-        static let noHouseholdSelected = String(localized: "当前未选择群组。")
-        static let displayNameRequired = String(localized: "称呼不能为空。")
-        static let nicknameRequired = String(localized: "请输入角色称呼（不能为空）。")
-        static let cannotEditProfile = String(localized: "当前没有权限修改该成员资料。")
-        static let cannotRemoveMember = String(localized: "当前没有权限移出或删除该成员。")
-        static let removeMemberFailed = String(localized: "操作失败，请稍后重试。")
-        static let householdNameMismatch = String(localized: "群组名称不匹配，请重新输入。")
-        static let disbandUnauthorized = String(localized: "只有创建者才能解散该群组。")
-        static let sessionExpired = String(localized: "您的登录会话已过期。请重新登录。")
-        static let householdNotFound = String(localized: "该群组不存在或已被删除。")
+        static let noHouseholdSelected = L10n.Common.noGroupIsCurrentlySelected.string()
+        static let displayNameRequired = L10n.Common.nameCannotBeEmpty.string()
+        static let nicknameRequired = L10n.Common.pleaseEnterARoleNameCannotBeEmpty.string()
+        static let cannotEditProfile = L10n.Family.youDoNotHavePermissionToEditThisMemberP.string()
+        static let cannotRemoveMember = L10n.Family.youDonTHavePermissionToRemoveOrDeleteTh.string()
+        static let removeMemberFailed = L10n.Common.actionFailedPleaseTryAgainLater.string()
+        static let householdNameMismatch = L10n.Family.groupNameDoesNotMatchPleaseEnterItAgain.string()
+        static let disbandUnauthorized = L10n.Family.onlyTheCreatorCanDisbandThisGroup.string()
+        static let sessionExpired = L10n.Auth.yourSignInSessionHasExpiredPleaseSignIn.string()
+        static let householdNotFound = L10n.Family.thisGroupDoesNotExistOrHasBeenDeleted.string()
         static let backendMigrationRequired = String(
-            localized: "需要后端升级。请应用最新的 Supabase 迁移并重试。"
+            localized: L10n.Common.backendUpgradeRequiredPleaseApplyTheLatest2
         )
-        static let networkFailure = String(localized: "网络连接错误。请检查您的连接并重试。")
-        static let renameHouseholdEmpty = String(localized: "群组名称不能为空。")
-        static let renameHouseholdTaken = String(localized: "该群组名称已被占用，请换一个名称。")
-        static let renameForbidden = String(localized: "仅创建者或管理员可以修改群组名称。")
+        static let networkFailure = L10n.Common.networkConnectionErrorPleaseCheckYourConne.string()
+        static let renameHouseholdEmpty = L10n.Family.groupNameCannotBeEmpty.string()
+        static let renameHouseholdTaken = L10n.Family.thisGroupNameIsAlreadyTakenPleaseChooseA.string()
+        static let renameForbidden = L10n.Family.onlyTheCreatorOrAnAdminCanRenameTheGrou.string()
         static let renameHouseholdNotFoundRefresh = String(
-            localized: "群组不存在或已被删除，请刷新后重试。"
+            localized: L10n.Family.thisGroupDoesNotExistOrHasBeenDeletedPl
         )
-        static let renameFailed = String(localized: "重命名群组失败，请稍后重试。")
-        static let cannotToggleAdminRole = String(localized: "当前没有权限修改该成员的管理员身份。")
-        static let adminLimitReached = String(localized: "群组管理员人数已达上限（3 人）。")
+        static let renameFailed = L10n.Common.failedToRenameTheGroupPleaseTryAgainLate.string()
+        static let cannotToggleAdminRole = L10n.Family.youDonTHavePermissionToChangeThisMember.string()
+        static let adminLimitReached = L10n.Family.thisGroupAlreadyHasTheMaximumOf3Admins.string()
     }
 
     private static let maxAdminCount = 3
@@ -653,7 +653,7 @@ final class FamilyViewModel: ObservableObject {
             return nil
         }
         guard member.householdId == householdId else {
-            errorMessage = AppLocalized.localized("成员创建失败：群组上下文不一致。")
+            errorMessage = AppLocalized.localized(L10n.Common.failedToCreateMemberInconsistentGroupConte)
             return nil
         }
 
@@ -681,7 +681,7 @@ final class FamilyViewModel: ObservableObject {
             currentActiveCount: activeMemberCount,
             hasPremium: hasPremiumAccess
         ) else {
-            return AppLocalized.localized("免费版每组最多 2 名成员，升级 Pro 后可添加更多。")
+            return AppLocalized.localized(L10n.Common.freePlanAllows2MembersPerGroupUpgradeTo)
         }
         let idsBeforeCreate = Set(profiles.map(\.id))
         var normalizedDraft = draft
@@ -808,7 +808,7 @@ final class FamilyViewModel: ObservableObject {
         print("🔎 [FamilyDebug] uploadAvatar received bytes=\(data.count)")
         #endif
         guard data.isEmpty == false else {
-            errorMessage = AppLocalized.localized("头像数据为空，请重新选择图片后再试。")
+            errorMessage = AppLocalized.localized(L10n.Common.avatarDataIsEmptyPleaseChooseAnotherPhoto)
             #if DEBUG
             print("❌ [FamilyDebug] uploadAvatar aborted - empty data")
             #endif
@@ -882,7 +882,7 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func deleteButtonTitle(for profile: FamilyProfile) -> LocalizedStringKey {
-        isVirtualMember(profile) ? "删除该成员档案" : "将该成员移出群组"
+        isVirtualMember(profile) ? L10n.Family.deleteMemberProfile : L10n.Family.removeFromGroup
     }
 
     func adminRoleToggleAction(for profile: FamilyProfile) -> ProfileEditView.AdminRoleToggleAction? {
@@ -891,7 +891,7 @@ final class FamilyViewModel: ObservableObject {
 
         let isAdmin = targetRole == .admin
         return ProfileEditView.AdminRoleToggleAction(
-            buttonTitle: isAdmin ? "移除管理员" : "设为管理员",
+            buttonTitle: isAdmin ? L10n.Common.removeAdmin : L10n.Common.makeAdmin,
             isPromoting: isAdmin == false,
             onToggle: { [weak self] in
                 guard let self else { return ProfileManagementCopy.removeMemberFailed }
@@ -949,7 +949,7 @@ final class FamilyViewModel: ObservableObject {
 
     func deleteOrRemoveMember(profile: FamilyProfile) async -> String? {
         guard let householdId = currentHouseholdId else {
-            return AppLocalized.localized("当前未选择群组。")
+            return AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
         }
         guard shouldShowDeleteButton(for: profile) else {
             return ProfileManagementCopy.cannotRemoveMember
@@ -1314,7 +1314,7 @@ final class FamilyViewModel: ObservableObject {
                     "\(key)=\(value.count)"
                 }
                 .sorted()
-                .joined(separator: ", ")
+                .joined(separator: L10n.Common.text)
             let sample = rows.prefix(12).map { row in
                 let ids = row.targetProfileIds?.map(\.uuidString).joined(separator: ",") ?? "nil"
                 return "id=\(row.id.uuidString), task_type=\(row.taskType ?? "nil"), target_profile_ids=\(ids)"
@@ -1345,8 +1345,8 @@ final class FamilyViewModel: ObservableObject {
                         .filter { $0.isEmpty == false }
                 )
                 let hitSubjectAndBirthday = legacyNames.contains(row.targetSubject ?? "")
-                    && title.contains("生日")
-                let hitLegacyTitleOnly = title.contains("生日")
+                    && title.contains(L10n.Common.birthday)
+                let hitLegacyTitleOnly = title.contains(L10n.Common.birthday)
                     && legacyNames.contains(where: { title.contains($0) })
                 return hitMarker || hitSubjectAndBirthday || hitLegacyTitleOnly
             }
@@ -1439,7 +1439,7 @@ final class FamilyViewModel: ObservableObject {
                     taskType: "birthday_reminder",
                     targetProfileIds: [profile.id],
                     targetSubject: nil,
-                    description: AppLocalized.localized("生日自动任务（年度循环）"),
+                    description: AppLocalized.localized(L10n.Common.birthdayAutoTaskYearlyRecurrence),
                     originalPrompt: birthdaySyncMarker(for: profile.id)
                 )
             }

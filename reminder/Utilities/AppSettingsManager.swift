@@ -11,9 +11,9 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
     /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
     var localizedName: LocalizedStringKey {
         switch self {
-        case .system: "跟随系统"
-        case .light: "浅色模式"
-        case .dark: "深色模式"
+        case .system: L10n.Common.followSystem.localized
+        case .light: L10n.Common.lightMode.localized
+        case .dark: L10n.Common.darkMode.localized
         }
     }
 
