@@ -53,16 +53,35 @@ struct TaskModeDayView: View {
             weekSection
                 .padding(.horizontal, 16)
 
-            ZStack(alignment: .top) {
-                dayScheduleContent
-                    .id(selectedDay)
-                    .transition(dayContentTransition)
+            if viewModel.tasks.isEmpty, viewModel.isLoading {
+                ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            } else if viewModel.tasks.isEmpty, let errorMessage = viewModel.errorMessage {
+                ContentUnavailableView {
+                    Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(errorMessage)
+                } actions: {
+                    Button(AppLocalized.string(L10n.Common.reload, locale: locale)) {
+                        Task {
+                            await refreshTasks()
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                ZStack(alignment: .top) {
+                    dayScheduleContent
+                        .id(selectedDay)
+                        .transition(dayContentTransition)
+                }
+                .animation(daySwipeSpring, value: selectedDay)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .offset(x: interactiveDayDragOffset)
+                .clipped()
+                .simultaneousGesture(dayChangeDragGesture)
             }
-            .animation(daySwipeSpring, value: selectedDay)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .offset(x: interactiveDayDragOffset)
-            .clipped()
-            .simultaneousGesture(dayChangeDragGesture)
         }
         .background(AppTheme.ColorToken.background.ignoresSafeArea())
         .onChange(of: selectedDate) { oldValue, newValue in

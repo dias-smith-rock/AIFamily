@@ -136,6 +136,12 @@ final class ScheduleViewModel: ObservableObject {
         }
 
         guard await NetworkMonitor.shared.isConnected else {
+            if !silent, tasks.isEmpty {
+                errorMessage = AppLocalized.localizedSync(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            }
+            #if DEBUG
+            print("[ScheduleViewModel] loadTasks skipped reason=offline household=\(householdId.uuidString.prefix(8)) tasks=\(tasks.count)")
+            #endif
             return
         }
 
@@ -150,7 +156,13 @@ final class ScheduleViewModel: ObservableObject {
             if !silent {
                 errorMessage = nil
             }
+            #if DEBUG
+            print("[ScheduleViewModel] loadTasks ok household=\(householdId.uuidString.prefix(8)) count=\(fresh.count)")
+            #endif
         } catch {
+            #if DEBUG
+            print("[ScheduleViewModel] loadTasks failed household=\(householdId.uuidString.prefix(8)) error=\(error.localizedDescription)")
+            #endif
             if !silent {
                 if restoredFromDisk == false {
                     errorMessage = error.localizedDescription

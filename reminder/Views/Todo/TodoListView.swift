@@ -71,15 +71,17 @@ struct TodoListView: View {
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
             .sheet(item: $taskForDetailSheet) { task in taskDetailSheet(task: task) }
             .sheet(isPresented: $isShowingCreateFlexibleSheet) { createFlexibleSheet }
-            .task(id: appRouter.selectedHouseholdId) {
+            .task(id: todoLoadTrigger) {
                 bindHouseholdContext()
+                guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasksIfNeeded()
                 openPendingFlexibleTaskIfNeeded()
-                Task { await refreshCurrentMembershipRole() }
+                await refreshCurrentMembershipRole()
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
                     await scheduleViewModel.loadTasks(silent: true)
+                    await viewModel.loadTasks(silent: true, force: true)
                 }
             }
             .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
@@ -368,6 +370,12 @@ struct TodoListView: View {
     private func presentCreateFlexible() {
         createTaskFormInstanceID = UUID()
         isShowingCreateFlexibleSheet = true
+    }
+
+    /// household 或 auth bootstrap 完成后触发待办加载，避免 JWT 刷新前过早请求。
+    private var todoLoadTrigger: String {
+        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
+        return "\(household)-\(appRouter.hasCompletedAuthBootstrap)"
     }
 
     private func bindHouseholdContext() {

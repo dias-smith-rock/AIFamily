@@ -161,14 +161,13 @@ struct TaskListView: View {
                     Text(message)
                 }
             }
-            .task {
+            .task(id: taskLoadTrigger) {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+                guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasks()
                 openPendingScheduledTaskIfNeeded()
-                Task {
-                    await refreshCurrentMembershipRole()
-                    await viewModel.setupRealtimeListener()
-                }
+                await refreshCurrentMembershipRole()
+                await viewModel.setupRealtimeListener()
             }
             .onDisappear {
                 Task {
@@ -178,12 +177,11 @@ struct TaskListView: View {
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
                 viewModel.setHouseholdContext(newValue)
                 Task {
+                    guard appRouter.hasCompletedAuthBootstrap else { return }
                     await viewModel.loadTasks()
                     openPendingScheduledTaskIfNeeded()
-                    Task {
-                        await refreshCurrentMembershipRole()
-                        await viewModel.setupRealtimeListener()
-                    }
+                    await refreshCurrentMembershipRole()
+                    await viewModel.setupRealtimeListener()
                 }
             }
             .onChange(of: appRouter.selectedMembershipId) { _, _ in
@@ -317,6 +315,12 @@ struct TaskListView: View {
                 }
             }
         )
+    }
+
+    /// household 或 auth bootstrap 完成后触发任务加载，避免 JWT 刷新前过早请求。
+    private var taskLoadTrigger: String {
+        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
+        return "\(household)-\(appRouter.hasCompletedAuthBootstrap)"
     }
 
     private func submitQuickTaskInput() {

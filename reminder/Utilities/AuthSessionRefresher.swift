@@ -14,7 +14,13 @@ enum AuthSessionRefresher {
         guard client.auth.currentSession != nil else { return }
         do {
             _ = try await client.auth.refreshSession()
+            #if DEBUG
+            print("[AuthSessionRefresher] refreshSession ok")
+            #endif
         } catch {
+            #if DEBUG
+            print("[AuthSessionRefresher] refreshSession failed: \(error.localizedDescription)")
+            #endif
             CrashReporting.record(error, context: ["step": "foreground_session_refresh"])
         }
         #endif

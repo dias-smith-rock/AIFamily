@@ -271,6 +271,27 @@ final class AppRouter: ObservableObject {
                 return
             }
 
+            if let currentId = selectedHouseholdId,
+               let currentOption = options.first(where: { $0.id == currentId }) {
+                debugLog("route.activeMember reason=current_selection household=\(currentOption.id.uuidString)")
+                selectHouseholdAndEnter(
+                    option: currentOption,
+                    userId: userId
+                )
+                await refreshSelectedHouseholdCreatorPro(householdId: currentOption.id)
+                return
+            }
+
+            if let snapshotOption = restoredOfflineHouseholdOption(in: options) {
+                debugLog("route.activeMember reason=offline_snapshot household=\(snapshotOption.id.uuidString)")
+                selectHouseholdAndEnter(
+                    option: snapshotOption,
+                    userId: userId
+                )
+                await refreshSelectedHouseholdCreatorPro(householdId: snapshotOption.id)
+                return
+            }
+
             selectedHouseholdId = nil
             selectedMembershipId = nil
         selectedProfileId = nil
@@ -757,6 +778,16 @@ final class AppRouter: ObservableObject {
         if let data = try? JSONEncoder().encode(snapshot) {
             UserDefaults.standard.set(data, forKey: Self.offlineHouseholdSnapshotKey)
         }
+    }
+
+    private func restoredOfflineHouseholdOption(in options: [HouseholdOption]) -> HouseholdOption? {
+        guard
+            let data = UserDefaults.standard.data(forKey: Self.offlineHouseholdSnapshotKey),
+            let snapshot = try? JSONDecoder().decode(OfflineHouseholdSnapshot.self, from: data)
+        else {
+            return nil
+        }
+        return options.first(where: { $0.id == snapshot.householdId })
     }
 
     private func saveLastHouseholdId(_ householdId: UUID, for userId: UUID) {

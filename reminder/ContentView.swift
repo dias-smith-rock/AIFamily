@@ -322,6 +322,18 @@ struct ContentView: View {
     }
 
     @MainActor
+    private func reloadTasksIfActiveMember() {
+        guard appRouter.appState == .activeMember,
+              appRouter.selectedHouseholdId != nil else {
+            return
+        }
+        #if DEBUG
+        print("[ContentView] bootstrap complete → reload tasks household=\(appRouter.selectedHouseholdId?.uuidString ?? "nil")")
+        #endif
+        NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+    }
+
+    @MainActor
     private func runForegroundLocationBootstrap(vipLogTrigger: String? = nil) async {
         _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
         refreshForegroundLocationSchedulerContext()
@@ -331,6 +343,7 @@ struct ContentView: View {
         if let vipLogTrigger {
             appRouter.logVIPAccessState(trigger: vipLogTrigger)
         }
+        reloadTasksIfActiveMember()
         guard await NetworkMonitor.shared.isConnected else { return }
         await reportLocationWhenEnteringForeground()
         await syncBackgroundLocationService()
