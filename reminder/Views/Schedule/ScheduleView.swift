@@ -456,9 +456,9 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", titleKey: L10n.Common.dinnerTogether.key, dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", titleKey: L10n.Common.groceryList.key, dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", titleKey: L10n.Common.kidsActivity.key, dueDateKind: .nextSaturdayFromSelected)
+                actionChip(emoji: "✨", title: L10n.Common.dinnerTogether, dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", title: L10n.Common.groceryList, dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", title: L10n.Common.kidsActivity, dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -466,15 +466,15 @@ struct TaskModeDayView: View {
     }
 
     /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
-    private func actionChip(emoji: String, titleKey: String, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
+    private func actionChip(emoji: String, title: L10n.Entry, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
         Button {
-            onQuickCreate(AppLocalized.string(titleKey, locale: locale), defaultDueDate(for: dueDateKind))
+            onQuickCreate(AppLocalized.string(title, locale: locale), defaultDueDate(for: dueDateKind))
         } label: {
             HStack(spacing: 10) {
                 Text(emoji)
                     .font(.system(size: 22))
                     .fixedSize()
-                Text(LocalizedStringKey(titleKey))
+                Text(title.localized)
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
             }
