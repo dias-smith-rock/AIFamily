@@ -69,7 +69,6 @@ extension L10n {
     static let theCurrentGroupDoesNotMatchThisTaskSave = Entry(key: "schedule_the_current_group_does_not_match_this_task_save", table: .schedule)
     static let theTaskHasBeenWrittenIntoTheScheduleAnd = Entry(key: "schedule_the_task_has_been_written_into_the_schedule_and", table: .schedule)
     static let thisIsARecurringTask = Entry(key: "schedule_this_is_a_recurring_task", table: .schedule)
-    static let thisOperationIsIrreversibleAllMembersWill = Entry(key: "schedule_this_operation_is_irreversible_all_members_will", table: .schedule)
     static let thisScheduleIsSynchronizedExternallyAndDoe = Entry(key: "schedule_this_schedule_is_synchronized_externally_and_doe", table: .schedule)
     static let thisTaskHasBeenCompleted = Entry(key: "schedule_this_task_has_been_completed", table: .schedule)
     static let thisTaskHasBeenCompleted2 = Entry(key: "schedule_this_task_has_been_completed_2", table: .schedule)

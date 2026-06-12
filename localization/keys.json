@@ -29,10 +29,10 @@
   },
   {
     "legacy_key": "此操作不可逆！所有成员将被移除，任务、评论反馈及邀请码将被永久清空。请输入当前群组名称「%@」以确认解散。",
-    "new_key": "schedule_this_operation_is_irreversible_all_members_will",
-    "table": "Schedule",
-    "swift_property": "thisOperationIsIrreversibleAllMembersWill",
-    "orphan": true
+    "new_key": "family_disband_confirm_message",
+    "table": "Family",
+    "swift_property": "disbandConfirmMessage",
+    "orphan": false
   },
   {
     "legacy_key": "粘贴 sig 后调用 consume-invite-link，快速验证 200/409/410 状态。",
@@ -71,10 +71,10 @@
   },
   {
     "legacy_key": "您是「%@」等 %lld 个群组的创建者，请先转移权限或解散群组后再注销账户。",
-    "new_key": "family_you_are_the_creator_of_2_lld_group_s_including_1",
-    "table": "Family",
-    "swift_property": "youAreTheCreatorOf2LldGroupSIncluding1",
-    "orphan": true
+    "new_key": "settings_delete_account_creator_block",
+    "table": "Settings",
+    "swift_property": "deleteAccountCreatorBlock",
+    "orphan": false
   },
   {
     "legacy_key": "转移后，您将降级为普通成员。被转移方会自动成为创建者，无需确认。请谨慎选择。",

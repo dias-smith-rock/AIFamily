@@ -4,7 +4,6 @@ import SwiftUI
 
 extension L10n {
     enum Common {
-    static let n1Lld2Lld = Entry(key: "common_1_lld_2_lld", table: .common)
     static let aboutWesync = Entry(key: "common_about_wesync", table: .common)
     static let accepted = Entry(key: "common_accepted", table: .common)
     static let account = Entry(key: "common_account", table: .common)
@@ -177,8 +176,8 @@ extension L10n {
     static let flexibleToDosDonTSupportRecurrence = Entry(key: "common_flexible_to_dos_don_t_support_recurrence", table: .common)
     static let followSystem = Entry(key: "common_follow_system", table: .common)
     static let fontSize = Entry(key: "common_font_size", table: .common)
-    static let forLabel = Entry(key: "common_for", table: .common)
     static let forExampleWangGroupCourtyard = Entry(key: "common_for_example_wang_group_courtyard", table: .common)
+    static let forLabel = Entry(key: "common_for", table: .common)
     static let forWhomFor = Entry(key: "common_for_whom_for", table: .common)
     static let free = Entry(key: "common_free", table: .common)
     static let fromChaosToClarity = Entry(key: "common_from_chaos_to_clarity", table: .common)
@@ -276,6 +275,7 @@ extension L10n {
     static let n10MinutesBefore = Entry(key: "common_n_10_minutes_before", table: .common)
     static let n15MinutesBefore = Entry(key: "common_n_15_minutes_before", table: .common)
     static let n1HourBefore = Entry(key: "common_n_1_hour_before", table: .common)
+    static let n1Lld2Lld = Entry(key: "common_1_lld_2_lld", table: .common)
     static let n30MinutesBefore = Entry(key: "common_n_30_minutes_before", table: .common)
     static let n3Day = Entry(key: "common_n_3_day", table: .common)
     static let n5MinutesBefore = Entry(key: "common_n_5_minutes_before", table: .common)
@@ -357,8 +357,8 @@ extension L10n {
     static let rememberToCheckYourRefrigeratorInventoryOn = Entry(key: "common_remember_to_check_your_refrigerator_inventory_on", table: .common)
     static let removeAdmin = Entry(key: "common_remove_admin", table: .common)
     static let removeAttachment = Entry(key: "common_remove_attachment", table: .common)
-    static let repeatLabel = Entry(key: "common_repeat", table: .common)
     static let repeat2 = Entry(key: "common_repeat_2", table: .common)
+    static let repeatLabel = Entry(key: "common_repeat", table: .common)
     static let requireFaceId = Entry(key: "common_require_face_id", table: .common)
     static let reset = Entry(key: "common_reset", table: .common)
     static let restoreFailedPleaseTryAgainLater = Entry(key: "common_restore_failed_please_try_again_later", table: .common)

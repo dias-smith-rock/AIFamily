@@ -142,7 +142,6 @@ extension L10n {
     static let upTo1Group2MembersPerGroup = Entry(key: "family_up_to_1_group_2_members_per_group", table: .family)
     static let whileHiddenGroupMembersCannotSeeYourLocat = Entry(key: "family_while_hidden_group_members_cannot_see_your_locat", table: .family)
     static let youAreAlreadyAMemberOfThisGroup = Entry(key: "family_you_are_already_a_member_of_this_group", table: .family)
-    static let youAreTheCreatorOf2LldGroupSIncluding1 = Entry(key: "family_you_are_the_creator_of_2_lld_group_s_including_1", table: .family)
     static let youAreTheCreatorOfThisGroupPleaseTransfe = Entry(key: "family_you_are_the_creator_of_this_group_please_transfe", table: .family)
     static let youAreTheCreatorOfThisGroupTransferOwner = Entry(key: "family_you_are_the_creator_of_this_group_transfer_owner", table: .family)
     static let youDoNotHavePermissionToEditThisMemberP = Entry(key: "family_you_do_not_have_permission_to_edit_this_member_p", table: .family)
