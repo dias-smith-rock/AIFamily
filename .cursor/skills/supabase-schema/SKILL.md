@@ -93,13 +93,13 @@ description: >-
 | `feedbacks` | `Feedback` |
 | `task_attachments` | `TaskAttachment` |
 | `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `current_location` / `history_location_*` → `LocationPayload`（`lat`/`lng`/`address_name`） |
-| `subscription_orders` | `SubscriptionOrder`；**仅 service_role**（Edge Function `verify-apple-subscription` → RPC `activate_premium_from_apple`）写入；客户端只读本人订单 |
-| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**仅 service_role 写入**；客户端只读 |
+| `subscription_orders` | `SubscriptionOrder`；历史 Apple IAP 订单（可选）；新购走路径见 RevenueCat |
+| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**仅 service_role** 经 `sync_user_entitlement_from_revenuecat`（RevenueCat Webhook / `sync-revenuecat-entitlement`）写入；客户端只读 |
 | `households.is_premium` | 购买激活时由 RPC 写入的缓存位；**客户端 VIP 判断不依赖此列**，改用 RPC `household_creator_has_active_pro` |
 | `resolve_household_creator_user_id` | RPC 内部辅助：优先 `household_memberships.role=creator` → `user_id`；回退 `households.creator_id` 作 auth user id 或 membership id |
 | `household_creator_has_active_pro` | RPC（authenticated 成员可调用）：`resolve_household_creator_user_id` → `user_entitlements` 判断创建者 Pro 是否有效 |
-| IAP 校验 | iOS 传 `VerificationResult.jwsRepresentation` → Edge Function 用 Apple 证书验 JWS → RPC 激活 |
-| VIP 权限（客户端） | `PremiumAccess`：本人 `user_entitlements.isActive` **或** 当前组织 `household_creator_has_active_pro` |
+| IAP / RevenueCat | Entitlement 标识符 `premium`；主路径 Webhook → `sync_user_entitlement_from_revenuecat`；兜底 `sync-revenuecat-entitlement` |
+| VIP 权限（客户端） | `AppRouter.hasPremiumAccess`：`PremiumAccess`（本人 `user_entitlements.isActive` **或** `household_creator_has_active_pro`）**或** `RevenueCatSubscriptionService.hasActiveProEntitlement` |
 | `invite_link_nonces` | `InviteLinkNonce` |
 
 ## 编解码

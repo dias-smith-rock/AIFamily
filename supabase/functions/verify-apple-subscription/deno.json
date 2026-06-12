@@ -1,7 +1,0 @@
-{
-  "imports": {
-    "jose": "npm:jose@5.9.6",
-    "@peculiar/x509": "npm:@peculiar/x509@1.12.3"
-  },
-  "nodeModulesDir": "auto"
-}

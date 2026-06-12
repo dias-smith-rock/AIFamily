@@ -6,7 +6,7 @@ struct VIPSubscriptionView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeVIPSubscriptionViewModel()
-    @ObservedObject private var storeKit = StoreKitSubscriptionService.shared
+    @ObservedObject private var revenueCat = RevenueCatSubscriptionService.shared
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
     @State private var showPurchaseSuccessAlert = false
@@ -47,7 +47,8 @@ struct VIPSubscriptionView: View {
         .task {
             AnalyticsManager.log(event: .vipPageViewed)
             await viewModel.loadProducts()
-            await storeKit.refreshLocalEntitlements(for: appRouter.authUserId)
+            await revenueCat.refreshCustomerInfo()
+            await revenueCat.syncEntitlementToCloudIfNeeded(appRouter: appRouter)
         }
         .alert(L10n.VIP.subscriptionSuccessful, isPresented: $showPurchaseSuccessAlert) {
             Button(L10n.Common.ok, role: .cancel) {
@@ -133,7 +134,7 @@ struct VIPSubscriptionView: View {
                 ForEach(VIPBillingPlan.allCases) { plan in
                     VIPPlanOptionCard(
                         plan: plan,
-                        priceText: storeKit.displayPrice(for: plan) ?? plan.fallbackPriceText,
+                        priceText: revenueCat.displayPrice(for: plan) ?? plan.fallbackPriceText,
                         isSelected: viewModel.selectedPlan == plan
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -241,7 +242,7 @@ struct VIPSubscriptionView: View {
     // MARK: - Footer
 
     private var proActiveDetailText: String {
-        if let expiry = storeKit.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement) {
+        if let expiry = revenueCat.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement) {
             let year = Calendar.current.component(.year, from: expiry)
             return String(
                 format: AppLocalized.string(L10n.Common.personalBenefitsValidUntilLld, locale: locale),

@@ -16,6 +16,7 @@
 		DDD16A0C2FC91B21009FE64F /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */; };
 		DDD16A0E2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */; };
 		DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */; };
+		DDE1RC012FC91B21009FE64F /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = DDE1RC022FC91B21009FE64F /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +59,7 @@
 				DDD16A0A2FC91B21009FE64F /* FirebaseAnalytics in Frameworks */,
 				DDD16A062FC91B21009FE64F /* FirebaseAI in Frameworks */,
 				DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */,
+				DDE1RC012FC91B21009FE64F /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,7 @@
 				DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */,
 				DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */,
 				DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */,
+				DDE1RC022FC91B21009FE64F /* RevenueCat */,
 			);
 			productName = WeSync;
 			productReference = DD17A5EF2F9F4E500059AE67 /* WeSync.app */;
@@ -159,6 +162,7 @@
 				DDC2AF6D2F9F860600D9A032 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 				DD169C4E2FB2A667007D6B54 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				DDD16A042FC91B21009FE64F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				DDE1RC032FC91B21009FE64F /* XCRemoteSwiftPackageReference "purchases-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DD17A5F02F9F4E500059AE67 /* Products */;
@@ -457,6 +461,14 @@
 				minimumVersion = 12.14.0;
 			};
 		};
+		DDE1RC032FC91B21009FE64F /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -499,6 +511,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DDD16A042FC91B21009FE64F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		DDE1RC022FC91B21009FE64F /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DDE1RC032FC91B21009FE64F /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

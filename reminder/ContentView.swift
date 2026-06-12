@@ -139,8 +139,7 @@ struct ContentView: View {
             reconcileStaleLoginSession()
         }
         .onAppear {
-            StoreKitSubscriptionService.shared.configure(appRouter: appRouter)
-            StoreKitSubscriptionService.shared.startTransactionListener()
+            RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
         }
         .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, completed in
             reconcileStaleLoginSession()

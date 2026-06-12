@@ -7,31 +7,24 @@ enum PremiumAccessDiagnostics {
         let householdLabel = resolvedHouseholdLabel(appRouter: appRouter)
         let householdIdText = appRouter.selectedHouseholdId.map(\.uuidString) ?? "nil"
         let creatorIsVIP = appRouter.selectedHouseholdCreatorHasActivePro
-        let currentUserIsVIP = StoreKitSubscriptionService.shared.isPersonalSubscriber(
+        let revenueCat = RevenueCatSubscriptionService.shared
+        let currentUserIsVIP = revenueCat.isPersonalSubscriber(
             userEntitlement: appRouter.userEntitlement
         )
         let inOrgVIP = resolvedInOrganizationVIP(appRouter: appRouter)
         let rpcDiagnostics = SubscriptionSupabaseSupport.lastCreatorProFetchDiagnostics.summaryForLog
+        let rcActive = revenueCat.hasActiveProEntitlement
 
         print(
             """
-            [VIPAccess] \(trigger) | 组织=\(householdLabel) | householdId=\(householdIdText) | 组织创建者VIP=\(boolText(creatorIsVIP)) | 当前用户VIP=\(boolText(currentUserIsVIP)) | 组织内VIP=\(boolText(inOrgVIP)) | \(rpcDiagnostics)
+            [VIPAccess] \(trigger) | 组织=\(householdLabel) | householdId=\(householdIdText) | 组织创建者VIP=\(boolText(creatorIsVIP)) | 当前用户VIP=\(boolText(currentUserIsVIP)) | RevenueCat=\(boolText(rcActive)) | 组织内VIP=\(boolText(inOrgVIP)) | \(rpcDiagnostics)
             """
         )
     }
 
     @MainActor
     private static func resolvedInOrganizationVIP(appRouter: AppRouter) -> Bool {
-        if GuestSessionStore.isGuestMode {
-            return true
-        }
-        guard appRouter.selectedHouseholdId != nil else {
-            return false
-        }
-        return PremiumAccess.hasPremiumAccess(
-            userEntitlement: appRouter.userEntitlement,
-            creatorHasActivePro: appRouter.selectedHouseholdCreatorHasActivePro
-        ) || StoreKitSubscriptionService.shared.hasLocalActiveSubscription
+        appRouter.hasPremiumAccess
     }
 
     @MainActor

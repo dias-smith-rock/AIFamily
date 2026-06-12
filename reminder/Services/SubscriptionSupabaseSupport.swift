@@ -6,7 +6,7 @@ import Supabase
 
 enum SubscriptionSupabaseSupport {
     private static let entitlementColumns = "user_id,is_pro,pro_expires_at"
-    private static let verifyAppleSubscriptionFunction = "verify-apple-subscription"
+    private static let syncRevenueCatEntitlementFunction = "sync-revenuecat-entitlement"
 
     /// 最近一次 `household_creator_has_active_pro` 拉取结果，供 VIP 诊断日志使用。
     @MainActor
@@ -63,41 +63,30 @@ enum SubscriptionSupabaseSupport {
         #endif
     }
 
-    /// App Store 购买/恢复/续订：服务端校验 JWS 后由 Edge Function 写入订单与权益。
+    /// 客户端兜底：服务端用 RevenueCat Secret API 校验后写入 `user_entitlements`。
     @MainActor
-    static func activatePremiumFromApplePurchase(
-        signedTransactionInfo: String,
-        environment: String
-    ) async throws -> VerifyAppleSubscriptionResponse {
+    static func syncEntitlementFromRevenueCat() async throws -> SyncRevenueCatEntitlementResponse {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
-        let request = VerifyAppleSubscriptionRequest(
-            signedTransactionInfo: signedTransactionInfo,
-            environment: environment
-        )
-
         do {
             return try await client.functions.invoke(
-                verifyAppleSubscriptionFunction,
-                options: FunctionInvokeOptions(body: request)
+                syncRevenueCatEntitlementFunction,
+                options: FunctionInvokeOptions(body: SyncRevenueCatEntitlementRequest())
             )
         } catch {
             throw SubscriptionSupabaseError.serverError(Self.serverErrorMessage(from: error))
         }
         #else
-        _ = signedTransactionInfo
-        _ = environment
         throw SubscriptionSupabaseError.sdkUnavailable
         #endif
     }
 
-    /// 创世用户福利：已禁用客户端直写，须通过服务端发放。
     #if canImport(Supabase)
     private static func serverErrorMessage(from error: Error) -> String {
         if let functionsError = error as? FunctionsError,
            case .httpError(let code, let data) = functionsError {
             let bodyText = String(data: data, encoding: .utf8) ?? ""
-            if let parsed = try? JSONDecoder().decode(VerifyAppleSubscriptionErrorBody.self, from: data),
+            if let parsed = try? JSONDecoder().decode(SubscriptionFunctionErrorBody.self, from: data),
                let message = parsed.error?.trimmingCharacters(in: .whitespacesAndNewlines),
                message.isEmpty == false {
                 #if DEBUG
@@ -160,20 +149,23 @@ struct HouseholdCreatorHasActiveProParams: Encodable, Sendable {
     }
 }
 
-struct VerifyAppleSubscriptionRequest: Encodable, Sendable {
-    var signedTransactionInfo: String
-    var environment: String
+struct SyncRevenueCatEntitlementRequest: Encodable, Sendable {}
+
+struct SyncRevenueCatEntitlementResponse: Decodable, Sendable, Equatable {
+    var synced: Bool?
+    var isPro: Bool?
+    var proExpiresAt: String?
+    var planPurchased: String?
+
+    enum CodingKeys: String, CodingKey {
+        case synced
+        case isPro
+        case proExpiresAt
+        case planPurchased
+    }
 }
 
-struct VerifyAppleSubscriptionResponse: Decodable, Sendable, Equatable {
-    var success: Bool?
-    var plan: String?
-    var productId: String?
-    var transactionId: String?
-    var expiresAt: String?
-}
-
-private struct VerifyAppleSubscriptionErrorBody: Decodable {
+private struct SubscriptionFunctionErrorBody: Decodable {
     var error: String?
     var step: String?
 }

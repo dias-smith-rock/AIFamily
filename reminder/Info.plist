@@ -48,5 +48,7 @@
 	<array>
 		<string>location</string>
 	</array>
+	<key>RevenueCatAPIKey</key>
+	<string>appl_sFrBSSHTlHHGejDLmcTIXYDtLhm</string>
 </dict>
 </plist>

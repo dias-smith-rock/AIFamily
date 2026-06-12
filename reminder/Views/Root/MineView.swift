@@ -8,7 +8,7 @@ struct MineView: View {
     @Environment(\.locale) private var locale
     @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
-    @ObservedObject private var storeKit = StoreKitSubscriptionService.shared
+    @ObservedObject private var revenueCat = RevenueCatSubscriptionService.shared
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
@@ -769,12 +769,12 @@ struct MineView: View {
         }
         .contentShape(Rectangle())
         .task {
-            await storeKit.refreshLocalEntitlements(for: appRouter.authUserId)
+            await revenueCat.refreshCustomerInfo()
         }
     }
 
     private var vipActiveSubtitle: String {
-        if let expiry = storeKit.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement),
+        if let expiry = revenueCat.personalSubscriptionExpiry(userEntitlement: appRouter.userEntitlement),
            appRouter.showsPersonalVIP {
             let year = Calendar.current.component(.year, from: expiry)
             return String(

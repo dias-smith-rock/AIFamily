@@ -81,7 +81,7 @@ final class AppRouter: ObservableObject {
         return PremiumAccess.hasPremiumAccess(
             userEntitlement: userEntitlement,
             creatorHasActivePro: selectedHouseholdCreatorHasActivePro
-        ) || StoreKitSubscriptionService.shared.hasLocalActiveSubscription
+        ) || RevenueCatSubscriptionService.shared.hasActiveProEntitlement
     }
 
     /// 本人是否享有 Pro（仅 `user_entitlements`，不含组织继承与游客放行）。
@@ -91,7 +91,7 @@ final class AppRouter: ObservableObject {
 
     /// 设置页 / 订阅页是否展示「本人已订阅」（云端权益或本会话已确认的本机订阅）。
     var showsPersonalVIP: Bool {
-        StoreKitSubscriptionService.shared.isPersonalSubscriber(userEntitlement: userEntitlement)
+        RevenueCatSubscriptionService.shared.isPersonalSubscriber(userEntitlement: userEntitlement)
     }
 
     /// 输出 VIP 三元诊断日志（创建者 VIP / 本人 VIP / 当前组织内 VIP）。
@@ -211,9 +211,10 @@ final class AppRouter: ObservableObject {
                 memberships: activeMemberships
             )
             authUserId = userId
+            await RevenueCatSubscriptionService.shared.logIn(userId: userId)
             await loadUserEntitlement(userId: userId)
-            await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: userId)
-            await StoreKitSubscriptionService.shared.syncPendingPurchaseToCloudIfNeeded(appRouter: self)
+            await RevenueCatSubscriptionService.shared.refreshCustomerInfo()
+            await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
@@ -467,7 +468,6 @@ final class AppRouter: ObservableObject {
     func applyOptimisticPersonalEntitlement(userId: UUID, expiresAt: Date?) {
         authUserId = userId
         userEntitlement = UserEntitlement(userId: userId, isPro: true, proExpiresAt: expiresAt)
-        StoreKitSubscriptionService.shared.confirmLocalSubscription(for: userId, expiresAt: expiresAt)
     }
 
     /// 解析当前登录用户 ID（bootstrap 未完成时从 session 补全）。
@@ -495,11 +495,10 @@ final class AppRouter: ObservableObject {
             let userId = try await SupabaseManager.shared.client.auth.session.user.id
             authUserId = userId
             await loadUserEntitlement(userId: userId)
-            await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: userId)
+            await RevenueCatSubscriptionService.shared.refreshCustomerInfo()
             if let householdId = selectedHouseholdId {
                 await refreshSelectedHouseholdCreatorPro(householdId: householdId)
             }
-            await refreshStateFromBackend()
         } catch {
             debugLog("refreshPremiumStateAfterClaim.error \(error.localizedDescription)")
         }
@@ -510,7 +509,7 @@ final class AppRouter: ObservableObject {
         authUserId = nil
         userEntitlement = nil
         Task {
-            await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: nil)
+            await RevenueCatSubscriptionService.shared.logOut()
         }
     }
 
@@ -583,6 +582,8 @@ final class AppRouter: ObservableObject {
         do {
             if let fetched = try await SubscriptionSupabaseSupport.fetchUserEntitlement(userId: userId) {
                 userEntitlement = fetched
+            } else {
+                userEntitlement = UserEntitlement(userId: userId, isPro: false, proExpiresAt: nil)
             }
         } catch {
             debugLog("loadUserEntitlement.error \(error.localizedDescription)")
