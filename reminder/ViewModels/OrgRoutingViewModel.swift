@@ -168,7 +168,7 @@ final class OrgRoutingViewModel: ObservableObject {
 
     private enum Copy {
         static let networkError = L10n.Common.networkConnectionErrorPleaseCheckYourConne.string()
-        static let createHouseholdFailed = L10n.Common.failedToCreateGroupPleaseTryAgainLater.string()
+        static let createHouseholdFailed = L10n.Family.failedToCreateGroupPleaseTryAgainLater.string()
         static let joinHouseholdFailed = L10n.Family.couldNotJoinTheGroupPleaseTryAgainLater.string()
         static let emptyHouseholdName = L10n.Family.groupNameCannotBeEmptyPleaseEnterANameB.string()
         static let invalidInviteCode = L10n.Family.invalidInviteCodePleaseCheckAndTryAgain.string()

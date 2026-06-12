@@ -5,7 +5,7 @@ import Foundation
 /// 生日同步任务在库内仅存标题模板（含 `%@`）与 `target_profile_ids`；展示名实时解析。
 enum BirthdayTaskDisplay {
     static let syncMarkerPrefix = "birthday_sync_profile:"
-    static let autoDescriptionKey = L10n.Common.birthdayAutoTaskYearlyRecurrence
+    static let autoDescriptionKey = L10n.Schedule.birthdayAutoTaskYearlyRecurrence.key
 
     enum Template: CaseIterable {
         case wishList
@@ -29,12 +29,12 @@ enum BirthdayTaskDisplay {
         /// String Catalog 中文 Key（含 `%@` 占位符）。
         var titleFormatKey: String {
             switch self {
-            case .wishList: return L10n.Common.prepareBirthdayWishListFor.localized
-            case .bookVenue: return L10n.Common.bookBirthdayRestaurantVenueFor.localized
-            case .buyGift: return L10n.Common.buyBirthdayGiftFor.localized
-            case .confirmCake: return L10n.Common.confirmBirthdayCakeReservationFor.localized
-            case .setupAndPickup: return L10n.Common.decorateVenueAndPickUpBirthdayCakeFor.localized
-            case .celebrate: return L10n.Common.spendTimeWithAndWishAHappyBirthday.localized
+            case .wishList: return L10n.Common.prepareBirthdayWishListFor.key
+            case .bookVenue: return L10n.Common.bookBirthdayRestaurantVenueFor.key
+            case .buyGift: return L10n.Common.buyBirthdayGiftFor.key
+            case .confirmCake: return L10n.Common.confirmBirthdayCakeReservationFor.key
+            case .setupAndPickup: return L10n.Common.decorateVenueAndPickUpBirthdayCakeFor.key
+            case .celebrate: return L10n.Common.spendTimeWithAndWishAHappyBirthday.key
             }
         }
 

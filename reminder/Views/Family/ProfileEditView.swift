@@ -107,16 +107,16 @@ struct ProfileEditView: View {
 
                 Section(L10n.Common.basicInfo) {
                     TextField(L10n.Common.nicknameSuchAsMum.localized, text: $name)
-                    Picker(L10n.Common.gender, selection: $gender) {
+                    Picker(L10n.Common.gender.localized, selection: $gender) {
                         ForEach(ProfileDraftGender.allCases) { item in
                             Text(item.localizedName).tag(item)
                         }
                     }
                     .pickerStyle(.segmented)
 
-                    Toggle(L10n.Common.setBirthday, isOn: $shouldSetBirthDate)
+                    Toggle(L10n.Common.setBirthday.localized, isOn: $shouldSetBirthDate)
                     if shouldSetBirthDate {
-                        DatePicker(L10n.Common.birthday, selection: $birthDate, displayedComponents: .date)
+                        DatePicker(L10n.Common.birthday.localized, selection: $birthDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
                 }
@@ -227,8 +227,8 @@ struct ProfileEditView: View {
                 if let memberRemoval {
                     Text(
                         memberRemoval.isVirtualMember
-                            ? L10n.Family.thisVirtualMemberProfileCannotBeRecovered
-                            : L10n.Schedule.afterRemovalTheyCanNoLongerAccessThisGro
+                            ? L10n.Family.thisVirtualMemberProfileCannotBeRecovered.localized
+                            : L10n.Schedule.afterRemovalTheyCanNoLongerAccessThisGro.localized
                     )
                 }
             }
@@ -244,15 +244,15 @@ struct ProfileEditView: View {
     }
 
     private var adminToggleAlertTitle: LocalizedStringKey {
-        guard let adminRoleToggle else { return L10n.Common.areYouSureYouWantToContinue }
-        return adminRoleToggle.isPromoting ? L10n.Family.makeThisMemberAnAdmin : L10n.Family.removeThisMemberSAdminRole
+        guard let adminRoleToggle else { return L10n.Common.areYouSureYouWantToContinue.localized }
+        return adminRoleToggle.isPromoting ? L10n.Family.makeThisMemberAnAdmin.localized : L10n.Family.removeThisMemberSAdminRole.localized
     }
 
     private var adminToggleAlertMessage: LocalizedStringKey {
         guard let adminRoleToggle else { return "" }
         return adminRoleToggle.isPromoting
-            ? L10n.Common.adminsCanHelpManageGroupMembersAndSetting
-            : L10n.Family.theyWillReturnToRegularMemberPermissions
+            ? L10n.Family.adminsCanHelpManageGroupMembersAndSetting.localized
+            : L10n.Family.theyWillReturnToRegularMemberPermissions.localized
     }
 
     private func performAdminRoleToggle() {
@@ -392,7 +392,7 @@ struct ProfileEditView: View {
             return
         }
         guard let householdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
 
@@ -484,7 +484,7 @@ extension ProfileEditView {
 
         var navigationTitleKey: LocalizedStringKey {
             switch self {
-            case .createLocalProfile: L10n.Common.createMemberProfile.localized
+            case .createLocalProfile: L10n.Family.createMemberProfile.localized
             case .edit: L10n.Common.editProfile.localized
             }
         }

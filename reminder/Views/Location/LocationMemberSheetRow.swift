@@ -91,10 +91,7 @@ struct LocationMemberSheetRow: View {
                 )
             }
             return String(
-                format: String(
-                    localized: L10n.Common.noLocationYetWillAppearOnTheMapWhenLoca,
-                    locale: locale
-                ),
+                format: AppLocalized.string(L10n.Location.noLocationYetWillAppearOnTheMapWhenLoca, locale: locale),
                 locale: locale,
                 member.displayName
             )
@@ -172,10 +169,7 @@ struct LocationMemberSheetRow: View {
 
     private func lastUpdatedText(since date: Date) -> String {
         let minutes = max(1, Int(Date().timeIntervalSince(date) / 60))
-        let format = String(
-            localized: L10n.Common.updatedLldMinAgo,
-            locale: locale
-        )
+        let format = AppLocalized.string(L10n.Common.updatedLldMinAgo, locale: locale)
         return String(format: format, locale: locale, minutes)
     }
 }

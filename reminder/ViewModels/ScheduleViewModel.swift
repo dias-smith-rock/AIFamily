@@ -106,7 +106,7 @@ final class ScheduleViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else {
             tasks = []
             if !silent {
-                errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+                errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             }
             return
         }
@@ -277,11 +277,11 @@ final class ScheduleViewModel: ObservableObject {
 
     func createTask(_ task: FamilyTask) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
         guard task.householdId == householdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.failedToSaveTaskInconsistentGroupContext)
+            errorMessage = AppLocalized.localized(L10n.Schedule.failedToSaveTaskInconsistentGroupContext)
             return
         }
 
@@ -434,14 +434,14 @@ final class ScheduleViewModel: ObservableObject {
         }
         if names.isEmpty {
             if ids.count == 1 {
-                return AppLocalized.string(L10n.Common.member, locale: locale)
+                return AppLocalized.string(L10n.Family.member, locale: locale)
             }
             return String(
                 format: AppLocalized.string(L10n.Common.lldPeople, locale: locale),
                 ids.count
             )
         }
-        return names.joined(separator: AppLocalized.string(L10n.Common.text, locale: locale))
+        return names.joined(separator: ", ")
     }
 
     func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {

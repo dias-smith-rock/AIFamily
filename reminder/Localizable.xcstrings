@@ -1,5 +1,68 @@
 {
-  "sourceLanguage": "zh-Hans",
-  "strings": {},
-  "version": "1.0"
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "" : {
+
+    },
+    " " : {
+
+    },
+    "·" : {
+
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@:" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld" : {
+      "localizations" : {
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld / %2$lld"
+          }
+        }
+      }
+    },
+    "%lld people" : {
+
+    },
+    "%lld%%" : {
+
+    },
+    "0" : {
+
+    },
+    "channel: %@" : {
+
+    },
+    "nonce: %@" : {
+
+    },
+    "Pro" : {
+
+    },
+    "SIG" : {
+
+    },
+    "token: %@" : {
+
+    },
+    "valid: %@" : {
+
+    }
+  },
+  "version" : "1.0"
 }

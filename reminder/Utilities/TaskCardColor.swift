@@ -84,7 +84,7 @@ private struct RGBComponents {
 private extension CharacterSet {
     static let hexadecimalCharacters: CharacterSet = {
         var set = CharacterSet()
-        set.insert(charactersIn: L10n.Common.n0 ... "9")
+        set.insert(charactersIn: "0" ... "9")
         set.insert(charactersIn: "a" ... "f")
         set.insert(charactersIn: "A" ... "F")
         return set

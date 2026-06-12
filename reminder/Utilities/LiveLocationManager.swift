@@ -36,7 +36,7 @@ final class LiveLocationManager: NSObject, ObservableObject {
     private var currentProfileId: UUID?
     private var profileIdByMembershipId: [UUID: UUID] = [:]
     private var currentUserId: UUID?
-    private var currentDisplayName: String = L10n.Family.groupMembers
+    private var currentDisplayName: String = AppLocalized.localizedSync(L10n.Family.groupMembers)
     private var connectedChannelHouseholdId: UUID?
     private var pendingPresenceTrack = false
     private var householdTransitionTask: Task<Void, Never>?

@@ -1,1456 +1,1481 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "location_choose_how_long_to_hide_your_location": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اختر مدة إخفاء موقعك"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "location_choose_how_long_to_hide_your_location" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختر مدة إخفاء موقعك"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose how long to hide your location"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose how long to hide your location"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige cuánto tiempo ocultar tu ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige cuánto tiempo ocultar tu ubicación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez la durée de masquage de votre position"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la durée de masquage de votre position"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान छिपाने की अवधि चुनें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान छिपाने की अवधि चुनें"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolha por quanto tempo ocultar sua localização"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha por quanto tempo ocultar sua localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடத்தை மறைக்கும் கால அளவைத் தேர்ந்தெடுக்கவும்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடத்தை மறைக்கும் கால அளவைத் தேர்ந்தெடுக்கவும்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择隐藏位置的时长"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择隐藏位置的时长"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "選擇隱藏位置的時長"
-          }
-        }
-      }
-    },
-    "location_collapse_location_sharing": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "طي مشاركة الموقع"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Collapse location sharing"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contraer ubicación compartida"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Réduire le partage de position"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान साझाकरण संक्षिप्त करें"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recolher compartilhamento de localização"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடப் பகிர்வை சுருக்கு"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起位置共享"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "收起位置共享"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇隱藏位置的時長"
           }
         }
       }
     },
-    "location_control_when_you_share_location_toggle_ghost_mod": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تحكم في وقت مشاركة الموقع — فعّل وضع التخفي في أي وقت."
+    "location_collapse_location_sharing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "طي مشاركة الموقع"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Control when you share location—toggle ghost mode anytime for private independence."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse location sharing"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Controla cuándo compartes ubicación: activa el modo fantasma cuando quieras."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraer ubicación compartida"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Contrôlez quand vous partagez votre position — mode fantôme en un geste."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réduire le partage de position"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान साझा करने का समय नियंत्रित करें — कभी भी घोस्ट मोड चालू करें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान साझाकरण संक्षिप्त करें"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Controle quando compartilha localização — ative o modo fantasma a qualquer momento."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recolher compartilhamento de localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடம் பகிர்வு நேரத்தைக் கட்டுப்படுத்துங்கள் — எப்போதும் மறைவு பயன்முறையை மாற்றுங்கள்."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடப் பகிர்வை சுருக்கு"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自由掌控位置共享时机，一键开启，随时切换独立隐私。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起位置共享"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "自由掌控位置共享時機，一鍵開啟，隨時切換獨立隱私。"
-          }
-        }
-      }
-    },
-    "location_current_user_always_shown_on_the_map": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "المستخدم الحالي، يظهر دائمًا على الخريطة"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Current user, always shown on the map"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usuario actual, siempre visible en el mapa"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utilisateur actuel, toujours affiché sur la carte"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "वर्तमान उपयोगकर्ता, हमेशा मानचित्र पर दिखता है"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usuário atual, sempre exibido no mapa"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "தற்போதைய பயனர், வரைபடத்தில் எப்போதும் காட்டப்படும்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当前用户，始终在地图上显示"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前使用者，始終在地圖上顯示"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起位置共享"
           }
         }
       }
     },
-    "location_enter_live_location_mode": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الدخول إلى وضع الموقع المباشر"
+    "location_control_when_you_share_location_toggle_ghost_mod" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحكم في وقت مشاركة الموقع — فعّل وضع التخفي في أي وقت."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter live location mode"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Control when you share location—toggle ghost mode anytime for private independence."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrar al modo de ubicación en vivo"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controla cuándo compartes ubicación: activa el modo fantasma cuando quieras."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activer le mode position en direct"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contrôlez quand vous partagez votre position — mode fantôme en un geste."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "लाइव लोकेशन मोड में प्रवेश करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान साझा करने का समय नियंत्रित करें — कभी भी घोस्ट मोड चालू करें।"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrar no modo de localização ao vivo"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Controle quando compartilha localização — ative o modo fantasma a qualquer momento."
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "நேரடி இடப் பகிர்வு பயன்முறைக்குள் நுழை"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடம் பகிர்வு நேரத்தைக் கட்டுப்படுத்துங்கள் — எப்போதும் மறைவு பயன்முறையை மாற்றுங்கள்."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "进入实时位置模式"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自由掌控位置共享时机，一键开启，随时切换独立隐私。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "進入即時位置模式"
-          }
-        }
-      }
-    },
-    "location_exit_live_location_mode": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الخروج من وضع الموقع المباشر"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exit live location mode"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salir del modo de ubicación en vivo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quitter le mode position en direct"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "लाइव लोकेशन मोड से बाहर निकलें"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sair do modo de localização ao vivo"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "நேரடி இடப் பகிர்வு பயன்முறையிலிருந்து வெளியேறு"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "退出实时位置模式"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "退出即時位置模式"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自由掌控位置共享時機，一鍵開啟，隨時切換獨立隱私。"
           }
         }
       }
     },
-    "location_expand_location_sharing": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "توسيع مشاركة الموقع"
+    "location_current_user_always_shown_on_the_map" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المستخدم الحالي، يظهر دائمًا على الخريطة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expand location sharing"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Current user, always shown on the map"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expandir ubicación compartida"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuario actual, siempre visible en el mapa"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Développer le partage de position"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utilisateur actuel, toujours affiché sur la carte"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान साझाकरण विस्तृत करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "वर्तमान उपयोगकर्ता, हमेशा मानचित्र पर दिखता है"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Expandir compartilhamento de localização"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuário atual, sempre exibido no mapa"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடப் பகிர்வை விரி"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "தற்போதைய பயனர், வரைபடத்தில் எப்போதும் காட்டப்படும்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "展开位置共享"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前用户，始终在地图上显示"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "展開位置共享"
-          }
-        }
-      }
-    },
-    "location_live_location_active_lld_people": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ الموقع المباشر نشط (%lld أشخاص)"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Live location active (%lld people)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Ubicación en vivo activa (%lld personas)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Position en direct active (%lld personnes)"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ लाइव स्थान सक्रिय (%lld लोग)"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Localização ao vivo ativa (%lld pessoas)"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ நேரடி இடம் செயலில் (%lld பேர்)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ 实时位置进行中（%lld 人）"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ 即時位置進行中（%lld 人）"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前使用者，始終在地圖上顯示"
           }
         }
       }
     },
-    "location_live_location_lld_online": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ موقع مباشر · %lld متصل"
+    "location_enter_live_location_mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الدخول إلى وضع الموقع المباشر"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Live location · %lld online"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter live location mode"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Ubicación en vivo · %lld en línea"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar al modo de ubicación en vivo"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Position en direct · %lld en ligne"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activer le mode position en direct"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ लाइव स्थान · %lld ऑनलाइन"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "लाइव लोकेशन मोड में प्रवेश करें"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ Localização ao vivo · %lld online"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrar no modo de localização ao vivo"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ நேரடி இடம் · %lld ஆன்லைன்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "நேரடி இடப் பகிர்வு பயன்முறைக்குள் நுழை"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ 实时位置 · %lld 人在线"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "进入实时位置模式"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "⚡️ 即時位置 · %lld 人在線"
-          }
-        }
-      }
-    },
-    "location_locate_my_location": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تحديد موقعي"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Locate my location"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Localizar mi ubicación"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Localiser mon emplacement"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "मेरे स्थान का पता लगाएँ"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Localizar minha localização"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "எனது இருப்பிடத்தைக் கண்டுபிடி"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "定位到我的位置"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "定位到我的位置"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "進入即時位置模式"
           }
         }
       }
     },
-    "location_location": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+    "location_exit_live_location_mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الخروج من وضع الموقع المباشر"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exit live location mode"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salir del modo de ubicación en vivo"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitter le mode position en direct"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "लाइव लोकेशन मोड से बाहर निकलें"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sair do modo de localização ao vivo"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "நேரடி இடப் பகிர்வு பயன்முறையிலிருந்து வெளியேறு"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地理位置"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出实时位置模式"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地理位置"
-          }
-        }
-      }
-    },
-    "location_location_2": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الموقع"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ubicación"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Localisation"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Localização"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடம்"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出即時位置模式"
           }
         }
       }
     },
-    "location_location_hidden": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 الموقع مخفي"
+    "location_expand_location_sharing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "توسيع مشاركة الموقع"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 Location hidden"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand location sharing"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 Ubicación oculta"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir ubicación compartida"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 Position masquée"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Développer le partage de position"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 स्थान छिपा है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान साझाकरण विस्तृत करें"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 Localização oculta"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir compartilhamento de localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 இடம் மறைக்கப்பட்டது"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடப் பகிர்வை விரி"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 位置已隐藏"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展开位置共享"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · 👻 位置已隱藏"
-          }
-        }
-      }
-    },
-    "location_location_hidden_2": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@، الموقع مخفي"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, location hidden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, ubicación oculta"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, position masquée"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, स्थान छिपा हुआ है"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, localização oculta"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, இடம் மறைக்கப்பட்டது"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@，位置已隐藏"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@，位置已隱藏"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開位置共享"
           }
         }
       }
     },
-    "location_location_not_added": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+    "location_live_location_active_lld_people" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ الموقع المباشر نشط (%lld أشخاص)"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Live location active (%lld people)"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Ubicación en vivo activa (%lld personas)"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Position en direct active (%lld personnes)"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ लाइव स्थान सक्रिय (%lld लोग)"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Localização ao vivo ativa (%lld pessoas)"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location not added"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ நேரடி இடம் செயலில் (%lld பேர்)"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未添加位置"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ 实时位置进行中（%lld 人）"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未新增位置"
-          }
-        }
-      }
-    },
-    "location_location_privacy_trail": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location privacy & trail"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置隐私与轨迹"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置隱私與軌跡"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ 即時位置進行中（%lld 人）"
           }
         }
       }
     },
-    "location_map_shows_only_the_latest_location_point_ghost_m": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+    "location_live_location_lld_online" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ موقع مباشر · %lld متصل"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Live location · %lld online"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Ubicación en vivo · %lld en línea"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Position en direct · %lld en ligne"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ लाइव स्थान · %lld ऑनलाइन"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ Localização ao vivo · %lld online"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows only the latest location point; ghost mode unavailable."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ நேரடி இடம் · %lld ஆன்லைன்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地图仅显示最新 1 个位置点，不支持位置隐身。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ 实时位置 · %lld 人在线"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地圖僅顯示最新 1 個位置點，不支援位置隱身。"
-          }
-        }
-      }
-    },
-    "location_map_shows_up_to_3_history_points_ghost_mode_unav": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Map shows up to 3 history points; ghost mode unavailable."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地图最多显示 3 个历史位置点，不支持位置隐身。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "地圖最多顯示 3 個歷史位置點，不支援位置隱身。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚡️ 即時位置 · %lld 人在線"
           }
         }
       }
     },
-    "location_n_20_location_history_points": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 نقطة من سجل المواقع"
+    "location_locate_my_location" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحديد موقعي"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 location history points"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Locate my location"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 puntos de historial de ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localizar mi ubicación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 points d'historique de position"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localiser mon emplacement"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 स्थान इतिहास बिंदु"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "मेरे स्थान का पता लगाएँ"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 pontos de histórico de localização"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localizar minha localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 இட வரலாறு புள்ளிகள்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "எனது இருப்பிடத்தைக் கண்டுபிடி"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 条位置历史轨迹"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定位到我的位置"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "20 條位置歷史軌跡"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "定位到我的位置"
           }
         }
       }
     },
-    "location_no_location_yet_will_appear_on_the_map_when_loca": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@، لا يوجد موقع بعد؛ سيظهر على الخريطة عند توفر بيانات الموقع"
+    "location_location" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, no location yet; will appear on the map when location data is available"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, sin ubicación; aparecerá en el mapa cuando haya datos de ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, pas de position ; apparaîtra sur la carte lorsque des données seront disponibles"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, अभी कोई स्थान नहीं; स्थान डेटा मिलने पर मानचित्र पर दिखेगा"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, sem localização; aparecerá no mapa quando houver dados de localização"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, இன்னும் இடம் இல்லை; இடத் தரவு கிடைக்கும்போது வரைபடத்தில் காட்டப்படும்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@，暂无位置，勾选后将在有定位数据时显示"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地理位置"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@，暫無位置，勾選後將在有定位資料時顯示"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地理位置"
           }
         }
       }
     },
-    "location_privacy_ghost_mode": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "وضع التخفي للخصوصية"
+    "location_location_2" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الموقع"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privacy ghost mode"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo fantasma de privacidad"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubicación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mode fantôme de confidentialité"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localisation"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "प्राइवेसी घोस्ट मोड"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Modo fantasma de privacidade"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "தனியுரிமை மறைவு பயன்முறை"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடம்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隐私隐身模式"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱私隱身模式"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置"
           }
         }
       }
     },
-    "location_refresh_locations": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تحديث المواقع"
+    "location_location_hidden" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 الموقع مخفي"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Refresh locations"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 Location hidden"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actualizar ubicaciones"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 Ubicación oculta"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actualiser les positions"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 Position masquée"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान रीफ़्रेश करें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 स्थान छिपा है"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atualizar localizações"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 Localização oculta"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடங்களைப் புதுப்பி"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 இடம் மறைக்கப்பட்டது"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "刷新位置"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 位置已隐藏"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "重新整理位置"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · 👻 位置已隱藏"
           }
         }
       }
     },
-    "location_search_or_add_a_location": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "بحث أو إضافة موقع"
+    "location_location_hidden_2" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@، الموقع مخفي"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Search or add a location"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, location hidden"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Buscar o agregar una ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, ubicación oculta"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rechercher ou ajouter un emplacement"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, position masquée"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "कोई स्थान खोजें या जोड़ें"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, स्थान छिपा हुआ है"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pesquise ou adicione um local"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, localização oculta"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இருப்பிடத்தைத் தேடவும் அல்லது சேர்க்கவும்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, இடம் மறைக்கப்பட்டது"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜索或添加位置"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，位置已隐藏"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "搜尋或新增位置"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，位置已隱藏"
           }
         }
       }
     },
-    "location_set_location_to_always_in_settings_to_update_you": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اختر «دائمًا» في الإعدادات لتحديث الموقع في الخلفية."
+    "location_location_not_added" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Set location to Always in Settings to update your position in the background."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige «Siempre» en Ajustes para actualizar tu ubicación en segundo plano."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez « Toujours » dans Réglages pour mettre à jour la position en arrière-plan."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "पृष्ठभूमि में अपडेट के लिए सेटिंग्स में स्थान को «हमेशा» चुनें।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Defina «Sempre» em Ajustes para atualizar a localização em segundo plano."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "பின்னணியில் புதுப்பிக்க அமைப்புகளில் «எப்போதும்» என தேர்ந்தெடுக்கவும்."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location not added"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "请在系统设置中将位置设为「始终」，才能在后台更新位置。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未添加位置"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "請在系統設定中將位置設為「始終」，才能在背景更新位置。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未新增位置"
           }
         }
       }
     },
-    "location_shown_on_the_map_when_selected": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@، يظهر على الخريطة عند التحديد"
+    "location_location_privacy_trail" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, shown on the map when selected"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, se muestra en el mapa al seleccionar"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, affiché sur la carte lorsqu'il est sélectionné"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, चयन करने पर मानचित्र पर दिखाया जाता है"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, exibido no mapa quando selecionado"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@, தேர்ந்தெடுக்கப்படும்போது வரைபடத்தில் காட்டப்படும்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location privacy & trail"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@，已选中时在地图上显示"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置隐私与轨迹"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@，已選取時在地圖上顯示"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置隱私與軌跡"
+          }
+        }
+      }
+    },
+    "location_map_shows_only_the_latest_location_point_ghost_m" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows only the latest location point; ghost mode unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图仅显示最新 1 个位置点，不支持位置隐身。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地圖僅顯示最新 1 個位置點，不支援位置隱身。"
+          }
+        }
+      }
+    },
+    "location_map_shows_up_to_3_history_points_ghost_mode_unav" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Map shows up to 3 history points; ghost mode unavailable."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地图最多显示 3 个历史位置点，不支持位置隐身。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "地圖最多顯示 3 個歷史位置點，不支援位置隱身。"
+          }
+        }
+      }
+    },
+    "location_n_20_location_history_points" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 نقطة من سجل المواقع"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 location history points"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 puntos de historial de ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 points d'historique de position"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 स्थान इतिहास बिंदु"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 pontos de histórico de localização"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 இட வரலாறு புள்ளிகள்"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 条位置历史轨迹"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "20 條位置歷史軌跡"
+          }
+        }
+      }
+    },
+    "location_no_location_yet_will_appear_on_the_map_when_loca" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@، لا يوجد موقع بعد؛ سيظهر على الخريطة عند توفر بيانات الموقع"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, no location yet; will appear on the map when location data is available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, sin ubicación; aparecerá en el mapa cuando haya datos de ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, pas de position ; apparaîtra sur la carte lorsque des données seront disponibles"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, अभी कोई स्थान नहीं; स्थान डेटा मिलने पर मानचित्र पर दिखेगा"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, sem localização; aparecerá no mapa quando houver dados de localização"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, இன்னும் இடம் இல்லை; இடத் தரவு கிடைக்கும்போது வரைபடத்தில் காட்டப்படும்"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，暂无位置，勾选后将在有定位数据时显示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，暫無位置，勾選後將在有定位資料時顯示"
+          }
+        }
+      }
+    },
+    "location_privacy_ghost_mode" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "وضع التخفي للخصوصية"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy ghost mode"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo fantasma de privacidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mode fantôme de confidentialité"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "प्राइवेसी घोस्ट मोड"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modo fantasma de privacidade"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "தனியுரிமை மறைவு பயன்முறை"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐私隐身模式"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱私隱身模式"
+          }
+        }
+      }
+    },
+    "location_refresh_locations" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تحديث المواقع"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Refresh locations"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualizar ubicaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiser les positions"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान रीफ़्रेश करें"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualizar localizações"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடங்களைப் புதுப்பி"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刷新位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重新整理位置"
+          }
+        }
+      }
+    },
+    "location_search_or_add_a_location" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بحث أو إضافة موقع"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search or add a location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar o agregar una ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher ou ajouter un emplacement"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "कोई स्थान खोजें या जोड़ें"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquise ou adicione um local"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இருப்பிடத்தைத் தேடவும் அல்லது சேர்க்கவும்"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索或添加位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋或新增位置"
+          }
+        }
+      }
+    },
+    "location_set_location_to_always_in_settings_to_update_you" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختر «دائمًا» في الإعدادات لتحديث الموقع في الخلفية."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set location to Always in Settings to update your position in the background."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige «Siempre» en Ajustes para actualizar tu ubicación en segundo plano."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez « Toujours » dans Réglages pour mettre à jour la position en arrière-plan."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "पृष्ठभूमि में अपडेट के लिए सेटिंग्स में स्थान को «हमेशा» चुनें।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Defina «Sempre» em Ajustes para atualizar a localização em segundo plano."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "பின்னணியில் புதுப்பிக்க அமைப்புகளில் «எப்போதும்» என தேர்ந்தெடுக்கவும்."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "请在系统设置中将位置设为「始终」，才能在后台更新位置。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在系統設定中將位置設為「始終」，才能在背景更新位置。"
+          }
+        }
+      }
+    },
+    "location_shown_on_the_map_when_selected" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@، يظهر على الخريطة عند التحديد"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, shown on the map when selected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, se muestra en el mapa al seleccionar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, affiché sur la carte lorsqu'il est sélectionné"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, चयन करने पर मानचित्र पर दिखाया जाता है"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, exibido no mapa quando selecionado"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, தேர்ந்தெடுக்கப்படும்போது வரைபடத்தில் காட்டப்படும்"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，已选中时在地图上显示"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@，已選取時在地圖上顯示"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

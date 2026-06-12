@@ -78,7 +78,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
 
-                Toggle(L10n.Common.allDay, isOn: $isAllDay)
+                Toggle(L10n.Common.allDay.localized, isOn: $isAllDay)
 
                 if isAllDay {
                     executionDateRow
@@ -92,7 +92,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .center, spacing: 12) {
-                    Text(L10n.Common.repeat.localized)
+                    Text(L10n.Common.repeatLabel.localized)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Spacer(minLength: 8)
@@ -120,14 +120,14 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
                 if selectedRecurrence == .custom {
                     Stepper(value: $recurrenceInterval, in: 2 ... 365) {
-                        Text(L10n.Schedule.recurrenceEveryNDays.formatted(locale: locale, recurrenceInterval))
+                        Text(L10n.Common.everyLldDays.formatted(locale: locale, recurrenceInterval))
                     }
                 }
 
                 if selectedRecurrence != .none {
-                    Toggle(L10n.Common.specifyEndDate, isOn: $showEndDate)
+                    Toggle(L10n.Common.specifyEndDate.localized, isOn: $showEndDate)
                     if showEndDate {
-                        DatePicker(L10n.Common.end, selection: $recurrenceEndDate, displayedComponents: .date)
+                        DatePicker(L10n.Common.end.localized, selection: $recurrenceEndDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
                 }
@@ -533,122 +533,138 @@ struct CreateTaskView: View {
             )
             .labelsHidden()
             .datePickerStyle(.compact)
-            .accessibilityLabel(L10n.Common.dueBy)
+            .accessibilityLabel(L10n.Common.dueBy.localized)
         }
     }
 
     private var formNavigationTitle: LocalizedStringKey {
         if editingTask != nil {
-            return isFlexibleMode ? L10n.Common.editToDo : L10n.Common.editEvent
+            return isFlexibleMode ? L10n.Common.editToDo.localized : L10n.Schedule.editEvent.localized
         }
-        return isFlexibleMode ? L10n.Common.newToDo : L10n.Schedule.newEvent
+        return isFlexibleMode ? L10n.Common.newToDo.localized : L10n.Schedule.newEvent.localized
     }
 
     private var formAccentTint: Color {
         isFlexibleMode ? Color.orange : AppTheme.ColorToken.accent
     }
 
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(.systemGroupedBackground)
+    @ViewBuilder
+    private var formErrorBanner: some View {
+        if let errorMessage {
+            Text(errorMessage)
+                .font(AppTheme.FontToken.caption)
+                .foregroundStyle(.red)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+        }
+    }
+
+    @ViewBuilder
+    private var formMoreOptionsSection: some View {
+        if isShowingMoreOptions {
+            repeatReminderPriorityCard
+            emergencyContactCard
+            assigneeWhoDoesCard
+            locationCard
+            moreDetailsCard
+            financeCard
+        }
+    }
+
+    @ViewBuilder
+    private var formScrollContent: some View {
+        VStack(spacing: 14) {
+            titleEditorCard
+            taskAttachmentCard
+            taskTimeSettingsSection
+            forWhomCard
+            formMoreOptionsSection
+            expandCollapseButton
+            formErrorBanner
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            dismissKeyboard()
+        }
+    }
+
+    @ToolbarContentBuilder
+    private var formToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button(L10n.Common.cancel.localized) {
+                dismiss()
+            }
+            .disabled(isSaving)
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            Button(L10n.Common.save.localized) {
+                Task {
+                    await saveTask()
+                }
+            }
+            .fontWeight(.semibold)
+            .disabled(isSaving || normalizedTitle.isEmpty)
+        }
+        ToolbarItemGroup(placement: .keyboard) {
+            Spacer()
+            Button(L10n.Common.finish.localized) {
+                dismissKeyboard()
+            }
+        }
+    }
+
+    private var formNavigationContent: some View {
+        ZStack {
+            Color(.systemGroupedBackground)
+                .ignoresSafeArea()
+
+            ScrollView {
+                formScrollContent
+            }
+            .scrollDismissesKeyboard(.interactively)
+
+            if isSaving {
+                Color.black.opacity(0.12)
                     .ignoresSafeArea()
-
-                ScrollView {
-                    VStack(spacing: 14) {
-                        titleEditorCard
-
-                        taskAttachmentCard
-
-                        taskTimeSettingsSection
-
-                        forWhomCard
-
-                        if isShowingMoreOptions {
-                            repeatReminderPriorityCard
-                            emergencyContactCard
-                            assigneeWhoDoesCard
-                            locationCard
-                            moreDetailsCard
-                            financeCard
-                        }
-
-                        expandCollapseButton
-
-                        if let errorMessage {
-                            Text(errorMessage)
-                                .font(AppTheme.FontToken.caption)
-                                .foregroundStyle(.red)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 4)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        dismissKeyboard()
-                    }
-                }
-                .scrollDismissesKeyboard(.interactively)
-
-                if isSaving {
-                    Color.black.opacity(0.12)
-                        .ignoresSafeArea()
-                    ProgressView()
-                        .scaleEffect(1.1)
-                }
+                ProgressView()
+                    .scaleEffect(1.1)
             }
-            .navigationTitle(formNavigationTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .tint(formAccentTint)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(L10n.Common.cancel) {
-                        dismiss()
-                    }
-                    .disabled(isSaving)
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(L10n.Common.save) {
-                        Task {
-                            await saveTask()
-                        }
-                    }
-                    .fontWeight(.semibold)
-                    .disabled(isSaving || normalizedTitle.isEmpty)
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button(L10n.Common.finish) {
-                        dismissKeyboard()
-                    }
-                }
+        }
+        .navigationTitle(formNavigationTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .tint(formAccentTint)
+        .toolbar { formToolbar }
+        .onAppear {
+            if editingTask == nil {
+                focusedField = .title
+            } else {
+                isShowingMoreOptions = true
             }
-            .onAppear {
-                if editingTask == nil {
-                    focusedField = .title
-                } else {
-                    isShowingMoreOptions = true
-                }
-            }
-            .task(id: editingTask?.parentTaskId) {
-                await loadParentRecurrenceTemplateIfNeeded()
-            }
-            .task(id: editingTask?.id) {
-                await loadExistingAttachmentsIfNeeded()
-            }
+        }
+        .task(id: editingTask?.parentTaskId) {
+            await loadParentRecurrenceTemplateIfNeeded()
+        }
+        .task(id: editingTask?.id) {
+            await loadExistingAttachmentsIfNeeded()
+        }
+    }
+
+    private var formStackWithDialogs: some View {
+        NavigationStack {
+            formNavigationContent
         }
         .task(id: appRouter.selectedHouseholdId ?? editingTask?.householdId) {
             await loadAssignees()
         }
         .confirmationDialog(
-            L10n.Schedule.thisIsARecurringTask,
+            L10n.Schedule.thisIsARecurringTask.localized,
             isPresented: $isShowingRecurringUpdateScopeDialog,
             titleVisibility: .visible
         ) {
-            Button(L10n.Schedule.onlyModifyThisTask) {
+            Button(L10n.Schedule.onlyModifyThisTask.localized) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
@@ -659,7 +675,7 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            Button(L10n.Common.modifyThisTaskAndBeyond, role: .destructive) {
+            Button(L10n.Schedule.modifyThisTaskAndBeyond.localized, role: .destructive) {
                 guard let existing = pendingRecurringUpdateTask else { return }
                 pendingRecurringUpdateTask = nil
                 Task {
@@ -670,25 +686,29 @@ struct CreateTaskView: View {
                     }
                 }
             }
-            Button(L10n.Common.cancel, role: .cancel) {
+            Button(L10n.Common.cancel.localized, role: .cancel) {
                 pendingRecurringUpdateTask = nil
             }
         } message: {
             Text(L10n.Common.pleaseSelectAModificationScope.localized)
         }
         .forcesNonPopoverDialogPresentation()
-        .confirmationDialog(L10n.Common.addAttachment, isPresented: $showAttachmentOptions, titleVisibility: .visible) {
-            Button(L10n.Common.photoLibrary) {
+        .confirmationDialog(L10n.Common.addAttachment.localized, isPresented: $showAttachmentOptions, titleVisibility: .visible) {
+            Button(L10n.Common.photoLibrary.localized) {
                 isPresentingPhotoLibrary = true
             }
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button(L10n.Common.takePhoto) {
+                Button(L10n.Common.takePhoto.localized) {
                     isPresentingCamera = true
                 }
             }
-            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Common.cancel.localized, role: .cancel) {}
         }
         .forcesNonPopoverDialogPresentation()
+    }
+
+    var body: some View {
+        formStackWithDialogs
         .photosPicker(
             isPresented: $isPresentingPhotoLibrary,
             selection: $selectedItems,
@@ -822,8 +842,8 @@ struct CreateTaskView: View {
                             .background(.ultraThinMaterial, in: Circle())
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.Assistant.voiceInput)
-                    .accessibilityHint(L10n.Common.featureComingSoon)
+                    .accessibilityLabel(L10n.Assistant.voiceInput.localized)
+                    .accessibilityHint(L10n.Common.featureComingSoon.localized)
                 }
             }
         }
@@ -925,7 +945,7 @@ struct CreateTaskView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.Common.selectFromAddressBook)
-                    .accessibilityHint(L10n.Common.featureComingSoon)
+                    .accessibilityHint(L10n.Common.featureComingSoon.localized)
                 }
             }
         }
@@ -1001,7 +1021,7 @@ struct CreateTaskView: View {
             }
         } label: {
             HStack(spacing: 6) {
-                Text(isShowingMoreOptions ? L10n.Common.collapseMoreOptions : L10n.Common.showMoreOptions)
+                Text(isShowingMoreOptions ? L10n.Common.collapseMoreOptions.localized : L10n.Common.showMoreOptions.localized)
                     .font(.subheadline.weight(.semibold))
                 Image(systemName: isShowingMoreOptions ? "chevron.up" : "chevron.down")
                     .font(.footnote.weight(.bold))
@@ -1310,7 +1330,7 @@ struct CreateTaskView: View {
                 Text(currencySymbol)
                     .font(.body)
                     .foregroundStyle(.secondary)
-                TextField(L10n.Common.n0.localized, text: costInputBinding)
+                TextField("0", text: costInputBinding)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.trailing)
                     .font(.body.weight(.medium))
@@ -1348,13 +1368,13 @@ struct CreateTaskView: View {
     }
 
     private var assigneeChipAll: some View {
-        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: L10n.Common.assignToEveryone) {
+        everyoneChip(isSelected: selectedAssigneeIds.isEmpty, accessibilityLabel: L10n.Common.assignToEveryone.localized) {
             selectedAssigneeIds = []
         }
     }
 
     private var forWhomChipAll: some View {
-        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: L10n.Common.forWhomAllMembers) {
+        everyoneChip(isSelected: selectedTargetProfileIds.isEmpty, accessibilityLabel: L10n.Family.forWhomAllMembers.localized) {
             selectedTargetProfileIds = []
         }
     }
@@ -1543,7 +1563,7 @@ struct CreateTaskView: View {
             return
         }
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = L10n.Common.noGroupIsCurrentlySelected.string(locale: locale)
+            errorMessage = L10n.Family.noGroupIsCurrentlySelected.string(locale: locale)
             return
         }
         guard let creatorMembershipId = appRouter.selectedMembershipId else {
@@ -1860,7 +1880,7 @@ struct CreateTaskView: View {
             return
         }
         guard let householdId = appRouter.selectedHouseholdId else {
-            errorMessage = L10n.Common.noGroupIsCurrentlySelected.string(locale: locale)
+            errorMessage = L10n.Family.noGroupIsCurrentlySelected.string(locale: locale)
             return
         }
         guard existing.householdId == householdId else {
@@ -1945,7 +1965,7 @@ struct CreateTaskView: View {
                     dueOnOrAfter: cutoff
                 )
                 guard rows.isEmpty == false else {
-                    errorMessage = L10n.Common.noTasksWereFoundToUpdate.string(locale: locale)
+                    errorMessage = L10n.Schedule.noTasksWereFoundToUpdate.string(locale: locale)
                     return
                 }
 
@@ -3024,7 +3044,7 @@ private extension CreateTaskView {
         var output = ""
         var sawDot = false
         for ch in raw {
-            if (L10n.Common.n0 ... "9").contains(ch) {
+            if ("0" ... "9").contains(ch) {
                 output.append(ch)
             } else if ch == "." || ch == "," {
                 if sawDot == false {

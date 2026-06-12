@@ -219,13 +219,13 @@ enum TaskAttachmentSupabaseError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .imageEncodingFailed:
-            return L10n.Common.imageCompressionFailedPleaseTryAgain.string()
+            return AppLocalized.localizedSync(L10n.Common.imageCompressionFailedPleaseTryAgain)
         case .sdkUnavailable:
-            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
+            return AppLocalized.localizedSync(L10n.Common.supabaseSdkIsNotAvailableInThisBuild)
         case .taskPayloadAssemblyFailed:
-            return L10n.Common.failedToPrepareTaskDataPleaseTryAgain.string()
+            return AppLocalized.localizedSync(L10n.Schedule.failedToPrepareTaskDataPleaseTryAgain)
         case .uploadFailed:
-            return L10n.Common.attachmentUploadFailedPleaseTryAgainLater.string()
+            return AppLocalized.localizedSync(L10n.Common.attachmentUploadFailedPleaseTryAgainLater)
         }
     }
 }

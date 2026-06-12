@@ -33,6 +33,7 @@ extension L10n {
     static let currentMembershipIsInvalidPleaseReEnterTh = Entry(key: "family_current_membership_is_invalid_please_re_enter_th", table: .family)
     static let currentMembershipIsInvalidReEnterTheGroup = Entry(key: "family_current_membership_is_invalid_re_enter_the_group", table: .family)
     static let deleteMemberProfile = Entry(key: "family_delete_member_profile", table: .family)
+    static let disbandConfirmMessage = Entry(key: "family_disband_confirm_message", table: .family)
     static let disbandingCannotBeUndone = Entry(key: "family_disbanding_cannot_be_undone", table: .family)
     static let dismissCurrentGroup = Entry(key: "family_dismiss_current_group", table: .family)
     static let dismissGroup = Entry(key: "family_dismiss_group", table: .family)

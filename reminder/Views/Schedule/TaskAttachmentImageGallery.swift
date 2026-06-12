@@ -103,7 +103,7 @@ struct TaskAttachmentImageGallery: View {
                     .padding(.vertical, 6)
                     .background(.white.opacity(0.12), in: Capsule())
                     .accessibilityLabel(
-                        L10n.Schedule.attachmentPageIndicator.formatted(locale: locale, currentIndex + 1, attachments.count)
+                        L10n.Common.n1Lld2Lld.formatted(locale: locale, currentIndex + 1, attachments.count)
                     )
             }
         }

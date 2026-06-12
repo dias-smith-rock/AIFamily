@@ -1,238 +1,242 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "assistant_simulation_execution_end_voice_return": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تنفيذ محاكاة نهاية عودة الصوت"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "assistant_simulation_execution_end_voice_return" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تنفيذ محاكاة نهاية عودة الصوت"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Simulation execution end voice return"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simulation execution end voice return"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retorno de voz final de ejecución de simulación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retorno de voz final de ejecución de simulación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retour vocal de fin d'exécution de la simulation"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retour vocal de fin d'exécution de la simulation"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सिमुलेशन निष्पादन अंत आवाज वापसी"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सिमुलेशन निष्पादन अंत आवाज वापसी"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Execução de simulação final retorno de voz"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Execução de simulação final retorno de voz"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "சிமுலேஷன் எக்ஸிகியூஷன் எண்ட் வாய்ஸ் ரிட்டர்ன்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "சிமுலேஷன் எக்ஸிகியூஷன் எண்ட் வாய்ஸ் ரிட்டர்ன்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "模拟执行端语音回传"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模拟执行端语音回传"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "模擬執行端語音回傳"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "模擬執行端語音回傳"
           }
         }
       }
     },
-    "assistant_speak_the_requirements_directly_by_voice": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• تحدث المتطلبات مباشرة بالصوت"
+    "assistant_speak_the_requirements_directly_by_voice" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• تحدث المتطلبات مباشرة بالصوت"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Speak the requirements directly by voice"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Speak the requirements directly by voice"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Decir los requisitos directamente por voz."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Decir los requisitos directamente por voz."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Exprimez les exigences directement par la voix"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Exprimez les exigences directement par la voix"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• आवश्यकताओं को सीधे आवाज से बताएं"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• आवश्यकताओं को सीधे आवाज से बताएं"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• Fale os requisitos diretamente por voz"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• Fale os requisitos diretamente por voz"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• தேவைகளை நேரடியாக குரல் மூலம் பேசுங்கள்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• தேவைகளை நேரடியாக குரல் மூலம் பேசுங்கள்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 直接语音说出需求"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• 直接语音说出需求"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "• 直接語音說出需求"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "• 直接語音說出需求"
           }
         }
       }
     },
-    "assistant_voice": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "صوت"
+    "assistant_voice" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "صوت"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "voice"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "voice"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "voz"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "voz"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "voix"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "voix"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आवाज़"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आवाज़"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "voz"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "voz"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "குரல்"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "குரல்"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "语音"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "語音"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音"
           }
         }
       }
     },
-    "assistant_voice_input": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "الإدخال الصوتي"
+    "assistant_voice_input" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الإدخال الصوتي"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Voice input"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voice input"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrada de voz"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrada de voz"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saisie vocale"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saisie vocale"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ध्वनि इनपुट"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ध्वनि इनपुट"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrada de voz"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrada de voz"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "குரல் உள்ளீடு"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "குரல் உள்ளீடு"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "语音输入"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "语音输入"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "語音輸入"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "語音輸入"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

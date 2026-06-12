@@ -30,7 +30,7 @@ enum MembershipRole: String, Codable, Equatable {
         switch self {
         case .creator: return L10n.Common.creator.string()
         case .admin: return L10n.Common.admin.string()
-        case .member: return L10n.Common.member.string()
+        case .member: return L10n.Family.member.string()
         }
     }
 
@@ -39,7 +39,7 @@ enum MembershipRole: String, Codable, Equatable {
         switch self {
         case .creator: L10n.Common.creator.localized
         case .admin: L10n.Common.admin.localized
-        case .member: L10n.Common.member.localized
+        case .member: L10n.Family.member.localized
         }
     }
 }

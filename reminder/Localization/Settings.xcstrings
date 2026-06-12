@@ -1,644 +1,655 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "settings_location_ghost_footer": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "أثناء الإخفاء، لا تُرسل إحداثيات جديدة إلى الخادم. لا يزال بإمكان أعضاء المجموعة رؤية آخر موقع أبلغت عنه."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "settings_location_ghost_footer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أثناء الإخفاء، لا تُرسل إحداثيات جديدة إلى الخادم. لا يزال بإمكان أعضاء المجموعة رؤية آخر موقع أبلغت عنه."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "While hidden, new coordinates are not sent to the server. Group members can still see your last reported location."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "While hidden, new coordinates are not sent to the server. Group members can still see your last reported location."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mientras esté oculto, no se envían nuevas coordenadas al servidor. Los miembros del grupo aún pueden ver su última ubicación reportada."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mientras esté oculto, no se envían nuevas coordenadas al servidor. Los miembros del grupo aún pueden ver su última ubicación reportada."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tant que vous êtes masqué, aucune nouvelle coordonnée n'est envoyée au serveur. Les membres du groupe voient toujours votre dernière position signalée."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tant que vous êtes masqué, aucune nouvelle coordonnée n'est envoyée au serveur. Les membres du groupe voient toujours votre dernière position signalée."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "छिपे रहने पर नए निर्देशांक सर्वर पर नहीं भेजे जाते। समूह के सदस्य आपका अंतिम रिपोर्ट किया स्थान अभी भी देख सकते हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "छिपे रहने पर नए निर्देशांक सर्वर पर नहीं भेजे जाते। समूह के सदस्य आपका अंतिम रिपोर्ट किया स्थान अभी भी देख सकते हैं।"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enquanto oculto, novas coordenadas não são enviadas ao servidor. Os membros do grupo ainda podem ver sua última localização reportada."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enquanto oculto, novas coordenadas não são enviadas ao servidor. Os membros do grupo ainda podem ver sua última localização reportada."
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "மறைத்திருக்கும் போது புதிய ஆயத்தொலைவுகள் சேவையகத்திற்கு அனுப்பப்படாது. குழு உறுப்பினர்கள் உங்கள் கடைசியாக அறிவித்த இடத்தை இன்னும் காணலாம்."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "மறைத்திருக்கும் போது புதிய ஆயத்தொலைவுகள் சேவையகத்திற்கு அனுப்பப்படாது. குழு உறுப்பினர்கள் உங்கள் கடைசியாக அறிவித்த இடத்தை இன்னும் காணலாம்."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隐身期间不会向服务器上报新坐标，群组成员仍可看到您上次上报的位置。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隐身期间不会向服务器上报新坐标，群组成员仍可看到您上次上报的位置。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "隱身期間不會向伺服器上報新座標，群組成員仍可看到您上次上報的位置。"
-          }
-        }
-      }
-    },
-    "settings_location_ghost_toggle": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إخفاء الموقع"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hide location"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ocultar ubicación"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Masquer la position"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान छुपाएँ"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ocultar localização"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடத்தை மறை"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置隐身"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置隱身"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隱身期間不會向伺服器上報新座標，群組成員仍可看到您上次上報的位置。"
           }
         }
       }
     },
-    "settings_location_reporting_distance_footer": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يُحفظ موقعك في السحابة فقط بعد تجاوز هذه المسافة."
+    "settings_location_ghost_toggle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إخفاء الموقع"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your location is saved only after you move beyond this distance."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hide location"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu ubicación solo se guarda después de moverte más allá de esta distancia."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar ubicación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Votre position n'est enregistrée qu'après avoir dépassé cette distance."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer la position"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस दूरी से अधिक चलने के बाद ही आपका स्थान क्लाउड में सहेजा जाता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान छुपाएँ"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sua localização só é salva depois que você se desloca além desta distância."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இந்த தூரத்தைக் கடந்து நகர்ந்த பிறகே உங்கள் இருப்பிடம் கிளவுடில் சேமிக்கப்படும்."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடத்தை மறை"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移动超过此距离后，才可能写入云端位置。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置隐身"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移動超過此距離後，才可能寫入雲端位置。"
-          }
-        }
-      }
-    },
-    "settings_location_reporting_distance_section": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "حد الإزاحة"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Movement threshold"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Umbral de desplazamiento"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seuil de déplacement"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थानांतरण सीमा"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Limite de deslocamento"
-          }
-        },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடப்பெயர்வு வரம்பு"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位移阈值"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位移閾值"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置隱身"
           }
         }
       }
     },
-    "settings_location_reporting_history_count_footer": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يؤثر فقط على عدد نقاط المسار والسجل المعروضة على الخريطة. سجلات الموقع المخزنة في السحابة لا تتغير."
+    "settings_location_reporting_distance_footer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يُحفظ موقعك في السحابة فقط بعد تجاوز هذه المسافة."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Only affects how many trail and history points are shown on the map. Cloud-stored location records are unchanged."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your location is saved only after you move beyond this distance."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Solo afecta cuántos puntos de ruta e historial se muestran en el mapa. Los registros de ubicación en la nube no cambian."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu ubicación solo se guarda después de moverte más allá de esta distancia."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "N'affecte que le nombre de points de trajet et d'historique affichés sur la carte. Les enregistrements de position dans le cloud restent inchangés."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre position n'est enregistrée qu'après avoir dépassé cette distance."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "केवल मानचित्र पर दिखाए जाने वाले ट्रेल और इतिहास बिंदुओं की संख्या को प्रभावित करता है। क्लाउड में संग्रहीत स्थान रिकॉर्ड अपरिवर्तित रहते हैं।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इस दूरी से अधिक चलने के बाद ही आपका स्थान क्लाउड में सहेजा जाता है।"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Afeta apenas quantos pontos de trilha e histórico são exibidos no mapa. Os registros de localização na nuvem permanecem inalterados."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sua localização só é salva depois que você se desloca além desta distância."
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "வரைபடத்தில் காட்டப்படும் பாதை மற்றும் வரலாற்று புள்ளிகளின் எண்ணிக்கையை மட்டுமே பாதிக்கிறது. கிளவுடில் சேமிக்கப்பட்ட இடம் பதிவுகள் மாறாது."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இந்த தூரத்தைக் கடந்து நகர்ந்த பிறகே உங்கள் இருப்பிடம் கிளவுடில் சேமிக்கப்படும்."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "仅影响地图上显示的轨迹与历史点数量，不会改变云端存储的位置记录。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移动超过此距离后，才可能写入云端位置。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "僅影響地圖上顯示的軌跡與歷史點數量，不會改變雲端儲存的位置記錄。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移動超過此距離後，才可能寫入雲端位置。"
           }
         }
       }
     },
-    "settings_location_reporting_history_count_section": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عدد مواقع السجل المعروضة"
+    "settings_location_reporting_distance_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حد الإزاحة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "History display count"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Movement threshold"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cantidad de historial mostrado"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umbral de desplazamiento"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nombre de points d'historique"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seuil de déplacement"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इतिहास प्रदर्शन संख्या"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थानांतरण सीमा"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quantidade de histórico exibido"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Limite de deslocamento"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "வரலாறு காட்சி எண்ணிக்கை"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடப்பெயர்வு வரம்பு"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "历史位置数量"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位移阈值"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "歷史位置數量"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位移閾值"
           }
         }
       }
     },
-    "settings_location_reporting_interval_footer": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يُنشأ سجل موقع جديد عند تحقق حدّي الإزاحة والفاصل الزمني معًا. إذا انقضى الفاصل فقط دون إزاحة كافية، يُحدَّث أحدث سجل."
+    "settings_location_reporting_history_count_footer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يؤثر فقط على عدد نقاط المسار والسجل المعروضة على الخريطة. سجلات الموقع المخزنة في السحابة لا تتغير."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A new location record is created when both movement and interval thresholds are met. If only the interval elapses without enough movement, the most recent record is updated."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only affects how many trail and history points are shown on the map. Cloud-stored location records are unchanged."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se crea un nuevo registro de ubicación cuando se cumplen el umbral de desplazamiento y el intervalo. Si solo transcurre el intervalo sin suficiente movimiento, se actualiza el registro más reciente."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo afecta cuántos puntos de ruta e historial se muestran en el mapa. Los registros de ubicación en la nube no cambian."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un nouvel enregistrement de position est créé lorsque les seuils de déplacement et d'intervalle sont atteints. Si seul l'intervalle s'écoule sans mouvement suffisant, l'enregistrement le plus récent est mis à jour."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "N'affecte que le nombre de points de trajet et d'historique affichés sur la carte. Les enregistrements de position dans le cloud restent inchangés."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "जब स्थानांतरण और अंतराल दोनों सीमाएँ पूरी होती हैं तो एक नया स्थान रिकॉर्ड बनता है। यदि पर्याप्त गति के बिना केवल अंतराल पूरा होता है, तो सबसे हाल का रिकॉर्ड अपडेट होता है।"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "केवल मानचित्र पर दिखाए जाने वाले ट्रेल और इतिहास बिंदुओं की संख्या को प्रभावित करता है। क्लाउड में संग्रहीत स्थान रिकॉर्ड अपरिवर्तित रहते हैं।"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um novo registro de localização é criado quando os limites de deslocamento e intervalo são atingidos. Se apenas o intervalo passar sem movimento suficiente, o registro mais recente é atualizado."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afeta apenas quantos pontos de trilha e histórico são exibidos no mapa. Os registros de localização na nuvem permanecem inalterados."
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடப்பெயர்வு மற்றும் இடைவெளி வரம்புகள் இரண்டும் பூர்த்தியாகும்போது புதிய இடம் பதிவு உருவாக்கப்படும். போதுமான இடப்பெயர்வு இல்லாமல் இடைவெளி மட்டும் முடிந்தால், சமீபத்திய பதிவு புதுப்பிக்கப்படும்."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "வரைபடத்தில் காட்டப்படும் பாதை மற்றும் வரலாற்று புள்ளிகளின் எண்ணிக்கையை மட்டுமே பாதிக்கிறது. கிளவுடில் சேமிக்கப்பட்ட இடம் பதிவுகள் மாறாது."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位移与间隔均达标时会新增一条位置记录；仅间隔到达而位移未达阈值时，会更新最近一条位置记录。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "仅影响地图上显示的轨迹与历史点数量，不会改变云端存储的位置记录。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位移與間隔均達標時會新增一條位置記錄；僅間隔到達而位移未達閾值時，會更新最近一條位置記錄。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "僅影響地圖上顯示的軌跡與歷史點數量，不會改變雲端儲存的位置記錄。"
           }
         }
       }
     },
-    "settings_location_reporting_interval_section": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "فترة الإبلاغ"
+    "settings_location_reporting_history_count_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "عدد مواقع السجل المعروضة"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Report interval"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "History display count"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intervalo de informe"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cantidad de historial mostrado"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intervalle de signalement"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nombre de points d'historique"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "रिपोर्ट अंतराल"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "इतिहास प्रदर्शन संख्या"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Intervalo de relatório"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quantidade de histórico exibido"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "அறிக்கை இடைவெளி"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "வரலாறு காட்சி எண்ணிக்கை"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上报间隔"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "历史位置数量"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上報間隔"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "歷史位置數量"
           }
         }
       }
     },
-    "settings_location_reporting_nav_title": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إبلاغ الموقع"
+    "settings_location_reporting_interval_footer" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يُنشأ سجل موقع جديد عند تحقق حدّي الإزاحة والفاصل الزمني معًا. إذا انقضى الفاصل فقط دون إزاحة كافية، يُحدَّث أحدث سجل."
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location reporting"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A new location record is created when both movement and interval thresholds are met. If only the interval elapses without enough movement, the most recent record is updated."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Informe de ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se crea un nuevo registro de ubicación cuando se cumplen el umbral de desplazamiento y el intervalo. Si solo transcurre el intervalo sin suficiente movimiento, se actualiza el registro más reciente."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Signalement de position"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un nouvel enregistrement de position est créé lorsque les seuils de déplacement et d'intervalle sont atteints. Si seul l'intervalle s'écoule sans mouvement suffisant, l'enregistrement le plus récent est mis à jour."
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान रिपोर्टिंग"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "जब स्थानांतरण और अंतराल दोनों सीमाएँ पूरी होती हैं तो एक नया स्थान रिकॉर्ड बनता है। यदि पर्याप्त गति के बिना केवल अंतराल पूरा होता है, तो सबसे हाल का रिकॉर्ड अपडेट होता है।"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Relatório de localização"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um novo registro de localização é criado quando os limites de deslocamento e intervalo são atingidos. Se apenas o intervalo passar sem movimento suficiente, o registro mais recente é atualizado."
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இருப்பிட அறிக்கை"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடப்பெயர்வு மற்றும் இடைவெளி வரம்புகள் இரண்டும் பூர்த்தியாகும்போது புதிய இடம் பதிவு உருவாக்கப்படும். போதுமான இடப்பெயர்வு இல்லாமல் இடைவெளி மட்டும் முடிந்தால், சமீபத்திய பதிவு புதுப்பிக்கப்படும்."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置上报"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位移与间隔均达标时会新增一条位置记录；仅间隔到达而位移未达阈值时，会更新最近一条位置记录。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置上報"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位移與間隔均達標時會新增一條位置記錄；僅間隔到達而位移未達閾值時，會更新最近一條位置記錄。"
           }
         }
       }
     },
-    "settings_location_sharing_section": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "مشاركة الموقع"
+    "settings_location_reporting_interval_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "فترة الإبلاغ"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Location Sharing"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Report interval"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compartir ubicación"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervalo de informe"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Partage de position"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervalle de signalement"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "स्थान साझाकरण"
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "रिपोर्ट अंतराल"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compartilhamento de localização"
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervalo de relatório"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "இடம் பகிர்வு"
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "அறிக்கை இடைவெளி"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置共享"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上报间隔"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "位置共享"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上報間隔"
           }
         }
       }
     },
-    "settings_profile_not_loaded_in_group": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+    "settings_location_reporting_nav_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إبلاغ الموقع"
           }
         },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location reporting"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informe de ubicación"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Signalement de position"
           }
         },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान रिपोर्टिंग"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relatório de localização"
           }
         },
-        "ta": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இருப்பிட அறிக்கை"
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置上报"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未載入你在目前群組的檔案，請先在「群組」確認已加入群組。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置上報"
+          }
+        }
+      }
+    },
+    "settings_location_sharing_section" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مشاركة الموقع"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Location Sharing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir ubicación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partage de position"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "स्थान साझाकरण"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartilhamento de localização"
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "இடம் பகிர்வு"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置共享"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置共享"
+          }
+        }
+      }
+    },
+    "settings_profile_not_loaded_in_group" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "ta" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your profile in the current group is not loaded yet. Open Groups to confirm membership."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未载入你在当前群组的档案，请先在「群组」确认已加入群组。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未載入你在目前群組的檔案，請先在「群組」確認已加入群組。"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

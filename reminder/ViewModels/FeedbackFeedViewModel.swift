@@ -31,7 +31,7 @@ final class FeedbackFeedViewModel: ObservableObject {
     func loadFeedbacks(taskId: UUID? = nil) async {
         guard let householdId = currentHouseholdId else {
             feedbacks = []
-            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             hasLoadedOnce = true
             return
         }
@@ -52,11 +52,11 @@ final class FeedbackFeedViewModel: ObservableObject {
 
     func createFeedback(_ feedback: Feedback) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
         guard feedback.householdId == nil || feedback.householdId == householdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.failedToSaveFeedbackInconsistentGroupConte)
+            errorMessage = AppLocalized.localized(L10n.Family.failedToSaveFeedbackInconsistentGroupConte)
             return
         }
 
@@ -112,7 +112,7 @@ final class FeedbackFeedViewModel: ObservableObject {
         audioData: Data
     ) async {
         guard let householdId = currentHouseholdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
 

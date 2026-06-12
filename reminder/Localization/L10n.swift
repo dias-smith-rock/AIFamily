@@ -51,6 +51,12 @@ enum L10n {
     }
 
     static func key(_ key: String, table: Table) -> LocalizedStringKey {
-        LocalizedStringKey(String.LocalizationValue(key), table: table.rawValue)
+        LocalizedStringKey(
+            String(
+                localized: String.LocalizationValue(key),
+                table: table.rawValue,
+                bundle: .main
+            )
+        )
     }
 }

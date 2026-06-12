@@ -41,7 +41,7 @@ enum VIPBillingPlan: String, CaseIterable, Identifiable {
     }
 
     var savingsBadge: LocalizedStringKey? {
-        isRecommended ? L10n.Common.save33 : nil
+        isRecommended ? L10n.Common.save33.localized : nil
     }
 }
 
@@ -81,26 +81,32 @@ final class VIPSubscriptionViewModel: ObservableObject {
 
         #if canImport(Supabase)
         do {
-            guard let userId = await appRouter.resolveAuthUserId() else {
-                errorMessage = AppLocalized.localized(L10n.VIP.signInBeforeSubscribe)
-                return false
-            }
+            let userId = await appRouter.resolveAuthUserId()
             guard let pending = try await storeKit.purchase(plan: selectedPlan, appAccountToken: userId) else {
                 return false
             }
 
-            let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                signedTransactionInfo: pending.signedTransactionInfo,
-                environment: pending.environment
-            )
-            let expiresAt = Self.parseSubscriptionExpiry(
-                serverExpiresAt: response.expiresAt,
-                fallback: pending.expiresAt
-            )
-            appRouter.applyOptimisticPersonalEntitlement(userId: userId, expiresAt: expiresAt)
-            await pending.finishIfNeeded()
-            AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
-            await appRouter.refreshPremiumStateAfterClaim()
+            storeKit.confirmLocalSubscription(for: userId, expiresAt: pending.expiresAt)
+            await storeKit.refreshLocalEntitlements(for: userId)
+
+            if let userId {
+                let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                    signedTransactionInfo: pending.signedTransactionInfo,
+                    environment: pending.environment
+                )
+                let expiresAt = Self.parseSubscriptionExpiry(
+                    serverExpiresAt: response.expiresAt,
+                    fallback: pending.expiresAt
+                )
+                appRouter.applyOptimisticPersonalEntitlement(userId: userId, expiresAt: expiresAt)
+                await pending.finishIfNeeded()
+                AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
+                await appRouter.refreshPremiumStateAfterClaim()
+            } else {
+                await pending.finishIfNeeded()
+                AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
+            }
+
             purchaseSucceeded = true
             return true
         } catch let error as StoreKitSubscriptionError {
@@ -139,24 +145,31 @@ final class VIPSubscriptionViewModel: ObservableObject {
             }
 
             let userId = await appRouter.resolveAuthUserId()
-            let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                signedTransactionInfo: pending.signedTransactionInfo,
-                environment: pending.environment
-            )
+            storeKit.confirmLocalSubscription(for: userId, expiresAt: pending.expiresAt)
+            await storeKit.refreshLocalEntitlements(for: userId ?? appRouter.authUserId)
+
             if let userId {
+                let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                    signedTransactionInfo: pending.signedTransactionInfo,
+                    environment: pending.environment
+                )
                 let expiresAt = Self.parseSubscriptionExpiry(
                     serverExpiresAt: response.expiresAt,
                     fallback: pending.expiresAt
                 )
                 appRouter.applyOptimisticPersonalEntitlement(userId: userId, expiresAt: expiresAt)
+                await pending.finishIfNeeded()
+                AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
+                await appRouter.refreshPremiumStateAfterClaim()
+            } else {
+                await pending.finishIfNeeded()
+                AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
             }
-            await pending.finishIfNeeded()
-            AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
-            await appRouter.refreshPremiumStateAfterClaim()
+
             purchaseSucceeded = true
             return true
         } catch let error as StoreKitSubscriptionError {
-            errorMessage = error.errorDescription ?? AppLocalized.localized(L10n.Common.noSubscriptionFoundToRestore)
+            errorMessage = error.errorDescription ?? AppLocalized.localized(L10n.VIP.noSubscriptionFoundToRestore)
             return false
         } catch let error as SubscriptionSupabaseError {
             errorMessage = error.errorDescription

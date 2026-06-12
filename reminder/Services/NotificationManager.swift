@@ -239,7 +239,7 @@ actor NotificationManager {
             let id18 = Self.identifier(taskId: payload.id, suffix: "allday-18")
             let ok = await addRequest(
                 identifier: id18,
-                title: AppLocalized.localizedSync(L10n.Common.allDayTaskReminder),
+                title: AppLocalized.localizedSync(L10n.Schedule.allDayTaskReminder),
                 body: baseBody,
                 at: fire18,
                 taskId: payload.id,
@@ -259,7 +259,7 @@ actor NotificationManager {
             let id21 = Self.identifier(taskId: payload.id, suffix: "allday-21")
             let ok = await addRequest(
                 identifier: id21,
-                title: AppLocalized.localizedSync(L10n.Common.allDayTaskReminder),
+                title: AppLocalized.localizedSync(L10n.Schedule.allDayTaskReminder),
                 body: baseBody,
                 at: fire21,
                 taskId: payload.id,
@@ -333,7 +333,7 @@ actor NotificationManager {
     private nonisolated static func contentTitle(from raw: String) -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return AppLocalized.localizedSync(L10n.Family.groupTask)
+            return AppLocalized.localizedSync(L10n.Schedule.groupTask)
         }
         let maxLen = 80
         if trimmed.count <= maxLen {

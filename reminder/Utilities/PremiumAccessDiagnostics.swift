@@ -41,12 +41,12 @@ enum PremiumAccessDiagnostics {
         }
         let name = appRouter.selectedHouseholdName?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let displayName = (name?.isEmpty == false) ? name! : L10n.Family.unnamedGroup
+        let displayName = (name?.isEmpty == false) ? name! : AppLocalized.localizedSync(L10n.Family.unnamedGroup)
         let shortId = householdId.uuidString.prefix(8)
         return "\(displayName)(\(shortId))"
     }
 
     private static func boolText(_ value: Bool) -> String {
-        value ? L10n.Common.yes : L10n.Common.no
+        value ? AppLocalized.localizedSync(L10n.Common.yes) : AppLocalized.localizedSync(L10n.Common.no)
     }
 }

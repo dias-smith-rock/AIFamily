@@ -207,7 +207,7 @@ struct TaskModeDayView: View {
         Group {
             if viewModel.isLoading {
                 pullToRefreshScrollContainer(minHeight: 360) {
-                    ProgressView(AppLocalized.string(L10n.Common.loadingTasks, locale: locale))
+                    ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
                         .frame(maxWidth: .infinity)
                         .padding(.top, 120)
                 }
@@ -446,7 +446,7 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 8) {
-                Text(L10n.Common.noTasksScheduledToday.localized)
+                Text(L10n.Schedule.noTasksScheduledToday.localized)
                     .font(.title3.bold())
                     .foregroundStyle(.primary)
                 Text(L10n.Common.enjoyYourTimeTogetherOrPlanSomethingNew.localized)
@@ -456,9 +456,9 @@ struct TaskModeDayView: View {
             }
 
             VStack(spacing: 12) {
-                actionChip(emoji: "✨", titleKey: L10n.Common.dinnerTogether, dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", titleKey: L10n.Common.groceryList, dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", titleKey: L10n.Common.kidsActivity, dueDateKind: .nextSaturdayFromSelected)
+                actionChip(emoji: "✨", titleKey: L10n.Common.dinnerTogether.key, dueDateKind: .selectedDay)
+                actionChip(emoji: "🛒", titleKey: L10n.Common.groceryList.key, dueDateKind: .dayAfterSelected)
+                actionChip(emoji: "🧸", titleKey: L10n.Common.kidsActivity.key, dueDateKind: .nextSaturdayFromSelected)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

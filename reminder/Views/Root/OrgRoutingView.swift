@@ -32,147 +32,163 @@ struct OrgRoutingView: View {
     @State private var isJoiningFullScreenLoading = false
 
     var body: some View {
+        orgRoutingNavigationStack
+            .onChange(of: viewModel.errorMessage) { _, newValue in
+                if let newValue {
+                    localErrorMessage = newValue
+                    showErrorAlert = true
+                }
+            }
+            .alert(L10n.Common.operationFailed, isPresented: $showErrorAlert) {
+                Button(L10n.Common.gotIt, role: .cancel) {
+                    viewModel.acknowledgeError()
+                }
+            } message: {
+                Text(localErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
+            }
+            .sheet(isPresented: $showCreateSheet) { createHouseholdSheet }
+            .sheet(isPresented: $showJoinSheet) { joinHouseholdSheet }
+            .confirmationDialog(L10n.Common.selectIdentificationMethod.localized, isPresented: $showScanOptions, titleVisibility: .visible) {
+                Button(L10n.Common.cameraScanCode) {
+                    showCameraScanner = true
+                }
+                Button(L10n.Common.library) {
+                    showPhotoPicker = true
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            }
+            .forcesNonPopoverDialogPresentation()
+            .sheet(isPresented: $showCameraScanner) {
+                QRScannerSheet { raw in
+                    handleRecognizedCode(raw)
+                    showCameraScanner = false
+                } onError: { message in
+                    joinInputError = message
+                    showCameraScanner = false
+                }
+            }
+            .photosPicker(
+                isPresented: $showPhotoPicker,
+                selection: $selectedPhotoItem,
+                matching: .images,
+                preferredItemEncoding: .automatic
+            )
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    await decodeInviteCodeFromPhoto(newItem)
+                }
+            }
+            .overlay {
+                if isJoiningFullScreenLoading {
+                    joiningGroupOverlay
+                }
+            }
+    }
+
+    private var orgRoutingNavigationStack: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    Text(AppLocalized.string(L10n.Common.pleaseChooseAWayToContinue, locale: locale))
-                        .font(AppTheme.FontToken.subtitle)
-                        .foregroundStyle(AppTheme.ColorToken.textSecondary)
-
-                    RouteActionCard(
-                        icon: "house.fill",
-                        title: AppLocalized.string(L10n.Family.iAmAParent, locale: locale),
-                        subtitle: AppLocalized.string(L10n.Common.createBrandNewGroupSpace, locale: locale),
-                        backgroundColor: Color.orange.opacity(0.12)
-                    ) {
-                        createInputError = nil
-                        showCreateSheet = true
-                    }
-
-                    RouteActionCard(
-                        icon: "qrcode.viewfinder",
-                        title: AppLocalized.string(L10n.Common.joinGroup, locale: locale),
-                        subtitle: AppLocalized.string(L10n.Common.joinViaScanOrInviteCode, locale: locale),
-                        backgroundColor: Color.green.opacity(0.12)
-                    ) {
-                        joinInputError = nil
-                        showJoinSheet = true
-                    }
-                }
-                .padding(20)
-            }
-            .background(AppTheme.ColorToken.background)
-            .navigationTitle(AppLocalized.string(L10n.Common.welcomeToWesync, locale: locale))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Task { await signOut() }
-                    } label: {
-                        if isSigningOut {
-                            ProgressView()
-                        } else {
-                            Text(AppLocalized.string(L10n.Auth.logOut, locale: locale))
-                                .foregroundStyle(.secondary)
+            orgRoutingScrollContent
+                .background(AppTheme.ColorToken.background)
+                .navigationTitle(AppLocalized.string(L10n.Common.welcomeToWesync, locale: locale))
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            Task { await signOut() }
+                        } label: {
+                            if isSigningOut {
+                                ProgressView()
+                            } else {
+                                Text(AppLocalized.string(L10n.Auth.logOut, locale: locale))
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                        .disabled(isSigningOut)
                     }
-                    .disabled(isSigningOut)
+                }
+        }
+    }
+
+    private var orgRoutingScrollContent: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                Text(AppLocalized.string(L10n.Common.pleaseChooseAWayToContinue, locale: locale))
+                    .font(AppTheme.FontToken.subtitle)
+                    .foregroundStyle(AppTheme.ColorToken.textSecondary)
+
+                RouteActionCard(
+                    icon: "house.fill",
+                    title: AppLocalized.string(L10n.Family.iAmAParent, locale: locale),
+                    subtitle: AppLocalized.string(L10n.Family.createBrandNewGroupSpace, locale: locale),
+                    backgroundColor: Color.orange.opacity(0.12)
+                ) {
+                    createInputError = nil
+                    showCreateSheet = true
+                }
+
+                RouteActionCard(
+                    icon: "qrcode.viewfinder",
+                    title: AppLocalized.string(L10n.Family.joinGroup, locale: locale),
+                    subtitle: AppLocalized.string(L10n.Family.joinViaScanOrInviteCode, locale: locale),
+                    backgroundColor: Color.green.opacity(0.12)
+                ) {
+                    joinInputError = nil
+                    showJoinSheet = true
                 }
             }
+            .padding(20)
         }
-        .onChange(of: viewModel.errorMessage) { _, newValue in
-            if let newValue {
-                localErrorMessage = newValue
-                showErrorAlert = true
+    }
+
+    private var joiningGroupOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.18)
+                .ignoresSafeArea()
+            VStack(spacing: 10) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text(AppLocalized.string(L10n.Family.joiningGroup, locale: locale))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .alert(L10n.Common.operationFailed, isPresented: $showErrorAlert) {
-            Button(L10n.Common.gotIt, role: .cancel) {
-                viewModel.acknowledgeError()
+        .transition(.opacity)
+    }
+
+    private var createHouseholdSheet: some View {
+        CreateHouseholdSheet(
+            householdName: $householdName,
+            householdDescription: $householdDescription,
+            inputError: $createInputError,
+            isSubmitting: viewModel.isCreating,
+            onSubmit: {
+                await submitCreate()
             }
-        } message: {
-            Text(localErrorMessage ?? L10n.Common.pleaseTryAgainLater)
-        }
-        .sheet(isPresented: $showCreateSheet) {
-            CreateHouseholdSheet(
-                householdName: $householdName,
-                householdDescription: $householdDescription,
-                inputError: $createInputError,
-                isSubmitting: viewModel.isCreating,
-                onSubmit: {
-                    await submitCreate()
-                }
-            )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showJoinSheet) {
-            JoinHouseholdSheet(
-                inviteCode: $inviteCode,
-                inputError: $joinInputError,
-                isSubmitting: viewModel.isJoining,
-                isDecodingPhoto: isDecodingPhoto,
-                onScan: {
-                    showScanOptions = true
-                },
-                onSubmit: {
-                    await submitJoin()
-                }
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .confirmationDialog(L10n.Common.selectIdentificationMethod, isPresented: $showScanOptions, titleVisibility: .visible) {
-            Button(L10n.Common.cameraScanCode) {
-                showCameraScanner = true
-            }
-            Button(L10n.Common.library) {
-                showPhotoPicker = true
-            }
-            Button(L10n.Common.cancel, role: .cancel) {}
-        }
-        .forcesNonPopoverDialogPresentation()
-        .sheet(isPresented: $showCameraScanner) {
-            QRScannerSheet { raw in
-                handleRecognizedCode(raw)
-                showCameraScanner = false
-            } onError: { message in
-                joinInputError = message
-                showCameraScanner = false
-            }
-        }
-        .photosPicker(
-            isPresented: $showPhotoPicker,
-            selection: $selectedPhotoItem,
-            matching: .images,
-            preferredItemEncoding: .automatic
         )
-        .onChange(of: selectedPhotoItem) { _, newItem in
-            guard let newItem else { return }
-            Task {
-                await decodeInviteCodeFromPhoto(newItem)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var joinHouseholdSheet: some View {
+        JoinHouseholdSheet(
+            inviteCode: $inviteCode,
+            inputError: $joinInputError,
+            isSubmitting: viewModel.isJoining,
+            isDecodingPhoto: isDecodingPhoto,
+            onScan: {
+                showScanOptions = true
+            },
+            onSubmit: {
+                await submitJoin()
             }
-        }
-        .overlay {
-            if isJoiningFullScreenLoading {
-                ZStack {
-                    Color.black.opacity(0.18)
-                        .ignoresSafeArea()
-                    VStack(spacing: 10) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text(AppLocalized.string(L10n.Common.joiningGroup, locale: locale))
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 20)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .transition(.opacity)
-            }
-        }
+        )
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     private var normalizedInviteCode: String {
@@ -189,7 +205,7 @@ struct OrgRoutingView: View {
 
     private func handleRecognizedCode(_ raw: String) {
         guard let code = firstInviteCode(from: raw.uppercased()) else {
-            joinInputError = AppLocalized.string(L10n.Common.noValidInviteCodeDetected, locale: locale)
+            joinInputError = AppLocalized.string(L10n.Family.noValidInviteCodeDetected, locale: locale)
             return
         }
         inviteCode = code
@@ -417,7 +433,7 @@ private struct CreateHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string(L10n.Common.createGroup, locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Family.createGroup, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -511,7 +527,7 @@ private struct JoinHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string(L10n.Common.joinGroup, locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Family.joinGroup, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

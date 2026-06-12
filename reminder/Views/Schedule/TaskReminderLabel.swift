@@ -21,7 +21,7 @@ enum TaskReminderLabel {
             HStack(spacing: 0) {
                 ForEach(Array(sorted.enumerated()), id: \.offset) { index, minutes in
                     if index > 0 {
-                        Text(L10n.Common.text.localized)
+                        Text(verbatim: ", ")
                     }
                     switch minutes {
                     case 0, 5, 10, 15, 30, 60:

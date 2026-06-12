@@ -68,11 +68,11 @@ struct ReviewAlertModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(
-                L10n.Common.enjoyingWesync,
+                L10n.Common.enjoyingWesync.localized,
                 isPresented: $manager.showReviewAlert
             ) {
-                Button(L10n.Common.maybeLater, role: .cancel) {}
-                Button(L10n.Common.writeAReview) {
+                Button(L10n.Common.maybeLater.localized, role: .cancel) {}
+                Button(L10n.Common.writeAReview.localized) {
                     openReviewPage()
                 }
             } message: {

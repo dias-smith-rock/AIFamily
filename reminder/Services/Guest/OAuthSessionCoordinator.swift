@@ -12,7 +12,7 @@ enum OAuthSessionCoordinator {
         var errorDescription: String? {
             switch self {
             case .sessionNotReady:
-                L10n.Auth.theLoginSessionIsNotReadyYetPleaseTryAg
+                AppLocalized.localizedSync(L10n.Auth.theLoginSessionIsNotReadyYetPleaseTryAg)
             }
         }
     }

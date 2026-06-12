@@ -559,7 +559,7 @@ struct LocationMainView: View {
                 .padding(.bottom, 10)
 
             if liveSharingMembers.isEmpty {
-                Text(L10n.Common.noMembersSharingLocation.localized)
+                Text(L10n.Family.noMembersSharingLocation.localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -686,7 +686,7 @@ struct LocationMainView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
             } else if viewModel.members.isEmpty, viewModel.isLoading == false {
-                Text(L10n.Common.noGroupMembersYet.localized)
+                Text(L10n.Family.noGroupMembersYet.localized)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -776,7 +776,7 @@ struct LocationMainView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
                 .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .accessibilityLabel(L10n.Family.groupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+                .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
             } else {
                 Button {
                     liveManager.recordUserInteraction()
@@ -810,7 +810,7 @@ struct LocationMainView: View {
                     .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Family.switchGroupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+                .accessibilityLabel(L10n.Family.switchGroups.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
             }
         }
     }

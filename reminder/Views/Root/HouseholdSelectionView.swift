@@ -32,6 +32,103 @@ struct HouseholdSelectionView: View {
     @State private var isJoiningFullScreenLoading = false
 
     var body: some View {
+        householdNavigationStack
+            .task {
+                await viewModel.fetchMyHouseholds(appRouter: appRouter)
+            }
+            .onChange(of: appRouter.appState) { _, newState in
+                guard newState == .orgRouting || newState == .householdSelection else { return }
+                Task {
+                    await viewModel.fetchMyHouseholds(appRouter: appRouter)
+                }
+            }
+            .onChange(of: viewModel.errorMessage) { _, newValue in
+                if let newValue {
+                    localErrorMessage = newValue
+                    showErrorAlert = true
+                }
+            }
+            .alert(L10n.Common.operationFailed, isPresented: $showErrorAlert) {
+                Button(L10n.Common.gotIt, role: .cancel) {
+                    viewModel.acknowledgeError()
+                }
+            } message: {
+                Text(localErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
+            }
+            .alert(L10n.Auth.logOut, isPresented: $viewModel.showSignOutAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.quit, role: .destructive) {
+                    Task {
+                        let succeeded = await viewModel.signOut(appRouter: appRouter)
+                        if succeeded == false, viewModel.authErrorMessage != nil {
+                            showAuthErrorAlert = true
+                        }
+                    }
+                }
+            } message: {
+                Text(L10n.Common.areYouSureYouWantToLogOutOfYourCurrent.localized)
+            }
+            .alert(L10n.Common.deleteAccount, isPresented: $viewModel.showDeleteAccountAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.deleteAccount2, role: .destructive) {
+                    Task {
+                        let succeeded = await viewModel.deleteAccount(appRouter: appRouter)
+                        if succeeded == false, viewModel.authErrorMessage != nil {
+                            showAuthErrorAlert = true
+                        }
+                    }
+                }
+            } message: {
+                Text(L10n.Family.thisOperationWillPermanentlyDeleteYourAcco.localized)
+            }
+            .alert(L10n.Common.accountOperationFailed, isPresented: $showAuthErrorAlert) {
+                Button(L10n.Common.gotIt, role: .cancel) {
+                    viewModel.authErrorMessage = nil
+                }
+            } message: {
+                Text(viewModel.authErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
+            }
+            .sheet(isPresented: $showCreateSheet) { householdCreateSheet }
+            .sheet(isPresented: $showJoinSheet) { householdJoinSheet }
+            .confirmationDialog(L10n.Common.selectIdentificationMethod.localized, isPresented: $showScanOptions, titleVisibility: .visible) {
+                Button(L10n.Common.cameraScanCode) {
+                    showCameraScanner = true
+                }
+                Button(L10n.Common.library) {
+                    showPhotoPicker = true
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            }
+            .forcesNonPopoverDialogPresentation()
+            .sheet(isPresented: $showCameraScanner) {
+                QRScannerSheet { raw in
+                    handleRecognizedCode(raw)
+                    showCameraScanner = false
+                } onError: { message in
+                    joinInputError = message
+                    showCameraScanner = false
+                }
+            }
+            .photosPicker(
+                isPresented: $showPhotoPicker,
+                selection: $selectedPhotoItem,
+                matching: .images,
+                preferredItemEncoding: .automatic
+            )
+            .onChange(of: selectedPhotoItem) { _, newItem in
+                guard let newItem else { return }
+                Task {
+                    await decodeInviteCodeFromPhoto(newItem)
+                }
+            }
+            .overlay {
+                if isJoiningFullScreenLoading || viewModel.isProcessingAuth {
+                    householdLoadingOverlay
+                }
+            }
+    }
+
+    private var householdNavigationStack: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -47,166 +144,85 @@ struct HouseholdSelectionView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Button {
-                            viewModel.showSignOutAlert = true
-                        } label: {
-                            Label(AppLocalized.string(L10n.Auth.logOut, locale: locale), systemImage: "rectangle.portrait.and.arrow.right")
-                        }
+                    householdAccountMenu
+                }
+            }
+        }
+    }
 
-                        Button(role: .destructive) {
-                            viewModel.showDeleteAccountAlert = true
-                        } label: {
-                            Label(L10n.Common.deleteAccount.localized, systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "person.crop.circle")
-                            .font(.title2)
-                            .foregroundStyle(.primary)
-                    }
-                    .disabled(viewModel.isProcessingAuth)
-                }
+    private var householdAccountMenu: some View {
+        Menu {
+            Button {
+                viewModel.showSignOutAlert = true
+            } label: {
+                Label(AppLocalized.string(L10n.Auth.logOut, locale: locale), systemImage: "rectangle.portrait.and.arrow.right")
             }
-        }
-        .task {
-            await viewModel.fetchMyHouseholds(appRouter: appRouter)
-        }
-        .onChange(of: appRouter.appState) { _, newState in
-            guard newState == .orgRouting || newState == .householdSelection else { return }
-            Task {
-                await viewModel.fetchMyHouseholds(appRouter: appRouter)
+
+            Button(role: .destructive) {
+                viewModel.showDeleteAccountAlert = true
+            } label: {
+                Label(L10n.Common.deleteAccount.localized, systemImage: "trash")
             }
+        } label: {
+            Image(systemName: "person.crop.circle")
+                .font(.title2)
+                .foregroundStyle(.primary)
         }
-        .onChange(of: viewModel.errorMessage) { _, newValue in
-            if let newValue {
-                localErrorMessage = newValue
-                showErrorAlert = true
+        .disabled(viewModel.isProcessingAuth)
+    }
+
+    private var householdLoadingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.18)
+                .ignoresSafeArea()
+            VStack(spacing: 10) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text(
+                    viewModel.isProcessingAuth
+                        ? AppLocalized.string(L10n.Common.processingAccountOperations, locale: locale)
+                        : AppLocalized.string(L10n.Family.joiningGroup, locale: locale)
+                )
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.secondary)
             }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
-        .alert(L10n.Common.operationFailed, isPresented: $showErrorAlert) {
-            Button(L10n.Common.gotIt, role: .cancel) {
-                viewModel.acknowledgeError()
+        .transition(.opacity)
+    }
+
+    private var householdCreateSheet: some View {
+        CreateHouseholdSheet(
+            householdName: $householdName,
+            householdDescription: $householdDescription,
+            inputError: $createInputError,
+            isSubmitting: viewModel.isCreating,
+            onSubmit: {
+                await submitCreate()
             }
-        } message: {
-            Text(localErrorMessage ?? L10n.Common.pleaseTryAgainLater)
-        }
-        .alert(L10n.Auth.logOut, isPresented: $viewModel.showSignOutAlert) {
-            Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Common.quit, role: .destructive) {
-                Task {
-                    let succeeded = await viewModel.signOut(appRouter: appRouter)
-                    if succeeded == false, viewModel.authErrorMessage != nil {
-                        showAuthErrorAlert = true
-                    }
-                }
-            }
-        } message: {
-            Text(L10n.Common.areYouSureYouWantToLogOutOfYourCurrent.localized)
-        }
-        .alert(L10n.Common.deleteAccount, isPresented: $viewModel.showDeleteAccountAlert) {
-            Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Common.deleteAccount2, role: .destructive) {
-                Task {
-                    let succeeded = await viewModel.deleteAccount(appRouter: appRouter)
-                    if succeeded == false, viewModel.authErrorMessage != nil {
-                        showAuthErrorAlert = true
-                    }
-                }
-            }
-        } message: {
-            Text(L10n.Family.thisOperationWillPermanentlyDeleteYourAcco.localized)
-        }
-        .alert(L10n.Common.accountOperationFailed, isPresented: $showAuthErrorAlert) {
-            Button(L10n.Common.gotIt, role: .cancel) {
-                viewModel.authErrorMessage = nil
-            }
-        } message: {
-            Text(viewModel.authErrorMessage ?? L10n.Common.pleaseTryAgainLater)
-        }
-        .sheet(isPresented: $showCreateSheet) {
-            CreateHouseholdSheet(
-                householdName: $householdName,
-                householdDescription: $householdDescription,
-                inputError: $createInputError,
-                isSubmitting: viewModel.isCreating,
-                onSubmit: {
-                    await submitCreate()
-                }
-            )
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showJoinSheet) {
-            JoinHouseholdSheet(
-                inviteCode: $inviteCode,
-                inputError: $joinInputError,
-                isSubmitting: viewModel.isJoining,
-                isDecodingPhoto: isDecodingPhoto,
-                onScan: {
-                    showScanOptions = true
-                },
-                onSubmit: {
-                    await submitJoin()
-                }
-            )
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
-        .confirmationDialog(L10n.Common.selectIdentificationMethod, isPresented: $showScanOptions, titleVisibility: .visible) {
-            Button(L10n.Common.cameraScanCode) {
-                showCameraScanner = true
-            }
-            Button(L10n.Common.library) {
-                showPhotoPicker = true
-            }
-            Button(L10n.Common.cancel, role: .cancel) {}
-        }
-        .forcesNonPopoverDialogPresentation()
-        .sheet(isPresented: $showCameraScanner) {
-            QRScannerSheet { raw in
-                handleRecognizedCode(raw)
-                showCameraScanner = false
-            } onError: { message in
-                joinInputError = message
-                showCameraScanner = false
-            }
-        }
-        .photosPicker(
-            isPresented: $showPhotoPicker,
-            selection: $selectedPhotoItem,
-            matching: .images,
-            preferredItemEncoding: .automatic
         )
-        .onChange(of: selectedPhotoItem) { _, newItem in
-            guard let newItem else { return }
-            Task {
-                await decodeInviteCodeFromPhoto(newItem)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var householdJoinSheet: some View {
+        JoinHouseholdSheet(
+            inviteCode: $inviteCode,
+            inputError: $joinInputError,
+            isSubmitting: viewModel.isJoining,
+            isDecodingPhoto: isDecodingPhoto,
+            onScan: {
+                showScanOptions = true
+            },
+            onSubmit: {
+                await submitJoin()
             }
-        }
-        .overlay {
-            if isJoiningFullScreenLoading || viewModel.isProcessingAuth {
-                ZStack {
-                    Color.black.opacity(0.18)
-                        .ignoresSafeArea()
-                    VStack(spacing: 10) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text(
-                            viewModel.isProcessingAuth
-                                ? AppLocalized.string(L10n.Common.processingAccountOperations, locale: locale)
-                                : AppLocalized.string(L10n.Common.joiningGroup, locale: locale)
-                        )
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 20)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .transition(.opacity)
-            }
-        }
+        )
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 
     // MARK: - Sections
@@ -229,7 +245,7 @@ struct HouseholdSelectionView: View {
         if viewModel.isLoading {
             VStack(spacing: 12) {
                 ProgressView()
-                Text(AppLocalized.string(L10n.Common.loadingYourGroups, locale: locale))
+                Text(AppLocalized.string(L10n.Family.loadingYourGroups, locale: locale))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -260,7 +276,7 @@ struct HouseholdSelectionView: View {
             Text(AppLocalized.string(L10n.Family.youHavenTJoinedAnyGroupsYet, locale: locale))
                 .font(.headline)
                 .foregroundStyle(.primary)
-            Text(AppLocalized.string(L10n.Common.createANewGroupOrJoinSomeoneElseSExisti, locale: locale))
+            Text(AppLocalized.string(L10n.Family.createANewGroupOrJoinSomeoneElseSExisti, locale: locale))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -275,7 +291,7 @@ struct HouseholdSelectionView: View {
                 createInputError = nil
                 showCreateSheet = true
             } label: {
-                Label(AppLocalized.string(L10n.Common.createNewGroup, locale: locale), systemImage: "plus.circle.fill")
+                Label(AppLocalized.string(L10n.Family.createNewGroup, locale: locale), systemImage: "plus.circle.fill")
                     .font(.system(size: 17, weight: .semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -312,7 +328,7 @@ struct HouseholdSelectionView: View {
 
     private func handleRecognizedCode(_ raw: String) {
         guard let code = firstInviteCode(from: raw.uppercased()) else {
-            joinInputError = AppLocalized.string(L10n.Common.noValidInviteCodeDetected, locale: locale)
+            joinInputError = AppLocalized.string(L10n.Family.noValidInviteCodeDetected, locale: locale)
             return
         }
         inviteCode = code
@@ -531,7 +547,7 @@ private struct CreateHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string(L10n.Common.createGroup, locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Family.createGroup, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -625,7 +641,7 @@ private struct JoinHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string(L10n.Common.joinGroup, locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Family.joinGroup, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

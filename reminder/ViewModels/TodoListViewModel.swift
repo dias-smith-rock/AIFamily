@@ -69,7 +69,7 @@ final class TodoListViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else {
             flexibleTasks = []
             completedTasks = []
-            errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
 
@@ -86,7 +86,7 @@ final class TodoListViewModel: ObservableObject {
             completedTasks = []
             loadedHouseholdId = nil
             if !silent {
-                errorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+                errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             }
             return
         }

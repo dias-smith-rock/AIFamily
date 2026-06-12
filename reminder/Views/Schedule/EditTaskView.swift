@@ -132,13 +132,13 @@ struct EditTaskView: View {
     }
 }
 
-#Preview(L10n.Schedule.newEvent) {
+#Preview("New Event") {
     EditTaskView(formMode: .scheduled)
         .environmentObject(AppRouter())
         .environmentObject(AppBootstrap())
 }
 
-#Preview(L10n.Common.edit) {
+#Preview("Edit") {
     EditTaskView(
         task: FamilyTask.mockTasks[1],
         onUpdateSuccess: { _ in }

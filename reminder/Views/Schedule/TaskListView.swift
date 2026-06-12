@@ -280,7 +280,7 @@ struct TaskListView: View {
             }
             .buttonStyle(.plain)
             .disabled(viewModel.isAIProcessing)
-            .accessibilityLabel(L10n.Common.createTaskFromPhoto)
+            .accessibilityLabel(L10n.Schedule.createTaskFromPhoto)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
@@ -407,8 +407,8 @@ struct TaskListView: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel(L10n.Family.groupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
-                        .accessibilityHint(L10n.Family.doubleTapToSwitchGroup)
+                        .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+                        .accessibilityHint(L10n.Family.doubleTapToSwitchGroup.localized)
                     }
                 }
 

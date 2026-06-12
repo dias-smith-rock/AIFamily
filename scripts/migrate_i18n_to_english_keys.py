@@ -186,6 +186,19 @@ def to_swift_property(new_key: str, table: str) -> str:
             name += part[0].upper() + part[1:]
     if name in {"default", "import", "switch", "return", "self", "Type"}:
         name += "Label"
+    reserved = {
+        "associatedtype", "class", "deinit", "enum", "extension", "func", "import", "init",
+        "inout", "internal", "let", "operator", "private", "protocol", "public", "static",
+        "struct", "subscript", "typealias", "var", "break", "case", "continue", "default",
+        "do", "else", "fallthrough", "for", "guard", "if", "in", "repeat", "return", "switch",
+        "where", "while", "as", "catch", "defer", "is", "rethrows", "throw", "throws", "try",
+        "async", "await", "self", "Self", "super", "true", "false", "nil", "some", "any",
+        "macro", "precedencegroup", "fileprivate", "open", "final",
+    }
+    if name in reserved:
+        name += "Label"
+    if name and name[0].isdigit():
+        name = "n" + name
     return name
 
 

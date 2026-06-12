@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct LiveHuddleLobbyCard: View {
+    @Environment(\.locale) private var locale
     let participants: [UserLocationState]
     let onJoin: () -> Void
 
@@ -12,7 +13,7 @@ struct LiveHuddleLobbyCard: View {
             avatarStack
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(L10n.Common.liveOngoingCount.formatted(locale: locale, participants.count))
+                Text(L10n.Location.liveLocationActiveLldPeople.formatted(locale: locale, participants.count))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(2)

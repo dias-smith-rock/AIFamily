@@ -20,7 +20,7 @@ struct SessionRestoreView: View {
                         .easeInOut(duration: 1.1).repeatForever(autoreverses: true),
                         value: isLogoPulsing
                     )
-                Text(L10n.Auth.taglineFull.localized)
+                Text(L10n.Common.fromChaosToClarityTogetherPerfectlySynced.localized)
                     .font(AppTheme.FontToken.subtitle)
                     .foregroundStyle(.white.opacity(0.82))
                     .multilineTextAlignment(.center)

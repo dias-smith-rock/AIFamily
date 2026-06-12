@@ -72,11 +72,11 @@ struct EmptyStateView: View {
 #Preview {
     EmptyStateView(
         systemImage: "calendar.badge.exclamationmark",
-        title: L10n.Common.noTasksYet,
-        message: L10n.Schedule.aiCreateTaskHint,
-        primaryActionTitle: L10n.Schedule.letAiCreateForMe,
+        title: L10n.Schedule.noTasksYet.localized,
+        message: L10n.Schedule.aiCreateTaskHint.localized,
+        primaryActionTitle: L10n.Schedule.letAiCreateForMe.localized,
         primaryAction: {},
-        secondaryActionTitle: L10n.Schedule.createManually,
+        secondaryActionTitle: L10n.Schedule.createManually.localized,
         secondaryAction: {}
     )
     .padding()

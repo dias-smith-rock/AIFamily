@@ -27,7 +27,7 @@ enum GroupSwitcherData {
                 id: householdId,
                 membershipId: membershipId,
                 profileId: appRouter.selectedProfileId,
-                name: name.isEmpty ? L10n.Family.unnamedGroup : GuestSessionStore.displayHouseholdName(name),
+                name: name.isEmpty ? AppLocalized.localizedSync(L10n.Family.unnamedGroup) : GuestSessionStore.displayHouseholdName(name),
                 creatorHasActivePro: appRouter.selectedHouseholdCreatorHasActivePro,
                 description: appRouter.selectedHouseholdDescription
             )
@@ -36,7 +36,7 @@ enum GroupSwitcherData {
 
     static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if trimmed.isEmpty { return L10n.Family.unnamedGroup.string() }
+        if trimmed.isEmpty { return AppLocalized.localizedSync(L10n.Family.unnamedGroup) }
         return GuestSessionStore.displayHouseholdName(trimmed)
     }
 }
@@ -105,7 +105,7 @@ struct SwitchGroupSheetView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
-                        Text(L10n.Common.createNewGroup2.localized)
+                        Text(L10n.Family.createNewGroup2.localized)
                     }
                     .foregroundStyle(.blue)
                     .padding(.horizontal, 20)
@@ -124,7 +124,7 @@ struct SwitchGroupSheetView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "person.badge.plus")
-                        Text(L10n.Common.joinAGroup.localized)
+                        Text(L10n.Family.joinAGroup.localized)
                     }
                     .foregroundStyle(.blue)
                     .padding(.horizontal, 20)
@@ -178,7 +178,7 @@ struct CreateOrganizationSheet: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
-            .navigationTitle(L10n.Common.createGroup.localized)
+            .navigationTitle(L10n.Family.createGroup.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -277,7 +277,7 @@ struct JoinExistingGroupSheet: View {
                 Spacer(minLength: 0)
             }
             .padding(16)
-            .navigationTitle(L10n.Common.joinAGroup.localized)
+            .navigationTitle(L10n.Family.joinAGroup.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -292,7 +292,7 @@ struct JoinExistingGroupSheet: View {
                         inputError = nil
                     } else {
                         inputError = AppLocalized.string(
-                            L10n.Common.noValidInviteCodeDetected,
+                            L10n.Family.noValidInviteCodeDetected,
                             locale: locale
                         )
                     }

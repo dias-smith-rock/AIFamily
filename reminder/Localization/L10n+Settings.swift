@@ -4,6 +4,7 @@ import SwiftUI
 
 extension L10n {
     enum Settings {
+    static let deleteAccountCreatorBlock = Entry(key: "settings_delete_account_creator_block", table: .settings)
     static let locationGhostFooter = Entry(key: "settings_location_ghost_footer", table: .settings)
     static let locationGhostToggle = Entry(key: "settings_location_ghost_toggle", table: .settings)
     static let locationReportingDistanceFooter = Entry(key: "settings_location_reporting_distance_footer", table: .settings)

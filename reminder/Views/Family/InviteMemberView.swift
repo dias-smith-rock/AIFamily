@@ -152,9 +152,7 @@ struct InviteMemberView: View {
     }
 
     private func inviteShareText(for inviteCode: String) -> String {
-        let format = String(
-            localized: L10n.Family.youReInvitedToJoinAWesyncGroupCopyThis
-        )
+        let format = AppLocalized.string(L10n.Family.youReInvitedToJoinAWesyncGroupCopyThis, locale: locale)
         return String(format: format, inviteCode)
     }
 
@@ -175,7 +173,7 @@ struct InviteMemberView: View {
         defer { isLoading = false }
 
         guard let currentHouseholdId else {
-            errorMessage = AppLocalized.string(L10n.Common.noGroupIsCurrentlySelected, locale: locale)
+            errorMessage = AppLocalized.string(L10n.Family.noGroupIsCurrentlySelected, locale: locale)
             return
         }
 

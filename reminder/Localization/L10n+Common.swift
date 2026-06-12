@@ -4,7 +4,7 @@ import SwiftUI
 
 extension L10n {
     enum Common {
-    static let 1Lld2Lld = Entry(key: "common_1_lld_2_lld", table: .common)
+    static let n1Lld2Lld = Entry(key: "common_1_lld_2_lld", table: .common)
     static let aboutWesync = Entry(key: "common_about_wesync", table: .common)
     static let accepted = Entry(key: "common_accepted", table: .common)
     static let account = Entry(key: "common_account", table: .common)
@@ -85,7 +85,7 @@ extension L10n {
     static let confirmToJoin = Entry(key: "common_confirm_to_join", table: .common)
     static let confirmTransfer = Entry(key: "common_confirm_transfer", table: .common)
     static let contactInformation = Entry(key: "common_contact_information", table: .common)
-    static let continue = Entry(key: "common_continue", table: .common)
+    static let continueButton = Entry(key: "common_continue", table: .common)
     static let continueWithGoogle = Entry(key: "common_continue_with_google", table: .common)
     static let couldNotParseTheDataReturnedByAiPleaseT = Entry(key: "common_could_not_parse_the_data_returned_by_ai_please_t", table: .common)
     static let couldNotReadImageDataPleaseChooseAgain = Entry(key: "common_could_not_read_image_data_please_choose_again", table: .common)
@@ -177,7 +177,7 @@ extension L10n {
     static let flexibleToDosDonTSupportRecurrence = Entry(key: "common_flexible_to_dos_don_t_support_recurrence", table: .common)
     static let followSystem = Entry(key: "common_follow_system", table: .common)
     static let fontSize = Entry(key: "common_font_size", table: .common)
-    static let for = Entry(key: "common_for", table: .common)
+    static let forLabel = Entry(key: "common_for", table: .common)
     static let forExampleWangGroupCourtyard = Entry(key: "common_for_example_wang_group_courtyard", table: .common)
     static let forWhomFor = Entry(key: "common_for_whom_for", table: .common)
     static let free = Entry(key: "common_free", table: .common)
@@ -357,7 +357,7 @@ extension L10n {
     static let rememberToCheckYourRefrigeratorInventoryOn = Entry(key: "common_remember_to_check_your_refrigerator_inventory_on", table: .common)
     static let removeAdmin = Entry(key: "common_remove_admin", table: .common)
     static let removeAttachment = Entry(key: "common_remove_attachment", table: .common)
-    static let repeat = Entry(key: "common_repeat", table: .common)
+    static let repeatLabel = Entry(key: "common_repeat", table: .common)
     static let repeat2 = Entry(key: "common_repeat_2", table: .common)
     static let requireFaceId = Entry(key: "common_require_face_id", table: .common)
     static let reset = Entry(key: "common_reset", table: .common)

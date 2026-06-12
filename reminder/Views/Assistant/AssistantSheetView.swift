@@ -134,16 +134,14 @@ struct AssistantSheetView: View {
             ProgressView(L10n.Schedule.writingTask.localized)
                 .padding(12)
         case let .sent(task):
-            ContentUnavailableView {
-                Text(L10n.Common.sent.formatted(locale: locale, task.title))
-            } description: {
-                Text(L10n.Schedule.theTaskHasBeenWrittenIntoTheScheduleAnd.localized)
-            } icon: {
-                Image(systemName: "checkmark.circle.fill")
-            }
+            ContentUnavailableView(
+                L10n.Common.sent.formatted(locale: locale, task.title),
+                systemImage: "checkmark.circle.fill",
+                description: Text(L10n.Schedule.theTaskHasBeenWrittenIntoTheScheduleAnd.localized)
+            )
         case let .failed(message):
             ContentUnavailableView(
-                L10n.Common.parsingFailed,
+                L10n.Common.parsingFailed.localized,
                 systemImage: "exclamationmark.triangle",
                 description: Text(message)
             )

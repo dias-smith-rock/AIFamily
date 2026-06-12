@@ -86,7 +86,7 @@ struct LoginView: View {
                 .scaledToFit()
                 .frame(width: 82, height: 82)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
-            Text(L10n.Auth.taglineFull.localized)
+            Text(L10n.Common.fromChaosToClarityTogetherPerfectlySynced.localized)
                 .font(AppTheme.FontToken.subtitle)
                 .foregroundStyle(.white.opacity(0.82))
                 .multilineTextAlignment(.center)
@@ -96,7 +96,7 @@ struct LoginView: View {
     private var actionSection: some View {
         VStack(spacing: 12) {
             OAuthGoogleSignInButton(
-                title: L10n.Common.continueWithGoogle,
+                title: L10n.Common.continueWithGoogle.localized,
                 isLoading: loadingProvider == .google,
                 action: triggerGoogleLogin
             )
@@ -104,7 +104,7 @@ struct LoginView: View {
 
             #if canImport(Supabase) && canImport(AuthenticationServices)
             OAuthAppleSignInButton(
-                title: L10n.Common.continueWithApple,
+                title: L10n.Auth.continueWithApple.localized,
                 isLoading: loadingProvider == .apple,
                 action: triggerAppleSignIn
             )

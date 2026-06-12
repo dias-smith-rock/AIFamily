@@ -56,7 +56,7 @@ struct FamilyView: View {
                             }
                             .buttonStyle(.plain)
                             .disabled(viewModel.isLeaving)
-                            .accessibilityLabel(AppLocalized.string(L10n.Common.leaveGroup, locale: locale))
+                            .accessibilityLabel(AppLocalized.string(L10n.Family.leaveGroup, locale: locale))
                         } else {
                             EmptyView()
                         }
@@ -225,7 +225,7 @@ struct FamilyView: View {
         }
         .alert(L10n.Family.areYouSureYouWantToLeaveThisGroup, isPresented: $viewModel.showLeaveConfirmation) {
             Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Common.leaveGroup, role: .destructive) {
+            Button(L10n.Family.leaveGroup, role: .destructive) {
                 Task { await submitLeaveHousehold() }
             }
         } message: {
@@ -241,7 +241,7 @@ struct FamilyView: View {
                 viewModel.acknowledgeLeaveError()
             }
         } message: {
-            Text(viewModel.leaveErrorMessage ?? L10n.Common.pleaseTryAgainLater)
+            Text(viewModel.leaveErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
         }
         .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
     }
@@ -274,7 +274,7 @@ struct FamilyView: View {
     private var familyListBody: some View {
         List {
             if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-                ProgressView(AppLocalized.string(L10n.Common.loadingMemberProfiles, locale: locale))
+                ProgressView(AppLocalized.string(L10n.Family.loadingMemberProfiles, locale: locale))
                     .frame(maxWidth: .infinity, minHeight: 220)
                     .listRowBackground(Color.clear)
             } else if let errorMessage = viewModel.errorMessage {
@@ -368,7 +368,7 @@ struct FamilyView: View {
                 .font(.largeTitle)
                 .foregroundStyle(Color.accentColor)
 
-            Text(L10n.Common.noOtherMembersYet.localized)
+            Text(L10n.Family.noOtherMembersYet.localized)
                 .foregroundStyle(.secondary)
 
             Button(L10n.Family.addGroupMembers) {
@@ -402,7 +402,7 @@ struct FamilyView: View {
                 .font(.system(size: 44))
                 .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text(L10n.Common.noMemberProfileYet.localized)
+            Text(L10n.Family.noMemberProfileYet.localized)
                 .font(.headline)
             Text(L10n.Schedule.addTheFirstMemberToShareTasksAndGentleD.localized)
                 .font(.subheadline)
@@ -614,7 +614,7 @@ struct FamilyView: View {
     /// 详情页「角色」一行：使用 `LocalizedStringKey`，由详情页 `\.locale` 驱动翻译。
     private func detailRoleLabel(for profile: FamilyProfile) -> LocalizedStringKey {
         if profile.isVirtualUser {
-            return L10n.Common.memberProfile.localized
+            return L10n.Family.memberProfile.localized
         }
         if let membership = resolvedMembership(for: profile),
            let role = membership.parsedRole {
@@ -657,7 +657,7 @@ struct FamilyView: View {
     private func renameCurrentHousehold(to newName: String, description: String) async {
         renameErrorMessage = nil
         guard let householdId = appRouter.selectedHouseholdId else {
-            renameErrorMessage = AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            renameErrorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
 
@@ -916,7 +916,7 @@ private struct OrganizationSettingsSheet: View {
             .environment(\.layoutDirection, appSettings.layoutDirection)
         } label: {
             settingsNavigationRow(
-                title: L10n.Common.transferOwnership,
+                title: L10n.Common.transferOwnership.localized,
                 systemImage: "person.2.badge.gearshape"
             )
         }
@@ -968,7 +968,7 @@ private struct OrganizationSettingsSheet: View {
                     } else {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .font(.body)
-                        Text(L10n.Common.leaveGroup.localized)
+                        Text(L10n.Family.leaveGroup.localized)
                             .font(.body.weight(.semibold))
                     }
                     Spacer(minLength: 8)
@@ -1011,6 +1011,7 @@ private struct OrganizationSettingsSheet: View {
 
 private struct DisbandHouseholdConfirmationSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     @ObservedObject var familyViewModel: FamilyViewModel
     let householdName: String
@@ -1097,7 +1098,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                     .shadow(radius: 10)
                 }
             }
-            .navigationTitle(L10n.Common.confirmDismissGroup.localized)
+            .navigationTitle(L10n.Family.confirmDismissGroup.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1108,7 +1109,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
             .alert(L10n.Common.dismissFailed, isPresented: $familyViewModel.showDisbandErrorAlert) {
                 Button(L10n.Common.gotIt, role: .cancel) {}
             } message: {
-                Text(familyViewModel.disbandError ?? L10n.Common.unknownErrorPleaseTryAgain)
+                Text(familyViewModel.disbandError ?? AppLocalized.string(L10n.Common.unknownErrorPleaseTryAgain, locale: locale))
             }
         }
     }

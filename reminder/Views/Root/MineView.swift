@@ -37,6 +37,63 @@ struct MineView: View {
     }
 
     var body: some View {
+        mineNavigationWithLifecycle
+            .alert(L10n.Common.notice, isPresented: toastAlertBinding) {
+                Button(L10n.Common.ok, role: .cancel) { viewModel.acknowledgeToast() }
+            } message: {
+                Text(verbatim: viewModel.toastMessage ?? "")
+            }
+            .alert(L10n.Common.exitFailed, isPresented: signOutErrorAlertBinding) {
+                Button(L10n.Common.gotIt, role: .cancel) { viewModel.acknowledgeSignOutError() }
+            } message: {
+                Text(verbatim: viewModel.signOutErrorMessage ?? "")
+            }
+            .alert(L10n.Common.deleteAccount, isPresented: $viewModel.showDeleteAccountAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.deleteAccount2, role: .destructive) {
+                    Task {
+                        authSessionGuard.beginLoggingOut()
+                        familyViewModel.prepareForSignOut()
+                        await viewModel.deleteAccount(appRouter: appRouter)
+                    }
+                }
+            } message: {
+                Text(L10n.Family.thisOperationWillPermanentlyDeleteYourAcco.localized)
+            }
+            .alert(L10n.Common.cannotDeleteAccount, isPresented: $viewModel.showCreatorBlockAlert) {
+                Button(L10n.Common.gotIt, role: .cancel) {}
+                Button(L10n.Family.groupSettings) {
+                    appRouter.requestOpenGroupSettings()
+                }
+            } message: {
+                Text(L10n.Settings.deleteAccountCreatorBlock.formatted(locale: locale, viewModel.creatorBlockGroupName, viewModel.creatorBlockGroupCount))
+            }
+            .mineSecondaryAlerts(
+                viewModel: viewModel,
+                showTermsSheet: $showTermsSheet,
+                showPrivacySheet: $showPrivacySheet,
+                showDiscardGuestDataAlert: $showDiscardGuestDataAlert,
+                appRouter: appRouter,
+                appBootstrap: appBootstrap,
+                isGuestModeStorage: $isGuestModeStorage
+            )
+    }
+
+    private var toastAlertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.toastMessage != nil },
+            set: { if $0 == false { viewModel.acknowledgeToast() } }
+        )
+    }
+
+    private var signOutErrorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.signOutErrorMessage != nil },
+            set: { if $0 == false { viewModel.acknowledgeSignOutError() } }
+        )
+    }
+
+    private var mineNavigationWithLifecycle: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView {
@@ -90,71 +147,6 @@ struct MineView: View {
             )
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
-        }
-        .alert(L10n.Common.notice, isPresented: Binding(
-            get: { viewModel.toastMessage != nil },
-            set: { if $0 == false { viewModel.acknowledgeToast() } }
-        )) {
-            Button(L10n.Common.ok, role: .cancel) { viewModel.acknowledgeToast() }
-        } message: {
-            Text(verbatim: viewModel.toastMessage ?? "")
-        }
-        .alert(L10n.Common.exitFailed, isPresented: Binding(
-            get: { viewModel.signOutErrorMessage != nil },
-            set: { if $0 == false { viewModel.acknowledgeSignOutError() } }
-        )) {
-            Button(L10n.Common.gotIt, role: .cancel) { viewModel.acknowledgeSignOutError() }
-        } message: {
-            Text(viewModel.signOutErrorMessage ?? "")
-        }
-        .alert(L10n.Common.deleteAccount, isPresented: $viewModel.showDeleteAccountAlert) {
-            Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Common.deleteAccount2, role: .destructive) {
-                Task {
-                    authSessionGuard.beginLoggingOut()
-                    familyViewModel.prepareForSignOut()
-                    await viewModel.deleteAccount(appRouter: appRouter)
-                }
-            }
-        } message: {
-            Text(L10n.Family.thisOperationWillPermanentlyDeleteYourAcco.localized)
-        }
-        .alert(L10n.Common.cannotDeleteAccount, isPresented: $viewModel.showCreatorBlockAlert) {
-            Button(L10n.Common.gotIt, role: .cancel) {}
-            Button(L10n.Family.groupSettings) {
-                appRouter.requestOpenGroupSettings()
-            }
-        } message: {
-            Text(L10n.Common.deleteAccountCreatorBlock.formatted(locale: locale, viewModel.creatorBlockGroupName, viewModel.creatorBlockGroupCount))
-        }
-        .alert(L10n.Common.accountDeletionFailed, isPresented: Binding(
-            get: { viewModel.deleteAccountErrorMessage != nil },
-            set: { if $0 == false { viewModel.acknowledgeDeleteAccountError() } }
-        )) {
-            Button(L10n.Common.gotIt, role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
-        } message: {
-            Text(viewModel.deleteAccountErrorMessage ?? "")
-        }
-        .sheet(isPresented: $showTermsSheet) {
-            if let url = SupportLegalLinks.termsOfService {
-                SafariView(url: url)
-                    .ignoresSafeArea()
-            }
-        }
-        .sheet(isPresented: $showPrivacySheet) {
-            if let url = SupportLegalLinks.privacyPolicy {
-                SafariView(url: url)
-                    .ignoresSafeArea()
-            }
-        }
-        .alert(L10n.Common.discardLocalData, isPresented: $showDiscardGuestDataAlert) {
-            Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Common.giveUp, role: .destructive) {
-                GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
-                isGuestModeStorage = false
-            }
-        } message: {
-            Text(L10n.Common.trialDataOnThisDeviceWillBeDeletedAndCa.localized)
         }
     }
 
@@ -528,7 +520,7 @@ struct MineView: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint(AppLocalized.string(L10n.Common.editMyGroupProfile, locale: locale))
+            .accessibilityHint(AppLocalized.string(L10n.Family.editMyGroupProfile, locale: locale))
         }
     }
 
@@ -640,7 +632,7 @@ struct MineView: View {
         case .creator, .admin:
             return contactSubtitleLine(for: profile)
         case .member:
-            return membership.parsedRole?.displayTitle ?? AppLocalized.string(L10n.Common.member, locale: locale)
+            return membership.parsedRole?.displayTitle ?? AppLocalized.string(L10n.Family.member, locale: locale)
         case .none:
             if profile.isVirtualUser {
                 return contactSubtitleLine(for: profile)
@@ -818,12 +810,38 @@ struct MineView: View {
 
     // MARK: - Section chrome
 
+    private func mineSectionHeader(_ title: L10n.Entry) -> some View {
+        mineSectionHeader(title.localized)
+    }
+
     private func mineSectionHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func mineNavigationRow(
+        title: L10n.Entry,
+        systemImage: String,
+        iconTint: Color,
+        subtitle: L10n.Entry? = nil,
+        value: String? = nil,
+        showsValue: Bool = true,
+        showsSubtitle: Bool = true,
+        action: @escaping () -> Void
+    ) -> some View {
+        mineNavigationRow(
+            title: title.localized,
+            systemImage: systemImage,
+            iconTint: iconTint,
+            subtitle: subtitle?.localized,
+            value: value,
+            showsValue: showsValue,
+            showsSubtitle: showsSubtitle,
+            action: action
+        )
     }
 
     private func mineNavigationRow(
@@ -885,6 +903,48 @@ struct MineView: View {
         }
         familyViewModel.clearRequiresLogin()
         await appRouter.refreshStateFromBackend()
+    }
+}
+
+private extension View {
+    func mineSecondaryAlerts(
+        viewModel: MineViewModel,
+        showTermsSheet: Binding<Bool>,
+        showPrivacySheet: Binding<Bool>,
+        showDiscardGuestDataAlert: Binding<Bool>,
+        appRouter: AppRouter,
+        appBootstrap: AppBootstrap,
+        isGuestModeStorage: Binding<Bool>
+    ) -> some View {
+        alert(L10n.Common.accountDeletionFailed, isPresented: Binding(
+            get: { viewModel.deleteAccountErrorMessage != nil },
+            set: { if $0 == false { viewModel.acknowledgeDeleteAccountError() } }
+        )) {
+            Button(L10n.Common.gotIt, role: .cancel) { viewModel.acknowledgeDeleteAccountError() }
+        } message: {
+            Text(verbatim: viewModel.deleteAccountErrorMessage ?? "")
+        }
+        .sheet(isPresented: showTermsSheet) {
+            if let url = SupportLegalLinks.termsOfService {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
+        .sheet(isPresented: showPrivacySheet) {
+            if let url = SupportLegalLinks.privacyPolicy {
+                SafariView(url: url)
+                    .ignoresSafeArea()
+            }
+        }
+        .alert(L10n.Common.discardLocalData, isPresented: showDiscardGuestDataAlert) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Common.giveUp, role: .destructive) {
+                GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
+                isGuestModeStorage.wrappedValue = false
+            }
+        } message: {
+            Text(L10n.Common.trialDataOnThisDeviceWillBeDeletedAndCa.localized)
+        }
     }
 }
 

@@ -920,7 +920,7 @@
     "legacy_key": "第 %lld 张，共 %lld 张",
     "new_key": "common_1_lld_2_lld",
     "table": "Common",
-    "swift_property": "1Lld2Lld",
+    "swift_property": "n1Lld2Lld",
     "orphan": true
   },
   {
@@ -4665,7 +4665,7 @@
     "legacy_key": "重复设置",
     "new_key": "common_repeat",
     "table": "Common",
-    "swift_property": "repeat",
+    "swift_property": "repeatLabel",
     "orphan": true
   },
   {
@@ -4777,7 +4777,7 @@
     "legacy_key": "为了谁",
     "new_key": "common_for",
     "table": "Common",
-    "swift_property": "for",
+    "swift_property": "forLabel",
     "orphan": true
   },
   {
@@ -5400,7 +5400,7 @@
     "legacy_key": "继续",
     "new_key": "common_continue",
     "table": "Common",
-    "swift_property": "continue",
+    "swift_property": "continueButton",
     "orphan": true
   },
   {

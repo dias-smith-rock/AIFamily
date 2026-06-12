@@ -136,16 +136,16 @@ enum AITaskParserError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sdkUnavailable:
-            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
+            return AppLocalized.localizedSync(L10n.Common.supabaseSdkIsNotAvailableInThisBuild)
         case .notAuthenticated:
-            return L10n.Auth.pleaseLogInFirstBeforeUsingAiToCreateA.string()
+            return AppLocalized.localizedSync(L10n.Auth.pleaseLogInFirstBeforeUsingAiToCreateA)
         case .uploadFailed(_, let isStorageRLS):
             if isStorageRLS {
-                return L10n.Common.uploadFailedStoragePermissionsAreNotConfig.string()
+                return AppLocalized.localizedSync(L10n.Common.uploadFailedStoragePermissionsAreNotConfig)
             }
-            return L10n.Common.imageUploadFailedPleaseCheckTheNetworkAnd.string()
+            return AppLocalized.localizedSync(L10n.Common.imageUploadFailedPleaseCheckTheNetworkAnd)
         case .invalidResponse:
-            return L10n.Common.couldNotParseTheDataReturnedByAiPleaseT.string()
+            return AppLocalized.localizedSync(L10n.Common.couldNotParseTheDataReturnedByAiPleaseT)
         case .serverError(let message):
             return AITaskParserUserMessage.mapServerRawText(message) ?? message
         }
@@ -299,7 +299,7 @@ struct AITaskParserService: Sendable {
         }
 
         guard response.success, let task = response.task else {
-            let message = response.error ?? L10n.Common.imageRecognitionFailedPleaseTryAgain.string()
+            let message = response.error ?? AppLocalized.localizedSync(L10n.Common.imageRecognitionFailedPleaseTryAgain)
             AIPhotoTaskCreationLogger.failure(
                 step: .parseResponseInvalid,
                 error: AITaskParserError.serverError(message),

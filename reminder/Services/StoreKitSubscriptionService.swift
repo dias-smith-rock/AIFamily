@@ -16,15 +16,15 @@ enum StoreKitSubscriptionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .productNotFound:
-            return L10n.Common.failedToLoadSubscriptionProductsPleaseTry.string()
+            return AppLocalized.localizedSync(L10n.VIP.failedToLoadSubscriptionProductsPleaseTry)
         case .userCancelled:
             return nil
         case .pending:
-            return L10n.Common.purchaseIsPendingCheckYourAppStoreAccount.string()
+            return AppLocalized.localizedSync(L10n.Common.purchaseIsPendingCheckYourAppStoreAccount)
         case .unverifiedTransaction:
-            return L10n.Common.purchaseVerificationFailedPleaseRetryOrCon.string()
+            return AppLocalized.localizedSync(L10n.Common.purchaseVerificationFailedPleaseRetryOrCon)
         case .noActiveSubscription:
-            return L10n.Common.noSubscriptionFoundToRestore.string()
+            return AppLocalized.localizedSync(L10n.VIP.noSubscriptionFoundToRestore)
         }
     }
 }
@@ -126,14 +126,10 @@ final class StoreKitSubscriptionService: ObservableObject {
     }
 
     func refreshLocalEntitlements(for userId: UUID? = nil) async {
-        guard let userId else {
-            clearSessionSubscriptionState()
-            return
-        }
-
         var hasActiveForUser = false
         var latestExpiryForUser: Date?
         var hasAnyDeviceActive = false
+        var latestDeviceExpiry: Date?
 
         for await verification in Transaction.currentEntitlements {
             guard case .verified(let transaction) = verification else { continue }
@@ -141,28 +137,50 @@ final class StoreKitSubscriptionService: ObservableObject {
             guard isActiveSubscription(transaction) else { continue }
 
             hasAnyDeviceActive = true
-            guard transaction.appAccountToken == userId else { continue }
-
-            hasActiveForUser = true
             if let expiration = transaction.expirationDate {
-                if let latestExpiryForUser, expiration <= latestExpiryForUser {
-                    continue
+                if let latestDeviceExpiry, expiration <= latestDeviceExpiry {
+                    // keep latest
+                } else {
+                    latestDeviceExpiry = expiration
                 }
-                latestExpiryForUser = expiration
+            }
+
+            if let userId, transaction.appAccountToken == userId {
+                hasActiveForUser = true
+                if let expiration = transaction.expirationDate {
+                    if let latestExpiryForUser, expiration <= latestExpiryForUser {
+                        continue
+                    }
+                    latestExpiryForUser = expiration
+                }
             }
         }
 
-        if hasActiveForUser {
-            hasLocalActiveSubscription = true
-            localSubscriptionExpiresAt = latestExpiryForUser
-            hasUnlinkedDeviceSubscription = false
-        } else if sessionConfirmedUserId == userId {
-            // 沙盒 / StoreKit 测试常延迟回填 appAccountToken；保留本会话内已确认的订阅状态。
-            hasUnlinkedDeviceSubscription = hasAnyDeviceActive && !hasLocalActiveSubscription
+        if let userId {
+            if hasActiveForUser {
+                hasLocalActiveSubscription = true
+                localSubscriptionExpiresAt = latestExpiryForUser ?? latestDeviceExpiry
+                hasUnlinkedDeviceSubscription = false
+            } else if sessionConfirmedUserId == userId {
+                // 沙盒 / StoreKit 测试常延迟回填 appAccountToken；保留本会话内已确认的订阅状态。
+                hasUnlinkedDeviceSubscription = hasAnyDeviceActive && !hasLocalActiveSubscription
+            } else if hasAnyDeviceActive {
+                hasLocalActiveSubscription = true
+                localSubscriptionExpiresAt = latestDeviceExpiry
+                hasUnlinkedDeviceSubscription = true
+            } else {
+                hasLocalActiveSubscription = false
+                localSubscriptionExpiresAt = nil
+                hasUnlinkedDeviceSubscription = false
+                if sessionConfirmedUserId != userId {
+                    sessionConfirmedUserId = nil
+                }
+            }
         } else {
-            hasLocalActiveSubscription = false
-            localSubscriptionExpiresAt = nil
-            hasUnlinkedDeviceSubscription = hasAnyDeviceActive
+            hasLocalActiveSubscription = hasAnyDeviceActive
+            localSubscriptionExpiresAt = latestDeviceExpiry
+            hasUnlinkedDeviceSubscription = false
+            sessionConfirmedUserId = nil
         }
         appRouter?.objectWillChange.send()
     }
@@ -176,7 +194,7 @@ final class StoreKitSubscriptionService: ObservableObject {
     }
 
     /// 服务端已校验购买/恢复成功后，立即标记本机会话内的本人订阅（避免 UI 等待 StoreKit 回填）。
-    func confirmLocalSubscription(for userId: UUID, expiresAt: Date?) {
+    func confirmLocalSubscription(for userId: UUID? = nil, expiresAt: Date?) {
         sessionConfirmedUserId = userId
         hasLocalActiveSubscription = true
         localSubscriptionExpiresAt = expiresAt
@@ -184,9 +202,45 @@ final class StoreKitSubscriptionService: ObservableObject {
         appRouter?.objectWillChange.send()
     }
 
-    func purchase(plan: VIPBillingPlan, appAccountToken: UUID) async throws -> PendingStorePurchase? {
+    /// 登录后：若本机 StoreKit 有有效订阅但云端尚未激活，补同步至 `user_entitlements`。
+    func syncPendingPurchaseToCloudIfNeeded(appRouter: AppRouter) async {
+        #if canImport(Supabase)
+        guard appRouter.userEntitlement?.isActive != true else { return }
+        guard let userId = await appRouter.resolveAuthUserId() else { return }
+        guard hasLocalActiveSubscription else { return }
+
+        do {
+            guard let pending = try await restorePurchases() else { return }
+
+            let response = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                signedTransactionInfo: pending.signedTransactionInfo,
+                environment: pending.environment
+            )
+            let expiresAt = Self.parseSubscriptionExpiry(
+                serverExpiresAt: response.expiresAt,
+                fallback: pending.expiresAt
+            )
+            appRouter.applyOptimisticPersonalEntitlement(userId: userId, expiresAt: expiresAt)
+            await pending.finishIfNeeded()
+            await appRouter.refreshPremiumStateAfterClaim()
+        } catch {
+            #if DEBUG
+            print("[StoreKit] syncPendingPurchaseToCloud error: \(error.localizedDescription)")
+            #endif
+        }
+        #else
+        _ = appRouter
+        #endif
+    }
+
+    func purchase(plan: VIPBillingPlan, appAccountToken: UUID? = nil) async throws -> PendingStorePurchase? {
         let product = try await resolvedProduct(for: plan)
-        let result = try await product.purchase(options: [.appAccountToken(appAccountToken)])
+        let result: Product.PurchaseResult
+        if let appAccountToken {
+            result = try await product.purchase(options: [.appAccountToken(appAccountToken)])
+        } else {
+            result = try await product.purchase()
+        }
 
         switch result {
         case .success(let verification):
@@ -214,28 +268,41 @@ final class StoreKitSubscriptionService: ObservableObject {
     // MARK: - Transaction updates
 
     private func handleTransactionUpdate(_ result: VerificationResult<Transaction>) async {
-        #if canImport(Supabase)
         do {
             let transaction = try checkVerified(result)
-            guard await shouldActivateForCurrentUser(transaction) else { return }
+            guard isActiveSubscription(transaction) else { return }
 
             guard let pending = try await makePendingPurchase(from: result, finishable: true) else {
                 return
             }
 
-            _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
-                signedTransactionInfo: pending.signedTransactionInfo,
-                environment: pending.environment
-            )
+            #if canImport(Supabase)
+            if await shouldActivateForCurrentUser(transaction) {
+                _ = try await SubscriptionSupabaseSupport.activatePremiumFromApplePurchase(
+                    signedTransactionInfo: pending.signedTransactionInfo,
+                    environment: pending.environment
+                )
+                await pending.finishIfNeeded()
+                await appRouter?.refreshPremiumStateAfterClaim()
+            } else {
+                let linkedUserId = appRouter?.authUserId
+                confirmLocalSubscription(for: linkedUserId, expiresAt: pending.expiresAt)
+                await refreshLocalEntitlements(for: linkedUserId)
+                await pending.finishIfNeeded()
+                appRouter?.objectWillChange.send()
+            }
+            #else
+            confirmLocalSubscription(for: nil, expiresAt: pending.expiresAt)
+            await refreshLocalEntitlements(for: nil)
             await pending.finishIfNeeded()
-            await appRouter?.refreshPremiumStateAfterClaim()
+            #endif
+
             AnalyticsManager.log(event: .vipPurchased(plan: pending.plan.rawValue))
         } catch {
             #if DEBUG
             print("[StoreKit] transaction update error: \(error.localizedDescription)")
             #endif
         }
-        #endif
     }
 
     // MARK: - Helpers
@@ -325,6 +392,23 @@ final class StoreKitSubscriptionService: ObservableObject {
         #else
         return false
         #endif
+    }
+
+    private static func parseSubscriptionExpiry(serverExpiresAt: String?, fallback: Date?) -> Date? {
+        if let serverExpiresAt,
+           serverExpiresAt.isEmpty == false,
+           let parsed = ISO8601DateFormatter().date(from: serverExpiresAt) {
+            return parsed
+        }
+        if let serverExpiresAt,
+           serverExpiresAt.isEmpty == false {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let parsed = formatter.date(from: serverExpiresAt) {
+                return parsed
+            }
+        }
+        return fallback
     }
 
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {

@@ -250,29 +250,25 @@ final class FamilyViewModel: ObservableObject {
     }
 
     private enum ProfileManagementCopy {
-        static let noHouseholdSelected = L10n.Common.noGroupIsCurrentlySelected.string()
-        static let displayNameRequired = L10n.Common.nameCannotBeEmpty.string()
-        static let nicknameRequired = L10n.Common.pleaseEnterARoleNameCannotBeEmpty.string()
-        static let cannotEditProfile = L10n.Family.youDoNotHavePermissionToEditThisMemberP.string()
-        static let cannotRemoveMember = L10n.Family.youDonTHavePermissionToRemoveOrDeleteTh.string()
-        static let removeMemberFailed = L10n.Common.actionFailedPleaseTryAgainLater.string()
-        static let householdNameMismatch = L10n.Family.groupNameDoesNotMatchPleaseEnterItAgain.string()
-        static let disbandUnauthorized = L10n.Family.onlyTheCreatorCanDisbandThisGroup.string()
-        static let sessionExpired = L10n.Auth.yourSignInSessionHasExpiredPleaseSignIn.string()
-        static let householdNotFound = L10n.Family.thisGroupDoesNotExistOrHasBeenDeleted.string()
-        static let backendMigrationRequired = String(
-            localized: L10n.Common.backendUpgradeRequiredPleaseApplyTheLatest2
-        )
-        static let networkFailure = L10n.Common.networkConnectionErrorPleaseCheckYourConne.string()
-        static let renameHouseholdEmpty = L10n.Family.groupNameCannotBeEmpty.string()
-        static let renameHouseholdTaken = L10n.Family.thisGroupNameIsAlreadyTakenPleaseChooseA.string()
-        static let renameForbidden = L10n.Family.onlyTheCreatorOrAnAdminCanRenameTheGrou.string()
-        static let renameHouseholdNotFoundRefresh = String(
-            localized: L10n.Family.thisGroupDoesNotExistOrHasBeenDeletedPl
-        )
-        static let renameFailed = L10n.Common.failedToRenameTheGroupPleaseTryAgainLate.string()
-        static let cannotToggleAdminRole = L10n.Family.youDonTHavePermissionToChangeThisMember.string()
-        static let adminLimitReached = L10n.Family.thisGroupAlreadyHasTheMaximumOf3Admins.string()
+        static let noHouseholdSelected = AppLocalized.localizedSync(L10n.Family.noGroupIsCurrentlySelected)
+        static let displayNameRequired = AppLocalized.localizedSync(L10n.Common.nameCannotBeEmpty)
+        static let nicknameRequired = AppLocalized.localizedSync(L10n.Common.pleaseEnterARoleNameCannotBeEmpty)
+        static let cannotEditProfile = AppLocalized.localizedSync(L10n.Family.youDoNotHavePermissionToEditThisMemberP)
+        static let cannotRemoveMember = AppLocalized.localizedSync(L10n.Family.youDonTHavePermissionToRemoveOrDeleteTh)
+        static let removeMemberFailed = AppLocalized.localizedSync(L10n.Common.actionFailedPleaseTryAgainLater)
+        static let householdNameMismatch = AppLocalized.localizedSync(L10n.Family.groupNameDoesNotMatchPleaseEnterItAgain)
+        static let disbandUnauthorized = AppLocalized.localizedSync(L10n.Family.onlyTheCreatorCanDisbandThisGroup)
+        static let sessionExpired = AppLocalized.localizedSync(L10n.Auth.yourSignInSessionHasExpiredPleaseSignIn)
+        static let householdNotFound = AppLocalized.localizedSync(L10n.Family.thisGroupDoesNotExistOrHasBeenDeleted)
+        static let backendMigrationRequired = AppLocalized.localizedSync(L10n.Common.backendUpgradeRequiredPleaseApplyTheLatest2)
+        static let networkFailure = AppLocalized.localizedSync(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+        static let renameHouseholdEmpty = AppLocalized.localizedSync(L10n.Family.groupNameCannotBeEmpty)
+        static let renameHouseholdTaken = AppLocalized.localizedSync(L10n.Family.thisGroupNameIsAlreadyTakenPleaseChooseA)
+        static let renameForbidden = AppLocalized.localizedSync(L10n.Family.onlyTheCreatorOrAnAdminCanRenameTheGrou)
+        static let renameHouseholdNotFoundRefresh = AppLocalized.localizedSync(L10n.Family.thisGroupDoesNotExistOrHasBeenDeletedPl)
+        static let renameFailed = AppLocalized.localizedSync(L10n.Family.failedToRenameTheGroupPleaseTryAgainLate)
+        static let cannotToggleAdminRole = AppLocalized.localizedSync(L10n.Family.youDonTHavePermissionToChangeThisMember)
+        static let adminLimitReached = AppLocalized.localizedSync(L10n.Family.thisGroupAlreadyHasTheMaximumOf3Admins)
     }
 
     private static let maxAdminCount = 3
@@ -653,7 +649,7 @@ final class FamilyViewModel: ObservableObject {
             return nil
         }
         guard member.householdId == householdId else {
-            errorMessage = AppLocalized.localized(L10n.Common.failedToCreateMemberInconsistentGroupConte)
+            errorMessage = AppLocalized.localized(L10n.Family.failedToCreateMemberInconsistentGroupConte)
             return nil
         }
 
@@ -681,7 +677,7 @@ final class FamilyViewModel: ObservableObject {
             currentActiveCount: activeMemberCount,
             hasPremium: hasPremiumAccess
         ) else {
-            return AppLocalized.localized(L10n.Common.freePlanAllows2MembersPerGroupUpgradeTo)
+            return AppLocalized.localized(L10n.VIP.freePlanAllows2MembersPerGroupUpgradeTo)
         }
         let idsBeforeCreate = Set(profiles.map(\.id))
         var normalizedDraft = draft
@@ -882,7 +878,7 @@ final class FamilyViewModel: ObservableObject {
     }
 
     func deleteButtonTitle(for profile: FamilyProfile) -> LocalizedStringKey {
-        isVirtualMember(profile) ? L10n.Family.deleteMemberProfile : L10n.Family.removeFromGroup
+        isVirtualMember(profile) ? L10n.Family.deleteMemberProfile.localized : L10n.Family.removeFromGroup.localized
     }
 
     func adminRoleToggleAction(for profile: FamilyProfile) -> ProfileEditView.AdminRoleToggleAction? {
@@ -891,7 +887,7 @@ final class FamilyViewModel: ObservableObject {
 
         let isAdmin = targetRole == .admin
         return ProfileEditView.AdminRoleToggleAction(
-            buttonTitle: isAdmin ? L10n.Common.removeAdmin : L10n.Common.makeAdmin,
+            buttonTitle: isAdmin ? L10n.Common.removeAdmin.localized : L10n.Common.makeAdmin.localized,
             isPromoting: isAdmin == false,
             onToggle: { [weak self] in
                 guard let self else { return ProfileManagementCopy.removeMemberFailed }
@@ -949,7 +945,7 @@ final class FamilyViewModel: ObservableObject {
 
     func deleteOrRemoveMember(profile: FamilyProfile) async -> String? {
         guard let householdId = currentHouseholdId else {
-            return AppLocalized.localized(L10n.Common.noGroupIsCurrentlySelected)
+            return AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
         }
         guard shouldShowDeleteButton(for: profile) else {
             return ProfileManagementCopy.cannotRemoveMember
@@ -1314,7 +1310,7 @@ final class FamilyViewModel: ObservableObject {
                     "\(key)=\(value.count)"
                 }
                 .sorted()
-                .joined(separator: L10n.Common.text)
+                .joined(separator: ", ")
             let sample = rows.prefix(12).map { row in
                 let ids = row.targetProfileIds?.map(\.uuidString).joined(separator: ",") ?? "nil"
                 return "id=\(row.id.uuidString), task_type=\(row.taskType ?? "nil"), target_profile_ids=\(ids)"
@@ -1345,8 +1341,8 @@ final class FamilyViewModel: ObservableObject {
                         .filter { $0.isEmpty == false }
                 )
                 let hitSubjectAndBirthday = legacyNames.contains(row.targetSubject ?? "")
-                    && title.contains(L10n.Common.birthday)
-                let hitLegacyTitleOnly = title.contains(L10n.Common.birthday)
+                    && title.contains(AppLocalized.localizedSync(L10n.Common.birthday))
+                let hitLegacyTitleOnly = title.contains(AppLocalized.localizedSync(L10n.Common.birthday))
                     && legacyNames.contains(where: { title.contains($0) })
                 return hitMarker || hitSubjectAndBirthday || hitLegacyTitleOnly
             }
@@ -1439,7 +1435,7 @@ final class FamilyViewModel: ObservableObject {
                     taskType: "birthday_reminder",
                     targetProfileIds: [profile.id],
                     targetSubject: nil,
-                    description: AppLocalized.localized(L10n.Common.birthdayAutoTaskYearlyRecurrence),
+                    description: AppLocalized.localized(L10n.Schedule.birthdayAutoTaskYearlyRecurrence),
                     originalPrompt: birthdaySyncMarker(for: profile.id)
                 )
             }

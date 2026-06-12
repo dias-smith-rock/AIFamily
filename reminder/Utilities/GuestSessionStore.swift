@@ -17,9 +17,9 @@ enum GuestSessionStore {
     static let snapshotCacheKey = "guest.workspace.snapshot"
     static let isGuestModeKey = "isGuestMode"
     /// String Catalog Key；游客默认群组名持久化用此固定键，展示时按当前语言解析。
-    static let defaultHouseholdNameCatalogKey = L10n.Common.mySpace
+    static let defaultHouseholdNameCatalogKey = L10n.Common.mySpace.key
     /// String Catalog Key；游客默认自称（档案名 / nickname）持久化用此固定键。
-    static let defaultSelfDisplayNameCatalogKey = L10n.Common.me
+    static let defaultSelfDisplayNameCatalogKey = L10n.Common.me.key
 
     /// 游客位置 Tab 演示用虚拟成员（稳定 ID，便于与模拟坐标对齐）。
     static let locationDemoProfile1Id = UUID(uuidString: "D1000001-0000-4000-8000-000000000001") ?? UUID()
@@ -88,7 +88,7 @@ enum GuestSessionStore {
     }
 
     static func localizedDefaultHouseholdName() -> String {
-        String(localized: String.LocalizationValue(defaultHouseholdNameCatalogKey))
+        AppLocalized.localizedSync(L10n.Common.mySpace)
     }
 
     /// 游客默认群组名按当前语言展示；用户自定义名称原样返回。
@@ -104,7 +104,7 @@ enum GuestSessionStore {
     }
 
     static func localizedDefaultSelfDisplayName() -> String {
-        String(localized: String.LocalizationValue(defaultSelfDisplayNameCatalogKey))
+        AppLocalized.localizedSync(L10n.Common.me)
     }
 
     /// 游客默认自称按当前语言展示；用户自定义名称原样返回。

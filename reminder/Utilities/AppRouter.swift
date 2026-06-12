@@ -132,6 +132,7 @@ final class AppRouter: ObservableObject {
     }
 
     func presentPremiumUpgrade() {
+        guard GuestSessionStore.isGuestMode == false else { return }
         isPresentingVIPUpgrade = true
     }
 
@@ -212,10 +213,11 @@ final class AppRouter: ObservableObject {
             authUserId = userId
             await loadUserEntitlement(userId: userId)
             await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: userId)
+            await StoreKitSubscriptionService.shared.syncPendingPurchaseToCloudIfNeeded(appRouter: self)
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
-                if memberships.contains(where: { ["invitedL10n.Common.textpending"].contains(normalizeStatus($0.status)) }) {
+                if memberships.contains(where: { ["invited", "pending"].contains(normalizeStatus($0.status)) }) {
                     appState = .pendingApproval
                     debugLog("route.pendingApproval reason=no_active_membership")
                 } else {
@@ -344,6 +346,7 @@ final class AppRouter: ObservableObject {
 
     /// 纯本地游客：直接进入主 Tab，不触发 Supabase 路由刷新。
     func enterGuestMode(snapshot: GuestWorkspaceSnapshot) {
+        isPresentingVIPUpgrade = false
         selectedHouseholdId = snapshot.householdId
         selectedMembershipId = snapshot.membershipId
         selectedProfileId = snapshot.profileId
@@ -506,7 +509,9 @@ final class AppRouter: ObservableObject {
     private func resetAuthenticatedPremiumState() {
         authUserId = nil
         userEntitlement = nil
-        StoreKitSubscriptionService.shared.clearSessionSubscriptionState()
+        Task {
+            await StoreKitSubscriptionService.shared.refreshLocalEntitlements(for: nil)
+        }
     }
 
     func dismissNewCreatorAlert() {
@@ -547,7 +552,7 @@ final class AppRouter: ObservableObject {
                 }
                 await self.refreshSelectedHouseholdCreatorPro(householdId: option.id)
                 await MainActor.run {
-                    self.logVIPAccessState(trigger: L10n.Family.switchOrganization)
+                    self.logVIPAccessState(trigger: L10n.Family.switchOrganization.string())
                 }
             } catch {
                 await MainActor.run {

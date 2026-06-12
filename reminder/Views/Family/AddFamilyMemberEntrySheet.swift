@@ -17,8 +17,8 @@ struct AddFamilyMemberEntrySheet: View {
                     } label: {
                         entryRow(
                             icon: "paperplane.fill",
-                            title: L10n.Family.inviteMembersToJoin,
-                            subtitle: L10n.Auth.sendAnInviteLinkSoTheyCanSignInOnTheir
+                            title: L10n.Family.inviteMembersToJoin.localized,
+                            subtitle: L10n.Auth.sendAnInviteLinkSoTheyCanSignInOnTheir.localized
                         )
                     }
                     .buttonStyle(.plain)
@@ -29,8 +29,8 @@ struct AddFamilyMemberEntrySheet: View {
                         } label: {
                             entryRow(
                                 icon: "person.text.rectangle",
-                                title: L10n.Common.createMemberProfile,
-                                subtitle: L10n.Common.noPhoneNumberNeededYouCanRecordTasksOnT
+                                title: L10n.Family.createMemberProfile.localized,
+                                subtitle: L10n.Schedule.noPhoneNumberNeededYouCanRecordTasksOnT.localized
                             )
                         }
                         .buttonStyle(.plain)
@@ -41,7 +41,7 @@ struct AddFamilyMemberEntrySheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(L10n.Common.close) {
+                    Button(L10n.Common.close.localized) {
                         dismiss()
                     }
                 }

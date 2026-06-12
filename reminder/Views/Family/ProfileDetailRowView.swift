@@ -5,6 +5,16 @@ struct ProfileDetailRowView: View {
     let title: LocalizedStringKey
     let value: String?
 
+    init(title: LocalizedStringKey, value: String?) {
+        self.title = title
+        self.value = value
+    }
+
+    init(title: L10n.Entry, value: String?) {
+        self.title = title.localized
+        self.value = value
+    }
+
     var body: some View {
         LabeledContent {
             if let display = trimmedValue {
@@ -30,6 +40,18 @@ struct ProfileDetailSensitiveRowView: View {
     let title: LocalizedStringKey
     let value: String?
     @Binding var reveals: Bool
+
+    init(title: LocalizedStringKey, value: String?, reveals: Binding<Bool>) {
+        self.title = title
+        self.value = value
+        self._reveals = reveals
+    }
+
+    init(title: L10n.Entry, value: String?, reveals: Binding<Bool>) {
+        self.title = title.localized
+        self.value = value
+        self._reveals = reveals
+    }
 
     var body: some View {
         HStack {

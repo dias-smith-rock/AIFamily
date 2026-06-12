@@ -9,7 +9,7 @@ enum AppTextSize: Int, CaseIterable, Identifiable, Codable {
 
     var id: Int { rawValue }
 
-    /// UI 展示用（键与 `Localizable.xcstrings` 一致）。
+    /// UI 展示用（键与 String Catalog 一致）。
     var title: LocalizedStringKey {
         switch self {
         case .tiny: L10n.Common.tiny.localized
@@ -27,11 +27,11 @@ enum AppTextSize: Int, CaseIterable, Identifiable, Codable {
 
     private var accessibilityCatalogKey: String {
         switch self {
-        case .tiny: L10n.Common.tiny.localized
-        case .small: L10n.Common.small.localized
-        case .standard: L10n.Common.standard.localized
-        case .large: L10n.Common.large.localized
-        case .extraLarge: L10n.Common.huge.localized
+        case .tiny: L10n.Common.tiny.key
+        case .small: L10n.Common.small.key
+        case .standard: L10n.Common.standard.key
+        case .large: L10n.Common.large.key
+        case .extraLarge: L10n.Common.huge.key
         }
     }
 

@@ -186,11 +186,11 @@ enum SubscriptionSupabaseError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .sdkUnavailable:
-            return L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string()
+            return AppLocalized.localizedSync(L10n.Common.supabaseSdkIsNotAvailableInThisBuild)
         case .serverError(let message):
             return message
         case .promotionalGrantDisabled:
-            return L10n.Common.promotionalBenefitsMustBeGrantedByTheServ.string()
+            return AppLocalized.localizedSync(L10n.Common.promotionalBenefitsMustBeGrantedByTheServ)
         }
     }
 }

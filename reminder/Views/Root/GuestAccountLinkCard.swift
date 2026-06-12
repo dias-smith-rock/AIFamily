@@ -33,7 +33,7 @@ struct GuestAccountLinkCard: View {
 
             VStack(spacing: 12) {
                 OAuthGoogleSignInButton(
-                    title: L10n.Common.syncWithGoogle,
+                    title: L10n.Common.syncWithGoogle.localized,
                     isLoading: loadingProvider == .google,
                     action: triggerGoogleLogin
                 )
@@ -41,7 +41,7 @@ struct GuestAccountLinkCard: View {
 
                 #if canImport(Supabase) && canImport(AuthenticationServices)
                 OAuthAppleSignInButton(
-                    title: L10n.Common.syncWithApple,
+                    title: L10n.Common.syncWithApple.localized,
                     isLoading: loadingProvider == .apple,
                     action: triggerAppleSignIn
                 )

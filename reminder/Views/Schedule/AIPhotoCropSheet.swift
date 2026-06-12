@@ -294,10 +294,10 @@ struct AIPhotoCropSheet: View {
 
     private func cornerAccessibilityLabel(_ corner: CropCorner) -> String {
         switch corner {
-        case .topLeft: L10n.Common.upperLeftControlPoint.localized
-        case .topRight: L10n.Common.upperRightCornerControlPoint.localized
-        case .bottomLeft: L10n.Common.lowerLeftCornerControlPoint.localized
-        case .bottomRight: L10n.Common.lowerRightCornerControlPoint.localized
+        case .topLeft: AppLocalized.localizedSync(L10n.Common.upperLeftControlPoint)
+        case .topRight: AppLocalized.localizedSync(L10n.Common.upperRightCornerControlPoint)
+        case .bottomLeft: AppLocalized.localizedSync(L10n.Common.lowerLeftCornerControlPoint)
+        case .bottomRight: AppLocalized.localizedSync(L10n.Common.lowerRightCornerControlPoint)
         }
     }
 

@@ -23,120 +23,54 @@ struct TodoListView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if viewModel.isLoading {
-                    ProgressView(L10n.Common.loadingTasks.localized)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let message = viewModel.errorMessage {
-                    ContentUnavailableView {
-                        Label(L10n.Common.loading.localized, systemImage: "exclamationmark.triangle")
-                    } description: {
-                        Text(message)
-                    } actions: {
-                        Button(L10n.Common.reload) {
-                            Task { await viewModel.loadTasks(force: true) }
-                        }
-                    }
-                } else if viewModel.hasOpenFlexibleTasks == false {
-                    if viewModel.completedTasks.isEmpty {
-                        ContentUnavailableView {
-                            Label(L10n.Common.noToDosYet.localized, systemImage: "checklist")
-                        } description: {
-                            Text(L10n.Schedule.addTasksWithoutASetStartTimeCompleteThem.localized)
-                        } actions: {
-                            Button(L10n.Common.newToDo) {
-                                presentCreateFlexible()
-                            }
-                        }
-                    } else {
-                        completedOnlyScrollView
-                    }
-                } else {
-                    todoListScrollView
+            todoStackContent
+        }
+        .appLocaleEnvironment(using: appSettings)
+    }
+
+    @ViewBuilder
+    private var todoMainContent: some View {
+        if viewModel.isLoading {
+            ProgressView(L10n.Schedule.loadingTasks.localized)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let message = viewModel.errorMessage {
+            ContentUnavailableView {
+                Label(L10n.Common.loading.localized, systemImage: "exclamationmark.triangle")
+            } description: {
+                Text(message)
+            } actions: {
+                Button(L10n.Common.reload) {
+                    Task { await viewModel.loadTasks(force: true) }
                 }
             }
+        } else if viewModel.hasOpenFlexibleTasks == false {
+            if viewModel.completedTasks.isEmpty {
+                ContentUnavailableView {
+                    Label(L10n.Common.noToDosYet.localized, systemImage: "checklist")
+                } description: {
+                    Text(L10n.Schedule.addTasksWithoutASetStartTimeCompleteThem.localized)
+                } actions: {
+                    Button(L10n.Common.newToDo) {
+                        presentCreateFlexible()
+                    }
+                }
+            } else {
+                completedOnlyScrollView
+            }
+        } else {
+            todoListScrollView
+        }
+    }
+
+    private var todoStackContent: some View {
+        todoMainContent
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
             .navigationTitle(L10n.Common.toDos.localized)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    groupSwitcherMenuButton
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        presentCreateFlexible()
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title2)
-                            .symbolRenderingMode(.palette)
-                            .foregroundStyle(.white, Color.accentColor)
-                    }
-                    .accessibilityLabel(L10n.Common.newToDo)
-                }
-            }
-            .sheet(isPresented: $showCompletedSheet) {
-                CompletedTasksListView(
-                    tasks: viewModel.completedTasks,
-                    displayTitle: { viewModel.displayTitle(for: $0) },
-                    forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
-                    completedLabel: { completedLabel(for: $0) },
-                    onSelectTask: { task in
-                        showCompletedSheet = false
-                        taskForDetailSheet = task
-                    }
-                )
-                .environment(\.locale, appSettings.appLocale)
-                .environment(\.layoutDirection, appSettings.layoutDirection)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $showOverdueSheet) {
-                OverdueTasksListView(
-                    tasks: viewModel.overdueTasks,
-                    displayTitle: { viewModel.displayTitle(for: $0) },
-                    forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
-                    deadlineLabel: { deadlineLabel(for: $0) },
-                    onSelectTask: { task in
-                        showOverdueSheet = false
-                        taskForDetailSheet = task
-                    }
-                )
-                .environment(\.locale, appSettings.appLocale)
-                .environment(\.layoutDirection, appSettings.layoutDirection)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(item: $taskForDetailSheet) { task in
-                NavigationStack {
-                    TaskDetailView(
-                        initialTask: task,
-                        currentUserRole: currentMembershipRole,
-                        assigneeDisplayName: assigneeLabel(for: task),
-                        scheduleViewModel: scheduleViewModel
-                    )
-                    .environmentObject(appRouter)
-                }
-                .environment(\.locale, appSettings.appLocale)
-                .environment(\.layoutDirection, appSettings.layoutDirection)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $isShowingCreateFlexibleSheet) {
-                EditTaskView(
-                    formMode: .flexible,
-                    onSaveSuccess: { _ in
-                        Task {
-                            await viewModel.loadTasks(silent: true, force: true)
-                            await scheduleViewModel.loadTasks(silent: true)
-                        }
-                    },
-                    onAlarmSync: { task in
-                        scheduleViewModel.syncAlarms(for: task)
-                    }
-                )
-                .id(createTaskFormInstanceID)
-                .environmentObject(appRouter)
-                .presentationDetents([.large])
-            }
+            .toolbar { todoToolbar }
+            .sheet(isPresented: $showCompletedSheet) { completedTasksSheet }
+            .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
+            .sheet(item: $taskForDetailSheet) { task in taskDetailSheet(task: task) }
+            .sheet(isPresented: $isShowingCreateFlexibleSheet) { createFlexibleSheet }
             .task(id: appRouter.selectedHouseholdId) {
                 bindHouseholdContext()
                 await viewModel.loadTasksIfNeeded()
@@ -154,8 +88,92 @@ struct TodoListView: View {
             .onChange(of: viewModel.flexibleTasks) { _, _ in
                 openPendingFlexibleTaskIfNeeded()
             }
+    }
+
+    @ToolbarContentBuilder
+    private var todoToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            groupSwitcherMenuButton
         }
-        .appLocaleEnvironment(using: appSettings)
+        ToolbarItem(placement: .topBarTrailing) {
+            Button {
+                presentCreateFlexible()
+            } label: {
+                Image(systemName: "plus.circle.fill")
+                    .font(.title2)
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, Color.accentColor)
+            }
+            .accessibilityLabel(L10n.Common.newToDo)
+        }
+    }
+
+    private var completedTasksSheet: some View {
+        CompletedTasksListView(
+            tasks: viewModel.completedTasks,
+            displayTitle: { viewModel.displayTitle(for: $0) },
+            forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+            completedLabel: { completedLabel(for: $0) },
+            onSelectTask: { task in
+                showCompletedSheet = false
+                taskForDetailSheet = task
+            }
+        )
+        .environment(\.locale, appSettings.appLocale)
+        .environment(\.layoutDirection, appSettings.layoutDirection)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var overdueTasksSheet: some View {
+        OverdueTasksListView(
+            tasks: viewModel.overdueTasks,
+            displayTitle: { viewModel.displayTitle(for: $0) },
+            forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+            deadlineLabel: { deadlineLabel(for: $0) },
+            onSelectTask: { task in
+                showOverdueSheet = false
+                taskForDetailSheet = task
+            }
+        )
+        .environment(\.locale, appSettings.appLocale)
+        .environment(\.layoutDirection, appSettings.layoutDirection)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func taskDetailSheet(task: FamilyTask) -> some View {
+        NavigationStack {
+            TaskDetailView(
+                initialTask: task,
+                currentUserRole: currentMembershipRole,
+                assigneeDisplayName: assigneeLabel(for: task),
+                scheduleViewModel: scheduleViewModel
+            )
+            .environmentObject(appRouter)
+        }
+        .environment(\.locale, appSettings.appLocale)
+        .environment(\.layoutDirection, appSettings.layoutDirection)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var createFlexibleSheet: some View {
+        EditTaskView(
+            formMode: .flexible,
+            onSaveSuccess: { _ in
+                Task {
+                    await viewModel.loadTasks(silent: true, force: true)
+                    await scheduleViewModel.loadTasks(silent: true)
+                }
+            },
+            onAlarmSync: { task in
+                scheduleViewModel.syncAlarms(for: task)
+            }
+        )
+        .id(createTaskFormInstanceID)
+        .environmentObject(appRouter)
+        .presentationDetents([.large])
     }
 
     // MARK: - Notification deep link
@@ -305,7 +323,7 @@ struct TodoListView: View {
                     .font(.body)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.Common.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
+                    Text(L10n.Todo.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.primary)
                     Text(L10n.Common.tapToReviewAndAdjustDeadlines.localized)
@@ -344,7 +362,7 @@ struct TodoListView: View {
                     .font(.caption2.weight(.semibold))
             }
         }
-        .accessibilityLabel(L10n.Family.groupAccessibilityLabel.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+        .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
     }
 
     private func presentCreateFlexible() {

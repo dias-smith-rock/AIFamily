@@ -10,10 +10,10 @@ struct LegalConsentFooterView: View {
             Text(L10n.Auth.bySigningInYouAgreeToThisAppS.localized)
                 .foregroundStyle(secondaryText)
             HStack(spacing: 4) {
-                linkButton(L10n.Common.privacyPolicy, action: onPrivacy)
+                linkButton(L10n.Common.privacyPolicy.localized, action: onPrivacy)
                 Text(L10n.Common.and.localized)
                     .foregroundStyle(secondaryText)
-                linkButton(L10n.Common.termsOfService, action: onTerms)
+                linkButton(L10n.Common.termsOfService.localized, action: onTerms)
             }
         }
         .font(.system(size: 12, weight: .regular))

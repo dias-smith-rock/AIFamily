@@ -29,12 +29,12 @@ struct TaskAssigneeLabelView: View {
 
         if names.isEmpty {
             if ids.count == 1 {
-                Text(L10n.Common.member.localized)
+                Text(L10n.Family.member.localized)
             } else {
                 Text("\(ids.count) people")
             }
         } else {
-            Text(verbatim: names.joined(separator: L10n.Common.text))
+            Text(verbatim: names.joined(separator: ", "))
         }
     }
 }

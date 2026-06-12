@@ -79,7 +79,7 @@ struct ContentView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $appRouter.isPresentingVIPUpgrade) {
+        .sheet(isPresented: vipUpgradeSheetBinding) {
             NavigationStack {
                 VIPSubscriptionView()
             }
@@ -93,6 +93,9 @@ struct ContentView: View {
             }
         }
         .task(id: isGuestMode) {
+            if isGuestMode {
+                appRouter.isPresentingVIPUpgrade = false
+            }
             guard isGuestMode, let snapshot = GuestSessionStore.loadSnapshot() else { return }
             if appBootstrap.mode != .guestLocal {
                 appBootstrap.enterGuestMode()
@@ -185,6 +188,16 @@ struct ContentView: View {
 
     private var hasAppAccess: Bool {
         isUserLoggedIn || isGuestMode
+    }
+
+    /// 游客试用模式不展示订阅 sheet；Pro 能力通过 `AppRouter.hasPremiumAccess` 全开。
+    private var vipUpgradeSheetBinding: Binding<Bool> {
+        Binding(
+            get: { appRouter.isPresentingVIPUpgrade && isGuestMode == false },
+            set: { newValue in
+                appRouter.isPresentingVIPUpgrade = newValue
+            }
+        )
     }
 
     @ViewBuilder

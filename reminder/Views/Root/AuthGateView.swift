@@ -51,7 +51,7 @@ struct AuthGateView: View {
                         ProgressView()
                             .frame(maxWidth: .infinity)
                     } else {
-                        Text(AppLocalized.string(L10n.Common.continue, locale: locale))
+                        Text(AppLocalized.string(L10n.Common.continueButton, locale: locale))
                             .font(.system(size: 16, weight: .semibold))
                             .frame(maxWidth: .infinity)
                     }

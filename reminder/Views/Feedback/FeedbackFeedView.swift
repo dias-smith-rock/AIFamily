@@ -124,7 +124,7 @@ struct FeedbackFeedView: View {
     @ViewBuilder
     private var content: some View {
         if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-            ProgressView(L10n.Common.loadingFeedback.localized)
+            ProgressView(L10n.Feedback.loadingFeedback.localized)
                 .frame(maxWidth: .infinity, minHeight: 220)
         } else if let errorMessage = viewModel.errorMessage {
             ContentUnavailableView {
@@ -213,12 +213,12 @@ private struct FeedbackCardView: View {
     }
 
     private var senderName: String {
-        guard let senderId = feedback.senderId else { return L10n.Common.system }
+        guard let senderId = feedback.senderId else { return AppLocalized.localizedSync(L10n.Common.system) }
         return MemberDisplayName.displayName(
             forMembershipId: senderId,
             members: HouseholdMembership.mockMembers,
             profiles: FamilyProfile.mockProfiles
-        ) ?? L10n.Common.member
+        ) ?? AppLocalized.localizedSync(L10n.Family.member)
     }
 
     private var taskScheduledAt: Date? {

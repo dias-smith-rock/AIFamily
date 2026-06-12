@@ -35,7 +35,7 @@ struct VIPSubscriptionView: View {
             .padding(.bottom, 24)
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(showsPersonalVIP ? L10n.VIP.proMembership : L10n.VIP.upgradeToVip)
+        .navigationTitle(showsPersonalVIP ? L10n.VIP.proMembership.localized : L10n.VIP.upgradeToVip.localized)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if showsPersonalVIP {
@@ -95,7 +95,7 @@ struct VIPSubscriptionView: View {
                 )
                 .padding(.top, 8)
 
-            Text(showsPersonalVIP ? L10n.VIP.proMembershipActive : L10n.VIP.upgradeToPro)
+            Text(showsPersonalVIP ? L10n.VIP.proMembershipActive.localized : L10n.VIP.upgradeToPro.localized)
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
@@ -158,40 +158,40 @@ struct VIPSubscriptionView: View {
                 VIPPremiumBenefitRow(
                     systemImage: "person.2.badge.gearshape.fill",
                     iconTint: .orange,
-                    title: L10n.VIP.onePayerWholeGroupVip,
-                    description: L10n.Family.oneRenewalCoversEveryoneGroupMembersSeamle,
+                    title: L10n.VIP.onePayerWholeGroupVip.localized,
+                    description: L10n.Family.oneRenewalCoversEveryoneGroupMembersSeamle.localized,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "person.3.fill",
                     iconTint: .blue,
-                    title: L10n.Family.unlimitedGroupsMembers,
-                    description: L10n.Common.noGroupCapsConnectEveryCircleOfYourLife,
+                    title: L10n.Family.unlimitedGroupsMembers.localized,
+                    description: L10n.Family.noGroupCapsConnectEveryCircleOfYourLife.localized,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "camera.viewfinder",
                     iconTint: .cyan,
-                    title: L10n.Schedule.aiPhotoToTask,
-                    description: L10n.Schedule.snapAPhotoToExtractKeySchedulesAndSimpli,
+                    title: L10n.Schedule.aiPhotoToTask.localized,
+                    description: L10n.Schedule.snapAPhotoToExtractKeySchedulesAndSimpli.localized,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "point.topleft.down.to.point.bottomright.filled.curvepath",
                     iconTint: .green,
-                    title: L10n.Location.n20LocationHistoryPoints,
-                    description: L10n.Common.richerMovementTrailsSoYouCanTrackSafetyA,
+                    title: L10n.Location.n20LocationHistoryPoints.localized,
+                    description: L10n.Common.richerMovementTrailsSoYouCanTrackSafetyA.localized,
                     showsDivider: true
                 )
 
                 VIPPremiumBenefitRow(
                     systemImage: "location.slash.fill",
                     iconTint: .purple,
-                    title: L10n.Location.privacyGhostMode,
-                    description: L10n.Location.controlWhenYouShareLocationToggleGhostMod,
+                    title: L10n.Location.privacyGhostMode.localized,
+                    description: L10n.Location.controlWhenYouShareLocationToggleGhostMod.localized,
                     showsDivider: false
                 )
             }
@@ -208,13 +208,18 @@ struct VIPSubscriptionView: View {
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
 
+            Text(L10n.VIP.signInOptionalForCrossDeviceSync.localized)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+
             HStack(spacing: 4) {
-                legalLinkButton(L10n.Common.privacyPolicy) {
+                legalLinkButton(L10n.Common.privacyPolicy.localized) {
                     showPrivacySheet = true
                 }
                 Text("·")
                     .foregroundStyle(.tertiary)
-                legalLinkButton(L10n.Common.termsOfService) {
+                legalLinkButton(L10n.Common.termsOfService.localized) {
                     showTermsSheet = true
                 }
             }
@@ -479,7 +484,7 @@ private struct VIPPremiumBenefitRow: View {
     }
 }
 
-#Preview(L10n.VIP.subscribed) {
+#Preview("Subscribed") {
     NavigationStack {
         VIPSubscriptionView()
             .environmentObject({

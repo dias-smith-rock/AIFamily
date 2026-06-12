@@ -8,6 +8,18 @@ struct TaskDetailRowView<Value: View>: View {
     var valueAccent: Bool = false
     @ViewBuilder let value: () -> Value
 
+    init(systemImage: String, label: LocalizedStringKey, valueIsPlaceholder: Bool = false, valueAccent: Bool = false, @ViewBuilder value: @escaping () -> Value) {
+        self.systemImage = systemImage
+        self.label = label
+        self.valueIsPlaceholder = valueIsPlaceholder
+        self.valueAccent = valueAccent
+        self.value = value
+    }
+
+    init(systemImage: String, label: L10n.Entry, valueIsPlaceholder: Bool = false, valueAccent: Bool = false, @ViewBuilder value: @escaping () -> Value) {
+        self.init(systemImage: systemImage, label: label.localized, valueIsPlaceholder: valueIsPlaceholder, valueAccent: valueAccent, value: value)
+    }
+
     var body: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Image(systemName: systemImage)

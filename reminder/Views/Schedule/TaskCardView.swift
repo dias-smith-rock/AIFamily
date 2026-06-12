@@ -27,7 +27,7 @@ struct TaskCardForWhomTrailing: View {
     var body: some View {
         Group {
             if sources.isEmpty {
-                Text(L10n.Common.text4.localized)
+                Text(verbatim: "—")
                     .font(style == .compact ? .caption2 : .caption)
                     .foregroundStyle(.tertiary)
             } else if sources.count == 1, style == .compact {

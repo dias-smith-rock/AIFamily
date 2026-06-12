@@ -15,7 +15,7 @@ struct ProfileDetailView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section(L10n.Common.memberInfo) {
+                Section(L10n.Family.memberInfo) {
                     ProfileDetailRowView(title: L10n.Common.name, value: profile.displayName)
                     LabeledContent {
                         Text(roleLabel)
@@ -68,7 +68,7 @@ struct ProfileDetailView: View {
                 }
             }
             .listStyle(.insetGrouped)
-            .navigationTitle(L10n.Common.memberDetails.localized)
+            .navigationTitle(L10n.Family.memberDetails.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

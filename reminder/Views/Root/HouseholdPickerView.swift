@@ -31,7 +31,7 @@ struct HouseholdPickerView: View {
     @ViewBuilder
     private var optionsList: some View {
         if appRouter.selectableHouseholds.isEmpty {
-            ProgressView(AppLocalized.string(L10n.Common.loadingGroupList, locale: locale))
+            ProgressView(AppLocalized.string(L10n.Family.loadingGroupList, locale: locale))
                 .frame(maxWidth: .infinity, minHeight: 180)
         } else {
             VStack(spacing: 10) {

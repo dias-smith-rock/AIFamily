@@ -28,7 +28,7 @@ struct TransferOwnershipView: View {
                     if viewModel.eligibleMembers.isEmpty {
                         Section {
                             ContentUnavailableView {
-                                Label(L10n.Common.noEligibleMembers.localized, systemImage: "person.crop.circle.badge.questionmark")
+                                Label(L10n.Family.noEligibleMembers.localized, systemImage: "person.crop.circle.badge.questionmark")
                             } description: {
                                 Text(L10n.Family.thereAreNoOtherActiveAccountMembersWhoCa.localized)
                             }

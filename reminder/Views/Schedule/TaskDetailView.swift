@@ -51,63 +51,67 @@ struct TaskDetailView: View {
         _task = State(initialValue: initialTask)
     }
 
+    private var detailScrollContent: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if task.source.isReadOnly {
+                externalSyncReadOnlyBanner
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+            }
+
+            titleHeader
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+
+            timePlanningCard
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+            forWhomSection
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+            if taskDetailViewModel.attachments.isEmpty == false {
+                attachmentsSection
+                    .padding(.horizontal, 16)
+                    .padding(.top, 16)
+            }
+
+            coreInfoCard
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+            if showMoreOptions == false {
+                expandMoreControl
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+            }
+
+            if showMoreOptions {
+                expandedReadonlySection
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+
+                collapseMoreControl
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+            }
+
+            if let statusError {
+                Text(statusError)
+                    .font(AppTheme.FontToken.caption)
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 20)
+                    .padding(.top, 16)
+            }
+        }
+        .padding(.bottom, bottomScrollPadding)
+    }
+
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if task.source.isReadOnly {
-                    externalSyncReadOnlyBanner
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                }
-
-                titleHeader
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
-
-                timePlanningCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-
-                forWhomSection
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-
-                if taskDetailViewModel.attachments.isEmpty == false {
-                    attachmentsSection
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                }
-
-                coreInfoCard
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-
-                if showMoreOptions == false {
-                    expandMoreControl
-                        .padding(.horizontal, 16)
-                        .padding(.top, 14)
-                }
-
-                if showMoreOptions {
-                    expandedReadonlySection
-                        .padding(.horizontal, 16)
-                        .padding(.top, 14)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-
-                    collapseMoreControl
-                        .padding(.horizontal, 16)
-                        .padding(.top, 10)
-                }
-
-                if let statusError {
-                    Text(statusError)
-                        .font(AppTheme.FontToken.caption)
-                        .foregroundStyle(.red)
-                        .padding(.horizontal, 20)
-                        .padding(.top, 16)
-                }
-            }
-            .padding(.bottom, bottomScrollPadding)
+            detailScrollContent
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(L10n.Schedule.missionDetails.localized)
@@ -115,7 +119,7 @@ struct TaskDetailView: View {
         .toolbarBackground(.automatic, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
-                Button(L10n.Common.close) {
+                Button(L10n.Common.close.localized) {
                     dismiss()
                 }
                 .fontWeight(.medium)
@@ -196,7 +200,7 @@ struct TaskDetailView: View {
             }
             Button(L10n.Common.cancel, role: .cancel) { }
         } message: {
-            Text(task.seriesGrouping == nil ? L10n.Common.thisActionCannotBeUndone2 : L10n.Common.pleaseSelectAScopeToDelete)
+            Text(task.seriesGrouping == nil ? L10n.Common.thisActionCannotBeUndone2.localized : L10n.Common.pleaseSelectAScopeToDelete.localized)
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -362,26 +366,26 @@ struct TaskDetailView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 if task.isFlexibleTodo {
-                    timePlanningLine(label: L10n.Common.dueDate) {
+                    timePlanningLine(label: L10n.Common.dueDate.localized) {
                         Text(flexibleDeadlineDetailText)
                     }
                     Text(L10n.Common.canBeCompletedAnytimeBeforeThisDate.localized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if task.isAllDay {
-                    timePlanningLine(label: L10n.Common.time2) {
+                    timePlanningLine(label: L10n.Common.time2.localized) {
                         Text(L10n.Common.allDay.localized)
                     }
                 } else {
-                    timePlanningLine(label: L10n.Common.startTime) {
+                    timePlanningLine(label: L10n.Common.startTime.localized) {
                         Text(timePlanningStartText)
                     }
                     if let endText = timePlanningEndText {
-                        timePlanningLine(label: L10n.Common.endTime) {
+                        timePlanningLine(label: L10n.Common.endTime.localized) {
                             Text(endText)
                         }
                     }
-                    timePlanningLine(label: L10n.Common.totalDuration) {
+                    timePlanningLine(label: L10n.Common.totalDuration.localized) {
                         TaskDurationText(minutes: task.durationMinutes)
                     }
                 }
@@ -437,8 +441,8 @@ struct TaskDetailView: View {
                         }
                         .buttonStyle(.plain)
                         .disabled(attachment.displayImageURL == nil)
-                        .accessibilityLabel(L10n.Common.viewAttachment)
-                        .accessibilityHint(L10n.Common.doubleTapForFullScreenSwipeLeftOrRightT)
+                        .accessibilityLabel(L10n.Common.viewAttachment.localized)
+                        .accessibilityHint(L10n.Common.doubleTapForFullScreenSwipeLeftOrRightT.localized)
                     }
                 }
                 .padding(.vertical, 4)
@@ -478,7 +482,7 @@ struct TaskDetailView: View {
                 Image(systemName: "person.3")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
-                Text(L10n.Common.for.localized)
+                Text(L10n.Common.forLabel.localized)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
             }
@@ -529,7 +533,7 @@ struct TaskDetailView: View {
                 .lineLimit(1)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Common.forWhomAllMembers)
+        .accessibilityLabel(L10n.Family.forWhomAllMembers.localized)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
@@ -625,7 +629,7 @@ struct TaskDetailView: View {
             HStack(spacing: 6) {
                 Text(L10n.Common.showMoreOptions.localized)
                     .font(.subheadline.weight(.semibold))
-                Text(L10n.Common.text3.localized)
+                Text(verbatim: "˅")
                     .font(.subheadline.weight(.bold))
             }
             .foregroundStyle(.tint)
@@ -644,7 +648,7 @@ struct TaskDetailView: View {
             HStack(spacing: 6) {
                 Text(L10n.Common.collapseMoreOptions.localized)
                     .font(.subheadline.weight(.semibold))
-                Text(L10n.Common.text2.localized)
+                Text(verbatim: "˄")
                     .font(.subheadline.weight(.bold))
             }
             .foregroundStyle(.tint)
@@ -658,26 +662,26 @@ struct TaskDetailView: View {
 
     private var expandedReadonlySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            expandedCard(title: L10n.Schedule.taskPriority) {
+            expandedCard(title: L10n.Schedule.taskPriority.localized) {
                 priorityReadonlySegmentVisual
             }
 
-            expandedCard(title: L10n.Common.emergencyContactNumberMeetingLink) {
+            expandedCard(title: L10n.Common.emergencyContactNumberMeetingLink.localized) {
                 emergencyReadonlyBlock
             }
 
-            expandedCard(title: L10n.Location.locationAlt) {
+            expandedCard(title: L10n.Location.location.localized) {
                 locationReadonlyRow
             }
 
-            expandedCard(title: L10n.Common.moreDetails) {
+            expandedCard(title: L10n.Common.moreDetails.localized) {
                 readonlyMultilineBlock(
                     text: descriptionMoreDetailsPart,
-                    emptyPlaceholder: L10n.Common.noNotesYet
+                    emptyPlaceholder: L10n.Common.noNotesYet.localized
                 )
             }
 
-            expandedCard(title: L10n.Common.financeAndNotes) {
+            expandedCard(title: L10n.Common.financeAndNotes.localized) {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Text(L10n.Common.expenses.localized)
@@ -696,7 +700,7 @@ struct TaskDetailView: View {
                             .foregroundStyle(.secondary)
                         readonlyMultilineBlock(
                             text: descriptionFinancePart,
-                            emptyPlaceholder: L10n.Common.youCanFillInExpenseDetailsPaymentMethods,
+                            emptyPlaceholder: L10n.Common.youCanFillInExpenseDetailsPaymentMethods.localized,
                             emptyAsCaptionHint: true
                         )
                     }
@@ -751,7 +755,7 @@ struct TaskDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Schedule.taskPriority)
+        .accessibilityLabel(L10n.Schedule.taskPriority.localized)
         .accessibilityValue(task.priority.localizedName)
     }
 
@@ -860,7 +864,7 @@ struct TaskDetailView: View {
                 .onTapGesture {
                     openURL(url)
                 }
-                .accessibilityHint(L10n.Common.doubleTapToCallOrOpenTheLink)
+                .accessibilityHint(L10n.Common.doubleTapToCallOrOpenTheLink.localized)
         } else {
             Text(raw)
                 .font(.body)
@@ -1039,22 +1043,22 @@ struct TaskDetailView: View {
                 switch task.status {
                 case .new:
                     if task.isFlexibleTodo {
-                        statusFooterPrimaryButton(L10n.Schedule.completeTheTask, tint: .green) {
+                        statusFooterPrimaryButton(L10n.Schedule.completeTheTask.localized, tint: .green) {
                             Task { await updateTaskStatus(to: .completed) }
                         }
                     } else {
-                        statusFooterPrimaryButton(L10n.Schedule.acceptTask, tint: .orange) {
+                        statusFooterPrimaryButton(L10n.Schedule.acceptTask.localized, tint: .orange) {
                             Task { await updateTaskStatus(to: .accepted) }
                         }
                     }
 
                 case .accepted:
-                    statusFooterPrimaryButton(L10n.Schedule.completeTheTask, tint: .green) {
+                    statusFooterPrimaryButton(L10n.Schedule.completeTheTask.localized, tint: .green) {
                         Task { await updateTaskStatus(to: .completed) }
                     }
 
                 case .inProgress:
-                    statusFooterPrimaryButton(L10n.Common.markAsComplete, tint: .green) {
+                    statusFooterPrimaryButton(L10n.Common.markAsComplete.localized, tint: .green) {
                         Task { await updateTaskStatus(to: .completed) }
                     }
 
@@ -1116,7 +1120,7 @@ struct TaskDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isUpdatingStatus)
-                .accessibilityLabel(L10n.Common.markAsToDoAgain)
+                .accessibilityLabel(L10n.Common.markAsToDoAgain.localized)
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 32))
@@ -1196,10 +1200,7 @@ struct TaskDetailView: View {
                 await scheduleViewModel.deleteTask(taskId: task.id)
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
-                    statusError = String(
-                        localized: L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul,
-                        locale: locale
-                    )
+                    statusError = AppLocalized.string(L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul, locale: locale)
                     return
                 }
                 let cutoff = task.dueDate ?? .distantPast
@@ -1231,10 +1232,7 @@ struct TaskDetailView: View {
 
     private func performGuestSeriesDelete() async {
         guard let grouping = task.seriesGrouping else {
-            statusError = String(
-                localized: L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul,
-                locale: locale
-            )
+            statusError = AppLocalized.string(L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul, locale: locale)
             return
         }
         let cutoff = task.dueDate ?? .distantPast

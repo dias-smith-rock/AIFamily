@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct LiveHuddleHUDBanner: View {
+    @Environment(\.locale) private var locale
     let participants: [UserLocationState]
     let exitButtonTitle: LocalizedStringKey
     let isDestructiveExit: Bool
@@ -17,7 +18,7 @@ struct LiveHuddleHUDBanner: View {
                     .foregroundStyle(Color.green)
                     .symbolEffect(.pulse, options: .repeating, value: radarPulse)
 
-                Text(L10n.Common.liveHudOnlineCount.formatted(locale: locale, participants.count))
+                Text(L10n.Location.liveLocationLldOnline.formatted(locale: locale, participants.count))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
@@ -92,7 +93,7 @@ struct LiveHuddleHUDBanner: View {
 #Preview {
     LiveHuddleHUDBanner(
         participants: UserLocationState.previewHousehold,
-        exitButtonTitle: L10n.Common.leave,
+        exitButtonTitle: L10n.Common.leave.localized,
         isDestructiveExit: false
     ) {}
     .padding()

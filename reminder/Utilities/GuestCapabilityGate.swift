@@ -6,7 +6,7 @@ enum GuestCapabilityError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .requiresSignIn:
-            L10n.Auth.signInToUseThisFeatureAndSyncYourLocal.string()
+            AppLocalized.localizedSync(L10n.Auth.signInToUseThisFeatureAndSyncYourLocal)
         }
     }
 }
@@ -24,8 +24,8 @@ extension EnvironmentValues {
 
 extension View {
     func guestSignInRequiredAlert(isPresented: Binding<Bool>) -> some View {
-        alert(L10n.Auth.signInRequired, isPresented: isPresented) {
-            Button(L10n.Common.ok, role: .cancel) {}
+        alert(L10n.Auth.signInRequired.localized, isPresented: isPresented) {
+            Button(L10n.Common.ok.localized, role: .cancel) {}
         } message: {
             Text(L10n.Auth.signInToUseCloudFeaturesAndSyncYourLoca.localized)
         }
