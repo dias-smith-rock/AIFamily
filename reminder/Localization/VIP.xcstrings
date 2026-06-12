@@ -119,6 +119,34 @@
         }
       }
     },
+    "vip_cloud_sync_failed_tap_retry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : { "stringUnit" : { "state" : "translated", "value" : "Pro نشط على هذا الجهاز، لكن مزامنة السحابة فشلت. أعد المحاولة للمزامنة عبر الأجهزة." } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro is active on this device, but cloud sync failed. Retry to sync across devices and groups." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Pro está activo en este dispositivo, pero falló la sincronización en la nube. Reintenta para sincronizar." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Pro est actif sur cet appareil, mais la synchronisation cloud a échoué. Réessayez." } },
+        "hi" : { "stringUnit" : { "state" : "translated", "value" : "इस डिवाइस पर Pro सक्रिय है, लेकिन क्लाउड सिंक विफल। पुनः प्रयास करें।" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Pro está ativo neste dispositivo, mas a sincronização na nuvem falhou. Tente novamente." } },
+        "ta" : { "stringUnit" : { "state" : "translated", "value" : "இந்த சாதனத்தில் Pro செயலில் உள்ளது, ஆனால் கிளவுட் ஒத்திசைவு தோல்வி. மீண்டும் முயற்சிக்கவும்." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本机 Pro 已生效，但云端同步失败。请重试以同步到其他设备并启用组织继承。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "本機 Pro 已生效，但雲端同步失敗。請重試以同步到其他裝置並啟用組織繼承。" } }
+      }
+    },
+    "vip_retry_cloud_sync" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "ar" : { "stringUnit" : { "state" : "translated", "value" : "إعادة مزامنة السحابة" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry cloud sync" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reintentar sincronización" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Réessayer la synchronisation" } },
+        "hi" : { "stringUnit" : { "state" : "translated", "value" : "क्लाउड सिंक पुनः प्रयास करें" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Tentar sincronizar novamente" } },
+        "ta" : { "stringUnit" : { "state" : "translated", "value" : "கிளவுட் ஒத்திசைவை மீண்டும் முயற்சி" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试云端同步" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重試雲端同步" } }
+      }
+    },
     "vip_claim_1_year_pro_for_free" : {
       "extractionState" : "stale",
       "localizations" : {

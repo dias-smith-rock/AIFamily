@@ -65,13 +65,15 @@ enum SubscriptionSupabaseSupport {
 
     /// 客户端兜底：服务端用 RevenueCat Secret API 校验后写入 `user_entitlements`。
     @MainActor
-    static func syncEntitlementFromRevenueCat() async throws -> SyncRevenueCatEntitlementResponse {
+    static func syncEntitlementFromRevenueCat(
+        request: SyncRevenueCatEntitlementRequest = SyncRevenueCatEntitlementRequest()
+    ) async throws -> SyncRevenueCatEntitlementResponse {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
         do {
             return try await client.functions.invoke(
                 syncRevenueCatEntitlementFunction,
-                options: FunctionInvokeOptions(body: SyncRevenueCatEntitlementRequest())
+                options: FunctionInvokeOptions(body: request)
             )
         } catch {
             throw SubscriptionSupabaseError.serverError(Self.serverErrorMessage(from: error))
@@ -149,19 +151,49 @@ struct HouseholdCreatorHasActiveProParams: Encodable, Sendable {
     }
 }
 
-struct SyncRevenueCatEntitlementRequest: Encodable, Sendable {}
+struct SyncRevenueCatLocalEntitlementHint: Encodable, Sendable, Equatable {
+    var isPro: Bool
+    var proExpiresAt: String?
+    var productId: String?
+}
+
+struct SyncRevenueCatEntitlementRequest: Encodable, Sendable {
+    var aliasAppUserIds: [String]?
+    var localEntitlement: SyncRevenueCatLocalEntitlementHint?
+
+    init(
+        aliasAppUserIds: [String]? = nil,
+        localEntitlement: SyncRevenueCatLocalEntitlementHint? = nil
+    ) {
+        self.aliasAppUserIds = aliasAppUserIds
+        self.localEntitlement = localEntitlement
+    }
+}
+
+struct SyncRevenueCatEntitlementDiagnostics: Decodable, Sendable, Equatable {
+    var entitlementKeys: [String]?
+    var subscriptionKeys: [String]?
+    var originalAppUserId: String?
+    var resolvedFrom: String?
+}
 
 struct SyncRevenueCatEntitlementResponse: Decodable, Sendable, Equatable {
     var synced: Bool?
     var isPro: Bool?
     var proExpiresAt: String?
     var planPurchased: String?
+    var diagnostics: SyncRevenueCatEntitlementDiagnostics?
+    var resolvedFromAppUserId: String?
+    var syncSource: String?
 
     enum CodingKeys: String, CodingKey {
         case synced
         case isPro
         case proExpiresAt
         case planPurchased
+        case diagnostics
+        case resolvedFromAppUserId
+        case syncSource
     }
 }
 

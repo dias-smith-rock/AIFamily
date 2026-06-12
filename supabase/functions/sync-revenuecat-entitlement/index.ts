@@ -1,12 +1,20 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  fetchRevenueCatSubscriber,
-  resolveEntitlementState,
+  type LocalEntitlementHint,
+  isAnonymousRevenueCatUser,
+  resolveSubscriberForAuthUser,
+  validateLocalEntitlementHint,
+  planFromProductId,
 } from "../_shared/revenuecat.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+type SyncRequestBody = {
+  aliasAppUserIds?: string[];
+  localEntitlement?: LocalEntitlementHint;
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -17,6 +25,15 @@ function jsonResponse(body: unknown, status = 200): Response {
       "Content-Type": "application/json",
     },
   });
+}
+
+function parseRequestBody(raw: unknown): SyncRequestBody {
+  if (!raw || typeof raw !== "object") return {};
+  const body = raw as SyncRequestBody;
+  return {
+    aliasAppUserIds: Array.isArray(body.aliasAppUserIds) ? body.aliasAppUserIds : undefined,
+    localEntitlement: body.localEntitlement,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -53,9 +70,50 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "Unauthorized" }, 401);
     }
 
-    const userId = userData.user.id;
-    const subscriber = await fetchRevenueCatSubscriber(userId, revenueCatSecret);
-    const { isPro, proExpiresAt, planPurchased } = resolveEntitlementState(subscriber.subscriber);
+    const requestBody = parseRequestBody(await req.json().catch(() => ({})));
+    const userId = userData.user.id.trim().toLowerCase();
+
+    let { isPro, proExpiresAt, planPurchased, diagnostics, resolvedFromAppUserId } =
+      await resolveSubscriberForAuthUser(
+        userId,
+        revenueCatSecret,
+        requestBody.aliasAppUserIds ?? [],
+      );
+
+    let syncSource = "client_sync";
+
+    if (
+      !isPro &&
+      validateLocalEntitlementHint(requestBody.localEntitlement) &&
+      (
+        isAnonymousRevenueCatUser(diagnostics.originalAppUserId) ||
+        (requestBody.aliasAppUserIds?.some((id) => isAnonymousRevenueCatUser(id)) ?? false)
+      )
+    ) {
+      isPro = true;
+      proExpiresAt = requestBody.localEntitlement?.proExpiresAt ?? null;
+      planPurchased = planFromProductId(requestBody.localEntitlement?.productId);
+      syncSource = "client_local_hint";
+      console.info("sync-revenuecat-entitlement: applying validated local entitlement hint", {
+        userId,
+        productId: requestBody.localEntitlement?.productId,
+        originalAppUserId: diagnostics.originalAppUserId,
+      });
+    }
+
+    if (!isPro) {
+      console.warn("sync-revenuecat-entitlement: RC reports inactive", {
+        userId,
+        resolvedFromAppUserId,
+        ...diagnostics,
+      });
+    } else if (resolvedFromAppUserId !== userId) {
+      console.info("sync-revenuecat-entitlement: entitlement from alias", {
+        userId,
+        resolvedFromAppUserId,
+        syncSource,
+      });
+    }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: rpcData, error: rpcError } = await adminClient.rpc(
@@ -65,7 +123,7 @@ Deno.serve(async (req) => {
         p_is_pro: isPro,
         p_pro_expires_at: isPro ? proExpiresAt : new Date().toISOString(),
         p_plan_purchased: planPurchased,
-        p_source: "client_sync",
+        p_source: syncSource,
       },
     );
 
@@ -81,6 +139,9 @@ Deno.serve(async (req) => {
       isPro,
       proExpiresAt: row?.pro_expires_at ?? proExpiresAt,
       planPurchased,
+      diagnostics,
+      resolvedFromAppUserId,
+      syncSource,
     });
   } catch (error) {
     console.error("sync-revenuecat-entitlement", error);

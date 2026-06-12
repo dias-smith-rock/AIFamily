@@ -42,6 +42,9 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
     @Published private(set) var hasActiveProEntitlement = false
     @Published private(set) var proExpiresAt: Date?
     @Published private(set) var isConfigured = false
+    /// 本机 VIP 已激活但云端 `user_entitlements` 未对齐时为 true。
+    @Published private(set) var showsCloudSyncWarning = false
+    @Published private(set) var cloudSyncErrorMessage: String?
 
     private weak var appRouter: AppRouter?
     private var customerInfo: CustomerInfo?
@@ -161,16 +164,45 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         }
     }
 
-    func logIn(userId: UUID) async {
-        guard isConfigured else { return }
+    @discardableResult
+    func logIn(userId: UUID) async -> Bool {
+        guard isConfigured else { return false }
         do {
             let result = try await Purchases.shared.logIn(userId.uuidString.lowercased())
             applyCustomerInfo(result.customerInfo)
+            print(
+                "[RevenueCat] logIn ok created=\(result.created) " +
+                "appUserID=\(Purchases.shared.appUserID)"
+            )
+            return true
         } catch {
-            #if DEBUG
             print("[RevenueCat] logIn error: \(error.localizedDescription)")
-            #endif
+            return false
         }
+    }
+
+    /// 已登录 Supabase 用户：合并匿名购买并推送收据到 RevenueCat 云端（sync 前必须调用）。
+    func alignLoggedInRevenueCatUser(supabaseUserId: UUID) async {
+        guard isConfigured else { return }
+
+        let target = supabaseUserId.uuidString.lowercased()
+        let current = Purchases.shared.appUserID
+
+        if current != target {
+            _ = await logIn(userId: supabaseUserId)
+        }
+
+        if Purchases.shared.appUserID.hasPrefix("$RCAnonymousID") {
+            print("[RevenueCat] still anonymous after logIn; running restorePurchases")
+            _ = try? await restorePurchases()
+        }
+
+        _ = try? await Purchases.shared.syncPurchases()
+        await refreshCustomerInfo()
+        print(
+            "[RevenueCat] align identity done appUserID=\(Purchases.shared.appUserID) " +
+            "localPro=\(hasActiveProEntitlement)"
+        )
     }
 
     func logOut() async {
@@ -249,27 +281,107 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
     }
 
     /// 已登录用户：将 RevenueCat 真相同步至 Supabase `user_entitlements`（兜底）。
-    func syncEntitlementToCloudIfNeeded(appRouter: AppRouter) async {
+    @discardableResult
+    func syncEntitlementToCloudIfNeeded(appRouter: AppRouter) async -> Bool {
         #if canImport(Supabase)
-        guard isConfigured else { return }
-        guard await appRouter.resolveAuthUserId() != nil else { return }
+        guard isConfigured else { return false }
+        guard let userId = await appRouter.resolveAuthUserId() else {
+            clearCloudSyncWarning()
+            return false
+        }
+
+        await alignLoggedInRevenueCatUser(supabaseUserId: userId)
+
+        let maxAttempts = hasActiveProEntitlement ? 3 : 1
+        var lastResponse: SyncRevenueCatEntitlementResponse?
 
         do {
-            _ = try await SubscriptionSupabaseSupport.syncEntitlementFromRevenueCat()
-            await appRouter.refreshPremiumStateAfterClaim()
+            for attempt in 1...maxAttempts {
+                let response = try await SubscriptionSupabaseSupport.syncEntitlementFromRevenueCat(
+                    request: makeSyncRequestPayload()
+                )
+                lastResponse = response
+                await appRouter.refreshPremiumStateAfterClaim()
+                updateCloudSyncWarning(appRouter: appRouter, syncResponse: response)
+
+                if showsCloudSyncWarning == false {
+                    return true
+                }
+
+                if attempt < maxAttempts {
+                    print(
+                        "[RevenueCat] cloud sync retry \(attempt)/\(maxAttempts) " +
+                        "isPro=\(response.isPro == true) diagnostics=\(response.diagnosticsSummary)"
+                    )
+                    try await Task.sleep(for: .seconds(2))
+                    _ = try? await Purchases.shared.syncPurchases()
+                    await refreshCustomerInfo()
+                }
+            }
+
+            if let lastResponse {
+                let alias = lastResponse.resolvedFromAppUserId ?? "nil"
+                let syncSource = lastResponse.syncSource ?? "nil"
+                print(
+                    "[RevenueCat] cloud sync mismatch after retries. " +
+                    "synced.isPro=\(lastResponse.isPro == true) syncSource=\(syncSource) " +
+                    "resolvedFrom=\(alias) \(lastResponse.diagnosticsSummary)"
+                )
+            }
+            return false
         } catch {
-            #if DEBUG
-            print("[RevenueCat] syncEntitlementToCloud error: \(error.localizedDescription)")
-            #endif
+            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            cloudSyncErrorMessage = message
+            showsCloudSyncWarning = hasActiveProEntitlement
+            print("[RevenueCat] syncEntitlementToCloud error: \(message)")
+            return false
         }
         #else
         _ = appRouter
+        return false
         #endif
+    }
+
+    private func clearCloudSyncWarning() {
+        showsCloudSyncWarning = false
+        cloudSyncErrorMessage = nil
+    }
+
+    private func updateCloudSyncWarning(
+        appRouter: AppRouter,
+        syncResponse: SyncRevenueCatEntitlementResponse
+    ) {
+        let localActive = hasActiveProEntitlement
+        let cloudActive = appRouter.userEntitlement?.isActive == true
+        let syncedPro = syncResponse.isPro == true
+
+        if localActive && cloudActive == false {
+            if syncedPro {
+                clearCloudSyncWarning()
+                return
+            }
+            showsCloudSyncWarning = true
+            cloudSyncErrorMessage = AppLocalized.localizedSync(L10n.VIP.cloudSyncFailedTapRetry)
+            let syncSource = syncResponse.syncSource ?? "nil"
+            print(
+                "[RevenueCat] cloud sync mismatch: local VIP active, cloud inactive. " +
+                "synced.isPro=\(syncedPro) syncSource=\(syncSource) \(syncResponse.diagnosticsSummary)"
+            )
+            return
+        }
+
+        clearCloudSyncWarning()
     }
 
     private func collectPackages(from offerings: Offerings) -> [Package] {
         if let current = offerings.current {
             return current.availablePackages
+        }
+        if let named = offerings.offering(identifier: RevenueCatConfiguration.defaultOfferingIdentifier) {
+            return named.availablePackages
+        }
+        if let legacy = offerings.offering(identifier: RevenueCatConfiguration.legacyOfferingIdentifier) {
+            return legacy.availablePackages
         }
         return offerings.all.values.flatMap(\.availablePackages)
     }
@@ -305,6 +417,57 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         appRouter?.objectWillChange.send()
     }
 
+    private func makeSyncRequestPayload() -> SyncRevenueCatEntitlementRequest {
+        var aliasIds: [String] = []
+        let currentAppUserId = Purchases.shared.appUserID
+        if let info = customerInfo {
+            let original = info.originalAppUserId
+            if original.isEmpty == false, original != currentAppUserId {
+                aliasIds.append(original)
+            }
+        }
+
+        var localHint: SyncRevenueCatLocalEntitlementHint?
+        if hasActiveProEntitlement, let info = customerInfo {
+            let activeProductId = resolveActiveProductId(from: info)
+            localHint = SyncRevenueCatLocalEntitlementHint(
+                isPro: true,
+                proExpiresAt: proExpiresAt.map { ISO8601DateFormatter().string(from: $0) },
+                productId: activeProductId
+            )
+            #if DEBUG
+            print(
+                "[RevenueCat] sync payload aliases=\(aliasIds) " +
+                "productId=\(activeProductId ?? "nil") expires=\(localHint?.proExpiresAt ?? "nil")"
+            )
+            #endif
+        }
+
+        return SyncRevenueCatEntitlementRequest(
+            aliasAppUserIds: aliasIds.isEmpty ? nil : aliasIds,
+            localEntitlement: localHint
+        )
+    }
+
+    private func resolveActiveProductId(from info: CustomerInfo) -> String? {
+        for productId in StoreKitProductCatalog.allProductIDs where info.activeSubscriptions.contains(productId) {
+            return productId
+        }
+        if let premium = info.entitlements[RevenueCatConfiguration.premiumEntitlementID],
+           premium.isActive {
+            let productId = premium.productIdentifier
+            if StoreKitProductCatalog.allProductIDs.contains(productId) {
+                return productId
+            }
+        }
+        for productId in StoreKitProductCatalog.allProductIDs {
+            if let entitlement = info.entitlements[productId], entitlement.isActive {
+                return productId
+            }
+        }
+        return nil
+    }
+
     private func resolvePremiumState(from info: CustomerInfo) -> (isActive: Bool, expiresAt: Date?) {
         if let entitlement = info.entitlements[RevenueCatConfiguration.premiumEntitlementID],
            entitlement.isActive {
@@ -314,6 +477,19 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
             return (true, info.expirationDate(forProductIdentifier: productId))
         }
         return (false, nil)
+    }
+}
+
+private extension SyncRevenueCatEntitlementResponse {
+    var diagnosticsSummary: String {
+        guard let diagnostics else { return "diagnostics=nil" }
+        let entitlements = diagnostics.entitlementKeys?.joined(separator: ",") ?? "[]"
+        let subscriptions = diagnostics.subscriptionKeys?.joined(separator: ",") ?? "[]"
+        return (
+            "entitlements=[\(entitlements)] subscriptions=[\(subscriptions)] " +
+            "originalAppUserId=\(diagnostics.originalAppUserId ?? "nil") " +
+            "resolvedFrom=\(diagnostics.resolvedFrom ?? "nil")"
+        )
     }
 }
 

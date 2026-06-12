@@ -20,6 +20,10 @@ struct VIPSubscriptionView: View {
             VStack(spacing: 20) {
                 heroSection
 
+                if revenueCat.showsCloudSyncWarning {
+                    cloudSyncWarningBanner
+                }
+
                 if showsPersonalVIP == false {
                     planPickerSection
                 }
@@ -77,6 +81,36 @@ struct VIPSubscriptionView: View {
                     .ignoresSafeArea()
             }
         }
+    }
+
+    // MARK: - Cloud sync warning
+
+    private var cloudSyncWarningBanner: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label {
+                Text(L10n.VIP.cloudSyncFailedTapRetry.localized)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+            } icon: {
+                Image(systemName: "exclamationmark.icloud")
+                    .foregroundStyle(.orange)
+            }
+
+            Button {
+                Task {
+                    await revenueCat.syncEntitlementToCloudIfNeeded(appRouter: appRouter)
+                }
+            } label: {
+                Text(L10n.VIP.retryCloudSync.localized)
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .tint(.orange)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: - Hero

@@ -14,10 +14,12 @@ enum PremiumAccessDiagnostics {
         let inOrgVIP = resolvedInOrganizationVIP(appRouter: appRouter)
         let rpcDiagnostics = SubscriptionSupabaseSupport.lastCreatorProFetchDiagnostics.summaryForLog
         let rcActive = revenueCat.hasActiveProEntitlement
+        let cloudEntitlementActive = appRouter.userEntitlement?.isActive == true
+        let cloudSyncWarning = revenueCat.showsCloudSyncWarning
 
         print(
             """
-            [VIPAccess] \(trigger) | 组织=\(householdLabel) | householdId=\(householdIdText) | 组织创建者VIP=\(boolText(creatorIsVIP)) | 当前用户VIP=\(boolText(currentUserIsVIP)) | RevenueCat=\(boolText(rcActive)) | 组织内VIP=\(boolText(inOrgVIP)) | \(rpcDiagnostics)
+            [VIPAccess] \(trigger) | 组织=\(householdLabel) | householdId=\(householdIdText) | 组织创建者VIP=\(boolText(creatorIsVIP)) | 当前用户VIP=\(boolText(currentUserIsVIP)) | RevenueCat=\(boolText(rcActive)) | 云端权益=\(boolText(cloudEntitlementActive)) | 云端未同步=\(boolText(cloudSyncWarning)) | 组织内VIP=\(boolText(inOrgVIP)) | \(rpcDiagnostics)
             """
         )
     }

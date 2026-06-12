@@ -13,4 +13,10 @@ enum RevenueCatConfiguration {
 
     /// RevenueCat Dashboard → Entitlements 标识符（与 Offering 绑定）
     static let premiumEntitlementID = "premium"
+
+    /// RevenueCat Dashboard → Offerings 标识符（全小写 `current`，并勾选为 Current offering）
+    static let defaultOfferingIdentifier = "current"
+
+    /// 部分项目 Current offering 误设为 `default` 时的兼容回退
+    static let legacyOfferingIdentifier = "default"
 }

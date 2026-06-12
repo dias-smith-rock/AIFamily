@@ -98,7 +98,7 @@ description: >-
 | `households.is_premium` | 购买激活时由 RPC 写入的缓存位；**客户端 VIP 判断不依赖此列**，改用 RPC `household_creator_has_active_pro` |
 | `resolve_household_creator_user_id` | RPC 内部辅助：优先 `household_memberships.role=creator` → `user_id`；回退 `households.creator_id` 作 auth user id 或 membership id |
 | `household_creator_has_active_pro` | RPC（authenticated 成员可调用）：`resolve_household_creator_user_id` → `user_entitlements` 判断创建者 Pro 是否有效 |
-| IAP / RevenueCat | Entitlement 标识符 `premium`；主路径 Webhook → `sync_user_entitlement_from_revenuecat`；兜底 `sync-revenuecat-entitlement` |
+| IAP / RevenueCat | Entitlement `premium`；服务端 `resolveEntitlementState` 与 iOS 一致（`premium` 或 `subscriptions` 中 `wesync.vip.*` 未过期）；Webhook + `sync-revenuecat-entitlement` 写入 |
 | VIP 权限（客户端） | `AppRouter.hasPremiumAccess`：`PremiumAccess`（本人 `user_entitlements.isActive` **或** `household_creator_has_active_pro`）**或** `RevenueCatSubscriptionService.hasActiveProEntitlement` |
 | `invite_link_nonces` | `InviteLinkNonce` |
 

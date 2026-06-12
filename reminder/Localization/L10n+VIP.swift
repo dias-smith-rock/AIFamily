@@ -6,6 +6,8 @@ extension L10n {
     enum VIP {
     static let appStoreSubscriptionsAreComingSoonStayTun = Entry(key: "vip_app_store_subscriptions_are_coming_soon_stay_tun", table: .vip)
     static let chooseAPlan = Entry(key: "vip_choose_a_plan", table: .vip)
+    static let cloudSyncFailedTapRetry = Entry(key: "vip_cloud_sync_failed_tap_retry", table: .vip)
+    static let retryCloudSync = Entry(key: "vip_retry_cloud_sync", table: .vip)
     static let claim1YearProForFree = Entry(key: "vip_claim_1_year_pro_for_free", table: .vip)
     static let currentGroupHasProBenefits = Entry(key: "vip_current_group_has_pro_benefits", table: .vip)
     static let currentGroupInheritsProBenefits = Entry(key: "vip_current_group_inherits_pro_benefits", table: .vip)

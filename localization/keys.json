@@ -3262,6 +3262,18 @@
     "orphan": true
   },
   {
+    "new_key": "vip_cloud_sync_failed_tap_retry",
+    "table": "VIP",
+    "swift_property": "cloudSyncFailedTapRetry",
+    "orphan": true
+  },
+  {
+    "new_key": "vip_retry_cloud_sync",
+    "table": "VIP",
+    "swift_property": "retryCloudSync",
+    "orphan": true
+  },
+  {
     "legacy_key": "选择识别方式",
     "new_key": "common_select_identification_method",
     "table": "Common",

@@ -84,6 +84,10 @@ final class VIPSubscriptionViewModel: ObservableObject {
         defer { isPurchasing = false }
 
         do {
+            if let userId = await appRouter.resolveAuthUserId() {
+                await revenueCat.alignLoggedInRevenueCatUser(supabaseUserId: userId)
+            }
+
             let purchased = try await revenueCat.purchase(plan: selectedPlan)
             guard purchased else { return false }
 
@@ -123,6 +127,10 @@ final class VIPSubscriptionViewModel: ObservableObject {
         defer { isPurchasing = false }
 
         do {
+            if let userId = await appRouter.resolveAuthUserId() {
+                await revenueCat.alignLoggedInRevenueCatUser(supabaseUserId: userId)
+            }
+
             let restored = try await revenueCat.restorePurchases()
             guard restored else { return false }
 
