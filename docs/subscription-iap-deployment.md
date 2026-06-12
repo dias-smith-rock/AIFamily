@@ -25,7 +25,10 @@
 
 ### Step 1 — SQL
 
-执行 [`reminder/Services/Supabase/migrations/20260617_revenuecat_entitlement_sync.sql`](reminder/Services/Supabase/migrations/20260617_revenuecat_entitlement_sync.sql)
+执行以下 migration（按顺序）：
+
+1. [`20260617_revenuecat_entitlement_sync.sql`](reminder/Services/Supabase/migrations/20260617_revenuecat_entitlement_sync.sql)
+2. [`20260618_user_entitlements_select_rls.sql`](reminder/Services/Supabase/migrations/20260618_user_entitlements_select_rls.sql)（客户端读取 `user_entitlements` 需此 RLS）
 
 验证：
 

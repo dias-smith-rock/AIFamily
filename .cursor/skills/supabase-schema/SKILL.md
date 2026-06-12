@@ -94,7 +94,7 @@ description: >-
 | `task_attachments` | `TaskAttachment` |
 | `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `current_location` / `history_location_*` → `LocationPayload`（`lat`/`lng`/`address_name`） |
 | `subscription_orders` | `SubscriptionOrder`；历史 Apple IAP 订单（可选）；新购走路径见 RevenueCat |
-| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**仅 service_role** 经 `sync_user_entitlement_from_revenuecat`（RevenueCat Webhook / `sync-revenuecat-entitlement`）写入；客户端只读 |
+| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**写入**仅 `service_role`（`sync_user_entitlement_from_revenuecat`）；**读取** authenticated `user_id = auth.uid()`（`20260618_user_entitlements_select_rls.sql`） |
 | `households.is_premium` | 购买激活时由 RPC 写入的缓存位；**客户端 VIP 判断不依赖此列**，改用 RPC `household_creator_has_active_pro` |
 | `resolve_household_creator_user_id` | RPC 内部辅助：优先 `household_memberships.role=creator` → `user_id`；回退 `households.creator_id` 作 auth user id 或 membership id |
 | `household_creator_has_active_pro` | RPC（authenticated 成员可调用）：`resolve_household_creator_user_id` → `user_entitlements` 判断创建者 Pro 是否有效 |

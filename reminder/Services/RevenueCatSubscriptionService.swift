@@ -12,6 +12,7 @@ enum RevenueCatSubscriptionError: LocalizedError {
     case userCancelled
     case pending
     case noActiveSubscription
+    case entitlementNotGranted
 
     var errorDescription: String? {
         switch self {
@@ -25,6 +26,8 @@ enum RevenueCatSubscriptionError: LocalizedError {
             return AppLocalized.localizedSync(L10n.Common.purchaseIsPendingCheckYourAppStoreAccount)
         case .noActiveSubscription:
             return AppLocalized.localizedSync(L10n.VIP.noSubscriptionFoundToRestore)
+        case .entitlementNotGranted:
+            return AppLocalized.localizedSync(L10n.Common.purchaseFailedPleaseTryAgainLater)
         }
     }
 }
@@ -206,12 +209,24 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
                 return false
             }
             applyCustomerInfo(result.customerInfo)
-            if let entitlement = result.customerInfo.entitlements[RevenueCatConfiguration.premiumEntitlementID],
-               entitlement.isActive {
-                AnalyticsManager.log(event: .vipPurchased(plan: plan.subscriptionPlan.rawValue))
-                return true
+            if hasActiveProEntitlement == false {
+                let refreshed = try await Purchases.shared.customerInfo(fetchPolicy: .fetchCurrent)
+                applyCustomerInfo(refreshed)
             }
-            return false
+            guard hasActiveProEntitlement else {
+                #if DEBUG
+                let info = customerInfo ?? result.customerInfo
+                let entitlementKeys = info.entitlements.all.keys.joined(separator: ", ")
+                print(
+                    "[RevenueCat] purchase finished but premium inactive. " +
+                    "entitlementKeys=[\(entitlementKeys)] " +
+                    "activeSubscriptions=\(info.activeSubscriptions)"
+                )
+                #endif
+                throw RevenueCatSubscriptionError.entitlementNotGranted
+            }
+            AnalyticsManager.log(event: .vipPurchased(plan: plan.subscriptionPlan.rawValue))
+            return true
         } catch let error as RevenueCat.ErrorCode {
             if error == .purchaseCancelledError {
                 return false
@@ -284,10 +299,21 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
 
     private func applyCustomerInfo(_ info: CustomerInfo) {
         customerInfo = info
-        let entitlement = info.entitlements[RevenueCatConfiguration.premiumEntitlementID]
-        hasActiveProEntitlement = entitlement?.isActive == true
-        proExpiresAt = entitlement?.expirationDate
+        let premium = resolvePremiumState(from: info)
+        hasActiveProEntitlement = premium.isActive
+        proExpiresAt = premium.expiresAt
         appRouter?.objectWillChange.send()
+    }
+
+    private func resolvePremiumState(from info: CustomerInfo) -> (isActive: Bool, expiresAt: Date?) {
+        if let entitlement = info.entitlements[RevenueCatConfiguration.premiumEntitlementID],
+           entitlement.isActive {
+            return (true, entitlement.expirationDate)
+        }
+        for productId in StoreKitProductCatalog.allProductIDs where info.activeSubscriptions.contains(productId) {
+            return (true, info.expirationDate(forProductIdentifier: productId))
+        }
+        return (false, nil)
     }
 }
 
