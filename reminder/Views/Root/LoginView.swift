@@ -30,6 +30,9 @@ struct LoginView: View {
     /// 是否展示底部「More」登录入口（暂时关闭）。
     private let showsMoreLoginEntry = false
 
+    /// 是否展示游客试用入口（暂时关闭）。
+    private let showsGuestModeEntry = false
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 80)
@@ -116,18 +119,20 @@ struct LoginView: View {
                 .multilineTextAlignment(.center)
             #endif
 
-            Button {
-                startGuestMode()
-            } label: {
-                Text(L10n.Auth.tryWithoutSigningIn.localized)
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+            if showsGuestModeEntry {
+                Button {
+                    startGuestMode()
+                } label: {
+                    Text(L10n.Auth.tryWithoutSigningIn.localized)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+                .disabled(loadingProvider != nil)
+                .padding(.top, 4)
             }
-            .buttonStyle(.plain)
-            .disabled(loadingProvider != nil)
-            .padding(.top, 4)
         }
     }
 
