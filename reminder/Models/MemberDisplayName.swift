@@ -52,6 +52,6 @@ enum MemberDisplayName {
     }
 
     private static func resolvedGuestSelfName(_ raw: String) -> String {
-        GuestSessionStore.displaySelfName(raw)
+        return StoredDisplayNameResolver.selfName(raw)
     }
 }

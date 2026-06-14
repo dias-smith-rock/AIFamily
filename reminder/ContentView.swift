@@ -6,7 +6,6 @@ struct ContentView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
-    @AppStorage(GuestSessionStore.isGuestModeKey) private var isGuestMode = false
     @AppStorage("requireFaceID") private var requireFaceID = false
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
     @StateObject private var biometricManager = BiometricManager()
@@ -17,9 +16,9 @@ struct ContentView: View {
             rootContent
         }
         .environmentObject(groupSwitcher)
-        .environment(\.isGuestMode, isGuestMode)
+        .environment(\.isAnonymousUser, appRouter.isAnonymousUser)
         .animation(.easeInOut, value: isUserLoggedIn)
-        .animation(.easeInOut, value: isGuestMode)
+        .animation(.easeInOut, value: appRouter.isAnonymousUser)
         .animation(.easeInOut, value: biometricManager.isUnlocked)
         .animation(.easeInOut, value: appRouter.appState)
         .animation(.easeInOut, value: appRouter.selectedHouseholdId)
@@ -43,7 +42,6 @@ struct ContentView: View {
         .sheet(isPresented: $groupSwitcher.showSwitchGroupDialog) {
             SwitchGroupSheetView(coordinator: groupSwitcher)
                 .environmentObject(appRouter)
-                .environment(\.isGuestMode, isGuestMode)
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
                 .presentationDetents([.medium, .large])
@@ -79,7 +77,7 @@ struct ContentView: View {
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: vipUpgradeSheetBinding) {
+        .sheet(isPresented: $appRouter.isPresentingVIPUpgrade) {
             NavigationStack {
                 VIPSubscriptionView()
             }
@@ -92,27 +90,12 @@ struct ContentView: View {
                 _ = await NotificationManager.shared.requestAuthorizationIfNeeded()
             }
         }
-        .task(id: isGuestMode) {
-            if isGuestMode {
-                appRouter.isPresentingVIPUpgrade = false
-            }
-            guard isGuestMode, let snapshot = GuestSessionStore.loadSnapshot() else { return }
-            if appBootstrap.mode != .guestLocal {
-                appBootstrap.enterGuestMode()
-            }
-            if appRouter.appState != .activeMember
-                || appRouter.selectedHouseholdId != snapshot.householdId {
-                appRouter.enterGuestMode(snapshot: snapshot)
-            }
-        }
         .task(id: isUserLoggedIn) {
             guard isUserLoggedIn else {
-                if isGuestMode == false {
-                    Self.hasReportedLocationOnLaunchThisSession = false
-                    BackgroundLocationCoordinator.shared.stop()
-                    ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
-                    ForegroundLocationPersistEligibility.shared.canPersist = false
-                }
+                Self.hasReportedLocationOnLaunchThisSession = false
+                BackgroundLocationCoordinator.shared.stop()
+                ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
+                ForegroundLocationPersistEligibility.shared.canPersist = false
                 return
             }
             await runForegroundLocationBootstrap(vipLogTrigger: "用户登录后")
@@ -139,6 +122,7 @@ struct ContentView: View {
             reconcileStaleLoginSession()
         }
         .onAppear {
+            LegacyGuestDataCleaner.removeLegacyLocalTrialKeysIfNeeded()
             RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
             Task {
                 await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
@@ -188,25 +172,11 @@ struct ContentView: View {
         }
     }
 
-    private var hasAppAccess: Bool {
-        isUserLoggedIn || isGuestMode
-    }
-
-    /// 游客试用模式不展示订阅 sheet；Pro 能力通过 `AppRouter.hasPremiumAccess` 全开。
-    private var vipUpgradeSheetBinding: Binding<Bool> {
-        Binding(
-            get: { appRouter.isPresentingVIPUpgrade && isGuestMode == false },
-            set: { newValue in
-                appRouter.isPresentingVIPUpgrade = newValue
-            }
-        )
-    }
-
     @ViewBuilder
     private var rootContent: some View {
-        if hasAppAccess == false {
+        if isUserLoggedIn == false {
             LoginView()
-        } else if isUserLoggedIn && requireFaceID && biometricManager.isUnlocked == false {
+        } else if requireFaceID && biometricManager.isUnlocked == false {
             LockScreenView(
                 isAuthenticating: biometricManager.isAuthenticating,
                 onUnlock: { biometricManager.authenticate() }
@@ -278,7 +248,6 @@ struct ContentView: View {
 
     @MainActor
     private func reconcileStaleLoginSession() {
-        guard isGuestMode == false else { return }
         guard isUserLoggedIn,
               appRouter.hasCompletedAuthBootstrap,
               appRouter.appState == .unauthenticated else {

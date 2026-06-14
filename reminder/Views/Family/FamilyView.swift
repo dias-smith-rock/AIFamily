@@ -14,7 +14,6 @@ private enum AddMemberRoute: Identifiable, Equatable {
 
 struct FamilyView: View {
     @Environment(\.locale) private var locale
-    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
@@ -28,7 +27,6 @@ struct FamilyView: View {
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
-    @State private var showsGuestSignInAlert = false
 
     var body: some View {
         NavigationStack {
@@ -243,7 +241,6 @@ struct FamilyView: View {
         } message: {
             Text(viewModel.leaveErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
         }
-        .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
     }
 
     private var leaveErrorAlertBinding: Binding<Bool> {
@@ -383,10 +380,6 @@ struct FamilyView: View {
     }
 
     private func presentAddMemberFlow() {
-        if isGuestMode {
-            showsGuestSignInAlert = true
-            return
-        }
         Task { @MainActor in
             guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
                 appRouter.presentPremiumUpgrade()
@@ -481,7 +474,7 @@ struct FamilyView: View {
     private var currentOrganizationDisplayName: String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if trimmed.isEmpty { return L10n.Family.unnamedGroup.string() }
-        return GuestSessionStore.displayHouseholdName(trimmed)
+        return StoredDisplayNameResolver.householdName(trimmed)
     }
 
     @ViewBuilder
@@ -710,10 +703,6 @@ struct FamilyView: View {
     @MainActor
     private func handleRequiresLoginIfNeeded() async {
         guard viewModel.requiresLogin else { return }
-        if isGuestMode {
-            viewModel.clearRequiresLogin()
-            return
-        }
         guard authSessionGuard.isLoggingOut == false else {
             viewModel.clearRequiresLogin()
             return
@@ -725,7 +714,6 @@ struct FamilyView: View {
 }
 
 private struct OrganizationSettingsSheet: View {
-    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.dismiss) private var dismiss
 
@@ -810,21 +798,19 @@ private struct OrganizationSettingsSheet: View {
 
                 Spacer(minLength: 0)
 
-                if isGuestMode == false {
-                    VStack(spacing: 18) {
-                        if familyViewModel.canTransferOwnership {
-                            transferOwnershipRow
-                        }
-
-                        if canDisband {
-                            disbandHouseholdSection
-                        } else if familyViewModel.canLeaveCurrentHousehold {
-                            leaveHouseholdSection
-                        }
+                VStack(spacing: 18) {
+                    if familyViewModel.canTransferOwnership {
+                        transferOwnershipRow
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 28)
+
+                    if canDisband {
+                        disbandHouseholdSection
+                    } else if familyViewModel.canLeaveCurrentHousehold {
+                        leaveHouseholdSection
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 28)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color(.systemGroupedBackground))

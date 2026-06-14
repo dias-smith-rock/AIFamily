@@ -11,9 +11,7 @@ struct TaskListView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
-    @Environment(\.isGuestMode) private var isGuestMode
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
-    @State private var showsGuestSignInAlert = false
 
     @State private var currentViewMode: CalendarViewMode = .day
     @State private var selectedDate: Date = Date()
@@ -213,7 +211,6 @@ struct TaskListView: View {
             .onChange(of: viewModel.prefilledTaskForAI?.id) { _, _ in
                 aiPrefillFormInstanceID = UUID()
             }
-            .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
             .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
                 openPendingScheduledTaskIfNeeded()
             }
@@ -331,10 +328,6 @@ struct TaskListView: View {
     }
 
     private func openAIPhotoTaskCreationFlow() {
-        if isGuestMode {
-            showsGuestSignInAlert = true
-            return
-        }
         viewModel.isShowingCamera = true
     }
 
@@ -385,36 +378,25 @@ struct TaskListView: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 4) {
-                Group {
-                    if isGuestMode {
-                        HStack(spacing: 4) {
-                            Text(GroupSwitcherData.currentName(for: appRouter))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                        }
-                    } else {
-                        Button {
-                            groupSwitcher.showSwitchGroupDialog = true
-                        } label: {
-                            HStack(spacing: 4) {
-                                Text(GroupSwitcherData.currentName(for: appRouter))
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                    .multilineTextAlignment(.leading)
+                Button {
+                    groupSwitcher.showSwitchGroupDialog = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(GroupSwitcherData.currentName(for: appRouter))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .multilineTextAlignment(.leading)
 
-                                Image(systemName: "chevron.down")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
-                        .accessibilityHint(L10n.Family.doubleTapToSwitchGroup.localized)
+                        Image(systemName: "chevron.down")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
                 }
+                .buttonStyle(.plain)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+                .accessibilityHint(L10n.Family.doubleTapToSwitchGroup.localized)
 
                 Button {
                     isShowingCalendarSheet = true

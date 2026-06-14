@@ -19,6 +19,7 @@ final class AppRouter: ObservableObject {
 
     @Published var appState: AppState = .unauthenticated
     /// `refreshStateFromBackend()` 是否已跑完一轮（含离线短路）；用于区分启动加载与鉴权失效。
+    @Published private(set) var isAnonymousUser = false
     @Published private(set) var hasCompletedAuthBootstrap = false
     @Published private(set) var selectableHouseholds: [HouseholdOption] = []
     @Published private(set) var recentHouseholds: [HouseholdOption] = []
@@ -75,9 +76,6 @@ final class AppRouter: ObservableObject {
 
     /// 当前上下文是否享有 Pro / Premium 能力（个人权益或当前组织创建者继承）。
     var hasPremiumAccess: Bool {
-        if GuestSessionStore.isGuestMode {
-            return true
-        }
         return PremiumAccess.hasPremiumAccess(
             userEntitlement: userEntitlement,
             creatorHasActivePro: selectedHouseholdCreatorHasActivePro
@@ -132,7 +130,6 @@ final class AppRouter: ObservableObject {
     }
 
     func presentPremiumUpgrade() {
-        guard GuestSessionStore.isGuestMode == false else { return }
         isPresentingVIPUpgrade = true
     }
 
@@ -171,11 +168,6 @@ final class AppRouter: ObservableObject {
     }
 
     func refreshStateFromBackend() async {
-        if GuestSessionStore.isGuestMode {
-            hasCompletedAuthBootstrap = true
-            return
-        }
-
         hasCompletedAuthBootstrap = false
         defer { hasCompletedAuthBootstrap = true }
 
@@ -200,6 +192,7 @@ final class AppRouter: ObservableObject {
             let client = SupabaseManager.shared.client
             let session = try await client.auth.session
             AuthSessionHints.markEverAuthenticated()
+            isAnonymousUser = session.user.isAnonymous
             let userId = session.user.id
             let memberships = try await fetchMemberships(client: client, userId: userId)
             let activeMemberships = memberships.filter { normalizeStatus($0.status) == "active" }
@@ -366,46 +359,6 @@ final class AppRouter: ObservableObject {
         appState = .activeMember
     }
 
-    /// 纯本地游客：直接进入主 Tab，不触发 Supabase 路由刷新。
-    func enterGuestMode(snapshot: GuestWorkspaceSnapshot) {
-        isPresentingVIPUpgrade = false
-        selectedHouseholdId = snapshot.householdId
-        selectedMembershipId = snapshot.membershipId
-        selectedProfileId = snapshot.profileId
-        selectedHouseholdName = snapshot.householdName
-        selectedHouseholdDescription = snapshot.householdDescription
-        selectedHouseholdCreatorHasActivePro = false
-        resetAuthenticatedPremiumState()
-        selectableHouseholds = [
-            HouseholdOption(
-                id: snapshot.householdId,
-                membershipId: snapshot.membershipId,
-                profileId: snapshot.profileId,
-                name: snapshot.householdName,
-                creatorHasActivePro: false,
-                description: snapshot.householdDescription
-            )
-        ]
-        recentHouseholds = selectableHouseholds
-        hasCompletedAuthBootstrap = true
-        appState = .activeMember
-    }
-
-    /// 退出游客或迁移前清空本地组织上下文。
-    func exitGuestMode() {
-        selectedHouseholdId = nil
-        selectedMembershipId = nil
-        selectedProfileId = nil
-        selectedHouseholdName = nil
-        selectedHouseholdDescription = ""
-        selectedHouseholdCreatorHasActivePro = false
-        resetAuthenticatedPremiumState()
-        selectableHouseholds = []
-        recentHouseholds = []
-        appState = .unauthenticated
-        hasCompletedAuthBootstrap = true
-    }
-
     /// 解散群组后清空当前组织上下文并回到入口枢纽页。
     func exitToOrgHubAfterDisband() {
         selectedHouseholdId = nil
@@ -528,6 +481,7 @@ final class AppRouter: ObservableObject {
 
     private func resetAuthenticatedPremiumState() {
         authUserId = nil
+        isAnonymousUser = false
         userEntitlement = nil
         Task {
             await RevenueCatSubscriptionService.shared.logOut()

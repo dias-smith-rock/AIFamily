@@ -20,7 +20,6 @@ struct TaskDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.locale) private var locale
-    @Environment(\.isGuestMode) private var isGuestMode
     @ObservedObject private var scheduleViewModel: ScheduleViewModel
     @StateObject private var taskDetailViewModel = TaskDetailViewModel()
 
@@ -37,7 +36,6 @@ struct TaskDetailView: View {
     @State private var displayRecurrenceRule: String?
     @State private var displayRecurrenceInterval: Int?
     @State private var isShowingDeleteAlert = false
-    @State private var showGuestSignInRequiredAlert = false
     @State private var attachmentGalleryPresentation: AttachmentGalleryPresentation?
     init(
         initialTask: FamilyTask,
@@ -207,7 +205,6 @@ struct TaskDetailView: View {
                 await loadForWhomProfiles()
             }
         }
-        .guestSignInRequiredAlert(isPresented: $showGuestSignInRequiredAlert)
     }
 
     // MARK: - Layout
@@ -295,15 +292,6 @@ struct TaskDetailView: View {
     private func loadSeriesRecurrenceIfNeeded() async {
         displayRecurrenceRule = nil
         displayRecurrenceInterval = nil
-
-        if isGuestMode {
-            if let rule = task.recurrenceRule?.trimmingCharacters(in: .whitespacesAndNewlines),
-               rule.isEmpty == false {
-                displayRecurrenceRule = task.recurrenceRule
-                displayRecurrenceInterval = task.recurrenceInterval
-            }
-            return
-        }
 
         #if canImport(Supabase)
         let householdId = appRouter.selectedHouseholdId ?? task.householdId
@@ -1182,17 +1170,6 @@ struct TaskDetailView: View {
         isDeletingTask = true
         statusError = nil
         defer { isDeletingTask = false }
-        if isGuestMode {
-            switch scope {
-            case .singleOnly:
-                await scheduleViewModel.deleteTask(taskId: task.id)
-            case .thisAndFuture:
-                await performGuestSeriesDelete()
-            }
-            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-            dismiss()
-            return
-        }
         #if canImport(Supabase)
         do {
             switch scope {
@@ -1228,29 +1205,6 @@ struct TaskDetailView: View {
         _ = scope
         statusError = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
         #endif
-    }
-
-    private func performGuestSeriesDelete() async {
-        guard let grouping = task.seriesGrouping else {
-            statusError = AppLocalized.string(L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul, locale: locale)
-            return
-        }
-        let cutoff = task.dueDate ?? .distantPast
-        let householdId = task.householdId
-        let ids = scheduleViewModel.tasks.filter { candidate in
-            guard candidate.householdId == householdId else { return false }
-            let anchor = candidate.dueDate ?? candidate.createdAt
-            guard anchor >= cutoff else { return false }
-            switch grouping {
-            case .byParentRoot(let rootId):
-                return candidate.id == rootId || candidate.parentTaskId == rootId
-            case .byLegacyGroup(let groupId):
-                return candidate.groupId == groupId
-            }
-        }.map(\.id)
-        for id in ids {
-            await scheduleViewModel.deleteTask(taskId: id)
-        }
     }
 }
 

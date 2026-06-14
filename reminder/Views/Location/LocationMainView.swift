@@ -8,7 +8,6 @@ import Supabase
 struct LocationMainView: View {
     var isTabActive: Bool = true
 
-    @Environment(\.isGuestMode) private var isGuestMode
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
@@ -19,7 +18,6 @@ struct LocationMainView: View {
     @State private var isRefreshingMapLocations = false
     @State private var isLiveSharingPanelExpanded = false
     @State private var fitCameraTask: Task<Void, Never>?
-    @State private var showGuestSignInRequiredAlert = false
     @AppStorage(LocationMapDisplayPreferences.displayCountStorageKey)
     private var mapHistoryDisplayCount = LocationMapDisplayPreferences.defaultHistoryDisplayCount
 
@@ -111,7 +109,7 @@ struct LocationMainView: View {
             viewModel.applyCachedDeviceLocationForMap()
             fitCameraToLiveAndDisplayedMembers()
             Task {
-                if isGuestMode == false, await NetworkMonitor.shared.isConnected {
+                if await NetworkMonitor.shared.isConnected {
                     await liveManager.observeHuddleLobby()
                 }
                 await viewModel.captureCurrentUserLocationForMap()
@@ -128,7 +126,7 @@ struct LocationMainView: View {
                 fitCameraToLiveAndDisplayedMembers()
                 Task {
                     _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
-                    if isGuestMode == false, await NetworkMonitor.shared.isConnected {
+                    if await NetworkMonitor.shared.isConnected {
                         await liveManager.observeHuddleLobby()
                     }
                     await viewModel.captureCurrentUserLocationForMap()
@@ -174,7 +172,6 @@ struct LocationMainView: View {
                 liveManager.recordUserInteraction()
             }
         )
-        .guestSignInRequiredAlert(isPresented: $showGuestSignInRequiredAlert)
     }
 
     @ViewBuilder
@@ -422,10 +419,6 @@ struct LocationMainView: View {
     private var liveModeToggleControl: some View {
         Button {
             liveManager.recordUserInteraction()
-            if isGuestMode {
-                showGuestSignInRequiredAlert = true
-                return
-            }
             if liveManager.isLiveModeActive {
                 isExitLiveModeAlertPresented = true
             } else {
@@ -734,7 +727,7 @@ struct LocationMainView: View {
             Text(L10n.Settings.locationGhostToggle.localized)
                 .font(.subheadline)
         }
-        .disabled(isGuestMode || liveManager.isLiveModeActive)
+        .disabled(liveManager.isLiveModeActive)
         .accessibilityLabel(L10n.Settings.locationGhostToggle)
     }
 
@@ -752,67 +745,39 @@ struct LocationMainView: View {
     }
 
     private var organizationSwitcherRow: some View {
-        Group {
-            if isGuestMode {
-                HStack(spacing: 10) {
-                    Image(systemName: "person.2.fill")
-                        .font(.body.weight(.semibold))
-                        .foregroundStyle(.orange)
-                        .frame(width: 28, height: 28)
-                        .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        Button {
+            liveManager.recordUserInteraction()
+            groupSwitcher.showSwitchGroupDialog = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "person.2.fill")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.orange)
+                    .frame(width: 28, height: 28)
+                    .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(L10n.Family.currentGroup.localized)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(GroupSwitcherData.currentName(for: appRouter))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer(minLength: 0)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Family.currentGroup.localized)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(GroupSwitcherData.currentName(for: appRouter))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
-            } else {
-                Button {
-                    liveManager.recordUserInteraction()
-                    groupSwitcher.showSwitchGroupDialog = true
-                } label: {
-                    HStack(spacing: 10) {
-                        Image(systemName: "person.2.fill")
-                            .font(.body.weight(.semibold))
-                            .foregroundStyle(.orange)
-                            .frame(width: 28, height: 28)
-                            .background(Color.orange.opacity(0.15), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(L10n.Family.currentGroup.localized)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                            Text(GroupSwitcherData.currentName(for: appRouter))
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                        }
+                Spacer(minLength: 0)
 
-                        Spacer(minLength: 0)
-
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.tertiary)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.Family.switchGroups.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(.secondarySystemFill).opacity(0.55), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Family.switchGroups.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
     }
 
     // MARK: - Helpers
@@ -829,7 +794,7 @@ struct LocationMainView: View {
         viewModel.applyCachedDeviceLocationForMap()
 
         await viewModel.captureCurrentUserLocationForMap()
-        if isGuestMode == false, await NetworkMonitor.shared.isConnected {
+        if await NetworkMonitor.shared.isConnected {
             await liveManager.observeHuddleLobby()
         }
     }

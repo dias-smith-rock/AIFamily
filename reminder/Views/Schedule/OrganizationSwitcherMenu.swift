@@ -27,7 +27,7 @@ enum GroupSwitcherData {
                 id: householdId,
                 membershipId: membershipId,
                 profileId: appRouter.selectedProfileId,
-                name: name.isEmpty ? AppLocalized.localizedSync(L10n.Family.unnamedGroup) : GuestSessionStore.displayHouseholdName(name),
+                name: name.isEmpty ? AppLocalized.localizedSync(L10n.Family.unnamedGroup) : StoredDisplayNameResolver.householdName(name),
                 creatorHasActivePro: appRouter.selectedHouseholdCreatorHasActivePro,
                 description: appRouter.selectedHouseholdDescription
             )
@@ -37,17 +37,15 @@ enum GroupSwitcherData {
     static func currentName(for appRouter: AppRouter) -> String {
         let trimmed = appRouter.selectedHouseholdName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if trimmed.isEmpty { return AppLocalized.localizedSync(L10n.Family.unnamedGroup) }
-        return GuestSessionStore.displayHouseholdName(trimmed)
+        return StoredDisplayNameResolver.householdName(trimmed)
     }
 }
 
 // MARK: - 切换群组半屏 Sheet
 
 struct SwitchGroupSheetView: View {
-    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @ObservedObject var coordinator: GroupSwitcherCoordinator
-    @State private var showsGuestSignInAlert = false
 
     private var organizations: [AppRouter.HouseholdOption] {
         GroupSwitcherData.organizations(for: appRouter)
@@ -97,11 +95,7 @@ struct SwitchGroupSheetView: View {
 
             VStack(alignment: .leading, spacing: 0) {
                 Button {
-                    if isGuestMode {
-                        showsGuestSignInAlert = true
-                    } else {
-                        coordinator.presentCreateOrganizationAfterDismiss(appRouter: appRouter)
-                    }
+                    coordinator.presentCreateOrganizationAfterDismiss(appRouter: appRouter)
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "plus.circle.fill")
@@ -116,11 +110,7 @@ struct SwitchGroupSheetView: View {
                 .buttonStyle(.plain)
 
                 Button {
-                    if isGuestMode {
-                        showsGuestSignInAlert = true
-                    } else {
-                        coordinator.presentJoinGroupAfterDismiss(appRouter: appRouter)
-                    }
+                    coordinator.presentJoinGroupAfterDismiss(appRouter: appRouter)
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "person.badge.plus")
@@ -139,7 +129,6 @@ struct SwitchGroupSheetView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemGroupedBackground))
-        .guestSignInRequiredAlert(isPresented: $showsGuestSignInAlert)
     }
 }
 

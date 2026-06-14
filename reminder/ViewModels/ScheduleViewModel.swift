@@ -602,11 +602,6 @@ final class ScheduleViewModel: ObservableObject {
         targetDate: Date,
         hasPremiumAccess: Bool
     ) async {
-        if GuestSessionStore.isGuestMode {
-            aiProcessingError = L10n.Auth.signInToUsePhotoRecognitionForTasks.string()
-            return
-        }
-
         guard PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: hasPremiumAccess) else {
             return
         }

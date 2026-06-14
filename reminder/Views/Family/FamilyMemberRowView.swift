@@ -43,7 +43,7 @@ struct FamilyMemberRowView: View {
             if let first = trimmed.first {
                 return String(first)
             }
-            return String(GuestSessionStore.localizedDefaultSelfDisplayName().prefix(1))
+            return String(AppLocalized.localizedSync(L10n.Common.me).prefix(1))
         }
         let trimmed = profile.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let first = trimmed.first else { return "?" }

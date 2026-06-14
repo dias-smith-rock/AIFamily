@@ -6,13 +6,11 @@ import UIKit
 
 struct MineView: View {
     @Environment(\.locale) private var locale
-    @Environment(\.isGuestMode) private var isGuestMode
     @EnvironmentObject private var appRouter: AppRouter
     @ObservedObject private var revenueCat = RevenueCatSubscriptionService.shared
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
-    @AppStorage(GuestSessionStore.isGuestModeKey) private var isGuestModeStorage = false
     @AppStorage("requireFaceID") private var requireFaceID = false
     @AppStorage(BackgroundLocationPreferences.storageKey) private var backgroundLocationEnabled = true
     @ObservedObject private var backgroundLocationCoordinator = BackgroundLocationCoordinator.shared
@@ -22,8 +20,6 @@ struct MineView: View {
     @State private var editingSelfProfile: FamilyProfile?
     @State private var showTermsSheet = false
     @State private var showPrivacySheet = false
-    @State private var showDiscardGuestDataAlert = false
-    @State private var isAnonymousSupabaseUser = false
 
     /// 与 `mineNavigationRow` 中「图标列 + 间距」一致，避免居中文字导致系统把分隔线对齐到屏幕中间。
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
@@ -34,7 +30,7 @@ struct MineView: View {
     }
 
     private var showsVIPEntryForCurrentUser: Bool {
-        FeatureVisibility.showsVIPEntry && isUserLoggedIn && isGuestMode == false
+        FeatureVisibility.showsVIPEntry && isUserLoggedIn
     }
 
     var body: some View {
@@ -72,11 +68,7 @@ struct MineView: View {
             .mineSecondaryAlerts(
                 viewModel: viewModel,
                 showTermsSheet: $showTermsSheet,
-                showPrivacySheet: $showPrivacySheet,
-                showDiscardGuestDataAlert: $showDiscardGuestDataAlert,
-                appRouter: appRouter,
-                appBootstrap: appBootstrap,
-                isGuestModeStorage: $isGuestModeStorage
+                showPrivacySheet: $showPrivacySheet
             )
     }
 
@@ -110,7 +102,6 @@ struct MineView: View {
         }
         .environment(\.locale, appSettings.appLocale)
         .task {
-            await refreshAnonymousState()
             await viewModel.loadAccountSummary()
             familyViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             familyViewModel.setMembershipContext(appRouter.selectedMembershipId)
@@ -155,40 +146,14 @@ struct MineView: View {
     @ViewBuilder
     private var mineSettingsList: some View {
         List {
-            if isAnonymousSupabaseUser {
+            if appRouter.isAnonymousUser {
                 Section {
                     AnonymousAccountLinkCard {
-                        Task { await refreshAnonymousState() }
+                        Task { await appRouter.refreshStateFromBackend() }
                     }
                 }
                 .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
                 .listRowBackground(Color.clear)
-            } else if isGuestMode {
-                Section {
-                    GuestAccountLinkCard(
-                        isUserLoggedIn: $isUserLoggedIn,
-                        isGuestMode: $isGuestModeStorage
-                    )
-                }
-                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
-                .listRowBackground(Color.clear)
-            } else if isUserLoggedIn, GuestSessionStore.hasPendingSnapshot {
-                Section {
-                    Button {
-                        Task { await retryGuestMigration() }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(L10n.Common.localDataNotSyncedYet.localized)
-                                .font(.headline)
-                            Text(L10n.Common.tapToRetryAndUploadTrialDataToTheCloud.localized)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .buttonStyle(.plain)
-                }
-                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
             }
 
             Section {
@@ -400,35 +365,12 @@ struct MineView: View {
             }
 
             Section {
-                if isGuestMode {
-                    Button(role: .destructive) {
-                        showDiscardGuestDataAlert = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Text(L10n.Common.discardLocalData.localized)
-                                .font(AppTheme.FontToken.bodyStrong)
-                            Spacer()
-                        }
-                        .padding(.vertical, 12)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
-                        .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if isAnonymousSupabaseUser == false {
+                if appRouter.isAnonymousUser == false {
                 Button {
                     Task {
-                        if isGuestMode {
-                            GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
-                            isGuestModeStorage = false
-                        } else {
-                            authSessionGuard.beginLoggingOut()
-                            familyViewModel.prepareForSignOut()
-                            await viewModel.signOut(appRouter: appRouter)
-                        }
+                        authSessionGuard.beginLoggingOut()
+                        familyViewModel.prepareForSignOut()
+                        await viewModel.signOut(appRouter: appRouter)
                     }
                 } label: {
                     HStack {
@@ -436,7 +378,7 @@ struct MineView: View {
                         if viewModel.isSigningOut {
                             ProgressView()
                         } else {
-                            Text(isGuestMode ? L10n.Common.exitTrial : L10n.Auth.logOut)
+                            Text(L10n.Auth.logOut)
                                 .font(AppTheme.FontToken.bodyStrong)
                         }
                         Spacer()
@@ -450,7 +392,7 @@ struct MineView: View {
                 .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
                 }
 
-                if isGuestMode == false {
+                if appRouter.isAnonymousUser == false {
                 Button(role: .destructive) {
                     Task { await viewModel.checkCreatorStatusBeforeDeletion() }
                 } label: {
@@ -537,17 +479,10 @@ struct MineView: View {
     }
 
     private var mineHeaderMainTitle: String {
-        if isGuestMode {
-            return familyViewModel.currentUserProfile?.displayName
-                ?? AppLocalized.string(L10n.Common.trialUser, locale: locale)
-        }
-        return familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
+        familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
     }
 
     private var mineHeaderSubtitle: String {
-        if isGuestMode {
-            return AppLocalized.string(L10n.Common.dataStoredOnThisDeviceOnly, locale: locale)
-        }
         guard let profile = familyViewModel.currentUserProfile else {
             return viewModel.email
         }
@@ -798,32 +733,6 @@ struct MineView: View {
         return AppLocalized.string(L10n.VIP.proMembershipActive, locale: locale)
     }
 
-    private func refreshAnonymousState() async {
-        isAnonymousSupabaseUser = await SupabaseAuthManager.isAnonymousUser()
-    }
-
-    private func retryGuestMigration() async {
-        guard let snapshot = GuestSessionStore.loadSnapshot() else { return }
-        switch await GuestDataMigrationService.evaluateTrialMigration() {
-        case .discardReturningUser:
-            await GuestDataMigrationService.discardTrialSnapshotWithoutMigration()
-            isGuestModeStorage = false
-            return
-        case .keepSnapshotRetryLater:
-            return
-        case .migrate:
-            break
-        }
-        do {
-            _ = try await GuestDataMigrationService.migrate(snapshot: snapshot, appRouter: appRouter)
-            isGuestModeStorage = false
-            await appRouter.refreshStateFromBackend()
-            viewModel.toastMessage = AppLocalized.string(L10n.Common.localDataSyncedToTheCloud, locale: locale)
-        } catch {
-            viewModel.toastMessage = error.localizedDescription
-        }
-    }
-
     // MARK: - Section chrome
 
     private func mineSectionHeader(_ title: L10n.Entry) -> some View {
@@ -909,10 +818,6 @@ struct MineView: View {
     @MainActor
     private func handleRequiresLoginIfNeeded() async {
         guard familyViewModel.requiresLogin else { return }
-        if isGuestMode {
-            familyViewModel.clearRequiresLogin()
-            return
-        }
         guard authSessionGuard.isLoggingOut == false else {
             familyViewModel.clearRequiresLogin()
             return
@@ -926,11 +831,7 @@ private extension View {
     func mineSecondaryAlerts(
         viewModel: MineViewModel,
         showTermsSheet: Binding<Bool>,
-        showPrivacySheet: Binding<Bool>,
-        showDiscardGuestDataAlert: Binding<Bool>,
-        appRouter: AppRouter,
-        appBootstrap: AppBootstrap,
-        isGuestModeStorage: Binding<Bool>
+        showPrivacySheet: Binding<Bool>
     ) -> some View {
         alert(L10n.Common.accountDeletionFailed, isPresented: Binding(
             get: { viewModel.deleteAccountErrorMessage != nil },
@@ -951,15 +852,6 @@ private extension View {
                 SafariView(url: url)
                     .ignoresSafeArea()
             }
-        }
-        .alert(L10n.Common.discardLocalData, isPresented: showDiscardGuestDataAlert) {
-            Button(L10n.Common.cancel, role: .cancel) {}
-            Button(L10n.Common.giveUp, role: .destructive) {
-                GuestSessionExit.signOut(appRouter: appRouter, appBootstrap: appBootstrap)
-                isGuestModeStorage.wrappedValue = false
-            }
-        } message: {
-            Text(L10n.Common.trialDataOnThisDeviceWillBeDeletedAndCa.localized)
         }
     }
 }

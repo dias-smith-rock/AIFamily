@@ -242,12 +242,12 @@ extension HouseholdMembership {
     func displayName(linkedProfile: FamilyProfile?) -> String {
         let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if trimmedNickname.isEmpty == false {
-            return GuestSessionStore.displaySelfName(trimmedNickname)
+            return StoredDisplayNameResolver.selfName(trimmedNickname)
         }
         if let linkedProfile {
             let profileName = linkedProfile.name.trimmingCharacters(in: .whitespacesAndNewlines)
             if profileName.isEmpty == false, profileName != L10n.Family.unnamedMember.string() {
-                return GuestSessionStore.displaySelfName(profileName)
+                return StoredDisplayNameResolver.selfName(profileName)
             }
         }
         return MemberDisplayName.unknownFallback

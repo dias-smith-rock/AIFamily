@@ -11,7 +11,6 @@ struct LoginView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
-    @AppStorage(GuestSessionStore.isGuestModeKey) private var isGuestMode = false
     @State private var loadingProvider: LoginProvider?
     @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
@@ -290,7 +289,7 @@ struct LoginView: View {
     /// OAuth 结束后，Auth 会话与 RLS 可见性在本地可能有短暂传播延迟。
     /// 这里做轻量重试，避免刚回调就误判成未登录，留在登录页。
     private func settlePostOAuthState() async throws {
-        let migrationFailed = try await OAuthSessionCoordinator.settleAfterOAuth(
+        try await OAuthSessionCoordinator.settleAfterOAuth(
             appRouter: appRouter,
             appBootstrap: appBootstrap,
             migrationFailureHandler: { message in
@@ -300,7 +299,6 @@ struct LoginView: View {
         await MainActor.run {
             withAnimation(.easeInOut) {
                 isUserLoggedIn = true
-                isGuestMode = migrationFailed && GuestSessionStore.hasPendingSnapshot
             }
         }
     }
@@ -316,7 +314,6 @@ struct LoginView: View {
             await MainActor.run {
                 withAnimation(.easeInOut) {
                     isUserLoggedIn = true
-                    isGuestMode = false
                 }
             }
             AnalyticsManager.log(event: .guestStarted)
@@ -328,18 +325,6 @@ struct LoginView: View {
         await MainActor.run {
             loadingProvider = nil
         }
-    }
-
-    /// 纯本地试用（遗留路径；新用户请走 Supabase 匿名登录）。
-    private func startGuestMode() {
-        let snapshot = GuestSessionStore.loadOrCreate()
-        GuestSessionStore.setGuestMode(true)
-        appBootstrap.enterGuestMode()
-        appRouter.enterGuestMode(snapshot: snapshot)
-        withAnimation(.easeInOut) {
-            isGuestMode = true
-        }
-        AnalyticsManager.log(event: .guestStarted)
     }
 }
 

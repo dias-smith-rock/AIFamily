@@ -363,11 +363,6 @@ final class FamilyViewModel: ObservableObject {
             return
         }
 
-        if GuestSessionStore.isGuestMode {
-            await loadMembersFromGuestWorkspace(householdId: householdId)
-            return
-        }
-
         let cacheKey = Self.membersCacheKey(for: householdId)
         let cachedPayload = await HouseholdLocalCache.loadMembers(for: householdId)
         if let cachedPayload {
@@ -459,37 +454,6 @@ final class FamilyViewModel: ObservableObject {
             #if DEBUG
             print("   phase: membershipService.fetchMemberRoster")
             print("   household_id=\(householdId.uuidString)")
-            #endif
-        }
-    }
-
-    /// 游客模式：直接从本机工作区读取名册，不校验 Supabase 会话。
-    private func loadMembersFromGuestWorkspace(householdId: UUID) async {
-        requiresLogin = false
-        let showBlockingSpinner = hasLoadedOnce == false && profiles.isEmpty
-        if showBlockingSpinner {
-            isLoading = true
-        }
-        errorMessage = nil
-        defer {
-            if showBlockingSpinner {
-                isLoading = false
-            }
-            hasLoadedOnce = true
-        }
-
-        do {
-            try await applyMemberRoster(
-                householdId: householdId,
-                persistToDiskCache: false
-            )
-            #if DEBUG
-            print("✅ [FamilyDebug] loadMembers guest success - profiles=\(profiles.count), memberships=\(members.count)")
-            #endif
-        } catch {
-            errorMessage = error.localizedDescription
-            #if DEBUG
-            print("❌ [FamilyDebug] loadMembers guest failed: \(error.localizedDescription)")
             #endif
         }
     }
