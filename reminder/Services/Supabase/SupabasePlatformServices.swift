@@ -833,6 +833,8 @@ extension SupabaseHouseholdRoutingService {
             throw HouseholdRoutingError.unauthenticated
         }
 
+        await Self.ensureCurrentUserFamilyProfileIfNeeded(client: client)
+
         do {
             return try await createHouseholdViaRPC(
                 client: client,
@@ -889,7 +891,64 @@ extension SupabaseHouseholdRoutingService {
             householdId: householdId,
             normalizedDescription: normalizedDescription
         )
+        let session = try await client.auth.session
+        await patchAnonymousCreatorDisplayNameIfNeeded(
+            client: client,
+            householdId: householdId,
+            session: session
+        )
         return householdId
+    }
+
+    /// 匿名登录后预建全局 `family_profiles`，避免建群 RPC 因缺档案失败。
+    fileprivate static func ensureCurrentUserFamilyProfileIfNeeded(client: SupabaseClient) async {
+        do {
+            _ = try await client.rpc("ensure_current_user_family_profile").execute()
+        } catch {
+            #if DEBUG
+            print("[HouseholdCreate] ensure_current_user_family_profile failed: \(error)")
+            #endif
+        }
+    }
+
+    /// RPC 可能写入中文默认昵称；匿名创建者统一改为 catalog key `family_new_member`。
+    /// 建群已成功时 patch 失败不应阻断流程。
+    fileprivate func patchAnonymousCreatorDisplayNameIfNeeded(
+        client: SupabaseClient,
+        householdId: UUID,
+        session: Session
+    ) async {
+        guard session.user.isAnonymous else { return }
+        let persistedName = Self.resolvedCreatorDisplayName(session: session)
+        let userId = session.user.id.uuidString.lowercased()
+        let householdIdText = householdId.uuidString.lowercased()
+
+        struct ProfileNamePatch: Encodable {
+            let name: String
+        }
+
+        struct MembershipNicknamePatch: Encodable {
+            let nickname: String
+        }
+
+        do {
+            try await client
+                .from("household_memberships")
+                .update(MembershipNicknamePatch(nickname: persistedName))
+                .eq("household_id", value: householdIdText)
+                .eq("user_id", value: userId)
+                .execute()
+
+            try await client
+                .from("family_profiles")
+                .update(ProfileNamePatch(name: persistedName))
+                .eq("user_id", value: userId)
+                .execute()
+        } catch {
+            #if DEBUG
+            print("[HouseholdCreate] patchAnonymousCreatorDisplayName failed: \(error)")
+            #endif
+        }
     }
 
     fileprivate func patchHouseholdDescriptionIfNeeded(
@@ -1020,6 +1079,16 @@ extension SupabaseHouseholdRoutingService {
 
     fileprivate static func parseCreatedHouseholdId(from data: Data) -> UUID? {
         guard data.isEmpty == false else { return nil }
+
+        if let rawText = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+           rawText.isEmpty == false {
+            let unquoted = rawText.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+            if let uuid = UUID(uuidString: unquoted) {
+                return uuid
+            }
+        }
+
         guard let json = try? JSONSerialization.jsonObject(with: data) else { return nil }
 
         if let rows = json as? [[String: Any]] {
@@ -1028,6 +1097,14 @@ extension SupabaseHouseholdRoutingService {
                     if let raw = row[key] as? String, let uuid = UUID(uuidString: raw) {
                         return uuid
                     }
+                }
+            }
+        }
+
+        if let dict = json as? [String: Any] {
+            for key in ["household_id", "v_household_id", "id"] {
+                if let raw = dict[key] as? String, let uuid = UUID(uuidString: raw) {
+                    return uuid
                 }
             }
         }
@@ -1067,7 +1144,10 @@ extension SupabaseHouseholdRoutingService {
         if let email = user.email, email.isEmpty == false {
             return email
         }
-        return AppLocalized.localizedSync(L10n.Common.admin)
+        if user.isAnonymous {
+            return L10n.Family.newMember.key
+        }
+        return L10n.Common.me.key
     }
 }
 

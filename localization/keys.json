@@ -5876,5 +5876,12 @@
     "table": "Schedule",
     "swift_property": "createManually",
     "orphan": false
+  },
+  {
+    "legacy_key": "New member",
+    "new_key": "family_new_member",
+    "table": "Family",
+    "swift_property": "newMember",
+    "orphan": true
   }
 ]

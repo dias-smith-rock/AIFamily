@@ -207,7 +207,13 @@ final class AppRouter: ObservableObject {
             await RevenueCatSubscriptionService.shared.logIn(userId: userId)
             await loadUserEntitlement(userId: userId)
             await RevenueCatSubscriptionService.shared.refreshCustomerInfo()
-            await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
+            if session.user.isAnonymous == false {
+                await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
+            } else {
+                Task {
+                    await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
+                }
+            }
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
@@ -328,9 +334,17 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectedHouseholdCreatorHasActivePro = false
-        resetAuthenticatedPremiumState()
         selectableHouseholds = []
         recentHouseholds = []
+    }
+
+    /// 匿名登录成功后立即进入组织路由，避免 `isUserLoggedIn` 已 true 但 `appState` 仍为 `.unauthenticated` 时卡在加载页。
+    func finishAnonymousSignIn(userId: UUID) {
+        authUserId = userId
+        isAnonymousUser = true
+        if appState == .unauthenticated {
+            goToOrgRouting()
+        }
     }
 
     func goToPendingApproval() {
@@ -545,6 +559,21 @@ final class AppRouter: ObservableObject {
         let householdId: UUID
         let profileId: UUID?
         let status: String
+
+        enum CodingKeys: String, CodingKey {
+            case id
+            case householdId
+            case profileId
+            case status
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(UUID.self, forKey: .id)
+            householdId = try container.decode(UUID.self, forKey: .householdId)
+            profileId = try container.decodeIfPresent(UUID.self, forKey: .profileId)
+            status = try container.decode(String.self, forKey: .status)
+        }
     }
 
     private struct HouseholdRow: Decodable {

@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// 曾登录用户冷启动恢复会话时的过渡页，避免先闪登录页再跳转主界面。
+/// 冷启动 Splash：恢复登录态与群组路由完成前展示，避免先闪任务主界面。
 struct SessionRestoreView: View {
-    @Environment(\.locale) private var locale
     @State private var isLogoPulsing = false
 
     var body: some View {
@@ -32,7 +31,7 @@ struct SessionRestoreView: View {
                 ProgressView()
                     .tint(.white)
                     .scaleEffect(1.1)
-                Text(AppLocalized.string(L10n.Auth.signingIn, locale: locale))
+                Text(L10n.Common.loading.localized)
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
             }

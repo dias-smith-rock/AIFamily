@@ -10,10 +10,16 @@ struct ContentView: View {
     @StateObject private var groupSwitcher = GroupSwitcherCoordinator()
     @StateObject private var biometricManager = BiometricManager()
     @State private var shouldHideAppSwitcherSnapshot = false
+    /// 冷启动 Splash：完成登录态与群组路由 bootstrap 前不展示主界面。
+    @State private var isLaunchBootstrapComplete = false
 
     var body: some View {
         Group {
-            rootContent
+            if isLaunchBootstrapComplete {
+                rootContent
+            } else {
+                SessionRestoreView()
+            }
         }
         .environmentObject(groupSwitcher)
         .environment(\.isAnonymousUser, appRouter.isAnonymousUser)
@@ -86,11 +92,19 @@ struct ContentView: View {
             .environment(\.layoutDirection, appSettings.layoutDirection)
         }
         .task(id: appRouter.appState) {
-            if isUserLoggedIn && biometricManager.isUnlocked {
+            if isLaunchBootstrapComplete,
+               isUserLoggedIn,
+               biometricManager.isUnlocked {
                 _ = await NotificationManager.shared.requestAuthorizationIfNeeded()
             }
         }
-        .task(id: isUserLoggedIn) {
+        .task {
+            guard isLaunchBootstrapComplete == false else { return }
+            await runLaunchBootstrap()
+        }
+        .task(id: postLaunchForegroundBootstrapToken) {
+            guard let postLaunchForegroundBootstrapToken else { return }
+            _ = postLaunchForegroundBootstrapToken
             guard isUserLoggedIn else {
                 Self.hasReportedLocationOnLaunchThisSession = false
                 BackgroundLocationCoordinator.shared.stop()
@@ -98,7 +112,14 @@ struct ContentView: View {
                 ForegroundLocationPersistEligibility.shared.canPersist = false
                 return
             }
-            await runForegroundLocationBootstrap(vipLogTrigger: "用户登录后")
+            await runPostAuthForegroundServices()
+        }
+        .onChange(of: isUserLoggedIn) { _, loggedIn in
+            guard isLaunchBootstrapComplete, loggedIn else { return }
+            Task {
+                await runAuthAndHouseholdBootstrap(vipLogTrigger: "登录后")
+                reconcileStaleLoginSession()
+            }
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
@@ -119,16 +140,11 @@ struct ContentView: View {
             }
         }
         .onChange(of: appRouter.appState) { _, _ in
+            guard isLaunchBootstrapComplete else { return }
             reconcileStaleLoginSession()
         }
-        .onAppear {
-            LegacyGuestDataCleaner.removeLegacyLocalTrialKeysIfNeeded()
-            RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
-            Task {
-                await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
-            }
-        }
-        .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, completed in
+        .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, _ in
+            guard isLaunchBootstrapComplete else { return }
             reconcileStaleLoginSession()
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -137,7 +153,7 @@ struct ContentView: View {
                 shouldHideAppSwitcherSnapshot = false
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
-                    guard isUserLoggedIn else { return }
+                    guard isUserLoggedIn, isLaunchBootstrapComplete else { return }
                     await runForegroundLocationBootstrap(vipLogTrigger: "App回到前台")
                 }
             } else if newPhase == .inactive {
@@ -170,6 +186,13 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    /// 冷启动完成后、登录态变化时触发位置/VIP 等前台服务（不再重复跑路由 bootstrap）。
+    private var postLaunchForegroundBootstrapToken: String? {
+        guard isLaunchBootstrapComplete else { return nil }
+        guard isUserLoggedIn else { return "signedOut" }
+        return "signedIn"
     }
 
     @ViewBuilder
@@ -205,7 +228,7 @@ struct ContentView: View {
         case .activeMember:
             householdRoutingFallback
         case .unauthenticated:
-            routingBootstrapPlaceholder
+            authenticatedSessionBootstrapPlaceholder
         }
     }
 
@@ -218,6 +241,19 @@ struct ContentView: View {
                 HouseholdSelectionView()
             }
         }
+    }
+
+    @ViewBuilder
+    private var authenticatedSessionBootstrapPlaceholder: some View {
+        #if canImport(Supabase)
+        if appRouter.hasPersistedSupabaseSession {
+            OrgRoutingView()
+        } else {
+            routingBootstrapPlaceholder
+        }
+        #else
+        routingBootstrapPlaceholder
+        #endif
     }
 
     private var routingBootstrapPlaceholder: some View {
@@ -244,6 +280,51 @@ struct ContentView: View {
                 }
             }
         )
+    }
+
+    @MainActor
+    private func runLaunchBootstrap() async {
+        LegacyGuestDataCleaner.removeLegacyLocalTrialKeysIfNeeded()
+        RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
+        await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
+
+        if isUserLoggedIn {
+            await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动")
+            reconcileStaleLoginSession()
+        }
+
+        withAnimation(.easeInOut) {
+            isLaunchBootstrapComplete = true
+        }
+    }
+
+    @MainActor
+    private func runAuthAndHouseholdBootstrap(vipLogTrigger: String?) async {
+        _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
+        refreshForegroundLocationSchedulerContext()
+        await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+        await appRouter.refreshStateFromBackend()
+        await fetchHouseholdsAndCheckCreatorRole()
+        if let vipLogTrigger {
+            appRouter.logVIPAccessState(trigger: vipLogTrigger)
+        }
+        reloadTasksIfActiveMember()
+    }
+
+    @MainActor
+    private func runPostAuthForegroundServices() async {
+        refreshForegroundLocationSchedulerContext()
+        reloadTasksIfActiveMember()
+        guard await NetworkMonitor.shared.isConnected else { return }
+        await reportLocationWhenEnteringForeground()
+        await syncBackgroundLocationService()
+        startForegroundLocationPeriodicRefreshIfNeeded()
+    }
+
+    @MainActor
+    private func runForegroundLocationBootstrap(vipLogTrigger: String? = nil) async {
+        await runAuthAndHouseholdBootstrap(vipLogTrigger: vipLogTrigger)
+        await runPostAuthForegroundServices()
     }
 
     @MainActor
@@ -303,23 +384,6 @@ struct ContentView: View {
         print("[ContentView] bootstrap complete → reload tasks household=\(appRouter.selectedHouseholdId?.uuidString ?? "nil")")
         #endif
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-    }
-
-    @MainActor
-    private func runForegroundLocationBootstrap(vipLogTrigger: String? = nil) async {
-        _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-        refreshForegroundLocationSchedulerContext()
-        await AuthSessionRefresher.refreshOnForegroundIfNeeded()
-        await appRouter.refreshStateFromBackend()
-        await fetchHouseholdsAndCheckCreatorRole()
-        if let vipLogTrigger {
-            appRouter.logVIPAccessState(trigger: vipLogTrigger)
-        }
-        reloadTasksIfActiveMember()
-        guard await NetworkMonitor.shared.isConnected else { return }
-        await reportLocationWhenEnteringForeground()
-        await syncBackgroundLocationService()
-        startForegroundLocationPeriodicRefreshIfNeeded()
     }
 
     /// 本会话首次进入前台：启动上报；之后回前台仍走 `appEnteredForeground`（后台定位开启时不重复上报）。

@@ -38,6 +38,9 @@ enum StoredDisplayNameResolver {
         if trimmed == L10n.Common.me.key {
             return AppLocalized.localizedSync(L10n.Common.me)
         }
+        if trimmed == L10n.Family.newMember.key || trimmed == "New member" || trimmed == "新成员" {
+            return AppLocalized.localizedSync(L10n.Family.newMember)
+        }
         return trimmed
     }
 }

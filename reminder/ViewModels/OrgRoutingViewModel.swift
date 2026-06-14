@@ -193,7 +193,15 @@ final class OrgRoutingViewModel: ObservableObject {
         switch action {
         case .create:
             #if DEBUG
+            #if canImport(Supabase)
+            if let dbError = error as? PostgrestError {
+                print("创建群组失败 PostgrestError: \(dbError.message ?? dbError.localizedDescription)")
+            } else {
+                print("创建群组失败: \(error)")
+            }
+            #else
             print("创建群组失败: \(error)")
+            #endif
             #endif
             return Copy.createHouseholdFailed
         case .join:

@@ -309,12 +309,12 @@ struct LoginView: View {
             loadingProvider = .guest
         }
         do {
-            _ = try await SupabaseAuthManager.signInAsGuest(appRouter: appRouter)
-            await appRouter.refreshStateFromBackend()
+            let userId = try await SupabaseAuthManager.signInAsGuest(appRouter: appRouter)
             await MainActor.run {
                 withAnimation(.easeInOut) {
                     isUserLoggedIn = true
                 }
+                appRouter.finishAnonymousSignIn(userId: userId)
             }
             AnalyticsManager.log(event: .guestStarted)
         } catch {

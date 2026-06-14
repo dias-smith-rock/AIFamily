@@ -22,8 +22,11 @@ enum SupabaseAuthManager {
         let session = try await client.auth.signInAnonymously()
         let userId = session.user.id
         AuthSessionHints.markEverAuthenticated()
-        await prepareRevenueCat(for: userId, appRouter: appRouter)
         notifyAuthUserChanged(userId: userId, isAnonymous: session.user.isAnonymous)
+        Task {
+            await ensureCurrentUserFamilyProfile()
+            await prepareRevenueCat(for: userId, appRouter: appRouter)
+        }
         #if DEBUG
         print("[SupabaseAuthManager] signInAsGuest ok userId=\(userId.uuidString.lowercased())")
         #endif
@@ -122,6 +125,16 @@ enum SupabaseAuthManager {
             userId: userId,
             appRouter: appRouter
         )
+    }
+
+    private static func ensureCurrentUserFamilyProfile() async {
+        do {
+            _ = try await client.rpc("ensure_current_user_family_profile").execute()
+        } catch {
+            #if DEBUG
+            print("[SupabaseAuthManager] ensure_current_user_family_profile failed: \(error)")
+            #endif
+        }
     }
 
     private static func notifyAuthUserChanged(userId: UUID, isAnonymous: Bool) {
