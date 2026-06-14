@@ -10,7 +10,7 @@ final class OrgRoutingViewModel: ObservableObject {
     @Published private(set) var isJoining = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var joinedHouseholds: [JoinedHousehold] = []
-    @Published private(set) var isLoading = true
+    @Published private(set) var isLoading = false
 
     @Published var showSignOutAlert = false
     @Published var showDeleteAccountAlert = false
@@ -44,7 +44,6 @@ final class OrgRoutingViewModel: ObservableObject {
             #endif
         } catch {
             print("拉取群组列表失败: \(error)")
-            joinedHouseholds = []
         }
     }
 

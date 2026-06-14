@@ -290,16 +290,27 @@ struct ContentView: View {
         RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
         await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
 
+        var revealedMainUI = false
+
         if await SupabaseAuthManager.isAnonymousUser() {
             SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
             isUserLoggedIn = false
         } else if isUserLoggedIn {
+            appRouter.beginHouseholdRoutingResolve()
+            defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
+            appRouter.goToOrgRouting()
+            withAnimation(.easeInOut) {
+                isLaunchBootstrapComplete = true
+            }
+            revealedMainUI = true
             await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动")
             reconcileStaleLoginSession()
         }
 
-        withAnimation(.easeInOut) {
-            isLaunchBootstrapComplete = true
+        if revealedMainUI == false {
+            withAnimation(.easeInOut) {
+                isLaunchBootstrapComplete = true
+            }
         }
     }
 

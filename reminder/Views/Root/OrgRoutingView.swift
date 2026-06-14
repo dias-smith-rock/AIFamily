@@ -40,8 +40,7 @@ struct OrgRoutingView: View {
                 appRouter.notifyOrgRoutingSurfaceDidAppear()
             }
             .task {
-                guard appRouter.isAnonymousUser == false else { return }
-                await viewModel.fetchMyHouseholds(appRouter: appRouter)
+                await loadJoinedHouseholdsForOrgRouting()
             }
             .onChange(of: viewModel.errorMessage) { _, newValue in
                 if let newValue {
@@ -153,6 +152,8 @@ struct OrgRoutingView: View {
     private var orgRoutingScrollContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
+                joinedHouseholdsSection
+
                 Text(AppLocalized.string(L10n.Common.pleaseChooseAWayToContinue, locale: locale))
                     .font(AppTheme.FontToken.subtitle)
                     .foregroundStyle(AppTheme.ColorToken.textSecondary)
@@ -184,9 +185,50 @@ struct OrgRoutingView: View {
         }
     }
 
+    @ViewBuilder
+    private var joinedHouseholdsSection: some View {
+        if viewModel.joinedHouseholds.isEmpty {
+            emptyJoinedHouseholdsPlaceholder
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(AppLocalized.string(L10n.Family.myGroups, locale: locale))
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppTheme.ColorToken.textSecondary)
+
+                ForEach(viewModel.joinedHouseholds) { joined in
+                    JoinedHouseholdCard(joined: joined) {
+                        appRouter.chooseJoinedHousehold(joined)
+                    }
+                }
+            }
+        }
+    }
+
+    private var emptyJoinedHouseholdsPlaceholder: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "house.and.flag")
+                .font(.system(size: 36))
+                .foregroundStyle(.tertiary)
+                .symbolRenderingMode(.hierarchical)
+            Text(AppLocalized.string(L10n.Family.youHavenTJoinedAnyGroupsYet, locale: locale))
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Text(AppLocalized.string(L10n.Family.createANewGroupOrJoinSomeoneElseSExisti, locale: locale))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+
+    private func loadJoinedHouseholdsForOrgRouting() async {
+        await viewModel.fetchMyHouseholds(appRouter: appRouter)
+        appRouter.notifyOrgRoutingHouseholdListLoadFinished()
+    }
+
     private func refreshHouseholdRouting() async {
         guard appRouter.isResolvingHouseholdRouting == false else { return }
-        await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
     }
 

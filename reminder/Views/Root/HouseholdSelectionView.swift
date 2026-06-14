@@ -480,7 +480,7 @@ struct HouseholdSelectionView: View {
 
 // MARK: - Card
 
-private struct JoinedHouseholdCard: View {
+struct JoinedHouseholdCard: View {
     let joined: JoinedHousehold
     let onTap: () -> Void
 

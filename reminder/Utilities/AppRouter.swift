@@ -56,6 +56,7 @@ final class AppRouter: ObservableObject {
 
     private var householdRoutingResolveRefreshFinished = false
     private var orgRoutingSurfaceDidAppear = false
+    private var orgRoutingHouseholdListLoadFinished = false
 
     private struct OfflineHouseholdSnapshot: Codable {
         let householdId: UUID
@@ -161,9 +162,10 @@ final class AppRouter: ObservableObject {
         isResolvingHouseholdRouting = true
         householdRoutingResolveRefreshFinished = false
         orgRoutingSurfaceDidAppear = false
+        orgRoutingHouseholdListLoadFinished = false
     }
 
-    /// refresh 完成后调用；若仍停留在群组路由页，须等 OrgRoutingView `onAppear` 再收起蒙层。
+    /// refresh 完成后调用；若仍停留在群组路由页，须等 OrgRoutingView `onAppear` 与群组列表加载完成后再收起蒙层。
     func finishHouseholdRoutingResolveAfterRefresh() {
         householdRoutingResolveRefreshFinished = true
         dismissHouseholdRoutingResolveOverlayIfReady()
@@ -175,6 +177,12 @@ final class AppRouter: ObservableObject {
         dismissHouseholdRoutingResolveOverlayIfReady()
     }
 
+    func notifyOrgRoutingHouseholdListLoadFinished() {
+        guard isResolvingHouseholdRouting else { return }
+        orgRoutingHouseholdListLoadFinished = true
+        dismissHouseholdRoutingResolveOverlayIfReady()
+    }
+
     private func dismissHouseholdRoutingResolveOverlayIfReady() {
         guard isResolvingHouseholdRouting, householdRoutingResolveRefreshFinished else { return }
 
@@ -183,7 +191,7 @@ final class AppRouter: ObservableObject {
             return
         }
 
-        guard orgRoutingSurfaceDidAppear else { return }
+        guard orgRoutingSurfaceDidAppear, orgRoutingHouseholdListLoadFinished else { return }
         clearHouseholdRoutingResolveState()
     }
 
@@ -191,6 +199,7 @@ final class AppRouter: ObservableObject {
         isResolvingHouseholdRouting = false
         householdRoutingResolveRefreshFinished = false
         orgRoutingSurfaceDidAppear = false
+        orgRoutingHouseholdListLoadFinished = false
     }
 
     func markOAuthBootstrapCompleted() {
