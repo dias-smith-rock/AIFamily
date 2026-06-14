@@ -112,24 +112,20 @@ final class OrgRoutingViewModel: ObservableObject {
         authErrorMessage = nil
         defer { isProcessingAuth = false }
 
-        AuthSessionGuard.shared.beginLoggingOut()
-        appRouter.logVIPAccessState(trigger: "用户退出前")
         do {
-            try await authService.signOut()
-            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
-            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
-            LocalCacheManager.shared.removeAll()
-            await appRouter.refreshStateFromBackend()
-            await AuthSessionGuard.shared.endLoggingOut()
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter)
             return true
         } catch {
             #if DEBUG
             print("退出登录失败: \(error)")
             #endif
             authErrorMessage = error.localizedDescription
-            await AuthSessionGuard.shared.endLoggingOut()
             return false
         }
+    }
+
+    func softExitToLogin(appRouter: AppRouter) {
+        SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
     }
 
     func deleteAccount(appRouter: AppRouter) async -> Bool {
@@ -140,23 +136,18 @@ final class OrgRoutingViewModel: ObservableObject {
 
         AuthSessionGuard.shared.beginLoggingOut()
         appRouter.logVIPAccessState(trigger: "用户退出前")
+        defer { Task { await AuthSessionGuard.shared.endLoggingOut() } }
         do {
             // 预留：接入 delete-account Edge Function / RPC 后在此调用
             // try await supabase.functions.invoke("delete-account")
             await authService.cleanUpCurrentUserAvatars()
-            try await authService.signOut()
-            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
-            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
-            LocalCacheManager.shared.removeAll()
-            await appRouter.refreshStateFromBackend()
-            await AuthSessionGuard.shared.endLoggingOut()
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter)
             return true
         } catch {
             #if DEBUG
             print("注销账号失败: \(error)")
             #endif
             authErrorMessage = error.localizedDescription
-            await AuthSessionGuard.shared.endLoggingOut()
             return false
         }
     }

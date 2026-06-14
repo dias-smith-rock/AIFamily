@@ -60,6 +60,9 @@ final class GroupSwitcherCoordinator: ObservableObject {
         newOrganizationDescription = ""
         isShowingCreateOrganizationSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdHouseholdId)
+        if appRouter.isAnonymousUser {
+            AnonymousBindPromptStore.scheduleAfterGroupAction()
+        }
         await appRouter.refreshStateFromBackend()
     }
 
@@ -80,6 +83,9 @@ final class GroupSwitcherCoordinator: ObservableObject {
         }
         showJoinGroupSheet = false
         showSwitchGroupDialog = false
+        if appRouter.isAnonymousUser {
+            AnonymousBindPromptStore.scheduleAfterGroupAction()
+        }
         await appRouter.refreshStateFromBackend()
         if let groupId = appRouter.selectedHouseholdId {
             AnalyticsManager.log(event: .groupJoined(groupId: groupId))

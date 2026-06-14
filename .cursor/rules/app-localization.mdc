@@ -1,0 +1,83 @@
+---
+description: WeFamily iOS 应用内多语言架构（冻结方案）；新增 UI 文案须遵循，禁止改动实现
+globs: reminder/**/*.swift
+alwaysApply: true
+---
+
+# 应用内多语言（冻结方案）
+
+## 架构冻结 — 禁止改动
+
+以下为实现定案，**不得**重构、替换或回退（含「改回单表 Localizable.xcstrings」「中文作 Key」「Bundle 语言 swizzle」等）：
+
+| 组件 | 路径 | 职责 |
+|------|------|------|
+| 类型安全访问层 | `reminder/Localization/L10n.swift` + `L10n+*.swift` | `Entry.localized` → **`LocalizedStringResource`**（保留 table + key） |
+| SwiftUI 便捷扩展 | `reminder/Localization/L10n+SwiftUI.swift` | `Text`/`Button`/`alert`/`Section` 接受 `L10n.Entry` |
+| 非 View 解析 | `reminder/Utilities/AppLocalized.swift` | ViewModel / Service / 通知等显式 `String` |
+| 语言环境注入 | `reminder/Utilities/AppLocaleEnvironment.swift` | 手动选语言时覆盖 `\.locale` |
+| 语言设置 | `reminder/Utilities/AppSettingsManager.swift` + `AppLanguage.swift` | `@AppStorage("app_language")` |
+| 根刷新 | `reminder/reminderApp.swift`、`AppTabRootView.swift` | `.appLocaleEnvironment` + **`.id(selectedLanguage.id)`** |
+| 持久化昵称 | `reminder/Utilities/AnonymousUserEnvironment.swift` → `StoredDisplayNameResolver` | 库中 catalog key → 当前语言展示名 |
+| 分域 Catalog | `reminder/Localization/{Common,Settings,...}.xcstrings` | 英文 snake_case Key，9 语言译文 |
+
+**核心原理**：SwiftUI 文案必须在**渲染时**由 `\.locale` + String Catalog（含 `table`）解析；**禁止**在创建 `LocalizedStringKey` 前用 `String(localized:…)` 预解析并固化。
+
+## View 层（SwiftUI）
+
+```swift
+// ✅ 静态文案
+Text(L10n.Settings.notifications.localized)
+.navigationTitle(L10n.Common.mine.localized)
+Section(L10n.Common.appSettings) { … }
+
+// ✅ 带插值（需 @Environment(\.locale)）
+Text(L10n.Family.disbandConfirmMessage.formatted(locale: locale, householdName))
+
+// ✅ TextField / 仅接受 String 的 API（iOS 18 部署目标）
+@Environment(\.locale) private var locale
+TextField(AppLocalized.string(L10n.Common.nicknameSuchAsMum, locale: locale), text: $name)
+
+// ✅ 动态 confirmationDialog 标题
+AppLocalized.string(L10n.Common.transferCreatorPermission, locale: locale)
+// 或 L10n.*.formatted(locale:locale, …)
+```
+
+Sheet / 独立导航栈若未继承根 `\.locale`，须链式 `.environment(\.locale, appSettings.appLocale)`（见 `FamilyView` 子 Sheet）。
+
+## 非 View 层
+
+```swift
+// ViewModel / @MainActor 业务逻辑
+AppLocalized.localized(L10n.Auth.sessionAbnormalRetry)
+
+// nonisolated（通知等）
+AppLocalized.localizedSync(L10n.Family.newMember)
+
+// 需显式 Locale
+L10n.Family.groupName.string(locale: locale)
+```
+
+## 禁止写法
+
+```swift
+// ❌ 预解析为 LocalizedStringKey（丢失 table，切换语言无效）
+LocalizedStringKey(String(localized: …, table: …))
+
+// ❌ L10n.Entry.localized 改回 LocalizedStringKey 或 String
+// ❌ View 层 Text("中文") 或裸 snake_case 字符串
+// ❌ 移除 .appLocaleEnvironment / .id(selectedLanguage.id)
+// ❌ 新增中文/英文句子作 Catalog Key
+```
+
+`localizedKey` 仅作**无 table 的旧 API 兜底**，新代码不得依赖。
+
+## 新增词条
+
+流程与 Key 命名见 **`.cursor/skills/english-localization-keys/SKILL.md`**（`keys.json` → `{Table}.xcstrings` → `L10n+*.swift` → lint）。
+
+## 提交前
+
+```bash
+python3 scripts/lint_i18n_keys.py
+```

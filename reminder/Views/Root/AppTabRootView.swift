@@ -5,6 +5,8 @@ struct AppTabRootView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @State private var selectedTab: Tab = .schedule
     @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
+    @State private var showAnonymousBindPrompt = false
+    @State private var showAnonymousBindLinkSheet = false
 
     enum Tab: Hashable {
         case schedule
@@ -72,6 +74,34 @@ struct AppTabRootView: View {
             if let tap = appRouter.pendingTaskReminderTap {
                 selectedTab = tap.isFlexibleTodo ? .todos : .schedule
             }
+            presentAnonymousBindPromptIfNeeded()
+        }
+        .alert(L10n.Auth.anonymousBindAfterGroupTitle.localized, isPresented: $showAnonymousBindPrompt) {
+            Button(L10n.Auth.guestBindAccount) {
+                showAnonymousBindLinkSheet = true
+            }
+            Button(L10n.Common.later, role: .cancel) {}
+        } message: {
+            Text(L10n.Auth.anonymousBindAfterGroupMessage.localized)
+        }
+        .sheet(isPresented: $showAnonymousBindLinkSheet) {
+            NavigationStack {
+                AnonymousAccountLinkCard {
+                    showAnonymousBindLinkSheet = false
+                    Task { await appRouter.refreshStateFromBackend() }
+                }
+                .padding()
+                .navigationTitle(L10n.Auth.guestBindAccount.localized)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(L10n.Common.close) {
+                            showAnonymousBindLinkSheet = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
         }
         .onChange(of: appRouter.pendingTaskReminderTap) { _, newValue in
             guard let tap = newValue else { return }
@@ -83,6 +113,14 @@ struct AppTabRootView: View {
         }
         .reviewAlertModifier(manager: reviewRedirectManager)
         .id(appSettings.selectedLanguage.id)
+    }
+
+    private func presentAnonymousBindPromptIfNeeded() {
+        guard appRouter.isAnonymousUser,
+              AnonymousBindPromptStore.consumeIfPending() else {
+            return
+        }
+        showAnonymousBindPrompt = true
     }
 }
 

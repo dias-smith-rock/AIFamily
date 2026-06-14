@@ -2183,6 +2183,118 @@
           }
         }
       }
+    },
+    "auth_guest_exit_options_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Guest session" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "游客会话" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "遊客會話" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Guest session" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Guest session" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Guest session" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Guest session" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Guest session" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Guest session" } }
+      }
+    },
+    "auth_guest_exit_options_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回登录页可在本机保留群组；绑定账号可换机同步；清除游客数据将创建新游客且无法恢复。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回登入頁可在本機保留群組；綁定帳號可換機同步；清除遊客資料將建立新遊客且無法恢復。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } }
+      }
+    },
+    "auth_guest_return_to_login_keep_data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回登录页（本机保留数据）" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回登入頁（本機保留資料）" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } }
+      }
+    },
+    "auth_guest_bind_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定 Apple 或 Google" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定 Apple 或 Google" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } }
+      }
+    },
+    "auth_guest_start_fresh_experience": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清除游客数据并重新开始" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除遊客資料並重新開始" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } }
+      }
+    },
+    "auth_return_to_login": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Return to login" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回登录页" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回登入頁" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Return to login" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Return to login" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Return to login" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Return to login" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Return to login" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Return to login" } }
+      }
+    },
+    "auth_anonymous_bind_after_group_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "要在所有设备保留群组吗？" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "要在所有裝置保留群組嗎？" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } }
+      }
+    },
+    "auth_anonymous_bind_after_group_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定 Apple 或 Google 可在换机后保留群组与 Pro 权益，用户 ID 不变。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定 Apple 或 Google 可在換機後保留群組與 Pro 權益，使用者 ID 不變。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } }
+      }
     }
   },
   "version": "1.0"

@@ -58,18 +58,15 @@ final class MineViewModel: ObservableObject {
         signOutErrorMessage = nil
         defer { isSigningOut = false }
 
-        AuthSessionGuard.shared.beginLoggingOut()
-        appRouter.logVIPAccessState(trigger: "用户退出前")
         do {
-            try await authService.signOut()
-            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
-            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
-            LocalCacheManager.shared.removeAll()
-            await appRouter.refreshStateFromBackend()
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter)
         } catch {
             signOutErrorMessage = error.localizedDescription
         }
-        await AuthSessionGuard.shared.endLoggingOut()
+    }
+
+    func softExitToLogin(appRouter: AppRouter) {
+        SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
     }
 
     func deleteAccount(appRouter: AppRouter) async {
@@ -84,11 +81,7 @@ final class MineViewModel: ObservableObject {
             // 预留：接入 delete-account Edge Function / RPC 后在此调用
             // try await supabase.functions.invoke("delete-account")
             await authService.cleanUpCurrentUserAvatars()
-            try await authService.signOut()
-            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
-            UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
-            LocalCacheManager.shared.removeAll()
-            await appRouter.refreshStateFromBackend()
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter)
         } catch {
             deleteAccountErrorMessage = error.localizedDescription
         }

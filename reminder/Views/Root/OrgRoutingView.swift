@@ -30,6 +30,9 @@ struct OrgRoutingView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isDecodingPhoto = false
     @State private var isJoiningFullScreenLoading = false
+    @State private var showGuestExitDialog = false
+    @State private var showLinkAccountSheet = false
+    @State private var showRegisteredSignOutAlert = false
 
     var body: some View {
         orgRoutingNavigationStack
@@ -84,6 +87,23 @@ struct OrgRoutingView: View {
                     joiningGroupOverlay
                 }
             }
+            .guestSessionExitDialogs(
+                showGuestExitDialog: $showGuestExitDialog,
+                showLinkAccountSheet: $showLinkAccountSheet,
+                isProcessing: $isSigningOut,
+                onError: { message in
+                    localErrorMessage = message
+                    showErrorAlert = true
+                }
+            )
+            .alert(L10n.Auth.logOut, isPresented: $showRegisteredSignOutAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.quit, role: .destructive) {
+                    Task { await performRegisteredSignOut() }
+                }
+            } message: {
+                Text(L10n.Common.areYouSureYouWantToLogOutOfYourCurrent.localized)
+            }
     }
 
     private var orgRoutingNavigationStack: some View {
@@ -95,13 +115,24 @@ struct OrgRoutingView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
-                            Task { await signOut() }
+                            if appRouter.isAnonymousUser {
+                                showGuestExitDialog = true
+                            } else {
+                                showRegisteredSignOutAlert = true
+                            }
                         } label: {
                             if isSigningOut {
                                 ProgressView()
                             } else {
-                                Text(AppLocalized.string(L10n.Auth.logOut, locale: locale))
-                                    .foregroundStyle(.secondary)
+                                Text(
+                                    AppLocalized.string(
+                                        appRouter.isAnonymousUser
+                                            ? L10n.Auth.returnToLogin
+                                            : L10n.Auth.logOut,
+                                        locale: locale
+                                    )
+                                )
+                                .foregroundStyle(.secondary)
                             }
                         }
                         .disabled(isSigningOut)
@@ -284,6 +315,9 @@ struct OrgRoutingView: View {
         guard let createdId else { return }
         showCreateSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdId)
+        if appRouter.isAnonymousUser {
+            AnonymousBindPromptStore.scheduleAfterGroupAction()
+        }
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
     }
@@ -307,31 +341,25 @@ struct OrgRoutingView: View {
         let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
         guard success else { return }
         showJoinSheet = false
+        if appRouter.isAnonymousUser {
+            AnonymousBindPromptStore.scheduleAfterGroupAction()
+        }
         await appRouter.refreshStateFromBackend()
         if let groupId = appRouter.selectedHouseholdId {
             AnalyticsManager.log(event: .groupJoined(groupId: groupId))
         }
     }
 
-    private func signOut() async {
+    private func performRegisteredSignOut() async {
         guard isSigningOut == false else { return }
         isSigningOut = true
         defer { isSigningOut = false }
 
-        AuthSessionGuard.shared.beginLoggingOut()
-        appRouter.logVIPAccessState(trigger: "用户退出前")
-        #if canImport(Supabase)
-        do {
-            try await SupabaseManager.shared.client.auth.signOut()
-            await appRouter.refreshStateFromBackend()
-        } catch {
-            localErrorMessage = error.localizedDescription
+        let succeeded = await viewModel.signOut(appRouter: appRouter)
+        if succeeded == false, let message = viewModel.authErrorMessage {
+            localErrorMessage = message
             showErrorAlert = true
         }
-        #else
-        appRouter.appState = .unauthenticated
-        #endif
-        await AuthSessionGuard.shared.endLoggingOut()
     }
 }
 

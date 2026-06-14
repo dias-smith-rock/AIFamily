@@ -5883,5 +5883,61 @@
     "table": "Family",
     "swift_property": "newMember",
     "orphan": true
+  },
+  {
+    "legacy_key": "Guest session",
+    "new_key": "auth_guest_exit_options_title",
+    "table": "Auth",
+    "swift_property": "guestExitOptionsTitle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Return to login keeps your groups on this device.",
+    "new_key": "auth_guest_exit_options_message",
+    "table": "Auth",
+    "swift_property": "guestExitOptionsMessage",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Return to login (keep data on this device)",
+    "new_key": "auth_guest_return_to_login_keep_data",
+    "table": "Auth",
+    "swift_property": "guestReturnToLoginKeepData",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Link Apple or Google",
+    "new_key": "auth_guest_bind_account",
+    "table": "Auth",
+    "swift_property": "guestBindAccount",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Clear guest data & start over",
+    "new_key": "auth_guest_start_fresh_experience",
+    "table": "Auth",
+    "swift_property": "guestStartFreshExperience",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Return to login",
+    "new_key": "auth_return_to_login",
+    "table": "Auth",
+    "swift_property": "returnToLogin",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Keep your group on every device?",
+    "new_key": "auth_anonymous_bind_after_group_title",
+    "table": "Auth",
+    "swift_property": "anonymousBindAfterGroupTitle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "Link Apple or Google to keep this group and Pro benefits if you switch devices.",
+    "new_key": "auth_anonymous_bind_after_group_message",
+    "table": "Auth",
+    "swift_property": "anonymousBindAfterGroupMessage",
+    "orphan": true
   }
 ]

@@ -8,6 +8,8 @@ description: >-
 
 # 英文 Key 多语言规范（WeFamily iOS）
 
+> **运行时架构（冻结）**：`.cursor/rules/app-localization.mdc` — `LocalizedStringResource`、`appLocaleEnvironment`、`.id(selectedLanguage.id)` 等**不得改动**。
+
 ## 核心规则
 
 **Catalog Key 使用英文 snake_case**（如 `settings_location_reporting_nav_title`），**禁止**新增中文或英文句子作 Key。
@@ -32,21 +34,24 @@ domain：`common` `settings` `auth` `schedule` `family` `location` `vip` `todo` 
 ## SwiftUI 写法
 
 ```swift
-// View
+// View — 依赖根节点 .appLocaleEnvironment + .id(selectedLanguage.id)
 Text(L10n.Settings.locationReportingNavTitle.localized)
 
-// Alert / Button（LocalizedStringKey）
+// Alert / Button — 优先 L10n.Entry 或 .localized（LocalizedStringResource）
 .alert(L10n.Common.notice, ...) { Button(L10n.Common.ok) {} }
 
-// 带插值
+// 带插值 — 需 @Environment(\.locale)
 Text(L10n.Todo.overdueCount.formatted(locale: locale, count))
+
+// TextField（iOS 18）— 用 AppLocalized.string
+TextField(AppLocalized.string(L10n.Common.nicknameSuchAsMum, locale: locale), text: $name)
 
 // ViewModel
 AppLocalized.localized(L10n.Auth.sessionAbnormalRetry)
 L10n.Family.groupName.string(locale: locale)
 ```
 
-自定义组件参数使用 `L10n.Entry` 或 `LocalizedStringKey`，禁止裸 `String` 中文。
+自定义组件参数使用 `L10n.Entry` 或 `LocalizedStringResource`，禁止裸 `String` 中文。
 
 ## 新增词条流程
 

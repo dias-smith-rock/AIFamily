@@ -18,6 +18,62 @@ enum SupabaseAuthManager {
 
     /// 匿名登录并绑定 RevenueCat `appUserID` 为 Supabase UUID。
     static func signInAsGuest(appRouter: AppRouter) async throws -> UUID {
+        try await resumeOrSignInAsGuest(appRouter: appRouter).userId
+    }
+
+    /// 若 Keychain 中已有匿名会话则恢复，否则创建新匿名用户。
+    static func resumeOrSignInAsGuest(appRouter: AppRouter) async throws -> (userId: UUID, resumed: Bool) {
+        #if canImport(Supabase)
+        if let session = try? await client.auth.session, session.user.isAnonymous {
+            let userId = session.user.id
+            AuthSessionHints.markEverAuthenticated()
+            notifyAuthUserChanged(userId: userId, isAnonymous: true)
+            Task {
+                await prepareRevenueCat(for: userId, appRouter: appRouter)
+            }
+            #if DEBUG
+            print("[SupabaseAuthManager] resumeOrSignInAsGuest resumed userId=\(userId.uuidString.lowercased())")
+            #endif
+            return (userId, true)
+        }
+        let userId = try await createNewAnonymousSession(appRouter: appRouter)
+        return (userId, false)
+        #else
+        _ = appRouter
+        throw SupabaseAuthManagerError.sdkUnavailable
+        #endif
+    }
+
+    /// 返回登录页但保留 Keychain 中的 Supabase 匿名会话（同设备可恢复群组）。
+    static func softExitToLogin(appRouter: AppRouter) {
+        UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+        appRouter.prepareForSoftExitToLogin()
+        #if DEBUG
+        print("[SupabaseAuthManager] softExitToLogin session preserved")
+        #endif
+    }
+
+    /// 销毁 Supabase 会话并清理本地缓存（游客「重新开始」或正式账号退出）。
+    static func hardSignOut(appRouter: AppRouter) async throws {
+        #if canImport(Supabase)
+        AuthSessionGuard.shared.beginLoggingOut()
+        appRouter.logVIPAccessState(trigger: "用户退出前")
+        defer { Task { await AuthSessionGuard.shared.endLoggingOut() } }
+        try await client.auth.signOut()
+        UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+        UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
+        LocalCacheManager.shared.removeAll()
+        await appRouter.refreshStateFromBackend()
+        #if DEBUG
+        print("[SupabaseAuthManager] hardSignOut complete")
+        #endif
+        #else
+        _ = appRouter
+        throw SupabaseAuthManagerError.sdkUnavailable
+        #endif
+    }
+
+    private static func createNewAnonymousSession(appRouter: AppRouter) async throws -> UUID {
         #if canImport(Supabase)
         let session = try await client.auth.signInAnonymously()
         let userId = session.user.id
@@ -28,7 +84,7 @@ enum SupabaseAuthManager {
             await prepareRevenueCat(for: userId, appRouter: appRouter)
         }
         #if DEBUG
-        print("[SupabaseAuthManager] signInAsGuest ok userId=\(userId.uuidString.lowercased())")
+        print("[SupabaseAuthManager] createNewAnonymousSession ok userId=\(userId.uuidString.lowercased())")
         #endif
         return userId
         #else

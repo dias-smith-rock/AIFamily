@@ -364,63 +364,60 @@ struct MineView: View {
                 mineSectionHeader(L10n.Common.supportLegal)
             }
 
-            Section {
-                if appRouter.isAnonymousUser == false {
-                Button {
-                    Task {
-                        authSessionGuard.beginLoggingOut()
-                        familyViewModel.prepareForSignOut()
-                        await viewModel.signOut(appRouter: appRouter)
-                    }
-                } label: {
-                    HStack {
-                        Spacer()
-                        if viewModel.isSigningOut {
-                            ProgressView()
-                        } else {
-                            Text(L10n.Auth.logOut)
-                                .font(AppTheme.FontToken.bodyStrong)
+            if appRouter.isAnonymousUser == false {
+                Section {
+                    Button {
+                        Task {
+                            familyViewModel.prepareForSignOut()
+                            await viewModel.signOut(appRouter: appRouter)
                         }
-                        Spacer()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if viewModel.isSigningOut {
+                                ProgressView()
+                            } else {
+                                Text(L10n.Auth.logOut)
+                                    .font(AppTheme.FontToken.bodyStrong)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                     }
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                    .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
-                }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
-                }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
 
-                if appRouter.isAnonymousUser == false {
-                Button(role: .destructive) {
-                    Task { await viewModel.checkCreatorStatusBeforeDeletion() }
-                } label: {
-                    HStack {
-                        Spacer()
-                        if viewModel.isCheckingCreatorStatus {
-                            ProgressView()
-                                .padding(.trailing, 4)
-                            Text(L10n.Common.deleteAccount.localized)
-                                .font(AppTheme.FontToken.bodyStrong)
-                        } else if viewModel.isDeletingAccount {
-                            ProgressView()
-                        } else {
-                            Text(L10n.Common.deleteAccount.localized)
-                                .font(AppTheme.FontToken.bodyStrong)
+                    Button(role: .destructive) {
+                        Task { await viewModel.checkCreatorStatusBeforeDeletion() }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if viewModel.isCheckingCreatorStatus {
+                                ProgressView()
+                                    .padding(.trailing, 4)
+                                Text(L10n.Common.deleteAccount.localized)
+                                    .font(AppTheme.FontToken.bodyStrong)
+                            } else if viewModel.isDeletingAccount {
+                                ProgressView()
+                            } else {
+                                Text(L10n.Common.deleteAccount.localized)
+                                    .font(AppTheme.FontToken.bodyStrong)
+                            }
+                            Spacer()
                         }
-                        Spacer()
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                     }
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
-                    .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
+                    .buttonStyle(.plain)
+                    .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
+                } header: {
+                    mineSectionHeader(L10n.Common.account)
                 }
-                .buttonStyle(.plain)
-                .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
-                }
-            } header: {
-                mineSectionHeader(L10n.Common.account)
             }
         }
         .listStyle(.insetGrouped)

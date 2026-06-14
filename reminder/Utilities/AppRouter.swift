@@ -140,6 +140,7 @@ final class AppRouter: ObservableObject {
     /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存。
     @discardableResult
     func restoreOfflineHouseholdContextIfNeeded() -> Bool {
+        syncSessionIdentityFromKeychainIfAvailable()
         guard selectedHouseholdId == nil else { return false }
         guard
             let data = UserDefaults.standard.data(forKey: Self.offlineHouseholdSnapshotKey),
@@ -170,6 +171,8 @@ final class AppRouter: ObservableObject {
     func refreshStateFromBackend() async {
         hasCompletedAuthBootstrap = false
         defer { hasCompletedAuthBootstrap = true }
+
+        syncSessionIdentityFromKeychainIfAvailable()
 
         #if canImport(Supabase)
         if await NetworkMonitor.shared.isConnected == false {
@@ -345,6 +348,19 @@ final class AppRouter: ObservableObject {
         if appState == .unauthenticated {
             goToOrgRouting()
         }
+    }
+
+    /// 游客软退出：回到登录页，不清 Keychain 会话。
+    func prepareForSoftExitToLogin() {
+        appState = .unauthenticated
+        selectedHouseholdId = nil
+        selectedMembershipId = nil
+        selectedProfileId = nil
+        selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
+        selectedHouseholdCreatorHasActivePro = false
+        selectableHouseholds = []
+        recentHouseholds = []
     }
 
     func goToPendingApproval() {
@@ -745,8 +761,17 @@ final class AppRouter: ObservableObject {
     private func clientHasPersistedSession() -> Bool {
         SupabaseManager.shared.client.auth.currentSession != nil
     }
+
+    /// 从 Keychain 已持久化的 Supabase 会话同步游客标记（离线短路或未走完 refresh 时仍需正确 UI）。
+    private func syncSessionIdentityFromKeychainIfAvailable() {
+        guard let session = SupabaseManager.shared.client.auth.currentSession else { return }
+        isAnonymousUser = session.user.isAnonymous
+        authUserId = session.user.id
+    }
     #else
     private func clientHasPersistedSession() -> Bool { false }
+
+    private func syncSessionIdentityFromKeychainIfAvailable() {}
     #endif
 
     private func saveOfflineHouseholdSnapshot(option: HouseholdOption) {

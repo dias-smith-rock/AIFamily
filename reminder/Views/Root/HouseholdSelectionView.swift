@@ -30,6 +30,9 @@ struct HouseholdSelectionView: View {
     @State private var selectedPhotoItem: PhotosPickerItem?
     @State private var isDecodingPhoto = false
     @State private var isJoiningFullScreenLoading = false
+    @State private var showGuestExitDialog = false
+    @State private var showLinkAccountSheet = false
+    @State private var isGuestExitProcessing = false
 
     var body: some View {
         householdNavigationStack
@@ -55,7 +58,7 @@ struct HouseholdSelectionView: View {
             } message: {
                 Text(localErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
             }
-            .alert(L10n.Auth.logOut, isPresented: $viewModel.showSignOutAlert) {
+            .alert(L10n.Auth.logOut, isPresented: registeredSignOutAlertBinding) {
                 Button(L10n.Common.cancel, role: .cancel) {}
                 Button(L10n.Common.quit, role: .destructive) {
                     Task {
@@ -68,6 +71,15 @@ struct HouseholdSelectionView: View {
             } message: {
                 Text(L10n.Common.areYouSureYouWantToLogOutOfYourCurrent.localized)
             }
+            .guestSessionExitDialogs(
+                showGuestExitDialog: $showGuestExitDialog,
+                showLinkAccountSheet: $showLinkAccountSheet,
+                isProcessing: $isGuestExitProcessing,
+                onError: { message in
+                    viewModel.authErrorMessage = message
+                    showAuthErrorAlert = true
+                }
+            )
             .alert(L10n.Common.deleteAccount, isPresented: $viewModel.showDeleteAccountAlert) {
                 Button(L10n.Common.cancel, role: .cancel) {}
                 Button(L10n.Common.deleteAccount2, role: .destructive) {
@@ -150,18 +162,37 @@ struct HouseholdSelectionView: View {
         }
     }
 
+    private var registeredSignOutAlertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.showSignOutAlert && appRouter.isAnonymousUser == false },
+            set: { viewModel.showSignOutAlert = $0 }
+        )
+    }
+
     private var householdAccountMenu: some View {
         Menu {
             Button {
-                viewModel.showSignOutAlert = true
+                if appRouter.isAnonymousUser {
+                    showGuestExitDialog = true
+                } else {
+                    viewModel.showSignOutAlert = true
+                }
             } label: {
-                Label(AppLocalized.string(L10n.Auth.logOut, locale: locale), systemImage: "rectangle.portrait.and.arrow.right")
+                Label(
+                    AppLocalized.string(
+                        appRouter.isAnonymousUser ? L10n.Auth.returnToLogin : L10n.Auth.logOut,
+                        locale: locale
+                    ),
+                    systemImage: "rectangle.portrait.and.arrow.right"
+                )
             }
 
-            Button(role: .destructive) {
-                viewModel.showDeleteAccountAlert = true
-            } label: {
-                Label(L10n.Common.deleteAccount.localized, systemImage: "trash")
+            if appRouter.isAnonymousUser == false {
+                Button(role: .destructive) {
+                    viewModel.showDeleteAccountAlert = true
+                } label: {
+                    Label(L10n.Common.deleteAccount.localized, systemImage: "trash")
+                }
             }
         } label: {
             Image(systemName: "person.crop.circle")
@@ -407,6 +438,9 @@ struct HouseholdSelectionView: View {
         guard let createdId else { return }
         showCreateSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdId)
+        if appRouter.isAnonymousUser {
+            AnonymousBindPromptStore.scheduleAfterGroupAction()
+        }
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
@@ -431,6 +465,9 @@ struct HouseholdSelectionView: View {
         let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
         guard success else { return }
         showJoinSheet = false
+        if appRouter.isAnonymousUser {
+            AnonymousBindPromptStore.scheduleAfterGroupAction()
+        }
         await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
         if let groupId = appRouter.selectedHouseholdId {
