@@ -31,8 +31,10 @@ enum AuthSessionHints {
     }
 
     /// 冷启动首步：若 UserDefaults 无安装实例 ID，视为新安装/卸载重装，清理可能残留的 Auth Keychain 槽位。
-    static func prepareForFreshInstallIfNeeded() {
-        guard UserDefaults.standard.string(forKey: installInstanceKey) == nil else { return }
+    /// - Returns: 是否判定为本次安装的首启（含卸载重装）。
+    @discardableResult
+    static func prepareForFreshInstallIfNeeded() -> Bool {
+        guard UserDefaults.standard.string(forKey: installInstanceKey) == nil else { return false }
 
         UserDefaults.standard.set(UUID().uuidString, forKey: installInstanceKey)
         UserDefaults.standard.set(false, forKey: formalAccountUsedKey)
@@ -41,5 +43,6 @@ enum AuthSessionHints {
         #if DEBUG
         print("[AuthSessionHints] fresh install detected — cleared auth keychain archives, guest entry enabled")
         #endif
+        return true
     }
 }

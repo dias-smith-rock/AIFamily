@@ -181,6 +181,7 @@ enum SupabaseAuthManager {
             return
         }
         persistFormalSession(session)
+        AuthSessionHints.markFormalAccountUsed()
         #if DEBUG
         print(
             "[SupabaseAuthManager] persisted formal session userId=\(session.user.id.uuidString.lowercased())"
@@ -510,7 +511,6 @@ enum SupabaseAuthManager {
                 refreshToken: session.refreshToken
             )
         )
-        AuthSessionHints.markFormalAccountUsed()
     }
 
     private static func persistActiveSessionToMatchingSlot() async {
@@ -535,6 +535,15 @@ enum SupabaseAuthManager {
         #endif
     }
 
+    /// 冷启动离线时读取 Keychain 已持久化会话，避免 `await session` 触发网络 refresh 阻塞 Splash。
+    static func currentUserIdFromPersistedSession() -> UUID? {
+        #if canImport(Supabase)
+        client.auth.currentSession?.user.id
+        #else
+        nil
+        #endif
+    }
+
     static func isAnonymousUser() async -> Bool {
         #if canImport(Supabase)
         do {
@@ -547,9 +556,26 @@ enum SupabaseAuthManager {
         #endif
     }
 
+    /// 冷启动离线时读取 Keychain 已持久化会话，避免 `await session` 触发网络 refresh 阻塞 Splash。
+    static func isAnonymousUserFromPersistedSession() -> Bool {
+        #if canImport(Supabase)
+        client.auth.currentSession?.user.isAnonymous ?? false
+        #else
+        false
+        #endif
+    }
+
+    /// 卸载重装后清除 Supabase SDK 本地会话，避免 `.initialSession` 误恢复旧正式账号。
+    static func clearSupabaseSessionForFreshInstallIfNeeded() async {
+        #if canImport(Supabase)
+        try? await client.auth.signOut(scope: .local)
+        #endif
+    }
+
     /// App 冷启动：若已有 Supabase 会话，用 UUID 初始化 / 对齐 RevenueCat。
     static func bootstrapRevenueCatIfNeeded(appRouter: AppRouter) async {
         #if canImport(Supabase)
+        guard await NetworkMonitor.shared.isConnected else { return }
         guard let userId = await currentUserId() else { return }
         await prepareRevenueCat(for: userId, appRouter: appRouter)
         #else
@@ -577,6 +603,7 @@ enum SupabaseAuthManager {
             persistGuestSession(session)
         } else {
             persistFormalSession(session)
+            AuthSessionHints.markFormalAccountUsed()
         }
         await prepareRevenueCat(for: userId, appRouter: appRouter)
         notifyAuthUserChanged(userId: userId, isAnonymous: session.user.isAnonymous)
@@ -614,6 +641,7 @@ enum SupabaseAuthManager {
             persistGuestSession(session)
         } else {
             persistFormalSession(session)
+            AuthSessionHints.markFormalAccountUsed()
         }
         await prepareRevenueCat(for: userId, appRouter: appRouter)
         notifyAuthUserChanged(userId: userId, isAnonymous: session.user.isAnonymous)

@@ -1,30 +1,32 @@
 import Foundation
 
-/// Google / OAuth 手动登录 → 主界面 的性能埋点（前缀 `[GoogleOAuthPerf]`）。
+/// 离线 + 已登录冷启动 → 主界面 的性能埋点（前缀 `[OfflineColdStartPerf]`）。
 /// 仅记录日志，不改变业务逻辑。
 @MainActor
-enum OAuthLoginPerformanceTracer {
+enum OfflineColdStartPerformanceTracer {
     private static var traceOriginSeconds: CFAbsoluteTime?
     private static var lastMarkSeconds: CFAbsoluteTime?
     private static var traceID: String = ""
-    private static var provider: String = ""
     private static var isActive = false
 
-    static let logPrefix = "[GoogleOAuthPerf]"
+    static let logPrefix = "[OfflineColdStartPerf]"
 
     static var traceIsActive: Bool { isActive }
 
     // MARK: - Trace lifecycle
 
-    static func beginTrace(provider: String) {
+    /// 冷启动且已登录、首帧网络为离线时开启追踪链。
+    static func beginTrace(networkConnectedAtStart: Bool) {
         guard isActive == false else { return }
         let now = nowSeconds()
-        self.provider = provider
         traceID = String(UUID().uuidString.prefix(8)).lowercased()
         traceOriginSeconds = now
         lastMarkSeconds = now
         isActive = true
-        log(label: "trace.begin", note: "provider=\(provider) path=manualOAuthLogin")
+        log(
+            label: "trace.begin",
+            note: "path=offlineColdStartLoggedIn networkConnectedAtStart=\(networkConnectedAtStart)"
+        )
     }
 
     static func finishMainPageReached(appRouter: AppRouter?) {
@@ -36,14 +38,14 @@ enum OAuthLoginPerformanceTracer {
         )
         if let origin = traceOriginSeconds {
             let totalMs = elapsedMilliseconds(since: origin, until: nowSeconds())
-            print("\(logPrefix) trace.finish totalMs=\(totalMs) traceId=\(traceID) provider=\(provider)")
+            print("\(logPrefix) trace.finish totalMs=\(totalMs) traceId=\(traceID)")
         }
         resetTrace()
     }
 
     static func cancelTrace(reason: String) {
         guard isActive else { return }
-        print("\(logPrefix) trace.cancel reason=\(reason) traceId=\(traceID) provider=\(provider)")
+        print("\(logPrefix) trace.cancel reason=\(reason) traceId=\(traceID)")
         resetTrace()
     }
 
@@ -97,7 +99,6 @@ enum OAuthLoginPerformanceTracer {
         var parts: [String] = [
             logPrefix,
             "traceId=\(traceID)",
-            "provider=\(provider)",
             "label=\(label)",
         ]
         if let origin = traceOriginSeconds {
@@ -162,31 +163,28 @@ enum OAuthLoginPerformanceTracer {
         traceOriginSeconds = nil
         lastMarkSeconds = nil
         traceID = ""
-        provider = ""
     }
 }
 
-/// 冷启动 `[AutoLoginPerf]` 与手动 OAuth `[GoogleOAuthPerf]` 共用埋点入口；inactive 的 tracer 自动跳过。
+/// 冷启动 Splash / launchBootstrap 埋点：同时写入 `[AutoLoginPerf]` 与 `[OfflineColdStartPerf]`（后者仅离线 trace 活跃时输出）。
 @MainActor
-enum LoginFlowPerformanceTracing {
+enum LaunchBootstrapPerformanceTracing {
+    static func beginColdStartTraceIfNeeded(isUserLoggedIn: Bool) {
+        AutoLoginPerformanceTracer.beginColdStartTraceIfNeeded(isUserLoggedIn: isUserLoggedIn)
+    }
+
     static func mark(
         _ label: String,
         note: String? = nil,
         appRouter: AppRouter? = nil
     ) {
         AutoLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        OAuthLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
         OfflineColdStartPerformanceTracer.mark(label, note: note, appRouter: appRouter)
     }
 
-    static func logAlways(
-        _ label: String,
-        note: String? = nil,
-        appRouter: AppRouter? = nil
-    ) {
-        AutoLoginPerformanceTracer.logAlways(label, note: note, appRouter: appRouter)
-        OAuthLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        OfflineColdStartPerformanceTracer.mark(label, note: note, appRouter: appRouter)
+    static func cancelTrace(reason: String) {
+        AutoLoginPerformanceTracer.cancelTrace(reason: reason)
+        OfflineColdStartPerformanceTracer.cancelTrace(reason: reason)
     }
 
     static func measure<T>(
@@ -195,14 +193,6 @@ enum LoginFlowPerformanceTracing {
         appRouter: AppRouter? = nil,
         operation: () async throws -> T
     ) async rethrows -> T {
-        if OAuthLoginPerformanceTracer.traceIsActive {
-            return try await OAuthLoginPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
         if OfflineColdStartPerformanceTracer.traceIsActive {
             return try await OfflineColdStartPerformanceTracer.measure(
                 label,
@@ -225,14 +215,6 @@ enum LoginFlowPerformanceTracing {
         appRouter: AppRouter? = nil,
         operation: () async -> T
     ) async -> T {
-        if OAuthLoginPerformanceTracer.traceIsActive {
-            return await OAuthLoginPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
         if OfflineColdStartPerformanceTracer.traceIsActive {
             return await OfflineColdStartPerformanceTracer.measure(
                 label,

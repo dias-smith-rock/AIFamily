@@ -23,7 +23,7 @@ final class NetworkMonitor: ObservableObject {
                 self.isConnected = connected
                 if self.hasReceivedInitialPathUpdate == false {
                     self.hasReceivedInitialPathUpdate = true
-                    AutoLoginPerformanceTracer.logAlways(
+                    LoginFlowPerformanceTracing.logAlways(
                         "networkMonitor.initialPath",
                         note: "connected=\(connected)"
                     )
@@ -54,7 +54,7 @@ final class NetworkMonitor: ObservableObject {
                 let waiters = initialPathWaiters
                 initialPathWaiters.removeAll()
                 let fallbackConnected = isConnected
-                AutoLoginPerformanceTracer.logAlways(
+                LoginFlowPerformanceTracing.logAlways(
                     "networkMonitor.initialPath",
                     note: "connected=\(fallbackConnected) source=timeout"
                 )
@@ -64,7 +64,7 @@ final class NetworkMonitor: ObservableObject {
             }
         }
         let waitMs = Int((CFAbsoluteTimeGetCurrent() - waitStart) * 1000)
-        AutoLoginPerformanceTracer.logAlways(
+        LoginFlowPerformanceTracing.logAlways(
             "networkMonitor.waitForInitialPathUpdate",
             note: "connected=\(connected) waitMs=\(waitMs)"
         )

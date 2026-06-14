@@ -221,17 +221,28 @@ final class AppRouter: ObservableObject {
     /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存（仅游客会话）。
     @discardableResult
     func restoreOfflineHouseholdContextIfNeeded() -> Bool {
+        LoginFlowPerformanceTracing.mark("restoreOfflineHouseholdContextIfNeeded.begin", appRouter: self)
         syncSessionIdentityFromKeychainIfAvailable()
-        guard isAnonymousUser else { return false }
+        guard isAnonymousUser else {
+            LoginFlowPerformanceTracing.mark("restoreOfflineHouseholdContextIfNeeded.skip", note: "notAnonymous", appRouter: self)
+            return false
+        }
         return tryFastEnterFromPersistedHouseholdSnapshot()
     }
 
     /// 有本地 household 快照时直接进入 activeMember（游客 / 正式账号冷启动快路径）。
     @discardableResult
     func tryFastEnterFromPersistedHouseholdSnapshot() -> Bool {
+        LoginFlowPerformanceTracing.mark("tryFastEnterFromPersistedHouseholdSnapshot.begin", appRouter: self)
         syncSessionIdentityFromKeychainIfAvailable()
-        guard selectedHouseholdId == nil else { return false }
-        guard let snapshot = loadPersistedHouseholdSnapshot() else { return false }
+        guard selectedHouseholdId == nil else {
+            LoginFlowPerformanceTracing.mark("tryFastEnterFromPersistedHouseholdSnapshot.skip", note: "householdAlreadySelected", appRouter: self)
+            return false
+        }
+        guard let snapshot = loadPersistedHouseholdSnapshot() else {
+            LoginFlowPerformanceTracing.mark("tryFastEnterFromPersistedHouseholdSnapshot.miss", note: "noPersistedSnapshot", appRouter: self)
+            return false
+        }
 
         selectedHouseholdId = snapshot.householdId
         selectedMembershipId = snapshot.membershipId
@@ -280,17 +291,6 @@ final class AppRouter: ObservableObject {
 
         #if canImport(Supabase)
         _ = await NetworkMonitor.shared.ensureInitialPathReady()
-
-        if await NetworkMonitor.shared.isConnected == false,
-           clientHasPersistedSession(),
-           appState != .activeMember || selectedHouseholdId == nil {
-            LoginFlowPerformanceTracing.mark(
-                "refreshState.offlineRetry.wait",
-                appRouter: self
-            )
-            try? await Task.sleep(nanoseconds: 400_000_000)
-            _ = await NetworkMonitor.shared.waitForInitialPathUpdate(timeoutNanoseconds: 200_000_000)
-        }
 
         if await NetworkMonitor.shared.isConnected == false {
             if clientHasPersistedSession(),
