@@ -280,6 +280,10 @@ enum SupabaseAuthManager {
         }
         appRouter.finishAnonymousSignIn(userId: userId)
         GuestLoginPerformanceTracer.mark("guest.bootstrap.finishAnonymousSignIn", appRouter: appRouter)
+        if appRouter.appState == .activeMember, appRouter.selectedHouseholdId != nil {
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            GuestLoginPerformanceTracer.mark("guest.bootstrap.reloadTasksPosted", appRouter: appRouter)
+        }
         await LoginFlowPerformanceTracing.measure(
             "guest.bootstrap.saveGuestSessionToKeychain",
             appRouter: appRouter

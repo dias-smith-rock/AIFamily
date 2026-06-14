@@ -113,12 +113,10 @@ final class ScheduleViewModel: ObservableObject {
 
         let cacheKey = Self.tasksCacheKey(for: householdId)
 
-        var restoredFromDisk = false
-        if silent == false, let cached = await HouseholdLocalCache.loadTasks(for: householdId) {
-            tasks = cached
-            errorMessage = nil
-            restoredFromDisk = true
-        }
+        var restoredFromDisk = await restoreTasksFromDiskIfNeeded(
+            householdId: householdId,
+            allowWhenSilent: silent == false
+        )
 
         if rosterLoadedForHouseholdId != householdId {
             await loadHouseholdRosterFromCache(in: householdId)
@@ -136,8 +134,8 @@ final class ScheduleViewModel: ObservableObject {
         }
 
         guard await NetworkMonitor.shared.isConnected else {
-            if !silent, tasks.isEmpty {
-                errorMessage = AppLocalized.localizedSync(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            if restoredFromDisk {
+                errorMessage = nil
             }
             #if DEBUG
             print("[ScheduleViewModel] loadTasks skipped reason=offline household=\(householdId.uuidString.prefix(8)) tasks=\(tasks.count)")
@@ -169,6 +167,20 @@ final class ScheduleViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    /// 非 silent 加载或列表为空时（含 silent 离线刷新）尝试恢复磁盘任务快照。
+    private func restoreTasksFromDiskIfNeeded(
+        householdId: UUID,
+        allowWhenSilent: Bool
+    ) async -> Bool {
+        guard allowWhenSilent || tasks.isEmpty else { return false }
+        guard let cached = await HouseholdLocalCache.loadTasks(for: householdId) else {
+            return false
+        }
+        tasks = cached
+        errorMessage = nil
+        return true
     }
 
     private func loadHouseholdRosterFromCache(in householdId: UUID) async {
