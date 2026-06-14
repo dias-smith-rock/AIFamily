@@ -78,6 +78,39 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         }
     }
 
+    /// 有效 Supabase UUID 可用时：首次 configure 即绑定 `appUserID`，否则 logIn 对齐。
+    func prepareForUser(userId: UUID, appRouter: AppRouter) async {
+        self.appRouter = appRouter
+        guard let apiKey = RevenueCatConfiguration.publicAPIKey else {
+            #if DEBUG
+            print("[RevenueCat] missing RevenueCatAPIKey in Info.plist")
+            #endif
+            return
+        }
+
+        let appUserID = userId.uuidString.lowercased()
+
+        if isConfigured == false {
+            #if DEBUG
+            Purchases.logLevel = .debug
+            #else
+            Purchases.logLevel = .warn
+            #endif
+            Purchases.configure(withAPIKey: apiKey, appUserID: appUserID)
+            Purchases.shared.delegate = self
+            isConfigured = true
+            await loadOfferings()
+            await refreshCustomerInfo()
+            #if DEBUG
+            print("[RevenueCat] configure with appUserID=\(appUserID)")
+            #endif
+            return
+        }
+
+        _ = await logIn(userId: userId)
+        await refreshCustomerInfo()
+    }
+
     func canPurchase(plan: VIPBillingPlan) -> Bool {
         packagesByPlan[plan] != nil || storeProductsByPlan[plan] != nil
     }
@@ -258,6 +291,7 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
                 throw RevenueCatSubscriptionError.entitlementNotGranted
             }
             AnalyticsManager.log(event: .vipPurchased(plan: plan.subscriptionPlan.rawValue))
+            await SubscriptionTrigger.shared.syncSubscriptionFallback(appRouter: appRouter)
             return true
         } catch let error as RevenueCat.ErrorCode {
             if error == .purchaseCancelledError {
@@ -305,6 +339,7 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
                 updateCloudSyncWarning(appRouter: appRouter, syncResponse: response)
 
                 if showsCloudSyncWarning == false {
+                    await SubscriptionTrigger.shared.syncSubscriptionFallback(appRouter: appRouter)
                     return true
                 }
 

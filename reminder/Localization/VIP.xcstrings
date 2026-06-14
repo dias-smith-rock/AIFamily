@@ -1,2217 +1,2366 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "vip_app_store_subscriptions_are_coming_soon_stay_tun" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اشتراكات App Store قريبًا. ترقبوا."
+  "sourceLanguage": "en",
+  "strings": {
+    "vip_app_store_subscriptions_are_coming_soon_stay_tun": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اشتراكات App Store قريبًا. ترقبوا."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store subscriptions are coming soon. Stay tuned."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store subscriptions are coming soon. Stay tuned."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las suscripciones en App Store llegarán pronto. Permanece atento."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las suscripciones en App Store llegarán pronto. Permanece atento."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les abonnements App Store arrivent bientôt. Restez à l'écoute."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les abonnements App Store arrivent bientôt. Restez à l'écoute."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store सब्सक्रिप्शन जल्द आ रहा है। बने रहें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store सब्सक्रिप्शन जल्द आ रहा है। बने रहें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinaturas na App Store em breve. Fique atento."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinaturas na App Store em breve. Fique atento."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store சந்தா விரைவில் வருகிறது. காத்திருங்கள்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store சந்தா விரைவில் வருகிறது. காத்திருங்கள்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store 订阅功能即将上线，敬请期待。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store 订阅功能即将上线，敬请期待。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App Store 訂閱功能即將上線，敬請期待。"
-          }
-        }
-      }
-    },
-    "vip_choose_a_plan" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اختر خطة الاشتراك"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choose a plan"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige un plan"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisir un forfait"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सब्सक्रिप्शन प्लान चुनें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Escolha um plano"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "சந்தா திட்டத்தைத் தேர்ந்தெடுக்கவும்"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "选择订阅方案"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "選擇訂閱方案"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store 訂閱功能即將上線，敬請期待。"
           }
         }
       }
     },
-    "vip_cloud_sync_failed_tap_retry" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : { "stringUnit" : { "state" : "translated", "value" : "Pro نشط على هذا الجهاز، لكن مزامنة السحابة فشلت. أعد المحاولة للمزامنة عبر الأجهزة." } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Pro is active on this device, but cloud sync failed. Retry to sync across devices and groups." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Pro está activo en este dispositivo, pero falló la sincronización en la nube. Reintenta para sincronizar." } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Pro est actif sur cet appareil, mais la synchronisation cloud a échoué. Réessayez." } },
-        "hi" : { "stringUnit" : { "state" : "translated", "value" : "इस डिवाइस पर Pro सक्रिय है, लेकिन क्लाउड सिंक विफल। पुनः प्रयास करें।" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Pro está ativo neste dispositivo, mas a sincronização na nuvem falhou. Tente novamente." } },
-        "ta" : { "stringUnit" : { "state" : "translated", "value" : "இந்த சாதனத்தில் Pro செயலில் உள்ளது, ஆனால் கிளவுட் ஒத்திசைவு தோல்வி. மீண்டும் முயற்சிக்கவும்." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本机 Pro 已生效，但云端同步失败。请重试以同步到其他设备并启用组织继承。" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "本機 Pro 已生效，但雲端同步失敗。請重試以同步到其他裝置並啟用組織繼承。" } }
-      }
-    },
-    "vip_retry_cloud_sync" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : { "stringUnit" : { "state" : "translated", "value" : "إعادة مزامنة السحابة" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Retry cloud sync" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Reintentar sincronización" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Réessayer la synchronisation" } },
-        "hi" : { "stringUnit" : { "state" : "translated", "value" : "क्लाउड सिंक पुनः प्रयास करें" } },
-        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Tentar sincronizar novamente" } },
-        "ta" : { "stringUnit" : { "state" : "translated", "value" : "கிளவுட் ஒத்திசைவை மீண்டும் முயற்சி" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "重试云端同步" } },
-        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "重試雲端同步" } }
-      }
-    },
-    "vip_claim_1_year_pro_for_free" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "احصل على سنة واحدة Pro مجانًا"
+    "vip_choose_a_plan": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر خطة الاشتراك"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Claim 1 Year Pro for Free"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a plan"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reclama 1 año Pro gratis"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un plan"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réclamez 1 an Pro gratuitement"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir un forfait"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 वर्ष Pro का निःशुल्क दावा करें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सब्सक्रिप्शन प्लान चुनें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reivindique 1 ano Pro gratuitamente"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha um plano"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 வருடம் Proஐ இலவசமாகப் பெறுங்கள்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சந்தா திட்டத்தைத் தேர்ந்தெடுக்கவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费领取 1 年 Pro 权益"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择订阅方案"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費領取 1 年 Pro 權益"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇訂閱方案"
           }
         }
       }
     },
-    "vip_current_group_has_pro_benefits" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "المجموعة الحالية تتمتع بمزايا Pro"
+    "vip_cloud_sync_failed_tap_retry": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro نشط على هذا الجهاز، لكن مزامنة السحابة فشلت. أعد المحاولة للمزامنة عبر الأجهزة."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Current group has Pro benefits"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro is active on this device, but cloud sync failed. Retry to sync across devices and groups."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El grupo actual tiene beneficios Pro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro está activo en este dispositivo, pero falló la sincronización en la nube. Reintenta para sincronizar."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le groupe actuel bénéficie de Pro"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro est actif sur cet appareil, mais la synchronisation cloud a échoué. Réessayez."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "वर्तमान समूह में Pro लाभ हैं"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस डिवाइस पर Pro सक्रिय है, लेकिन क्लाउड सिंक विफल। पुनः प्रयास करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O grupo atual tem benefícios Pro"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro está ativo neste dispositivo, mas a sincronização na nuvem falhou. Tente novamente."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "தற்போதைய குழு Pro 혜택களைக் கொண்டுள்ளது"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த சாதனத்தில் Pro செயலில் உள்ளது, ஆனால் கிளவுட் ஒத்திசைவு தோல்வி. மீண்டும் முயற்சிக்கவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前群组已享 Pro 权益"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本机 Pro 已生效，但云端同步失败。请重试以同步到其他设备并启用组织继承。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前群組已享有 Pro 權益"
-          }
-        }
-      }
-    },
-    "vip_current_group_inherits_pro_benefits" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "المجموعة الحالية ترث مزايا Pro"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Current group inherits Pro benefits"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El grupo actual hereda beneficios Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le groupe actuel hérite des avantages Pro"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "वर्तमान समूह Pro लाभ प्राप्त करता है"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O grupo atual herda benefícios Pro"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "தற்போதைய குழு Pro 혜택களைப் பெறுகிறது"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前群组已继承 Pro 权益"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前群組已繼承 Pro 權益"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本機 Pro 已生效，但雲端同步失敗。請重試以同步到其他裝置並啟用組織繼承。"
           }
         }
       }
     },
-    "vip_customize_history_trail_count_and_enable_ghost_m" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+    "vip_retry_cloud_sync": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة مزامنة السحابة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry cloud sync"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reintentar sincronización"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayer la synchronisation"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लाउड सिंक पुनः प्रयास करें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tentar sincronizar novamente"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கிளவுட் ஒத்திசைவை மீண்டும் முயற்சி"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 自定义历史轨迹数量，开启位置隐身不上报新坐标。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重试云端同步"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 自訂歷史軌跡數量，開啟位置隱身不上報新座標。"
-          }
-        }
-      }
-    },
-    "vip_failed_to_load_subscription_products_please_try" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تعذر تحميل منتجات الاشتراك. يرجى المحاولة لاحقًا."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed to load subscription products. Please try again later."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se pudieron cargar los productos de suscripción. Inténtalo más tarde."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Échec du chargement des abonnements. Réessayez plus tard."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सब्सक्रिप्शन उत्पाद लोड नहीं हो सके। बाद में पुनः प्रयास करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Falha ao carregar produtos de assinatura. Tente novamente mais tarde."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "சந்தா தயாரிப்புகளை ஏற்ற முடியவில்லை. பின்னர் முயற்சிக்கவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "订阅商品加载失败，请稍后重试。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訂閱商品載入失敗，請稍後重試。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重試雲端同步"
           }
         }
       }
     },
-    "vip_founding_member_offer_claim_1_year_of_pro_free_f" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 عرض العضو المؤسس: احصل على سنة واحدة من Pro مجانًا لفترة محدودة!"
+    "vip_claim_1_year_pro_for_free": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "احصل على سنة واحدة Pro مجانًا"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 Founding member offer: claim 1 year of Pro free for a limited time!"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claim 1 Year Pro for Free"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 Oferta para miembro fundador: ¡reclama 1 año de Pro gratis por tiempo limitado!"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclama 1 año Pro gratis"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 Offre membre fondateur : bénéficiez de 1 an de Pro gratuit pour une durée limitée !"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réclamez 1 an Pro gratuitement"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 संस्थापक सदस्य प्रस्ताव: सीमित समय के लिए 1 वर्ष के लिए Pro का निःशुल्क दावा करें!"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 वर्ष Pro का निःशुल्क दावा करें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 Oferta para membro fundador: reivindique 1 ano de Pro grátis por tempo limitado!"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reivindique 1 ano Pro gratuitamente"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 ஸ்தாபக உறுப்பினர் சலுகை: குறிப்பிட்ட காலத்திற்கு Pro 1 வருடத்தை இலவசமாகப் பெறுங்கள்!"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 வருடம் Proஐ இலவசமாகப் பெறுங்கள்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费领取 1 年 Pro 权益"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "🚀 創世用戶福利：限時免費領取 1 年 Pro 權益！"
-          }
-        }
-      }
-    },
-    "vip_free_plan_allows_1_compressed_image_per_task_upg" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الخطة المجانية تسمح بصورة مضغوطة واحدة لكل مهمة. قم بالترقية إلى Pro للمزيد وجودة أعلى."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free plan allows 1 compressed image per task. Upgrade to Pro for more and higher quality."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El plan gratuito permite 1 imagen comprimida por tarea. Actualiza a Pro para más y mejor calidad."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le plan gratuit permet 1 image compressée par tâche. Passez à Pro pour plus et une meilleure qualité."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मुफ्त योजना में प्रति कार्य 1 संपीड़ित छवि। अधिक और बेहतर गुणवत्ता के लिए Pro में अपग्रेड करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O plano gratuito permite 1 imagem comprimida por tarefa. Atualize para Pro para mais e melhor qualidade."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "இலவச திட்டம் ஒரு பணிக்கு 1 சுருக்கப்பட்ட படம். Pro-க்கு மேம்படுத்தவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版每任务仅支持 1 张压缩图片，升级 Pro 后可添加更多并支持更高画质。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費版每任務僅支援 1 張壓縮圖片，升級 Pro 後可新增更多並支援更高畫質。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費領取 1 年 Pro 權益"
           }
         }
       }
     },
-    "vip_free_plan_allows_1_compressed_image_per_task_upg_2" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تسمح الخطة المجانية بصورة واحدة مضغوطة لكل مهمة. قم بالترقية إلى Pro لمزيد من المرفقات."
+    "vip_current_group_has_pro_benefits": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المجموعة الحالية تتمتع بمزايا Pro"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free plan allows 1 compressed image per task. Upgrade to Pro for more attachments."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current group has Pro benefits"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El plan gratuito permite 1 imagen comprimida por tarea. Actualice a Pro para obtener más archivos adjuntos."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El grupo actual tiene beneficios Pro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le plan gratuit permet 1 image compressée par tâche. Passez à Pro pour plus de pièces jointes."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le groupe actuel bénéficie de Pro"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "निःशुल्क योजना प्रति कार्य 1 संपीड़ित छवि की अनुमति देती है। अधिक अनुलग्नकों के लिए Pro पर अपग्रेड करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वर्तमान समूह में Pro लाभ हैं"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O plano gratuito permite 1 imagem compactada por tarefa. Atualize para Pro para mais anexos."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O grupo atual tem benefícios Pro"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "இலவச திட்டம் ஒரு பணிக்கு 1 சுருக்கப்பட்ட படத்தை அனுமதிக்கிறது. கூடுதல் இணைப்புகளுக்கு Pro க்கு மேம்படுத்தவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தற்போதைய குழு Pro 혜택களைக் கொண்டுள்ளது"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版每任务仅支持 1 张图片，升级 Pro 可上传更多附件。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前群组已享 Pro 权益"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費版每任務僅支援 1 張圖片，升級 Pro 可上傳更多附件。"
-          }
-        }
-      }
-    },
-    "vip_free_plan_allows_1_group_upgrade_to_pro_for_unli" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الخطة المجانية تسمح بمجموعة واحدة. قم بالترقية إلى Pro لمجموعات غير محدودة."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free plan allows 1 group. Upgrade to Pro for unlimited groups."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El plan gratuito permite 1 grupo. Actualiza a Pro para grupos ilimitados."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le plan gratuit permet 1 groupe. Passez à Pro pour des groupes illimités."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मुफ्त योजना में 1 समूह। असीमित समूहों के लिए Pro में अपग्रेड करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O plano gratuito permite 1 grupo. Atualize para Pro para grupos ilimitados."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "இலவச திட்டம் 1 குழுவை அனுமதிக்கிறது. Pro-க்கு மேம்படுத்தவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版最多加入 1 个群组，升级 Pro 后可无限创建与加入。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費版最多加入 1 個群組，升級 Pro 後可無限建立與加入。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前群組已享有 Pro 權益"
           }
         }
       }
     },
-    "vip_free_plan_allows_2_members_per_group_upgrade_to" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الخطة المجانية تسمح بعضوين لكل مجموعة. قم بالترقية إلى Pro للمزيد."
+    "vip_current_group_inherits_pro_benefits": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المجموعة الحالية ترث مزايا Pro"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free plan allows 2 members per group. Upgrade to Pro for more."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current group inherits Pro benefits"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El plan gratuito permite 2 miembros por grupo. Actualiza a Pro para más."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El grupo actual hereda beneficios Pro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le plan gratuit permet 2 membres par groupe. Passez à Pro pour plus."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le groupe actuel hérite des avantages Pro"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मुफ्त योजना में प्रति समूह 2 सदस्य। अधिक के लिए Pro में अपग्रेड करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वर्तमान समूह Pro लाभ प्राप्त करता है"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O plano gratuito permite 2 membros por grupo. Atualize para Pro para mais."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O grupo atual herda benefícios Pro"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "இலவச திட்டம் ஒரு குழuvukku 2 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தற்போதைய குழு Pro 혜택களைப் பெறுகிறது"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版每组最多 2 名成员，升级 Pro 后可添加更多。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前群组已继承 Pro 权益"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費版每組最多 2 名成員，升級 Pro 後可新增更多。"
-          }
-        }
-      }
-    },
-    "vip_free_plan_allows_2_members_per_group_upgrade_to_2" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الخطة المجانية تسمح بعضوين لكل مجموعة. قم بالترقية إلى Pro لدعوة المزيد."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Free plan allows 2 members per group. Upgrade to Pro to invite more."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El plan gratuito permite 2 miembros por grupo. Actualiza a Pro para invitar más."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le plan gratuit permet 2 membres par groupe. Passez à Pro pour inviter plus."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "मुफ्त योजना में प्रति समूह 2 सदस्य। अधिक आमंत्रित करने के लिए Pro में अपग्रेड करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O plano gratuito permite 2 membros por grupo. Atualize para Pro para convidar mais."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "இலவச திட்டம் ஒரு குழuvukku 2 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "免費版每組最多 2 名成員，升級 Pro 後可邀請更多。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前群組已繼承 Pro 權益"
           }
         }
       }
     },
-    "vip_no_subscription_found_to_restore" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "لم يتم العثور على اشتراك لاستعادته."
+    "vip_customize_history_trail_count_and_enable_ghost_m": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No subscription found to restore."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se encontró ninguna suscripción para restaurar."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun abonnement à restaurer."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "पुनर्स्थापित करने के लिए कोई सब्सक्रिप्शन नहीं मिला।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma assinatura encontrada para restaurar."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "மீட்டமைக்க சந்தா கிடைக்கவில்லை."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Customize history trail count and enable ghost mode to stop uploading new coordinates."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到可恢复的订阅。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 自定义历史轨迹数量，开启位置隐身不上报新坐标。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未找到可恢復的訂閱。"
-          }
-        }
-      }
-    },
-    "vip_one_payer_whole_group_vip" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "دفع واحد، VIP للمجموعة بأكملها"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "One payer, whole group VIP"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un pago, VIP para todo el grupo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un payeur, VIP pour tout le groupe"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "एक भुगतान, पूरे समूह को VIP"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Um pagamento, VIP para todo o grupo"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ஒருவர் செலுத்தினால், முழு குழுவுக்கும் VIP"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一人付费，全组 VIP"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一人付費，全組 VIP"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 自訂歷史軌跡數量，開啟位置隱身不上報新座標。"
           }
         }
       }
     },
-    "vip_pro" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+    "vip_failed_to_load_subscription_products_please_try": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذر تحميل منتجات الاشتراك. يرجى المحاولة لاحقًا."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to load subscription products. Please try again later."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron cargar los productos de suscripción. Inténtalo más tarde."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Échec du chargement des abonnements. Réessayez plus tard."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सब्सक्रिप्शन उत्पाद लोड नहीं हो सके। बाद में पुनः प्रयास करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falha ao carregar produtos de assinatura. Tente novamente mais tarde."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சந்தா தயாரிப்புகளை ஏற்ற முடியவில்லை. பின்னர் முயற்சிக்கவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 版"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅商品加载失败，请稍后重试。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 版"
-          }
-        }
-      }
-    },
-    "vip_pro_is_active_enjoy_all_premium_features" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم تفعيل Pro. استمتع بجميع المزايا المميزة!"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro is active. Enjoy all premium features!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro activado. ¡Disfruta de todas las funciones premium!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro activé. Profitez de toutes les fonctionnalités premium !"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro सक्रिय है। सभी प्रीमियम सुविधाओं का आनंद लें!"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro ativado. Aproveite todos os recursos premium!"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro செயலில் உள்ளது. அனைத்து பிரீமியம் அம்சங்களையும் அனுபவியுங்கள்!"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 会员已激活，尽情使用高级功能吧。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 會員已啟用，盡情使用高級功能吧。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訂閱商品載入失敗，請稍後重試。"
           }
         }
       }
     },
-    "vip_pro_membership" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "عضوية Pro"
+    "vip_founding_member_offer_claim_1_year_of_pro_free_f": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 عرض العضو المؤسس: احصل على سنة واحدة من Pro مجانًا لفترة محدودة!"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro membership"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 Founding member offer: claim 1 year of Pro free for a limited time!"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Membresía Pro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 Oferta para miembro fundador: ¡reclama 1 año de Pro gratis por tiempo limitado!"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonnement Pro"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 Offre membre fondateur : bénéficiez de 1 an de Pro gratuit pour une durée limitée !"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro सदस्यता"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 संस्थापक सदस्य प्रस्ताव: सीमित समय के लिए 1 वर्ष के लिए Pro का निःशुल्क दावा करें!"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinatura Pro"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 Oferta para membro fundador: reivindique 1 ano de Pro grátis por tempo limitado!"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro உறுப்பினர்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 ஸ்தாபக உறுப்பினர் சலுகை: குறிப்பிட்ட காலத்திற்கு Pro 1 வருடத்தை இலவசமாகப் பெறுங்கள்!"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 会员"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 创世用户福利：限时免费领取 1 年 Pro 权益！"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 會員"
-          }
-        }
-      }
-    },
-    "vip_pro_membership_active" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "عضوية Pro مفعّلة"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro membership active"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Membresía Pro activa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonnement Pro actif"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro सदस्यता सक्रिय"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinatura Pro ativa"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro உறுப்பினர் செயலில்"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 会员已激活"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro 會員已啟用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "🚀 創世用戶福利：限時免費領取 1 年 Pro 權益！"
           }
         }
       }
     },
-    "vip_pro_membership_required" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يتطلب عضوية Pro"
+    "vip_free_plan_allows_1_compressed_image_per_task_upg": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطة المجانية تسمح بصورة مضغوطة واحدة لكل مهمة. قم بالترقية إلى Pro للمزيد وجودة أعلى."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro membership required"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free plan allows 1 compressed image per task. Upgrade to Pro for more and higher quality."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se requiere membresía Pro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El plan gratuito permite 1 imagen comprimida por tarea. Actualiza a Pro para más y mejor calidad."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonnement Pro requis"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le plan gratuit permet 1 image compressée par tâche. Passez à Pro pour plus et une meilleure qualité."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro सदस्यता आवश्यक है"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ्त योजना में प्रति कार्य 1 संपीड़ित छवि। अधिक और बेहतर गुणवत्ता के लिए Pro में अपग्रेड करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinatura Pro necessária"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O plano gratuito permite 1 imagem comprimida por tarefa. Atualize para Pro para mais e melhor qualidade."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro உறுப்பினர் தேவை"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இலவச திட்டம் ஒரு பணிக்கு 1 சுருக்கப்பட்ட படம். Pro-க்கு மேம்படுத்தவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要 Pro 会员"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费版每任务仅支持 1 张压缩图片，升级 Pro 后可添加更多并支持更高画质。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要 Pro 會員"
-          }
-        }
-      }
-    },
-    "vip_sign_in_before_subscribe" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please sign in before subscribing."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先登录后再订阅。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先登入後再訂閱。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費版每任務僅支援 1 張壓縮圖片，升級 Pro 後可新增更多並支援更高畫質。"
           }
         }
       }
     },
-    "vip_sign_in_optional_for_cross_device_sync" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+    "vip_free_plan_allows_1_compressed_image_per_task_upg_2": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسمح الخطة المجانية بصورة واحدة مضغوطة لكل مهمة. قم بالترقية إلى Pro لمزيد من المرفقات."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free plan allows 1 compressed image per task. Upgrade to Pro for more attachments."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El plan gratuito permite 1 imagen comprimida por tarea. Actualice a Pro para obtener más archivos adjuntos."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le plan gratuit permet 1 image compressée par tâche. Passez à Pro pour plus de pièces jointes."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "निःशुल्क योजना प्रति कार्य 1 संपीड़ित छवि की अनुमति देती है। अधिक अनुलग्नकों के लिए Pro पर अपग्रेड करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O plano gratuito permite 1 imagem compactada por tarefa. Atualize para Pro para mais anexos."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இலவச திட்டம் ஒரு பணிக்கு 1 சுருக்கப்பட்ட படத்தை அனுமதிக்கிறது. கூடுதல் இணைப்புகளுக்கு Pro க்கு மேம்படுத்தவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录为可选项。无需账号即可订阅；稍后登录可将 Pro 同步至您的多台设备。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费版每任务仅支持 1 张图片，升级 Pro 可上传更多附件。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入為可選項。無需帳號即可訂閱；稍後登入可將 Pro 同步至您的多台裝置。"
-          }
-        }
-      }
-    },
-    "vip_subscribe_to_pro" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اشترك في Pro"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscribe to Pro"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suscribirse a Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "S'abonner à Pro"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro सब्सक्राइब करें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinar Pro"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro-க்கு சந்தா"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "订阅 Pro"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訂閱 Pro"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費版每任務僅支援 1 張圖片，升級 Pro 可上傳更多附件。"
           }
         }
       }
     },
-    "vip_subscribed" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "مشترك"
+    "vip_free_plan_allows_1_group_upgrade_to_pro_for_unli": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطة المجانية تسمح بمجموعة واحدة. قم بالترقية إلى Pro لمجموعات غير محدودة."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscribed"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free plan allows 1 group. Upgrade to Pro for unlimited groups."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suscrito"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El plan gratuito permite 1 grupo. Actualiza a Pro para grupos ilimitados."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonné"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le plan gratuit permet 1 groupe. Passez à Pro pour des groupes illimités."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सब्सक्राइब किया"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ्त योजना में 1 समूह। असीमित समूहों के लिए Pro में अपग्रेड करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinado"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O plano gratuito permite 1 grupo. Atualize para Pro para grupos ilimitados."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "சந்தா செய்யப்பட்டது"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இலவச திட்டம் 1 குழுவை அனுமதிக்கிறது. Pro-க்கு மேம்படுத்தவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已订阅"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费版最多加入 1 个群组，升级 Pro 后可无限创建与加入。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已訂閱"
-          }
-        }
-      }
-    },
-    "vip_subscription_renews_automatically_cancel_anytime" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يتجدد الاشتراك تلقائيًا. يمكنك الإلغاء في أي وقت من إعدادات App Store."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscription renews automatically. Cancel anytime in App Store account settings."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La suscripción se renueva automáticamente. Cancela cuando quieras en Ajustes de App Store."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les réglages App Store."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सब्सक्रिप्शन स्वतः नवीनीकृत होगा। App Store सेटिंग्स में कभी भी रद्द करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A assinatura renova automaticamente. Cancele a qualquer momento nas definições da App Store."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "சந்தா தானாக புதுப்பிக்கப்படும். App Store அமைப்புகளில் எப்போதும் ரத்து செய்யலாம்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "订阅将自动续费，可随时在 App Store 账户设置中取消。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訂閱將自動續費，可隨時在 App Store 帳戶設定中取消。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費版最多加入 1 個群組，升級 Pro 後可無限建立與加入。"
           }
         }
       }
     },
-    "vip_subscription_successful" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم الاشتراك بنجاح"
+    "vip_free_plan_allows_2_members_per_group_upgrade_to": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطة المجانية تسمح بعضوين لكل مجموعة. قم بالترقية إلى Pro للمزيد."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscription successful"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free plan allows 2 members per group. Upgrade to Pro for more."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suscripción exitosa"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El plan gratuito permite 2 miembros por grupo. Actualiza a Pro para más."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonnement réussi"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le plan gratuit permet 2 membres par groupe. Passez à Pro pour plus."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सब्सक्रिप्शन सफल"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ्त योजना में प्रति समूह 2 सदस्य। अधिक के लिए Pro में अपग्रेड करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Assinatura concluída"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O plano gratuito permite 2 membros por grupo. Atualize para Pro para mais."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "சந்தா வெற்றி"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இலவச திட்டம் ஒரு குழuvukku 2 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "订阅成功"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费版每组最多 2 名成员，升级 Pro 后可添加更多。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "訂閱成功"
-          }
-        }
-      }
-    },
-    "vip_success_your_pro_benefits_are_active_until_2027" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "النجاح! مزايا Pro الخاصة بك نشطة حتى عام 2027."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Success! Your Pro benefits are active until 2027."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Éxito! Tus beneficios Pro están activos hasta 2027."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Succès ! Vos avantages Pro sont actifs jusqu'en 2027."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सफलता! आपके Pro लाभ 2027 तक सक्रिय हैं।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sucesso! Seus benefícios Pro estarão ativos até 2027."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "வெற்றி! உங்களின் Pro பலன்கள் 2027 வரை செயலில் இருக்கும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "领取成功！您的 Pro 权益已激活至 2027 年。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "領取成功！您的 Pro 權益已啟用至 2027 年。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費版每組最多 2 名成員，升級 Pro 後可新增更多。"
           }
         }
       }
     },
-    "vip_success_your_pro_benefits_are_active_until_lld" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "النجاح! فوائد Pro الخاصة بك نشطة حتى %lld."
+    "vip_free_plan_allows_2_members_per_group_upgrade_to_2": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الخطة المجانية تسمح بعضوين لكل مجموعة. قم بالترقية إلى Pro لدعوة المزيد."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Success! Your Pro benefits are active until %lld."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Free plan allows 2 members per group. Upgrade to Pro to invite more."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Éxito! Tus beneficios Pro están activos hasta el %lld."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El plan gratuito permite 2 miembros por grupo. Actualiza a Pro para invitar más."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Succès ! Vos avantages Pro sont actifs jusqu'au %lld."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le plan gratuit permet 2 membres par groupe. Passez à Pro pour inviter plus."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सफलता! आपके Pro लाभ %lld तक सक्रिय हैं।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मुफ्त योजना में प्रति समूह 2 सदस्य। अधिक आमंत्रित करने के लिए Pro में अपग्रेड करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sucesso! Seus benefícios Pro estarão ativos até %lld."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O plano gratuito permite 2 membros por grupo. Atualize para Pro para convidar mais."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "வெற்றி! உங்களின் Pro பலன்கள் %lld வரை செயலில் இருக்கும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இலவச திட்டம் ஒரு குழuvukku 2 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "领取成功！您的 Pro 权益已激活至 %lld 年。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "領取成功！您的 Pro 權益已啟用至 %lld 年。"
-          }
-        }
-      }
-    },
-    "vip_take_or_pick_a_photo_to_auto_fill_tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Take or pick a photo to auto-fill tasks."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 拍照或选图，自动识别并预填任务。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 拍照或選圖，自動識別並預填任務。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費版每組最多 2 名成員，升級 Pro 後可邀請更多。"
           }
         }
       }
     },
-    "vip_thank_you_for_your_support_enjoy_pro_features" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "شكرًا لدعمك. استمتع بميزات Pro!"
+    "vip_no_subscription_found_to_restore": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لم يتم العثور على اشتراك لاستعادته."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thank you for your support. Enjoy Pro features!"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No subscription found to restore."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gracias por tu apoyo. ¡Disfruta las funciones Pro!"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontró ninguna suscripción para restaurar."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Merci pour votre soutien. Profitez des fonctionnalités Pro !"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun abonnement à restaurer."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "आपके समर्थन के लिए धन्यवाद। Pro सुविधाओं का आनंद लें!"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पुनर्स्थापित करने के लिए कोई सब्सक्रिप्शन नहीं मिला।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obrigado pelo apoio. Aproveite os recursos Pro!"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma assinatura encontrada para restaurar."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உங்கள் ஆதரவுக்கு நன்றி. Pro அ 기능களை அனுபவிக்கவும்!"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "மீட்டமைக்க சந்தா கிடைக்கவில்லை."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "感谢您的支持，尽情使用 Pro 功能吧。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到可恢复的订阅。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "感謝您的支持，盡情使用 Pro 功能吧。"
-          }
-        }
-      }
-    },
-    "vip_unlimited_groups_to_create_and_join_unlimited_me" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 مجموعات غير محدودة للإنشاء والانضمام، عدد غير محدود من الأعضاء."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Unlimited groups to create and join, unlimited members."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Grupos ilimitados para crear y unirse, miembros ilimitados."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Groupes illimités à créer et à rejoindre, membres illimités."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 असीमित समूह बनाने और शामिल होने के लिए, असीमित सदस्य।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Grupos ilimitados para criar e participar, membros ilimitados."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 உருவாக்க மற்றும் சேர வரம்பற்ற குழுக்கள், வரம்பற்ற உறுப்பினர்கள்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 无限创建与加入群组，无限成员人数。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 無限建立與加入群組，無限成員人數。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未找到可恢復的訂閱。"
           }
         }
       }
     },
-    "vip_unlimited_images_per_task_original_quality_plus" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 صور غير محدودة لكل مهمة، بالجودة الأصلية، بالإضافة إلى الفيديو والمستندات (PDF/Word)."
+    "vip_one_payer_whole_group_vip": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دفع واحد، VIP للمجموعة بأكملها"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Unlimited images per task, original quality, plus video and documents (PDF/Word)."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One payer, whole group VIP"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Imágenes ilimitadas por tarea, calidad original, además de videos y documentos (PDF/Word)."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un pago, VIP para todo el grupo"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Images illimitées par tâche, qualité originale, ainsi que vidéo et documents (PDF/Word)."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un payeur, VIP pour tout le groupe"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 प्रति कार्य असीमित छवियां, मूल गुणवत्ता, साथ ही वीडियो और दस्तावेज़ (PDF/Word)।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एक भुगतान, पूरे समूह को VIP"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 Imagens ilimitadas por tarefa, qualidade original, além de vídeos e documentos (PDF/Word)."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um pagamento, VIP para todo o grupo"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 ஒரு பணிக்கு வரம்பற்ற படங்கள், அசல் தரம், மேலும் வீடியோ மற்றும் ஆவணங்கள் (PDF/Word)."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஒருவர் செலுத்தினால், முழு குழுவுக்கும் VIP"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一人付费，全组 VIP"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "👑 單任務無限圖片、支援原圖 (Original Quality)、解鎖影片與文件 (PDF/Word) 上傳。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一人付費，全組 VIP"
           }
         }
       }
     },
-    "vip_upgrade_to_pro" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الترقية إلى Pro"
+    "vip_pro": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade to Pro"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualiza a Pro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mise à niveau vers Pro"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro पर अपग्रेड करें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualize para Pro"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro க்கு மேம்படுத்தவும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级至 Pro 高级版"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 版"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升級至 Pro 高級版"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 版"
           }
         }
       }
     },
-    "vip_upgrade_to_pro_2" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الترقية إلى Pro"
+    "vip_pro_is_active_enjoy_all_premium_features": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم تفعيل Pro. استمتع بجميع المزايا المميزة!"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade to Pro"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro is active. Enjoy all premium features!"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualizar a Pro"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro activado. ¡Disfruta de todas las funciones premium!"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passer à Pro"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro activé. Profitez de toutes les fonctionnalités premium !"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro में अपग्रेड करें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro सक्रिय है। सभी प्रीमियम सुविधाओं का आनंद लें!"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualizar para Pro"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro ativado. Aproveite todos os recursos premium!"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pro ஆக மேம்படுத்தவும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro செயலில் உள்ளது. அனைத்து பிரீமியம் அம்சங்களையும் அனுபவியுங்கள்!"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级 Pro"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 会员已激活，尽情使用高级功能吧。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升級 Pro"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 會員已啟用，盡情使用高級功能吧。"
           }
         }
       }
     },
-    "vip_upgrade_to_vip" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الترقية إلى VIP"
+    "vip_pro_membership": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عضوية Pro"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Upgrade to VIP"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro membership"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualizar a VIP"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membresía Pro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Surclassement en VIP"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnement Pro"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "वीआईपी में अपग्रेड करें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro सदस्यता"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualize para VIP"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinatura Pro"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP ஆக மேம்படுத்தவும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro உறுப்பினர்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升级至VIP"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 会员"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "升級至VIP"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 會員"
           }
         }
       }
     },
-    "vip_vip_benefits_coming_soon" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP الفوائد قريبا."
+    "vip_pro_membership_active": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عضوية Pro مفعّلة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP benefits coming soon."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro membership active"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beneficios de VIP próximamente."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membresía Pro activa"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les avantages VIP seront bientôt disponibles."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnement Pro actif"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP लाभ जल्द ही आ रहा है।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro सदस्यता सक्रिय"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Benefícios VIP em breve."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinatura Pro ativa"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP பலன்கள் விரைவில்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro உறுப்பினர் செயலில்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP 权益即将开放。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 会员已激活"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "VIP 權益即將開放。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro 會員已啟用"
           }
         }
       }
     },
-    "vip_you_already_have_pro_membership" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "لديك بالفعل عضوية Pro."
+    "vip_pro_membership_required": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتطلب عضوية Pro"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You already have Pro membership."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro membership required"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ya tienes membresía Pro."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se requiere membresía Pro"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vous avez déjà l'abonnement Pro."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnement Pro requis"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "आपके पास पहले से Pro सदस्यता है।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro सदस्यता आवश्यक है"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Você já tem assinatura Pro."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinatura Pro necessária"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உங்களிடம் ஏற்கனவே Pro உறுப்பினர் உள்ளது."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro உறுப்பினர் தேவை"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您已是 Pro 会员。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 Pro 会员"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您已是 Pro 會員。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要 Pro 會員"
+          }
+        }
+      }
+    },
+    "vip_sign_in_before_subscribe": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please sign in before subscribing."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先登录后再订阅。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先登入後再訂閱。"
+          }
+        }
+      }
+    },
+    "vip_sign_in_optional_for_cross_device_sync": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in is optional. Subscribe without an account; sign in later to sync Pro across devices."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录为可选项。无需账号即可订阅；稍后登录可将 Pro 同步至您的多台设备。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入為可選項。無需帳號即可訂閱；稍後登入可將 Pro 同步至您的多台裝置。"
+          }
+        }
+      }
+    },
+    "vip_subscribe_to_pro": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اشترك في Pro"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribe to Pro"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suscribirse a Pro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "S'abonner à Pro"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro सब्सक्राइब करें"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinar Pro"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro-க்கு சந்தா"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅 Pro"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訂閱 Pro"
+          }
+        }
+      }
+    },
+    "vip_subscribed": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مشترك"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribed"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suscrito"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonné"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सब्सक्राइब किया"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinado"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சந்தா செய்யப்பட்டது"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已订阅"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已訂閱"
+          }
+        }
+      }
+    },
+    "vip_subscription_renews_automatically_cancel_anytime": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتجدد الاشتراك تلقائيًا. يمكنك الإلغاء في أي وقت من إعدادات App Store."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription renews automatically. Cancel anytime in App Store account settings."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suscripción se renueva automáticamente. Cancela cuando quieras en Ajustes de App Store."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'abonnement se renouvelle automatiquement. Annulez à tout moment dans les réglages App Store."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सब्सक्रिप्शन स्वतः नवीनीकृत होगा। App Store सेटिंग्स में कभी भी रद्द करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A assinatura renova automaticamente. Cancele a qualquer momento nas definições da App Store."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சந்தா தானாக புதுப்பிக்கப்படும். App Store அமைப்புகளில் எப்போதும் ரத்து செய்யலாம்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅将自动续费，可随时在 App Store 账户设置中取消。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訂閱將自動續費，可隨時在 App Store 帳戶設定中取消。"
+          }
+        }
+      }
+    },
+    "vip_subscription_successful": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم الاشتراك بنجاح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscription successful"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suscripción exitosa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonnement réussi"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सब्सक्रिप्शन सफल"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Assinatura concluída"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சந்தா வெற்றி"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅成功"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訂閱成功"
+          }
+        }
+      }
+    },
+    "vip_success_your_pro_benefits_are_active_until_2027": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النجاح! مزايا Pro الخاصة بك نشطة حتى عام 2027."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Success! Your Pro benefits are active until 2027."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Éxito! Tus beneficios Pro están activos hasta 2027."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Succès ! Vos avantages Pro sont actifs jusqu'en 2027."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सफलता! आपके Pro लाभ 2027 तक सक्रिय हैं।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sucesso! Seus benefícios Pro estarão ativos até 2027."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வெற்றி! உங்களின் Pro பலன்கள் 2027 வரை செயலில் இருக்கும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "领取成功！您的 Pro 权益已激活至 2027 年。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "領取成功！您的 Pro 權益已啟用至 2027 年。"
+          }
+        }
+      }
+    },
+    "vip_success_your_pro_benefits_are_active_until_lld": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النجاح! فوائد Pro الخاصة بك نشطة حتى %lld."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Success! Your Pro benefits are active until %lld."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Éxito! Tus beneficios Pro están activos hasta el %lld."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Succès ! Vos avantages Pro sont actifs jusqu'au %lld."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सफलता! आपके Pro लाभ %lld तक सक्रिय हैं।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sucesso! Seus benefícios Pro estarão ativos até %lld."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வெற்றி! உங்களின் Pro பலன்கள் %lld வரை செயலில் இருக்கும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "领取成功！您的 Pro 权益已激活至 %lld 年。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "領取成功！您的 Pro 權益已啟用至 %lld 年。"
+          }
+        }
+      }
+    },
+    "vip_take_or_pick_a_photo_to_auto_fill_tasks": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Take or pick a photo to auto-fill tasks."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 拍照或选图，自动识别并预填任务。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 拍照或選圖，自動識別並預填任務。"
+          }
+        }
+      }
+    },
+    "vip_thank_you_for_your_support_enjoy_pro_features": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شكرًا لدعمك. استمتع بميزات Pro!"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thank you for your support. Enjoy Pro features!"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gracias por tu apoyo. ¡Disfruta las funciones Pro!"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Merci pour votre soutien. Profitez des fonctionnalités Pro !"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके समर्थन के लिए धन्यवाद। Pro सुविधाओं का आनंद लें!"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrigado pelo apoio. Aproveite os recursos Pro!"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் ஆதரவுக்கு நன்றி. Pro அ 기능களை அனுபவிக்கவும்!"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "感谢您的支持，尽情使用 Pro 功能吧。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "感謝您的支持，盡情使用 Pro 功能吧。"
+          }
+        }
+      }
+    },
+    "vip_unlimited_groups_to_create_and_join_unlimited_me": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 مجموعات غير محدودة للإنشاء والانضمام، عدد غير محدود من الأعضاء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Unlimited groups to create and join, unlimited members."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Grupos ilimitados para crear y unirse, miembros ilimitados."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Groupes illimités à créer et à rejoindre, membres illimités."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 असीमित समूह बनाने और शामिल होने के लिए, असीमित सदस्य।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Grupos ilimitados para criar e participar, membros ilimitados."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 உருவாக்க மற்றும் சேர வரம்பற்ற குழுக்கள், வரம்பற்ற உறுப்பினர்கள்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 无限创建与加入群组，无限成员人数。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 無限建立與加入群組，無限成員人數。"
+          }
+        }
+      }
+    },
+    "vip_unlimited_images_per_task_original_quality_plus": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 صور غير محدودة لكل مهمة، بالجودة الأصلية، بالإضافة إلى الفيديو والمستندات (PDF/Word)."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Unlimited images per task, original quality, plus video and documents (PDF/Word)."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Imágenes ilimitadas por tarea, calidad original, además de videos y documentos (PDF/Word)."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Images illimitées par tâche, qualité originale, ainsi que vidéo et documents (PDF/Word)."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 प्रति कार्य असीमित छवियां, मूल गुणवत्ता, साथ ही वीडियो और दस्तावेज़ (PDF/Word)।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 Imagens ilimitadas por tarefa, qualidade original, além de vídeos e documentos (PDF/Word)."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 ஒரு பணிக்கு வரம்பற்ற படங்கள், அசல் தரம், மேலும் வீடியோ மற்றும் ஆவணங்கள் (PDF/Word)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 单任务无限图片、支持原图 (Original Quality)、解锁视频与文档 (PDF/Word) 上传。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "👑 單任務無限圖片、支援原圖 (Original Quality)、解鎖影片與文件 (PDF/Word) 上傳。"
+          }
+        }
+      }
+    },
+    "vip_upgrade_to_pro": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الترقية إلى Pro"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade to Pro"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiza a Pro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mise à niveau vers Pro"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro पर अपग्रेड करें"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualize para Pro"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro க்கு மேம்படுத்தவும்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级至 Pro 高级版"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升級至 Pro 高級版"
+          }
+        }
+      }
+    },
+    "vip_upgrade_to_pro_2": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الترقية إلى Pro"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade to Pro"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar a Pro"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passer à Pro"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro में अपग्रेड करें"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualizar para Pro"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro ஆக மேம்படுத்தவும்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级 Pro"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升級 Pro"
+          }
+        }
+      }
+    },
+    "vip_upgrade_to_vip": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الترقية إلى VIP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upgrade to VIP"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar a VIP"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surclassement en VIP"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वीआईपी में अपग्रेड करें"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualize para VIP"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP ஆக மேம்படுத்தவும்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升级至VIP"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "升級至VIP"
+          }
+        }
+      }
+    },
+    "vip_vip_benefits_coming_soon": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP الفوائد قريبا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP benefits coming soon."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beneficios de VIP próximamente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les avantages VIP seront bientôt disponibles."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP लाभ जल्द ही आ रहा है।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benefícios VIP em breve."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP பலன்கள் விரைவில்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP 权益即将开放。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VIP 權益即將開放。"
+          }
+        }
+      }
+    },
+    "vip_you_already_have_pro_membership": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لديك بالفعل عضوية Pro."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You already have Pro membership."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya tienes membresía Pro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous avez déjà l'abonnement Pro."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपके पास पहले से Pro सदस्यता है।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você já tem assinatura Pro."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்களிடம் ஏற்கனவே Pro உறுப்பினர் உள்ளது."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您已是 Pro 会员。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您已是 Pro 會員。"
+          }
+        }
+      }
+    },
+    "vip_guest_purchase_account_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅绑定当前账号。可在「我的」绑定 Apple，以便在其他设备保留 Pro 权益。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅绑定当前账号。可在「我的」绑定 Apple，以便在其他设备保留 Pro 权益。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purchases are tied to this device account. Link Apple in Settings to keep Pro on other devices."
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

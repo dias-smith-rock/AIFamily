@@ -140,6 +140,9 @@ struct ContentView: View {
         }
         .onAppear {
             RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
+            Task {
+                await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
+            }
         }
         .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, completed in
             reconcileStaleLoginSession()

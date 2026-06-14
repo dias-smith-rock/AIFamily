@@ -23,6 +23,7 @@ struct MineView: View {
     @State private var showTermsSheet = false
     @State private var showPrivacySheet = false
     @State private var showDiscardGuestDataAlert = false
+    @State private var isAnonymousSupabaseUser = false
 
     /// 与 `mineNavigationRow` 中「图标列 + 间距」一致，避免居中文字导致系统把分隔线对齐到屏幕中间。
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
@@ -109,6 +110,7 @@ struct MineView: View {
         }
         .environment(\.locale, appSettings.appLocale)
         .task {
+            await refreshAnonymousState()
             await viewModel.loadAccountSummary()
             familyViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
             familyViewModel.setMembershipContext(appRouter.selectedMembershipId)
@@ -153,7 +155,15 @@ struct MineView: View {
     @ViewBuilder
     private var mineSettingsList: some View {
         List {
-            if isGuestMode {
+            if isAnonymousSupabaseUser {
+                Section {
+                    AnonymousAccountLinkCard {
+                        Task { await refreshAnonymousState() }
+                    }
+                }
+                .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 8, trailing: 16))
+                .listRowBackground(Color.clear)
+            } else if isGuestMode {
                 Section {
                     GuestAccountLinkCard(
                         isUserLoggedIn: $isUserLoggedIn,
@@ -408,6 +418,7 @@ struct MineView: View {
                     .buttonStyle(.plain)
                 }
 
+                if isAnonymousSupabaseUser == false {
                 Button {
                     Task {
                         if isGuestMode {
@@ -437,6 +448,7 @@ struct MineView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
+                }
 
                 if isGuestMode == false {
                 Button(role: .destructive) {
@@ -784,6 +796,10 @@ struct MineView: View {
             )
         }
         return AppLocalized.string(L10n.VIP.proMembershipActive, locale: locale)
+    }
+
+    private func refreshAnonymousState() async {
+        isAnonymousSupabaseUser = await SupabaseAuthManager.isAnonymousUser()
     }
 
     private func retryGuestMigration() async {

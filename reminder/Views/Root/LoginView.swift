@@ -21,6 +21,7 @@ struct LoginView: View {
     private enum LoginProvider {
         case apple
         case google
+        case guest
     }
 
     /// 必须与 `supabase/config.toml` 中 `[auth].additional_redirect_urls` 完全一致，
@@ -30,8 +31,8 @@ struct LoginView: View {
     /// 是否展示底部「More」登录入口（暂时关闭）。
     private let showsMoreLoginEntry = false
 
-    /// 是否展示游客试用入口（暂时关闭）。
-    private let showsGuestModeEntry = false
+    /// 是否展示游客试用入口（Supabase 匿名登录，满足 5.1.1）。
+    private let showsGuestModeEntry = true
 
     var body: some View {
         VStack(spacing: 0) {
@@ -121,13 +122,20 @@ struct LoginView: View {
 
             if showsGuestModeEntry {
                 Button {
-                    startGuestMode()
+                    Task { await startSupabaseGuestExperience() }
                 } label: {
-                    Text(L10n.Auth.tryWithoutSigningIn.localized)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
+                    Group {
+                        if loadingProvider == .guest {
+                            ProgressView()
+                                .tint(.white.opacity(0.85))
+                        } else {
+                            Text(L10n.Auth.guestExperienceNoSignup.localized)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.85))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
                 }
                 .buttonStyle(.plain)
                 .disabled(loadingProvider != nil)
@@ -297,6 +305,32 @@ struct LoginView: View {
         }
     }
 
+    private func startSupabaseGuestExperience() async {
+        await MainActor.run {
+            loginErrorAlert = nil
+            loadingProvider = .guest
+        }
+        do {
+            _ = try await SupabaseAuthManager.signInAsGuest(appRouter: appRouter)
+            await appRouter.refreshStateFromBackend()
+            await MainActor.run {
+                withAnimation(.easeInOut) {
+                    isUserLoggedIn = true
+                    isGuestMode = false
+                }
+            }
+            AnalyticsManager.log(event: .guestStarted)
+        } catch {
+            await MainActor.run {
+                loginErrorAlert = error.localizedDescription
+            }
+        }
+        await MainActor.run {
+            loadingProvider = nil
+        }
+    }
+
+    /// 纯本地试用（遗留路径；新用户请走 Supabase 匿名登录）。
     private func startGuestMode() {
         let snapshot = GuestSessionStore.loadOrCreate()
         GuestSessionStore.setGuestMode(true)

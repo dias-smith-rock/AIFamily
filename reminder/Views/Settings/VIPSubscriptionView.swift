@@ -7,6 +7,7 @@ struct VIPSubscriptionView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @StateObject private var viewModel = AppViewModels.makeVIPSubscriptionViewModel()
     @ObservedObject private var revenueCat = RevenueCatSubscriptionService.shared
+    @State private var isAnonymousSupabaseUser = false
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
     @State private var showPurchaseSuccessAlert = false
@@ -49,6 +50,7 @@ struct VIPSubscriptionView: View {
             }
         }
         .task {
+            isAnonymousSupabaseUser = await SupabaseAuthManager.isAnonymousUser()
             AnalyticsManager.log(event: .vipPageViewed)
             await viewModel.loadProducts()
             await revenueCat.refreshCustomerInfo()
@@ -243,10 +245,17 @@ struct VIPSubscriptionView: View {
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
 
-            Text(L10n.VIP.signInOptionalForCrossDeviceSync.localized)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
+            if isAnonymousSupabaseUser {
+                Text(L10n.VIP.guestPurchaseAccountNote.localized)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text(L10n.VIP.signInOptionalForCrossDeviceSync.localized)
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+            }
 
             HStack(spacing: 4) {
                 legalLinkButton(L10n.Common.privacyPolicy.localized) {

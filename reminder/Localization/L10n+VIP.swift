@@ -27,6 +27,7 @@ extension L10n {
     static let proMembershipActive = Entry(key: "vip_pro_membership_active", table: .vip)
     static let proMembershipRequired = Entry(key: "vip_pro_membership_required", table: .vip)
     static let signInBeforeSubscribe = Entry(key: "vip_sign_in_before_subscribe", table: .vip)
+    static let guestPurchaseAccountNote = Entry(key: "vip_guest_purchase_account_note", table: .vip)
     static let signInOptionalForCrossDeviceSync = Entry(key: "vip_sign_in_optional_for_cross_device_sync", table: .vip)
     static let subscribeToPro = Entry(key: "vip_subscribe_to_pro", table: .vip)
     static let subscribed = Entry(key: "vip_subscribed", table: .vip)

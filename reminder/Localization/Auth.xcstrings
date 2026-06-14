@@ -1,2012 +1,2189 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "auth_a_valid_sign_in_session_was_detected" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم اكتشاف جلسة دخول صالحة sign"
+  "sourceLanguage": "en",
+  "strings": {
+    "auth_a_valid_sign_in_session_was_detected": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم اكتشاف جلسة دخول صالحة sign"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A valid sign-in session was detected"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A valid sign-in session was detected"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se detectó una sesión entrante sig válida"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se detectó una sesión entrante sig válida"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Une session sign-in valide a été détectée"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une session sign-in valide a été détectée"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "एक वैध sign-इन सत्र का पता चला"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एक वैध sign-इन सत्र का पता चला"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uma sessão sign-in válida foi detectada"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma sessão sign-in válida foi detectada"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "சரியான sign அமர்வு கண்டறியப்பட்டது"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "சரியான sign அமர்வு கண்டறியப்பட்டது"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已检测到有效登录会话"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已检测到有效登录会话"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "已偵測到有效登入會話"
-          }
-        }
-      }
-    },
-    "auth_apple_credential_read_failed" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read Apple sign-in credentials."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未能读取 Apple 登录凭证。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未能讀取 Apple 登入憑證。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已偵測到有效登入會話"
           }
         }
       }
     },
-    "auth_apple_identity_token_failed" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+    "auth_apple_credential_read_failed": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not obtain Apple identity token."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read Apple sign-in credentials."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未能获取 Apple identity token。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能读取 Apple 登录凭证。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "未能取得 Apple identity token。"
-          }
-        }
-      }
-    },
-    "auth_apple_supabase_unavailable_use_google" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前建置未啟用 Sign in with Apple / Supabase，請使用 Google 登入。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能讀取 Apple 登入憑證。"
           }
         }
       }
     },
-    "auth_by_signing_in_you_agree_to_this_app_s" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "بتسجيل الدخول، فإنك توافق على "
+    "auth_apple_identity_token_failed": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "By signing in, you agree to this app's "
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Al iniciar sesión, aceptas los documentos de esta app: "
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En vous connectant, vous acceptez les documents de cette app : "
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "साइन इन करके, आप इस ऐप की "
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ao entrar, você concorda com os documentos deste app: "
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவதன் மூலம், இந்த ஆப்ஸின் "
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not obtain Apple identity token."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录即表示您同意本 App 的"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能获取 Apple identity token。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入即表示您同意本 App 的"
-          }
-        }
-      }
-    },
-    "auth_continue_with_apple" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تواصل مع Apple"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue with Apple"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continuar con Apple"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continuez avec Apple"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple के साथ जारी रखें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue com Apple"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple உடன் தொடரவும்"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "通过 Apple 登录"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "透過 Apple 登入"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能取得 Apple identity token。"
           }
         }
       }
     },
-    "auth_it_is_detected_that_the_current_session_is_inval" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم اكتشاف أن الجلسة الحالية غير صالحة. الرجاء تسجيل الدخول أولا ثم تحميل أعضاء المجموعة."
+    "auth_apple_supabase_unavailable_use_google": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "It is detected that the current session is invalid. Please log in first and then load group members."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se detecta que la sesión actual no es válida. Inicie sesión primero y luego cargue los miembros del grupo."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il est détecté que la session en cours n'est pas valide. Veuillez d'abord vous connecter, puis charger les membres du groupe."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "यह पता चला है कि वर्तमान सत्र अमान्य है. कृपया पहले लॉग इन करें और फिर समूह सदस्यों को लोड करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "É detectado que a sessão atual é inválida. Faça login primeiro e depois carregue os membros do grupo."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "தற்போதைய அமர்வு தவறானது என்று கண்டறியப்பட்டது. முதலில் உள்நுழைந்து பின்னர் குழு உறுப்பினர்களை ஏற்றவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This build does not include Sign in with Apple / Supabase. Please sign in with Google."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "检测到当前会话无效，请先登录再加载群组成员。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前构建未启用 Sign in with Apple / Supabase，请使用 Google 登录。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "偵測到目前會話無效，請先登入再載入群組成員。"
-          }
-        }
-      }
-    },
-    "auth_log_in_and_continue" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تسجيل الدخول والمتابعة"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log in and continue"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión y continúa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous et continuez"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "लॉग इन करें और जारी रखें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login e continue"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைந்து தொடரவும்"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录并继续"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入並繼續"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前建置未啟用 Sign in with Apple / Supabase，請使用 Google 登入。"
           }
         }
       }
     },
-    "auth_log_out" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تسجيل الخروج"
+    "auth_by_signing_in_you_agree_to_this_app_s": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بتسجيل الدخول، فإنك توافق على "
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Log out"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "By signing in, you agree to this app's "
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finalizar la sesión"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al iniciar sesión, aceptas los documentos de esta app: "
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se déconnecter"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En vous connectant, vous acceptez les documents de cette app : "
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "लॉग आउट"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइन इन करके, आप इस ऐप की "
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sair"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ao entrar, você concorda com os documentos deste app: "
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "வெளியேறு"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவதன் மூலம், இந்த ஆப்ஸின் "
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "退出登录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录即表示您同意本 App 的"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登出登入"
-          }
-        }
-      }
-    },
-    "auth_login_method" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "طريقة تسجيل الدخول"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Login method"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Método de inicio de sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Méthode de connexion"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "लॉगिन विधि"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Método de login"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவு முறை"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录方式"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入方式"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入即表示您同意本 App 的"
           }
         }
       }
     },
-    "auth_need_to_log_in_first" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تحتاج إلى تسجيل الدخول أولا"
+    "auth_continue_with_apple": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تواصل مع Apple"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Need to log in first"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue with Apple"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Necesitas iniciar sesión primero"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar con Apple"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il faut d'abord se connecter"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuez avec Apple"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सबसे पहले लॉग इन करना होगा"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple के साथ जारी रखें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Precisa fazer login primeiro"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue com Apple"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "முதலில் உள்நுழைய வேண்டும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple உடன் தொடரவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要先登录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过 Apple 登录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要先登入"
-          }
-        }
-      }
-    },
-    "auth_please_log_in_first_before_using_ai_to_create_a" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يرجى تسجيل الدخول أولاً قبل استخدام AI لإنشاء مهمة للتعرف على الصور."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Please log in first before using AI to create a task for image recognition."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicie sesión primero antes de usar AI para crear una tarea de reconocimiento de imágenes."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Veuillez d'abord vous connecter avant d'utiliser AI pour créer une tâche de reconnaissance d'image."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "छवि पहचान के लिए कार्य बनाने के लिए AI का उपयोग करने से पहले कृपया लॉग इन करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login primeiro antes de usar AI para criar uma tarefa para reconhecimento de imagem."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI ஐப் பயன்படுத்துவதற்கு முன் முதலில் உள்நுழையவும், படத்தை அறிதலுக்கான பணியை உருவாக்கவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先登录后再使用 AI 识图创建任务。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先登入後再使用 AI 識圖建立任務。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過 Apple 登入"
           }
         }
       }
     },
-    "auth_refresh_session_state" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تحديث حالة الجلسة"
+    "auth_it_is_detected_that_the_current_session_is_inval": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم اكتشاف أن الجلسة الحالية غير صالحة. الرجاء تسجيل الدخول أولا ثم تحميل أعضاء المجموعة."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Refresh session state"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "It is detected that the current session is invalid. Please log in first and then load group members."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualizar el estado de la sesión"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se detecta que la sesión actual no es válida. Inicie sesión primero y luego cargue los miembros del grupo."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualiser l'état de la session"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il est détecté que la session en cours n'est pas valide. Veuillez d'abord vous connecter, puis charger les membres du groupe."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सत्र स्थिति ताज़ा करें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह पता चला है कि वर्तमान सत्र अमान्य है. कृपया पहले लॉग इन करें और फिर समूह सदस्यों को लोड करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atualizar estado da sessão"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "É detectado que a sessão atual é inválida. Faça login primeiro e depois carregue os membros do grupo."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "அமர்வு நிலையைப் புதுப்பிக்கவும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தற்போதைய அமர்வு தவறானது என்று கண்டறியப்பட்டது. முதலில் உள்நுழைந்து பின்னர் குழு உறுப்பினர்களை ஏற்றவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新会话状态"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检测到当前会话无效，请先登录再加载群组成员。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刷新會話狀態"
-          }
-        }
-      }
-    },
-    "auth_send_an_invite_link_so_they_can_sign_in_on_their" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "أرسل رابط دعوة ليتمكنوا من تسجيل الدخول على هواتفهم والمشاركة."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send an invite link so they can sign in on their phone and participate."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envía un enlace de invitación para que puedan iniciar sesión en su teléfono y participar."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envoyez un lien d'invitation pour qu'ils puissent se connecter sur leur téléphone et participer."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "आमंत्रण लिंक भेजें ताकि वे अपने फ़ोन पर साइन इन कर सकें और भाग ले सकें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Envie um link de convite para que possam entrar no celular e participar."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "அவர்கள் தங்கள் தொலைபேசியில் உள்நுழைந்து பங்கேற்க அழைப்பு இணைப்பை அனுப்பவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "发送邀请链接，对方可使用自己的手机登录并互动。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "發送邀請連結，對方可使用自己的手機登入並互動。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "偵測到目前會話無效，請先登入再載入群組成員。"
           }
         }
       }
     },
-    "auth_session_abnormal_retry" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+    "auth_log_in_and_continue": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسجيل الدخول والمتابعة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log in and continue"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión y continúa"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous et continuez"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लॉग इन करें और जारी रखें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login e continue"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in state is invalid. Please try again."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைந்து தொடரவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录状态异常，请重试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录并继续"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入狀態異常，請重試。"
-          }
-        }
-      }
-    },
-    "auth_session_verification" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "التحقق من الجلسة"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Session verification"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verificación de sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vérification de session"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सत्र सत्यापन"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verificação de sessão"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "அமர்வு சரிபார்ப்பு"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会话校验"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "會話校驗"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入並繼續"
           }
         }
       }
     },
-    "auth_sign_in_link_sent_check_your_email_and_return_to" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم إرسال رابط تسجيل الدخول. تحقق من بريدك الإلكتروني وارجع إلى التطبيق"
+    "auth_log_out": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسجيل الخروج"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in link sent. Check your email and return to the app"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log out"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enlace de inicio de sesión enviado. Revisa tu correo electrónico y regresa a la aplicación."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finalizar la sesión"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lien de connexion envoyé. Vérifiez votre courrier électronique et revenez à l'application"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se déconnecter"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "साइन-इन लिंक भेजा गया. अपना ईमेल जांचें और ऐप पर वापस लौटें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लॉग आउट"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Link de login enviado. Verifique seu e-mail e retorne ao aplicativo"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sair"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவு இணைப்பு அனுப்பப்பட்டது. உங்கள் மின்னஞ்சலைச் சரிபார்த்து, பயன்பாட்டிற்குத் திரும்பவும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வெளியேறு"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录链接已发送，请检查邮箱并回到 App"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "退出登录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入連結已發送，請檢查郵箱並回到 App"
-          }
-        }
-      }
-    },
-    "auth_sign_in_request_sent_complete_authorization_and" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم إرسال طلب تسجيل الدخول. أكمل التفويض وحاول مرة أخرى"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in request sent. Complete authorization and try again"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solicitud de inicio de sesión enviada. Completa la autorización y vuelve a intentarlo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Demande de connexion envoyée. Terminez l'autorisation et réessayez"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "साइन-इन अनुरोध भेजा गया. प्राधिकरण पूर्ण करें और पुनः प्रयास करें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solicitação de login enviada. Conclua a autorização e tente novamente"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவு கோரிக்கை அனுப்பப்பட்டது. அங்கீகாரத்தை நிறைவு செய்து, மீண்டும் முயற்சிக்கவும்"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录请求已发送，请完成授权后重试"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入要求已發送，請完成授權後重試"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登出登入"
           }
         }
       }
     },
-    "auth_sign_in_required" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يلزم تسجيل الدخول"
+    "auth_login_method": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "طريقة تسجيل الدخول"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign-in required"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Login method"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se requiere iniciar sesión"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Método de inicio de sesión"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connexion requise"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Méthode de connexion"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "लॉग इन आवश्यक है"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लॉगिन विधि"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "É necessário fazer login"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Método de login"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவு தேவை"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவு முறை"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要登录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录方式"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "需要登入"
-          }
-        }
-      }
-    },
-    "auth_sign_in_to_enable_cloud_sync" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "قم بتسجيل الدخول لتمكين المزامنة السحابية"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in to enable cloud sync"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión para habilitar la sincronización en la nube"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous pour activer la synchronisation cloud"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "क्लाउड सिंक सक्षम करने के लिए साइन इन करें"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login para ativar a sincronização na nuvem"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "கிளவுட் ஒத்திசைவை இயக்க உள்நுழையவும்"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请先登录以启用云端同步"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請先登入啟用雲端同步"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入方式"
           }
         }
       }
     },
-    "auth_sign_in_to_share_live_location_with_group_member" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سجّل الدخول لمشاركة الموقع المباشر مع أعضاء المجموعة."
+    "auth_need_to_log_in_first": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحتاج إلى تسجيل الدخول أولا"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in to share live location with group members."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Need to log in first"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión para compartir ubicación en tiempo real con el grupo."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Necesitas iniciar sesión primero"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous pour partager votre position en direct avec le groupe."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il faut d'abord se connecter"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "समूह सदस्यों के साथ लाइव स्थान साझा करने के लिए लॉग इन करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सबसे पहले लॉग इन करना होगा"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login para compartilhar localização ao vivo com o grupo."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precisa fazer login primeiro"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "குழு உறுப்பினர்களுடன் நேரடி இருப்பிடத்தைப் பகிர உள்நுழையவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "முதலில் உள்நுழைய வேண்டும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录后可与群组成员共享实时位置。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要先登录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入後可與群組成員共享即時位置。"
-          }
-        }
-      }
-    },
-    "auth_sign_in_to_use_cloud_features_and_sync_your_loca" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سجّل الدخول لاستخدام ميزات السحابة ومزامنة بياناتك المحلية."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in to use cloud features and sync your local data."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión para usar funciones en la nube y sincronizar tus datos locales."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous pour utiliser les fonctions cloud et synchroniser vos données locales."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "क्लाउड सुविधाओं और स्थानीय डेटा सिंक के लिए लॉग इन करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login para usar recursos na nuvem e sincronizar dados locais."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "கிளவுட் அம்சங்களையும் உள்ளூர் தரவை ஒத்திசைக்கவும் உள்நுழையவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录后可使用云端功能，并同步本地数据。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入後可使用雲端功能，並同步本機資料。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要先登入"
           }
         }
       }
     },
-    "auth_sign_in_to_use_photo_recognition_for_tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سجّل الدخول لاستخدام التعرف على الصور في المهام."
+    "auth_please_log_in_first_before_using_ai_to_create_a": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرجى تسجيل الدخول أولاً قبل استخدام AI لإنشاء مهمة للتعرف على الصور."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in to use photo recognition for tasks."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please log in first before using AI to create a task for image recognition."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión para usar el reconocimiento de fotos en tareas."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicie sesión primero antes de usar AI para crear una tarea de reconocimiento de imágenes."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous pour utiliser la reconnaissance photo pour les tâches."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veuillez d'abord vous connecter avant d'utiliser AI pour créer une tâche de reconnaissance d'image."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "कार्यों में फोटो पहचान के लिए लॉग इन करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "छवि पहचान के लिए कार्य बनाने के लिए AI का उपयोग करने से पहले कृपया लॉग इन करें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login para usar reconhecimento de fotos em tarefas."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login primeiro antes de usar AI para criar uma tarefa para reconhecimento de imagem."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "பணிகளில் புகைப்பட அடையாளத்திற்கு உள்நுழையவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI ஐப் பயன்படுத்துவதற்கு முன் முதலில் உள்நுழையவும், படத்தை அறிதலுக்கான பணியை உருவாக்கவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录后可使用拍照识图功能。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先登录后再使用 AI 识图创建任务。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入後可使用拍照識圖功能。"
-          }
-        }
-      }
-    },
-    "auth_sign_in_to_use_this_feature_and_sync_your_local" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سجّل الدخول لاستخدام هذه الميزة ومزامنة بياناتك المحلية."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in to use this feature and sync your local data."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión para usar esta función y sincronizar tus datos locales."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connectez-vous pour utiliser cette fonction et synchroniser vos données locales."
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "इस सुविधा और स्थानीय डेटा सिंक के लिए लॉग इन करें।"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Faça login para usar este recurso e sincronizar dados locais."
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "இந்த அம்சத்தையும் உள்ளூர் தரவை ஒத்திசைக்கவும் உள்நுழையவும்."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录后可使用此功能，并同步本地数据。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入後可使用此功能，並同步本機資料。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先登入後再使用 AI 識圖建立任務。"
           }
         }
       }
     },
-    "auth_sign_in_to_wesync" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تسجيل الدخول إلى WeSync"
+    "auth_refresh_session_state": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحديث حالة الجلسة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sign in to WeSync"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Refresh session state"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciar sesión en WeSync"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar el estado de la sesión"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connexion à WeSync"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualiser l'état de la session"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WeSync में साइन इन करें"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सत्र स्थिति ताज़ा करें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entrar no WeSync"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atualizar estado da sessão"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "WeSync இல் உள்நுழைக"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அமர்வு நிலையைப் புதுப்பிக்கவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录同圈"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新会话状态"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入同圈"
-          }
-        }
-      }
-    },
-    "auth_signed_in_successfully" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم تسجيل الدخول بنجاح"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signed in successfully"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciado sesión correctamente"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecté avec succès"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सफलतापूर्वक साइन इन किया गया"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Login feito com sucesso"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "வெற்றிகரமாக உள்நுழைந்துள்ளது"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录成功"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入成功"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新會話狀態"
           }
         }
       }
     },
-    "auth_signed_in_with_apple" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تم تسجيل الدخول باستخدام Apple"
+    "auth_send_an_invite_link_so_they_can_sign_in_on_their": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أرسل رابط دعوة ليتمكنوا من تسجيل الدخول على هواتفهم والمشاركة."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signed in with Apple"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send an invite link so they can sign in on their phone and participate."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicia sesión con Apple"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envía un enlace de invitación para que puedan iniciar sesión en su teléfono y participar."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connecté avec Apple"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyez un lien d'invitation pour qu'ils puissent se connecter sur leur téléphone et participer."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple के साथ साइन इन किया गया"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आमंत्रण लिंक भेजें ताकि वे अपने फ़ोन पर साइन इन कर सकें और भाग ले सकें।"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conectado com Apple"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envie um link de convite para que possam entrar no celular e participar."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple மூலம் உள்நுழைந்துள்ளீர்கள்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அவர்கள் தங்கள் தொலைபேசியில் உள்நுழைந்து பங்கேற்க அழைப்பு இணைப்பை அனுப்பவும்."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple 登录成功"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发送邀请链接，对方可使用自己的手机登录并互动。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apple 登入成功"
-          }
-        }
-      }
-    },
-    "auth_signing_in" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "جارٍ تسجيل الدخول…"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signing in…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iniciando sesión…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connexion en cours…"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "साइन इन हो रहा है…"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entrando…"
-          }
-        },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைகிறது…"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在登录…"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "正在登入…"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "發送邀請連結，對方可使用自己的手機登入並互動。"
           }
         }
       }
     },
-    "auth_the_login_session_is_not_ready_yet_please_try_ag" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "جلسة تسجيل الدخول ليست جاهزة بعد، يرجى المحاولة مرة أخرى لاحقًا."
+    "auth_session_abnormal_retry": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The login session is not ready yet, please try again later."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La sesión de inicio de sesión aún no está lista; inténtelo nuevamente más tarde."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La session de connexion n'est pas encore prête, veuillez réessayer plus tard."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "लॉगिन सत्र अभी तैयार नहीं है, कृपया बाद में पुनः प्रयास करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A sessão de login ainda não está pronta. Tente novamente mais tarde."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவு அமர்வு இன்னும் தயாராகவில்லை, பின்னர் மீண்டும் முயற்சிக்கவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in state is invalid. Please try again."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录会话尚未就绪，请稍后重试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录状态异常，请重试。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入會話尚未就緒，請稍後重試。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入狀態異常，請重試。"
           }
         }
       }
     },
-    "auth_try_without_signing_in" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "جرّب دون تسجيل الدخول"
+    "auth_session_verification": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التحقق من الجلسة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try without signing in"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session verification"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Probar sin iniciar sesión"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificación de sesión"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Essayer sans se connecter"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérification de session"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "बिना लॉग इन किए आज़माएं"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सत्र सत्यापन"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Experimentar sem entrar"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificação de sessão"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழையாமல் முயற்சிக்கவும்"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அமர்வு சரிபார்ப்பு"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暂不登录，先试用"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会话校验"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "暫不登入，先試用"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "會話校驗"
           }
         }
       }
     },
-    "auth_unable_to_complete_login" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "غير قادر على إكمال تسجيل الدخول"
+    "auth_sign_in_link_sent_check_your_email_and_return_to": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم إرسال رابط تسجيل الدخول. تحقق من بريدك الإلكتروني وارجع إلى التطبيق"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unable to complete login"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in link sent. Check your email and return to the app"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No se puede completar el inicio de sesión"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enlace de inicio de sesión enviado. Revisa tu correo electrónico y regresa a la aplicación."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de terminer la connexion"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lien de connexion envoyé. Vérifiez votre courrier électronique et revenez à l'application"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "लॉगिन पूरा करने में असमर्थ"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइन-इन लिंक भेजा गया. अपना ईमेल जांचें और ऐप पर वापस लौटें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não foi possível concluir o login"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link de login enviado. Verifique seu e-mail e retorne ao aplicativo"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உள்நுழைவை முடிக்க முடியவில்லை"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவு இணைப்பு அனுப்பப்பட்டது. உங்கள் மின்னஞ்சலைச் சரிபார்த்து, பயன்பாட்டிற்குத் திரும்பவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "无法完成登录"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录链接已发送，请检查邮箱并回到 App"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "無法完成登入"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入連結已發送，請檢查郵箱並回到 App"
           }
         }
       }
     },
-    "auth_your_data_is_stored_on_this_device_only_sign_in" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "البيانات محفوظة على هذا الجهاز فقط. سجّل الدخول للمزامنة مع السحابة والتعاون مع العائلة."
+    "auth_sign_in_request_sent_complete_authorization_and": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم إرسال طلب تسجيل الدخول. أكمل التفويض وحاول مرة أخرى"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your data is stored on this device only. Sign in to sync to the cloud and collaborate with family."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in request sent. Complete authorization and try again"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los datos solo se guardan en este dispositivo. Inicia sesión para sincronizar en la nube y colaborar con tu familia."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solicitud de inicio de sesión enviada. Completa la autorización y vuelve a intentarlo."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les données sont stockées uniquement sur cet appareil. Connectez-vous pour les synchroniser dans le cloud et collaborer en famille."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Demande de connexion envoyée. Terminez l'autorisation et réessayez"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "डेटा केवल इस डिवाइस पर है। क्लाउड में सिंक और परिवार के साथ सहयोग के लिए लॉग इन करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइन-इन अनुरोध भेजा गया. प्राधिकरण पूर्ण करें और पुनः प्रयास करें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os dados ficam apenas neste dispositivo. Faça login para sincronizar na nuvem e colaborar com a família."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solicitação de login enviada. Conclua a autorização e tente novamente"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "தரவு இந்த சாதனத்தில் மட்டுமே சேமிக்கப்படுகிறது. கிளவுடில் ஒத்திசைக்கவும் குடும்பத்துடன் இணைந்து பணியாற்ற உள்நுழையவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவு கோரிக்கை அனுப்பப்பட்டது. அங்கீகாரத்தை நிறைவு செய்து, மீண்டும் முயற்சிக்கவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前数据仅保存在本机。登录后可同步到云端，并与家人协作。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录请求已发送，请完成授权后重试"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前資料僅儲存在本機。登入後可同步至雲端，並與家人協作。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入要求已發送，請完成授權後重試"
           }
         }
       }
     },
-    "auth_your_sign_in_session_expired_please_sign_in_agai" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "انتهت صلاحية تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى والمحاولة مجددًا."
+    "auth_sign_in_required": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يلزم تسجيل الدخول"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your sign-in session expired. Please sign in again and retry."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign-in required"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu sesión ha caducado. Inicia sesión de nuevo e inténtalo otra vez."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se requiere iniciar sesión"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre session a expiré. Reconnectez-vous et réessayez."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion requise"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "आपका साइन-इन सत्र समाप्त हो गया। फिर से लॉग इन करके पुनः प्रयास करें।"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लॉग इन आवश्यक है"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A sua sessão expirou. Inicie sessão novamente e tente outra vez."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "É necessário fazer login"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உங்கள் உள்நுழைவு காலாவதியாகிவிட்டது. மீண்டும் உள்நுழைந்து முயற்சிக்கவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவு தேவை"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登录状态已失效，请重新登录后再试。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要登录"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "登入狀態已失效，請重新登入後再試。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要登入"
           }
         }
       }
     },
-    "auth_your_sign_in_session_has_expired_please_sign_in" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "لقد انتهت صلاحية جلسة تسجيل الدخول الخاصة بك. الرجاء تسجيل الدخول مرة أخرى."
+    "auth_sign_in_to_enable_cloud_sync": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قم بتسجيل الدخول لتمكين المزامنة السحابية"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your sign-in session has expired. Please sign in again."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to enable cloud sync"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Su sesión de inicio de sesión ha caducado. Por favor inicia sesión nuevamente."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para habilitar la sincronización en la nube"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre session de connexion a expiré. Veuillez vous reconnecter."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour activer la synchronisation cloud"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "आपका साइन-इन सत्र समाप्त हो गया है. कृपया पुनः साइन इन करें."
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लाउड सिंक सक्षम करने के लिए साइन इन करें"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sua sessão de login expirou. Faça login novamente."
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login para ativar a sincronização na nuvem"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "உங்கள் உள்நுழைவு அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்."
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கிளவுட் ஒத்திசைவை இயக்க உள்நுழையவும்"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您的登录会话已过期。请重新登录。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请先登录以启用云端同步"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "您的登入會話已過期。請重新登入。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請先登入啟用雲端同步"
+          }
+        }
+      }
+    },
+    "auth_sign_in_to_share_live_location_with_group_member": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول لمشاركة الموقع المباشر مع أعضاء المجموعة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to share live location with group members."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para compartir ubicación en tiempo real con el grupo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour partager votre position en direct avec le groupe."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समूह सदस्यों के साथ लाइव स्थान साझा करने के लिए लॉग इन करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login para compartilhar localização ao vivo com o grupo."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குழு உறுப்பினர்களுடன் நேரடி இருப்பிடத்தைப் பகிர உள்நுழையவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录后可与群组成员共享实时位置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後可與群組成員共享即時位置。"
+          }
+        }
+      }
+    },
+    "auth_sign_in_to_use_cloud_features_and_sync_your_loca": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول لاستخدام ميزات السحابة ومزامنة بياناتك المحلية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use cloud features and sync your local data."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para usar funciones en la nube y sincronizar tus datos locales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour utiliser les fonctions cloud et synchroniser vos données locales."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्लाउड सुविधाओं और स्थानीय डेटा सिंक के लिए लॉग इन करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login para usar recursos na nuvem e sincronizar dados locais."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கிளவுட் அம்சங்களையும் உள்ளூர் தரவை ஒத்திசைக்கவும் உள்நுழையவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录后可使用云端功能，并同步本地数据。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後可使用雲端功能，並同步本機資料。"
+          }
+        }
+      }
+    },
+    "auth_sign_in_to_use_photo_recognition_for_tasks": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول لاستخدام التعرف على الصور في المهام."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use photo recognition for tasks."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para usar el reconocimiento de fotos en tareas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour utiliser la reconnaissance photo pour les tâches."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कार्यों में फोटो पहचान के लिए लॉग इन करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login para usar reconhecimento de fotos em tarefas."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பணிகளில் புகைப்பட அடையாளத்திற்கு உள்நுழையவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录后可使用拍照识图功能。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後可使用拍照識圖功能。"
+          }
+        }
+      }
+    },
+    "auth_sign_in_to_use_this_feature_and_sync_your_local": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سجّل الدخول لاستخدام هذه الميزة ومزامنة بياناتك المحلية."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to use this feature and sync your local data."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión para usar esta función y sincronizar tus datos locales."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connectez-vous pour utiliser cette fonction et synchroniser vos données locales."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस सुविधा और स्थानीय डेटा सिंक के लिए लॉग इन करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faça login para usar este recurso e sincronizar dados locais."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இந்த அம்சத்தையும் உள்ளூர் தரவை ஒத்திசைக்கவும் உள்நுழையவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录后可使用此功能，并同步本地数据。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入後可使用此功能，並同步本機資料。"
+          }
+        }
+      }
+    },
+    "auth_sign_in_to_wesync": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تسجيل الدخول إلى WeSync"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to WeSync"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar sesión en WeSync"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion à WeSync"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync में साइन इन करें"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar no WeSync"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WeSync இல் உள்நுழைக"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录同圈"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入同圈"
+          }
+        }
+      }
+    },
+    "auth_signed_in_successfully": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم تسجيل الدخول بنجاح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in successfully"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciado sesión correctamente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecté avec succès"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सफलतापूर्वक साइन इन किया गया"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Login feito com sucesso"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வெற்றிகரமாக உள்நுழைந்துள்ளது"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录成功"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入成功"
+          }
+        }
+      }
+    },
+    "auth_signed_in_with_apple": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم تسجيل الدخول باستخدام Apple"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signed in with Apple"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia sesión con Apple"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connecté avec Apple"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple के साथ साइन इन किया गया"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectado com Apple"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple மூலம் உள்நுழைந்துள்ளீர்கள்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 登录成功"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 登入成功"
+          }
+        }
+      }
+    },
+    "auth_signing_in": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ تسجيل الدخول…"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Signing in…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciando sesión…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion en cours…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइन इन हो रहा है…"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrando…"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைகிறது…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在登录…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在登入…"
+          }
+        }
+      }
+    },
+    "auth_the_login_session_is_not_ready_yet_please_try_ag": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جلسة تسجيل الدخول ليست جاهزة بعد، يرجى المحاولة مرة أخرى لاحقًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The login session is not ready yet, please try again later."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La sesión de inicio de sesión aún no está lista; inténtelo nuevamente más tarde."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La session de connexion n'est pas encore prête, veuillez réessayer plus tard."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लॉगिन सत्र अभी तैयार नहीं है, कृपया बाद में पुनः प्रयास करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A sessão de login ainda não está pronta. Tente novamente mais tarde."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவு அமர்வு இன்னும் தயாராகவில்லை, பின்னர் மீண்டும் முயற்சிக்கவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录会话尚未就绪，请稍后重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入會話尚未就緒，請稍後重試。"
+          }
+        }
+      }
+    },
+    "auth_try_without_signing_in": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جرّب دون تسجيل الدخول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try without signing in"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar sin iniciar sesión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essayer sans se connecter"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बिना लॉग इन किए आज़माएं"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimentar sem entrar"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழையாமல் முயற்சிக்கவும்"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂不登录，先试用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫不登入，先試用"
+          }
+        }
+      }
+    },
+    "auth_unable_to_complete_login": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "غير قادر على إكمال تسجيل الدخول"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to complete login"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede completar el inicio de sesión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de terminer la connexion"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लॉगिन पूरा करने में असमर्थ"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível concluir o login"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உள்நுழைவை முடிக்க முடியவில்லை"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法完成登录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法完成登入"
+          }
+        }
+      }
+    },
+    "auth_your_data_is_stored_on_this_device_only_sign_in": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "البيانات محفوظة على هذا الجهاز فقط. سجّل الدخول للمزامنة مع السحابة والتعاون مع العائلة."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your data is stored on this device only. Sign in to sync to the cloud and collaborate with family."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los datos solo se guardan en este dispositivo. Inicia sesión para sincronizar en la nube y colaborar con tu familia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les données sont stockées uniquement sur cet appareil. Connectez-vous pour les synchroniser dans le cloud et collaborer en famille."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डेटा केवल इस डिवाइस पर है। क्लाउड में सिंक और परिवार के साथ सहयोग के लिए लॉग इन करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Os dados ficam apenas neste dispositivo. Faça login para sincronizar na nuvem e colaborar com a família."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தரவு இந்த சாதனத்தில் மட்டுமே சேமிக்கப்படுகிறது. கிளவுடில் ஒத்திசைக்கவும் குடும்பத்துடன் இணைந்து பணியாற்ற உள்நுழையவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "当前数据仅保存在本机。登录后可同步到云端，并与家人协作。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前資料僅儲存在本機。登入後可同步至雲端，並與家人協作。"
+          }
+        }
+      }
+    },
+    "auth_your_sign_in_session_expired_please_sign_in_agai": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهت صلاحية تسجيل الدخول. يرجى تسجيل الدخول مرة أخرى والمحاولة مجددًا."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your sign-in session expired. Please sign in again and retry."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu sesión ha caducado. Inicia sesión de nuevo e inténtalo otra vez."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre session a expiré. Reconnectez-vous et réessayez."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका साइन-इन सत्र समाप्त हो गया। फिर से लॉग इन करके पुनः प्रयास करें।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A sua sessão expirou. Inicie sessão novamente e tente outra vez."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் உள்நுழைவு காலாவதியாகிவிட்டது. மீண்டும் உள்நுழைந்து முயற்சிக்கவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录状态已失效，请重新登录后再试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入狀態已失效，請重新登入後再試。"
+          }
+        }
+      }
+    },
+    "auth_your_sign_in_session_has_expired_please_sign_in": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لقد انتهت صلاحية جلسة تسجيل الدخول الخاصة بك. الرجاء تسجيل الدخول مرة أخرى."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your sign-in session has expired. Please sign in again."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Su sesión de inicio de sesión ha caducado. Por favor inicia sesión nuevamente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre session de connexion a expiré. Veuillez vous reconnecter."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आपका साइन-इन सत्र समाप्त हो गया है. कृपया पुनः साइन इन करें."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sua sessão de login expirou. Faça login novamente."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் உள்நுழைவு அமர்வு காலாவதியானது. மீண்டும் உள்நுழையவும்."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的登录会话已过期。请重新登录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "您的登入會話已過期。請重新登入。"
+          }
+        }
+      }
+    },
+    "auth_guest_experience_no_signup": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "游客体验（无须注册）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "游客体验（无须注册）"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest experience (no signup)"
+          }
+        }
+      }
+    },
+    "auth_bind_apple_account_keep_data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 账号（保留当前全部数据）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 账号（保留当前全部数据）"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple Account (keep all data)"
+          }
+        }
+      }
+    },
+    "auth_anonymous_account_link_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 或 Google 可在多设备同步；用户 ID 与订阅权益保持不变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 或 Google 可在多设备同步；用户 ID 与订阅权益保持不变。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to sync across devices. Your user ID and subscription stay the same."
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
