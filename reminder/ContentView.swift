@@ -116,7 +116,7 @@ struct ContentView: View {
         }
         .onChange(of: isUserLoggedIn) { _, loggedIn in
             guard isLaunchBootstrapComplete, loggedIn else { return }
-            OAuthLoginPerformanceTracer.mark(
+            LoginFlowPerformanceTracing.mark(
                 "contentView.isUserLoggedIn.changed",
                 note: "loggedIn=true bootstrapTrigger=login",
                 appRouter: appRouter

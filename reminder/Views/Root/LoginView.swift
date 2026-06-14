@@ -357,25 +357,44 @@ struct LoginView: View {
 
     private func startSupabaseGuestExperience() async {
         guard AuthSessionHints.showsGuestLoginEntry else { return }
+        GuestLoginPerformanceTracer.beginTrace(entryPath: "guestTap")
         await MainActor.run {
             loginErrorAlert = nil
             showGuestRestoreFailedAlert = false
             loadingProvider = .guest
         }
+        GuestLoginPerformanceTracer.mark("guest.login.loadingStarted", appRouter: appRouter)
         #if DEBUG
         await GuestSessionDiagnostics.logAsync("guest.tap.start", appRouter: appRouter)
         #endif
         do {
-            let result = try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
-            await SupabaseAuthManager.finishGuestSignInBootstrap(
-                appRouter: appRouter,
-                userId: result.userId
+            let result = try await GuestLoginPerformanceTracer.measure(
+                "guest.login.resumeOrSignInAsGuest",
+                appRouter: appRouter
+            ) {
+                try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
+            }
+            GuestLoginPerformanceTracer.mark(
+                "guest.login.resumeOrSignInAsGuest.result",
+                note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)",
+                appRouter: appRouter
             )
+            await GuestLoginPerformanceTracer.measure(
+                "guest.login.finishGuestSignInBootstrap",
+                note: "userId=\(result.userId.uuidString.lowercased())",
+                appRouter: appRouter
+            ) {
+                await SupabaseAuthManager.finishGuestSignInBootstrap(
+                    appRouter: appRouter,
+                    userId: result.userId
+                )
+            }
             await MainActor.run {
                 withAnimation(.easeInOut) {
                     isUserLoggedIn = true
                 }
             }
+            GuestLoginPerformanceTracer.mark("guest.login.isUserLoggedInSet", appRouter: appRouter)
             #if DEBUG
             await GuestSessionDiagnostics.logAsync(
                 "guest.tap.afterResume",
@@ -390,10 +409,14 @@ struct LoginView: View {
             #endif
             AnalyticsManager.log(event: .guestStarted)
         } catch let error as SupabaseAuthManagerError where error.needsGuestSessionReset {
+            GuestLoginPerformanceTracer.cancelTrace(reason: "needsGuestSessionReset")
             await MainActor.run {
                 showGuestRestoreFailedAlert = true
             }
         } catch {
+            GuestLoginPerformanceTracer.cancelTrace(
+                reason: "error \(error.localizedDescription)"
+            )
             await MainActor.run {
                 loginErrorAlert = error.localizedDescription
             }
@@ -401,27 +424,50 @@ struct LoginView: View {
         await MainActor.run {
             loadingProvider = nil
         }
+        GuestLoginPerformanceTracer.mark("guest.login.loadingFinished", appRouter: appRouter)
     }
 
     private func resetGuestSessionAndStartFresh() async {
+        GuestLoginPerformanceTracer.beginTrace(entryPath: "guestResetFresh")
         await MainActor.run {
             loginErrorAlert = nil
             showGuestRestoreFailedAlert = false
             loadingProvider = .guest
         }
+        GuestLoginPerformanceTracer.mark("guest.reset.loadingStarted", appRouter: appRouter)
         do {
-            let result = try await SupabaseAuthManager.resetGuestSessionAndSignIn(appRouter: appRouter)
-            await SupabaseAuthManager.finishGuestSignInBootstrap(
-                appRouter: appRouter,
-                userId: result.userId
+            let result = try await GuestLoginPerformanceTracer.measure(
+                "guest.reset.resetGuestSessionAndSignIn",
+                appRouter: appRouter
+            ) {
+                try await SupabaseAuthManager.resetGuestSessionAndSignIn(appRouter: appRouter)
+            }
+            GuestLoginPerformanceTracer.mark(
+                "guest.reset.resetGuestSessionAndSignIn.result",
+                note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)",
+                appRouter: appRouter
             )
+            await GuestLoginPerformanceTracer.measure(
+                "guest.reset.finishGuestSignInBootstrap",
+                note: "userId=\(result.userId.uuidString.lowercased())",
+                appRouter: appRouter
+            ) {
+                await SupabaseAuthManager.finishGuestSignInBootstrap(
+                    appRouter: appRouter,
+                    userId: result.userId
+                )
+            }
             await MainActor.run {
                 withAnimation(.easeInOut) {
                     isUserLoggedIn = true
                 }
             }
+            GuestLoginPerformanceTracer.mark("guest.reset.isUserLoggedInSet", appRouter: appRouter)
             AnalyticsManager.log(event: .guestStarted)
         } catch {
+            GuestLoginPerformanceTracer.cancelTrace(
+                reason: "error \(error.localizedDescription)"
+            )
             await MainActor.run {
                 loginErrorAlert = error.localizedDescription
             }
@@ -429,6 +475,7 @@ struct LoginView: View {
         await MainActor.run {
             loadingProvider = nil
         }
+        GuestLoginPerformanceTracer.mark("guest.reset.loadingFinished", appRouter: appRouter)
     }
 }
 

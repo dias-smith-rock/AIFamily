@@ -218,6 +218,38 @@ final class AppRouter: ObservableObject {
         return true
     }
 
+    /// 游客快照快路径：跳过阻塞 refresh 时仍标记 bootstrap 完成，避免 UI 卡在加载态。
+    func markAuthBootstrapCompletedForDeferredRefresh() {
+        hasCompletedAuthBootstrap = true
+    }
+
+    /// 快照快路径命中后后台补全 refresh / RevenueCat / 任务列表，不阻塞进主 Tab。
+    func scheduleDeferredRefreshStateFromBackend(trigger: String) {
+        Task { @MainActor in
+            GuestLoginPerformanceTracer.mark(
+                "guest.bootstrap.refreshStateFromBackend.deferred.begin",
+                note: "trigger=\(trigger)",
+                appRouter: self
+            )
+            let deferredStart = CFAbsoluteTimeGetCurrent()
+            #if canImport(Supabase)
+            if await NetworkMonitor.shared.isConnected == false, let userId = authUserId {
+                scheduleDeferredRevenueCatBootstrap(userId: userId)
+            }
+            #endif
+            await refreshStateFromBackend()
+            if appState == .activeMember, selectedHouseholdId != nil {
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            }
+            let stepMs = Int((CFAbsoluteTimeGetCurrent() - deferredStart) * 1000)
+            GuestLoginPerformanceTracer.mark(
+                "guest.bootstrap.refreshStateFromBackend.deferred.end",
+                note: "trigger=\(trigger) stepMs=\(stepMs)",
+                appRouter: self
+            )
+        }
+    }
+
     /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存（仅游客会话）。
     @discardableResult
     func restoreOfflineHouseholdContextIfNeeded() -> Bool {

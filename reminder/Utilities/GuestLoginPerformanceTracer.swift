@@ -1,30 +1,31 @@
 import Foundation
 
-/// Google / OAuth 手动登录 → 主界面 的性能埋点（前缀 `[GoogleOAuthPerf]`）。
+/// 游客模式登录 → 主界面 的性能埋点（前缀 `[GuestLoginPerf]`）。
 /// 仅记录日志，不改变业务逻辑。
 @MainActor
-enum OAuthLoginPerformanceTracer {
+enum GuestLoginPerformanceTracer {
     private static var traceOriginSeconds: CFAbsoluteTime?
     private static var lastMarkSeconds: CFAbsoluteTime?
     private static var traceID: String = ""
-    private static var provider: String = ""
+    private static var entryPath: String = ""
     private static var isActive = false
 
-    static let logPrefix = "[GoogleOAuthPerf]"
+    static let logPrefix = "[GuestLoginPerf]"
 
     static var traceIsActive: Bool { isActive }
 
     // MARK: - Trace lifecycle
 
-    static func beginTrace(provider: String) {
+    /// 登录页点击「游客体验」或「清除重来」时开启追踪链。
+    static func beginTrace(entryPath: String) {
         guard isActive == false else { return }
         let now = nowSeconds()
-        self.provider = provider
+        self.entryPath = entryPath
         traceID = String(UUID().uuidString.prefix(8)).lowercased()
         traceOriginSeconds = now
         lastMarkSeconds = now
         isActive = true
-        log(label: "trace.begin", note: "provider=\(provider) path=manualOAuthLogin")
+        log(label: "trace.begin", note: "entryPath=\(entryPath) path=guestLogin")
     }
 
     static func finishMainPageReached(appRouter: AppRouter?) {
@@ -36,14 +37,14 @@ enum OAuthLoginPerformanceTracer {
         )
         if let origin = traceOriginSeconds {
             let totalMs = elapsedMilliseconds(since: origin, until: nowSeconds())
-            print("\(logPrefix) trace.finish totalMs=\(totalMs) traceId=\(traceID) provider=\(provider)")
+            print("\(logPrefix) trace.finish totalMs=\(totalMs) traceId=\(traceID) entryPath=\(entryPath)")
         }
         resetTrace()
     }
 
     static func cancelTrace(reason: String) {
         guard isActive else { return }
-        print("\(logPrefix) trace.cancel reason=\(reason) traceId=\(traceID) provider=\(provider)")
+        print("\(logPrefix) trace.cancel reason=\(reason) traceId=\(traceID) entryPath=\(entryPath)")
         resetTrace()
     }
 
@@ -97,7 +98,7 @@ enum OAuthLoginPerformanceTracer {
         var parts: [String] = [
             logPrefix,
             "traceId=\(traceID)",
-            "provider=\(provider)",
+            "entryPath=\(entryPath)",
             "label=\(label)",
         ]
         if let origin = traceOriginSeconds {
@@ -162,108 +163,6 @@ enum OAuthLoginPerformanceTracer {
         traceOriginSeconds = nil
         lastMarkSeconds = nil
         traceID = ""
-        provider = ""
-    }
-}
-
-/// 冷启动 `[AutoLoginPerf]` 与手动 OAuth `[GoogleOAuthPerf]` 共用埋点入口；inactive 的 tracer 自动跳过。
-@MainActor
-enum LoginFlowPerformanceTracing {
-    static func mark(
-        _ label: String,
-        note: String? = nil,
-        appRouter: AppRouter? = nil
-    ) {
-        AutoLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        OAuthLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        OfflineColdStartPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        GuestLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-    }
-
-    static func logAlways(
-        _ label: String,
-        note: String? = nil,
-        appRouter: AppRouter? = nil
-    ) {
-        AutoLoginPerformanceTracer.logAlways(label, note: note, appRouter: appRouter)
-        OAuthLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        OfflineColdStartPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-        GuestLoginPerformanceTracer.mark(label, note: note, appRouter: appRouter)
-    }
-
-    static func measure<T>(
-        _ label: String,
-        note: String? = nil,
-        appRouter: AppRouter? = nil,
-        operation: () async throws -> T
-    ) async rethrows -> T {
-        if OAuthLoginPerformanceTracer.traceIsActive {
-            return try await OAuthLoginPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
-        if OfflineColdStartPerformanceTracer.traceIsActive {
-            return try await OfflineColdStartPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
-        if GuestLoginPerformanceTracer.traceIsActive {
-            return try await GuestLoginPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
-        return try await AutoLoginPerformanceTracer.measure(
-            label,
-            note: note,
-            appRouter: appRouter,
-            operation: operation
-        )
-    }
-
-    static func measure<T>(
-        _ label: String,
-        note: String? = nil,
-        appRouter: AppRouter? = nil,
-        operation: () async -> T
-    ) async -> T {
-        if OAuthLoginPerformanceTracer.traceIsActive {
-            return await OAuthLoginPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
-        if OfflineColdStartPerformanceTracer.traceIsActive {
-            return await OfflineColdStartPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
-        if GuestLoginPerformanceTracer.traceIsActive {
-            return await GuestLoginPerformanceTracer.measure(
-                label,
-                note: note,
-                appRouter: appRouter,
-                operation: operation
-            )
-        }
-        return await AutoLoginPerformanceTracer.measure(
-            label,
-            note: note,
-            appRouter: appRouter,
-            operation: operation
-        )
+        entryPath = ""
     }
 }

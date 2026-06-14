@@ -43,18 +43,30 @@ enum SupabaseAuthManager {
     /// 进入游客模式：SDK 内 anonymous → Keychain 注入（setSession）→ 仅槽位为空时 signInAnonymously。
     static func resumeOrSignInAsGuest(appRouter: AppRouter) async throws -> (userId: UUID, resumed: Bool) {
         #if canImport(Supabase)
+        GuestLoginPerformanceTracer.mark("guest.resume.begin", appRouter: appRouter)
         if let session = try? await client.auth.session {
             if session.user.isAnonymous {
+                GuestLoginPerformanceTracer.mark(
+                    "guest.resume.branch",
+                    note: "existingSDKAnonymous userId=\(session.user.id.uuidString.lowercased())",
+                    appRouter: appRouter
+                )
                 persistGuestSession(session)
                 #if DEBUG
                 await GuestSessionDiagnostics.logAsync("guest.resume.branch=keychain", appRouter: appRouter)
                 #endif
                 return resumeExistingAnonymousSession(session, appRouter: appRouter)
             }
+            GuestLoginPerformanceTracer.mark(
+                "guest.resume.formalSDKSessionPersisted",
+                note: "userId=\(session.user.id.uuidString.lowercased())",
+                appRouter: appRouter
+            )
             persistFormalSession(session)
         }
 
         if GuestSessionArchive.hasSavedTokens {
+            GuestLoginPerformanceTracer.mark("guest.resume.branch", note: "archive", appRouter: appRouter)
             #if DEBUG
             await GuestSessionDiagnostics.logAsync("guest.resume.attemptArchive", appRouter: appRouter)
             #endif
@@ -69,6 +81,7 @@ enum SupabaseAuthManager {
             return restored
         }
 
+        GuestLoginPerformanceTracer.mark("guest.resume.branch", note: "createNew", appRouter: appRouter)
         #if DEBUG
         await GuestSessionDiagnostics.logAsync("guest.resume.branch=createNew", appRouter: appRouter)
         #endif
@@ -76,6 +89,11 @@ enum SupabaseAuthManager {
         if let session = try? await client.auth.session {
             persistGuestSession(session)
         }
+        GuestLoginPerformanceTracer.mark(
+            "guest.resume.createNew.done",
+            note: "userId=\(userId.uuidString.lowercased())",
+            appRouter: appRouter
+        )
         return (userId, false)
         #else
         _ = appRouter
@@ -205,11 +223,18 @@ enum SupabaseAuthManager {
     /// 清除失效的游客槽位并创建全新 anonymous session（破坏性操作）。
     static func resetGuestSessionAndSignIn(appRouter: AppRouter) async throws -> (userId: UUID, resumed: Bool) {
         #if canImport(Supabase)
+        GuestLoginPerformanceTracer.mark("guest.reset.clearArchiveAndSignOut.begin", appRouter: appRouter)
         GuestSessionArchive.clear()
         if let session = try? await client.auth.session, session.user.isAnonymous {
             try await client.auth.signOut()
         }
+        GuestLoginPerformanceTracer.mark("guest.reset.createNewSession.begin", appRouter: appRouter)
         let userId = try await createNewAnonymousSession(appRouter: appRouter)
+        GuestLoginPerformanceTracer.mark(
+            "guest.reset.createNewSession.done",
+            note: "userId=\(userId.uuidString.lowercased())",
+            appRouter: appRouter
+        )
         return (userId, false)
         #else
         _ = appRouter
@@ -222,12 +247,46 @@ enum SupabaseAuthManager {
         appRouter: AppRouter,
         userId: UUID
     ) async {
+        GuestLoginPerformanceTracer.mark("guest.bootstrap.begin", note: "userId=\(userId.uuidString.lowercased())", appRouter: appRouter)
         appRouter.markOAuthBootstrapCompleted()
+        GuestLoginPerformanceTracer.mark("guest.bootstrap.markOAuthBootstrapCompleted", appRouter: appRouter)
         appRouter.syncSessionIdentityFromPersistedSessionIfAvailable()
-        _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
-        await appRouter.refreshStateFromBackend()
+        GuestLoginPerformanceTracer.mark("guest.bootstrap.syncSessionIdentity.done", appRouter: appRouter)
+        let restoredOffline = appRouter.restoreOfflineHouseholdContextIfNeeded()
+        GuestLoginPerformanceTracer.mark(
+            "guest.bootstrap.restoreOfflineHouseholdContext",
+            note: "restored=\(restoredOffline)",
+            appRouter: appRouter
+        )
+        let canSkipBlockingRefresh =
+            restoredOffline
+            && appRouter.appState == .activeMember
+            && appRouter.selectedHouseholdId != nil
+        if canSkipBlockingRefresh {
+            GuestLoginPerformanceTracer.mark(
+                "guest.bootstrap.refreshStateFromBackend.skipped",
+                note: "snapshotFastPath",
+                appRouter: appRouter
+            )
+            appRouter.markAuthBootstrapCompletedForDeferredRefresh()
+            appRouter.scheduleDeferredRefreshStateFromBackend(trigger: "guestSnapshotFastPath")
+        } else {
+            await LoginFlowPerformanceTracing.measure(
+                "guest.bootstrap.refreshStateFromBackend",
+                appRouter: appRouter
+            ) {
+                await appRouter.refreshStateFromBackend()
+            }
+        }
         appRouter.finishAnonymousSignIn(userId: userId)
-        await saveGuestSessionToKeychain()
+        GuestLoginPerformanceTracer.mark("guest.bootstrap.finishAnonymousSignIn", appRouter: appRouter)
+        await LoginFlowPerformanceTracing.measure(
+            "guest.bootstrap.saveGuestSessionToKeychain",
+            appRouter: appRouter
+        ) {
+            await saveGuestSessionToKeychain()
+        }
+        GuestLoginPerformanceTracer.mark("guest.bootstrap.end", appRouter: appRouter)
     }
 
     /// 销毁 Supabase 会话并清理本地缓存。
@@ -307,11 +366,21 @@ enum SupabaseAuthManager {
 
     private static func createNewAnonymousSession(appRouter: AppRouter) async throws -> UUID {
         #if canImport(Supabase)
-        let session = try await client.auth.signInAnonymously()
+        let session = try await GuestLoginPerformanceTracer.measure(
+            "guest.auth.signInAnonymously",
+            appRouter: appRouter
+        ) {
+            try await client.auth.signInAnonymously()
+        }
         let userId = session.user.id
         persistGuestSession(session)
         AuthSessionHints.markEverAuthenticated()
         notifyAuthUserChanged(userId: userId, isAnonymous: session.user.isAnonymous)
+        GuestLoginPerformanceTracer.mark(
+            "guest.auth.signInAnonymously.postSetupScheduled",
+            note: "userId=\(userId.uuidString.lowercased())",
+            appRouter: appRouter
+        )
         Task {
             await ensureCurrentUserFamilyProfile()
             await prepareRevenueCat(for: userId, appRouter: appRouter)
@@ -335,6 +404,11 @@ enum SupabaseAuthManager {
         persistGuestSession(session)
         AuthSessionHints.markEverAuthenticated()
         notifyAuthUserChanged(userId: userId, isAnonymous: true)
+        GuestLoginPerformanceTracer.mark(
+            "guest.resume.existingAnonymousSession",
+            note: "userId=\(userId.uuidString.lowercased())",
+            appRouter: appRouter
+        )
         Task {
             await prepareRevenueCat(for: userId, appRouter: appRouter)
         }
@@ -349,8 +423,15 @@ enum SupabaseAuthManager {
         appRouter: AppRouter
     ) async throws -> (userId: UUID, resumed: Bool) {
         guard let archived = GuestSessionArchive.load() else {
+            GuestLoginPerformanceTracer.mark("guest.archive.miss", appRouter: appRouter)
             throw SupabaseAuthManagerError.guestSessionNotFound
         }
+
+        GuestLoginPerformanceTracer.mark(
+            "guest.archive.loaded",
+            note: "archivedUserId=\(archived.userId.uuidString.lowercased())",
+            appRouter: appRouter
+        )
 
         #if DEBUG
         await GuestSessionDiagnostics.logAsync(
@@ -360,8 +441,19 @@ enum SupabaseAuthManager {
         )
         #endif
 
-        let httpRefresh = await GuestArchiveTokenRefresher.refreshArchivedGuestTokens(
-            context: "guestRestore.beforeInject"
+        let httpRefresh = await GuestLoginPerformanceTracer.measure(
+            "guest.archive.httpRefresh",
+            note: "context=guestRestore.beforeInject archivedUserId=\(archived.userId.uuidString.lowercased())",
+            appRouter: appRouter
+        ) {
+            await GuestArchiveTokenRefresher.refreshArchivedGuestTokens(
+                context: "guestRestore.beforeInject"
+            )
+        }
+        GuestLoginPerformanceTracer.mark(
+            "guest.archive.httpRefresh.result",
+            note: "\(httpRefresh)",
+            appRouter: appRouter
         )
         #if DEBUG
         await GuestSessionDiagnostics.logAsync(
@@ -377,7 +469,13 @@ enum SupabaseAuthManager {
 
         let session: Session
         do {
-            session = try await activateGuestSessionFromArchivedPayload(payloadForInject, appRouter: appRouter)
+            session = try await GuestLoginPerformanceTracer.measure(
+                "guest.archive.activateSession",
+                note: "archivedUserId=\(archived.userId.uuidString.lowercased())",
+                appRouter: appRouter
+            ) {
+                try await activateGuestSessionFromArchivedPayload(payloadForInject, appRouter: appRouter)
+            }
         } catch let error as SupabaseAuthManagerError {
             throw error
         } catch {
@@ -421,13 +519,11 @@ enum SupabaseAuthManager {
                 accessToken: archived.accessToken,
                 refreshToken: archived.refreshToken
             )
-            #if DEBUG
-            await GuestSessionDiagnostics.logAsync(
+            GuestLoginPerformanceTracer.mark(
                 "guest.archive.activate.setSession.ok",
-                appRouter: appRouter,
-                note: "archivedUserId=\(archived.userId.uuidString.lowercased())"
+                note: "archivedUserId=\(archived.userId.uuidString.lowercased())",
+                appRouter: appRouter
             )
-            #endif
             return session
         } catch {
             lastError = error
@@ -442,13 +538,11 @@ enum SupabaseAuthManager {
 
         do {
             let session = try await client.auth.refreshSession(refreshToken: archived.refreshToken)
-            #if DEBUG
-            await GuestSessionDiagnostics.logAsync(
+            GuestLoginPerformanceTracer.mark(
                 "guest.archive.activate.refresh.ok",
-                appRouter: appRouter,
-                note: "archivedUserId=\(archived.userId.uuidString.lowercased())"
+                note: "archivedUserId=\(archived.userId.uuidString.lowercased())",
+                appRouter: appRouter
             )
-            #endif
             return session
         } catch {
             lastError = error
