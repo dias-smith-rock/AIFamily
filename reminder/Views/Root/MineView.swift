@@ -479,7 +479,11 @@ struct MineView: View {
     }
 
     private var mineHeaderMainTitle: String {
-        familyViewModel.currentUserProfile?.displayName ?? viewModel.displayName
+        if let profile = familyViewModel.currentUserProfile {
+            let raw = profile.membershipNickname ?? profile.profileName ?? profile.name
+            return StoredDisplayNameResolver.selfName(raw, locale: locale)
+        }
+        return StoredDisplayNameResolver.selfName(viewModel.displayName, locale: locale)
     }
 
     private var mineHeaderSubtitle: String {
@@ -736,11 +740,7 @@ struct MineView: View {
     // MARK: - Section chrome
 
     private func mineSectionHeader(_ title: L10n.Entry) -> some View {
-        mineSectionHeader(title.localized)
-    }
-
-    private func mineSectionHeader(_ title: LocalizedStringKey) -> some View {
-        Text(title)
+        Text(title.localized)
             .font(.caption.weight(.semibold))
             .foregroundStyle(.secondary)
             .textCase(.uppercase)
@@ -770,10 +770,10 @@ struct MineView: View {
     }
 
     private func mineNavigationRow(
-        title: LocalizedStringKey,
+        title: LocalizedStringResource,
         systemImage: String,
         iconTint: Color,
-        subtitle: LocalizedStringKey? = nil,
+        subtitle: LocalizedStringResource? = nil,
         value: String? = nil,
         showsValue: Bool = true,
         showsSubtitle: Bool = true,

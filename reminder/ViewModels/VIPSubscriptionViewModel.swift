@@ -22,14 +22,14 @@ enum VIPBillingPlan: String, CaseIterable, Identifiable {
         }
     }
 
-    var periodLabel: LocalizedStringKey {
+    var periodLabel: LocalizedStringResource {
         switch self {
         case .monthly: L10n.Common.monthly2.localized
         case .yearly: L10n.Common.yearly2.localized
         }
     }
 
-    var planTitle: LocalizedStringKey {
+    var planTitle: LocalizedStringResource {
         switch self {
         case .monthly: L10n.Common.monthly.localized
         case .yearly: L10n.Common.yearly.localized
@@ -40,7 +40,7 @@ enum VIPBillingPlan: String, CaseIterable, Identifiable {
         self == .yearly
     }
 
-    var savingsBadge: LocalizedStringKey? {
+    var savingsBadge: LocalizedStringResource? {
         isRecommended ? L10n.Common.save33.localized : nil
     }
 }

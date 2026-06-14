@@ -2,20 +2,20 @@ import SwiftUI
 
 struct EmptyStateView: View {
     let systemImage: String
-    let title: LocalizedStringKey
-    let message: LocalizedStringKey
-    let primaryActionTitle: LocalizedStringKey
+    let title: LocalizedStringResource
+    let message: LocalizedStringResource
+    let primaryActionTitle: LocalizedStringResource
     let primaryAction: () -> Void
-    let secondaryActionTitle: LocalizedStringKey?
+    let secondaryActionTitle: LocalizedStringResource?
     let secondaryAction: (() -> Void)?
 
     init(
         systemImage: String,
-        title: LocalizedStringKey,
-        message: LocalizedStringKey,
-        primaryActionTitle: LocalizedStringKey,
+        title: LocalizedStringResource,
+        message: LocalizedStringResource,
+        primaryActionTitle: LocalizedStringResource,
         primaryAction: @escaping () -> Void,
-        secondaryActionTitle: LocalizedStringKey? = nil,
+        secondaryActionTitle: LocalizedStringResource? = nil,
         secondaryAction: (() -> Void)? = nil
     ) {
         self.systemImage = systemImage

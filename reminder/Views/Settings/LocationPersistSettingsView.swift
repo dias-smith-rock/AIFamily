@@ -193,7 +193,7 @@ struct LocationPersistSettingsView: View {
     }
 
     private func optionRow(
-        title: LocalizedStringKey,
+        title: LocalizedStringResource,
         isSelected: Bool,
         showsProBadge: Bool = false,
         action: @escaping () -> Void
@@ -222,7 +222,7 @@ struct LocationPersistSettingsView: View {
         .buttonStyle(.plain)
     }
 
-    private func distanceLabel(for meters: Double) -> LocalizedStringKey {
+    private func distanceLabel(for meters: Double) -> LocalizedStringResource {
         switch Int(meters) {
         case 100: L10n.Common.distance100m.localized
         case 200: L10n.Common.distance200m.localized
@@ -234,7 +234,7 @@ struct LocationPersistSettingsView: View {
         }
     }
 
-    private func intervalLabel(for seconds: TimeInterval) -> LocalizedStringKey {
+    private func intervalLabel(for seconds: TimeInterval) -> LocalizedStringResource {
         switch Int(seconds) {
         case 300: L10n.Common.duration5min.localized
         case 600: L10n.Common.duration10min.localized
@@ -245,7 +245,7 @@ struct LocationPersistSettingsView: View {
         }
     }
 
-    private func historyDisplayCountLabel(for count: Int) -> LocalizedStringKey {
+    private func historyDisplayCountLabel(for count: Int) -> LocalizedStringResource {
         switch count {
         case 3: L10n.Common.count3.localized
         case 5: L10n.Common.count5.localized

@@ -14,7 +14,7 @@ enum TaskRecurrenceRule: String, CaseIterable, Identifiable, Sendable, Equatable
 
     var id: String { rawValue }
 
-    var titleKey: LocalizedStringKey {
+    var titleKey: LocalizedStringResource {
         switch self {
         case .none: L10n.Common.doesNotRepeat.localized
         case .daily: L10n.Common.daily.localized

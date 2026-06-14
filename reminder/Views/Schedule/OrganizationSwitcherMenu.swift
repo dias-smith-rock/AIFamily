@@ -136,6 +136,7 @@ struct SwitchGroupSheetView: View {
 
 struct CreateOrganizationSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     @Binding var organizationName: String
     @Binding var organizationDescription: String
@@ -147,12 +148,12 @@ struct CreateOrganizationSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    TextField(L10n.Family.enterGroupName.localized, text: $organizationName)
+                    TextField(AppLocalized.string(L10n.Family.enterGroupName, locale: locale), text: $organizationName)
                         .textInputAutocapitalization(.words)
                         .disabled(isSubmitting)
                         .createGroupFieldStyle()
 
-                    TextField(L10n.Family.enterGroupDescriptionOptional.localized, text: $organizationDescription, axis: .vertical)
+                    TextField(AppLocalized.string(L10n.Family.enterGroupDescriptionOptional, locale: locale), text: $organizationDescription, axis: .vertical)
                         .lineLimit(3 ... 6)
                         .disabled(isSubmitting)
                         .createGroupFieldStyle()

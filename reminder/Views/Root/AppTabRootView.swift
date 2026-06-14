@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @State private var selectedTab: Tab = .schedule
     @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
 
@@ -12,7 +13,7 @@ struct AppTabRootView: View {
         case family
         case personalSettings
 
-        var titleKey: LocalizedStringKey {
+        var titleKey: LocalizedStringResource {
             switch self {
             case .schedule: L10n.Schedule.schedule.localized
             case .todos: L10n.Common.toDos.localized
@@ -81,6 +82,7 @@ struct AppTabRootView: View {
             selectedTab = .family
         }
         .reviewAlertModifier(manager: reviewRedirectManager)
+        .id(appSettings.selectedLanguage.id)
     }
 }
 

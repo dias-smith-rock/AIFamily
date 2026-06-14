@@ -261,7 +261,7 @@ struct TaskListView: View {
 
     private var quickTaskInputBar: some View {
         HStack(spacing: 10) {
-            TextField(L10n.Schedule.enterTaskTitle.localized, text: $quickTaskInput)
+            TextField(AppLocalized.string(L10n.Schedule.enterTaskTitle, locale: appSettings.appLocale), text: $quickTaskInput)
                 .textFieldStyle(.roundedBorder)
                 .submitLabel(.done)
                 .onSubmit(submitQuickTaskInput)

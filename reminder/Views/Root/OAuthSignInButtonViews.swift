@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 与 `LoginView` 一致的 OAuth 主按钮样式，供登录页与游客转正卡片复用。
 struct OAuthGoogleSignInButton: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     var isLoading = false
     let action: () -> Void
 
@@ -30,7 +30,7 @@ struct OAuthGoogleSignInButton: View {
 }
 
 struct OAuthAppleSignInButton: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     var isLoading = false
     let action: () -> Void
 

@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// 成员详情键值行：标签与占位符使用 `LocalizedStringKey`，由根节点 `\.locale` 驱动翻译。
+/// 成员详情键值行：标签与占位符使用 String Catalog，由根节点 `\.locale` 驱动翻译。
 struct ProfileDetailRowView: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let value: String?
 
-    init(title: LocalizedStringKey, value: String?) {
+    init(title: LocalizedStringResource, value: String?) {
         self.title = title
         self.value = value
     }
@@ -37,11 +37,11 @@ struct ProfileDetailRowView: View {
 
 /// 成员详情敏感字段行（证件号等）：支持显示/掩码切换。
 struct ProfileDetailSensitiveRowView: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let value: String?
     @Binding var reveals: Bool
 
-    init(title: LocalizedStringKey, value: String?, reveals: Binding<Bool>) {
+    init(title: LocalizedStringResource, value: String?, reveals: Binding<Bool>) {
         self.title = title
         self.value = value
         self._reveals = reveals

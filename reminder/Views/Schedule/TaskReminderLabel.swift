@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 提醒偏移（分钟）→ String Catalog 键（与 `CreateTaskView` / 详情页共用）。
 enum TaskReminderLabel {
-    static func titleKey(forMinutes minutes: Int) -> LocalizedStringKey {
+    static func titleKey(forMinutes minutes: Int) -> LocalizedStringResource {
         switch minutes {
         case 0: L10n.Common.onTime.localized
         case 5: L10n.Common.n5MinutesBefore.localized

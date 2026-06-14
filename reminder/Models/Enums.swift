@@ -35,7 +35,7 @@ enum MembershipRole: String, Codable, Equatable {
     }
 
     /// UI 展示用（键与 `Localizable.xcstrings` 一致）。
-    var localizedName: LocalizedStringKey {
+    var localizedName: LocalizedStringResource {
         switch self {
         case .creator: L10n.Common.creator.localized
         case .admin: L10n.Common.admin.localized
@@ -69,7 +69,7 @@ enum TaskStatus: String, Codable, Equatable, Sendable {
     case cancelled
 
     /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
-    var localizedName: LocalizedStringKey {
+    var localizedName: LocalizedStringResource {
         switch self {
         case .new: L10n.Common.pending.localized
         case .accepted: L10n.Common.accepted.localized
@@ -89,7 +89,7 @@ enum TaskPriority: String, Codable, Equatable, CaseIterable {
     case high
     case urgent
 
-    var localizedName: LocalizedStringKey {
+    var localizedName: LocalizedStringResource {
         switch self {
         case .urgent, .high: L10n.Common.urgent.localized
         case .normal, .low: L10n.Common.normal.localized

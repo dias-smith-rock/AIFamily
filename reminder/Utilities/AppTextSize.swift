@@ -10,7 +10,7 @@ enum AppTextSize: Int, CaseIterable, Identifiable, Codable {
     var id: Int { rawValue }
 
     /// UI 展示用（键与 String Catalog 一致）。
-    var title: LocalizedStringKey {
+    var title: LocalizedStringResource {
         switch self {
         case .tiny: L10n.Common.tiny.localized
         case .small: L10n.Common.small.localized

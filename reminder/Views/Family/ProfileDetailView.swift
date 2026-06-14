@@ -4,7 +4,7 @@ struct ProfileDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     let profile: FamilyProfile
-    let roleLabel: LocalizedStringKey
+    let roleLabel: LocalizedStringResource
     let canEdit: Bool
     let onEdit: () -> Void
 

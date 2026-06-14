@@ -387,7 +387,7 @@ struct TaskDetailView: View {
     }
 
     private func timePlanningLine<Content: View>(
-        label: LocalizedStringKey,
+        label: LocalizedStringResource,
         @ViewBuilder value: () -> Content
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -800,7 +800,7 @@ struct TaskDetailView: View {
     @ViewBuilder
     private func readonlyMultilineBlock(
         text: String?,
-        emptyPlaceholder: LocalizedStringKey,
+        emptyPlaceholder: LocalizedStringResource,
         emptyAsCaptionHint: Bool = false
     ) -> some View {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
@@ -826,7 +826,7 @@ struct TaskDetailView: View {
         }
     }
 
-    private func expandedCard<Content: View>(title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
+    private func expandedCard<Content: View>(title: LocalizedStringResource, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -1010,7 +1010,7 @@ struct TaskDetailView: View {
     // MARK: - 底部状态机
 
     private func statusFooterPrimaryButton(
-        _ title: LocalizedStringKey,
+        _ title: LocalizedStringResource,
         tint: Color,
         action: @escaping () -> Void
     ) -> some View {

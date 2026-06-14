@@ -841,7 +841,7 @@ final class FamilyViewModel: ObservableObject {
         return canCurrentUserManageHousehold
     }
 
-    func deleteButtonTitle(for profile: FamilyProfile) -> LocalizedStringKey {
+    func deleteButtonTitle(for profile: FamilyProfile) -> LocalizedStringResource {
         isVirtualMember(profile) ? L10n.Family.deleteMemberProfile.localized : L10n.Family.removeFromGroup.localized
     }
 

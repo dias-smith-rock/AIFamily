@@ -25,7 +25,7 @@ struct LegalConsentFooterView: View {
         .white.opacity(0.55)
     }
 
-    private func linkButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+    private func linkButton(_ title: LocalizedStringResource, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .underline()

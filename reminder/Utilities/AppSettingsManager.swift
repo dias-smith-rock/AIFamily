@@ -8,8 +8,8 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
 
     var id: String { rawValue }
 
-    /// UI 展示用（键与 `Localizable.xcstrings` 一致，勿使用 `rawValue`）。
-    var localizedName: LocalizedStringKey {
+    /// UI 展示用（键与 String Catalog 一致，勿使用 `rawValue`）。
+    var localizedName: LocalizedStringResource {
         switch self {
         case .system: L10n.Common.followSystem.localized
         case .light: L10n.Common.lightMode.localized
@@ -18,7 +18,7 @@ enum AppAppearance: String, CaseIterable, Identifiable, Codable {
     }
 
     /// 与 `localizedName` 相同；设置页列表等沿用此命名。
-    var settingsTitleKey: LocalizedStringKey { localizedName }
+    var settingsTitleKey: LocalizedStringResource { localizedName }
 
     var colorScheme: ColorScheme? {
         switch self {

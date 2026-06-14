@@ -13,7 +13,7 @@ enum CalendarViewMode: String, CaseIterable {
     /// 顶栏视图切换菜单中当前可用的模式（未实现的选项暂不展示）。
     static let menuCases: [CalendarViewMode] = [.list, .day]
 
-    var menuTitleKey: LocalizedStringKey {
+    var menuTitleKey: LocalizedStringResource {
         switch self {
         case .list: return L10n.Common.list.localized
         case .day: return L10n.Common.day.localized

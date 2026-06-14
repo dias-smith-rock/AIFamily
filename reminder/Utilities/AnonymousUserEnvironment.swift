@@ -32,14 +32,16 @@ enum StoredDisplayNameResolver {
         return trimmed
     }
 
-    static func selfName(_ storedName: String?) -> String {
+    static func selfName(_ storedName: String?, locale: Locale? = nil) -> String {
         let trimmed = storedName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard trimmed.isEmpty == false else { return trimmed }
         if trimmed == L10n.Common.me.key {
-            return AppLocalized.localizedSync(L10n.Common.me)
+            return locale.map { AppLocalized.string(L10n.Common.me, locale: $0) }
+                ?? AppLocalized.localizedSync(L10n.Common.me)
         }
         if trimmed == L10n.Family.newMember.key || trimmed == "New member" || trimmed == "新成员" {
-            return AppLocalized.localizedSync(L10n.Family.newMember)
+            return locale.map { AppLocalized.string(L10n.Family.newMember, locale: $0) }
+                ?? AppLocalized.localizedSync(L10n.Family.newMember)
         }
         return trimmed
     }

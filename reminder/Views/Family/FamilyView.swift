@@ -604,8 +604,7 @@ struct FamilyView: View {
         return nil
     }
 
-    /// 详情页「角色」一行：使用 `LocalizedStringKey`，由详情页 `\.locale` 驱动翻译。
-    private func detailRoleLabel(for profile: FamilyProfile) -> LocalizedStringKey {
+    private func detailRoleLabel(for profile: FamilyProfile) -> LocalizedStringResource {
         if profile.isVirtualUser {
             return L10n.Family.memberProfile.localized
         }
@@ -845,7 +844,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var organizationNameField: some View {
-        TextField(L10n.Family.enterGroupName.localized, text: $name)
+        TextField(AppLocalized.string(L10n.Family.enterGroupName, locale: appSettings.appLocale), text: $name)
             .textInputAutocapitalization(.words)
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
@@ -855,7 +854,7 @@ private struct OrganizationSettingsSheet: View {
     }
 
     private var organizationDescriptionField: some View {
-        TextField(L10n.Family.enterGroupDescriptionOptional.localized, text: $groupDescription, axis: .vertical)
+        TextField(AppLocalized.string(L10n.Family.enterGroupDescriptionOptional, locale: appSettings.appLocale), text: $groupDescription, axis: .vertical)
             .lineLimit(3 ... 6)
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
@@ -970,7 +969,7 @@ private struct OrganizationSettingsSheet: View {
         .padding(.top, 8)
     }
 
-    private func settingsNavigationRow(title: LocalizedStringKey, systemImage: String) -> some View {
+    private func settingsNavigationRow(title: LocalizedStringResource, systemImage: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: systemImage)
                 .font(.body)
@@ -1031,7 +1030,7 @@ private struct DisbandHouseholdConfirmationSheet: View {
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    TextField(L10n.Family.enterGroupNameToConfirm.localized, text: $disbandInputName)
+                    TextField(AppLocalized.string(L10n.Family.enterGroupNameToConfirm, locale: locale), text: $disbandInputName)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled(true)
                         .textFieldStyle(.roundedBorder)

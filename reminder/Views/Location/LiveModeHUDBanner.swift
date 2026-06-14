@@ -3,7 +3,7 @@ import SwiftUI
 struct LiveHuddleHUDBanner: View {
     @Environment(\.locale) private var locale
     let participants: [UserLocationState]
-    let exitButtonTitle: LocalizedStringKey
+    let exitButtonTitle: LocalizedStringResource
     let isDestructiveExit: Bool
     let onExit: () -> Void
 

@@ -49,7 +49,7 @@ struct AddFamilyMemberEntrySheet: View {
         }
     }
 
-    private func entryRow(icon: String, title: LocalizedStringKey, subtitle: LocalizedStringKey) -> some View {
+    private func entryRow(icon: String, title: LocalizedStringResource, subtitle: LocalizedStringResource) -> some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
                 .font(.title2)

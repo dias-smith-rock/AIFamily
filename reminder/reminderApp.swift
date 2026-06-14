@@ -56,6 +56,7 @@ struct WeFamilyApp: App {
                 .preferredColorScheme(appSettings.colorScheme)
                 .applyAppTextSize()
                 .tint(AppTheme.ColorToken.accent)
+                .id(appSettings.selectedLanguage.id)
         }
         .modelContainer(sharedModelContainer)
     }

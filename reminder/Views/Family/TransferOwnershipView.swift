@@ -63,7 +63,7 @@ struct TransferOwnershipView: View {
             .navigationBarTitleDisplayMode(.inline)
             .disabled(viewModel.isTransferring)
             .confirmationDialog(
-                confirmationTitleKey,
+                confirmationTitle,
                 isPresented: selectedMemberBinding,
                 titleVisibility: .visible
             ) {
@@ -121,13 +121,11 @@ struct TransferOwnershipView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    private var confirmationTitleKey: LocalizedStringKey {
+    private var confirmationTitle: String {
         if let name = viewModel.selectedMember?.nickname {
-            return LocalizedStringKey(
-                L10n.Common.transferCreatorPermissionTo.formatted(locale: locale, name)
-            )
+            return L10n.Common.transferCreatorPermissionTo.formatted(locale: locale, name)
         }
-        return L10n.Common.transferCreatorPermission.localized
+        return AppLocalized.string(L10n.Common.transferCreatorPermission, locale: locale)
     }
 
     private var selectedMemberBinding: Binding<Bool> {

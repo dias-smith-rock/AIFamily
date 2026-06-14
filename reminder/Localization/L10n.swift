@@ -20,8 +20,18 @@ enum L10n {
         let key: String
         let table: Table
 
-        var localized: LocalizedStringKey {
-            L10n.key(key, table: table)
+        /// SwiftUI 文案：保留 catalog key + table，由 `\.locale` 环境在渲染时解析。
+        var localized: LocalizedStringResource {
+            LocalizedStringResource(
+                String.LocalizationValue(key),
+                table: table.rawValue,
+                bundle: .main
+            )
+        }
+
+        /// 仍需 `LocalizedStringKey` 的旧 API（无 table 支持，仅作兼容）。
+        var localizedKey: LocalizedStringKey {
+            LocalizedStringKey(key)
         }
 
         func string(locale: Locale) -> String {
@@ -50,9 +60,7 @@ enum L10n {
         }
     }
 
-    static func key(_ key: String, table: Table) -> LocalizedStringKey {
-        LocalizedStringKey(
-            String(localized: String.LocalizationValue(key), table: table.rawValue, bundle: .main)
-        )
+    static func key(_ key: String, table: Table) -> LocalizedStringResource {
+        Entry(key: key, table: table).localized
     }
 }

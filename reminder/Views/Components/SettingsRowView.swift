@@ -1,23 +1,23 @@
 import SwiftUI
 
 struct SettingsRowView: View {
-    let title: LocalizedStringKey
+    let title: LocalizedStringResource
     let systemImage: String
     let iconTint: Color
-    var subtitle: LocalizedStringKey?
+    var subtitle: LocalizedStringResource?
     var value: String?
-    var valueKey: LocalizedStringKey?
+    var valueKey: LocalizedStringResource?
     var showsValue: Bool = true
     var showsSubtitle: Bool = true
     var showsChevron: Bool = true
 
     init(
-        title: LocalizedStringKey,
+        title: LocalizedStringResource,
         systemImage: String,
         iconTint: Color,
-        subtitle: LocalizedStringKey? = nil,
+        subtitle: LocalizedStringResource? = nil,
         value: String? = nil,
-        valueKey: LocalizedStringKey? = nil,
+        valueKey: LocalizedStringResource? = nil,
         showsValue: Bool = true,
         showsSubtitle: Bool = true,
         showsChevron: Bool = true
@@ -39,7 +39,7 @@ struct SettingsRowView: View {
         iconTint: Color,
         subtitle: L10n.Entry? = nil,
         value: String? = nil,
-        valueKey: LocalizedStringKey? = nil,
+        valueKey: LocalizedStringResource? = nil,
         showsValue: Bool = true,
         showsSubtitle: Bool = true,
         showsChevron: Bool = true

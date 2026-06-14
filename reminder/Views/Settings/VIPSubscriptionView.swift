@@ -273,7 +273,7 @@ struct VIPSubscriptionView: View {
         .padding(.horizontal, 8)
     }
 
-    private func legalLinkButton(_ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+    private func legalLinkButton(_ title: LocalizedStringResource, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .underline()
@@ -484,8 +484,8 @@ private struct VIPPlanOptionCard: View {
 private struct VIPPremiumBenefitRow: View {
     let systemImage: String
     let iconTint: Color
-    let title: LocalizedStringKey
-    let description: LocalizedStringKey
+    let title: LocalizedStringResource
+    let description: LocalizedStringResource
     let showsDivider: Bool
 
     var body: some View {

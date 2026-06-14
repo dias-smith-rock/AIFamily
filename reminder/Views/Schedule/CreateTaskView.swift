@@ -140,7 +140,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     }
 
     private func timeSettingLabel(
-        _ title: LocalizedStringKey,
+        _ title: LocalizedStringResource,
         systemImage: String
     ) -> some View {
         Label(title, systemImage: systemImage)
@@ -535,7 +535,7 @@ struct CreateTaskView: View {
         }
     }
 
-    private var formNavigationTitle: LocalizedStringKey {
+    private var formNavigationTitle: LocalizedStringResource {
         if editingTask != nil {
             return isFlexibleMode ? L10n.Common.editToDo.localized : L10n.Schedule.editEvent.localized
         }
@@ -914,7 +914,7 @@ struct CreateTaskView: View {
                     .foregroundStyle(.secondary)
 
                 HStack(alignment: .center, spacing: 10) {
-                    TextField(L10n.Common.enterNumberOrLink.localized, text: $emergencyPhone)
+                    TextField(AppLocalized.string(L10n.Common.enterNumberOrLink, locale: locale), text: $emergencyPhone)
                         .font(.body)
                         .keyboardType(.phonePad)
                         .textContentType(.telephoneNumber)
@@ -959,7 +959,7 @@ struct CreateTaskView: View {
                 Image(systemName: "mappin.and.ellipse")
                     .font(.body.weight(.semibold))
                     .foregroundStyle(.secondary)
-                TextField(L10n.Location.searchOrAddALocation.localized, text: $locationName)
+                TextField(AppLocalized.string(L10n.Location.searchOrAddALocation, locale: locale), text: $locationName)
                     .font(.body)
                     .focused($focusedField, equals: .locationSearch)
                 Image(systemName: "chevron.right")
@@ -1359,7 +1359,7 @@ struct CreateTaskView: View {
         }
     }
 
-    private func everyoneChip(isSelected: Bool, accessibilityLabel: LocalizedStringKey, onTap: @escaping () -> Void) -> some View {
+    private func everyoneChip(isSelected: Bool, accessibilityLabel: LocalizedStringResource, onTap: @escaping () -> Void) -> some View {
         Button(action: onTap) {
             VStack(spacing: 6) {
                 ZStack {
@@ -2233,7 +2233,7 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var titleKey: LocalizedStringKey {
+    var titleKey: LocalizedStringResource {
         switch self {
         case .none: L10n.Common.none.localized
         case .atTimeOfEvent: L10n.Common.onTime.localized

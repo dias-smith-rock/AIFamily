@@ -5,6 +5,7 @@ import Kingfisher
 
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
 
     let mode: Mode
     let householdId: UUID?
@@ -106,7 +107,7 @@ struct ProfileEditView: View {
                 }
 
                 Section(L10n.Common.basicInfo) {
-                    TextField(L10n.Common.nicknameSuchAsMum.localized, text: $name)
+                    TextField(AppLocalized.string(L10n.Common.nicknameSuchAsMum, locale: locale), text: $name)
                     Picker(L10n.Common.gender.localized, selection: $gender) {
                         ForEach(ProfileDraftGender.allCases) { item in
                             Text(item.localizedName).tag(item)
@@ -122,32 +123,32 @@ struct ProfileEditView: View {
                 }
 
                 Section(L10n.Common.contactInformation) {
-                    TextField(L10n.Common.mail.localized, text: $email)
+                    TextField(AppLocalized.string(L10n.Common.mail, locale: locale), text: $email)
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    TextField(L10n.Common.phoneNumber.localized, text: $mainPhone)
+                    TextField(AppLocalized.string(L10n.Common.phoneNumber, locale: locale), text: $mainPhone)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
-                    TextField(L10n.Common.alternatePhone.localized, text: $secondPhone)
+                    TextField(AppLocalized.string(L10n.Common.alternatePhone, locale: locale), text: $secondPhone)
                         .textContentType(.telephoneNumber)
                         .keyboardType(.phonePad)
                 }
 
                 Section(L10n.Common.growthData) {
-                    TextField(L10n.Common.heightCm.localized, text: $height)
+                    TextField(AppLocalized.string(L10n.Common.heightCm, locale: locale), text: $height)
                         .keyboardType(.decimalPad)
-                    TextField(L10n.Common.weightKg.localized, text: $weight)
+                    TextField(AppLocalized.string(L10n.Common.weightKg, locale: locale), text: $weight)
                         .keyboardType(.decimalPad)
                 }
 
                 Section(L10n.Common.educationAndDocuments) {
-                    TextField(L10n.Common.attendSchool.localized, text: $school)
-                    TextField(L10n.Common.currentGrade.localized, text: $grade)
-                    TextField(L10n.Common.idNumber.localized, text: $idCardNum)
-                    TextField(L10n.Common.passportNo.localized, text: $passportNum)
-                    TextField(L10n.Common.travelPermitReturnPermitNumber.localized, text: $permitNum)
+                    TextField(AppLocalized.string(L10n.Common.attendSchool, locale: locale), text: $school)
+                    TextField(AppLocalized.string(L10n.Common.currentGrade, locale: locale), text: $grade)
+                    TextField(AppLocalized.string(L10n.Common.idNumber, locale: locale), text: $idCardNum)
+                    TextField(AppLocalized.string(L10n.Common.passportNo, locale: locale), text: $passportNum)
+                    TextField(AppLocalized.string(L10n.Common.travelPermitReturnPermitNumber, locale: locale), text: $permitNum)
                 }
 
                 if let adminRoleToggle {
@@ -243,12 +244,12 @@ struct ProfileEditView: View {
         }
     }
 
-    private var adminToggleAlertTitle: LocalizedStringKey {
+    private var adminToggleAlertTitle: LocalizedStringResource {
         guard let adminRoleToggle else { return L10n.Common.areYouSureYouWantToContinue.localized }
         return adminRoleToggle.isPromoting ? L10n.Family.makeThisMemberAnAdmin.localized : L10n.Family.removeThisMemberSAdminRole.localized
     }
 
-    private var adminToggleAlertMessage: LocalizedStringKey {
+    private var adminToggleAlertMessage: LocalizedStringResource {
         guard let adminRoleToggle else { return "" }
         return adminRoleToggle.isPromoting
             ? L10n.Family.adminsCanHelpManageGroupMembersAndSetting.localized
@@ -461,13 +462,13 @@ struct ProfileEditView: View {
 
 extension ProfileEditView {
     struct AdminRoleToggleAction {
-        let buttonTitle: LocalizedStringKey
+        let buttonTitle: LocalizedStringResource
         let isPromoting: Bool
         let onToggle: @MainActor () async -> String?
     }
 
     struct MemberRemovalAction {
-        let buttonTitle: LocalizedStringKey
+        let buttonTitle: LocalizedStringResource
         let isVirtualMember: Bool
         let onDelete: @MainActor () async -> String?
     }
@@ -482,7 +483,7 @@ extension ProfileEditView {
             return nil
         }
 
-        var navigationTitleKey: LocalizedStringKey {
+        var navigationTitleKey: LocalizedStringResource {
             switch self {
             case .createLocalProfile: L10n.Family.createMemberProfile.localized
             case .edit: L10n.Common.editProfile.localized
@@ -506,7 +507,7 @@ enum ProfileDraftGender: String, CaseIterable, Identifiable {
         }
     }
 
-    var localizedName: LocalizedStringKey {
+    var localizedName: LocalizedStringResource {
         switch self {
         case .unspecified: L10n.Common.notSet.localized
         case .male: L10n.Common.male.localized

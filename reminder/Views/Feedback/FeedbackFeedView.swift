@@ -12,7 +12,7 @@ struct FeedbackFeedView: View {
 
         var id: Self { self }
 
-        var label: LocalizedStringKey {
+        var label: LocalizedStringResource {
             switch self {
             case .all: L10n.Feedback.filterAll.localized
             case .unread: L10n.Feedback.filterUnread.localized

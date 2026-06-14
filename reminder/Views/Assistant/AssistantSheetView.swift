@@ -153,7 +153,7 @@ struct AssistantSheetView: View {
             iconButton("photo.badge.plus")
             iconButton("mic")
 
-            TextField(L10n.Common.pasteANotificationOrSayARequest.localized, text: $viewModel.inputText)
+            TextField(AppLocalized.string(L10n.Common.pasteANotificationOrSayARequest, locale: locale), text: $viewModel.inputText)
                 .textFieldStyle(.plain)
                 .focused($isComposerFocused)
                 .clipboardPasteOnFocus(when: isComposerFocused, text: $viewModel.inputText)
@@ -198,6 +198,7 @@ private struct TaskPreviewCard: View {
     let draft: TaskDraft
     let onConfirm: () async -> Void
     let onCorrection: (String) async -> Void
+    @Environment(\.locale) private var locale
     @State private var correction = ""
     @FocusState private var isCorrectionFocused: Bool
 
@@ -216,7 +217,7 @@ private struct TaskPreviewCard: View {
             if let profileIds = draft.targetProfileIds, profileIds.isEmpty == false {
                 Label("\(profileIds.count)", systemImage: "person")
             }
-            TextField(L10n.Common.naturalLanguageCorrectionEGChangeTheTime.localized, text: $correction)
+            TextField(AppLocalized.string(L10n.Common.naturalLanguageCorrectionEGChangeTheTime, locale: locale), text: $correction)
                 .textFieldStyle(.roundedBorder)
                 .focused($isCorrectionFocused)
                 .clipboardPasteOnFocus(when: isCorrectionFocused, text: $correction)

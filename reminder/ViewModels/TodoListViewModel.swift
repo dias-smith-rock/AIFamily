@@ -189,7 +189,7 @@ final class TodoListViewModel: ObservableObject {
 
         var id: String { rawValue }
 
-        var titleKey: LocalizedStringKey {
+        var titleKey: LocalizedStringResource {
             switch self {
             case .overdue: L10n.Common.overdue.localized
             case .today: L10n.Common.dueToday.localized

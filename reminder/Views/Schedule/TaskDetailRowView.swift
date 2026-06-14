@@ -1,14 +1,14 @@
 import SwiftUI
 
-/// 任务详情键值行：标签使用 `LocalizedStringKey`，由根节点 `\.locale` 驱动翻译。
+/// 任务详情键值行：标签使用 String Catalog，由根节点 `\.locale` 驱动翻译。
 struct TaskDetailRowView<Value: View>: View {
     let systemImage: String
-    let label: LocalizedStringKey
+    let label: LocalizedStringResource
     var valueIsPlaceholder: Bool = false
     var valueAccent: Bool = false
     @ViewBuilder let value: () -> Value
 
-    init(systemImage: String, label: LocalizedStringKey, valueIsPlaceholder: Bool = false, valueAccent: Bool = false, @ViewBuilder value: @escaping () -> Value) {
+    init(systemImage: String, label: LocalizedStringResource, valueIsPlaceholder: Bool = false, valueAccent: Bool = false, @ViewBuilder value: @escaping () -> Value) {
         self.systemImage = systemImage
         self.label = label
         self.valueIsPlaceholder = valueIsPlaceholder
