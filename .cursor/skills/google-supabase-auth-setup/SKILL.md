@@ -78,6 +78,28 @@ try await SupabaseManager.shared.client.auth.signInWithOAuth(
    - 原因：Google OAuth 客户端缺少 Supabase callback
    - 处理：添加 `https://<PROJECT-REF>.supabase.co/auth/v1/callback`
 
+## 游客转正（linkIdentity）
+
+匿名用户绑定 Apple/Google 使用 `linkIdentity()` / `linkIdentityWithIdToken()`，**必须**在 Supabase 开启 Manual Linking：
+
+1. **线上项目**：Dashboard → **Authentication** → **Sign In / Providers** → **User Signups** → 打开 **Allow manual linking**
+2. **本地 / 自托管**：`supabase/config.toml` 中 `enable_manual_linking = true`（或 `GOTRUE_SECURITY_MANUAL_LINKING_ENABLED=true`）
+3. 同时确保 **Allow anonymous sign-ins** 已开启
+
+未开启时报错：`Manual linking is disabled`（客户端会映射为友好文案）。
+
+### Google / Apple 已被其他用户占用
+
+游客 `linkIdentity` 时若 OAuth 已绑定另一 `auth.users`，GoTrue 返回 `Identity is already linked to another user`。
+
+**WeSync 产品策略（不提供切换登录、不合并数据）：**
+
+- 客户端识别该错误，弹出专用说明（`auth_identity_already_linked_*`）
+- 引导用户：**换一个 Google/Apple 绑定**，或**继续游客**（当前群组保留在本游客 UUID）
+- **禁止**自动 fallback 为 `signInWithOAuth` 登录已有账号（会丢弃当前游客 session/群组上下文）
+
+参考：[Identity Linking](https://supabase.com/docs/guides/auth/auth-identity-linking) · [Anonymous Sign-Ins](https://supabase.com/docs/guides/auth/auth-anonymous)
+
 ## 输出要求（给用户的回复模板）
 
 - 先判断是「代码问题」还是「控制台配置问题」

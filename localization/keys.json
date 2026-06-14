@@ -5939,5 +5939,26 @@
     "table": "Auth",
     "swift_property": "anonymousBindAfterGroupMessage",
     "orphan": true
+  },
+  {
+    "legacy_key": "Account linking is not enabled on the server.",
+    "new_key": "auth_manual_linking_disabled",
+    "table": "Auth",
+    "swift_property": "manualLinkingDisabled",
+    "orphan": true
+  },
+  {
+    "legacy_key": "This account is already in use",
+    "new_key": "auth_identity_already_linked_title",
+    "table": "Auth",
+    "swift_property": "identityAlreadyLinkedTitle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "This Google or Apple account is already linked to another WeSync user.",
+    "new_key": "auth_identity_already_linked_message",
+    "table": "Auth",
+    "swift_property": "identityAlreadyLinkedMessage",
+    "orphan": true
   }
 ]

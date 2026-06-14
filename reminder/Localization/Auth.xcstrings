@@ -1771,6 +1771,48 @@
         }
       }
     },
+    "auth_identity_already_linked_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "该账号已被使用" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "該帳號已被使用" } },
+        "es": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "This account is already in use" } }
+      }
+    },
+    "auth_identity_already_linked_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 账号已绑定其他 WeSync 用户。请换一个账号绑定，或继续以游客使用——当前群组仍保留在本游客账号下。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 帳號已綁定其他 WeSync 使用者。請換一個帳號綁定，或繼續以遊客使用——目前群組仍保留在本遊客帳號下。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another WeSync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } }
+      }
+    },
+    "auth_manual_linking_disabled": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "服务端尚未开启账号绑定功能，请稍后再试或联系支持。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "伺服器尚未開啟帳號綁定功能，請稍後再試或聯絡支援。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } }
+      }
+    },
     "auth_unable_to_complete_login": {
       "extractionState": "stale",
       "localizations": {
@@ -2072,57 +2114,71 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "绑定 Apple 账号（保留当前全部数据）"
+            "value": "绑定 Apple 账号"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "绑定 Apple 账号（保留当前全部数据）"
+            "value": "綁定 Apple 帳號"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Link Apple Account (keep all data)"
+            "value": "Link Apple Account"
           }
         }
+      }
+    },
+    "auth_link_account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link Account" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定账号" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定帳號" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Link Account" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Link Account" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Link Account" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Link Account" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Link Account" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Link Account" } }
       }
     },
     "auth_anonymous_account_link_subtitle": {

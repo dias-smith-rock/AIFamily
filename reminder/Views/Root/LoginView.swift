@@ -14,6 +14,7 @@ struct LoginView: View {
     @State private var loadingProvider: LoginProvider?
     @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
+    @State private var showIdentityAlreadyLinkedAlert = false
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
 
@@ -75,6 +76,11 @@ struct LoginView: View {
             Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(loginErrorAlert ?? "")
+        }
+        .alert(L10n.Auth.identityAlreadyLinkedTitle.localized, isPresented: $showIdentityAlreadyLinkedAlert) {
+            Button(L10n.Common.ok, role: .cancel) {}
+        } message: {
+            Text(L10n.Auth.identityAlreadyLinkedMessage.localized)
         }
         // 保留：处理 Magic Link 邮件回跳等非 ASWebAuthenticationSession 场景
         .onOpenURL { url in
@@ -177,13 +183,22 @@ struct LoginView: View {
             } catch {
                 if isUserCancelled(error) == false {
                     await MainActor.run {
-                        loginErrorAlert = error.localizedDescription
+                        presentAuthFailure(error)
                     }
                 }
             }
             await MainActor.run {
                 loadingProvider = nil
             }
+        }
+    }
+
+    @MainActor
+    private func presentAuthFailure(_ error: Error) {
+        if OAuthSignInSupport.isIdentityAlreadyLinked(error) {
+            showIdentityAlreadyLinkedAlert = true
+        } else {
+            loginErrorAlert = OAuthSignInSupport.userFacingMessage(for: error, locale: locale)
         }
     }
 
@@ -206,7 +221,7 @@ struct LoginView: View {
         case .failure(let error):
             if isUserCancelled(error) == false {
                 await MainActor.run {
-                    loginErrorAlert = error.localizedDescription
+                    presentAuthFailure(error)
                 }
             }
         case .success(let authorization):
@@ -256,7 +271,7 @@ struct LoginView: View {
             } catch {
                 if isUserCancelled(error) == false {
                     await MainActor.run {
-                        loginErrorAlert = error.localizedDescription
+                        presentAuthFailure(error)
                     }
                 }
             }
@@ -289,7 +304,7 @@ struct LoginView: View {
                 try await settlePostOAuthState()
             } catch {
                 await MainActor.run {
-                    loginErrorAlert = error.localizedDescription
+                    presentAuthFailure(error)
                 }
             }
         }

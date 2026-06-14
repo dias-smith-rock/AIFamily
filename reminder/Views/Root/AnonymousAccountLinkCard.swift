@@ -13,6 +13,7 @@ struct AnonymousAccountLinkCard: View {
 
     @State private var loadingProvider: OAuthProvider?
     @State private var errorMessage: String?
+    @State private var showIdentityAlreadyLinkedAlert = false
     @State private var appleSignInPresenter = AppleSignInPresenter()
     var onLinked: () -> Void = {}
 
@@ -24,7 +25,7 @@ struct AnonymousAccountLinkCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label {
-                Text(L10n.Auth.bindAppleAccountKeepData.localized)
+                Text(L10n.Auth.linkAccount.localized)
                     .font(.headline)
             } icon: {
                 Image(systemName: "lock.fill")
@@ -64,6 +65,19 @@ struct AnonymousAccountLinkCard: View {
             Button(L10n.Common.ok, role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
+        }
+        .alert(L10n.Auth.identityAlreadyLinkedTitle.localized, isPresented: $showIdentityAlreadyLinkedAlert) {
+            Button(L10n.Common.ok, role: .cancel) {}
+        } message: {
+            Text(L10n.Auth.identityAlreadyLinkedMessage.localized)
+        }
+    }
+
+    private func handleLinkFailure(_ error: Error) {
+        if OAuthSignInSupport.isIdentityAlreadyLinked(error) {
+            showIdentityAlreadyLinkedAlert = true
+        } else {
+            errorMessage = OAuthSignInSupport.userFacingMessage(for: error, locale: locale)
         }
     }
 
@@ -111,7 +125,7 @@ struct AnonymousAccountLinkCard: View {
                 onLinked()
             } catch {
                 if OAuthSignInSupport.isUserCancelled(error) == false {
-                    errorMessage = error.localizedDescription
+                    handleLinkFailure(error)
                 }
             }
         }
@@ -128,7 +142,7 @@ struct AnonymousAccountLinkCard: View {
                 onLinked()
             } catch {
                 if OAuthSignInSupport.isUserCancelled(error) == false {
-                    errorMessage = error.localizedDescription
+                    handleLinkFailure(error)
                 }
             }
         }
