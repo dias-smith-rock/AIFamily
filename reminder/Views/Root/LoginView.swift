@@ -14,6 +14,7 @@ struct LoginView: View {
     @State private var loadingProvider: LoginProvider?
     @State private var appleSignInPresenter = AppleSignInPresenter()
     @State private var loginErrorAlert: String?
+    @State private var showGuestRestoreFailedAlert = false
     @State private var showIdentityAlreadyLinkedAlert = false
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
@@ -31,8 +32,10 @@ struct LoginView: View {
     /// 是否展示底部「More」登录入口（暂时关闭）。
     private let showsMoreLoginEntry = false
 
-    /// 是否展示游客试用入口（Supabase 匿名登录，满足 5.1.1）。
-    private let showsGuestModeEntry = true
+    /// 是否展示游客试用入口（仅从未用过 Google / Apple 正式账号的设备展示）。
+    private var showsGuestModeEntry: Bool {
+        AuthSessionHints.showsGuestLoginEntry
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -77,6 +80,14 @@ struct LoginView: View {
         } message: {
             Text(loginErrorAlert ?? "")
         }
+        .alert(L10n.Auth.guestSessionRestoreFailedTitle, isPresented: $showGuestRestoreFailedAlert) {
+            Button(L10n.Common.cancel, role: .cancel) {}
+            Button(L10n.Auth.clearGuestDataAndStartFresh, role: .destructive) {
+                Task { await resetGuestSessionAndStartFresh() }
+            }
+        } message: {
+            Text(L10n.Auth.guestSessionRestoreFailedMessage.localized)
+        }
         .alert(L10n.Auth.identityAlreadyLinkedTitle.localized, isPresented: $showIdentityAlreadyLinkedAlert) {
             Button(L10n.Common.ok, role: .cancel) {}
         } message: {
@@ -85,6 +96,10 @@ struct LoginView: View {
         // 保留：处理 Magic Link 邮件回跳等非 ASWebAuthenticationSession 场景
         .onOpenURL { url in
             handleAuthCallback(url)
+        }
+        .task {
+            guard AuthSessionHints.showsGuestLoginEntry else { return }
+            await GuestSessionKeepAlive.refreshOnLoginScreenIfNeeded()
         }
     }
 
@@ -321,20 +336,69 @@ struct LoginView: View {
     }
 
     private func startSupabaseGuestExperience() async {
+        guard AuthSessionHints.showsGuestLoginEntry else { return }
         await MainActor.run {
             loginErrorAlert = nil
+            showGuestRestoreFailedAlert = false
             loadingProvider = .guest
         }
+        #if DEBUG
+        await GuestSessionDiagnostics.logAsync("guest.tap.start", appRouter: appRouter)
+        #endif
         do {
             let result = try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
+            await SupabaseAuthManager.finishGuestSignInBootstrap(
+                appRouter: appRouter,
+                userId: result.userId
+            )
             await MainActor.run {
                 withAnimation(.easeInOut) {
                     isUserLoggedIn = true
                 }
-                appRouter.finishAnonymousSignIn(userId: result.userId)
             }
-            if result.resumed {
-                await appRouter.refreshStateFromBackend()
+            #if DEBUG
+            await GuestSessionDiagnostics.logAsync(
+                "guest.tap.afterResume",
+                appRouter: appRouter,
+                note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)"
+            )
+            GuestSessionDiagnostics.log(
+                "guest.tap.finished",
+                appRouter: appRouter,
+                note: "joinedHouseholdsPendingOrgRoutingFetch"
+            )
+            #endif
+            AnalyticsManager.log(event: .guestStarted)
+        } catch let error as SupabaseAuthManagerError where error.needsGuestSessionReset {
+            await MainActor.run {
+                showGuestRestoreFailedAlert = true
+            }
+        } catch {
+            await MainActor.run {
+                loginErrorAlert = error.localizedDescription
+            }
+        }
+        await MainActor.run {
+            loadingProvider = nil
+        }
+    }
+
+    private func resetGuestSessionAndStartFresh() async {
+        await MainActor.run {
+            loginErrorAlert = nil
+            showGuestRestoreFailedAlert = false
+            loadingProvider = .guest
+        }
+        do {
+            let result = try await SupabaseAuthManager.resetGuestSessionAndSignIn(appRouter: appRouter)
+            await SupabaseAuthManager.finishGuestSignInBootstrap(
+                appRouter: appRouter,
+                userId: result.userId
+            )
+            await MainActor.run {
+                withAnimation(.easeInOut) {
+                    isUserLoggedIn = true
+                }
             }
             AnalyticsManager.log(event: .guestStarted)
         } catch {

@@ -20368,19 +20368,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "quit"
+            "value" : "Quit"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "abandonar"
+            "value" : "Abandonar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "quitter"
+            "value" : "Quitter"
           }
         },
         "hi" : {
@@ -20392,7 +20392,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "desistir"
+            "value" : "Desistir"
           }
         },
         "ta" : {

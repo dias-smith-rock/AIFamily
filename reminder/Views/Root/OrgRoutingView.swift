@@ -224,6 +224,13 @@ struct OrgRoutingView: View {
 
     private func loadJoinedHouseholdsForOrgRouting() async {
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
+        #if DEBUG
+        GuestSessionDiagnostics.log(
+            "guest.orgRouting.loadFinished",
+            appRouter: appRouter,
+            note: "joinedCount=\(viewModel.joinedHouseholds.count) isLoading=\(viewModel.isLoading)"
+        )
+        #endif
         appRouter.notifyOrgRoutingHouseholdListLoadFinished()
     }
 

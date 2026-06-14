@@ -153,6 +153,11 @@ struct ContentView: View {
                 shouldHideAppSwitcherSnapshot = false
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
+                    if isUserLoggedIn == false, AuthSessionHints.showsGuestLoginEntry {
+                        await GuestSessionKeepAlive.refreshOnLoginScreenIfNeeded()
+                    } else if appRouter.isAnonymousUser == false {
+                        await GuestSessionKeepAlive.refreshWhileFormalUserActiveIfNeeded()
+                    }
                     guard isUserLoggedIn, isLaunchBootstrapComplete else { return }
                     await runForegroundLocationBootstrap(vipLogTrigger: "App回到前台")
                 }
@@ -286,8 +291,10 @@ struct ContentView: View {
 
     @MainActor
     private func runLaunchBootstrap() async {
+        AuthSessionHints.prepareForFreshInstallIfNeeded()
         LegacyGuestDataCleaner.removeLegacyLocalTrialKeysIfNeeded()
         RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
+        DualSessionTokenSync.registerIfNeeded()
         await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
 
         var revealedMainUI = false

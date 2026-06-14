@@ -2351,6 +2351,76 @@
         "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
         "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } }
       }
+    },
+    "auth_no_saved_guest_session_was_found_on_this_device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "本设备未找到已保存的游客会话。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "本裝置未找到已保存的游客會話。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } }
+      }
+    },
+    "auth_your_guest_session_could_not_be_restored_please_try_again": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法恢复游客会话，请重试。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法恢復游客會話，請重試。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } }
+      }
+    },
+    "auth_guest_session_restore_failed_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法恢复游客会话" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法恢復游客會話" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } }
+      }
+    },
+    "auth_guest_session_restore_failed_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "本机保存的游客会话已在服务端失效，无法恢复原有群组。你可以清除游客数据并重新开始。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "本機保存的游客會話已在伺服器端失效，無法恢復原有群組。你可以清除游客資料並重新開始。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } }
+      }
+    },
+    "auth_clear_guest_data_and_start_fresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清除游客数据并重新开始" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除游客資料並重新開始" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } }
+      }
     }
   },
   "version": "1.0"

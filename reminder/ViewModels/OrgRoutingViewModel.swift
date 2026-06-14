@@ -34,15 +34,36 @@ final class OrgRoutingViewModel: ObservableObject {
 
         do {
             let response = try await householdRoutingService.fetchMyJoinedHouseholds()
+            let droppedBySelectable = response.filter { $0.isSelectable == false }.count
+            let droppedByArchived = response.filter {
+                $0.isSelectable && $0.household?.isArchivedOrDeleted == true
+            }.count
             joinedHouseholds = response.filter { household in
                 household.isSelectable
                     && household.household?.isArchivedOrDeleted == false
             }
             await appRouter.checkForNewCreatorRoles(fetchedHouseholds: joinedHouseholds)
             #if DEBUG
+            GuestSessionDiagnostics.log(
+                "guest.fetchMyHouseholds",
+                appRouter: appRouter,
+                membershipSummary: GuestSessionDiagnostics.MembershipSummary(
+                    rawCount: response.count,
+                    filteredCount: joinedHouseholds.count,
+                    droppedBySelectable: droppedBySelectable,
+                    droppedByArchived: droppedByArchived
+                )
+            )
             print("✅ [OrgHub] fetchMyHouseholds — count=\(joinedHouseholds.count)")
             #endif
         } catch {
+            #if DEBUG
+            GuestSessionDiagnostics.log(
+                "guest.fetchMyHouseholds.failed",
+                appRouter: appRouter,
+                note: error.localizedDescription
+            )
+            #endif
             print("拉取群组列表失败: \(error)")
         }
     }

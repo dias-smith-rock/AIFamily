@@ -64,6 +64,8 @@ enum OAuthSessionCoordinator {
 
         await appRouter.refreshStateFromBackend()
         await retryOAuthHouseholdRefreshIfNeeded(appRouter: appRouter)
+        await SupabaseAuthManager.persistFormalSessionIfNeeded()
+        await GuestSessionKeepAlive.refreshAfterOAuthSettlementIfNeeded()
         appBootstrap.bumpSessionRevision()
 
         if appRouter.appState != .unauthenticated {

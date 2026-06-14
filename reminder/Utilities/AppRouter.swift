@@ -54,6 +54,12 @@ final class AppRouter: ObservableObject {
     /// OAuth `settleAfterOAuth` 已 refresh 时，跳过 `ContentView` 登录后重复 refresh。
     private var skipNextLoginBootstrapRefresh = false
 
+    #if DEBUG
+    var guestDiagnosticsWillSkipNextLoginBootstrapRefresh: Bool {
+        skipNextLoginBootstrapRefresh
+    }
+    #endif
+
     private var householdRoutingResolveRefreshFinished = false
     private var orgRoutingSurfaceDidAppear = false
     private var orgRoutingHouseholdListLoadFinished = false
@@ -268,6 +274,29 @@ final class AppRouter: ObservableObject {
         }
 
         do {
+            #if DEBUG
+            var guestRefreshActiveCount = 0
+            var guestRefreshTotalCount = 0
+            var guestRefreshOptionsCount = 0
+            var guestRefreshCapturedStats = false
+            defer {
+                if isAnonymousUser {
+                    GuestSessionDiagnostics.log(
+                        "guest.refresh.done",
+                        appRouter: self,
+                        refreshSummary: guestRefreshCapturedStats
+                            ? GuestSessionDiagnostics.RefreshSummary(
+                                activeMembershipCount: guestRefreshActiveCount,
+                                optionsCount: guestRefreshOptionsCount,
+                                totalMembershipCount: guestRefreshTotalCount
+                            )
+                            : nil,
+                        note: guestRefreshCapturedStats ? nil : "noMembershipQuery"
+                    )
+                }
+            }
+            #endif
+
             let client = SupabaseManager.shared.client
             let session = try await client.auth.session
             AuthSessionHints.markEverAuthenticated()
@@ -275,6 +304,11 @@ final class AppRouter: ObservableObject {
             let userId = session.user.id
             let memberships = try await fetchMemberships(client: client, userId: userId)
             let activeMemberships = memberships.filter { normalizeStatus($0.status) == "active" }
+            #if DEBUG
+            guestRefreshActiveCount = activeMemberships.count
+            guestRefreshTotalCount = memberships.count
+            guestRefreshCapturedStats = true
+            #endif
             debugLog(
                 "refresh.start user=\(userId.uuidString) memberships=\(memberships.count) active=\(activeMemberships.count) statuses=\(membershipStatusSummary(memberships))"
             )
@@ -282,6 +316,9 @@ final class AppRouter: ObservableObject {
                 client: client,
                 memberships: activeMemberships
             )
+            #if DEBUG
+            guestRefreshOptionsCount = options.count
+            #endif
             authUserId = userId
             await RevenueCatSubscriptionService.shared.logIn(userId: userId)
             await loadUserEntitlement(userId: userId)
