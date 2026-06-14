@@ -583,6 +583,14 @@ final class AppRouter: ObservableObject {
         recentHouseholds = []
     }
 
+    /// 离线 hardSignOut 后本地重置路由与 Premium 状态，不依赖 `refreshStateFromBackend`。
+    func applyLocalStateAfterHardSignOut() {
+        clearHouseholdRoutingResolveState()
+        prepareForSoftExitToLogin()
+        resetAuthenticatedPremiumState()
+        hasCompletedAuthBootstrap = true
+    }
+
     func goToPendingApproval() {
         appState = .pendingApproval
         selectedHouseholdId = nil

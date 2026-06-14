@@ -237,21 +237,29 @@ enum SupabaseAuthManager {
         appRouter.logVIPAccessState(trigger: "用户退出前")
         defer { Task { await AuthSessionGuard.shared.endLoggingOut() } }
 
-        if let session = try? await client.auth.session {
+        let isOnline = await NetworkMonitor.shared.isConnected
+
+        if let session = client.auth.currentSession {
             if session.user.isAnonymous {
                 persistGuestSession(session)
             } else {
                 persistFormalSession(session)
-                let refreshResult = await GuestArchiveTokenRefresher.refreshArchivedGuestTokens(
-                    context: "hardSignOut.beforeFormalSignOut"
-                )
-                #if DEBUG
-                print("[SupabaseAuthManager] guest archive refresh on formal signOut result=\(refreshResult)")
-                #endif
+                if isOnline {
+                    let refreshResult = await GuestArchiveTokenRefresher.refreshArchivedGuestTokens(
+                        context: "hardSignOut.beforeFormalSignOut"
+                    )
+                    #if DEBUG
+                    print("[SupabaseAuthManager] guest archive refresh on formal signOut result=\(refreshResult)")
+                    #endif
+                } else {
+                    #if DEBUG
+                    print("[SupabaseAuthManager] skipped guest archive refresh on formal signOut (offline)")
+                    #endif
+                }
             }
         }
 
-        try await client.auth.signOut()
+        try await signOutFromSDK(preferGlobal: isOnline)
         if clearGuestArchive {
             GuestSessionArchive.clear()
         }
@@ -260,15 +268,41 @@ enum SupabaseAuthManager {
         if clearGuestArchive {
             LocalCacheManager.shared.removeAll()
         }
-        await appRouter.refreshStateFromBackend()
+        appRouter.applyLocalStateAfterHardSignOut()
+        if isOnline {
+            await appRouter.refreshStateFromBackend()
+        }
         #if DEBUG
-        print("[SupabaseAuthManager] hardSignOut complete clearGuestArchive=\(clearGuestArchive)")
+        print("[SupabaseAuthManager] hardSignOut complete clearGuestArchive=\(clearGuestArchive) online=\(isOnline)")
         #endif
         #else
         _ = appRouter
         throw SupabaseAuthManagerError.sdkUnavailable
         #endif
     }
+
+    #if canImport(Supabase)
+    /// Supabase SDK 会先 `sessionManager.remove()` 再请求 `/logout`；离线时后者失败但仍应视为退出成功。
+    private static func signOutFromSDK(preferGlobal: Bool) async throws {
+        do {
+            if preferGlobal {
+                try await client.auth.signOut()
+            } else {
+                try await client.auth.signOut(scope: .local)
+            }
+        } catch {
+            if client.auth.currentSession == nil {
+                #if DEBUG
+                print(
+                    "[SupabaseAuthManager] signOut network error ignored after local session cleared: \(error.localizedDescription)"
+                )
+                #endif
+                return
+            }
+            throw error
+        }
+    }
+    #endif
 
     private static func createNewAnonymousSession(appRouter: AppRouter) async throws -> UUID {
         #if canImport(Supabase)
