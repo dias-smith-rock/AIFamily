@@ -892,7 +892,7 @@ struct CreateTaskView: View {
                 Divider().padding(.vertical, 6)
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(L10n.Schedule.taskPriority.localized)
+                    Text(L10n.Schedule.taskPriority2.localized)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Picker("", selection: $formPriority) {

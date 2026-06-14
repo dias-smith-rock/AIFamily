@@ -650,7 +650,7 @@ struct TaskDetailView: View {
 
     private var expandedReadonlySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            expandedCard(title: L10n.Schedule.taskPriority.localized) {
+            expandedCard(title: L10n.Schedule.taskPriority2.localized) {
                 priorityReadonlySegmentVisual
             }
 
@@ -743,7 +743,7 @@ struct TaskDetailView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Schedule.taskPriority.localized)
+        .accessibilityLabel(L10n.Schedule.taskPriority2.localized)
         .accessibilityValue(task.priority.localizedName)
     }
 
