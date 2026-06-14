@@ -21,26 +21,47 @@ enum SupabaseAuthManager {
         try await resumeOrSignInAsGuest(appRouter: appRouter).userId
     }
 
-    /// 若 Keychain 中已有匿名会话则恢复，否则创建新匿名用户。
+    /// 若 Keychain 中已有匿名会话则恢复，否则尝试归档恢复，否则创建新匿名用户。
     static func resumeOrSignInAsGuest(appRouter: AppRouter) async throws -> (userId: UUID, resumed: Bool) {
         #if canImport(Supabase)
         if let session = try? await client.auth.session, session.user.isAnonymous {
-            let userId = session.user.id
-            AuthSessionHints.markEverAuthenticated()
-            notifyAuthUserChanged(userId: userId, isAnonymous: true)
-            Task {
-                await prepareRevenueCat(for: userId, appRouter: appRouter)
-            }
-            #if DEBUG
-            print("[SupabaseAuthManager] resumeOrSignInAsGuest resumed userId=\(userId.uuidString.lowercased())")
-            #endif
-            return (userId, true)
+            return resumeExistingAnonymousSession(session, appRouter: appRouter)
         }
+
+        if let restored = try await restoreArchivedAnonymousSession(appRouter: appRouter) {
+            return restored
+        }
+
         let userId = try await createNewAnonymousSession(appRouter: appRouter)
         return (userId, false)
         #else
         _ = appRouter
         throw SupabaseAuthManagerError.sdkUnavailable
+        #endif
+    }
+
+    /// 登录页 OAuth 前归档当前 anonymous session，避免切换正式账号后丢失游客 UUID。
+    static func archiveAnonymousSessionBeforeOAuthSignIn() async {
+        #if canImport(Supabase)
+        guard let session = try? await client.auth.session,
+              session.user.isAnonymous,
+              session.refreshToken.isEmpty == false
+        else {
+            return
+        }
+
+        GuestSessionArchive.save(
+            GuestSessionArchive.Payload(
+                userId: session.user.id,
+                accessToken: session.accessToken,
+                refreshToken: session.refreshToken
+            )
+        )
+        #if DEBUG
+        print(
+            "[SupabaseAuthManager] archived anonymous session userId=\(session.user.id.uuidString.lowercased())"
+        )
+        #endif
         #endif
     }
 
@@ -53,13 +74,17 @@ enum SupabaseAuthManager {
         #endif
     }
 
-    /// 销毁 Supabase 会话并清理本地缓存（游客「重新开始」或正式账号退出）。
-    static func hardSignOut(appRouter: AppRouter) async throws {
+    /// 销毁 Supabase 会话并清理本地缓存。
+    /// - Parameter clearGuestArchive: 仅游客「重新开始」时为 true；正式账号退出应保留归档以便恢复游客。
+    static func hardSignOut(appRouter: AppRouter, clearGuestArchive: Bool = false) async throws {
         #if canImport(Supabase)
         AuthSessionGuard.shared.beginLoggingOut()
         appRouter.logVIPAccessState(trigger: "用户退出前")
         defer { Task { await AuthSessionGuard.shared.endLoggingOut() } }
         try await client.auth.signOut()
+        if clearGuestArchive {
+            GuestSessionArchive.clear()
+        }
         UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
         UserDefaults.standard.removeObject(forKey: AppRouter.offlineHouseholdSnapshotKey)
         LocalCacheManager.shared.removeAll()
@@ -92,6 +117,53 @@ enum SupabaseAuthManager {
         throw SupabaseAuthManagerError.sdkUnavailable
         #endif
     }
+
+    #if canImport(Supabase)
+    private static func resumeExistingAnonymousSession(
+        _ session: Session,
+        appRouter: AppRouter
+    ) -> (userId: UUID, resumed: Bool) {
+        let userId = session.user.id
+        AuthSessionHints.markEverAuthenticated()
+        notifyAuthUserChanged(userId: userId, isAnonymous: true)
+        Task {
+            await prepareRevenueCat(for: userId, appRouter: appRouter)
+        }
+        #if DEBUG
+        print("[SupabaseAuthManager] resumeOrSignInAsGuest resumed userId=\(userId.uuidString.lowercased())")
+        #endif
+        return (userId, true)
+    }
+
+    private static func restoreArchivedAnonymousSession(
+        appRouter: AppRouter
+    ) async throws -> (userId: UUID, resumed: Bool)? {
+        guard let archived = GuestSessionArchive.load() else { return nil }
+
+        do {
+            let session = try await client.auth.setSession(
+                accessToken: archived.accessToken,
+                refreshToken: archived.refreshToken
+            )
+            guard session.user.isAnonymous, session.user.id == archived.userId else {
+                GuestSessionArchive.clear()
+                return nil
+            }
+            #if DEBUG
+            print(
+                "[SupabaseAuthManager] restoreArchivedAnonymousSession userId=\(session.user.id.uuidString.lowercased())"
+            )
+            #endif
+            return resumeExistingAnonymousSession(session, appRouter: appRouter)
+        } catch {
+            GuestSessionArchive.clear()
+            #if DEBUG
+            print("[SupabaseAuthManager] restoreArchivedAnonymousSession failed: \(error.localizedDescription)")
+            #endif
+            return nil
+        }
+    }
+    #endif
 
     static func currentUserId() async -> UUID? {
         #if canImport(Supabase)

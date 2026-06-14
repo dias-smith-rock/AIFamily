@@ -252,21 +252,14 @@ struct LoginView: View {
                 avatarStorageService: SupabaseAvatarStorageService(provider: provider)
             )
             do {
-                if await SupabaseAuthManager.isAnonymousUser() {
-                    try await SupabaseAuthManager.linkAppleIdentity(
-                        idToken: idTokenString,
-                        rawNonce: rawNonce,
-                        appRouter: appRouter
-                    )
-                } else {
-                    try await auth.signInWithApple(
-                        idToken: idTokenString,
-                        rawNonce: rawNonce,
-                        appleGivenName: credential.fullName?.givenName,
-                        appleFamilyName: credential.fullName?.familyName,
-                        appleEmail: credential.email
-                    )
-                }
+                await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn()
+                try await auth.signInWithApple(
+                    idToken: idTokenString,
+                    rawNonce: rawNonce,
+                    appleGivenName: credential.fullName?.givenName,
+                    appleFamilyName: credential.fullName?.familyName,
+                    appleEmail: credential.email
+                )
                 try await settlePostOAuthState()
             } catch {
                 if isUserCancelled(error) == false {
@@ -282,11 +275,8 @@ struct LoginView: View {
     /// 走 supabase-swift 的内置 `signInWithOAuth`：iOS 上会用 `ASWebAuthenticationSession`
     /// 在当前 App 内弹出 Safari View 卡片完成登录，回跳由 SDK 内部接管，不需要 `onOpenURL`。
     private func signInWithGoogleOAuth() async throws {
-        if await SupabaseAuthManager.isAnonymousUser() {
-            try await SupabaseAuthManager.linkGoogleIdentity(appRouter: appRouter)
-        } else {
-            try await OAuthSignInSupport.signInWithGoogleOAuth()
-        }
+        await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn()
+        try await OAuthSignInSupport.signInWithGoogleOAuth()
     }
 
     /// 用户在 Safari View 卡片里点了L10n.Common.cancel会抛 `ASWebAuthenticationSessionError.canceledLogin`，

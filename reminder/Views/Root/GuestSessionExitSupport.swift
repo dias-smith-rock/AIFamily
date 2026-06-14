@@ -55,7 +55,7 @@ struct GuestSessionExitDialogs: ViewModifier {
         isProcessing = true
         defer { isProcessing = false }
         do {
-            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter)
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter, clearGuestArchive: true)
         } catch {
             onError(error.localizedDescription)
         }
