@@ -223,13 +223,15 @@ final class AppRouter: ObservableObject {
     func restoreOfflineHouseholdContextIfNeeded() -> Bool {
         syncSessionIdentityFromKeychainIfAvailable()
         guard isAnonymousUser else { return false }
+        return tryFastEnterFromPersistedHouseholdSnapshot()
+    }
+
+    /// 有本地 household 快照时直接进入 activeMember（游客 / 正式账号冷启动快路径）。
+    @discardableResult
+    func tryFastEnterFromPersistedHouseholdSnapshot() -> Bool {
+        syncSessionIdentityFromKeychainIfAvailable()
         guard selectedHouseholdId == nil else { return false }
-        guard
-            let data = UserDefaults.standard.data(forKey: Self.offlineHouseholdSnapshotKey),
-            let snapshot = try? JSONDecoder().decode(OfflineHouseholdSnapshot.self, from: data)
-        else {
-            return false
-        }
+        guard let snapshot = loadPersistedHouseholdSnapshot() else { return false }
 
         selectedHouseholdId = snapshot.householdId
         selectedMembershipId = snapshot.membershipId
@@ -238,7 +240,22 @@ final class AppRouter: ObservableObject {
         selectedHouseholdDescription = snapshot.householdDescription
         selectedHouseholdCreatorHasActivePro = snapshot.creatorHasActivePro
         appState = .activeMember
+        AutoLoginPerformanceTracer.logAlways(
+            "refreshState.offlineSnapshotFastPath",
+            note: "householdId=\(snapshot.householdId.uuidString.lowercased()) isAnonymous=\(isAnonymousUser)",
+            appRouter: self
+        )
         return true
+    }
+
+    private func loadPersistedHouseholdSnapshot() -> OfflineHouseholdSnapshot? {
+        guard
+            let data = UserDefaults.standard.data(forKey: Self.offlineHouseholdSnapshotKey),
+            let snapshot = try? JSONDecoder().decode(OfflineHouseholdSnapshot.self, from: data)
+        else {
+            return nil
+        }
+        return snapshot
     }
 
     func clearOfflineHouseholdSnapshot() {
@@ -251,23 +268,53 @@ final class AppRouter: ObservableObject {
     }
 
     func refreshStateFromBackend() async {
+        AutoLoginPerformanceTracer.mark("refreshState.begin", appRouter: self)
         hasCompletedAuthBootstrap = false
-        defer { hasCompletedAuthBootstrap = true }
+        defer {
+            hasCompletedAuthBootstrap = true
+            AutoLoginPerformanceTracer.mark("refreshState.end", appRouter: self)
+        }
 
         syncSessionIdentityFromKeychainIfAvailable()
+        AutoLoginPerformanceTracer.mark("refreshState.syncKeychainIdentity.done", appRouter: self)
 
         #if canImport(Supabase)
+        _ = await NetworkMonitor.shared.ensureInitialPathReady()
+
+        if await NetworkMonitor.shared.isConnected == false,
+           clientHasPersistedSession(),
+           appState != .activeMember || selectedHouseholdId == nil {
+            AutoLoginPerformanceTracer.mark(
+                "refreshState.offlineRetry.wait",
+                appRouter: self
+            )
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            _ = await NetworkMonitor.shared.waitForInitialPathUpdate(timeoutNanoseconds: 200_000_000)
+        }
+
         if await NetworkMonitor.shared.isConnected == false {
             if clientHasPersistedSession(),
                appState == .activeMember,
                selectedHouseholdId != nil {
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.skip",
+                    note: "offline keepActiveMember",
+                    appRouter: self
+                )
                 debugLog("refresh.skipped reason=offline keepActiveMember")
                 return
             }
             if clientHasPersistedSession(), AuthSessionHints.hasEverAuthenticated {
                 if appState == .unauthenticated {
                     _ = restoreOfflineHouseholdContextIfNeeded()
+                } else if appState == .orgRouting, selectedHouseholdId == nil {
+                    _ = tryFastEnterFromPersistedHouseholdSnapshot()
                 }
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.skip",
+                    note: "offline",
+                    appRouter: self
+                )
                 debugLog("refresh.skipped reason=offline")
             }
             return
@@ -299,10 +346,23 @@ final class AppRouter: ObservableObject {
 
             let client = SupabaseManager.shared.client
             let session = try await client.auth.session
+            defer {
+                scheduleDeferredEntitlementCloudSyncIfNeeded(session: session)
+            }
+            AutoLoginPerformanceTracer.mark(
+                "refreshState.authSession.ok",
+                note: "userId=\(session.user.id.uuidString.lowercased()) isAnonymous=\(session.user.isAnonymous)",
+                appRouter: self
+            )
             AuthSessionHints.markEverAuthenticated()
             isAnonymousUser = session.user.isAnonymous
             let userId = session.user.id
             let memberships = try await fetchMemberships(client: client, userId: userId)
+            AutoLoginPerformanceTracer.mark(
+                "refreshState.fetchMemberships.done",
+                note: "count=\(memberships.count)",
+                appRouter: self
+            )
             let activeMemberships = memberships.filter { normalizeStatus($0.status) == "active" }
             #if DEBUG
             guestRefreshActiveCount = activeMemberships.count
@@ -316,28 +376,31 @@ final class AppRouter: ObservableObject {
                 client: client,
                 memberships: activeMemberships
             )
+            AutoLoginPerformanceTracer.mark(
+                "refreshState.fetchHouseholdOptions.done",
+                note: "count=\(options.count)",
+                appRouter: self
+            )
             #if DEBUG
             guestRefreshOptionsCount = options.count
             #endif
             authUserId = userId
             await RevenueCatSubscriptionService.shared.logIn(userId: userId)
+            AutoLoginPerformanceTracer.mark("refreshState.revenueCat.logIn.done", appRouter: self)
             await loadUserEntitlement(userId: userId)
+            AutoLoginPerformanceTracer.mark("refreshState.loadUserEntitlement.done", appRouter: self)
             await RevenueCatSubscriptionService.shared.refreshCustomerInfo()
-            if session.user.isAnonymous == false {
-                await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
-            } else {
-                Task {
-                    await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
-                }
-            }
+            AutoLoginPerformanceTracer.mark("refreshState.revenueCat.refreshCustomerInfo.done", appRouter: self)
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
             guard activeMemberships.isEmpty == false else {
                 if memberships.contains(where: { ["invited", "pending"].contains(normalizeStatus($0.status)) }) {
                     appState = .pendingApproval
+                    AutoLoginPerformanceTracer.mark("refreshState.route.pendingApproval", appRouter: self)
                     debugLog("route.pendingApproval reason=no_active_membership")
                 } else {
                     appState = .orgRouting
+                    AutoLoginPerformanceTracer.mark("refreshState.route.orgRouting", note: "noActiveMembership", appRouter: self)
                     debugLog("route.orgRouting reason=no_active_membership")
                 }
                 selectableHouseholds = []
@@ -356,54 +419,74 @@ final class AppRouter: ObservableObject {
             if let preferredId = pendingPreferredHouseholdId,
                let preferredOption = options.first(where: { $0.id == preferredId }) {
                 pendingPreferredHouseholdId = nil
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.route.activeMember",
+                    note: "reason=preferred_after_create household=\(preferredOption.id.uuidString.lowercased())",
+                    appRouter: self
+                )
                 debugLog("route.activeMember reason=preferred_after_create household=\(preferredOption.id.uuidString)")
                 selectHouseholdAndEnter(
                     option: preferredOption,
                     userId: userId
                 )
-                await refreshSelectedHouseholdCreatorPro(householdId: preferredOption.id)
                 return
             }
 
             if options.count == 1, let onlyOption = options.first {
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.route.activeMember",
+                    note: "reason=single_household household=\(onlyOption.id.uuidString.lowercased())",
+                    appRouter: self
+                )
                 debugLog("route.activeMember reason=single_household household=\(onlyOption.id.uuidString)")
                 selectHouseholdAndEnter(
                     option: onlyOption,
                     userId: userId
                 )
-                await refreshSelectedHouseholdCreatorPro(householdId: onlyOption.id)
                 return
             }
 
             if let lastHouseholdId = loadLastHouseholdId(for: userId),
                let lastOption = options.first(where: { $0.id == lastHouseholdId }) {
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.route.activeMember",
+                    note: "reason=last_household household=\(lastOption.id.uuidString.lowercased())",
+                    appRouter: self
+                )
                 debugLog("route.activeMember reason=last_household household=\(lastOption.id.uuidString)")
                 selectHouseholdAndEnter(
                     option: lastOption,
                     userId: userId
                 )
-                await refreshSelectedHouseholdCreatorPro(householdId: lastOption.id)
                 return
             }
 
             if let currentId = selectedHouseholdId,
                let currentOption = options.first(where: { $0.id == currentId }) {
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.route.activeMember",
+                    note: "reason=current_selection household=\(currentOption.id.uuidString.lowercased())",
+                    appRouter: self
+                )
                 debugLog("route.activeMember reason=current_selection household=\(currentOption.id.uuidString)")
                 selectHouseholdAndEnter(
                     option: currentOption,
                     userId: userId
                 )
-                await refreshSelectedHouseholdCreatorPro(householdId: currentOption.id)
                 return
             }
 
             if let snapshotOption = restoredOfflineHouseholdOption(in: options) {
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.route.activeMember",
+                    note: "reason=offline_snapshot household=\(snapshotOption.id.uuidString.lowercased())",
+                    appRouter: self
+                )
                 debugLog("route.activeMember reason=offline_snapshot household=\(snapshotOption.id.uuidString)")
                 selectHouseholdAndEnter(
                     option: snapshotOption,
                     userId: userId
                 )
-                await refreshSelectedHouseholdCreatorPro(householdId: snapshotOption.id)
                 return
             }
 
@@ -414,13 +497,24 @@ final class AppRouter: ObservableObject {
             selectedHouseholdDescription = ""
             selectedHouseholdCreatorHasActivePro = false
             appState = .householdSelection
+            AutoLoginPerformanceTracer.mark(
+                "refreshState.route.householdSelection",
+                note: "options=\(options.count)",
+                appRouter: self
+            )
             debugLog("route.householdSelection reason=multiple_households options=\(options.count)")
         } catch {
+            AutoLoginPerformanceTracer.mark(
+                "refreshState.error",
+                note: error.localizedDescription,
+                appRouter: self
+            )
             debugLog("refresh.error \(error.localizedDescription)")
             // 仅在鉴权确实失效时回退到登录页；
             // 其余瞬时错误（网络、解码、RLS 变更等）保持当前页面，避免错误踢回登录。
             if isAuthenticationError(error) {
                 appState = .unauthenticated
+                AutoLoginPerformanceTracer.mark("refreshState.route.unauthenticated", note: "auth_error", appRouter: self)
                 selectableHouseholds = []
                 recentHouseholds = []
                 selectedHouseholdId = nil
@@ -434,6 +528,11 @@ final class AppRouter: ObservableObject {
             } else if appState == .unauthenticated {
                 // 已有会话但拉取组织状态失败时，至少进入组织路由页，避免卡在登录页死循环。
                 appState = .orgRouting
+                AutoLoginPerformanceTracer.mark(
+                    "refreshState.route.orgRouting",
+                    note: "non_auth_error_while_unauthenticated",
+                    appRouter: self
+                )
                 debugLog("route.orgRouting reason=non_auth_error_while_unauthenticated")
             }
         }
@@ -795,37 +894,58 @@ final class AppRouter: ObservableObject {
 
     private func fetchHouseholdOptions(client: SupabaseClient, memberships: [MembershipRow]) async throws -> [HouseholdOption] {
         debugLog("query.household_options.start memberships=\(memberships.count)")
-        var options: [HouseholdOption] = []
         let uniqueHouseholdIDs = Array(Set(memberships.map(\.householdId)))
+        guard uniqueHouseholdIDs.isEmpty == false else { return [] }
+
+        let householdIDStrings = uniqueHouseholdIDs.map(\.uuidString)
+        let stepStart = CFAbsoluteTimeGetCurrent()
+        let householdRows: [HouseholdRow] = try await client
+            .from("households")
+            .select("id,name,description")
+            .in("id", values: householdIDStrings)
+            .execute()
+            .value
+        AutoLoginPerformanceTracer.logAlways(
+            "fetchHouseholdOptions.batchHouseholds",
+            note: "requested=\(uniqueHouseholdIDs.count) fetched=\(householdRows.count) stepMs=\(Int((CFAbsoluteTimeGetCurrent() - stepStart) * 1000))"
+        )
+
+        let householdByID = Dictionary(uniqueKeysWithValues: householdRows.map { ($0.id, $0) })
+        var creatorProByHouseholdID: [UUID: Bool] = [:]
+        creatorProByHouseholdID.reserveCapacity(uniqueHouseholdIDs.count)
+
+        await withTaskGroup(of: (UUID, Bool).self) { group in
+            for householdID in uniqueHouseholdIDs {
+                group.addTask { @MainActor in
+                    let perHouseholdStart = CFAbsoluteTimeGetCurrent()
+                    let creatorHasActivePro: Bool
+                    do {
+                        creatorHasActivePro = try await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
+                            householdId: householdID
+                        )
+                    } catch {
+                        creatorHasActivePro = false
+                    }
+                    AutoLoginPerformanceTracer.logAlways(
+                        "fetchHouseholdOptions.perHousehold",
+                        note: "householdId=\(householdID.uuidString.lowercased()) stepMs=\(Int((CFAbsoluteTimeGetCurrent() - perHouseholdStart) * 1000))"
+                    )
+                    return (householdID, creatorHasActivePro)
+                }
+            }
+            for await result in group {
+                creatorProByHouseholdID[result.0] = result.1
+            }
+        }
+
+        var options: [HouseholdOption] = []
+        options.reserveCapacity(uniqueHouseholdIDs.count)
         for householdID in uniqueHouseholdIDs {
             guard let membership = memberships.first(where: { $0.householdId == householdID }) else {
                 continue
             }
-            debugLog("query.household_by_id.start household=\(householdID.uuidString)")
-            let rows: [HouseholdRow] = try await client
-                .from("households")
-                .select("id,name,description")
-                .eq("id", value: householdID.uuidString)
-                .limit(1)
-                .execute()
-                .value
-
-            let creatorHasActivePro: Bool
-            do {
-                creatorHasActivePro = try await SubscriptionSupabaseSupport.fetchHouseholdCreatorHasActivePro(
-                    householdId: householdID
-                )
-            } catch {
-                debugLog(
-                    "fetchHouseholdCreatorHasActivePro.error household=\(householdID.uuidString) \(error.localizedDescription)"
-                )
-                print(
-                    "[VIPAccess] household_creator_has_active_pro 失败 household=\(householdID.uuidString.prefix(8)) error=\(error.localizedDescription)"
-                )
-                creatorHasActivePro = false
-            }
-
-            if let household = rows.first {
+            let creatorHasActivePro = creatorProByHouseholdID[householdID] ?? false
+            if let household = householdByID[householdID] {
                 debugLog("query.household_by_id.hit household=\(household.id.uuidString) name=\(household.name)")
                 options.append(
                     .init(
@@ -845,7 +965,7 @@ final class AppRouter: ObservableObject {
                         membershipId: membership.id,
                         profileId: membership.profileId,
                         name: "Group \(householdID.uuidString.prefix(6))",
-                        creatorHasActivePro: false,
+                        creatorHasActivePro: creatorHasActivePro,
                         description: ""
                     )
                 )
@@ -872,6 +992,25 @@ final class AppRouter: ObservableObject {
         saveOfflineHouseholdSnapshot(option: option)
         appState = .activeMember
     }
+
+    #if canImport(Supabase)
+    private func scheduleDeferredEntitlementCloudSyncIfNeeded(session: Session) {
+        Task { @MainActor in
+            AutoLoginPerformanceTracer.logAlways(
+                "refreshState.syncEntitlementToCloud.begin",
+                note: "isAnonymous=\(session.user.isAnonymous)",
+                appRouter: self
+            )
+            let syncStart = CFAbsoluteTimeGetCurrent()
+            await RevenueCatSubscriptionService.shared.syncEntitlementToCloudIfNeeded(appRouter: self)
+            AutoLoginPerformanceTracer.logAlways(
+                "refreshState.syncEntitlementToCloud.end",
+                note: "stepMs=\(Int((CFAbsoluteTimeGetCurrent() - syncStart) * 1000)) isAnonymous=\(session.user.isAnonymous)",
+                appRouter: self
+            )
+        }
+    }
+    #endif
 
     #if canImport(Supabase)
     private func clientHasPersistedSession() -> Bool {
@@ -1001,4 +1140,17 @@ final class AppRouter: ObservableObject {
         #endif
     }
     #endif
+}
+
+extension AppRouter.AppState {
+    /// 性能埋点 / 诊断日志用路由状态名。
+    var perfTraceName: String {
+        switch self {
+        case .unauthenticated: return "unauthenticated"
+        case .orgRouting: return "orgRouting"
+        case .householdSelection: return "householdSelection"
+        case .pendingApproval: return "pendingApproval"
+        case .activeMember: return "activeMember"
+        }
+    }
 }

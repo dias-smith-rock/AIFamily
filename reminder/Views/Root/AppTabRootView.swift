@@ -71,6 +71,7 @@ struct AppTabRootView: View {
                 .tag(Tab.personalSettings)
         }
         .onAppear {
+            AutoLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
             if let tap = appRouter.pendingTaskReminderTap {
                 selectedTab = tap.isFlexibleTodo ? .todos : .schedule
             }

@@ -117,7 +117,7 @@ struct ContentView: View {
         .onChange(of: isUserLoggedIn) { _, loggedIn in
             guard isLaunchBootstrapComplete, loggedIn else { return }
             Task {
-                await runAuthAndHouseholdBootstrap(vipLogTrigger: "登录后")
+                await runAuthAndHouseholdBootstrap(vipLogTrigger: "登录后", bootstrapTrigger: "login")
                 reconcileStaleLoginSession()
             }
         }
@@ -139,8 +139,15 @@ struct ContentView: View {
                 }
             }
         }
-        .onChange(of: appRouter.appState) { _, _ in
+        .onChange(of: appRouter.appState) { oldState, newState in
             guard isLaunchBootstrapComplete else { return }
+            if oldState != newState {
+                AutoLoginPerformanceTracer.mark(
+                    "router.appState.changed",
+                    note: "from=\(oldState.perfTraceName) to=\(newState.perfTraceName)",
+                    appRouter: appRouter
+                )
+            }
             reconcileStaleLoginSession()
         }
         .onChange(of: appRouter.hasCompletedAuthBootstrap) { _, _ in
@@ -271,6 +278,7 @@ struct ContentView: View {
 
     private static var hasLoggedAppOpenThisSession = false
     private static var hasReportedLocationOnLaunchThisSession = false
+    private static var launchBootstrapFinishedAt: CFAbsoluteTime?
 
     private static func logAppOpenedIfNeeded() {
         guard hasLoggedAppOpenThisSession == false else { return }
@@ -291,52 +299,139 @@ struct ContentView: View {
 
     @MainActor
     private func runLaunchBootstrap() async {
+        AutoLoginPerformanceTracer.beginColdStartTraceIfNeeded(isUserLoggedIn: isUserLoggedIn)
+        AutoLoginPerformanceTracer.mark("launchBootstrap.begin", appRouter: appRouter)
+
+        _ = await NetworkMonitor.shared.ensureInitialPathReady()
+
         AuthSessionHints.prepareForFreshInstallIfNeeded()
+        AutoLoginPerformanceTracer.mark("launchBootstrap.prepareFreshInstall.done", appRouter: appRouter)
+
         LegacyGuestDataCleaner.removeLegacyLocalTrialKeysIfNeeded()
         RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
+        AutoLoginPerformanceTracer.mark("launchBootstrap.revenueCat.configure.done", appRouter: appRouter)
+
         DualSessionTokenSync.registerIfNeeded()
-        await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
+        AutoLoginPerformanceTracer.mark("launchBootstrap.dualSessionTokenSync.registered", appRouter: appRouter)
+
+        await AutoLoginPerformanceTracer.measure(
+            "launchBootstrap.bootstrapRevenueCatIfNeeded",
+            appRouter: appRouter
+        ) {
+            await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
+        }
 
         var revealedMainUI = false
 
         if await SupabaseAuthManager.isAnonymousUser() {
+            AutoLoginPerformanceTracer.mark(
+                "launchBootstrap.branch.anonymousSoftExit",
+                note: "skipAutoLoginPath",
+                appRouter: appRouter
+            )
+            AutoLoginPerformanceTracer.cancelTrace(reason: "anonymousUserSoftExit")
             SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
             isUserLoggedIn = false
         } else if isUserLoggedIn {
+            AutoLoginPerformanceTracer.mark(
+                "launchBootstrap.branch.formalAutoLogin",
+                note: "isUserLoggedIn=true",
+                appRouter: appRouter
+            )
             appRouter.beginHouseholdRoutingResolve()
             defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
             appRouter.goToOrgRouting()
+            AutoLoginPerformanceTracer.mark("launchBootstrap.goToOrgRouting", appRouter: appRouter)
+            revealedMainUI = true
+            await AutoLoginPerformanceTracer.measure(
+                "launchBootstrap.runAuthAndHouseholdBootstrap",
+                note: "vipLogTrigger=冷启动",
+                appRouter: appRouter
+            ) {
+                await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动", bootstrapTrigger: "coldStart")
+            }
+            reconcileStaleLoginSession()
+            AutoLoginPerformanceTracer.mark("launchBootstrap.reconcileStaleLoginSession.done", appRouter: appRouter)
             withAnimation(.easeInOut) {
                 isLaunchBootstrapComplete = true
             }
-            revealedMainUI = true
-            await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动")
-            reconcileStaleLoginSession()
+            AutoLoginPerformanceTracer.mark("launchBootstrap.splashDismissed", appRouter: appRouter)
+        } else {
+            AutoLoginPerformanceTracer.mark(
+                "launchBootstrap.branch.loginScreen",
+                note: "isUserLoggedIn=false",
+                appRouter: appRouter
+            )
+            AutoLoginPerformanceTracer.cancelTrace(reason: "notLoggedIn")
         }
 
         if revealedMainUI == false {
             withAnimation(.easeInOut) {
                 isLaunchBootstrapComplete = true
             }
+            AutoLoginPerformanceTracer.mark("launchBootstrap.splashDismissed.loginOrAnonymous", appRouter: appRouter)
+        }
+        AutoLoginPerformanceTracer.mark("launchBootstrap.end", appRouter: appRouter)
+        if revealedMainUI {
+            Self.launchBootstrapFinishedAt = CFAbsoluteTimeGetCurrent()
         }
     }
 
     @MainActor
-    private func runAuthAndHouseholdBootstrap(vipLogTrigger: String?) async {
+    private func runAuthAndHouseholdBootstrap(
+        vipLogTrigger: String?,
+        bootstrapTrigger: String = "foreground"
+    ) async {
+        AutoLoginPerformanceTracer.mark(
+            "authBootstrap.begin",
+            note: [vipLogTrigger.map { "trigger=\($0)" }, "bootstrapTrigger=\(bootstrapTrigger)"]
+                .compactMap { $0 }
+                .joined(separator: " "),
+            appRouter: appRouter
+        )
         appRouter.syncSessionIdentityFromPersistedSessionIfAvailable()
-        if appRouter.isAnonymousUser {
-            _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
+        AutoLoginPerformanceTracer.mark("authBootstrap.syncSessionIdentity.done", appRouter: appRouter)
+
+        let usedOfflineSnapshotFastPath = appRouter.tryFastEnterFromPersistedHouseholdSnapshot()
+        if usedOfflineSnapshotFastPath {
+            AutoLoginPerformanceTracer.mark("authBootstrap.offlineSnapshotFastPath", appRouter: appRouter)
         }
         refreshForegroundLocationSchedulerContext()
-        await AuthSessionRefresher.refreshOnForegroundIfNeeded()
-        if appRouter.consumeSkipNextLoginBootstrapRefresh() == false {
-            await appRouter.refreshStateFromBackend()
+        await AutoLoginPerformanceTracer.measure(
+            "authBootstrap.authSessionRefresher",
+            appRouter: appRouter
+        ) {
+            await AuthSessionRefresher.refreshOnForegroundIfNeeded()
         }
-        await fetchHouseholdsAndCheckCreatorRole()
+        if appRouter.consumeSkipNextLoginBootstrapRefresh() == false {
+            await AutoLoginPerformanceTracer.measure(
+                "authBootstrap.refreshStateFromBackend",
+                appRouter: appRouter
+            ) {
+                await appRouter.refreshStateFromBackend()
+            }
+        } else {
+            AutoLoginPerformanceTracer.mark(
+                "authBootstrap.refreshStateFromBackend.skipped",
+                appRouter: appRouter
+            )
+        }
+        await AutoLoginPerformanceTracer.measure(
+            "authBootstrap.fetchHouseholdsAndCheckCreatorRole",
+            appRouter: appRouter
+        ) {
+            await fetchHouseholdsAndCheckCreatorRole()
+        }
         if let vipLogTrigger {
             appRouter.logVIPAccessState(trigger: vipLogTrigger)
+            AutoLoginPerformanceTracer.mark(
+                "authBootstrap.logVIPAccessState",
+                note: "trigger=\(vipLogTrigger)",
+                appRouter: appRouter
+            )
         }
         reloadTasksIfActiveMember()
+        AutoLoginPerformanceTracer.mark("authBootstrap.end", appRouter: appRouter)
     }
 
     @MainActor
@@ -351,8 +446,26 @@ struct ContentView: View {
 
     @MainActor
     private func runForegroundLocationBootstrap(vipLogTrigger: String? = nil) async {
-        await runAuthAndHouseholdBootstrap(vipLogTrigger: vipLogTrigger)
+        if shouldSkipForegroundBootstrapAfterColdLaunch() {
+            AutoLoginPerformanceTracer.mark(
+                "authBootstrap.skipped",
+                note: "recentColdLaunch bootstrapTrigger=foreground",
+                appRouter: appRouter
+            )
+            await runPostAuthForegroundServices()
+            return
+        }
+        await runAuthAndHouseholdBootstrap(
+            vipLogTrigger: vipLogTrigger,
+            bootstrapTrigger: "foreground"
+        )
         await runPostAuthForegroundServices()
+    }
+
+    @MainActor
+    private func shouldSkipForegroundBootstrapAfterColdLaunch() -> Bool {
+        guard let finishedAt = Self.launchBootstrapFinishedAt else { return false }
+        return CFAbsoluteTimeGetCurrent() - finishedAt < 1.0
     }
 
     @MainActor
@@ -376,9 +489,29 @@ struct ContentView: View {
 
     @MainActor
     private func fetchHouseholdsAndCheckCreatorRole() async {
-        guard appRouter.appState != .unauthenticated else { return }
+        guard appRouter.appState != .unauthenticated else {
+            AutoLoginPerformanceTracer.mark(
+                "fetchHouseholds.skipped",
+                note: "unauthenticated",
+                appRouter: appRouter
+            )
+            return
+        }
+        if appRouter.appState == .orgRouting, appRouter.isResolvingHouseholdRouting {
+            AutoLoginPerformanceTracer.mark(
+                "fetchHouseholds.skipped",
+                note: "orgRoutingAlreadyLoading",
+                appRouter: appRouter
+            )
+            return
+        }
         let orgViewModel = AppViewModels.makeOrgRoutingViewModel()
         await orgViewModel.fetchMyHouseholds(appRouter: appRouter)
+        AutoLoginPerformanceTracer.mark(
+            "fetchHouseholds.done",
+            note: "joinedCount=\(orgViewModel.joinedHouseholds.count)",
+            appRouter: appRouter
+        )
     }
 
     @MainActor
@@ -411,6 +544,11 @@ struct ContentView: View {
         #if DEBUG
         print("[ContentView] bootstrap complete → reload tasks household=\(appRouter.selectedHouseholdId?.uuidString ?? "nil")")
         #endif
+        AutoLoginPerformanceTracer.mark(
+            "authBootstrap.reloadTasksIfActiveMember",
+            note: "householdId=\(appRouter.selectedHouseholdId?.uuidString.lowercased() ?? "nil")",
+            appRouter: appRouter
+        )
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
     }
 

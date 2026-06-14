@@ -37,10 +37,16 @@ struct OrgRoutingView: View {
     var body: some View {
         orgRoutingNavigationStack
             .onAppear {
+                AutoLoginPerformanceTracer.mark("orgRoutingView.onAppear", appRouter: appRouter)
                 appRouter.notifyOrgRoutingSurfaceDidAppear()
             }
             .task {
-                await loadJoinedHouseholdsForOrgRouting()
+                await AutoLoginPerformanceTracer.measure(
+                    "orgRoutingView.loadJoinedHouseholds",
+                    appRouter: appRouter
+                ) {
+                    await loadJoinedHouseholdsForOrgRouting()
+                }
             }
             .onChange(of: viewModel.errorMessage) { _, newValue in
                 if let newValue {
