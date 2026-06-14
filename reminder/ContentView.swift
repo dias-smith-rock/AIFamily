@@ -116,6 +116,11 @@ struct ContentView: View {
         }
         .onChange(of: isUserLoggedIn) { _, loggedIn in
             guard isLaunchBootstrapComplete, loggedIn else { return }
+            OAuthLoginPerformanceTracer.mark(
+                "contentView.isUserLoggedIn.changed",
+                note: "loggedIn=true bootstrapTrigger=login",
+                appRouter: appRouter
+            )
             Task {
                 await runAuthAndHouseholdBootstrap(vipLogTrigger: "登录后", bootstrapTrigger: "login")
                 reconcileStaleLoginSession()
@@ -142,7 +147,7 @@ struct ContentView: View {
         .onChange(of: appRouter.appState) { oldState, newState in
             guard isLaunchBootstrapComplete else { return }
             if oldState != newState {
-                AutoLoginPerformanceTracer.mark(
+                LoginFlowPerformanceTracing.mark(
                     "router.appState.changed",
                     note: "from=\(oldState.perfTraceName) to=\(newState.perfTraceName)",
                     appRouter: appRouter
@@ -382,7 +387,7 @@ struct ContentView: View {
         vipLogTrigger: String?,
         bootstrapTrigger: String = "foreground"
     ) async {
-        AutoLoginPerformanceTracer.mark(
+        LoginFlowPerformanceTracing.mark(
             "authBootstrap.begin",
             note: [vipLogTrigger.map { "trigger=\($0)" }, "bootstrapTrigger=\(bootstrapTrigger)"]
                 .compactMap { $0 }
@@ -390,48 +395,68 @@ struct ContentView: View {
             appRouter: appRouter
         )
         appRouter.syncSessionIdentityFromPersistedSessionIfAvailable()
-        AutoLoginPerformanceTracer.mark("authBootstrap.syncSessionIdentity.done", appRouter: appRouter)
+        LoginFlowPerformanceTracing.mark("authBootstrap.syncSessionIdentity.done", appRouter: appRouter)
 
         let usedOfflineSnapshotFastPath = appRouter.tryFastEnterFromPersistedHouseholdSnapshot()
         if usedOfflineSnapshotFastPath {
-            AutoLoginPerformanceTracer.mark("authBootstrap.offlineSnapshotFastPath", appRouter: appRouter)
+            LoginFlowPerformanceTracing.mark("authBootstrap.offlineSnapshotFastPath", appRouter: appRouter)
         }
         refreshForegroundLocationSchedulerContext()
-        await AutoLoginPerformanceTracer.measure(
-            "authBootstrap.authSessionRefresher",
-            appRouter: appRouter
-        ) {
-            await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+
+        let skippedPostOAuthBootstrap = appRouter.consumeSkipNextLoginBootstrapRefresh()
+        if skippedPostOAuthBootstrap == false {
+            await LoginFlowPerformanceTracing.measure(
+                "authBootstrap.authSessionRefresher",
+                appRouter: appRouter
+            ) {
+                await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+            }
+        } else {
+            LoginFlowPerformanceTracing.mark(
+                "authBootstrap.authSessionRefresher.skipped",
+                note: "postOAuthBootstrap",
+                appRouter: appRouter
+            )
         }
-        if appRouter.consumeSkipNextLoginBootstrapRefresh() == false {
-            await AutoLoginPerformanceTracer.measure(
+
+        if skippedPostOAuthBootstrap == false {
+            await LoginFlowPerformanceTracing.measure(
                 "authBootstrap.refreshStateFromBackend",
                 appRouter: appRouter
             ) {
                 await appRouter.refreshStateFromBackend()
             }
         } else {
-            AutoLoginPerformanceTracer.mark(
+            LoginFlowPerformanceTracing.mark(
                 "authBootstrap.refreshStateFromBackend.skipped",
                 appRouter: appRouter
             )
         }
-        await AutoLoginPerformanceTracer.measure(
-            "authBootstrap.fetchHouseholdsAndCheckCreatorRole",
-            appRouter: appRouter
-        ) {
-            await fetchHouseholdsAndCheckCreatorRole()
+
+        if skippedPostOAuthBootstrap == false || appRouter.appState == .orgRouting {
+            await LoginFlowPerformanceTracing.measure(
+                "authBootstrap.fetchHouseholdsAndCheckCreatorRole",
+                appRouter: appRouter
+            ) {
+                await fetchHouseholdsAndCheckCreatorRole()
+            }
+        } else {
+            LoginFlowPerformanceTracing.mark(
+                "authBootstrap.fetchHouseholdsAndCheckCreatorRole.skipped",
+                note: "postOAuthActiveMember",
+                appRouter: appRouter
+            )
         }
         if let vipLogTrigger {
             appRouter.logVIPAccessState(trigger: vipLogTrigger)
-            AutoLoginPerformanceTracer.mark(
+            LoginFlowPerformanceTracing.mark(
                 "authBootstrap.logVIPAccessState",
                 note: "trigger=\(vipLogTrigger)",
                 appRouter: appRouter
             )
         }
         reloadTasksIfActiveMember()
-        AutoLoginPerformanceTracer.mark("authBootstrap.end", appRouter: appRouter)
+        LoginFlowPerformanceTracing.mark("authBootstrap.end", appRouter: appRouter)
     }
 
     @MainActor

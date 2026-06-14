@@ -86,15 +86,26 @@ enum SupabaseAuthManager {
     /// 登录页 OAuth 前：写入游客 Keychain 槽位并通过 HTTP 换票保活，再清 SDK 本地会话以便 OAuth。
     static func archiveAnonymousSessionBeforeOAuthSignIn(appRouter: AppRouter) async {
         #if canImport(Supabase)
+        OAuthLoginPerformanceTracer.mark("oauth.archive.begin", appRouter: appRouter)
         if let session = try? await client.auth.session,
            session.user.isAnonymous,
            session.refreshToken.isEmpty == false
         {
+            OAuthLoginPerformanceTracer.mark(
+                "oauth.archive.anonymousSDKSession",
+                note: "userId=\(session.user.id.uuidString.lowercased())",
+                appRouter: appRouter
+            )
             persistGuestSession(session)
             let refreshResult = await GuestArchiveTokenRefresher.refreshAndPersistGuestTokens(
                 refreshToken: session.refreshToken,
                 expectedUserId: session.user.id,
                 context: "beforeOAuth.sdkSession"
+            )
+            OAuthLoginPerformanceTracer.mark(
+                "oauth.archive.httpRefresh",
+                note: "result=\(refreshResult)",
+                appRouter: appRouter
             )
             #if DEBUG
             print(
@@ -104,31 +115,61 @@ enum SupabaseAuthManager {
             appRouter.clearHouseholdRoutingForIdentitySwitch()
             do {
                 try await client.auth.signOut(scope: .local)
+                OAuthLoginPerformanceTracer.mark("oauth.archive.localSignOut.ok", appRouter: appRouter)
                 #if DEBUG
                 print("[SupabaseAuthManager] signed out anonymous session locally before OAuth")
                 #endif
             } catch {
+                OAuthLoginPerformanceTracer.mark(
+                    "oauth.archive.localSignOut.failed",
+                    note: error.localizedDescription,
+                    appRouter: appRouter
+                )
                 #if DEBUG
                 print("[SupabaseAuthManager] local signOut before OAuth failed: \(error)")
                 #endif
             }
+            OAuthLoginPerformanceTracer.mark("oauth.archive.end", note: "path=anonymousSDKSession", appRouter: appRouter)
             return
         }
 
         if GuestSessionArchive.hasSavedTokens {
-            let refreshResult = await GuestArchiveTokenRefresher.refreshArchivedGuestTokens(
-                context: "beforeOAuth.archiveOnly"
+            OAuthLoginPerformanceTracer.mark(
+                "oauth.archive.archiveOnly.skipped",
+                note: "backgroundRefresh",
+                appRouter: appRouter
             )
-            #if DEBUG
-            print("[SupabaseAuthManager] refreshed guest archive before OAuth (no SDK session) result=\(refreshResult)")
-            #endif
+            Task {
+                let refreshResult = await GuestArchiveTokenRefresher.refreshArchivedGuestTokens(
+                    context: "beforeOAuth.archiveOnly.background"
+                )
+                if case .failed(_, let message) = refreshResult,
+                   shouldClearStaleGuestArchive(afterRefreshMessage: message)
+                {
+                    GuestSessionArchive.clear()
+                    #if DEBUG
+                    print("[SupabaseAuthManager] cleared stale guest archive after refresh failure: \(message)")
+                    #endif
+                }
+            }
         }
 
         appRouter.clearHouseholdRoutingForIdentitySwitch()
+        OAuthLoginPerformanceTracer.mark("oauth.archive.end", note: "path=noActiveAnonymousSession", appRouter: appRouter)
         #else
         _ = appRouter
         #endif
     }
+
+    #if canImport(Supabase)
+    private static func shouldClearStaleGuestArchive(afterRefreshMessage message: String) -> Bool {
+        let normalized = message.lowercased()
+        if normalized.contains("bad_json") { return true }
+        if normalized.contains("invalid") { return true }
+        if normalized.contains("refresh_token") { return true }
+        return false
+    }
+    #endif
 
     /// OAuth / 正式登录成功后，将当前 session 同步到正式 Keychain 槽位。
     static func persistFormalSessionIfNeeded() async {

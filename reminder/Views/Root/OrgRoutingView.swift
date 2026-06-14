@@ -37,11 +37,11 @@ struct OrgRoutingView: View {
     var body: some View {
         orgRoutingNavigationStack
             .onAppear {
-                AutoLoginPerformanceTracer.mark("orgRoutingView.onAppear", appRouter: appRouter)
+                LoginFlowPerformanceTracing.mark("orgRoutingView.onAppear", appRouter: appRouter)
                 appRouter.notifyOrgRoutingSurfaceDidAppear()
             }
             .task {
-                await AutoLoginPerformanceTracer.measure(
+                await LoginFlowPerformanceTracing.measure(
                     "orgRoutingView.loadJoinedHouseholds",
                     appRouter: appRouter
                 ) {

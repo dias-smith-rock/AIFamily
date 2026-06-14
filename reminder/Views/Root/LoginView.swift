@@ -191,12 +191,27 @@ struct LoginView: View {
             await MainActor.run {
                 loginErrorAlert = nil
                 loadingProvider = .google
+                OAuthLoginPerformanceTracer.beginTrace(provider: "google")
             }
             do {
                 try await signInWithGoogleOAuth()
-                try await settlePostOAuthState()
+                try await OAuthLoginPerformanceTracer.measure(
+                    "oauth.login.settlePostOAuthState",
+                    appRouter: appRouter
+                ) {
+                    try await settlePostOAuthState()
+                }
+                OAuthLoginPerformanceTracer.mark(
+                    "oauth.login.settleComplete",
+                    appRouter: appRouter
+                )
             } catch {
-                if isUserCancelled(error) == false {
+                if isUserCancelled(error) {
+                    OAuthLoginPerformanceTracer.cancelTrace(reason: "userCancelled")
+                } else {
+                    OAuthLoginPerformanceTracer.cancelTrace(
+                        reason: "error: \(error.localizedDescription)"
+                    )
                     await MainActor.run {
                         presentAuthFailure(error)
                     }
@@ -290,8 +305,13 @@ struct LoginView: View {
     /// 走 supabase-swift 的内置 `signInWithOAuth`：iOS 上会用 `ASWebAuthenticationSession`
     /// 在当前 App 内弹出 Safari View 卡片完成登录，回跳由 SDK 内部接管，不需要 `onOpenURL`。
     private func signInWithGoogleOAuth() async throws {
-        await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn(appRouter: appRouter)
-        try await OAuthSignInSupport.signInWithGoogleOAuth()
+        try await OAuthLoginPerformanceTracer.measure(
+            "oauth.login.signInWithGoogleOAuth",
+            appRouter: appRouter
+        ) {
+            await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn(appRouter: appRouter)
+            try await OAuthSignInSupport.signInWithGoogleOAuth()
+        }
     }
 
     /// 用户在 Safari View 卡片里点了L10n.Common.cancel会抛 `ASWebAuthenticationSessionError.canceledLogin`，
