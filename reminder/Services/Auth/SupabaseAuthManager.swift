@@ -154,15 +154,26 @@ enum SupabaseAuthManager {
 
     static func linkGoogleIdentity(appRouter: AppRouter) async throws {
         #if canImport(Supabase)
+        let queryParams = [
+            (name: "prompt", value: "select_account"),
+            (name: "access_type", value: "offline"),
+        ]
+        #if canImport(AuthenticationServices) && canImport(UIKit)
+        let oauthResponse = try await client.auth.getLinkIdentityURL(
+            provider: .google,
+            redirectTo: OAuthSignInSupport.oauthRedirectURL,
+            queryParams: queryParams
+        )
+        let callbackURL = try await OAuthSignInSupport.presentInAppOAuth(url: oauthResponse.url)
+        let session = try await client.auth.session(from: callbackURL)
+        #else
         try await client.auth.linkIdentity(
             provider: .google,
             redirectTo: OAuthSignInSupport.oauthRedirectURL,
-            queryParams: [
-                (name: "prompt", value: "select_account"),
-                (name: "access_type", value: "offline"),
-            ]
+            queryParams: queryParams
         )
         let session = try await client.auth.session
+        #endif
         let userId = session.user.id
         await prepareRevenueCat(for: userId, appRouter: appRouter)
         notifyAuthUserChanged(userId: userId, isAnonymous: session.user.isAnonymous)

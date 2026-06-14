@@ -3,6 +3,9 @@ import Foundation
 #if canImport(AuthenticationServices)
 import AuthenticationServices
 #endif
+#if canImport(UIKit)
+import UIKit
+#endif
 #if canImport(Supabase)
 import Supabase
 #endif
@@ -24,6 +27,37 @@ enum OAuthSignInSupport {
         throw NSError(domain: "OAuthSignInSupport", code: -1)
         #endif
     }
+
+    /// 游客 `linkIdentity` 须在 App 内完成 OAuth（与 `signInWithOAuth` 一致），避免 `UIApplication.open` 跳出 App。
+    #if canImport(AuthenticationServices) && canImport(UIKit)
+    @MainActor
+    static func presentInAppOAuth(url: URL) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            guard let callbackScheme = oauthRedirectURL?.scheme else {
+                continuation.resume(throwing: OAuthSignInSupportError.missingRedirectURL)
+                return
+            }
+
+            let presentationContextProvider = OAuthWebAuthenticationPresentationContextProvider()
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callbackURLScheme: callbackScheme
+            ) { callbackURL, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let callbackURL {
+                    continuation.resume(returning: callbackURL)
+                } else {
+                    continuation.resume(throwing: OAuthSignInSupportError.missingCallbackURL)
+                }
+                _ = presentationContextProvider
+            }
+
+            session.presentationContextProvider = presentationContextProvider
+            session.start()
+        }
+    }
+    #endif
 
     /// Maps GoTrue errors (e.g. manual linking disabled) to localized user-facing copy.
     static func userFacingMessage(for error: Error, locale: Locale) -> String {
@@ -65,3 +99,35 @@ enum OAuthSignInSupport {
         return false
     }
 }
+
+private enum OAuthSignInSupportError: Error {
+    case missingRedirectURL
+    case missingCallbackURL
+}
+
+#if canImport(AuthenticationServices) && canImport(UIKit)
+@MainActor
+private final class OAuthWebAuthenticationPresentationContextProvider: NSObject,
+    ASWebAuthenticationPresentationContextProviding
+{
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if let keyWindow = scenes.flatMap(\.windows).first(where: \.isKeyWindow) {
+            return keyWindow
+        }
+        if let firstWindow = scenes.first?.windows.first {
+            return firstWindow
+        }
+        if let firstScene = scenes.first {
+            return ASPresentationAnchor(windowScene: firstScene)
+        }
+        if
+            let anyScene = UIApplication.shared.connectedScenes.first,
+            let windowScene = anyScene as? UIWindowScene
+        {
+            return ASPresentationAnchor(windowScene: windowScene)
+        }
+        return ASPresentationAnchor()
+    }
+}
+#endif
