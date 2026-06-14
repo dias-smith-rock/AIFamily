@@ -18,7 +18,10 @@ struct LocationPersistSettingsView: View {
         List {
             Section {
                 Toggle(isOn: locationGhostModeBinding) {
-                    Text(L10n.Settings.locationGhostToggle.localized)
+                    HStack(spacing: 6) {
+                        Text(L10n.Settings.locationGhostToggle.localized)
+                        proBadge
+                    }
                 }
                 .disabled(appRouter.selectedHouseholdId == nil || appRouter.selectedProfileId == nil)
             } header: {
@@ -64,10 +67,7 @@ struct LocationPersistSettingsView: View {
                     optionRow(
                         title: historyDisplayCountLabel(for: count),
                         isSelected: normalizedMapHistoryDisplayCount == count,
-                        showsProBadge: PremiumLimits.canSetMapHistoryDisplayCount(
-                            count,
-                            hasPremium: appRouter.hasPremiumAccess
-                        ) == false
+                        showsProBadge: count > PremiumLimits.freeMaxMapHistoryDisplayCount
                     ) {
                         guard PremiumLimits.canSetMapHistoryDisplayCount(
                             count,
@@ -203,12 +203,7 @@ struct LocationPersistSettingsView: View {
                 Text(title)
                     .foregroundStyle(.primary)
                 if showsProBadge {
-                    Text("Pro")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(Color.orange, in: Capsule())
+                    proBadge
                 }
                 Spacer()
                 if isSelected {
@@ -220,6 +215,15 @@ struct LocationPersistSettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var proBadge: some View {
+        Text("Pro")
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Color.orange, in: Capsule())
     }
 
     private func distanceLabel(for meters: Double) -> LocalizedStringResource {
