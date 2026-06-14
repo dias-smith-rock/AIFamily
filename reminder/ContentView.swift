@@ -246,7 +246,9 @@ struct ContentView: View {
     @ViewBuilder
     private var authenticatedSessionBootstrapPlaceholder: some View {
         #if canImport(Supabase)
-        if appRouter.hasPersistedSupabaseSession {
+        if appRouter.isResolvingHouseholdRouting {
+            routingBootstrapPlaceholder
+        } else if appRouter.hasPersistedSupabaseSession {
             OrgRoutingView()
         } else {
             routingBootstrapPlaceholder
@@ -303,10 +305,15 @@ struct ContentView: View {
 
     @MainActor
     private func runAuthAndHouseholdBootstrap(vipLogTrigger: String?) async {
-        _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
+        appRouter.syncSessionIdentityFromPersistedSessionIfAvailable()
+        if appRouter.isAnonymousUser {
+            _ = appRouter.restoreOfflineHouseholdContextIfNeeded()
+        }
         refreshForegroundLocationSchedulerContext()
         await AuthSessionRefresher.refreshOnForegroundIfNeeded()
-        await appRouter.refreshStateFromBackend()
+        if appRouter.consumeSkipNextLoginBootstrapRefresh() == false {
+            await appRouter.refreshStateFromBackend()
+        }
         await fetchHouseholdsAndCheckCreatorRole()
         if let vipLogTrigger {
             appRouter.logVIPAccessState(trigger: vipLogTrigger)

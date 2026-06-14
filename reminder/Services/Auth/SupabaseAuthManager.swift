@@ -41,12 +41,13 @@ enum SupabaseAuthManager {
     }
 
     /// 登录页 OAuth 前归档当前 anonymous session，避免切换正式账号后丢失游客 UUID。
-    static func archiveAnonymousSessionBeforeOAuthSignIn() async {
+    static func archiveAnonymousSessionBeforeOAuthSignIn(appRouter: AppRouter) async {
         #if canImport(Supabase)
         guard let session = try? await client.auth.session,
               session.user.isAnonymous,
               session.refreshToken.isEmpty == false
         else {
+            appRouter.clearHouseholdRoutingForIdentitySwitch()
             return
         }
 
@@ -57,11 +58,24 @@ enum SupabaseAuthManager {
                 refreshToken: session.refreshToken
             )
         )
+        appRouter.clearHouseholdRoutingForIdentitySwitch()
+        do {
+            try await client.auth.signOut(scope: .local)
+            #if DEBUG
+            print("[SupabaseAuthManager] signed out anonymous session locally before OAuth")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[SupabaseAuthManager] local signOut before OAuth failed: \(error)")
+            #endif
+        }
         #if DEBUG
         print(
             "[SupabaseAuthManager] archived anonymous session userId=\(session.user.id.uuidString.lowercased())"
         )
         #endif
+        #else
+        _ = appRouter
         #endif
     }
 

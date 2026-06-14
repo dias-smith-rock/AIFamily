@@ -13,8 +13,12 @@ final class AppBootstrap: ObservableObject {
     private(set) var viewModelFactory: ViewModelFactory
     private(set) var mode: AppServiceMode
     let featureFlags: FeatureFlags
-    /// 切换 Live 服务后递增，用于重建 Tab 内 `@StateObject` ViewModel。
+    /// 切换 Live 服务或 OAuth 身份后递增，用于重建 Tab 内 `@StateObject` ViewModel。
     @Published private(set) var sessionRevision = UUID()
+
+    func bumpSessionRevision() {
+        sessionRevision = UUID()
+    }
 
     init() {
         if Self.isRunningPreview {

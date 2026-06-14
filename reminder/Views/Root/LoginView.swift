@@ -252,7 +252,7 @@ struct LoginView: View {
                 avatarStorageService: SupabaseAvatarStorageService(provider: provider)
             )
             do {
-                await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn()
+                await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn(appRouter: appRouter)
                 try await auth.signInWithApple(
                     idToken: idTokenString,
                     rawNonce: rawNonce,
@@ -275,7 +275,7 @@ struct LoginView: View {
     /// 走 supabase-swift 的内置 `signInWithOAuth`：iOS 上会用 `ASWebAuthenticationSession`
     /// 在当前 App 内弹出 Safari View 卡片完成登录，回跳由 SDK 内部接管，不需要 `onOpenURL`。
     private func signInWithGoogleOAuth() async throws {
-        await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn()
+        await SupabaseAuthManager.archiveAnonymousSessionBeforeOAuthSignIn(appRouter: appRouter)
         try await OAuthSignInSupport.signInWithGoogleOAuth()
     }
 
@@ -309,15 +309,15 @@ struct LoginView: View {
         try await OAuthSessionCoordinator.settleAfterOAuth(
             appRouter: appRouter,
             appBootstrap: appBootstrap,
+            onEnterOrgRouting: {
+                withAnimation(.easeInOut) {
+                    isUserLoggedIn = true
+                }
+            },
             migrationFailureHandler: { message in
                 loginErrorAlert = message
             }
         )
-        await MainActor.run {
-            withAnimation(.easeInOut) {
-                isUserLoggedIn = true
-            }
-        }
     }
 
     private func startSupabaseGuestExperience() async {

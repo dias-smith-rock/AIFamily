@@ -48,6 +48,15 @@ final class AppRouter: ObservableObject {
     /// 下次 `refreshStateFromBackend()` 完成后优先激活的组织（如刚创建的群组）。
     private var pendingPreferredHouseholdId: UUID?
 
+    /// OAuth 正式登录后：OrgRoutingView 展示群组信息加载蒙层。
+    @Published private(set) var isResolvingHouseholdRouting = false
+
+    /// OAuth `settleAfterOAuth` 已 refresh 时，跳过 `ContentView` 登录后重复 refresh。
+    private var skipNextLoginBootstrapRefresh = false
+
+    private var householdRoutingResolveRefreshFinished = false
+    private var orgRoutingSurfaceDidAppear = false
+
     private struct OfflineHouseholdSnapshot: Codable {
         let householdId: UUID
         let membershipId: UUID?
@@ -137,10 +146,68 @@ final class AppRouter: ObservableObject {
         pendingOpenGroupSettings = false
     }
 
-    /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存。
+    /// Bootstrap 前同步 Keychain 会话身份（离线或未走完 refresh 时仍需正确游客标记）。
+    func syncSessionIdentityFromPersistedSessionIfAvailable() {
+        syncSessionIdentityFromKeychainIfAvailable()
+    }
+
+    /// OAuth / 正式账号切换前清空离线快照与组织路由，避免误恢复游客 household。
+    func clearHouseholdRoutingForIdentitySwitch() {
+        clearOfflineHouseholdSnapshot()
+        prepareForSoftExitToLogin()
+    }
+
+    func beginHouseholdRoutingResolve() {
+        isResolvingHouseholdRouting = true
+        householdRoutingResolveRefreshFinished = false
+        orgRoutingSurfaceDidAppear = false
+    }
+
+    /// refresh 完成后调用；若仍停留在群组路由页，须等 OrgRoutingView `onAppear` 再收起蒙层。
+    func finishHouseholdRoutingResolveAfterRefresh() {
+        householdRoutingResolveRefreshFinished = true
+        dismissHouseholdRoutingResolveOverlayIfReady()
+    }
+
+    func notifyOrgRoutingSurfaceDidAppear() {
+        guard isResolvingHouseholdRouting else { return }
+        orgRoutingSurfaceDidAppear = true
+        dismissHouseholdRoutingResolveOverlayIfReady()
+    }
+
+    private func dismissHouseholdRoutingResolveOverlayIfReady() {
+        guard isResolvingHouseholdRouting, householdRoutingResolveRefreshFinished else { return }
+
+        if appState != .orgRouting {
+            clearHouseholdRoutingResolveState()
+            return
+        }
+
+        guard orgRoutingSurfaceDidAppear else { return }
+        clearHouseholdRoutingResolveState()
+    }
+
+    private func clearHouseholdRoutingResolveState() {
+        isResolvingHouseholdRouting = false
+        householdRoutingResolveRefreshFinished = false
+        orgRoutingSurfaceDidAppear = false
+    }
+
+    func markOAuthBootstrapCompleted() {
+        skipNextLoginBootstrapRefresh = true
+    }
+
+    func consumeSkipNextLoginBootstrapRefresh() -> Bool {
+        guard skipNextLoginBootstrapRefresh else { return false }
+        skipNextLoginBootstrapRefresh = false
+        return true
+    }
+
+    /// 离线冷启动时恢复上次组织上下文，保证任务列表可命中本地缓存（仅游客会话）。
     @discardableResult
     func restoreOfflineHouseholdContextIfNeeded() -> Bool {
         syncSessionIdentityFromKeychainIfAvailable()
+        guard isAnonymousUser else { return false }
         guard selectedHouseholdId == nil else { return false }
         guard
             let data = UserDefaults.standard.data(forKey: Self.offlineHouseholdSnapshotKey),
@@ -339,6 +406,9 @@ final class AppRouter: ObservableObject {
         selectedHouseholdCreatorHasActivePro = false
         selectableHouseholds = []
         recentHouseholds = []
+        if isResolvingHouseholdRouting {
+            orgRoutingSurfaceDidAppear = false
+        }
     }
 
     /// 匿名登录成功后立即进入组织路由，避免 `isUserLoggedIn` 已 true 但 `appState` 仍为 `.unauthenticated` 时卡在加载页。

@@ -36,6 +36,13 @@ struct OrgRoutingView: View {
 
     var body: some View {
         orgRoutingNavigationStack
+            .onAppear {
+                appRouter.notifyOrgRoutingSurfaceDidAppear()
+            }
+            .task {
+                guard appRouter.isAnonymousUser == false else { return }
+                await viewModel.fetchMyHouseholds(appRouter: appRouter)
+            }
             .onChange(of: viewModel.errorMessage) { _, newValue in
                 if let newValue {
                     localErrorMessage = newValue
@@ -84,7 +91,9 @@ struct OrgRoutingView: View {
             }
             .overlay {
                 if isJoiningFullScreenLoading {
-                    joiningGroupOverlay
+                    routingOverlay(message: L10n.Family.joiningGroup)
+                } else if appRouter.isResolvingHouseholdRouting {
+                    routingOverlay(message: L10n.Family.loadingYourGroups)
                 }
             }
             .guestSessionExitDialogs(
@@ -170,16 +179,25 @@ struct OrgRoutingView: View {
             }
             .padding(20)
         }
+        .refreshable {
+            await refreshHouseholdRouting()
+        }
     }
 
-    private var joiningGroupOverlay: some View {
+    private func refreshHouseholdRouting() async {
+        guard appRouter.isResolvingHouseholdRouting == false else { return }
+        await appRouter.refreshStateFromBackend()
+        await viewModel.fetchMyHouseholds(appRouter: appRouter)
+    }
+
+    private func routingOverlay(message: L10n.Entry) -> some View {
         ZStack {
             Color.black.opacity(0.18)
                 .ignoresSafeArea()
             VStack(spacing: 10) {
                 ProgressView()
                     .scaleEffect(1.2)
-                Text(AppLocalized.string(L10n.Family.joiningGroup, locale: locale))
+                Text(AppLocalized.string(message, locale: locale))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.secondary)
             }
