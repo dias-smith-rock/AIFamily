@@ -288,7 +288,10 @@ struct ContentView: View {
         RevenueCatSubscriptionService.shared.configure(appRouter: appRouter)
         await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
 
-        if isUserLoggedIn {
+        if await SupabaseAuthManager.isAnonymousUser() {
+            SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
+            isUserLoggedIn = false
+        } else if isUserLoggedIn {
             await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动")
             reconcileStaleLoginSession()
         }
