@@ -47,6 +47,8 @@ extension L10n {
     static let guestSessionRestoreFailedTitle = Entry(key: "auth_guest_session_restore_failed_title", table: .auth)
     static let guestSessionRestoreFailedMessage = Entry(key: "auth_guest_session_restore_failed_message", table: .auth)
     static let clearGuestDataAndStartFresh = Entry(key: "auth_clear_guest_data_and_start_fresh", table: .auth)
+    static let clearGuestDataConfirmTitle = Entry(key: "auth_clear_guest_data_confirm_title", table: .auth)
+    static let clearGuestDataConfirmMessage = Entry(key: "auth_clear_guest_data_confirm_message", table: .auth)
     static let returnToLogin = Entry(key: "auth_return_to_login", table: .auth)
     static let anonymousBindAfterGroupTitle = Entry(key: "auth_anonymous_bind_after_group_title", table: .auth)
     static let anonymousBindAfterGroupMessage = Entry(key: "auth_anonymous_bind_after_group_message", table: .auth)

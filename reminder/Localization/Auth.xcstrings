@@ -2421,6 +2421,34 @@
         "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
         "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } }
       }
+    },
+    "auth_clear_guest_data_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清除游客数据？" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除遊客資料？" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } }
+      }
+    },
+    "auth_clear_guest_data_confirm_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "将清除本机的游客群组与数据，并创建新的游客会话。此操作无法撤销。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "將清除本機的遊客群組與資料，並建立新的遊客會話。此操作無法撤銷。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } }
+      }
     }
   },
   "version": "1.0"

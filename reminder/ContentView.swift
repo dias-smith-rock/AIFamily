@@ -312,9 +312,6 @@ struct ContentView: View {
     private func runLaunchBootstrap() async {
         _ = await NetworkMonitor.shared.ensureInitialPathReady()
         let networkConnectedAtStart = await NetworkMonitor.shared.isConnected
-        if isUserLoggedIn, networkConnectedAtStart == false {
-            OfflineColdStartPerformanceTracer.beginTrace(networkConnectedAtStart: networkConnectedAtStart)
-        }
 
         LaunchBootstrapPerformanceTracing.beginColdStartTraceIfNeeded(isUserLoggedIn: isUserLoggedIn)
         LaunchBootstrapPerformanceTracing.mark(
@@ -322,6 +319,10 @@ struct ContentView: View {
             note: "networkConnectedAtStart=\(networkConnectedAtStart)",
             appRouter: appRouter
         )
+
+        if isUserLoggedIn, networkConnectedAtStart == false {
+            OfflineColdStartPerformanceTracer.beginTrace(networkConnectedAtStart: networkConnectedAtStart)
+        }
 
         let isFreshInstall = AuthSessionHints.prepareForFreshInstallIfNeeded()
         LaunchBootstrapPerformanceTracing.mark("launchBootstrap.prepareFreshInstall.done", appRouter: appRouter)
@@ -362,15 +363,62 @@ struct ContentView: View {
             ? await SupabaseAuthManager.isAnonymousUser()
             : SupabaseAuthManager.isAnonymousUserFromPersistedSession()
 
+        if isAnonymousUser, isUserLoggedIn == false, networkConnectedAtStart == false {
+            OfflineColdStartPerformanceTracer.beginTrace(networkConnectedAtStart: networkConnectedAtStart)
+        }
+
         if isAnonymousUser {
             LaunchBootstrapPerformanceTracing.mark(
-                "launchBootstrap.branch.anonymousSoftExit",
-                note: "skipAutoLoginPath",
+                "launchBootstrap.branch.guestAutoLogin",
+                note: "networkConnectedAtStart=\(networkConnectedAtStart)",
                 appRouter: appRouter
             )
-            LaunchBootstrapPerformanceTracing.cancelTrace(reason: "anonymousUserSoftExit")
-            SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
-            isUserLoggedIn = false
+            GuestLoginPerformanceTracer.beginTrace(entryPath: "guestColdStart")
+
+            appRouter.beginHouseholdRoutingResolve()
+            defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
+            let dismissedSplashEarly = dismissLaunchSplashEarlyIfOfflineLoggedIn(
+                networkConnectedAtStart: networkConnectedAtStart
+            )
+            if dismissedSplashEarly == false {
+                appRouter.goToOrgRouting()
+                LaunchBootstrapPerformanceTracing.mark("launchBootstrap.goToOrgRouting", appRouter: appRouter)
+            }
+
+            do {
+                let result = try await LaunchBootstrapPerformanceTracing.measure(
+                    "launchBootstrap.guestResumeOrSignIn",
+                    appRouter: appRouter
+                ) {
+                    try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
+                }
+                await LaunchBootstrapPerformanceTracing.measure(
+                    "launchBootstrap.guestFinishSignInBootstrap",
+                    note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)",
+                    appRouter: appRouter
+                ) {
+                    await SupabaseAuthManager.finishGuestSignInBootstrap(
+                        appRouter: appRouter,
+                        userId: result.userId
+                    )
+                }
+                isUserLoggedIn = true
+                revealedMainUI = true
+                reconcileStaleLoginSession()
+                LaunchBootstrapPerformanceTracing.mark("launchBootstrap.reconcileStaleLoginSession.done", appRouter: appRouter)
+            } catch {
+                GuestLoginPerformanceTracer.cancelTrace(reason: "coldStartFailed \(error.localizedDescription)")
+                LaunchBootstrapPerformanceTracing.cancelTrace(reason: "guestColdStartFailed")
+                SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
+                isUserLoggedIn = false
+            }
+
+            if isLaunchBootstrapComplete == false {
+                withAnimation(.easeInOut) {
+                    isLaunchBootstrapComplete = true
+                }
+            }
+            LaunchBootstrapPerformanceTracing.mark("launchBootstrap.splashDismissed", appRouter: appRouter)
         } else if isUserLoggedIn {
             LaunchBootstrapPerformanceTracing.mark(
                 "launchBootstrap.branch.formalAutoLogin",

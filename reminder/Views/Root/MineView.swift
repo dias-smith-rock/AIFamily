@@ -20,6 +20,8 @@ struct MineView: View {
     @State private var editingSelfProfile: FamilyProfile?
     @State private var showTermsSheet = false
     @State private var showPrivacySheet = false
+    @State private var showClearGuestDataAlert = false
+    @State private var isClearingGuestData = false
 
     /// 与 `mineNavigationRow` 中「图标列 + 间距」一致，避免居中文字导致系统把分隔线对齐到屏幕中间。
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
@@ -70,6 +72,14 @@ struct MineView: View {
                 showTermsSheet: $showTermsSheet,
                 showPrivacySheet: $showPrivacySheet
             )
+            .alert(L10n.Auth.clearGuestDataConfirmTitle, isPresented: $showClearGuestDataAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Auth.guestStartFreshExperience, role: .destructive) {
+                    Task { await clearGuestDataAndStartOver() }
+                }
+            } message: {
+                Text(L10n.Auth.clearGuestDataConfirmMessage.localized)
+            }
     }
 
     private var toastAlertBinding: Binding<Bool> {
@@ -364,8 +374,29 @@ struct MineView: View {
                 mineSectionHeader(L10n.Common.supportLegal)
             }
 
-            if appRouter.isAnonymousUser == false {
-                Section {
+            Section {
+                if appRouter.isAnonymousUser {
+                    Button(role: .destructive) {
+                        showClearGuestDataAlert = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            if isClearingGuestData {
+                                ProgressView()
+                            } else {
+                                Text(L10n.Auth.guestStartFreshExperience)
+                                    .font(AppTheme.FontToken.bodyStrong)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
+                        .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isClearingGuestData)
+                } else {
                     Button {
                         Task {
                             familyViewModel.prepareForSignOut()
@@ -388,7 +419,11 @@ struct MineView: View {
                         .alignmentGuide(.listRowSeparatorLeading) { _ in Self.settingsRowSeparatorLeading }
                     }
                     .buttonStyle(.plain)
-                    .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
+                    .disabled(
+                        viewModel.isSigningOut
+                            || viewModel.isDeletingAccount
+                            || viewModel.isCheckingCreatorStatus
+                    )
 
                     Button(role: .destructive) {
                         Task { await viewModel.checkCreatorStatusBeforeDeletion() }
@@ -415,9 +450,9 @@ struct MineView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(viewModel.isSigningOut || viewModel.isDeletingAccount || viewModel.isCheckingCreatorStatus)
-                } header: {
-                    mineSectionHeader(L10n.Common.account)
                 }
+            } header: {
+                mineSectionHeader(L10n.Common.account)
             }
         }
         .listStyle(.insetGrouped)
@@ -810,6 +845,20 @@ struct MineView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    @MainActor
+    private func clearGuestDataAndStartOver() async {
+        guard isClearingGuestData == false else { return }
+        isClearingGuestData = true
+        defer { isClearingGuestData = false }
+
+        familyViewModel.prepareForSignOut()
+        do {
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter, clearGuestArchive: true)
+        } catch {
+            viewModel.signOutErrorMessage = error.localizedDescription
+        }
     }
 
     @MainActor

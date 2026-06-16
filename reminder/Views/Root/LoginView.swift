@@ -141,25 +141,12 @@ struct LoginView: View {
             #endif
 
             if showsGuestModeEntry {
-                Button {
-                    Task { await startSupabaseGuestExperience() }
-                } label: {
-                    Group {
-                        if loadingProvider == .guest {
-                            ProgressView()
-                                .tint(.white.opacity(0.85))
-                        } else {
-                            Text(L10n.Auth.guestExperienceNoSignup.localized)
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.85))
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
+                OAuthGuestSignInButton(
+                    title: L10n.Auth.guestExperienceNoSignup.localized,
+                    isLoading: loadingProvider == .guest,
+                    action: { Task { await startSupabaseGuestExperience() } }
+                )
                 .disabled(loadingProvider != nil)
-                .padding(.top, 4)
             }
         }
     }

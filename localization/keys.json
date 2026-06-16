@@ -5960,5 +5960,19 @@
     "table": "Auth",
     "swift_property": "identityAlreadyLinkedMessage",
     "orphan": true
+  },
+  {
+    "legacy_key": "Clear guest data?",
+    "new_key": "auth_clear_guest_data_confirm_title",
+    "table": "Auth",
+    "swift_property": "clearGuestDataConfirmTitle",
+    "orphan": true
+  },
+  {
+    "legacy_key": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone.",
+    "new_key": "auth_clear_guest_data_confirm_message",
+    "table": "Auth",
+    "swift_property": "clearGuestDataConfirmMessage",
+    "orphan": true
   }
 ]
