@@ -166,8 +166,7 @@ struct OrgRoutingView: View {
 
                 RouteActionCard(
                     icon: "house.fill",
-                    title: AppLocalized.string(L10n.Family.iAmAParent, locale: locale),
-                    subtitle: AppLocalized.string(L10n.Family.createBrandNewGroupSpace, locale: locale),
+                    title: AppLocalized.string(L10n.Family.createBrandNewGroupSpace, locale: locale),
                     backgroundColor: Color.orange.opacity(0.12)
                 ) {
                     createInputError = nil
@@ -176,8 +175,7 @@ struct OrgRoutingView: View {
 
                 RouteActionCard(
                     icon: "qrcode.viewfinder",
-                    title: AppLocalized.string(L10n.Family.joinGroup, locale: locale),
-                    subtitle: AppLocalized.string(L10n.Family.joinViaScanOrInviteCode, locale: locale),
+                    title: AppLocalized.string(L10n.Family.joinViaScanOrInviteCode, locale: locale),
                     backgroundColor: Color.green.opacity(0.12)
                 ) {
                     joinInputError = nil
@@ -439,7 +437,6 @@ struct OrgRoutingView: View {
 private struct RouteActionCard: View {
     let icon: String
     let title: String
-    let subtitle: String
     let backgroundColor: Color
     let onTap: () -> Void
 
@@ -453,14 +450,11 @@ private struct RouteActionCard: View {
                     .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(title)
-                        .font(AppTheme.FontToken.section)
-                        .foregroundStyle(.primary)
-                    Text(subtitle)
-                        .font(AppTheme.FontToken.subtitle)
-                        .foregroundStyle(AppTheme.ColorToken.textSecondary)
-                }
+                Text(title)
+                    .font(AppTheme.FontToken.section)
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+
                 Spacer()
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.tertiary)
