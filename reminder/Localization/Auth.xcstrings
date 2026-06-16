@@ -2055,55 +2055,55 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Guest (no signup)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "游客体验（无须注册）"
+            "value": "游客（无须注册）"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "游客体验（无须注册）"
+            "value": "遊客（無須註冊）"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Invitado (sin registro)"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Invité (sans inscription)"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Convidado (sem registro)"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Guest (no signup)"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Guest (no signup)"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Guest experience (no signup)"
+            "value": "Guest (no signup)"
           }
         }
       }
