@@ -94,6 +94,12 @@ struct TaskWeekGridView: View {
                 applyWeekOffset(target, animated: true)
             }
         }
+        .onChange(of: isCurrentWeekTimelineReady) { oldValue, newValue in
+            WeekViewPerformanceTracer.mark(
+                "isCurrentWeekTimelineReady.changed",
+                note: "from=\(oldValue) to=\(newValue) weekOffset=\(weekOffset)"
+            )
+        }
     }
 
     // MARK: - Week pager
@@ -209,13 +215,30 @@ struct TaskWeekGridView: View {
             ZStack(alignment: .bottomTrailing) {
                 Group {
                     if shouldShowTimeline {
-                        timelineScrollArea(
+                        WeekTimelineScrollArea(
                             days: days,
                             weekTasks: weekTasks,
-                            displayedWeekOffset: offset
+                            displayedWeekOffset: offset,
+                            weekOffset: weekOffset,
+                            pagerSlot: pagerSlot,
+                            isCurrentWeekTimelineReady: isCurrentWeekTimelineReady,
+                            isAdjacentWeekPagesReady: isAdjacentWeekPagesReady,
+                            gridColumnWidth: $gridColumnWidth,
+                            horizontalPadding: horizontalPadding,
+                            viewModel: viewModel,
+                            onTaskSelect: onTaskSelect,
+                            onRefresh: refreshTasks,
+                            taskDisplayDate: taskDisplayDate
                         )
                     } else {
                         timelineGridPlaceholder
+                            .onAppear {
+                                WeekViewPerformanceTracer.recordTimelinePlaceholderAppear(
+                                    displayedWeekOffset: offset,
+                                    isCenterPage: isCenterPage,
+                                    isCurrentWeekTimelineReady: isCurrentWeekTimelineReady
+                                )
+                            }
                     }
                 }
 
@@ -276,6 +299,11 @@ struct TaskWeekGridView: View {
         WeekViewPerformanceTracer.mark(
             "firstPaint.expand",
             note: "enablingTimelineAndAdjacentPages"
+        )
+        WeekViewPerformanceTracer.recordFirstPaintExpandScrollContext(
+            weekOffset: weekOffset,
+            isDisplayingCurrentWeek: isDisplayingCurrentWeek(offset: weekOffset),
+            isCurrentWeekTimelineReadyBefore: isCurrentWeekTimelineReady
         )
         isCurrentWeekTimelineReady = true
         isAdjacentWeekPagesReady = true
@@ -484,145 +512,6 @@ struct TaskWeekGridView: View {
         .padding(.horizontal, 1)
     }
 
-    // MARK: - Timeline grid
-
-    private func timelineScrollArea(days: [Date], weekTasks: [FamilyTask], displayedWeekOffset: Int) -> some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
-                HStack(alignment: .top, spacing: 0) {
-                    timeLabelsColumn
-                        .frame(width: ScheduleTimelineMetrics.timeColumnWidth)
-
-                    GeometryReader { geometry in
-                        let gridWidth = geometry.size.width
-                        let columnWidth = gridWidth / 7
-                        let layoutItems = WeekViewPerformanceTracer.measureLayoutEngine(
-                            taskCount: weekTasks.count,
-                            columnWidth: columnWidth
-                        ) {
-                            WeekTaskLayoutEngine.layout(
-                                tasks: weekTasks,
-                                weekDays: days,
-                                columnWidth: columnWidth,
-                                taskStart: taskDisplayDate,
-                                taskEnd: { $0.timelineEndDate }
-                            )
-                        }
-                        let _ = WeekViewPerformanceTracer.recordGeometryLayoutPass(
-                            columnWidth: columnWidth,
-                            weekTaskCount: weekTasks.count
-                        )
-
-                        ZStack(alignment: .topLeading) {
-                            AppTheme.ColorToken.surface
-
-                            WeekGridBackground(
-                                columnWidth: columnWidth,
-                                columnCount: 7
-                            )
-                            .frame(width: gridWidth, height: WeekGridMetrics.gridHeight)
-
-                            if let nowY = currentTimeYOffset(in: days) {
-                                nowIndicator(y: nowY, gridWidth: gridWidth)
-
-                                Color.clear
-                                    .frame(width: 1, height: 1)
-                                    .offset(y: max(0, nowY - 80))
-                                    .id(WeekGridScrollIDs.timeAnchor(for: displayedWeekOffset))
-                            }
-
-                            ForEach(layoutItems) { item in
-                                Button {
-                                    onTaskSelect(item.task)
-                                } label: {
-                                    WeekTaskEventCard(
-                                        task: item.task,
-                                        title: viewModel.displayTitle(for: item.task)
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .frame(width: item.frame.width, height: item.frame.height)
-                                .offset(x: item.frame.minX, y: item.frame.minY)
-                            }
-                        }
-                        .frame(width: gridWidth, height: WeekGridMetrics.gridHeight, alignment: .topLeading)
-                        .onAppear {
-                            if abs(gridColumnWidth - columnWidth) > 0.5 {
-                                gridColumnWidth = columnWidth
-                            }
-                        }
-                        .onChange(of: geometry.size.width) { _, newWidth in
-                            let updated = newWidth / 7
-                            if abs(gridColumnWidth - updated) > 0.5 {
-                                gridColumnWidth = updated
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: WeekGridMetrics.gridHeight)
-                }
-                .padding(.top, 6)
-                .padding(.horizontal, horizontalPadding)
-                .padding(.bottom, 24)
-            }
-            .refreshable {
-                await refreshTasks()
-            }
-            .onAppear {
-                WeekViewPerformanceTracer.recordTimelineScrollAppear(
-                    weekOffset: displayedWeekOffset,
-                    weekTaskCount: weekTasks.count
-                )
-                scrollToInitialTime(
-                    proxy: proxy,
-                    days: days,
-                    displayedWeekOffset: displayedWeekOffset,
-                    animated: false
-                )
-            }
-            .onChange(of: weekOffset) { _, _ in
-                scrollToInitialTime(
-                    proxy: proxy,
-                    days: days,
-                    displayedWeekOffset: displayedWeekOffset,
-                    animated: true
-                )
-            }
-        }
-    }
-
-    private var timeLabelsColumn: some View {
-        VStack(spacing: 0) {
-            ForEach(0..<WeekGridMetrics.hoursPerDay, id: \.self) { hour in
-                Text(hourLabel(for: hour))
-                    .font(.system(size: 10, weight: .regular))
-                    .foregroundStyle(.secondary)
-                    .padding(.top, hour == 0 ? 2 : 0)
-                    .frame(height: WeekGridMetrics.hourRowHeight, alignment: .top)
-                    .offset(y: hour == 0 ? 0 : -6)
-            }
-        }
-    }
-
-    private func hourLabel(for hour: Int) -> String {
-        String(format: "%02d:00", hour)
-    }
-
-    private func nowIndicator(y: CGFloat, gridWidth: CGFloat) -> some View {
-        ZStack(alignment: .leading) {
-            Rectangle()
-                .fill(Color.red)
-                .frame(width: gridWidth, height: 1)
-                .offset(y: y)
-
-            Circle()
-                .fill(Color.red)
-                .frame(width: 7, height: 7)
-                .offset(x: -3, y: y - 3)
-        }
-        .allowsHitTesting(false)
-    }
-
     // MARK: - Back to current week
 
     private var backToCurrentWeekButton: some View {
@@ -686,31 +575,6 @@ struct TaskWeekGridView: View {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    private func currentTimeYOffset(in days: [Date]) -> CGFloat? {
-        guard days.contains(where: { Calendar.current.isDateInToday($0) }) else { return nil }
-        return WeekTaskLayoutEngine.yOffset(for: Date())
-    }
-
-    private func scrollToInitialTime(
-        proxy: ScrollViewProxy,
-        days: [Date],
-        displayedWeekOffset: Int,
-        animated: Bool
-    ) {
-        guard days.contains(where: { Calendar.current.isDateInToday($0) }) else { return }
-        let anchorID = WeekGridScrollIDs.timeAnchor(for: displayedWeekOffset)
-        let action = {
-            proxy.scrollTo(anchorID, anchor: .top)
-        }
-        if animated {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                action()
-            }
-        } else {
-            action()
-        }
-    }
-
     private func refreshTasks() async {
         if let onRefresh {
             await onRefresh()
@@ -719,6 +583,265 @@ struct TaskWeekGridView: View {
         }
     }
 }
+
+// MARK: - Timeline scroll area
+
+private struct WeekTimelineScrollArea: View {
+    let days: [Date]
+    let weekTasks: [FamilyTask]
+    let displayedWeekOffset: Int
+    let weekOffset: Int
+    let pagerSlot: Int
+    let isCurrentWeekTimelineReady: Bool
+    let isAdjacentWeekPagesReady: Bool
+    @Binding var gridColumnWidth: CGFloat
+    let horizontalPadding: CGFloat
+    @ObservedObject var viewModel: ScheduleViewModel
+    let onTaskSelect: (FamilyTask) -> Void
+    let onRefresh: () async -> Void
+    let taskDisplayDate: (FamilyTask) -> Date
+
+    private var isActiveWeekPage: Bool { displayedWeekOffset == weekOffset }
+    private var containsToday: Bool {
+        days.contains(where: { Calendar.current.isDateInToday($0) })
+    }
+
+    private var nowY: CGFloat? {
+        guard containsToday else { return nil }
+        return WeekTaskLayoutEngine.yOffset(for: Date())
+    }
+
+    private var anchorID: String {
+        WeekGridScrollIDs.timeAnchor(for: displayedWeekOffset)
+    }
+
+    private var fractionalHourNow: CGFloat {
+        WeekTaskLayoutEngine.fractionalHour(for: Date())
+    }
+
+    private var nowHour: Int {
+        Int(fractionalHourNow)
+    }
+
+    private var nowYOffsetWithinHour: CGFloat {
+        (fractionalHourNow - CGFloat(nowHour)) * WeekGridMetrics.hourRowHeight
+    }
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                HStack(alignment: .top, spacing: 0) {
+                    timeLabelsColumn {
+                        alignToCurrentTime(
+                            using: proxy,
+                            source: "scrollAnchor.onAppear",
+                            animated: false
+                        )
+                    }
+                    .frame(width: ScheduleTimelineMetrics.timeColumnWidth)
+
+                    GeometryReader { geometry in
+                    let gridWidth = geometry.size.width
+                    let columnWidth = gridWidth / 7
+                    let layoutItems = WeekViewPerformanceTracer.measureLayoutEngine(
+                        taskCount: weekTasks.count,
+                        columnWidth: columnWidth
+                    ) {
+                        WeekTaskLayoutEngine.layout(
+                            tasks: weekTasks,
+                            weekDays: days,
+                            columnWidth: columnWidth,
+                            taskStart: taskDisplayDate,
+                            taskEnd: { $0.timelineEndDate }
+                        )
+                    }
+                    let _ = WeekViewPerformanceTracer.recordGeometryLayoutPass(
+                        columnWidth: columnWidth,
+                        weekTaskCount: weekTasks.count
+                    )
+
+                    ZStack(alignment: .topLeading) {
+                        AppTheme.ColorToken.surface
+
+                        WeekGridBackground(
+                            columnWidth: columnWidth,
+                            columnCount: 7
+                        )
+                        .frame(width: gridWidth, height: WeekGridMetrics.gridHeight)
+
+                        if let nowY {
+                            nowIndicator(y: nowY, gridWidth: gridWidth)
+                        }
+
+                        ForEach(layoutItems) { item in
+                            Button {
+                                onTaskSelect(item.task)
+                            } label: {
+                                WeekTaskEventCard(
+                                    task: item.task,
+                                    title: viewModel.displayTitle(for: item.task)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .frame(width: item.frame.width, height: item.frame.height)
+                            .offset(x: item.frame.minX, y: item.frame.minY)
+                        }
+                    }
+                    .frame(width: gridWidth, height: WeekGridMetrics.gridHeight, alignment: .topLeading)
+                    .onAppear {
+                        if abs(gridColumnWidth - columnWidth) > 0.5 {
+                            gridColumnWidth = columnWidth
+                        }
+                    }
+                    .onChange(of: geometry.size.width) { _, newWidth in
+                        let updated = newWidth / 7
+                        if abs(gridColumnWidth - updated) > 0.5 {
+                            gridColumnWidth = updated
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: WeekGridMetrics.gridHeight)
+            }
+            .padding(.top, 6)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.bottom, 24)
+        }
+        .refreshable {
+            await onRefresh()
+        }
+        .onAppear {
+            WeekViewPerformanceTracer.recordTimelineScrollAppear(
+                weekOffset: displayedWeekOffset,
+                weekTaskCount: weekTasks.count
+            )
+            scheduleAlignToCurrentTimeRetry(using: proxy, source: "timelineScrollArea.onAppear")
+        }
+        .onChange(of: weekOffset) { _, newOffset in
+            guard displayedWeekOffset == newOffset else { return }
+            alignToCurrentTime(using: proxy, source: "timelineScrollArea.weekOffsetChanged", animated: true)
+        }
+        .onChange(of: isCurrentWeekTimelineReady) { _, isReady in
+            guard isReady else { return }
+            scheduleAlignToCurrentTimeRetry(using: proxy, source: "isCurrentWeekTimelineReady")
+        }
+        }
+    }
+
+    private func timeLabelsColumn(onAnchorAppear: @escaping () -> Void) -> some View {
+        VStack(spacing: 0) {
+            ForEach(0..<WeekGridMetrics.hoursPerDay, id: \.self) { hour in
+                let rowTopPadding: CGFloat = hour == 0 ? 2 : 0
+                Text(hourLabel(for: hour))
+                    .font(.system(size: 10, weight: .regular))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, rowTopPadding)
+                    .frame(height: WeekGridMetrics.hourRowHeight, alignment: .top)
+                    .offset(y: hour == 0 ? 0 : -6)
+                    .overlay(alignment: .top) {
+                        if isActiveWeekPage, containsToday, hour == nowHour {
+                            Color.clear
+                                .frame(width: 1, height: 1)
+                                .padding(.top, nowYOffsetWithinHour + rowTopPadding)
+                                .id(anchorID)
+                                .onAppear {
+                                    WeekViewPerformanceTracer.recordScrollAnchorAppear(
+                                        displayedWeekOffset: displayedWeekOffset,
+                                        nowY: nowY,
+                                        anchorOffsetY: nowY,
+                                        anchorID: anchorID,
+                                        anchorParent: "hourRow"
+                                    )
+                                    onAnchorAppear()
+                                }
+                        }
+                    }
+            }
+        }
+    }
+
+    private func hourLabel(for hour: Int) -> String {
+        String(format: "%02d:00", hour)
+    }
+
+    private func nowIndicator(y: CGFloat, gridWidth: CGFloat) -> some View {
+        ZStack(alignment: .leading) {
+            Rectangle()
+                .fill(Color.red)
+                .frame(width: gridWidth, height: 1)
+                .offset(y: y)
+
+            Circle()
+                .fill(Color.red)
+                .frame(width: 7, height: 7)
+                .offset(x: -3, y: y - 3)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func alignToCurrentTime(using proxy: ScrollViewProxy, source: String, animated: Bool) {
+        guard isActiveWeekPage else {
+            WeekViewPerformanceTracer.recordScrollToNowSkipped(
+                source: source,
+                reason: "displayedWeekOffsetMismatch"
+            )
+            return
+        }
+
+        WeekViewPerformanceTracer.recordScrollToNowAttempt(
+            source: source,
+            displayedWeekOffset: displayedWeekOffset,
+            weekOffset: weekOffset,
+            pagerSlot: pagerSlot,
+            isCurrentWeekTimelineReady: isCurrentWeekTimelineReady,
+            isAdjacentWeekPagesReady: isAdjacentWeekPagesReady,
+            containsToday: containsToday,
+            isDisplayingCurrentWeek: isActiveWeekPage && containsToday,
+            nowY: nowY,
+            anchorID: anchorID,
+            animated: animated
+        )
+
+        guard containsToday else {
+            WeekViewPerformanceTracer.recordScrollToNowSkipped(
+                source: source,
+                reason: "weekHasNoToday"
+            )
+            return
+        }
+
+        let applyScroll = {
+            WeekViewPerformanceTracer.recordScrollToNowInvoked(
+                source: source,
+                anchorID: anchorID,
+                anchorOffsetY: nowY,
+                animated: animated
+            )
+            proxy.scrollTo(
+                anchorID,
+                anchor: WeekGridScrollIDs.currentTimeScrollViewportAnchor
+            )
+        }
+
+        if animated {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                applyScroll()
+            }
+        } else {
+            applyScroll()
+        }
+    }
+
+    private func scheduleAlignToCurrentTimeRetry(using proxy: ScrollViewProxy, source: String) {
+        Task { @MainActor in
+            await Task.yield()
+            alignToCurrentTime(using: proxy, source: "\(source).retry1", animated: false)
+            try? await Task.sleep(nanoseconds: 120_000_000)
+            alignToCurrentTime(using: proxy, source: "\(source).retry2", animated: false)
+        }
+    }
+}
+
 
 // MARK: - Grid background
 
@@ -797,6 +920,9 @@ private struct WeekTaskEventCard: View {
 }
 
 private enum WeekGridScrollIDs {
+    /// 当周自动滚动时，「此刻」线在可视区域内的纵向位置（中部偏上）。
+    static let currentTimeScrollViewportAnchor = UnitPoint(x: 0, y: 0.34)
+
     static func timeAnchor(for weekOffset: Int) -> String {
         "week-grid-time-anchor-\(weekOffset)"
     }

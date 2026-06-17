@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 
 /// 日程周视图切换、侧滑换周与首屏渲染性能埋点（前缀 `[WeekViewPerf]`）。
 /// 仅记录日志，不改变业务逻辑。
@@ -14,6 +15,11 @@ enum WeekViewPerformanceTracer {
         var tasksFilterCallCount = 0
         var tasksFilterTotalMs = 0
         var gridCanvasDrawCount = 0
+        var scrollToNowAttemptCount = 0
+        var scrollToNowSkipCount = 0
+        var scrollToNowInvokeCount = 0
+        var scrollAnchorAppearCount = 0
+        var timelinePlaceholderAppearCount = 0
     }
 
     private static var sessionActive = false
@@ -272,6 +278,141 @@ enum WeekViewPerformanceTracer {
         return result
     }
 
+    // MARK: - Scroll to now (diagnostics only)
+
+    static func recordTimelinePlaceholderAppear(
+        displayedWeekOffset: Int,
+        isCenterPage: Bool,
+        isCurrentWeekTimelineReady: Bool
+    ) {
+        guard sessionActive else { return }
+        counters.timelinePlaceholderAppearCount += 1
+        log(
+            phase: "scrollToNow",
+            label: "timeline.placeholder.onAppear",
+            note: [
+                "displayedWeekOffset=\(displayedWeekOffset)",
+                "isCenterPage=\(isCenterPage)",
+                "isCurrentWeekTimelineReady=\(isCurrentWeekTimelineReady)",
+                "cumulative=\(counters.timelinePlaceholderAppearCount)",
+            ].joined(separator: " ")
+        )
+    }
+
+    static func recordScrollAnchorAppear(
+        displayedWeekOffset: Int,
+        nowY: CGFloat?,
+        anchorOffsetY: CGFloat?,
+        anchorID: String,
+        anchorParent: String = "hourRow"
+    ) {
+        guard sessionActive else { return }
+        counters.scrollAnchorAppearCount += 1
+        log(
+            phase: "scrollToNow",
+            label: "scrollAnchor.onAppear",
+            note: [
+                "anchorID=\(anchorID)",
+                "displayedWeekOffset=\(displayedWeekOffset)",
+                "nowY=\(formatCGFloat(nowY))",
+                "anchorOffsetY=\(formatCGFloat(anchorOffsetY))",
+                "anchorParent=\(anchorParent)",
+                "cumulative=\(counters.scrollAnchorAppearCount)",
+            ].joined(separator: " ")
+        )
+    }
+
+    static func recordScrollToNowAttempt(
+        source: String,
+        displayedWeekOffset: Int,
+        weekOffset: Int,
+        pagerSlot: Int,
+        isCurrentWeekTimelineReady: Bool,
+        isAdjacentWeekPagesReady: Bool,
+        containsToday: Bool,
+        isDisplayingCurrentWeek: Bool,
+        nowY: CGFloat?,
+        anchorID: String,
+        animated: Bool
+    ) {
+        guard sessionActive else { return }
+        counters.scrollToNowAttemptCount += 1
+        log(
+            phase: "scrollToNow",
+            label: "scrollToNow.attempt",
+            note: [
+                "source=\(source)",
+                "displayedWeekOffset=\(displayedWeekOffset)",
+                "weekOffset=\(weekOffset)",
+                "offsetMatches=\(displayedWeekOffset == weekOffset)",
+                "pagerSlot=\(pagerSlot)",
+                "isCurrentWeekTimelineReady=\(isCurrentWeekTimelineReady)",
+                "isAdjacentWeekPagesReady=\(isAdjacentWeekPagesReady)",
+                "containsToday=\(containsToday)",
+                "isDisplayingCurrentWeek=\(isDisplayingCurrentWeek)",
+                "nowY=\(nowY.map(formatCGFloat) ?? "nil")",
+                "anchorID=\(anchorID)",
+                "scrollAnchorViewportAnchor=0.34",
+                "animated=\(animated)",
+                "cumulative=\(counters.scrollToNowAttemptCount)",
+            ].joined(separator: " ")
+        )
+    }
+
+    static func recordScrollToNowSkipped(source: String, reason: String) {
+        guard sessionActive else { return }
+        counters.scrollToNowSkipCount += 1
+        log(
+            phase: "scrollToNow",
+            label: "scrollToNow.skipped",
+            note: "source=\(source) reason=\(reason) cumulative=\(counters.scrollToNowSkipCount)"
+        )
+    }
+
+    static func recordScrollToNowInvoked(
+        source: String,
+        anchorID: String,
+        anchorOffsetY: CGFloat?,
+        animated: Bool
+    ) {
+        guard sessionActive else { return }
+        counters.scrollToNowInvokeCount += 1
+        log(
+            phase: "scrollToNow",
+            label: "scrollToNow.invoked",
+            note: [
+                "source=\(source)",
+                "anchorID=\(anchorID)",
+                "anchorOffsetY=\(anchorOffsetY.map(formatCGFloat) ?? "nil")",
+                "scrollAnchorViewportAnchor=0.34",
+                "animated=\(animated)",
+                "cumulative=\(counters.scrollToNowInvokeCount)",
+            ].joined(separator: " ")
+        )
+    }
+
+    static func recordFirstPaintExpandScrollContext(
+        weekOffset: Int,
+        isDisplayingCurrentWeek: Bool,
+        isCurrentWeekTimelineReadyBefore: Bool
+    ) {
+        guard sessionActive else { return }
+        log(
+            phase: "scrollToNow",
+            label: "firstPaint.expand.scrollContext",
+            note: [
+                "weekOffset=\(weekOffset)",
+                "isDisplayingCurrentWeek=\(isDisplayingCurrentWeek)",
+                "isCurrentWeekTimelineReadyBefore=\(isCurrentWeekTimelineReadyBefore)",
+            ].joined(separator: " ")
+        )
+    }
+
+    private static func formatCGFloat(_ value: CGFloat?) -> String {
+        guard let value else { return "nil" }
+        return String(format: "%.1f", value)
+    }
+
     // MARK: - Swipe internals
 
     private static func beginSwipeTrace(from oldOffset: Int, to newOffset: Int, source: String) {
@@ -362,6 +503,11 @@ enum WeekViewPerformanceTracer {
             "tasksFilterCallCount=\(counters.tasksFilterCallCount)",
             "tasksFilterTotalMs=\(counters.tasksFilterTotalMs)",
             "gridCanvasDrawCount=\(counters.gridCanvasDrawCount)",
+            "scrollToNowAttemptCount=\(counters.scrollToNowAttemptCount)",
+            "scrollToNowSkipCount=\(counters.scrollToNowSkipCount)",
+            "scrollToNowInvokeCount=\(counters.scrollToNowInvokeCount)",
+            "scrollAnchorAppearCount=\(counters.scrollAnchorAppearCount)",
+            "timelinePlaceholderAppearCount=\(counters.timelinePlaceholderAppearCount)",
             "weekBodyOffsetSample=\(bodyOffsetSample)",
             "weekHeaderOffsetSample=\(headerOffsetSample)",
         ].joined(separator: " ")
