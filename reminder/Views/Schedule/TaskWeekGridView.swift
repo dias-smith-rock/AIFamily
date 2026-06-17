@@ -597,8 +597,9 @@ struct TaskWeekGridView: View {
                 Text(hourLabel(for: hour))
                     .font(.system(size: 10, weight: .regular))
                     .foregroundStyle(.secondary)
+                    .padding(.top, hour == 0 ? 2 : 0)
                     .frame(height: WeekGridMetrics.hourRowHeight, alignment: .top)
-                    .offset(y: -6)
+                    .offset(y: hour == 0 ? 0 : -6)
             }
         }
     }
