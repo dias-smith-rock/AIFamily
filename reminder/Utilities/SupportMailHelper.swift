@@ -51,4 +51,8 @@ enum SupportLegalLinks {
     /// 固定英文版（避免按系统语言重定向到 `/zh-CN/...`）。
     static let termsOfServiceEnglish = URL(string: "https://www.wefamily.ai/en/terms")
     static let privacyPolicyEnglish = URL(string: "https://www.wefamily.ai/en/privacy")
+
+    static let appStoreWriteReview = URL(
+        string: "https://apps.apple.com/app/id6775353963?action=write-review"
+    )
 }

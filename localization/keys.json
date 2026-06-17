@@ -4121,6 +4121,11 @@
     "orphan": true
   },
   {
+    "new_key": "common_contact_us",
+    "table": "Common",
+    "swift_property": "contactUs"
+  },
+  {
     "legacy_key": "敬请期待",
     "new_key": "common_coming_soon_2",
     "table": "Common",

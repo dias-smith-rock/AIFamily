@@ -84,6 +84,7 @@ extension L10n {
     static let confirmToJoin = Entry(key: "common_confirm_to_join", table: .common)
     static let confirmTransfer = Entry(key: "common_confirm_transfer", table: .common)
     static let contactInformation = Entry(key: "common_contact_information", table: .common)
+    static let contactUs = Entry(key: "common_contact_us", table: .common)
     static let continueButton = Entry(key: "common_continue", table: .common)
     static let continueWithGoogle = Entry(key: "common_continue_with_google", table: .common)
     static let couldNotParseTheDataReturnedByAiPleaseT = Entry(key: "common_could_not_parse_the_data_returned_by_ai_please_t", table: .common)

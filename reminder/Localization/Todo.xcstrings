@@ -2,6 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "todo_overdue_count" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

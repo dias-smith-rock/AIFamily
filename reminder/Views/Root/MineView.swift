@@ -328,11 +328,22 @@ struct MineView: View {
 
             Section {
                 Button {
+                    openAppStoreReview()
+                } label: {
+                    SettingsRowView(
+                        title: L10n.Common.supportUs,
+                        systemImage: "star.fill",
+                        iconTint: .orange
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
                     Task { await viewModel.contactSupport() }
                 } label: {
                     SettingsRowView(
-                        title: L10n.Common.support,
-                        systemImage: "lifepreserver.circle.fill",
+                        title: L10n.Common.contactUs,
+                        systemImage: "envelope.fill",
                         iconTint: .cyan
                     )
                 }
@@ -870,6 +881,13 @@ struct MineView: View {
         }
         familyViewModel.clearRequiresLogin()
         await appRouter.refreshStateFromBackend()
+    }
+
+    private func openAppStoreReview() {
+        guard let url = SupportLegalLinks.appStoreWriteReview else { return }
+        #if canImport(UIKit)
+        UIApplication.shared.open(url)
+        #endif
     }
 }
 
