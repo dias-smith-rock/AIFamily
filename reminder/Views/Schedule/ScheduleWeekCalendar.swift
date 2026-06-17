@@ -2,6 +2,11 @@ import Foundation
 
 /// 自然周计算（与 `TaskModeDayView` 周条逻辑一致，供周视图复用）。
 enum ScheduleWeekCalendar {
+    /// 周视图侧滑分页窗口：上一周 / 当前周 / 下一周。
+    static let pagerSlotCount = 3
+    static let pagerCenterSlot = 1
+
+    /// 日视图周条仍使用的历史页范围（周视图网格已改用三页窗口）。
     static let weekPageRange = -500...500
 
     static func startOfWeek(for date: Date, calendar: Calendar = .current) -> Date {

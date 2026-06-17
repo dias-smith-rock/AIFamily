@@ -187,7 +187,16 @@ struct TaskListView: View {
                     await refreshCurrentMembershipRole()
                 }
             }
-            .onChange(of: currentViewMode) { _, mode in
+            .onChange(of: currentViewMode) { oldMode, mode in
+                if mode == .week {
+                    WeekViewPerformanceTracer.beginTrace(
+                        entryPath: "modeSwitch.\(oldMode.rawValue)->\(mode.rawValue)",
+                        scheduledTaskCount: viewModel.scheduledTasks.count,
+                        totalTaskCount: viewModel.tasks.count
+                    )
+                } else if oldMode == .week {
+                    WeekViewPerformanceTracer.cancelTrace(reason: "leftWeekMode->\(mode.rawValue)")
+                }
                 if mode == .list {
                     viewModel.noteVisibleMonth(containing: Date())
                     listScrollToken += 1
