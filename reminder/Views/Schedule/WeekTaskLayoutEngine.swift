@@ -104,6 +104,18 @@ enum WeekTaskLayoutEngine {
         fractionalHour(for: date, calendar: calendar) * WeekGridMetrics.hourRowHeight
     }
 
+    static func earliestTimedTaskStartY(
+        tasks: [FamilyTask],
+        calendar: Calendar = .current,
+        taskStart: (FamilyTask) -> Date
+    ) -> CGFloat? {
+        let timedTasks = tasks.filter { $0.isAllDay == false }
+        guard let earliest = timedTasks.min(by: { taskStart($0) < taskStart($1) }) else {
+            return nil
+        }
+        return yOffset(for: taskStart(earliest), calendar: calendar)
+    }
+
     static func fractionalHour(for date: Date, calendar: Calendar = .current) -> CGFloat {
         let components = calendar.dateComponents([.hour, .minute, .second], from: date)
         let hour = CGFloat(components.hour ?? 0)

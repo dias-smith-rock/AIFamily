@@ -333,29 +333,33 @@ enum WeekViewPerformanceTracer {
         isDisplayingCurrentWeek: Bool,
         nowY: CGFloat?,
         anchorID: String,
-        animated: Bool
+        animated: Bool,
+        scrollMode: String? = nil
     ) {
         guard sessionActive else { return }
         counters.scrollToNowAttemptCount += 1
+        var notes = [
+            "source=\(source)",
+            "displayedWeekOffset=\(displayedWeekOffset)",
+            "weekOffset=\(weekOffset)",
+            "offsetMatches=\(displayedWeekOffset == weekOffset)",
+            "pagerSlot=\(pagerSlot)",
+            "isCurrentWeekTimelineReady=\(isCurrentWeekTimelineReady)",
+            "isAdjacentWeekPagesReady=\(isAdjacentWeekPagesReady)",
+            "containsToday=\(containsToday)",
+            "isDisplayingCurrentWeek=\(isDisplayingCurrentWeek)",
+            "anchorOffsetY=\(nowY.map(formatCGFloat) ?? "nil")",
+            "anchorID=\(anchorID)",
+            "animated=\(animated)",
+            "cumulative=\(counters.scrollToNowAttemptCount)",
+        ]
+        if let scrollMode {
+            notes.append("scrollMode=\(scrollMode)")
+        }
         log(
             phase: "scrollToNow",
             label: "scrollToNow.attempt",
-            note: [
-                "source=\(source)",
-                "displayedWeekOffset=\(displayedWeekOffset)",
-                "weekOffset=\(weekOffset)",
-                "offsetMatches=\(displayedWeekOffset == weekOffset)",
-                "pagerSlot=\(pagerSlot)",
-                "isCurrentWeekTimelineReady=\(isCurrentWeekTimelineReady)",
-                "isAdjacentWeekPagesReady=\(isAdjacentWeekPagesReady)",
-                "containsToday=\(containsToday)",
-                "isDisplayingCurrentWeek=\(isDisplayingCurrentWeek)",
-                "nowY=\(nowY.map(formatCGFloat) ?? "nil")",
-                "anchorID=\(anchorID)",
-                "scrollAnchorViewportAnchor=0.34",
-                "animated=\(animated)",
-                "cumulative=\(counters.scrollToNowAttemptCount)",
-            ].joined(separator: " ")
+            note: notes.joined(separator: " ")
         )
     }
 
@@ -373,21 +377,25 @@ enum WeekViewPerformanceTracer {
         source: String,
         anchorID: String,
         anchorOffsetY: CGFloat?,
-        animated: Bool
+        animated: Bool,
+        scrollMode: String? = nil
     ) {
         guard sessionActive else { return }
         counters.scrollToNowInvokeCount += 1
+        var notes = [
+            "source=\(source)",
+            "anchorID=\(anchorID)",
+            "anchorOffsetY=\(anchorOffsetY.map(formatCGFloat) ?? "nil")",
+            "animated=\(animated)",
+            "cumulative=\(counters.scrollToNowInvokeCount)",
+        ]
+        if let scrollMode {
+            notes.append("scrollMode=\(scrollMode)")
+        }
         log(
             phase: "scrollToNow",
             label: "scrollToNow.invoked",
-            note: [
-                "source=\(source)",
-                "anchorID=\(anchorID)",
-                "anchorOffsetY=\(anchorOffsetY.map(formatCGFloat) ?? "nil")",
-                "scrollAnchorViewportAnchor=0.34",
-                "animated=\(animated)",
-                "cumulative=\(counters.scrollToNowInvokeCount)",
-            ].joined(separator: " ")
+            note: notes.joined(separator: " ")
         )
     }
 

@@ -26,6 +26,7 @@ struct TaskWeekGridView: View {
     /// C：首帧后再挂载上一周 / 下一周页（含任务过滤与网格）。
     @State private var isAdjacentWeekPagesReady = false
     @State private var firstPaintExpansionTask: Task<Void, Never>?
+    @State private var pendingTimelineScrollMode: WeekTimelineScrollMode?
 
     private let horizontalPadding: CGFloat = 16
 
@@ -223,6 +224,7 @@ struct TaskWeekGridView: View {
                             pagerSlot: pagerSlot,
                             isCurrentWeekTimelineReady: isCurrentWeekTimelineReady,
                             isAdjacentWeekPagesReady: isAdjacentWeekPagesReady,
+                            pendingTimelineScrollMode: $pendingTimelineScrollMode,
                             gridColumnWidth: $gridColumnWidth,
                             horizontalPadding: horizontalPadding,
                             viewModel: viewModel,
@@ -329,10 +331,12 @@ struct TaskWeekGridView: View {
         switch newSlot {
         case 0:
             WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "tabViewSwipe")
+            pendingTimelineScrollMode = .earliestTask
             shiftDisplayedWeek(by: -1)
             recenterPagerSlot()
         case 2:
             WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "tabViewSwipe")
+            pendingTimelineScrollMode = .earliestTask
             shiftDisplayedWeek(by: 1)
             recenterPagerSlot()
         default:
@@ -351,6 +355,9 @@ struct TaskWeekGridView: View {
 
     private func applyWeekOffset(_ target: Int, animated: Bool) {
         ensureFirstPaintExpanded()
+        if target != weekOffset {
+            pendingTimelineScrollMode = .earliestTask
+        }
         let updates = {
             weekOffset = target
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
@@ -537,6 +544,7 @@ struct TaskWeekGridView: View {
         let today = Calendar.current.startOfDay(for: Date())
         let targetOffset = ScheduleWeekCalendar.weekOffset(for: today, epochStart: weekEpochStart)
         WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "jumpToCurrentWeek")
+        pendingTimelineScrollMode = .currentTime
         withAnimation(.easeInOut(duration: 0.25)) {
             weekOffset = targetOffset
             selectedDate = today
@@ -584,6 +592,15 @@ struct TaskWeekGridView: View {
     }
 }
 
+private enum WeekTimelineScrollMode {
+    /// 首帧进入：含今天则滚到此刻，否则滚到最早任务。
+    case currentTimeIfToday
+    /// 强制滚到此刻（如「回到本周」）。
+    case currentTime
+    /// 滚到当周最早定时任务顶部（侧滑换周后）。
+    case earliestTask
+}
+
 // MARK: - Timeline scroll area
 
 private struct WeekTimelineScrollArea: View {
@@ -594,12 +611,15 @@ private struct WeekTimelineScrollArea: View {
     let pagerSlot: Int
     let isCurrentWeekTimelineReady: Bool
     let isAdjacentWeekPagesReady: Bool
+    @Binding var pendingTimelineScrollMode: WeekTimelineScrollMode?
     @Binding var gridColumnWidth: CGFloat
     let horizontalPadding: CGFloat
     @ObservedObject var viewModel: ScheduleViewModel
     let onTaskSelect: (FamilyTask) -> Void
     let onRefresh: () async -> Void
     let taskDisplayDate: (FamilyTask) -> Date
+
+    @State private var activeScrollMode: WeekTimelineScrollMode = .currentTimeIfToday
 
     private var isActiveWeekPage: Bool { displayedWeekOffset == weekOffset }
     private var containsToday: Bool {
@@ -611,8 +631,15 @@ private struct WeekTimelineScrollArea: View {
         return WeekTaskLayoutEngine.yOffset(for: Date())
     }
 
-    private var anchorID: String {
-        WeekGridScrollIDs.timeAnchor(for: displayedWeekOffset)
+    private var earliestTaskStartY: CGFloat? {
+        WeekTaskLayoutEngine.earliestTimedTaskStartY(
+            tasks: weekTasks,
+            taskStart: taskDisplayDate
+        )
+    }
+
+    private var scrollAnchorID: String {
+        WeekGridScrollIDs.scrollAnchor(for: displayedWeekOffset)
     }
 
     private var fractionalHourNow: CGFloat {
@@ -632,8 +659,9 @@ private struct WeekTimelineScrollArea: View {
             ScrollView(.vertical, showsIndicators: true) {
                 HStack(alignment: .top, spacing: 0) {
                     timeLabelsColumn {
-                        alignToCurrentTime(
+                        alignTimeline(
                             using: proxy,
+                            mode: activeScrollMode,
                             source: "scrollAnchor.onAppear",
                             animated: false
                         )
@@ -715,15 +743,29 @@ private struct WeekTimelineScrollArea: View {
                 weekOffset: displayedWeekOffset,
                 weekTaskCount: weekTasks.count
             )
-            scheduleAlignToCurrentTimeRetry(using: proxy, source: "timelineScrollArea.onAppear")
+            scheduleTimelineAlignRetry(
+                using: proxy,
+                mode: .currentTimeIfToday,
+                source: "timelineScrollArea.onAppear"
+            )
         }
         .onChange(of: weekOffset) { _, newOffset in
             guard displayedWeekOffset == newOffset else { return }
-            alignToCurrentTime(using: proxy, source: "timelineScrollArea.weekOffsetChanged", animated: true)
+            let mode = pendingTimelineScrollMode ?? .earliestTask
+            pendingTimelineScrollMode = nil
+            scheduleTimelineAlignRetry(
+                using: proxy,
+                mode: mode,
+                source: "timelineScrollArea.weekOffsetChanged"
+            )
         }
         .onChange(of: isCurrentWeekTimelineReady) { _, isReady in
             guard isReady else { return }
-            scheduleAlignToCurrentTimeRetry(using: proxy, source: "isCurrentWeekTimelineReady")
+            scheduleTimelineAlignRetry(
+                using: proxy,
+                mode: .currentTimeIfToday,
+                source: "isCurrentWeekTimelineReady"
+            )
         }
         }
     }
@@ -739,17 +781,19 @@ private struct WeekTimelineScrollArea: View {
                     .frame(height: WeekGridMetrics.hourRowHeight, alignment: .top)
                     .offset(y: hour == 0 ? 0 : -6)
                     .overlay(alignment: .top) {
-                        if isActiveWeekPage, containsToday, hour == nowHour {
+                        if isActiveWeekPage,
+                           let placement = scrollAnchorPlacement(for: activeScrollMode),
+                           hour == placement.hour {
                             Color.clear
                                 .frame(width: 1, height: 1)
-                                .padding(.top, nowYOffsetWithinHour + rowTopPadding)
-                                .id(anchorID)
+                                .padding(.top, placement.offsetInHour + placement.rowTopPadding)
+                                .id(scrollAnchorID)
                                 .onAppear {
                                     WeekViewPerformanceTracer.recordScrollAnchorAppear(
                                         displayedWeekOffset: displayedWeekOffset,
-                                        nowY: nowY,
-                                        anchorOffsetY: nowY,
-                                        anchorID: anchorID,
+                                        nowY: placement.offsetY,
+                                        anchorOffsetY: placement.offsetY,
+                                        anchorID: scrollAnchorID,
                                         anchorParent: "hourRow"
                                     )
                                     onAnchorAppear()
@@ -779,7 +823,63 @@ private struct WeekTimelineScrollArea: View {
         .allowsHitTesting(false)
     }
 
-    private func alignToCurrentTime(using proxy: ScrollViewProxy, source: String, animated: Bool) {
+    private struct ScrollAnchorPlacement {
+        let hour: Int
+        let offsetInHour: CGFloat
+        let rowTopPadding: CGFloat
+        let offsetY: CGFloat
+    }
+
+    private func scrollAnchorPlacement(for mode: WeekTimelineScrollMode) -> ScrollAnchorPlacement? {
+        switch mode {
+        case .currentTime:
+            guard containsToday else { return scrollAnchorPlacement(for: .earliestTask) }
+            return placement(forYOffset: nowY ?? 0, hour: nowHour, offsetInHour: nowYOffsetWithinHour)
+        case .currentTimeIfToday:
+            if containsToday {
+                return placement(forYOffset: nowY ?? 0, hour: nowHour, offsetInHour: nowYOffsetWithinHour)
+            }
+            return scrollAnchorPlacement(for: .earliestTask)
+        case .earliestTask:
+            if let earliestTaskStartY {
+                return placement(forYOffset: earliestTaskStartY)
+            }
+            return placement(forYOffset: 0, hour: 0, offsetInHour: 0)
+        }
+    }
+
+    private func placement(
+        forYOffset yOffset: CGFloat,
+        hour: Int? = nil,
+        offsetInHour: CGFloat? = nil
+    ) -> ScrollAnchorPlacement {
+        let resolvedHour = hour ?? min(23, max(0, Int(yOffset / WeekGridMetrics.hourRowHeight)))
+        let resolvedOffsetInHour = offsetInHour
+            ?? (yOffset - CGFloat(resolvedHour) * WeekGridMetrics.hourRowHeight)
+        let rowTopPadding: CGFloat = resolvedHour == 0 ? 2 : 0
+        return ScrollAnchorPlacement(
+            hour: resolvedHour,
+            offsetInHour: resolvedOffsetInHour,
+            rowTopPadding: rowTopPadding,
+            offsetY: yOffset
+        )
+    }
+
+    private func viewportAnchor(for mode: WeekTimelineScrollMode) -> UnitPoint {
+        switch mode {
+        case .currentTime, .currentTimeIfToday where containsToday:
+            return WeekGridScrollIDs.currentTimeScrollViewportAnchor
+        default:
+            return WeekGridScrollIDs.earliestTaskScrollViewportAnchor
+        }
+    }
+
+    private func alignTimeline(
+        using proxy: ScrollViewProxy,
+        mode: WeekTimelineScrollMode,
+        source: String,
+        animated: Bool
+    ) {
         guard isActiveWeekPage else {
             WeekViewPerformanceTracer.recordScrollToNowSkipped(
                 source: source,
@@ -787,6 +887,18 @@ private struct WeekTimelineScrollArea: View {
             )
             return
         }
+
+        activeScrollMode = mode
+
+        guard scrollAnchorPlacement(for: mode) != nil else {
+            WeekViewPerformanceTracer.recordScrollToNowSkipped(
+                source: source,
+                reason: "noScrollAnchor"
+            )
+            return
+        }
+
+        let resolvedAnchorY = scrollAnchorPlacement(for: mode)?.offsetY
 
         WeekViewPerformanceTracer.recordScrollToNowAttempt(
             source: source,
@@ -797,29 +909,23 @@ private struct WeekTimelineScrollArea: View {
             isAdjacentWeekPagesReady: isAdjacentWeekPagesReady,
             containsToday: containsToday,
             isDisplayingCurrentWeek: isActiveWeekPage && containsToday,
-            nowY: nowY,
-            anchorID: anchorID,
-            animated: animated
+            nowY: resolvedAnchorY,
+            anchorID: scrollAnchorID,
+            animated: animated,
+            scrollMode: String(describing: mode)
         )
-
-        guard containsToday else {
-            WeekViewPerformanceTracer.recordScrollToNowSkipped(
-                source: source,
-                reason: "weekHasNoToday"
-            )
-            return
-        }
 
         let applyScroll = {
             WeekViewPerformanceTracer.recordScrollToNowInvoked(
                 source: source,
-                anchorID: anchorID,
-                anchorOffsetY: nowY,
-                animated: animated
+                anchorID: scrollAnchorID,
+                anchorOffsetY: resolvedAnchorY,
+                animated: animated,
+                scrollMode: String(describing: mode)
             )
             proxy.scrollTo(
-                anchorID,
-                anchor: WeekGridScrollIDs.currentTimeScrollViewportAnchor
+                scrollAnchorID,
+                anchor: viewportAnchor(for: mode)
             )
         }
 
@@ -832,12 +938,16 @@ private struct WeekTimelineScrollArea: View {
         }
     }
 
-    private func scheduleAlignToCurrentTimeRetry(using proxy: ScrollViewProxy, source: String) {
+    private func scheduleTimelineAlignRetry(
+        using proxy: ScrollViewProxy,
+        mode: WeekTimelineScrollMode,
+        source: String
+    ) {
         Task { @MainActor in
             await Task.yield()
-            alignToCurrentTime(using: proxy, source: "\(source).retry1", animated: false)
+            alignTimeline(using: proxy, mode: mode, source: "\(source).retry1", animated: false)
             try? await Task.sleep(nanoseconds: 120_000_000)
-            alignToCurrentTime(using: proxy, source: "\(source).retry2", animated: false)
+            alignTimeline(using: proxy, mode: mode, source: "\(source).retry2", animated: true)
         }
     }
 }
@@ -922,9 +1032,11 @@ private struct WeekTaskEventCard: View {
 private enum WeekGridScrollIDs {
     /// 当周自动滚动时，「此刻」线在可视区域内的纵向位置（中部偏上）。
     static let currentTimeScrollViewportAnchor = UnitPoint(x: 0, y: 0.34)
+    /// 最早任务顶部对齐视口顶部。
+    static let earliestTaskScrollViewportAnchor = UnitPoint.top
 
-    static func timeAnchor(for weekOffset: Int) -> String {
-        "week-grid-time-anchor-\(weekOffset)"
+    static func scrollAnchor(for weekOffset: Int) -> String {
+        "week-grid-scroll-anchor-\(weekOffset)"
     }
 }
 
