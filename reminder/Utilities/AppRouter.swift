@@ -54,6 +54,9 @@ final class AppRouter: ObservableObject {
     /// OAuth `settleAfterOAuth` 已 refresh 时，跳过 `ContentView` 登录后重复 refresh。
     private var skipNextLoginBootstrapRefresh = false
 
+    private var personalSubscriptionRefreshInFlight: Task<Void, Never>?
+    private var lastPersonalSubscriptionRefreshAt: Date?
+
     #if DEBUG
     var guestDiagnosticsWillSkipNextLoginBootstrapRefresh: Bool {
         skipNextLoginBootstrapRefresh
@@ -772,7 +775,36 @@ final class AppRouter: ObservableObject {
     }
 
     /// VIP 页 / 设置入口：拉取云端 `user_entitlements` 并对齐 RevenueCat 本机状态。
-    func refreshPersonalSubscriptionState() async {
+    /// - Parameters:
+    ///   - force: 为 `true` 时忽略时间窗并再跑一轮（如下拉刷新）。
+    ///   - minimumInterval: 非强制刷新时，距上次成功刷新短于此间隔则跳过。
+    func refreshPersonalSubscriptionState(
+        force: Bool = false,
+        minimumInterval: TimeInterval = 30
+    ) async {
+        if force == false,
+           let last = lastPersonalSubscriptionRefreshAt,
+           Date().timeIntervalSince(last) < minimumInterval {
+            return
+        }
+
+        if let inFlight = personalSubscriptionRefreshInFlight {
+            await inFlight.value
+            if force == false {
+                return
+            }
+        }
+
+        let task = Task { @MainActor in
+            defer { personalSubscriptionRefreshInFlight = nil }
+            await performPersonalSubscriptionRefresh()
+            lastPersonalSubscriptionRefreshAt = Date()
+        }
+        personalSubscriptionRefreshInFlight = task
+        await task.value
+    }
+
+    private func performPersonalSubscriptionRefresh() async {
         #if canImport(Supabase)
         guard let userId = await resolveAuthUserId() else { return }
         await loadUserEntitlement(userId: userId)

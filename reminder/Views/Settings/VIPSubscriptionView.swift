@@ -11,10 +11,16 @@ struct VIPSubscriptionView: View {
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
     @State private var showPurchaseSuccessAlert = false
-    @State private var isResolvingVIPStatus = true
+    @State private var isResolvingVIPStatus = false
 
     private var showsPersonalVIP: Bool {
         appRouter.showsPersonalVIP
+    }
+
+    private var hasVIPDisplayCache: Bool {
+        appRouter.userEntitlement != nil
+            || revenueCat.hasActiveProEntitlement
+            || revenueCat.hasLoadedProducts
     }
 
     var body: some View {
@@ -61,7 +67,7 @@ struct VIPSubscriptionView: View {
             await refreshVIPPageData()
         }
         .refreshable {
-            await refreshVIPPageData()
+            await refreshVIPPageData(force: true)
         }
         .alert(L10n.VIP.subscriptionSuccessful, isPresented: $showPurchaseSuccessAlert) {
             Button(L10n.Common.ok, role: .cancel) {
@@ -340,17 +346,40 @@ struct VIPSubscriptionView: View {
     }
 
     @MainActor
-    private func refreshVIPPageData() async {
-        isResolvingVIPStatus = true
-        defer { isResolvingVIPStatus = false }
-
+    private func refreshVIPPageData(force: Bool = false) async {
         isAnonymousSupabaseUser = await SupabaseAuthManager.isAnonymousUser()
         AnalyticsManager.log(event: .vipPageViewed)
 
-        await appRouter.refreshPersonalSubscriptionState()
-        await viewModel.loadProducts()
-        await revenueCat.syncEntitlementToCloudIfNeeded(appRouter: appRouter)
-        await appRouter.refreshPersonalSubscriptionState()
+        if showsPersonalVIP, force == false {
+            Task {
+                await appRouter.refreshPersonalSubscriptionState(force: false)
+            }
+            return
+        }
+
+        let shouldBlockUI = force == false && hasVIPDisplayCache == false
+        if shouldBlockUI {
+            isResolvingVIPStatus = true
+        }
+        defer {
+            if shouldBlockUI {
+                isResolvingVIPStatus = false
+            }
+        }
+
+        await appRouter.refreshPersonalSubscriptionState(force: force)
+
+        guard showsPersonalVIP == false else { return }
+
+        if revenueCat.hasLoadedProducts {
+            return
+        }
+
+        if force || shouldBlockUI {
+            await viewModel.loadProducts()
+        } else {
+            Task { await viewModel.loadProducts() }
+        }
     }
 
     private func planPriceText(for plan: VIPBillingPlan) -> String {
