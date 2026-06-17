@@ -11,6 +11,7 @@ struct VIPSubscriptionView: View {
     @State private var showPrivacySheet = false
     @State private var showTermsSheet = false
     @State private var showPurchaseSuccessAlert = false
+    @State private var isResolvingVIPStatus = true
 
     private var showsPersonalVIP: Bool {
         appRouter.showsPersonalVIP
@@ -43,18 +44,24 @@ struct VIPSubscriptionView: View {
         .navigationTitle(showsPersonalVIP ? L10n.VIP.proMembership.localized : L10n.VIP.upgradeToVip.localized)
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if showsPersonalVIP {
-                activeProStatusBar
-            } else {
-                subscribeButtonBar
+            if isResolvingVIPStatus == false {
+                if showsPersonalVIP {
+                    activeProStatusBar
+                } else {
+                    subscribeButtonBar
+                }
+            }
+        }
+        .overlay {
+            if isResolvingVIPStatus {
+                vipPageLoadingOverlay
             }
         }
         .task {
-            isAnonymousSupabaseUser = await SupabaseAuthManager.isAnonymousUser()
-            AnalyticsManager.log(event: .vipPageViewed)
-            await viewModel.loadProducts()
-            await revenueCat.refreshCustomerInfo()
-            await revenueCat.syncEntitlementToCloudIfNeeded(appRouter: appRouter)
+            await refreshVIPPageData()
+        }
+        .refreshable {
+            await refreshVIPPageData()
         }
         .alert(L10n.VIP.subscriptionSuccessful, isPresented: $showPurchaseSuccessAlert) {
             Button(L10n.Common.ok, role: .cancel) {
@@ -170,7 +177,7 @@ struct VIPSubscriptionView: View {
                 ForEach(VIPBillingPlan.allCases) { plan in
                     VIPPlanOptionCard(
                         plan: plan,
-                        priceText: revenueCat.displayPrice(for: plan) ?? plan.fallbackPriceText,
+                        priceText: planPriceText(for: plan),
                         isSelected: viewModel.selectedPlan == plan
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -313,48 +320,126 @@ struct VIPSubscriptionView: View {
         }
     }
 
+    private var vipPageLoadingOverlay: some View {
+        ZStack {
+            Color(.systemGroupedBackground)
+                .opacity(0.94)
+                .ignoresSafeArea()
+            VStack(spacing: 12) {
+                ProgressView()
+                    .scaleEffect(1.25)
+                Text(L10n.Common.loading.localized)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 20)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .transition(.opacity)
+    }
+
+    @MainActor
+    private func refreshVIPPageData() async {
+        isResolvingVIPStatus = true
+        defer { isResolvingVIPStatus = false }
+
+        isAnonymousSupabaseUser = await SupabaseAuthManager.isAnonymousUser()
+        AnalyticsManager.log(event: .vipPageViewed)
+
+        await appRouter.refreshPersonalSubscriptionState()
+        await viewModel.loadProducts()
+        await revenueCat.syncEntitlementToCloudIfNeeded(appRouter: appRouter)
+        await appRouter.refreshPersonalSubscriptionState()
+    }
+
+    private func planPriceText(for plan: VIPBillingPlan) -> String {
+        if revenueCat.isLoadingProducts {
+            return AppLocalized.string(L10n.Common.loading, locale: locale)
+        }
+        if let price = revenueCat.displayPrice(for: plan) {
+            return price
+        }
+        return "—"
+    }
+
     private var subscribeButtonBar: some View {
         VStack(spacing: 10) {
             Divider()
 
-            Button {
-                Task {
-                    let success = await viewModel.purchaseSubscription(appRouter: appRouter)
-                    if success {
-                        showPurchaseSuccessAlert = true
-                    }
-                }
-            } label: {
+            if revenueCat.isLoadingProducts || viewModel.isPurchasing {
                 Group {
-                    if viewModel.isPurchasing {
-                        ProgressView()
-                            .tint(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                    } else {
-                        VStack(spacing: 4) {
-                            Text(L10n.VIP.subscribeToPro.localized)
-                                .font(.headline.weight(.bold))
-                            Text(subscribePriceCaption)
-                                .font(.subheadline.weight(.medium))
-                                .opacity(0.92)
-                        }
-                        .foregroundStyle(.white)
+                    ProgressView()
+                        .tint(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                    }
+                        .padding(.vertical, 16)
                 }
                 .background(
                     LinearGradient(
-                        colors: [.orange, .yellow.opacity(0.92)],
+                        colors: [.orange.opacity(0.45), .yellow.opacity(0.4)],
                         startPoint: .leading,
                         endPoint: .trailing
                     ),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous)
                 )
+            } else if revenueCat.hasLoadedProducts == false {
+                VStack(spacing: 8) {
+                    Button {
+                        Task { await viewModel.loadProducts() }
+                    } label: {
+                        Text(L10n.VIP.retryLoadProducts.localized)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(
+                                LinearGradient(
+                                    colors: [.orange, .yellow.opacity(0.92)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
+
+                    if let error = revenueCat.lastProductLoadError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                }
+            } else {
+                Button {
+                    Task {
+                        let success = await viewModel.purchaseSubscription(appRouter: appRouter)
+                        if success {
+                            showPurchaseSuccessAlert = true
+                        }
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Text(L10n.VIP.subscribeToPro.localized)
+                            .font(.headline.weight(.bold))
+                        Text(subscribePriceCaption)
+                            .font(.subheadline.weight(.medium))
+                            .opacity(0.92)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [.orange, .yellow.opacity(0.92)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .disabled(viewModel.isPurchasing || viewModel.isLoadingProducts || viewModel.canPurchaseSelectedPlan == false)
 
             Button {
                 Task {
@@ -369,7 +454,7 @@ struct VIPSubscriptionView: View {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isPurchasing)
+            .disabled(viewModel.isPurchasing || revenueCat.isLoadingProducts)
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
@@ -380,6 +465,7 @@ struct VIPSubscriptionView: View {
     private var subscribePriceCaption: String {
         let plan = viewModel.selectedPlan
         let price = viewModel.displayPrice(for: plan)
+        guard price.isEmpty == false else { return "" }
         switch plan {
         case .monthly:
             return String(

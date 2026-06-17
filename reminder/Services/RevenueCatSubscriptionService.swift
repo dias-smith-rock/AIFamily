@@ -39,6 +39,8 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
     @Published private(set) var packagesByPlan: [VIPBillingPlan: Package] = [:]
     @Published private(set) var storeProductsByPlan: [VIPBillingPlan: StoreProduct] = [:]
     @Published private(set) var isLoadingProducts = false
+    @Published private(set) var hasLoadedProducts = false
+    @Published private(set) var lastProductLoadError: String?
     @Published private(set) var hasActiveProEntitlement = false
     @Published private(set) var proExpiresAt: Date?
     @Published private(set) var isConfigured = false
@@ -132,26 +134,32 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
     }
 
     func loadOfferings() async {
-        guard isConfigured else { return }
+        guard isConfigured else {
+            hasLoadedProducts = false
+            lastProductLoadError = AppLocalized.localizedSync(L10n.VIP.failedToLoadSubscriptionProductsPleaseTry)
+            print("[RevenueCat] loadOfferings skipped: not configured")
+            return
+        }
         isLoadingProducts = true
         defer { isLoadingProducts = false }
 
         var packageMap: [VIPBillingPlan: Package] = [:]
+        var offeringsError: String?
         do {
             let offerings = try await Purchases.shared.offerings()
             let packages = collectPackages(from: offerings)
             packageMap = mapPackages(packages)
 
-            #if DEBUG
             if packageMap.isEmpty {
                 let productIds = packages.map(\.storeProduct.productIdentifier)
-                print("[RevenueCat] offerings loaded but no plan match. current=\(offerings.current?.identifier ?? "nil") productIds=\(productIds)")
+                print(
+                    "[RevenueCat] offerings loaded but no plan match. " +
+                    "current=\(offerings.current?.identifier ?? "nil") productIds=\(productIds)"
+                )
             }
-            #endif
         } catch {
-            #if DEBUG
+            offeringsError = error.localizedDescription
             print("[RevenueCat] loadOfferings error: \(error.localizedDescription)")
-            #endif
         }
 
         packagesByPlan = packageMap
@@ -159,6 +167,7 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
         var productMap = packageMap.reduce(into: [VIPBillingPlan: StoreProduct]()) { partial, entry in
             partial[entry.key] = entry.value.storeProduct
         }
+        var productsFallbackError: String?
         let missingPlans = VIPBillingPlan.allCases.filter { productMap[$0] == nil }
         if missingPlans.isEmpty == false {
             do {
@@ -169,19 +178,35 @@ final class RevenueCatSubscriptionService: NSObject, ObservableObject {
                         productMap[plan] = product
                     }
                 }
-                #if DEBUG
                 if missingPlans.contains(where: { productMap[$0] == nil }) {
                     let found = products.map(\.productIdentifier)
-                    print("[RevenueCat] StoreKit products fallback incomplete. requested=\(productIds) found=\(found)")
+                    print(
+                        "[RevenueCat] StoreKit products fallback incomplete. " +
+                        "requested=\(productIds) found=\(found)"
+                    )
                 }
-                #endif
             } catch {
-                #if DEBUG
+                productsFallbackError = error.localizedDescription
                 print("[RevenueCat] products fallback error: \(error.localizedDescription)")
-                #endif
             }
         }
         storeProductsByPlan = productMap
+
+        let loadedPlans = VIPBillingPlan.allCases.filter { canPurchase(plan: $0) }
+        hasLoadedProducts = loadedPlans.isEmpty == false
+        if hasLoadedProducts {
+            lastProductLoadError = nil
+            print("[RevenueCat] products ready plans=\(loadedPlans.map(\.rawValue).joined(separator: ","))")
+        } else {
+            lastProductLoadError = offeringsError
+                ?? productsFallbackError
+                ?? AppLocalized.localizedSync(L10n.VIP.failedToLoadSubscriptionProductsPleaseTry)
+            print(
+                "[RevenueCat] products unavailable configured=\(isConfigured) " +
+                "offeringsError=\(offeringsError ?? "nil") fallbackError=\(productsFallbackError ?? "nil")"
+            )
+        }
+
         await refreshCustomerInfo()
     }
 

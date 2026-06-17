@@ -68,7 +68,7 @@ final class VIPSubscriptionViewModel: ObservableObject {
     }
 
     func displayPrice(for plan: VIPBillingPlan) -> String {
-        revenueCat.displayPrice(for: plan) ?? plan.fallbackPriceText
+        revenueCat.displayPrice(for: plan) ?? ""
     }
 
     func purchaseSubscription(appRouter: AppRouter) async -> Bool {

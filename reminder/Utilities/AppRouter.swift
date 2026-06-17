@@ -427,6 +427,8 @@ final class AppRouter: ObservableObject {
             guestRefreshOptionsCount = options.count
             #endif
             authUserId = userId
+            await loadUserEntitlement(userId: userId)
+            LoginFlowPerformanceTracing.mark("refreshState.loadUserEntitlement.done", appRouter: self)
             scheduleDeferredRevenueCatBootstrap(userId: userId)
             recentHouseholds = sortHouseholdsByRecentUsage(options, userId: userId)
 
@@ -769,6 +771,23 @@ final class AppRouter: ObservableObject {
         #endif
     }
 
+    /// VIP 页 / 设置入口：拉取云端 `user_entitlements` 并对齐 RevenueCat 本机状态。
+    func refreshPersonalSubscriptionState() async {
+        #if canImport(Supabase)
+        guard let userId = await resolveAuthUserId() else { return }
+        await loadUserEntitlement(userId: userId)
+        let revenueCat = RevenueCatSubscriptionService.shared
+        await revenueCat.alignLoggedInRevenueCatUser(supabaseUserId: userId)
+        await revenueCat.refreshCustomerInfo()
+        let cloudActive = userEntitlement?.isActive == true
+        let localActive = revenueCat.hasActiveProEntitlement
+        if cloudActive == false, localActive {
+            await revenueCat.syncEntitlementToCloudIfNeeded(appRouter: self)
+        }
+        logVIPAccessState(trigger: "refreshPersonalSubscriptionState")
+        #endif
+    }
+
     private func resetAuthenticatedPremiumState() {
         authUserId = nil
         isAnonymousUser = false
@@ -1075,8 +1094,6 @@ final class AppRouter: ObservableObject {
             let deferredStart = CFAbsoluteTimeGetCurrent()
             await RevenueCatSubscriptionService.shared.logIn(userId: userId)
             LoginFlowPerformanceTracing.mark("refreshState.revenueCat.logIn.done", appRouter: self)
-            await loadUserEntitlement(userId: userId)
-            LoginFlowPerformanceTracing.mark("refreshState.loadUserEntitlement.done", appRouter: self)
             await RevenueCatSubscriptionService.shared.refreshCustomerInfo()
             LoginFlowPerformanceTracing.mark("refreshState.revenueCat.refreshCustomerInfo.done", appRouter: self)
             LoginFlowPerformanceTracing.logAlways(

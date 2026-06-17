@@ -752,7 +752,7 @@ struct MineView: View {
         }
         .contentShape(Rectangle())
         .task {
-            await revenueCat.refreshCustomerInfo()
+            await appRouter.refreshPersonalSubscriptionState()
         }
     }
 

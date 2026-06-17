@@ -237,6 +237,20 @@
         }
       }
     },
+    "vip_retry_load_products": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Retry loading products" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "重试加载商品" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "重試載入商品" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Retry loading products" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Retry loading products" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Retry loading products" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Retry loading products" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Retry loading products" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Retry loading products" } }
+      }
+    },
     "vip_claim_1_year_pro_for_free": {
       "extractionState": "stale",
       "localizations": {

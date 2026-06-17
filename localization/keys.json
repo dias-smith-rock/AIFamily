@@ -5974,5 +5974,12 @@
     "table": "Auth",
     "swift_property": "clearGuestDataConfirmMessage",
     "orphan": true
+  },
+  {
+    "legacy_key": "Retry loading products",
+    "new_key": "vip_retry_load_products",
+    "table": "VIP",
+    "swift_property": "retryLoadProducts",
+    "orphan": true
   }
 ]
