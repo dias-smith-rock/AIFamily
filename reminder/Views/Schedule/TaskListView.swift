@@ -15,6 +15,8 @@ struct TaskListView: View {
 
     @State private var currentViewMode: CalendarViewMode = .day
     @State private var selectedDate: Date = Date()
+    /// 从年视图钻取时恢复到的微观视图（日 / 周）。
+    @State private var yearDrillDownViewMode: CalendarViewMode = .day
 
     @State private var isShowingCalendarSheet = false
     @State private var isShowingCreateTaskSheet = false
@@ -201,6 +203,13 @@ struct TaskListView: View {
                     viewModel.noteVisibleMonth(containing: Date())
                     listScrollToken += 1
                 }
+                if mode == .year {
+                    let year = Calendar.current.component(.year, from: selectedDate)
+                    viewModel.setYearViewYear(year, locale: locale)
+                }
+                if mode != .year, mode != .list {
+                    yearDrillDownViewMode = mode
+                }
             }
             .onChange(of: selectedDate) { _, newValue in
                 let normalized = dayID(for: newValue)
@@ -263,7 +272,18 @@ struct TaskListView: View {
                         onTaskSelect: { taskForDetailSheet = $0 },
                         onRefresh: refreshTasks
                     )
-                case .threeDay, .month, .year:
+                case .year:
+                    TaskYearView(
+                        viewModel: viewModel,
+                        selectedDate: $selectedDate,
+                        onMonthSelected: { monthStart in
+                            drillDownFromYear(to: monthStart)
+                        },
+                        onDateSelected: { date in
+                            drillDownFromYear(to: date)
+                        }
+                    )
+                case .threeDay, .month:
                     Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -453,6 +473,12 @@ struct TaskListView: View {
         switch currentViewMode {
         case .list:
             return viewModel.currentVisibleDate
+        case .year:
+            var components = DateComponents()
+            components.year = viewModel.yearViewSelectedYear
+            components.month = 1
+            components.day = 1
+            return Calendar.current.date(from: components) ?? selectedDate
         default:
             return selectedDate
         }
@@ -476,6 +502,14 @@ struct TaskListView: View {
 
     private func dayID(for date: Date) -> Date {
         Calendar.current.startOfDay(for: date)
+    }
+
+    private func drillDownFromYear(to date: Date) {
+        let normalized = dayID(for: date)
+        selectedDate = normalized
+        withAnimation(.easeInOut(duration: 0.25)) {
+            currentViewMode = yearDrillDownViewMode
+        }
     }
 
     private var monthTaskDots: [Date: [Color]] {

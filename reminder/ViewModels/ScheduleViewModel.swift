@@ -151,6 +151,9 @@ final class ScheduleViewModel: ObservableObject {
             let fresh = try await taskService.fetchTasks(in: householdId)
             tasks = fresh
             LocalCacheManager.shared.save(fresh, forKey: cacheKey)
+            if yearCalendarSnapshot != nil {
+                rebuildYearViewSnapshot(locale: AppSettingsManager.shared.appLocale)
+            }
             if !silent {
                 errorMessage = nil
             }
@@ -419,6 +422,43 @@ final class ScheduleViewModel: ObservableObject {
         if calendar.isDate(monthStart, equalTo: currentVisibleDate, toGranularity: .month) == false {
             currentVisibleDate = monthStart
         }
+    }
+
+    // MARK: - Year view
+
+    @Published private(set) var yearViewSelectedYear: Int = Calendar.current.component(.year, from: Date())
+    @Published private(set) var yearCalendarSnapshot: YearCalendarSnapshot?
+
+    func setYearViewYear(_ year: Int, locale: Locale) {
+        let clamped = max(1970, min(2100, year))
+        yearViewSelectedYear = clamped
+        rebuildYearViewSnapshot(locale: locale)
+    }
+
+    func refreshYearViewSnapshot(locale: Locale) {
+        rebuildYearViewSnapshot(locale: locale)
+    }
+
+    private func rebuildYearViewSnapshot(locale: Locale) {
+        let density = yearTaskDensity(for: yearViewSelectedYear)
+        yearCalendarSnapshot = YearCalendarBuilder.makeSnapshot(
+            year: yearViewSelectedYear,
+            locale: locale,
+            taskDensityByDayKey: density
+        )
+    }
+
+    /// 聚合当前已加载日程在指定年份的每日任务数；避免在视图 body 中遍历任务。
+    func yearTaskDensity(for year: Int) -> [String: Int] {
+        YearCalendarBuilder.taskDensity(
+            for: year,
+            tasks: scheduledTasks,
+            taskAnchor: scheduleAnchorDate(for:)
+        )
+    }
+
+    private func scheduleAnchorDate(for task: FamilyTask) -> Date {
+        task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
     /// 列表模式智能滚动：今天首个定时日程；若无则今天之后最近一条（不含灵活待办）。

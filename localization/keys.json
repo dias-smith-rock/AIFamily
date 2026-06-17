@@ -5986,5 +5986,19 @@
     "table": "VIP",
     "swift_property": "retryLoadProducts",
     "orphan": true
+  },
+  {
+    "legacy_key": "上一年",
+    "new_key": "schedule_previous_year",
+    "table": "Schedule",
+    "swift_property": "previousYear",
+    "orphan": true
+  },
+  {
+    "legacy_key": "下一年",
+    "new_key": "schedule_next_year",
+    "table": "Schedule",
+    "swift_property": "nextYear",
+    "orphan": true
   }
 ]

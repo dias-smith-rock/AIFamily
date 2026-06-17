@@ -11,7 +11,7 @@ enum CalendarViewMode: String, CaseIterable {
     case year = "Year"
 
     /// 顶栏视图切换菜单中当前可用的模式（未实现的选项暂不展示）。
-    static let menuCases: [CalendarViewMode] = [.list, .day, .week]
+    static let menuCases: [CalendarViewMode] = [.list, .day, .week, .year]
 
     var menuTitleKey: LocalizedStringResource {
         switch self {
