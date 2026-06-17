@@ -247,7 +247,14 @@ struct TaskListView: View {
                         },
                         onRefresh: refreshTasks
                     )
-                case .threeDay, .week, .month, .year:
+                case .week:
+                    TaskWeekGridView(
+                        selectedDate: $selectedDate,
+                        viewModel: viewModel,
+                        onTaskSelect: { taskForDetailSheet = $0 },
+                        onRefresh: refreshTasks
+                    )
+                case .threeDay, .month, .year:
                     Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
