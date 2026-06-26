@@ -188,17 +188,13 @@ struct TodoListView: View {
         appRouter.consumePendingTaskReminderTap()
     }
 
+    private var showsTodoSummaryFooter: Bool {
+        viewModel.overdueTasks.isEmpty == false || viewModel.completedTasks.isEmpty == false
+    }
+
     private var todoListScrollView: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 20) {
-                if viewModel.overdueTasks.isEmpty == false {
-                    overdueWarningBanner
-                }
-
-                if viewModel.completedTasks.isEmpty == false {
-                    completedTasksBanner
-                }
-
                 if viewModel.mainSectionedTasks().isEmpty {
                     overdueOnlyPlaceholderContent
                 } else {
@@ -229,8 +225,43 @@ struct TodoListView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            todoSummaryFooterInset
+        }
         .refreshable {
             await viewModel.loadTasks(silent: true, force: true)
+        }
+    }
+
+    private var todoSummaryFooterInset: some View {
+        Group {
+            if showsTodoSummaryFooter {
+                todoSummaryFooterRow
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                    .background {
+                        AppTheme.ColorToken.background
+                            .shadow(color: Color.black.opacity(0.08), radius: 8, y: -2)
+                    }
+            }
+        }
+    }
+
+    private var todoSummaryFooterRow: some View {
+        Group {
+            if viewModel.overdueTasks.isEmpty == false || viewModel.completedTasks.isEmpty == false {
+                HStack(spacing: 10) {
+                    if viewModel.overdueTasks.isEmpty == false {
+                        compactOverdueSummaryCard
+                            .frame(maxWidth: .infinity)
+                    }
+                    if viewModel.completedTasks.isEmpty == false {
+                        compactCompletedSummaryCard
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+            }
         }
     }
 
@@ -244,47 +275,46 @@ struct TodoListView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.top, 24)
-
-                completedTasksBanner
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            todoSummaryFooterInset
         }
         .refreshable {
             await viewModel.loadTasks(silent: true, force: true)
         }
     }
 
-    private var completedTasksBanner: some View {
+    private var compactCompletedSummaryCard: some View {
         Button {
             showCompletedSheet = true
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.body)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(
-                        String(
-                            format: AppLocalized.string(L10n.Common.lldToDoSCompleted, locale: locale),
-                            Int64(viewModel.completedTasks.count)
-                        )
-                    )
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
-                    Text(L10n.Common.tapToViewCompletedItems.localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.body)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
 
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                Text(
+                    String(
+                        format: AppLocalized.string(L10n.Common.lldToDoSCompleted, locale: locale),
+                        Int64(viewModel.completedTasks.count)
+                    )
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 10)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -301,38 +331,36 @@ struct TodoListView: View {
         ContentUnavailableView {
             Label(L10n.Common.nothingDueSoon.localized, systemImage: "checklist")
         } description: {
-            Text(L10n.Common.allOpenToDosAreOverdueTapTheBannerAbove.localized)
+            Text(L10n.Common.tapToReviewAndAdjustDeadlines.localized)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 32)
         .padding(.bottom, 24)
     }
 
-    private var overdueWarningBanner: some View {
+    private var compactOverdueSummaryCard: some View {
         Button {
             showOverdueSheet = true
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "clock.arrow.circlepath")
-                    .foregroundStyle(.secondary)
-                    .font(.body)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.Todo.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
-                    Text(L10n.Common.tapToReviewAndAdjustDeadlines.localized)
-                        .font(.caption)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "clock.arrow.circlepath")
                         .foregroundStyle(.secondary)
+                        .font(.body)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
 
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                Text(L10n.Todo.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 10)
             .padding(.vertical, 10)
             .background(Color(.secondarySystemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
