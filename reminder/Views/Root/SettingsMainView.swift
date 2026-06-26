@@ -1,36 +1,104 @@
 import SwiftUI
 
-struct FamilyView: View {
+struct SettingsMainView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @ObservedObject private var authSessionGuard = AuthSessionGuard.shared
-    @StateObject private var viewModel = AppViewModels.makeFamilyViewModel()
+    @StateObject private var familyViewModel = AppViewModels.makeFamilyViewModel()
+    @StateObject private var mineViewModel = AppViewModels.makeMineViewModel()
+    @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var addMemberRoute: FamilyAddMemberRoute?
     @State private var isPresentingCreateLocalProfile = false
     @State private var isShowingRenameHouseholdSheet = false
-    @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
+    @State private var editingSelfProfile: FamilyProfile?
+    @State private var showTermsSheet = false
+    @State private var showPrivacySheet = false
+    @State private var showClearGuestDataAlert = false
+    @State private var isClearingGuestData = false
 
     var body: some View {
+        settingsNavigationWithLifecycle
+            .alert(L10n.Common.notice, isPresented: toastAlertBinding) {
+                Button(L10n.Common.ok, role: .cancel) { mineViewModel.acknowledgeToast() }
+            } message: {
+                Text(verbatim: mineViewModel.toastMessage ?? "")
+            }
+            .alert(L10n.Common.exitFailed, isPresented: signOutErrorAlertBinding) {
+                Button(L10n.Common.gotIt, role: .cancel) { mineViewModel.acknowledgeSignOutError() }
+            } message: {
+                Text(verbatim: mineViewModel.signOutErrorMessage ?? "")
+            }
+            .alert(L10n.Common.deleteAccount, isPresented: $mineViewModel.showDeleteAccountAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Common.deleteAccount2, role: .destructive) {
+                    Task {
+                        authSessionGuard.beginLoggingOut()
+                        familyViewModel.prepareForSignOut()
+                        await mineViewModel.deleteAccount(appRouter: appRouter)
+                    }
+                }
+            } message: {
+                Text(L10n.Family.thisOperationWillPermanentlyDeleteYourAcco.localized)
+            }
+            .alert(L10n.Common.cannotDeleteAccount, isPresented: $mineViewModel.showCreatorBlockAlert) {
+                Button(L10n.Common.gotIt, role: .cancel) {}
+                Button(L10n.Family.groupSettings) {
+                    openOrganizationSettings()
+                }
+            } message: {
+                Text(L10n.Settings.deleteAccountCreatorBlock.formatted(locale: locale, mineViewModel.creatorBlockGroupName, mineViewModel.creatorBlockGroupCount))
+            }
+            .personalAccountSettingsAlerts(
+                viewModel: mineViewModel,
+                showTermsSheet: $showTermsSheet,
+                showPrivacySheet: $showPrivacySheet
+            )
+            .alert(L10n.Auth.clearGuestDataConfirmTitle, isPresented: $showClearGuestDataAlert) {
+                Button(L10n.Common.cancel, role: .cancel) {}
+                Button(L10n.Auth.guestStartFreshExperience, role: .destructive) {
+                    Task { await clearGuestDataAndStartOver() }
+                }
+            } message: {
+                Text(L10n.Auth.clearGuestDataConfirmMessage.localized)
+            }
+    }
+
+    private var toastAlertBinding: Binding<Bool> {
+        Binding(
+            get: { mineViewModel.toastMessage != nil },
+            set: { if $0 == false { mineViewModel.acknowledgeToast() } }
+        )
+    }
+
+    private var signOutErrorAlertBinding: Binding<Bool> {
+        Binding(
+            get: { mineViewModel.signOutErrorMessage != nil },
+            set: { if $0 == false { mineViewModel.acknowledgeSignOutError() } }
+        )
+    }
+
+    private var settingsNavigationWithLifecycle: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 GlobalHeaderView(
                     leading: {
-                        Text(L10n.Family.groups.localized)
+                        Text(L10n.Common.settingsTab.localized)
                             .font(.title2.weight(.bold))
                             .foregroundStyle(.primary)
                     },
                     trailing: {
-                        if viewModel.canLeaveCurrentHousehold && isMemberRole {
+                        if familyViewModel.canLeaveCurrentHousehold && isMemberRole {
                             Button {
-                                viewModel.requestToLeave()
+                                familyViewModel.requestToLeave()
                             } label: {
-                                if viewModel.isLeaving {
+                                if familyViewModel.isLeaving {
                                     ProgressView()
                                         .tint(.blue)
                                         .scaleEffect(0.85)
@@ -41,7 +109,7 @@ struct FamilyView: View {
                                 }
                             }
                             .buttonStyle(.plain)
-                            .disabled(viewModel.isLeaving)
+                            .disabled(familyViewModel.isLeaving)
                             .accessibilityLabel(AppLocalized.string(L10n.Family.leaveGroup, locale: locale))
                         } else {
                             EmptyView()
@@ -49,32 +117,34 @@ struct FamilyView: View {
                     }
                 )
 
-                familyListBody
+                settingsListBody
                     .background(Color(.systemGroupedBackground))
             }
             .background(Color(.systemGroupedBackground))
             .navigationBarHidden(true)
         }
+        .environment(\.locale, appSettings.appLocale)
         .task {
-            viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-            viewModel.setMembershipContext(appRouter.selectedMembershipId)
-            await viewModel.loadMembers()
+            await mineViewModel.loadAccountSummary()
+            familyViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+            familyViewModel.setMembershipContext(appRouter.selectedMembershipId)
+            await familyViewModel.loadMembers()
             await handleRequiresLoginIfNeeded()
             Task { await appRouter.refreshSelectedHouseholdSnapshot() }
         }
         .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
-            viewModel.setHouseholdContext(newValue)
+            familyViewModel.setHouseholdContext(newValue)
             Task {
-                await viewModel.loadMembers()
+                await familyViewModel.loadMembers()
                 await handleRequiresLoginIfNeeded()
                 Task { await appRouter.refreshSelectedHouseholdSnapshot() }
             }
         }
         .onChange(of: appRouter.selectedMembershipId) { _, newValue in
-            viewModel.setMembershipContext(newValue)
-            Task { await viewModel.loadMembers() }
+            familyViewModel.setMembershipContext(newValue)
+            Task { await familyViewModel.loadMembers() }
         }
-        .onChange(of: viewModel.requiresLogin) { _, needsLogin in
+        .onChange(of: familyViewModel.requiresLogin) { _, needsLogin in
             guard needsLogin else { return }
             Task { await handleRequiresLoginIfNeeded() }
         }
@@ -89,7 +159,7 @@ struct FamilyView: View {
                 AddFamilyMemberEntrySheet(
                     canCreateProfileWithoutAccount: canCreateVirtualProfile,
                     onChooseInvite: {
-                        guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
+                        guard familyViewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
                             addMemberRoute = nil
                             appRouter.presentPremiumUpgrade()
                             return
@@ -98,7 +168,7 @@ struct FamilyView: View {
                     },
                     onChooseCreateProfile: {
                         guard canCreateVirtualProfile else { return }
-                        guard viewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
+                        guard familyViewModel.canAddMember(hasPremiumAccess: appRouter.hasPremiumAccess) else {
                             addMemberRoute = nil
                             appRouter.presentPremiumUpgrade()
                             return
@@ -116,7 +186,7 @@ struct FamilyView: View {
                 InviteMemberView(
                     currentHouseholdId: appRouter.selectedHouseholdId,
                     creatorMembershipId: appRouter.selectedMembershipId,
-                    activeMemberCount: viewModel.activeMemberCount,
+                    activeMemberCount: familyViewModel.activeMemberCount,
                     hasPremiumAccess: appRouter.hasPremiumAccess
                 )
                 .presentationDetents([.large])
@@ -129,13 +199,10 @@ struct FamilyView: View {
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: canCreateVirtualProfile,
                 uploadAvatar: { data, profileId in
-                    #if DEBUG
-                    print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
-                    #endif
-                    return await viewModel.uploadAvatar(data: data, profileId: profileId)
+                    await familyViewModel.uploadAvatar(data: data, profileId: profileId)
                 },
                 onSave: { householdId, draft in
-                    let result = await viewModel.createLocalProfile(
+                    let result = await familyViewModel.createLocalProfile(
                         householdId: householdId,
                         draft: draft,
                         hasPremiumAccess: appRouter.hasPremiumAccess
@@ -153,17 +220,14 @@ struct FamilyView: View {
             ProfileEditView(
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
-                canEdit: viewModel.canEditProfile(profile),
+                canEdit: familyViewModel.canEditProfile(profile),
                 memberRemoval: memberRemovalAction(for: profile),
                 adminRoleToggle: adminRoleToggleAction(for: profile),
                 uploadAvatar: { data, profileId in
-                    #if DEBUG
-                    print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
-                    #endif
-                    return await viewModel.uploadAvatar(data: data, profileId: profileId)
+                    await familyViewModel.uploadAvatar(data: data, profileId: profileId)
                 },
                 onSave: { _, draft in
-                    await viewModel.updateProfile(profile, draft: draft)
+                    await familyViewModel.updateProfile(profile, draft: draft)
                 }
             )
             .environment(\.locale, appSettings.appLocale)
@@ -173,10 +237,25 @@ struct FamilyView: View {
             ProfileDetailView(
                 profile: profile,
                 roleLabel: detailRoleLabel(for: profile),
-                canEdit: viewModel.canEditProfile(profile),
+                canEdit: familyViewModel.canEditProfile(profile),
                 onEdit: {
                     selectedProfileForDetail = nil
                     editingProfile = profile
+                }
+            )
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
+        }
+        .fullScreenCover(item: $editingSelfProfile) { profile in
+            ProfileEditView(
+                mode: .edit(profile),
+                householdId: appRouter.selectedHouseholdId,
+                canEdit: familyViewModel.canEditProfile(profile),
+                uploadAvatar: { data, profileId in
+                    await familyViewModel.uploadAvatar(data: data, profileId: profileId)
+                },
+                onSave: { _, draft in
+                    await familyViewModel.updateProfile(profile, draft: draft)
                 }
             )
             .environment(\.locale, appSettings.appLocale)
@@ -186,9 +265,9 @@ struct FamilyView: View {
             OrganizationSettingsSheet(
                 initialName: appRouter.selectedHouseholdName ?? "",
                 initialDescription: appRouter.selectedHouseholdDescription,
-                familyViewModel: viewModel,
-                isSubmitting: viewModel.isLoading,
-                canDisband: viewModel.canDisbandCurrentHousehold,
+                familyViewModel: familyViewModel,
+                isSubmitting: familyViewModel.isLoading,
+                canDisband: familyViewModel.canDisbandCurrentHousehold,
                 errorMessage: renameErrorMessage,
                 onSubmit: { newName, description in
                     await renameCurrentHousehold(to: newName, description: description)
@@ -204,12 +283,12 @@ struct FamilyView: View {
         }
         .alert(L10n.Common.notice, isPresented: transferSuccessToastBinding) {
             Button(L10n.Common.ok, role: .cancel) {
-                viewModel.acknowledgeTransferSuccessToast()
+                familyViewModel.acknowledgeTransferSuccessToast()
             }
         } message: {
-            Text(viewModel.transferSuccessToastMessage ?? "")
+            Text(familyViewModel.transferSuccessToastMessage ?? "")
         }
-        .alert(L10n.Family.areYouSureYouWantToLeaveThisGroup, isPresented: $viewModel.showLeaveConfirmation) {
+        .alert(L10n.Family.areYouSureYouWantToLeaveThisGroup, isPresented: $familyViewModel.showLeaveConfirmation) {
             Button(L10n.Common.cancel, role: .cancel) {}
             Button(L10n.Family.leaveGroup, role: .destructive) {
                 Task { await submitLeaveHousehold() }
@@ -217,26 +296,26 @@ struct FamilyView: View {
         } message: {
             Text(L10n.Schedule.afterLoggingOutYouWillNotBeAbleToViewT.localized)
         }
-        .alert(L10n.Common.notice, isPresented: $viewModel.showCreatorBlockAlert) {
+        .alert(L10n.Common.notice, isPresented: $familyViewModel.showCreatorBlockAlert) {
             Button(L10n.Common.gotIt, role: .cancel) {}
         } message: {
             Text(L10n.Family.youAreTheCreatorOfThisGroupTransferOwner.localized)
         }
         .alert(L10n.Family.couldNotLeaveGroup, isPresented: leaveErrorAlertBinding) {
             Button(L10n.Common.gotIt, role: .cancel) {
-                viewModel.acknowledgeLeaveError()
+                familyViewModel.acknowledgeLeaveError()
             }
         } message: {
-            Text(viewModel.leaveErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
+            Text(familyViewModel.leaveErrorMessage ?? AppLocalized.string(L10n.Common.pleaseTryAgainLater, locale: locale))
         }
     }
 
     private var leaveErrorAlertBinding: Binding<Bool> {
         Binding(
-            get: { viewModel.leaveErrorMessage != nil },
+            get: { familyViewModel.leaveErrorMessage != nil },
             set: { isPresented in
                 if isPresented == false {
-                    viewModel.acknowledgeLeaveError()
+                    familyViewModel.acknowledgeLeaveError()
                 }
             }
         )
@@ -244,21 +323,21 @@ struct FamilyView: View {
 
     private var transferSuccessToastBinding: Binding<Bool> {
         Binding(
-            get: { viewModel.transferSuccessToastMessage != nil },
+            get: { familyViewModel.transferSuccessToastMessage != nil },
             set: { isPresented in
                 if isPresented == false {
-                    viewModel.acknowledgeTransferSuccessToast()
+                    familyViewModel.acknowledgeTransferSuccessToast()
                 }
             }
         )
     }
 
-    // MARK: - List Body
-
-    private var familyListBody: some View {
+    private var settingsListBody: some View {
         List {
+            PersonalVIPSubscriptionSection()
+
             FamilyGroupSettingsSection(
-                viewModel: viewModel,
+                viewModel: familyViewModel,
                 addMemberRoute: $addMemberRoute,
                 editingProfile: $editingProfile,
                 selectedProfileForDetail: $selectedProfileForDetail,
@@ -266,12 +345,25 @@ struct FamilyView: View {
                 isShowingRenameHouseholdSheet: $isShowingRenameHouseholdSheet,
                 onOpenOrganizationSettings: openOrganizationSettings
             )
+
+            PersonalAccountSettingsSection(
+                viewModel: mineViewModel,
+                familyViewModel: familyViewModel,
+                editingSelfProfile: $editingSelfProfile,
+                showTermsSheet: $showTermsSheet,
+                showPrivacySheet: $showPrivacySheet,
+                showClearGuestDataAlert: $showClearGuestDataAlert,
+                isClearingGuestData: $isClearingGuestData,
+                showsProfileHeader: false,
+                showsInlineVIPEntry: false
+            )
         }
         .listStyle(.insetGrouped)
         .environment(\.editMode, .constant(isSortingMembers ? .active : .inactive))
         .contentMargins(.top, 0, for: .scrollContent)
         .refreshable {
-            await viewModel.loadMembers()
+            await familyViewModel.loadMembers()
+            await mineViewModel.loadAccountSummary()
         }
     }
 
@@ -284,16 +376,16 @@ struct FamilyView: View {
     }
 
     private func memberRemovalAction(for profile: FamilyProfile) -> ProfileEditView.MemberRemovalAction? {
-        guard viewModel.shouldShowDeleteButton(for: profile) else { return nil }
+        guard familyViewModel.shouldShowDeleteButton(for: profile) else { return nil }
         return ProfileEditView.MemberRemovalAction(
-            buttonTitle: viewModel.deleteButtonTitle(for: profile),
-            isVirtualMember: viewModel.isVirtualMember(profile),
-            onDelete: { await viewModel.deleteOrRemoveMember(profile: profile) }
+            buttonTitle: familyViewModel.deleteButtonTitle(for: profile),
+            isVirtualMember: familyViewModel.isVirtualMember(profile),
+            onDelete: { await familyViewModel.deleteOrRemoveMember(profile: profile) }
         )
     }
 
     private func adminRoleToggleAction(for profile: FamilyProfile) -> ProfileEditView.AdminRoleToggleAction? {
-        viewModel.adminRoleToggleAction(for: profile)
+        familyViewModel.adminRoleToggleAction(for: profile)
     }
 
     private func detailRoleLabel(for profile: FamilyProfile) -> LocalizedStringResource {
@@ -308,13 +400,12 @@ struct FamilyView: View {
     }
 
     private func resolvedMembership(for profile: FamilyProfile) -> HouseholdMembership? {
-        profile.primaryMembership ?? viewModel.membership(for: profile)
+        profile.primaryMembership ?? familyViewModel.membership(for: profile)
     }
 
-    /// 只要是当前群组下「有账号」的正式成员（含 member/admin/creator）即可新建无账号成员档案。
     private var canCreateVirtualProfile: Bool {
         guard let selectedMembershipId = appRouter.selectedMembershipId else { return false }
-        guard let currentMembership = viewModel.members.first(where: { $0.id == selectedMembershipId }) else { return false }
+        guard let currentMembership = familyViewModel.members.first(where: { $0.id == selectedMembershipId }) else { return false }
         return currentMembership.userId != nil
     }
 
@@ -325,7 +416,7 @@ struct FamilyView: View {
     private var currentUserRole: MembershipRole {
         guard
             let selectedMembershipId = appRouter.selectedMembershipId,
-            let currentMembership = viewModel.members.first(where: { $0.id == selectedMembershipId })
+            let currentMembership = familyViewModel.members.first(where: { $0.id == selectedMembershipId })
         else {
             return .member
         }
@@ -340,7 +431,7 @@ struct FamilyView: View {
             return
         }
 
-        let renameFailureMessage = await viewModel.renameHousehold(
+        let renameFailureMessage = await familyViewModel.renameHousehold(
             householdId: householdId,
             newName: newName,
             description: description
@@ -359,7 +450,7 @@ struct FamilyView: View {
     private func submitDisbandHousehold(userInput: String) async -> Bool {
         guard let householdId = appRouter.selectedHouseholdId else { return false }
         let currentName = appRouter.selectedHouseholdName ?? ""
-        let success = await viewModel.confirmDisband(
+        let success = await familyViewModel.confirmDisband(
             householdId: householdId,
             currentName: currentName,
             userInputName: userInput
@@ -380,28 +471,42 @@ struct FamilyView: View {
     @MainActor
     private func submitLeaveHousehold() async {
         guard let householdId = appRouter.selectedHouseholdId else { return }
-        let success = await viewModel.confirmLeave(householdId: householdId, appRouter: appRouter)
+        let success = await familyViewModel.confirmLeave(householdId: householdId, appRouter: appRouter)
         guard success else { return }
         isShowingRenameHouseholdSheet = false
         await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
     }
 
     @MainActor
-    private func handleRequiresLoginIfNeeded() async {
-        guard viewModel.requiresLogin else { return }
-        guard authSessionGuard.isLoggingOut == false else {
-            viewModel.clearRequiresLogin()
-            return
+    private func clearGuestDataAndStartOver() async {
+        guard isClearingGuestData == false else { return }
+        isClearingGuestData = true
+        defer { isClearingGuestData = false }
+
+        familyViewModel.prepareForSignOut()
+        do {
+            try await SupabaseAuthManager.hardSignOut(appRouter: appRouter, clearGuestArchive: true)
+        } catch {
+            mineViewModel.signOutErrorMessage = error.localizedDescription
         }
-        viewModel.clearRequiresLogin()
-        await appRouter.refreshStateFromBackend()
     }
 
+    @MainActor
+    private func handleRequiresLoginIfNeeded() async {
+        guard familyViewModel.requiresLogin else { return }
+        guard authSessionGuard.isLoggingOut == false else {
+            familyViewModel.clearRequiresLogin()
+            return
+        }
+        familyViewModel.clearRequiresLogin()
+        await appRouter.refreshStateFromBackend()
+    }
 }
 
 #Preview {
-    FamilyView()
+    SettingsMainView()
         .environmentObject(AppRouter())
+        .environmentObject(AppBootstrap())
         .environmentObject(AppSettingsManager.shared)
         .environmentObject(GroupSwitcherCoordinator())
 }

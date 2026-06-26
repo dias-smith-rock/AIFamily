@@ -4714,6 +4714,13 @@
     "orphan": true
   },
   {
+    "legacy_key": "设置",
+    "new_key": "common_settings_tab",
+    "table": "Common",
+    "swift_property": "settingsTab",
+    "orphan": true
+  },
+  {
     "legacy_key": "预计开销",
     "new_key": "common_expenses",
     "table": "Common",

@@ -382,6 +382,7 @@ extension L10n {
     static let selected = Entry(key: "common_selected", table: .common)
     static let sent = Entry(key: "common_sent", table: .common)
     static let setBirthday = Entry(key: "common_set_birthday", table: .common)
+    static let settingsTab = Entry(key: "common_settings_tab", table: .common)
     static let showMoreOptions = Entry(key: "common_show_more_options", table: .common)
     static let small = Entry(key: "common_small", table: .common)
     static let somethingWentWrongPleaseTryAgainLater = Entry(key: "common_something_went_wrong_please_try_again_later", table: .common)

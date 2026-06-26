@@ -11,17 +11,17 @@ struct AppTabRootView: View {
     enum Tab: Hashable {
         case schedule
         case todos
+        case expenses
         case location
-        case family
-        case personalSettings
+        case settings
 
         var titleKey: LocalizedStringResource {
             switch self {
             case .schedule: L10n.Schedule.schedule.localized
             case .todos: L10n.Common.toDos.localized
+            case .expenses: L10n.Common.expenses.localized
             case .location: L10n.Location.location.localized
-            case .family: L10n.Family.groups.localized
-            case .personalSettings: L10n.Common.mine.localized
+            case .settings: L10n.Common.settingsTab.localized
             }
         }
 
@@ -29,26 +29,32 @@ struct AppTabRootView: View {
             switch self {
             case .schedule: "calendar"
             case .todos: "checklist"
+            case .expenses: "dollarsign.circle"
             case .location: "map"
-            case .family: "person.2"
-            case .personalSettings: "gearshape.fill"
+            case .settings: "gearshape.2"
             }
         }
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            TaskListView()
+            ScheduleMainView()
                 .tabItem {
                     Label(Tab.schedule.titleKey, systemImage: Tab.schedule.systemImage)
                 }
                 .tag(Tab.schedule)
 
-            TodoListView()
+            TodoMainView()
                 .tabItem {
                     Label(Tab.todos.titleKey, systemImage: Tab.todos.systemImage)
                 }
                 .tag(Tab.todos)
+
+            ExpenseMainView()
+                .tabItem {
+                    Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
+                }
+                .tag(Tab.expenses)
 
             LocationMainView(isTabActive: selectedTab == .location)
                 .tabItem {
@@ -56,19 +62,11 @@ struct AppTabRootView: View {
                 }
                 .tag(Tab.location)
 
-            // 「消息」Tab 延后版本开放，FeedbackFeedView 仍保留在工程中。
-
-            FamilyView()
+            SettingsMainView()
                 .tabItem {
-                    Label(Tab.family.titleKey, systemImage: Tab.family.systemImage)
+                    Label(Tab.settings.titleKey, systemImage: Tab.settings.systemImage)
                 }
-                .tag(Tab.family)
-
-            MineView()
-                .tabItem {
-                    Label(Tab.personalSettings.titleKey, systemImage: Tab.personalSettings.systemImage)
-                }
-                .tag(Tab.personalSettings)
+                .tag(Tab.settings)
         }
         .onAppear {
             AutoLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
@@ -113,7 +111,7 @@ struct AppTabRootView: View {
         }
         .onChange(of: appRouter.pendingOpenGroupSettings) { _, shouldOpen in
             guard shouldOpen else { return }
-            selectedTab = .family
+            selectedTab = .settings
         }
         .reviewAlertModifier(manager: reviewRedirectManager)
         .id(appSettings.selectedLanguage.id)
