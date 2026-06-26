@@ -58,7 +58,7 @@ struct TaskCardForWhomTrailing: View {
 
 // MARK: - TaskCardView
 
-/// 日程列表中的单条任务卡片（设计稿：左侧强调线 + 分区信息 + 右侧「为了谁」）。
+/// 日程列表中的单条任务卡片（分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
     @Environment(\.locale) private var locale
 
@@ -78,6 +78,8 @@ struct TaskCardView: View {
         self.forWhomAvatars = forWhomAvatars
         self.assigneeLabel = assigneeLabel
     }
+
+    private let cardShape = RoundedRectangle(cornerRadius: 12, style: .continuous)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -99,14 +101,11 @@ struct TaskCardView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
-                .frame(width: 4)
+        .clipShape(cardShape)
+        .overlay {
+            cardShape.strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
     }
 
     // MARK: - Header
