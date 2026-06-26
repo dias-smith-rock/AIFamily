@@ -319,4 +319,25 @@ final class TodoListViewModel: ObservableObject {
         }
         return ordered
     }
+
+    func applyOptimisticCompletion(for task: FamilyTask) {
+        flexibleTasks.removeAll { $0.id == task.id }
+        var optimistic = task
+        optimistic.status = .completed
+        completedTasks.removeAll { $0.id == task.id }
+        completedTasks.insert(optimistic, at: 0)
+    }
+
+    func completeFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID?) async throws {
+        let updated = try await taskService.patchTaskStatus(
+            taskId: task.id,
+            to: .completed,
+            completionLocation: nil,
+            actingMembershipId: actingMembershipId
+        )
+        flexibleTasks.removeAll { $0.id == updated.id }
+        completedTasks.removeAll { $0.id == updated.id }
+        completedTasks.insert(updated, at: 0)
+        NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+    }
 }

@@ -19,6 +19,9 @@ struct TodoListView: View {
     @State private var isShowingCreateFlexibleSheet = false
     @State private var createTaskFormInstanceID = UUID()
     @State private var currentMembershipRole: MembershipRole = .member
+    @State private var completionCheckedTaskIDs: Set<UUID> = []
+    @State private var completionFlyingTaskIDs: Set<UUID> = []
+    @State private var completionInFlightTaskIDs: Set<UUID> = []
 
     var body: some View {
         NavigationStack {
@@ -188,6 +191,44 @@ struct TodoListView: View {
         appRouter.consumePendingTaskReminderTap()
     }
 
+    private func beginCompleteFlexibleTask(_ task: FamilyTask) {
+        guard completionInFlightTaskIDs.contains(task.id) == false else { return }
+
+        completionInFlightTaskIDs.insert(task.id)
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
+            completionCheckedTaskIDs.insert(task.id)
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 260_000_000)
+
+            withAnimation(.easeIn(duration: 0.52)) {
+                completionFlyingTaskIDs.insert(task.id)
+            }
+
+            try? await Task.sleep(nanoseconds: 520_000_000)
+
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                viewModel.applyOptimisticCompletion(for: task)
+            }
+
+            completionFlyingTaskIDs.remove(task.id)
+            completionCheckedTaskIDs.remove(task.id)
+
+            do {
+                try await viewModel.completeFlexibleTask(
+                    task,
+                    actingMembershipId: appRouter.selectedMembershipId
+                )
+                await scheduleViewModel.loadTasks(silent: true)
+            } catch {
+                await viewModel.loadTasks(silent: true, force: true)
+            }
+
+            completionInFlightTaskIDs.remove(task.id)
+        }
+    }
+
     private var showsTodoSummaryFooter: Bool {
         viewModel.overdueTasks.isEmpty == false || viewModel.completedTasks.isEmpty == false
     }
@@ -205,17 +246,26 @@ struct TodoListView: View {
                                 .foregroundStyle(.secondary)
 
                             ForEach(tasks) { task in
+                                let isFlying = completionFlyingTaskIDs.contains(task.id)
                                 TodoFlexibleRow(
                                     task: task,
                                     displayTitle: viewModel.displayTitle(for: task),
                                     forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
                                     deadlineLabel: deadlineLabel(for: task),
-                                    style: .active
+                                    style: .active,
+                                    isCompletionChecked: completionCheckedTaskIDs.contains(task.id),
+                                    onToggleComplete: {
+                                        beginCompleteFlexibleTask(task)
+                                    },
+                                    onOpen: {
+                                        taskForDetailSheet = task
+                                    }
                                 )
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    taskForDetailSheet = task
-                                }
+                                .scaleEffect(isFlying ? 0.22 : 1, anchor: .center)
+                                .offset(x: isFlying ? 72 : 0, y: isFlying ? 220 : 0)
+                                .opacity(isFlying ? 0 : 1)
+                                .zIndex(isFlying ? 2 : 0)
+                                .allowsHitTesting(isFlying == false && completionInFlightTaskIDs.contains(task.id) == false)
                             }
                         }
                     }
@@ -310,9 +360,12 @@ struct TodoListView: View {
                 )
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .contentTransition(.numericText())
+                .animation(.spring(response: 0.38, dampingFraction: 0.82), value: viewModel.completedTasks.count)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 10)
@@ -356,8 +409,9 @@ struct TodoListView: View {
                 Text(L10n.Todo.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.85)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, 10)
@@ -444,9 +498,9 @@ struct TodoListView: View {
         )
     }
 
-    private func deadlineLabel(for task: FamilyTask) -> String {
+    private func deadlineLabel(for task: FamilyTask) -> String? {
         guard let day = task.flexibleDeadlineDay else {
-            return AppLocalized.string(L10n.Common.noDueDate, locale: locale)
+            return nil
         }
         let fmt = day.formatted(
             .dateTime
@@ -456,7 +510,7 @@ struct TodoListView: View {
                 .locale(locale)
         )
         return String(
-            format: AppLocalized.string(L10n.Common.dueBy, locale: locale),
+            format: AppLocalized.string(L10n.Common.dueBy2, locale: locale),
             fmt
         )
     }
@@ -528,7 +582,7 @@ private struct OverdueTasksListView: View {
     let tasks: [FamilyTask]
     let displayTitle: (FamilyTask) -> String
     let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
-    let deadlineLabel: (FamilyTask) -> String
+    let deadlineLabel: (FamilyTask) -> String?
     let onSelectTask: (FamilyTask) -> Void
 
     var body: some View {
@@ -580,15 +634,15 @@ private struct TodoFlexibleRow: View {
     let task: FamilyTask
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
-    let deadlineLabel: String
+    let deadlineLabel: String?
     let style: Style
+    var isCompletionChecked: Bool = false
+    var onToggleComplete: (() -> Void)? = nil
+    var onOpen: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Image(systemName: leadingSymbolName)
-                .font(.subheadline)
-                .foregroundStyle(leadingSymbolColor)
-                .frame(width: 20)
+            leadingControl
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(displayTitle)
@@ -597,13 +651,21 @@ private struct TodoFlexibleRow: View {
                     .strikethrough(style == .completed)
                     .lineLimit(2)
 
-                Text(deadlineLabel)
-                    .font(.caption)
-                    .foregroundStyle(subtitleColor)
+                if let deadlineLabel {
+                    Text(deadlineLabel)
+                        .font(.caption)
+                        .foregroundStyle(subtitleColor)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onOpen?()
+            }
 
-            TaskCardForWhomTrailing(sources: forWhomAvatars, style: .compact)
+            if forWhomAvatars.isEmpty == false {
+                TaskCardForWhomTrailing(sources: forWhomAvatars, style: .compact, showsEmptyPlaceholder: false)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -612,6 +674,26 @@ private struct TodoFlexibleRow: View {
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(cardBorderColor, lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var leadingControl: some View {
+        if style == .active, let onToggleComplete {
+            Button(action: onToggleComplete) {
+                Image(systemName: isCompletionChecked ? "checkmark.circle.fill" : "circle")
+                    .font(.title3)
+                    .foregroundStyle(isCompletionChecked ? .green : Color.secondary)
+                    .frame(width: 24, height: 24)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Common.markAsComplete)
+            .disabled(isCompletionChecked)
+        } else {
+            Image(systemName: leadingSymbolName)
+                .font(.subheadline)
+                .foregroundStyle(leadingSymbolColor)
+                .frame(width: 24)
         }
     }
 

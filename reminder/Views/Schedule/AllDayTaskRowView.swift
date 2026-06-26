@@ -24,23 +24,19 @@ struct AllDayTaskRowView: View {
                 .foregroundStyle(.primary)
                 .lineLimit(1)
 
-            HStack(spacing: 8) {
-                Text(L10n.Common.forLabel.localized)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+            if forWhomAvatars.isEmpty == false {
+                HStack(spacing: 8) {
+                    Text(L10n.Common.forLabel.localized)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
 
-                Spacer(minLength: 0)
+                    Spacer(minLength: 0)
 
-                if forWhomAvatars.isEmpty == false {
                     HStack(spacing: -6) {
                         ForEach(Array(forWhomAvatars.prefix(3))) { source in
                             microAvatar(source: source)
                         }
                     }
-                } else {
-                    Text(verbatim: "—")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
                 }
             }
         }

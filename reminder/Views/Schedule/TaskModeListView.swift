@@ -179,7 +179,7 @@ private struct TaskModeListMinimalRow: View {
 
             Spacer(minLength: 8)
 
-            TaskCardForWhomTrailing(sources: forWhomAvatars, style: .compact)
+            TaskCardAssigneeTrailing(forWhomAvatars: forWhomAvatars, style: .compact)
                 .padding(.trailing, 2)
         }
         .padding(.horizontal, 12)

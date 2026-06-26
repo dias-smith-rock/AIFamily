@@ -19,17 +19,29 @@ struct TaskCardForWhomTrailing: View {
 
     let sources: [TaskCardAvatarSource]
     var style: Style = .standard
+    var showsEmptyPlaceholder: Bool = false
 
     private var avatarSize: CGFloat {
         style == .compact ? 22 : 24
     }
 
+    private var trailingMinWidth: CGFloat? {
+        if sources.isEmpty, showsEmptyPlaceholder == false {
+            return nil
+        }
+        return style == .compact ? 28 : 32
+    }
+
     var body: some View {
         Group {
             if sources.isEmpty {
-                Text(verbatim: "—")
-                    .font(style == .compact ? .caption2 : .caption)
-                    .foregroundStyle(.tertiary)
+                if showsEmptyPlaceholder {
+                    Text(verbatim: "—")
+                        .font(style == .compact ? .caption2 : .caption)
+                        .foregroundStyle(.tertiary)
+                } else {
+                    EmptyView()
+                }
             } else if sources.count == 1, style == .compact {
                 singleLabelOrAvatar(sources[0])
             } else {
@@ -40,7 +52,7 @@ struct TaskCardForWhomTrailing: View {
                 }
             }
         }
-        .frame(minWidth: style == .compact ? 28 : 32, alignment: .trailing)
+        .frame(minWidth: trailingMinWidth ?? 0, alignment: .trailing)
     }
 
     @ViewBuilder
@@ -52,6 +64,23 @@ struct TaskCardForWhomTrailing: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+        }
+    }
+}
+
+// MARK: - 为了谁（右侧展示，仅有目标档案时显示）
+
+struct TaskCardAssigneeTrailing: View {
+    let forWhomAvatars: [TaskCardAvatarSource]
+    var style: TaskCardForWhomTrailing.Style = .standard
+
+    var body: some View {
+        if forWhomAvatars.isEmpty == false {
+            TaskCardForWhomTrailing(
+                sources: forWhomAvatars,
+                style: style,
+                showsEmptyPlaceholder: false
+            )
         }
     }
 }
@@ -90,7 +119,7 @@ struct TaskCardView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                TaskCardForWhomTrailing(sources: forWhomAvatars)
+                TaskCardAssigneeTrailing(forWhomAvatars: forWhomAvatars)
                     .padding(.trailing, 2)
             }
 
