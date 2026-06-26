@@ -94,18 +94,12 @@ struct TodoListView: View {
     @ToolbarContentBuilder
     private var todoToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            groupSwitcherMenuButton
+            GroupSwitcherToolbarButton()
         }
         ToolbarItem(placement: .topBarTrailing) {
-            Button {
+            AccentPlusToolbarButton(accessibilityLabel: L10n.Common.newToDo) {
                 presentCreateFlexible()
-            } label: {
-                Image(systemName: "plus.circle.fill")
-                    .font(.title2)
-                    .symbolRenderingMode(.palette)
-                    .foregroundStyle(.white, Color.accentColor)
             }
-            .accessibilityLabel(L10n.Common.newToDo)
         }
     }
 
@@ -349,21 +343,6 @@ struct TodoListView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.Schedule.viewOverdueTasks)
-    }
-
-    private var groupSwitcherMenuButton: some View {
-        Button {
-            groupSwitcher.showSwitchGroupDialog = true
-        } label: {
-            HStack(spacing: 4) {
-                Text(GroupSwitcherData.currentName(for: appRouter))
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Image(systemName: "chevron.down")
-                    .font(.caption2.weight(.semibold))
-            }
-        }
-        .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
     }
 
     private func presentCreateFlexible() {

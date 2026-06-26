@@ -10,7 +10,6 @@ struct TaskListView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
-    @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
 
     @State private var currentViewMode: CalendarViewMode = .day
@@ -31,14 +30,17 @@ struct TaskListView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .bottomTrailing) {
                 mainContent
+                createTaskFAB
                 if viewModel.isAIProcessing {
                     aiProcessingOverlay
                 }
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .navigationBarHidden(true)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { scheduleToolbar }
             .sheet(item: $taskForDetailSheet) { task in
                 NavigationStack {
                     TaskDetailView(
@@ -241,8 +243,6 @@ struct TaskListView: View {
 
     private var mainContent: some View {
         VStack(spacing: 0) {
-            calendarTopBar
-
             Group {
                 switch currentViewMode {
                 case .list:
@@ -386,87 +386,65 @@ struct TaskListView: View {
 
     // MARK: - Top bar（参考 Apple Calendar）
 
-    private var calendarTopBar: some View {
-        HStack(spacing: 0) {
-            Menu {
-                ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
-                    Button {
-                        currentViewMode = mode
-                    } label: {
-                        HStack {
-                            Text(mode.menuTitleKey)
-                            Spacer(minLength: 8)
-                            if mode == currentViewMode {
-                                Image(systemName: "checkmark")
-                            }
+    @ToolbarContentBuilder
+    private var scheduleToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarLeading) {
+            GroupSwitcherToolbarButton()
+            Button {
+                isShowingCalendarSheet = true
+            } label: {
+                HStack(spacing: 4) {
+                    Text(navigationMonthYearTitle)
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.semibold))
+                }
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            calendarViewModeMenu
+        }
+    }
+
+    private var createTaskFAB: some View {
+        Button {
+            openCreateTask(prefill: "")
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(AppTheme.ColorToken.accent, in: Circle())
+                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 20)
+        .padding(.bottom, 72)
+        .accessibilityLabel(L10n.Schedule.createNewTask)
+    }
+
+    private var calendarViewModeMenu: some View {
+        Menu {
+            ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
+                Button {
+                    currentViewMode = mode
+                } label: {
+                    HStack {
+                        Text(mode.menuTitleKey)
+                        Spacer(minLength: 8)
+                        if mode == currentViewMode {
+                            Image(systemName: "checkmark")
                         }
                     }
                 }
-            } label: {
-                Image(systemName: "line.3.horizontal")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.primary)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
-
-            Spacer(minLength: 8)
-
-            VStack(spacing: 4) {
-                Button {
-                    groupSwitcher.showSwitchGroupDialog = true
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(GroupSwitcherData.currentName(for: appRouter))
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .multilineTextAlignment(.leading)
-
-                        Image(systemName: "chevron.down")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
-                .accessibilityHint(L10n.Family.doubleTapToSwitchGroup.localized)
-
-                Button {
-                    isShowingCalendarSheet = true
-                } label: {
-                    HStack(spacing: 6) {
-                        Text(navigationMonthYearTitle)
-                            .font(.title2.bold())
-                            .foregroundStyle(.primary)
-                        Image(systemName: "chevron.down")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 2)
-                }
-                .buttonStyle(.plain)
-            }
-
-            Spacer(minLength: 8)
-
-            Button {
-                openCreateTask(prefill: "")
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(AppTheme.ColorToken.accent)
-                    .clipShape(Circle())
-            }
-            .buttonStyle(.plain)
-            .frame(width: 44, height: 44)
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.primary)
         }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 8)
+        .buttonStyle(.plain)
     }
 
     private var navigationReferenceDate: Date {

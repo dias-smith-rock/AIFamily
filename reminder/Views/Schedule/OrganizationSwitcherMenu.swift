@@ -41,6 +41,44 @@ enum GroupSwitcherData {
     }
 }
 
+// MARK: - Shared toolbar controls
+
+struct GroupSwitcherToolbarButton: View {
+    @Environment(\.locale) private var locale
+    @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
+
+    var body: some View {
+        Button {
+            groupSwitcher.showSwitchGroupDialog = true
+        } label: {
+            HStack(spacing: 4) {
+                Text(GroupSwitcherData.currentName(for: appRouter))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+        }
+        .accessibilityLabel(L10n.Family.group.formatted(locale: locale, GroupSwitcherData.currentName(for: appRouter)))
+    }
+}
+
+struct AccentPlusToolbarButton: View {
+    let accessibilityLabel: L10n.Entry
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "plus.circle.fill")
+                .font(.title2)
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, Color.accentColor)
+        }
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
 // MARK: - 切换群组半屏 Sheet
 
 struct SwitchGroupSheetView: View {
