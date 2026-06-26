@@ -213,40 +213,39 @@ struct TaskWeekGridView: View {
                     .padding(.horizontal, horizontalPadding)
             }
 
-            ZStack(alignment: .bottomTrailing) {
-                Group {
-                    if shouldShowTimeline {
-                        WeekTimelineScrollArea(
-                            days: days,
-                            weekTasks: weekTasks,
-                            displayedWeekOffset: offset,
-                            weekOffset: weekOffset,
-                            pagerSlot: pagerSlot,
-                            isCurrentWeekTimelineReady: isCurrentWeekTimelineReady,
-                            isAdjacentWeekPagesReady: isAdjacentWeekPagesReady,
-                            pendingTimelineScrollMode: $pendingTimelineScrollMode,
-                            gridColumnWidth: $gridColumnWidth,
-                            horizontalPadding: horizontalPadding,
-                            viewModel: viewModel,
-                            onTaskSelect: onTaskSelect,
-                            onRefresh: refreshTasks,
-                            taskDisplayDate: taskDisplayDate
-                        )
-                    } else {
-                        timelineGridPlaceholder
-                            .onAppear {
-                                WeekViewPerformanceTracer.recordTimelinePlaceholderAppear(
-                                    displayedWeekOffset: offset,
-                                    isCenterPage: isCenterPage,
-                                    isCurrentWeekTimelineReady: isCurrentWeekTimelineReady
-                                )
-                            }
-                    }
+            Group {
+                if shouldShowTimeline {
+                    WeekTimelineScrollArea(
+                        days: days,
+                        weekTasks: weekTasks,
+                        displayedWeekOffset: offset,
+                        weekOffset: weekOffset,
+                        pagerSlot: pagerSlot,
+                        isCurrentWeekTimelineReady: isCurrentWeekTimelineReady,
+                        isAdjacentWeekPagesReady: isAdjacentWeekPagesReady,
+                        pendingTimelineScrollMode: $pendingTimelineScrollMode,
+                        gridColumnWidth: $gridColumnWidth,
+                        horizontalPadding: horizontalPadding,
+                        viewModel: viewModel,
+                        onTaskSelect: onTaskSelect,
+                        onRefresh: refreshTasks,
+                        taskDisplayDate: taskDisplayDate
+                    )
+                } else {
+                    timelineGridPlaceholder
+                        .onAppear {
+                            WeekViewPerformanceTracer.recordTimelinePlaceholderAppear(
+                                displayedWeekOffset: offset,
+                                isCenterPage: isCenterPage,
+                                isCurrentWeekTimelineReady: isCurrentWeekTimelineReady
+                            )
+                        }
                 }
-
+            }
+            .overlay(alignment: .bottomLeading) {
                 if isDisplayingCurrentWeek(offset: offset) == false, shouldShowTimeline {
                     backToCurrentWeekButton
-                        .padding(.trailing, horizontalPadding + 4)
+                        .padding(.leading, horizontalPadding + 4)
                         .padding(.bottom, 16)
                         .transition(.scale.combined(with: .opacity))
                 }
