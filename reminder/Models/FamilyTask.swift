@@ -54,6 +54,21 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 
     var estimatedCost: Int?
 
+    /// `tasks.list_id` — 购物清单等外键（账本预留）。
+    var listId: UUID? = nil
+    /// `tasks.actual_amount` — 公账实付/实收金额（NUMERIC）。
+    var actualAmount: Double? = nil
+    /// `tasks.payer_id` — 垫付人 **membership id**。
+    var payerId: UUID? = nil
+    /// `tasks.split_member_ids` — 均摊成员 **membership id** 数组。
+    var splitMemberIds: [UUID]? = nil
+    /// `tasks.expense_category` — 分类快照，如「🍔 餐饮美食」。
+    var expenseCategory: String? = nil
+    /// `tasks.reward_points` — 任务可获积分（审批流预留）。
+    var rewardPoints: Int? = nil
+    /// `tasks.point_approved_by` — 审批家长 **membership id**。
+    var pointApprovedBy: UUID? = nil
+
     /// `tasks.background_color`，`#RRGGBB`；`nil` 表示列表使用系统默认二级背景。
     var backgroundColor: String? = nil
     /// `tasks.emergency_phone`，用于卡片快捷拨号 / FaceTime。
@@ -111,6 +126,13 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         recurrenceInterval: Int? = nil,
         reminderOffsets: [Int]? = nil,
         estimatedCost: Int? = nil,
+        listId: UUID? = nil,
+        actualAmount: Double? = nil,
+        payerId: UUID? = nil,
+        splitMemberIds: [UUID]? = nil,
+        expenseCategory: String? = nil,
+        rewardPoints: Int? = nil,
+        pointApprovedBy: UUID? = nil,
         backgroundColor: String? = nil,
         emergencyPhone: String? = nil,
         createdAt: Date,
@@ -150,6 +172,13 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         self.recurrenceInterval = recurrenceInterval
         self.reminderOffsets = reminderOffsets
         self.estimatedCost = estimatedCost
+        self.listId = listId
+        self.actualAmount = actualAmount
+        self.payerId = payerId
+        self.splitMemberIds = splitMemberIds
+        self.expenseCategory = expenseCategory
+        self.rewardPoints = rewardPoints
+        self.pointApprovedBy = pointApprovedBy
         self.backgroundColor = backgroundColor
         self.emergencyPhone = emergencyPhone
         self.createdAt = createdAt
@@ -192,6 +221,13 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         case recurrenceInterval
         case reminderOffsets
         case estimatedCost
+        case listId
+        case actualAmount
+        case payerId
+        case splitMemberIds
+        case expenseCategory
+        case rewardPoints
+        case pointApprovedBy
         case backgroundColor
         case emergencyPhone
         case createdAt
@@ -247,6 +283,13 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         recurrenceInterval = try container.decodeIfPresent(Int.self, forKey: .recurrenceInterval)
         reminderOffsets = try container.decodeIfPresent([Int].self, forKey: .reminderOffsets)
         estimatedCost = try container.decodeIfPresent(Int.self, forKey: .estimatedCost)
+        listId = try container.decodeIfPresent(UUID.self, forKey: .listId)
+        actualAmount = Self.decodeFlexibleDouble(from: container, forKey: .actualAmount)
+        payerId = try container.decodeIfPresent(UUID.self, forKey: .payerId)
+        splitMemberIds = try container.decodeIfPresent([UUID].self, forKey: .splitMemberIds)
+        expenseCategory = try container.decodeIfPresent(String.self, forKey: .expenseCategory)
+        rewardPoints = try container.decodeIfPresent(Int.self, forKey: .rewardPoints)
+        pointApprovedBy = try container.decodeIfPresent(UUID.self, forKey: .pointApprovedBy)
         backgroundColor = try container.decodeIfPresent(String.self, forKey: .backgroundColor)
         emergencyPhone = try container.decodeIfPresent(String.self, forKey: .emergencyPhone)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
@@ -290,6 +333,13 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(recurrenceInterval, forKey: .recurrenceInterval)
         try container.encodeIfPresent(reminderOffsets, forKey: .reminderOffsets)
         try container.encodeIfPresent(estimatedCost, forKey: .estimatedCost)
+        try container.encodeIfPresent(listId, forKey: .listId)
+        try container.encodeIfPresent(actualAmount, forKey: .actualAmount)
+        try container.encodeIfPresent(payerId, forKey: .payerId)
+        try container.encodeIfPresent(splitMemberIds, forKey: .splitMemberIds)
+        try container.encodeIfPresent(expenseCategory, forKey: .expenseCategory)
+        try container.encodeIfPresent(rewardPoints, forKey: .rewardPoints)
+        try container.encodeIfPresent(pointApprovedBy, forKey: .pointApprovedBy)
         try container.encodeIfPresent(backgroundColor, forKey: .backgroundColor)
         try container.encodeIfPresent(emergencyPhone, forKey: .emergencyPhone)
         try container.encode(createdAt, forKey: .createdAt)
@@ -299,6 +349,20 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 
 extension FamilyTask {
     /// JSONB 字段不完整时不拖垮整行任务解码（合并定位字段后常见残缺 `geofence`）。
+    private static func decodeFlexibleDouble(
+        from container: KeyedDecodingContainer<CodingKeys>,
+        forKey key: CodingKeys
+    ) -> Double? {
+        if let value = try? container.decodeIfPresent(Double.self, forKey: key) {
+            return value
+        }
+        if let stringValue = try? container.decodeIfPresent(String.self, forKey: key),
+           let parsed = Double(stringValue.replacingOccurrences(of: ",", with: "")) {
+            return parsed
+        }
+        return nil
+    }
+
     private static func decodeLenientJSON<T: Decodable>(
         _ type: T.Type,
         from container: KeyedDecodingContainer<CodingKeys>,

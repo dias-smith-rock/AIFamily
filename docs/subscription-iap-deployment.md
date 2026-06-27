@@ -27,8 +27,8 @@
 
 执行以下 migration（按顺序）：
 
-1. [`20260617_revenuecat_entitlement_sync.sql`](reminder/Services/Supabase/migrations/20260617_revenuecat_entitlement_sync.sql)
-2. [`20260618_user_entitlements_select_rls.sql`](reminder/Services/Supabase/migrations/20260618_user_entitlements_select_rls.sql)（客户端读取 `user_entitlements` 需此 RLS）
+1. [`20260627120003_revenuecat_entitlement_sync.sql`](supabase/migrations/20260627120003_revenuecat_entitlement_sync.sql)（或 `supabase db push` 全量迁移）
+2. `user_entitlements` SELECT RLS 已含于 [`20260627020719_remote_schema.sql`](supabase/migrations/20260627020719_remote_schema.sql) 基线
 
 验证：
 
@@ -158,5 +158,5 @@ SUPABASE_PROJECT_REF=xxx TEST_USER_ID=<uuid> USER_JWT=<jwt> \
 | 云端 sync 调用 | `reminder/Services/SubscriptionSupabaseSupport.swift` |
 | Webhook | `supabase/functions/revenuecat-webhook/index.ts` |
 | 客户端 sync | `supabase/functions/sync-revenuecat-entitlement/index.ts` |
-| SQL RPC | `reminder/Services/Supabase/migrations/20260617_revenuecat_entitlement_sync.sql` |
+| SQL RPC | `supabase/migrations/20260627120003_revenuecat_entitlement_sync.sql` |
 | 商品 ID | `reminder/Utilities/StoreKitProductCatalog.swift` |

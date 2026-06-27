@@ -25,6 +25,15 @@ final class ViewModelFactory: ObservableObject {
         )
     }
 
+    func makeLedgerViewModel() -> FamilyLedgerViewModel {
+        FamilyLedgerViewModel(
+            taskService: services.taskService,
+            ledgerService: services.ledgerService,
+            membershipService: services.membershipService,
+            familyProfileService: services.familyProfileService
+        )
+    }
+
     func makeFeedbackFeedViewModel() -> FeedbackFeedViewModel {
         FeedbackFeedViewModel(
             feedbackService: services.feedbackService,
@@ -110,6 +119,10 @@ enum AppViewModels {
 
     static func makeTodoListViewModel() -> TodoListViewModel {
         factory.makeTodoListViewModel()
+    }
+
+    static func makeLedgerViewModel() -> FamilyLedgerViewModel {
+        factory.makeLedgerViewModel()
     }
 
     static func makeFeedbackFeedViewModel() -> FeedbackFeedViewModel {

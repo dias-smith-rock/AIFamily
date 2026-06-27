@@ -16,9 +16,9 @@ final class ScheduleViewModel: ObservableObject {
         tasks.filter(\.isScheduledCalendarTask)
     }
 
-    /// 待办 Tab：`task_type == flexible`。
+    /// 待办 Tab：`task_type == flexible`（排除账本行）。
     var flexibleTasks: [FamilyTask] {
-        tasks.filter(\.isFlexibleTodo)
+        tasks.filter(\.isFlexibleTodoCandidate)
     }
     /// 当前群组下活跃成员（`household_memberships`），用于列表「谁去办」解析。
     @Published private(set) var householdMembers: [HouseholdMembership] = []

@@ -5,6 +5,8 @@ import Foundation
 enum TaskTypeKind: String, Codable, Equatable {
     case scheduled
     case flexible
+    case expense
+    case income
 }
 
 extension FamilyTask {
@@ -22,9 +24,15 @@ extension FamilyTask {
         resolvedTaskType == .flexible
     }
 
-    /// 在日程 Tab 时间轴 / 列表中展示的任务（`scheduled`，排除系统任务）。
+    /// 灵活待办 Tab 过滤：排除账本行。
+    var isFlexibleTodoCandidate: Bool {
+        isFlexibleTodo && isLedgerEntry == false
+    }
+
+    /// 在日程 Tab 时间轴 / 列表中展示的任务（`scheduled`，排除系统任务与账本行）。
     var isScheduledCalendarTask: Bool {
         guard isBirthdaySystemTask == false else { return false }
+        guard isLedgerEntry == false else { return false }
         return resolvedTaskType == .scheduled
     }
 

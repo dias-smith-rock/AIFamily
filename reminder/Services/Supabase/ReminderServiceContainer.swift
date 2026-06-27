@@ -5,6 +5,7 @@ struct ReminderServiceContainer {
     let feedbackService: FeedbackDataService
     let membershipService: HouseholdMembershipDataService
     let familyProfileService: FamilyProfileDataService
+    let ledgerService: LedgerDataService
     let authService: AuthService
     let voiceStorageService: VoiceStorageService
     let avatarStorageService: AvatarStorageService
@@ -22,6 +23,7 @@ struct ReminderServiceContainer {
             feedbackService: SupabaseFeedbackDataService(provider: provider),
             membershipService: SupabaseHouseholdMembershipDataService(provider: provider),
             familyProfileService: SupabaseFamilyProfileDataService(provider: provider),
+            ledgerService: SupabaseLedgerDataService(provider: provider),
             authService: SupabaseAuthService(
                 provider: provider,
                 avatarStorageService: avatarStorageService
@@ -39,11 +41,13 @@ struct ReminderServiceContainer {
     }
 
     static func mock() -> ReminderServiceContainer {
-        ReminderServiceContainer(
-            taskService: MockTaskDataService(),
+        let taskService = MockTaskDataService()
+        return ReminderServiceContainer(
+            taskService: taskService,
             feedbackService: MockFeedbackDataService(),
             membershipService: MockHouseholdMembershipDataService(),
             familyProfileService: MockFamilyProfileDataService(),
+            ledgerService: MockLedgerDataService(taskService: taskService),
             authService: MockAuthService(),
             voiceStorageService: MockVoiceStorageService(),
             avatarStorageService: MockAvatarStorageService(),

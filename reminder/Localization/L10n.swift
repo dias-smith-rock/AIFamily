@@ -14,6 +14,7 @@ enum L10n {
         case todo = "Todo"
         case feedback = "Feedback"
         case assistant = "Assistant"
+        case ledger = "Ledger"
     }
 
     struct Entry {

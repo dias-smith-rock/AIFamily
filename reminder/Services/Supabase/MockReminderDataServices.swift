@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Tasks
 
 actor MockTaskDataService: TaskDataService {
-    private var tasks: [FamilyTask] = FamilyTask.mockTasks
+    private var tasks: [FamilyTask] = FamilyTask.mockTasks + FamilyTask.mockLedgerTasks
 
     func fetchTasks(in householdId: UUID) async throws -> [FamilyTask] {
         // Mock：与线上一致，不按 user id 过滤 involvedMemberIds（该数组为 membership id）。
@@ -400,5 +400,56 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
     func transferOwnership(householdId: UUID, newCreatorUserId: UUID) async throws {
         _ = householdId
         _ = newCreatorUserId
+    }
+}
+
+// MARK: - Ledger
+
+actor MockLedgerDataService: LedgerDataService {
+    private let taskService: TaskDataService
+    private var categoriesByHousehold: [UUID: [ExpenseCategory]] = [:]
+    private var pointsEntries: [PointsLedgerEntry]
+
+    init(taskService: TaskDataService, seedPoints: [PointsLedgerEntry] = MockLedgerData.mockPointsEntries) {
+        self.taskService = taskService
+        self.pointsEntries = seedPoints
+    }
+
+    func fetchCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
+        categoriesByHousehold[householdId] ?? []
+    }
+
+    func ensureDefaultCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
+        if let existing = categoriesByHousehold[householdId], existing.isEmpty == false {
+            return existing
+        }
+        let now = Date()
+        let seeded = ExpenseCategory.defaultSeedTemplates.map { template in
+            ExpenseCategory(
+                id: UUID(),
+                householdId: householdId,
+                name: template.name,
+                icon: template.icon,
+                createdAt: now
+            )
+        }
+        categoriesByHousehold[householdId] = seeded
+        return seeded
+    }
+
+    func fetchPointsLedger(in householdId: UUID, targetProfileId: UUID?) async throws -> [PointsLedgerEntry] {
+        pointsEntries
+            .filter { $0.householdId == householdId }
+            .filter { targetProfileId == nil || $0.targetProfileId == targetProfileId }
+            .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    func insertPointsLedgerEntry(_ entry: PointsLedgerEntry) async throws -> PointsLedgerEntry {
+        pointsEntries.append(entry)
+        return entry
+    }
+
+    func createLedgerTask(_ task: FamilyTask) async throws -> FamilyTask {
+        try await taskService.createTask(task)
     }
 }

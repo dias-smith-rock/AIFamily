@@ -140,7 +140,7 @@ final class TodoListViewModel: ObservableObject {
     }
 
     private func applyFlexibleTasks(from allTasks: [FamilyTask]) {
-        let flexible = allTasks.filter(\.isFlexibleTodo)
+        let flexible = allTasks.filter(\.isFlexibleTodoCandidate)
         completedTasks = flexible
             .filter { $0.status == .completed }
             .sorted { lhs, rhs in

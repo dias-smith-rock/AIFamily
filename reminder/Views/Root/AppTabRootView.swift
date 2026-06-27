@@ -19,7 +19,7 @@ struct AppTabRootView: View {
             switch self {
             case .schedule: L10n.Schedule.schedule.localized
             case .todos: L10n.Common.toDos.localized
-            case .expenses: L10n.Common.expenses.localized
+            case .expenses: L10n.Ledger.wallet.localized
             case .location: L10n.Location.location.localized
             case .settings: L10n.Common.settingsTab.localized
             }
@@ -29,7 +29,7 @@ struct AppTabRootView: View {
             switch self {
             case .schedule: "calendar"
             case .todos: "checklist"
-            case .expenses: "dollarsign.circle"
+            case .expenses: "wallet.pass"
             case .location: "map"
             case .settings: "gearshape.2"
             }

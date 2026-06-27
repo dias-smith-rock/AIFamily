@@ -23,7 +23,11 @@ enum AuthSessionHints {
 
     /// 登录页是否展示「游客体验」入口。
     static var showsGuestLoginEntry: Bool {
-        hasEverUsedFormalAccount == false
+        #if DEBUG
+        return true
+        #else
+        return hasEverUsedFormalAccount == false
+        #endif
     }
 
     static func markFormalAccountUsed() {

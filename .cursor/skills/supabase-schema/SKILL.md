@@ -14,6 +14,24 @@ description: >-
 
 以 **Supabase 线上表结构** 为准更新本表；Studio ERD 仅作参考。`reminder/Services/Supabase/SupabaseSetup.sql` 为早期 MVP 草稿，**勿**以其 `tasks` 列名为准。
 
+## 数据库迁移（canonical）
+
+**唯一执行目录：** `supabase/migrations/`（Supabase CLI / Branching 只读此路径）。
+
+| 顺序 | 文件 | 说明 |
+|------|------|------|
+| 1 | `20260627020719_remote_schema.sql` | `supabase db pull` 基线（含 location RPC、RevenueCat RPC 等） |
+| 2 | `20260627023215_device_bindings_target_type_check.sql` | device_bindings check 约束 |
+| 3 | `20260627120000_task_spatial_rpc.sql` | 空间任务 RPC（幂等） |
+| 4 | `20260627120001_location_states_ghost_default.sql` | 位置隐身默认 false |
+| 5 | `20260627120002_live_huddle_realtime_rls.sql` | Live Huddle Realtime RLS |
+| 6 | `20260627120003_revenuecat_entitlement_sync.sql` | RevenueCat → user_entitlements |
+| 7 | `20260627120004_wallet_ledger_schema.sql` | 公账 / 积分 MVP |
+
+废弃历史 SQL（勿加入 migrations 链）：`supabase/schema-history/`。
+
+新增 schema：**先**写 `supabase/migrations/YYYYMMDDHHMMSS_*.sql`，**再** `supabase db push` 或合并分支；禁止只在 SQL Editor 手改 master 而不同步到此目录。
+
 ## `tasks` 表（核心）
 
 | 数据库列 | Swift (`FamilyTask`) | 说明 |
@@ -32,7 +50,15 @@ description: >-
 | `recurrence_end_date` | `recurrenceEndDate` | 线上实际列名；解码可兼容 `recurrence_end_at`（ERD 草案，未上线前勿写入） |
 | `issue` | `issue` | `text`，任务「遇到问题」说明；≠ `TaskStatus.issue` 枚举 |
 | `alarm_set_by` | `alarmSetBy` | JSONB `[String: AlarmConfig]`（按成员称呼键） |
-| `task_type` | `taskType` | `scheduled` / `flexible` |
+| `task_type` | `taskType` | `scheduled` / `flexible` / `birthday_reminder` / **`expense`** / **`income`** |
+| `estimated_cost` | `estimatedCost` | 任务预估费用（日程创建 UI）；≠ 公账实付 |
+| `list_id` | `listId` | 购物清单等外键（账本预留） |
+| `actual_amount` | `actualAmount` | 公账实付/实收（NUMERIC → `Double`） |
+| `payer_id` | `payerId` | **membership id** — 垫付人 |
+| `split_member_ids` | `splitMemberIds` | **membership id[]** — 均摊 |
+| `expense_category` | `expenseCategory` | 分类快照文本，如 `🍔 餐饮美食` |
+| `reward_points` | `rewardPoints` | 任务可获积分（审批流预留） |
+| `point_approved_by` | `pointApprovedBy` | **membership id** — 审批家长 |
 | `end_datetime` | `endDatetime` | |
 | `duration_minutes` | `durationMinutes` | |
 | `source` | `source` | `TaskSource` |
@@ -64,9 +90,9 @@ description: >-
 - **读取**：`SupabaseLocationStateDataService.fetch*` 按 `household_id` 过滤；解码可兼容已废弃的 `current_location` / `history_location_*`（仅读）。
 - **写入**：`reportCurrentLocationIfNeeded` → `LocationPersistWriteGate`（距离 + 时间双门禁，阈值见 `LocationPersistPreferences` 用户设置）→ RPC；RPC 未部署时 PostgREST upsert 写 `locations`。
 - **展示态**：`UserLocationState.locations`（`locations[0]` = 当前）；轨迹 `breadcrumbCoordinates` = 数组 reversed。
-- **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`20260602_live_huddle_realtime_rls.sql`。
+- **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`supabase/migrations/20260627120002_live_huddle_realtime_rls.sql`。
 
-迁移：`20260602_location_states_household_rpc.sql`、`20260602_location_states_ghost_default.sql`、`20260605_location_states_locations_array.sql`（三列 → `locations` 数组 + cap 触发器 + RPC 重写）、`20260609_location_states_min_distance_floor.sql`、`20260610_location_states_min_interval_gate.sql`、`20260611_location_states_setting_floors.sql`（RPC 下限改为 100m / 5min，与 `LocationPersistPreferences.minimumConfigurable*` 对齐）。
+迁移：location 相关变更已并入 `20260627020719_remote_schema.sql` 基线（`locations` JSONB 数组 + cap 触发器 + `push_entity_location`）；增量见 `20260627120001_location_states_ghost_default.sql`。
 
 ### 写入路径
 
@@ -101,6 +127,18 @@ description: >-
 | IAP / RevenueCat | Entitlement `premium`；服务端 `resolveEntitlementState` 与 iOS 一致（`premium` 或 `subscriptions` 中 `wesync.vip.*` 未过期）；Webhook + `sync-revenuecat-entitlement` 写入 |
 | VIP 权限（客户端） | `AppRouter.hasPremiumAccess`：`PremiumAccess`（本人 `user_entitlements.isActive` **或** `household_creator_has_active_pro`）**或** `RevenueCatSubscriptionService.hasActiveProEntitlement` |
 | `invite_link_nonces` | `InviteLinkNonce` |
+| `expense_categories` | `ExpenseCategory`；`household_id` + `name` 唯一；`icon` + `name` 展示为 `displayLabel` |
+| `points_ledger` | `PointsLedgerEntry`；`target_profile_id` = **`family_profiles.id`**；`amount` 正=赚取负=兑换 |
+| `household_rewards` | Phase 2 愿望商城；`required_points` |
+
+迁移：`supabase/migrations/20260627120004_wallet_ledger_schema.sql`（tasks 增量列 + 三表 + 公账 RLS 增补）。
+
+## 账本写入路径（MVP）
+
+- **公账/收入**：`LedgerDataService.createLedgerTask` → 直接 `insert` `tasks`（`task_type` = `expense` / `income`），不经 `create_task_with_spatial`。
+- **积分流水**：`LedgerDataService.insertPointsLedgerEntry` → `points_ledger`。
+- **分类 seed**：`ensureDefaultCategories` 首次为空时写入 8 条预设模板（`ExpenseCategory.defaultSeedTemplates`）。
+- **沙盒**：客户端 `LedgerAccessControl` — `creator`/`admin` 见公账分段；`member` 锁定积分视图。DB RLS：`expense`/`income` 行仅 `can_manage_household` 可读。
 
 ## 编解码
 

@@ -82,3 +82,12 @@ protocol FamilyProfileDataService {
     /// 删除无账号虚拟成员档案（`family_profiles` 单行）。
     func deleteProfile(profileId: UUID) async throws
 }
+
+protocol LedgerDataService {
+    func fetchCategories(in householdId: UUID) async throws -> [ExpenseCategory]
+    func ensureDefaultCategories(in householdId: UUID) async throws -> [ExpenseCategory]
+    func fetchPointsLedger(in householdId: UUID, targetProfileId: UUID?) async throws -> [PointsLedgerEntry]
+    func insertPointsLedgerEntry(_ entry: PointsLedgerEntry) async throws -> PointsLedgerEntry
+    /// 公账/收入行：直接 insert `tasks`，不经空间 RPC。
+    func createLedgerTask(_ task: FamilyTask) async throws -> FamilyTask
+}
