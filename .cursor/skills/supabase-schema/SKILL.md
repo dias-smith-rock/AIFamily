@@ -131,7 +131,15 @@ description: >-
 | `points_ledger` | `PointsLedgerEntry`；`target_profile_id` = **`family_profiles.id`**；`amount` 正=赚取负=兑换 |
 | `household_rewards` | Phase 2 愿望商城；`required_points` |
 
-迁移：`supabase/migrations/20260627120004_wallet_ledger_schema.sql`（tasks 增量列 + 三表 + 公账 RLS 增补）。
+迁移：`supabase/migrations/20260627120004_wallet_ledger_schema.sql`（tasks 增量列 + 三表 + 公账 RLS 增补）；`20260627130000_fix_membership_role_helpers.sql`（`can_manage_household` / `current_user_role` 对齐 `household_memberships.role`，勿用已废弃 `user_role` 列）。
+
+### 角色 helper（RLS）
+
+| 函数 | 说明 |
+|------|------|
+| `get_user_role_in_household` | 返回当前用户在群组的 `role::text`（`creator` / `admin` / `member`），仅 `status=active` |
+| `can_manage_household` | `role in ('creator','admin')` |
+| `current_user_role` | 委托 `get_user_role_in_household`（**禁止**引用 `user_role` 列） |
 
 ## 账本写入路径（MVP）
 
