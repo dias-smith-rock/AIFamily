@@ -51,6 +51,8 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
     /// `ledger_transactions.payer_ids` — 垫付人 **family_profiles.id[]**。
     var payerIds: [UUID]
     var targetMemberIds: [UUID]
+    /// `ledger_transactions.visible_member_ids` — 可见成员 **family_profiles.id[]**；空 = 不额外限制。
+    var visibleMemberIds: [UUID]
     var note: String?
     var attachmentUrls: [String]
     var source: String
@@ -62,6 +64,13 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
 
     /// 兼容旧单垫付人调用；权威字段为 `payerIds`。
     var payerId: UUID? { payerIds.first }
+
+    /// 与 RLS 一致：空列表不额外限制；否则需在列表内或为记账人。
+    func isVisible(to viewerProfileId: UUID?) -> Bool {
+        if visibleMemberIds.isEmpty { return true }
+        guard let viewerProfileId else { return false }
+        return visibleMemberIds.contains(viewerProfileId) || creatorId == viewerProfileId
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -77,6 +86,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         case payerIds
         case payerId
         case targetMemberIds
+        case visibleMemberIds
         case note
         case attachmentUrls
         case source
@@ -97,6 +107,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         categoryIconSnapshot: String?,
         payerIds: [UUID],
         targetMemberIds: [UUID],
+        visibleMemberIds: [UUID] = [],
         note: String?,
         attachmentUrls: [String],
         source: String,
@@ -116,6 +127,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         self.categoryIconSnapshot = categoryIconSnapshot
         self.payerIds = payerIds
         self.targetMemberIds = targetMemberIds
+        self.visibleMemberIds = visibleMemberIds
         self.note = note
         self.attachmentUrls = attachmentUrls
         self.source = source
@@ -145,6 +157,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
             payerIds = []
         }
         targetMemberIds = try container.decodeIfPresent([UUID].self, forKey: .targetMemberIds) ?? []
+        visibleMemberIds = try container.decodeIfPresent([UUID].self, forKey: .visibleMemberIds) ?? []
         note = try container.decodeIfPresent(String.self, forKey: .note)
         attachmentUrls = try container.decodeIfPresent([String].self, forKey: .attachmentUrls) ?? []
         source = try container.decodeIfPresent(String.self, forKey: .source) ?? "manual"
@@ -167,6 +180,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         try container.encodeIfPresent(categoryIconSnapshot, forKey: .categoryIconSnapshot)
         try container.encode(payerIds, forKey: .payerIds)
         try container.encode(targetMemberIds, forKey: .targetMemberIds)
+        try container.encode(visibleMemberIds, forKey: .visibleMemberIds)
         try container.encodeIfPresent(note, forKey: .note)
         try container.encode(attachmentUrls, forKey: .attachmentUrls)
         try container.encode(source, forKey: .source)

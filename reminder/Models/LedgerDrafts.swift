@@ -10,6 +10,7 @@ struct LedgerTransactionDraft: Equatable, Sendable {
     var selectedTags: [CategoryTag]
     var payerIds: [UUID]
     var targetMemberIds: [UUID]
+    var visibleMemberIds: [UUID]
     var note: String?
     var creatorProfileId: UUID
 }
@@ -56,6 +57,7 @@ struct LedgerTransactionUpdatePatch: Encodable {
     let categoryIconSnapshot: String?
     let payerIds: [UUID]
     let targetMemberIds: [UUID]
+    let visibleMemberIds: [UUID]
     let note: String?
     let updatedAt: Date
 
@@ -69,6 +71,7 @@ struct LedgerTransactionUpdatePatch: Encodable {
         case categoryIconSnapshot = "category_icon_snapshot"
         case payerIds = "payer_ids"
         case targetMemberIds = "target_member_ids"
+        case visibleMemberIds = "visible_member_ids"
         case note
         case updatedAt = "updated_at"
     }

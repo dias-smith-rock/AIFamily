@@ -10,6 +10,8 @@ final class FamilyLedgerViewModel: ObservableObject {
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
+    /// 当前查看者 profile（用于可见度过滤；与 RLS 对齐）。
+    @Published private(set) var viewerProfileId: UUID?
 
     @Published var reportPeriod: LedgerReportPeriod = .month
     @Published var reportPayerFilterId: UUID?
@@ -74,9 +76,26 @@ final class FamilyLedgerViewModel: ObservableObject {
             householdMembers = []
             familyProfiles = []
             loadedHouseholdId = nil
+            viewerProfileId = nil
         } else if changed {
             loadedHouseholdId = nil
         }
+    }
+
+    /// 根据当前 membership / profile 更新可见度查看者。
+    func setViewerContext(membershipId: UUID?, fallbackProfileId: UUID?) {
+        if let membershipId,
+           let membership = householdMembers.first(where: { $0.id == membershipId }),
+           let profileId = membership.profileId {
+            viewerProfileId = profileId
+            return
+        }
+        viewerProfileId = fallbackProfileId
+    }
+
+    /// Wallet / 列表 / 报表共用的可见流水。
+    var visibleTransactions: [LedgerTransaction] {
+        transactions.filter { $0.isVisible(to: viewerProfileId) }
     }
 
     func loadInitialDataIfNeeded() async {
@@ -440,7 +459,7 @@ final class FamilyLedgerViewModel: ObservableObject {
     // MARK: - Summary / Report
 
     var filteredTransactionsForReport: [LedgerTransaction] {
-        transactions.filter { tx in
+        visibleTransactions.filter { tx in
             guard isInSelectedPeriod(tx.transactionTime) else { return false }
             if let payerId = reportPayerFilterId, tx.payerIds.contains(payerId) == false {
                 return false
@@ -502,7 +521,7 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     var dashboardTransactions: [LedgerTransaction] {
-        transactions.filter {
+        visibleTransactions.filter {
             isInPeriod($0.transactionTime, period: ledgerGranularity, anchor: periodAnchor)
         }
     }
@@ -576,9 +595,9 @@ final class FamilyLedgerViewModel: ObservableObject {
         NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
     }
 
-    /// 指定分类下的全部流水（按时间倒序）。
+    /// 指定分类下对当前查看者可见的流水（按时间倒序）。
     func transactions(forCategoryId categoryId: UUID) -> [LedgerTransaction] {
-        transactions
+        visibleTransactions
             .filter { $0.categoryId == categoryId }
             .sorted { $0.transactionTime > $1.transactionTime }
     }
@@ -734,7 +753,7 @@ final class FamilyLedgerViewModel: ObservableObject {
         for period: LedgerReportPeriod,
         anchor: Date
     ) -> (expense: Double, income: Double) {
-        let rows = transactions.filter { isInPeriod($0.transactionTime, period: period, anchor: anchor) }
+        let rows = visibleTransactions.filter { isInPeriod($0.transactionTime, period: period, anchor: anchor) }
         let expense = sumConverted(rows.filter { $0.type == .expense })
         let income = sumConverted(rows.filter { $0.type == .income })
         return (expense, income)

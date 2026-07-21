@@ -63,6 +63,10 @@ struct LedgerTransactionDetailSheet: View {
                                 title: L10n.Ledger.beneficiaries.localized,
                                 value: memberNames(transaction.targetMemberIds)
                             )
+                            detailRow(
+                                title: L10n.Ledger.visibility.localized,
+                                value: visibilityDisplay(for: transaction)
+                            )
                         } header: {
                             Text(L10n.Ledger.forWhom.localized)
                         }
@@ -162,6 +166,13 @@ struct LedgerTransactionDetailSheet: View {
     private func memberNames(_ ids: [UUID]) -> String {
         guard ids.isEmpty == false else { return "—" }
         return ids.map { viewModel.profileDisplayName(for: $0) }.joined(separator: ", ")
+    }
+
+    private func visibilityDisplay(for transaction: LedgerTransaction) -> String {
+        if transaction.visibleMemberIds.isEmpty {
+            return AppLocalized.string(L10n.Ledger.visibilityEveryoneWithAccess, locale: locale)
+        }
+        return memberNames(transaction.visibleMemberIds)
     }
 
     private func deleteEntry() async {

@@ -100,6 +100,7 @@ final class SupabaseLedgerDataService: LedgerDataService {
             categoryIconSnapshot: draft.category.icon,
             payerIds: draft.payerIds,
             targetMemberIds: draft.targetMemberIds,
+            visibleMemberIds: draft.visibleMemberIds,
             note: draft.note?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
             attachmentUrls: [],
             source: "manual",
@@ -147,6 +148,7 @@ final class SupabaseLedgerDataService: LedgerDataService {
             categoryIconSnapshot: draft.category.icon,
             payerIds: draft.payerIds,
             targetMemberIds: draft.targetMemberIds,
+            visibleMemberIds: draft.visibleMemberIds,
             note: draft.note?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
             updatedAt: now
         )

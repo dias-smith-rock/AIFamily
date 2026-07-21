@@ -22,6 +22,7 @@ struct ManualExpenseEntrySheet: View {
     @State private var selectedTagIds: Set<UUID> = []
     @State private var selectedPayerIds: Set<UUID> = []
     @State private var selectedTargetIds: Set<UUID> = []
+    @State private var selectedVisibleIds: Set<UUID> = []
     @State private var noteText = ""
     @State private var isSaving = false
     @State private var isPresentingCreateLocalProfile = false
@@ -51,6 +52,7 @@ struct ManualExpenseEntrySheet: View {
             _selectedCategoryId = State(initialValue: editingTransaction.categoryId)
             _selectedPayerIds = State(initialValue: Set(editingTransaction.payerIds))
             _selectedTargetIds = State(initialValue: Set(editingTransaction.targetMemberIds))
+            _selectedVisibleIds = State(initialValue: Set(editingTransaction.visibleMemberIds))
             _noteText = State(initialValue: editingTransaction.note ?? "")
         } else {
             self.prefillType = locksToIncome ? .income : prefillType
@@ -175,6 +177,23 @@ struct ManualExpenseEntrySheet: View {
                                         }
                                     }
                                 }
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(L10n.Ledger.visibility.localized)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+
+                                    LedgerTagCapsuleFlow(spacing: 8) {
+                                        ForEach(selectableProfiles) { profile in
+                                            selectableCapsule(
+                                                title: memberLabel(for: profile),
+                                                isSelected: selectedVisibleIds.contains(profile.id)
+                                            ) {
+                                                toggleVisible(profile.id)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                             .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                         }
@@ -215,6 +234,10 @@ struct ManualExpenseEntrySheet: View {
             }
             .task {
                 await viewModel.loadRoster()
+                viewModel.setViewerContext(
+                    membershipId: appRouter.selectedMembershipId,
+                    fallbackProfileId: appRouter.selectedProfileId
+                )
                 applyDefaults()
             }
             .fullScreenCover(isPresented: $isPresentingCreateLocalProfile) {
@@ -343,6 +366,19 @@ struct ManualExpenseEntrySheet: View {
         }
     }
 
+    private func toggleVisible(_ id: UUID) {
+        // Me 为必选，不可取消
+        if id == currentCreatorProfileId {
+            selectedVisibleIds.insert(id)
+            return
+        }
+        if selectedVisibleIds.contains(id) {
+            selectedVisibleIds.remove(id)
+        } else {
+            selectedVisibleIds.insert(id)
+        }
+    }
+
     // MARK: - Bindings / helpers
 
     private var navigationTitle: LocalizedStringResource {
@@ -431,6 +467,7 @@ struct ManualExpenseEntrySheet: View {
         return selectedCategory != nil
             && currentCreatorProfileId != nil
             && selectedPayerIds.isEmpty == false
+            && selectedVisibleIds.isEmpty == false
     }
 
     private var parsedAmount: Double? {
@@ -470,6 +507,10 @@ struct ManualExpenseEntrySheet: View {
             selectedCategoryId = editing.categoryId
             selectedPayerIds = Set(editing.payerIds)
             selectedTargetIds = Set(editing.targetMemberIds)
+            selectedVisibleIds = Set(editing.visibleMemberIds)
+            if let me = currentCreatorProfileId {
+                selectedVisibleIds.insert(me)
+            }
             // 用标签名快照反查当前分类下的 tag id
             let names = Set(editing.tagSnapshots)
             selectedTagIds = Set(
@@ -493,6 +534,30 @@ struct ManualExpenseEntrySheet: View {
                 selectedPayerIds.insert(first)
             }
         }
+        if selectedVisibleIds.isEmpty {
+            selectedVisibleIds = defaultVisibleProfileIds
+        }
+        if let me = currentCreatorProfileId {
+            selectedVisibleIds.insert(me)
+        }
+    }
+
+    /// 默认可见：组织内 creator / admin 对应的 profile；始终包含 Me。
+    private var defaultVisibleProfileIds: Set<UUID> {
+        var ids = Set(
+            viewModel.householdMembers.compactMap { membership -> UUID? in
+                guard let role = membership.parsedRole,
+                      role == .creator || role == .admin,
+                      let profileId = membership.profileId else {
+                    return nil
+                }
+                return profileId
+            }
+        )
+        if let me = currentCreatorProfileId {
+            ids.insert(me)
+        }
+        return ids
     }
 
     private func saveEntry() async {
@@ -507,6 +572,8 @@ struct ManualExpenseEntrySheet: View {
         defer { isSaving = false }
 
         let selectedTags = availableTags.filter { selectedTagIds.contains($0.id) }
+        var visibleIds = selectedVisibleIds
+        visibleIds.insert(creatorId)
         let draft = LedgerTransactionDraft(
             householdId: householdId,
             type: entryType,
@@ -517,6 +584,7 @@ struct ManualExpenseEntrySheet: View {
             selectedTags: selectedTags,
             payerIds: Array(selectedPayerIds),
             targetMemberIds: Array(selectedTargetIds),
+            visibleMemberIds: Array(visibleIds),
             note: noteText,
             creatorProfileId: editingTransaction?.creatorId ?? creatorId
         )

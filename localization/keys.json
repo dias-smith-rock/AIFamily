@@ -6091,5 +6091,19 @@
     "table": "Ledger",
     "swift_property": "deleteEntryMessage",
     "orphan": false
+  },
+  {
+    "legacy_key": "可见度",
+    "new_key": "ledger_visibility",
+    "table": "Ledger",
+    "swift_property": "visibility",
+    "orphan": false
+  },
+  {
+    "legacy_key": "所有有权限的人",
+    "new_key": "ledger_visibility_everyone_with_access",
+    "table": "Ledger",
+    "swift_property": "visibilityEveryoneWithAccess",
+    "orphan": false
   }
 ]

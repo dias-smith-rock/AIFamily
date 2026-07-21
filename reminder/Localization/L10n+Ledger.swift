@@ -79,6 +79,8 @@ extension L10n {
         static let editEntry = Entry(key: "ledger_edit_entry", table: .ledger)
         static let deleteEntry = Entry(key: "ledger_delete_entry", table: .ledger)
         static let deleteEntryMessage = Entry(key: "ledger_delete_entry_message", table: .ledger)
+        static let visibility = Entry(key: "ledger_visibility", table: .ledger)
+        static let visibilityEveryoneWithAccess = Entry(key: "ledger_visibility_everyone_with_access", table: .ledger)
     }
 }
 

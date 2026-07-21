@@ -468,6 +468,7 @@ actor MockLedgerDataService: LedgerDataService {
             categoryIconSnapshot: draft.category.icon,
             payerIds: draft.payerIds,
             targetMemberIds: draft.targetMemberIds,
+            visibleMemberIds: draft.visibleMemberIds,
             note: draft.note,
             attachmentUrls: [],
             source: "manual",
@@ -504,6 +505,7 @@ actor MockLedgerDataService: LedgerDataService {
         row.categoryIconSnapshot = draft.category.icon
         row.payerIds = draft.payerIds
         row.targetMemberIds = draft.targetMemberIds
+        row.visibleMemberIds = draft.visibleMemberIds
         row.note = draft.note
         row.updatedAt = now
         row.tagSnapshots = draft.selectedTags.map(\.name)

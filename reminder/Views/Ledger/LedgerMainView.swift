@@ -57,6 +57,10 @@ struct LedgerMainView: View {
                     return
                 }
                 await viewModel.loadRoster(loadToken: token, source: "main_task")
+                viewModel.setViewerContext(
+                    membershipId: appRouter.selectedMembershipId,
+                    fallbackProfileId: appRouter.selectedProfileId
+                )
                 if canAccessWalletData {
                     // 分类为空时强制重拉，避免错误缓存
                     let forceReload = viewModel.categories.isEmpty
@@ -95,6 +99,10 @@ struct LedgerMainView: View {
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
                     await viewModel.loadRoster(loadToken: token, source: "on_change_household")
+                    viewModel.setViewerContext(
+                        membershipId: appRouter.selectedMembershipId,
+                        fallbackProfileId: appRouter.selectedProfileId
+                    )
                     if canAccessWalletData {
                         await viewModel.loadLedgerData(
                             force: true,
@@ -115,6 +123,10 @@ struct LedgerMainView: View {
                 )
                 Task {
                     await viewModel.loadRoster(loadToken: token, source: "on_change_membership")
+                    viewModel.setViewerContext(
+                        membershipId: appRouter.selectedMembershipId,
+                        fallbackProfileId: appRouter.selectedProfileId
+                    )
                     if canAccessWalletData {
                         await viewModel.loadLedgerData(
                             force: true,
@@ -133,7 +145,9 @@ struct LedgerMainView: View {
             appRouter.selectedHouseholdId?.uuidString ?? "none",
             appRouter.selectedMembershipId?.uuidString ?? "none",
             appSettings.selectedLanguage.id,
-            appSettings.ledgerDisplayCurrency
+            appSettings.ledgerDisplayCurrency,
+            // bootstrap 完成前会 skip；必须纳入 id，否则完成后 .task 不会重跑 → 永久空态
+            appRouter.hasCompletedAuthBootstrap ? "boot1" : "boot0",
         ].joined(separator: "|")
     }
 
