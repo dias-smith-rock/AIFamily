@@ -65,6 +65,18 @@ struct PersonalAccountSettingsSection: View {
                 )
             }
 
+            NavigationLink {
+                LedgerDisplayCurrencySettingsView()
+            } label: {
+                SettingsRowView(
+                    title: L10n.Settings.ledgerDisplayCurrency,
+                    systemImage: "dollarsign.circle",
+                    iconTint: .green,
+                    value: appSettings.ledgerDisplayCurrency,
+                    showsChevron: false
+                )
+            }
+
             Button {
                 #if canImport(UIKit)
                 SystemSettingsHelper.openAppSettings()

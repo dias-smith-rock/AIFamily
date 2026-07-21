@@ -46,6 +46,7 @@ struct LedgerMainView: View {
                     let forceReload = viewModel.categories.isEmpty
                     await viewModel.loadLedgerData(force: forceReload)
                 }
+                await ExchangeRateStore.shared.ensureRatesFresh()
             }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
                 viewModel.setHouseholdContext(newValue)
@@ -73,7 +74,8 @@ struct LedgerMainView: View {
         [
             appRouter.selectedHouseholdId?.uuidString ?? "none",
             appRouter.selectedMembershipId?.uuidString ?? "none",
-            appSettings.selectedLanguage.id
+            appSettings.selectedLanguage.id,
+            appSettings.ledgerDisplayCurrency
         ].joined(separator: "|")
     }
 

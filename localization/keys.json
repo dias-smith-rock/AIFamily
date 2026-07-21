@@ -6007,5 +6007,19 @@
     "table": "Schedule",
     "swift_property": "nextYear",
     "orphan": true
+  },
+  {
+    "legacy_key": "记账显示货币",
+    "new_key": "settings_ledger_display_currency",
+    "table": "Settings",
+    "swift_property": "ledgerDisplayCurrency",
+    "orphan": false
+  },
+  {
+    "legacy_key": "仅影响 Wallet 金额的展示换算，不会改动已记账流水的币种。",
+    "new_key": "settings_ledger_display_currency_footer",
+    "table": "Settings",
+    "swift_property": "ledgerDisplayCurrencyFooter",
+    "orphan": false
   }
 ]

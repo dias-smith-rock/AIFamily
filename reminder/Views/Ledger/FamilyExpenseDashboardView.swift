@@ -2,7 +2,9 @@ import SwiftUI
 
 struct FamilyExpenseDashboardView: View {
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @ObservedObject var viewModel: FamilyLedgerViewModel
+    @ObservedObject private var exchangeRates = ExchangeRateStore.shared
 
     /// `false`：普通成员仅进账（收入网格），不展示支出/报表/分类管理。
     var allowsExpenseManagement: Bool = true
@@ -59,6 +61,10 @@ struct FamilyExpenseDashboardView: View {
         }
         .refreshable {
             await viewModel.loadInitialData(force: true)
+            await exchangeRates.ensureRatesFresh()
+        }
+        .task {
+            await exchangeRates.ensureRatesFresh()
         }
         .safeAreaInset(edge: .bottom) {
             bottomBar
@@ -358,7 +364,14 @@ struct FamilyExpenseDashboardView: View {
     }
 
     private func currencyText(_ value: Double) -> String {
-        value.formatted(.number.precision(.fractionLength(0...2)))
+        // 依赖 appSettings / exchangeRates，切换显示货币或汇率刷新时触发重绘
+        _ = appSettings.ledgerDisplayCurrency
+        _ = exchangeRates.fetchedAt
+        return LedgerMoneyFormatter.string(
+            value,
+            currencyCode: viewModel.displayCurrencyCode,
+            locale: locale
+        )
     }
 
     private func attemptDelete(_ category: ExpenseCategory) {

@@ -16,5 +16,7 @@ extension L10n {
     static let locationReportingNavTitle = Entry(key: "settings_location_reporting_nav_title", table: .settings)
     static let locationSharingSection = Entry(key: "settings_location_sharing_section", table: .settings)
     static let profileNotLoadedInGroup = Entry(key: "settings_profile_not_loaded_in_group", table: .settings)
+    static let ledgerDisplayCurrency = Entry(key: "settings_ledger_display_currency", table: .settings)
+    static let ledgerDisplayCurrencyFooter = Entry(key: "settings_ledger_display_currency_footer", table: .settings)
     }
 }

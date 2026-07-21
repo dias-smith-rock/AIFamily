@@ -42,6 +42,9 @@ final class AppSettingsManager: ObservableObject {
     @AppStorage("app_language")
     private var languageStorage = ""
 
+    @AppStorage("ledger_display_currency")
+    private var ledgerDisplayCurrencyStorage = LedgerCurrency.defaultCode
+
     var appearance: AppAppearance {
         get { AppAppearance(rawValue: appearanceStorage) ?? .system }
         set {
@@ -63,6 +66,15 @@ final class AppSettingsManager: ObservableObject {
         set {
             objectWillChange.send()
             languageStorage = newValue == .system ? "" : newValue.rawValue
+        }
+    }
+
+    /// Wallet / 报表展示用货币（ISO 4217）；非法值回退 HKD。
+    var ledgerDisplayCurrency: String {
+        get { LedgerCurrency.normalized(ledgerDisplayCurrencyStorage) }
+        set {
+            objectWillChange.send()
+            ledgerDisplayCurrencyStorage = LedgerCurrency.normalized(newValue)
         }
     }
 

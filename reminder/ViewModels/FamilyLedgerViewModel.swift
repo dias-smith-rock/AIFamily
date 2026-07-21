@@ -204,15 +204,11 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     var reportExpenseTotal: Double {
-        filteredTransactionsForReport
-            .filter { $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
+        sumConverted(filteredTransactionsForReport.filter { $0.type == .expense })
     }
 
     var reportIncomeTotal: Double {
-        filteredTransactionsForReport
-            .filter { $0.type == .income }
-            .reduce(0) { $0 + $1.amount }
+        sumConverted(filteredTransactionsForReport.filter { $0.type == .income })
     }
 
     var reportNetTotal: Double {
@@ -227,7 +223,7 @@ final class FamilyLedgerViewModel: ObservableObject {
                 (
                     name: name,
                     icon: rows.first?.categoryIconSnapshot,
-                    amount: rows.reduce(0) { $0 + $1.amount }
+                    amount: sumConverted(rows)
                 )
             }
             .sorted { $0.amount > $1.amount }
@@ -248,15 +244,11 @@ final class FamilyLedgerViewModel: ObservableObject {
     // MARK: - Home period navigation
 
     var expenseTotalInPeriod: Double {
-        dashboardTransactions
-            .filter { $0.type == .expense }
-            .reduce(0) { $0 + $1.amount }
+        sumConverted(dashboardTransactions.filter { $0.type == .expense })
     }
 
     var incomeTotalInPeriod: Double {
-        dashboardTransactions
-            .filter { $0.type == .income }
-            .reduce(0) { $0 + $1.amount }
+        sumConverted(dashboardTransactions.filter { $0.type == .income })
     }
 
     var dashboardTransactions: [LedgerTransaction] {
@@ -266,9 +258,14 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     func amount(for categoryId: UUID, type: LedgerEntryType) -> Double {
-        dashboardTransactions
-            .filter { $0.type == type && $0.categoryId == categoryId }
-            .reduce(0) { $0 + $1.amount }
+        sumConverted(
+            dashboardTransactions.filter { $0.type == type && $0.categoryId == categoryId }
+        )
+    }
+
+    /// 当前设置中的 Wallet 显示货币。
+    var displayCurrencyCode: String {
+        AppSettingsManager.shared.ledgerDisplayCurrency
     }
 
     func shiftPeriod(by delta: Int) {
@@ -426,13 +423,24 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     // MARK: - Private
 
+    private func sumConverted(_ rows: [LedgerTransaction]) -> Double {
+        let target = displayCurrencyCode
+        return rows.reduce(0) { partial, tx in
+            partial + ExchangeRateStore.shared.convert(
+                amount: tx.amount,
+                from: tx.currency,
+                to: target
+            )
+        }
+    }
+
     private func periodTotals(
         for period: LedgerReportPeriod,
         anchor: Date
     ) -> (expense: Double, income: Double) {
         let rows = transactions.filter { isInPeriod($0.transactionTime, period: period, anchor: anchor) }
-        let expense = rows.filter { $0.type == .expense }.reduce(0) { $0 + $1.amount }
-        let income = rows.filter { $0.type == .income }.reduce(0) { $0 + $1.amount }
+        let expense = sumConverted(rows.filter { $0.type == .expense })
+        let income = sumConverted(rows.filter { $0.type == .income })
         return (expense, income)
     }
 

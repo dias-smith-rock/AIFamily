@@ -12,7 +12,7 @@ struct ManualExpenseEntrySheet: View {
 
     @State private var entryType: LedgerEntryType
     @State private var amountText = ""
-    @State private var currency = "HKD"
+    @State private var currency: String
     @State private var transactionTime = Date()
     @State private var selectedCategoryId: UUID?
     @State private var selectedTagIds: Set<UUID> = []
@@ -21,7 +21,7 @@ struct ManualExpenseEntrySheet: View {
     @State private var noteText = ""
     @State private var isSaving = false
 
-    private let currencies = ["HKD", "CNY", "USD", "EUR", "JPY"]
+    private let currencies = LedgerCurrency.allCodes
 
     init(
         viewModel: FamilyLedgerViewModel,
@@ -34,6 +34,7 @@ struct ManualExpenseEntrySheet: View {
         self.prefillCategoryId = prefillCategoryId
         self.locksToIncome = locksToIncome
         _entryType = State(initialValue: locksToIncome ? .income : prefillType)
+        _currency = State(initialValue: AppSettingsManager.shared.ledgerDisplayCurrency)
     }
 
     var body: some View {

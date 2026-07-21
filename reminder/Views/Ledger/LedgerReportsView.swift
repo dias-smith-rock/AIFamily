@@ -3,7 +3,10 @@ import Charts
 
 struct LedgerReportsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.locale) private var locale
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @ObservedObject var viewModel: FamilyLedgerViewModel
+    @ObservedObject private var exchangeRates = ExchangeRateStore.shared
 
     var body: some View {
         NavigationStack {
@@ -23,6 +26,9 @@ struct LedgerReportsView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.close) { dismiss() }
                 }
+            }
+            .task {
+                await exchangeRates.ensureRatesFresh()
             }
         }
     }
@@ -80,7 +86,7 @@ struct LedgerReportsView: View {
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            Text(value.formatted(.number.precision(.fractionLength(0...2))))
+            Text(moneyText(value))
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(tint)
                 .lineLimit(1)
@@ -90,6 +96,16 @@ struct LedgerReportsView: View {
         .padding(10)
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func moneyText(_ value: Double) -> String {
+        _ = appSettings.ledgerDisplayCurrency
+        _ = exchangeRates.fetchedAt
+        return LedgerMoneyFormatter.string(
+            value,
+            currencyCode: viewModel.displayCurrencyCode,
+            locale: locale
+        )
     }
 
     @ViewBuilder
@@ -122,7 +138,7 @@ struct LedgerReportsView: View {
                             Text("\(item.icon ?? "🏷️") \(item.name)")
                                 .font(.subheadline)
                             Spacer()
-                            Text(item.amount.formatted(.number.precision(.fractionLength(0...2))))
+                            Text(moneyText(item.amount))
                                 .font(.subheadline.weight(.semibold))
                         }
                     }
