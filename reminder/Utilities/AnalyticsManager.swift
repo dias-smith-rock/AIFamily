@@ -27,6 +27,9 @@ enum AnalyticsManager {
         case aiPhotoTaskSucceeded
         case guestStarted
         case guestMigrated(taskCount: Int)
+        case ledgerCategoryDeleteFailed(step: String, errorCode: String, detail: String)
+        case ledgerCategoryDeleteSucceeded
+        case ledgerCategoryDeleteBlocked(reason: String)
     }
 
     /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
@@ -153,6 +156,25 @@ enum AnalyticsManager {
                 "guest_migrated",
                 ["task_count": taskCount]
             )
+
+        case .ledgerCategoryDeleteFailed(let step, let errorCode, let detail):
+            return (
+                "ledger_category_delete_failed",
+                [
+                    "step": step,
+                    "error_code": errorCode,
+                    "detail": detail,
+                ]
+            )
+
+        case .ledgerCategoryDeleteSucceeded:
+            return ("ledger_category_delete_succeeded", nil)
+
+        case .ledgerCategoryDeleteBlocked(let reason):
+            return (
+                "ledger_category_delete_blocked",
+                ["reason": reason]
+            )
         }
     }
 
@@ -204,6 +226,12 @@ enum AnalyticsManager {
             return "guest_started"
         case .guestMigrated(let taskCount):
             return "guest_migrated task_count=\(taskCount)"
+        case .ledgerCategoryDeleteFailed(let step, let errorCode, let detail):
+            return "ledger_category_delete_failed step=\(step) error=\(errorCode) \(detail)"
+        case .ledgerCategoryDeleteSucceeded:
+            return "ledger_category_delete_succeeded"
+        case .ledgerCategoryDeleteBlocked(let reason):
+            return "ledger_category_delete_blocked reason=\(reason)"
         }
     }
 }

@@ -199,3 +199,17 @@ enum LedgerReportPeriod: String, CaseIterable, Identifiable {
         }
     }
 }
+
+enum LedgerCategoryMutationError: LocalizedError, Equatable {
+    case hasLinkedTransactions
+    case softDeleteDidNotPersist
+
+    var errorDescription: String? {
+        switch self {
+        case .hasLinkedTransactions:
+            AppLocalized.localizedSync(L10n.Ledger.cannotDeleteCategoryWithEntries)
+        case .softDeleteDidNotPersist:
+            AppLocalized.localizedSync(L10n.Ledger.deleteCategoryFailed)
+        }
+    }
+}

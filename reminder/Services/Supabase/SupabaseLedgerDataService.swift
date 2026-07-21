@@ -136,21 +136,68 @@ final class SupabaseLedgerDataService: LedgerDataService {
     }
 
     func softDeleteCategory(id: UUID) async throws {
-        let patch = CategorySoftDeletePatch(isDeleted: true, updatedAt: Date())
-        _ = try await provider.client
-            .from(LedgerSupabaseTable.expenseCategories)
-            .update(patch)
-            .eq("id", value: id.uuidString.lowercased())
-            .execute()
+        LedgerCategoryDeleteLogger.step(
+            .serviceStarted,
+            categoryId: id,
+            detail: "table=expense_categories patch=is_deleted,updated_at"
+        )
+        do {
+            let patch = CategorySoftDeletePatch(isDeleted: true, updatedAt: Date())
+            let updated: ExpenseCategory = try await provider.client
+                .from(LedgerSupabaseTable.expenseCategories)
+                .update(patch)
+                .eq("id", value: id.uuidString.lowercased())
+                .select()
+                .single()
+                .execute()
+                .value
+            LedgerCategoryDeleteLogger.step(
+                .updateReturned,
+                categoryId: id,
+                categoryName: updated.name,
+                householdId: updated.householdId,
+                detail: "is_deleted=\(updated.isDeleted) type=\(updated.type.rawValue) is_preset=\(updated.isPreset)"
+            )
+            guard updated.isDeleted else {
+                throw LedgerCategoryMutationError.softDeleteDidNotPersist
+            }
+
+            let tagPatch = TagSoftDeletePatch(isDeleted: true)
+            _ = try await provider.client
+                .from(LedgerSupabaseTable.categoryTags)
+                .update(tagPatch)
+                .eq("category_id", value: id.uuidString.lowercased())
+                .eq("is_deleted", value: false)
+                .execute()
+            LedgerCategoryDeleteLogger.step(
+                .tagsSoftDeleted,
+                categoryId: id,
+                householdId: updated.householdId
+            )
+        } catch {
+            LedgerCategoryDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                categoryId: id,
+                detail: "phase=supabase_update"
+            )
+            throw error
+        }
     }
 
     func softDeleteTag(id: UUID) async throws {
         let patch = TagSoftDeletePatch(isDeleted: true)
-        _ = try await provider.client
+        let updated: CategoryTag = try await provider.client
             .from(LedgerSupabaseTable.categoryTags)
             .update(patch)
             .eq("id", value: id.uuidString.lowercased())
+            .select()
+            .single()
             .execute()
+            .value
+        guard updated.isDeleted else {
+            throw LedgerCategoryMutationError.softDeleteDidNotPersist
+        }
     }
 
     func createCategory(
@@ -178,6 +225,28 @@ final class SupabaseLedgerDataService: LedgerDataService {
         return try await provider.client
             .from(LedgerSupabaseTable.expenseCategories)
             .insert(row)
+            .select()
+            .single()
+            .execute()
+            .value
+    }
+
+    func updateCategory(
+        id: UUID,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory {
+        let patch = CategoryUpdatePatch(
+            name: name,
+            icon: icon,
+            colorHex: colorHex,
+            updatedAt: Date()
+        )
+        return try await provider.client
+            .from(LedgerSupabaseTable.expenseCategories)
+            .update(patch)
+            .eq("id", value: id.uuidString.lowercased())
             .select()
             .single()
             .execute()
@@ -274,6 +343,16 @@ final class SupabaseLedgerDataService: LedgerDataService {
         colorHex: String?
     ) async throws -> ExpenseCategory {
         _ = householdId; _ = type; _ = name; _ = icon; _ = colorHex
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func updateCategory(
+        id: UUID,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory {
+        _ = id; _ = name; _ = icon; _ = colorHex
         throw SupabaseServiceError.sdkUnavailable
     }
 

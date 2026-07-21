@@ -47,6 +47,10 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     var currentHouseholdIdValue: UUID? { currentHouseholdId }
 
+    func clearErrorMessage() {
+        errorMessage = nil
+    }
+
     func setHouseholdContext(_ householdId: UUID?) {
         let changed = currentHouseholdId != householdId
         currentHouseholdId = householdId
@@ -85,13 +89,17 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     func loadLedgerData(force: Bool) async {
         guard let householdId = currentHouseholdId else { return }
-        if force == false, loadedHouseholdId == householdId { return }
+        // 分类为空视为未就绪：禁止缓存命中，避免「补种失败一次 → 永远空白」
+        if force == false,
+           loadedHouseholdId == householdId,
+           categories.contains(where: { $0.isDeleted == false }) {
+            return
+        }
 
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
 
-        // 幂等补种；失败不阻断后续读取（例如旧家庭已有分类）
         do {
             try await ledgerService.ensurePresetCategories(in: householdId)
         } catch {
@@ -99,35 +107,62 @@ final class FamilyLedgerViewModel: ObservableObject {
         }
 
         do {
-            async let categoriesTask = ledgerService.fetchCategories(
-                in: householdId,
-                type: nil,
-                includeDeleted: false
-            )
-            async let tagsTask = ledgerService.fetchTags(
-                in: householdId,
-                categoryId: nil,
-                includeDeleted: false
-            )
-            async let txTask = ledgerService.fetchTransactions(in: householdId)
+            try await reloadLedgerPayload(householdId: householdId)
 
-            categories = try await categoriesTask
-            tags = try await tagsTask
-            var rows = try await txTask
-
-            let mappings = try await ledgerService.fetchTagMappings(for: rows.map(\.id))
-            let tagsByTx = Dictionary(grouping: mappings, by: \.transactionId)
-            for index in rows.indices {
-                rows[index].tagSnapshots = (tagsByTx[rows[index].id] ?? []).map(\.tagNameSnapshot)
+            // 成员端只能看到 income：若仍空，再补种并重拉一次（覆盖竞态 / 仅有支出分类的家庭）
+            if visibleCategoriesNeedRetry {
+                do {
+                    try await ledgerService.ensurePresetCategories(in: householdId)
+                } catch {
+                    errorMessage = error.localizedDescription
+                }
+                try await reloadLedgerPayload(householdId: householdId)
             }
-            transactions = rows
+
             loadedHouseholdId = householdId
-            if categories.isEmpty == false {
+            if categories.contains(where: { $0.isDeleted == false }) {
                 errorMessage = nil
             }
         } catch {
             errorMessage = error.localizedDescription
+            // 失败时不要记为已加载，下次进入可重试
+            if loadedHouseholdId == householdId {
+                loadedHouseholdId = nil
+            }
         }
+    }
+
+    /// 当前缓存里是否仍缺少可用分类（含「仅有支出、收入为空」对成员不可见的情况）。
+    private var visibleCategoriesNeedRetry: Bool {
+        let active = categories.filter { $0.isDeleted == false }
+        if active.isEmpty { return true }
+        // 若完全没有 income，成员页会空白；管理员也应有默认收入分类
+        return active.contains(where: { $0.type == .income }) == false
+    }
+
+    private func reloadLedgerPayload(householdId: UUID) async throws {
+        async let categoriesTask = ledgerService.fetchCategories(
+            in: householdId,
+            type: nil,
+            includeDeleted: false
+        )
+        async let tagsTask = ledgerService.fetchTags(
+            in: householdId,
+            categoryId: nil,
+            includeDeleted: false
+        )
+        async let txTask = ledgerService.fetchTransactions(in: householdId)
+
+        categories = try await categoriesTask
+        tags = try await tagsTask
+        var rows = try await txTask
+
+        let mappings = try await ledgerService.fetchTagMappings(for: rows.map(\.id))
+        let tagsByTx = Dictionary(grouping: mappings, by: \.transactionId)
+        for index in rows.indices {
+            rows[index].tagSnapshots = (tagsByTx[rows[index].id] ?? []).map(\.tagNameSnapshot)
+        }
+        transactions = rows
     }
 
     func loadInitialData(force: Bool) async {
@@ -279,20 +314,80 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     func softDeleteCategory(_ category: ExpenseCategory) async throws {
-        try await ledgerService.softDeleteCategory(id: category.id)
-        categories.removeAll { $0.id == category.id }
-        tags.removeAll { $0.categoryId == category.id }
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        let householdId = currentHouseholdId
+        let linkedCount = transactions.filter { $0.categoryId == category.id }.count
+
+        LedgerCategoryDeleteLogger.step(
+            .attempt,
+            categoryId: category.id,
+            categoryName: category.name,
+            householdId: householdId,
+            detail: "type=\(category.type.rawValue) is_preset=\(category.isPreset) linked_tx=\(linkedCount) tags=\(tags.filter { $0.categoryId == category.id }.count)"
+        )
+
+        guard canDeleteCategory(category) else {
+            LedgerCategoryDeleteLogger.step(
+                .blockedHasTransactions,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: householdId,
+                detail: "linked_tx=\(linkedCount)"
+            )
+            AnalyticsManager.log(event: .ledgerCategoryDeleteBlocked(reason: "has_linked_transactions"))
+            let blocked = LedgerCategoryMutationError.hasLinkedTransactions
+            errorMessage = blocked.localizedDescription
+            throw blocked
+        }
+
+        do {
+            try await ledgerService.softDeleteCategory(id: category.id)
+            categories.removeAll { $0.id == category.id }
+            tags.removeAll { $0.categoryId == category.id }
+            LedgerCategoryDeleteLogger.step(
+                .localStateUpdated,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: householdId,
+                detail: "remaining_categories=\(categories.count)"
+            )
+            LedgerCategoryDeleteLogger.step(
+                .succeeded,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: householdId
+            )
+            AnalyticsManager.log(event: .ledgerCategoryDeleteSucceeded)
+        } catch {
+            LedgerCategoryDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: householdId
+            )
+            errorMessage = error.localizedDescription
+            throw error
+        }
+    }
+
+    /// 分类下若存在任一流水（含历史），不可删除。
+    func canDeleteCategory(_ category: ExpenseCategory) -> Bool {
+        transactions.contains { $0.categoryId == category.id } == false
     }
 
     func softDeleteTag(_ tag: CategoryTag) async throws {
-        try await ledgerService.softDeleteTag(id: tag.id)
-        tags.removeAll { $0.id == tag.id }
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        do {
+            try await ledgerService.softDeleteTag(id: tag.id)
+            tags.removeAll { $0.id == tag.id }
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
     }
 
-    func addCategory(type: LedgerEntryType, name: String, icon: String) async throws {
-        guard let householdId = currentHouseholdId else { return }
+    @discardableResult
+    func addCategory(type: LedgerEntryType, name: String, icon: String) async throws -> ExpenseCategory? {
+        guard let householdId = currentHouseholdId else { return nil }
         let created = try await ledgerService.createCategory(
             householdId: householdId,
             type: type,
@@ -301,6 +396,20 @@ final class FamilyLedgerViewModel: ObservableObject {
             colorHex: "#007AFF"
         )
         categories.append(created)
+        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        return created
+    }
+
+    func updateCategory(_ category: ExpenseCategory, name: String, icon: String, colorHex: String?) async throws {
+        let updated = try await ledgerService.updateCategory(
+            id: category.id,
+            name: name,
+            icon: icon,
+            colorHex: colorHex
+        )
+        if let index = categories.firstIndex(where: { $0.id == updated.id }) {
+            categories[index] = updated
+        }
         NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
     }
 

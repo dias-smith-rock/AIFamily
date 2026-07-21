@@ -19,11 +19,29 @@ struct CategorySoftDeletePatch: Encodable {
     let updatedAt: Date
 
     enum CodingKeys: String, CodingKey {
-        case isDeleted
-        case updatedAt
+        case isDeleted = "is_deleted"
+        case updatedAt = "updated_at"
+    }
+}
+
+struct CategoryUpdatePatch: Encodable {
+    let name: String
+    let icon: String
+    let colorHex: String?
+    let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case icon
+        case colorHex = "color_hex"
+        case updatedAt = "updated_at"
     }
 }
 
 struct TagSoftDeletePatch: Encodable {
     let isDeleted: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case isDeleted = "is_deleted"
+    }
 }

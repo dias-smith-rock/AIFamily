@@ -50,6 +50,7 @@ extension L10n {
         static let addCategory = Entry(key: "ledger_add_category", table: .ledger)
         static let addTag = Entry(key: "ledger_add_tag", table: .ledger)
         static let deleteCategory = Entry(key: "ledger_delete_category", table: .ledger)
+        static let deleteCategoryFailed = Entry(key: "ledger_delete_category_failed", table: .ledger)
         static let deleteTag = Entry(key: "ledger_delete_tag", table: .ledger)
         static let categoryName = Entry(key: "ledger_category_name", table: .ledger)
         static let tagName = Entry(key: "ledger_tag_name", table: .ledger)
@@ -63,5 +64,10 @@ extension L10n {
         static let noCategoriesHint = Entry(key: "ledger_no_categories_hint", table: .ledger)
         static let previousPeriod = Entry(key: "ledger_previous_period", table: .ledger)
         static let nextPeriod = Entry(key: "ledger_next_period", table: .ledger)
+        static let editCategory = Entry(key: "ledger_edit_category", table: .ledger)
+        static let cannotDeleteCategoryWithEntries = Entry(
+            key: "ledger_cannot_delete_category_with_entries",
+            table: .ledger
+        )
     }
 }

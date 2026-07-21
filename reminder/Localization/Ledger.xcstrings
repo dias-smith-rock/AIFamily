@@ -137,6 +137,23 @@
         }
       }
     },
+    "ledger_cannot_delete_category_with_entries": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This category still has ledger entries and cannot be deleted."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该分类下仍有记账记录，无法删除。"
+          }
+        }
+      }
+    },
     "ledger_category": {
       "extractionState": "stale",
       "localizations": {
@@ -256,6 +273,23 @@
         }
       }
     },
+    "ledger_delete_category_failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not delete the category. Please try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除分类失败，请重试。"
+          }
+        }
+      }
+    },
     "ledger_delete_tag": {
       "extractionState": "stale",
       "localizations": {
@@ -286,6 +320,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "说明"
+          }
+        }
+      }
+    },
+    "ledger_edit_category": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit category"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "编辑分类"
           }
         }
       }

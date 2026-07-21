@@ -526,6 +526,22 @@ actor MockLedgerDataService: LedgerDataService {
         return row
     }
 
+    func updateCategory(
+        id: UUID,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory {
+        guard let index = categories.firstIndex(where: { $0.id == id }) else {
+            throw SupabaseServiceError.sdkUnavailable
+        }
+        categories[index].name = name
+        categories[index].icon = icon
+        categories[index].colorHex = colorHex
+        categories[index].updatedAt = Date()
+        return categories[index]
+    }
+
     func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag {
         let row = CategoryTag(
             id: UUID(),

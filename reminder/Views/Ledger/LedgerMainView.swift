@@ -42,7 +42,9 @@ struct LedgerMainView: View {
                 guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadRoster()
                 if canAccessWalletData {
-                    await viewModel.loadLedgerData(force: false)
+                    // 分类为空时强制重拉，避免错误缓存
+                    let forceReload = viewModel.categories.isEmpty
+                    await viewModel.loadLedgerData(force: forceReload)
                 }
             }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in

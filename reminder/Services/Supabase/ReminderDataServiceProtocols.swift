@@ -98,6 +98,12 @@ protocol LedgerDataService {
         icon: String,
         colorHex: String?
     ) async throws -> ExpenseCategory
+    func updateCategory(
+        id: UUID,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory
     func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag
     /// 若组织缺少默认分类，幂等补齐（任意活跃成员可调用，含 member）。
     func ensurePresetCategories(in householdId: UUID) async throws

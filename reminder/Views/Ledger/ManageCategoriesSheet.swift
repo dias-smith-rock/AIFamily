@@ -5,88 +5,96 @@ struct ManageCategoriesSheet: View {
     @Environment(\.locale) private var locale
     @ObservedObject var viewModel: FamilyLedgerViewModel
 
-    @State private var manageType: LedgerEntryType = .expense
-    @State private var newCategoryName = ""
-    @State private var newCategoryIcon = "🏷️"
-    @State private var newTagName = ""
-    @State private var selectedCategoryForTag: UUID?
+    @State private var manageType: LedgerEntryType
     @State private var categoryPendingDelete: ExpenseCategory?
-    @State private var tagPendingDelete: CategoryTag?
+    @State private var isConfirmingCategoryDelete = false
+    @State private var categoryPendingEdit: ExpenseCategory?
+    @State private var isShowingCreateCategory = false
+    @State private var deleteBlockedMessage: String?
+
+    init(viewModel: FamilyLedgerViewModel, initialType: LedgerEntryType = .expense) {
+        self.viewModel = viewModel
+        _manageType = State(initialValue: initialType)
+    }
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    Picker("", selection: $manageType) {
-                        Text(L10n.Ledger.expense.localized).tag(LedgerEntryType.expense)
-                        Text(L10n.Ledger.income.localized).tag(LedgerEntryType.income)
+            ZStack(alignment: .bottomTrailing) {
+                List {
+                    Section {
+                        Picker("", selection: $manageType) {
+                            Text(L10n.Ledger.expense.localized).tag(LedgerEntryType.expense)
+                            Text(L10n.Ledger.income.localized).tag(LedgerEntryType.income)
+                        }
+                        .pickerStyle(.segmented)
+                        .listRowBackground(Color.clear)
                     }
-                    .pickerStyle(.segmented)
-                    .listRowBackground(Color.clear)
-                }
 
-                Section {
-                    ForEach(viewModel.categories(for: manageType)) { category in
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Text(category.displayLabel)
-                                    .font(.body.weight(.semibold))
-                                Spacer()
-                                if category.isPreset == false {
+                    Section {
+                        ForEach(viewModel.categories(for: manageType)) { category in
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Text(category.displayLabel)
+                                        .font(.body.weight(.semibold))
+                                    Spacer()
+                                    Button {
+                                        categoryPendingEdit = category
+                                    } label: {
+                                        Image(systemName: "pencil")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .accessibilityLabel(L10n.Ledger.editCategory.localized)
+
                                     Button(role: .destructive) {
-                                        categoryPendingDelete = category
+                                        attemptDelete(category)
                                     } label: {
                                         Image(systemName: "trash")
                                     }
                                     .buttonStyle(.borderless)
+                                    .accessibilityLabel(L10n.Ledger.deleteCategory.localized)
                                 }
-                            }
 
-                            ForEach(viewModel.tags(for: category.id)) { tag in
-                                HStack {
-                                    Text(tag.name)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    if tag.isPreset == false {
-                                        Button(role: .destructive) {
-                                            tagPendingDelete = tag
-                                        } label: {
-                                            Image(systemName: "minus.circle")
+                                let tags = viewModel.tags(for: category.id)
+                                if tags.isEmpty == false {
+                                    LedgerTagCapsuleFlow(spacing: 8) {
+                                        ForEach(tags) { tag in
+                                            Text(tag.name)
+                                                .font(.caption.weight(.medium))
+                                                .foregroundStyle(.primary)
+                                                .lineLimit(1)
+                                                .fixedSize(horizontal: true, vertical: false)
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 6)
+                                                .background(Color(.secondarySystemFill))
+                                                .clipShape(Capsule())
                                         }
-                                        .buttonStyle(.borderless)
                                     }
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
+                    } header: {
+                        Text(L10n.Ledger.manageCategories.localized)
+                            .textCase(nil)
                     }
                 }
+                .contentMargins(.bottom, 88, for: .scrollContent)
 
-                Section(L10n.Ledger.addCategory.localized) {
-                    TextField(AppLocalized.string(L10n.Ledger.categoryName, locale: locale), text: $newCategoryName)
-                    TextField(AppLocalized.string(L10n.Ledger.iconEmoji, locale: locale), text: $newCategoryIcon)
-                    Button(L10n.Ledger.addCategory.localized) {
-                        Task { await addCategory() }
-                    }
-                    .disabled(newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                Button {
+                    isShowingCreateCategory = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 56, height: 56)
+                        .background(Color.accentColor)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
                 }
-
-                Section(L10n.Ledger.addTag.localized) {
-                    Picker(L10n.Ledger.category.localized, selection: tagCategoryBinding) {
-                        ForEach(viewModel.categories(for: manageType)) { category in
-                            Text(category.displayLabel).tag(category.id)
-                        }
-                    }
-                    TextField(AppLocalized.string(L10n.Ledger.tagName, locale: locale), text: $newTagName)
-                    Button(L10n.Ledger.addTag.localized) {
-                        Task { await addTag() }
-                    }
-                    .disabled(
-                        newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            || selectedCategoryForTag == nil
-                    )
-                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 20)
+                .padding(.bottom, 20)
+                .accessibilityLabel(L10n.Ledger.addCategory.localized)
             }
             .navigationTitle(L10n.Ledger.manageCategories.localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -95,25 +103,32 @@ struct ManageCategoriesSheet: View {
                     Button(L10n.Common.close) { dismiss() }
                 }
             }
-            .onAppear {
-                selectedCategoryForTag = viewModel.categories(for: manageType).first?.id
+            .sheet(item: $categoryPendingEdit) { category in
+                EditCategorySheet(viewModel: viewModel, category: category)
             }
-            .onChange(of: manageType) { _, _ in
-                selectedCategoryForTag = viewModel.categories(for: manageType).first?.id
+            .sheet(isPresented: $isShowingCreateCategory) {
+                CreateCategorySheet(viewModel: viewModel, entryType: manageType)
             }
             .alert(
                 L10n.Ledger.deleteCategory.localized,
-                isPresented: Binding(
-                    get: { categoryPendingDelete != nil },
-                    set: { if $0 == false { categoryPendingDelete = nil } }
-                )
+                isPresented: $isConfirmingCategoryDelete
             ) {
                 Button(L10n.Ledger.deleteCategory, role: .destructive) {
+                    guard let category = categoryPendingDelete else {
+                        LedgerCategoryDeleteLogger.step(
+                            .failed,
+                            categoryId: nil,
+                            detail: "confirm_action_missing_pending_category source=manage_sheet"
+                        )
+                        return
+                    }
+                    categoryPendingDelete = nil
                     Task {
-                        if let category = categoryPendingDelete {
-                            try? await viewModel.softDeleteCategory(category)
+                        do {
+                            try await viewModel.softDeleteCategory(category)
+                        } catch {
+                            // errorMessage 已由 ViewModel 写入
                         }
-                        categoryPendingDelete = nil
                     }
                 }
                 Button(L10n.Common.cancel, role: .cancel) {
@@ -121,52 +136,64 @@ struct ManageCategoriesSheet: View {
                 }
             }
             .alert(
-                L10n.Ledger.deleteTag.localized,
+                L10n.Common.notice.localized,
                 isPresented: Binding(
-                    get: { tagPendingDelete != nil },
-                    set: { if $0 == false { tagPendingDelete = nil } }
+                    get: { deleteBlockedMessage != nil },
+                    set: { if $0 == false { deleteBlockedMessage = nil } }
                 )
             ) {
-                Button(L10n.Ledger.deleteTag, role: .destructive) {
-                    Task {
-                        if let tag = tagPendingDelete {
-                            try? await viewModel.softDeleteTag(tag)
-                        }
-                        tagPendingDelete = nil
-                    }
+                Button(L10n.Common.ok, role: .cancel) {
+                    deleteBlockedMessage = nil
                 }
-                Button(L10n.Common.cancel, role: .cancel) {
-                    tagPendingDelete = nil
+            } message: {
+                if let deleteBlockedMessage {
+                    Text(deleteBlockedMessage)
+                }
+            }
+            .alert(
+                L10n.Common.notice.localized,
+                isPresented: Binding(
+                    get: {
+                        viewModel.errorMessage?.isEmpty == false
+                    },
+                    set: { if $0 == false { viewModel.clearErrorMessage() } }
+                )
+            ) {
+                Button(L10n.Common.ok, role: .cancel) {
+                    viewModel.clearErrorMessage()
+                }
+            } message: {
+                if let message = viewModel.errorMessage {
+                    Text(message)
                 }
             }
         }
     }
 
-    private var tagCategoryBinding: Binding<UUID> {
-        Binding(
-            get: { selectedCategoryForTag ?? viewModel.categories(for: manageType).first?.id ?? UUID() },
-            set: { selectedCategoryForTag = $0 }
-        )
-    }
-
-    private func addCategory() async {
-        let name = newCategoryName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let icon = newCategoryIcon.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard name.isEmpty == false else { return }
-        try? await viewModel.addCategory(
-            type: manageType,
-            name: name,
-            icon: icon.isEmpty ? "🏷️" : icon
-        )
-        newCategoryName = ""
-        newCategoryIcon = "🏷️"
-    }
-
-    private func addTag() async {
-        let name = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard name.isEmpty == false,
-              let categoryId = selectedCategoryForTag else { return }
-        try? await viewModel.addTag(categoryId: categoryId, name: name)
-        newTagName = ""
+    private func attemptDelete(_ category: ExpenseCategory) {
+        if viewModel.canDeleteCategory(category) {
+            LedgerCategoryDeleteLogger.step(
+                .confirmPresented,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: viewModel.currentHouseholdIdValue,
+                detail: "source=manage_sheet"
+            )
+            categoryPendingDelete = category
+            isConfirmingCategoryDelete = true
+        } else {
+            LedgerCategoryDeleteLogger.step(
+                .blockedHasTransactions,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: viewModel.currentHouseholdIdValue,
+                detail: "source=manage_sheet"
+            )
+            AnalyticsManager.log(event: .ledgerCategoryDeleteBlocked(reason: "has_linked_transactions"))
+            deleteBlockedMessage = AppLocalized.string(
+                L10n.Ledger.cannotDeleteCategoryWithEntries,
+                locale: locale
+            )
+        }
     }
 }

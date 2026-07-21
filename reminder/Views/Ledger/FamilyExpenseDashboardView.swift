@@ -11,7 +11,12 @@ struct FamilyExpenseDashboardView: View {
     @State private var incomeExpanded = true
     @State private var entryPrefill: ManualEntryPrefill?
     @State private var isShowingCategoryManager = false
+    @State private var manageCategoriesInitialType: LedgerEntryType = .expense
     @State private var isShowingReports = false
+    @State private var categoryPendingEdit: ExpenseCategory?
+    @State private var categoryPendingDelete: ExpenseCategory?
+    @State private var isConfirmingCategoryDelete = false
+    @State private var deleteBlockedMessage: String?
 
     private let gridColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
 
@@ -79,10 +84,58 @@ struct FamilyExpenseDashboardView: View {
             )
         }
         .sheet(isPresented: $isShowingCategoryManager) {
-            ManageCategoriesSheet(viewModel: viewModel)
+            ManageCategoriesSheet(
+                viewModel: viewModel,
+                initialType: manageCategoriesInitialType
+            )
         }
         .sheet(isPresented: $isShowingReports) {
             LedgerReportsView(viewModel: viewModel)
+        }
+        .sheet(item: $categoryPendingEdit) { category in
+            EditCategorySheet(viewModel: viewModel, category: category)
+        }
+        .alert(
+            L10n.Ledger.deleteCategory.localized,
+            isPresented: $isConfirmingCategoryDelete
+        ) {
+            Button(L10n.Ledger.deleteCategory, role: .destructive) {
+                // 必须先拷贝：alert 关闭时不要依赖仍存活的 pending 状态时序
+                guard let category = categoryPendingDelete else {
+                    LedgerCategoryDeleteLogger.step(
+                        .failed,
+                        categoryId: nil,
+                        detail: "confirm_action_missing_pending_category source=dashboard"
+                    )
+                    return
+                }
+                categoryPendingDelete = nil
+                Task {
+                    do {
+                        try await viewModel.softDeleteCategory(category)
+                    } catch {
+                        // errorMessage 已由 ViewModel 写入
+                    }
+                }
+            }
+            Button(L10n.Common.cancel, role: .cancel) {
+                categoryPendingDelete = nil
+            }
+        }
+        .alert(
+            L10n.Common.notice.localized,
+            isPresented: Binding(
+                get: { deleteBlockedMessage != nil },
+                set: { if $0 == false { deleteBlockedMessage = nil } }
+            )
+        ) {
+            Button(L10n.Common.ok, role: .cancel) {
+                deleteBlockedMessage = nil
+            }
+        } message: {
+            if let deleteBlockedMessage {
+                Text(deleteBlockedMessage)
+            }
         }
     }
 
@@ -154,24 +207,39 @@ struct FamilyExpenseDashboardView: View {
     ) -> some View {
         let categories = viewModel.categories(for: type)
         return VStack(alignment: .leading, spacing: 12) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.wrappedValue.toggle()
+            HStack(spacing: 8) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.wrappedValue.toggle()
+                    }
+                } label: {
+                    HStack {
+                        Text(title)
+                            .font(.headline)
+                        Text(currencyText(total))
+                            .font(.headline)
+                            .foregroundStyle(type == .income ? Color.green : Color.primary)
+                        Spacer(minLength: 8)
+                        Image(systemName: "chevron.down")
+                            .rotationEffect(.degrees(isExpanded.wrappedValue ? 0 : -90))
+                            .foregroundStyle(.secondary)
+                    }
                 }
-            } label: {
-                HStack {
-                    Text(title)
-                        .font(.headline)
-                    Text(currencyText(total))
-                        .font(.headline)
-                        .foregroundStyle(type == .income ? Color.green : Color.primary)
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .rotationEffect(.degrees(isExpanded.wrappedValue ? 0 : -90))
-                        .foregroundStyle(.secondary)
+                .buttonStyle(.plain)
+
+                if allowsExpenseManagement {
+                    Button {
+                        manageCategoriesInitialType = type
+                        isShowingCategoryManager = true
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 32, height: 32)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Ledger.manageCategories.localized)
                 }
             }
-            .buttonStyle(.plain)
 
             if isExpanded.wrappedValue {
                 if categories.isEmpty {
@@ -180,8 +248,12 @@ struct FamilyExpenseDashboardView: View {
                     } description: {
                         Text(L10n.Ledger.noCategoriesHint.localized)
                     } actions: {
+                        Button(L10n.Common.reload) {
+                            Task { await viewModel.loadLedgerData(force: true) }
+                        }
                         if allowsExpenseManagement {
                             Button(L10n.Ledger.manageCategories.localized) {
+                                manageCategoriesInitialType = type
                                 isShowingCategoryManager = true
                             }
                         }
@@ -202,6 +274,20 @@ struct FamilyExpenseDashboardView: View {
                                     categoryId: category.id
                                 )
                             }
+                            .contextMenu {
+                                if allowsExpenseManagement {
+                                    Button(L10n.Ledger.editCategory.localized, systemImage: "pencil") {
+                                        categoryPendingEdit = category
+                                    }
+                                    Button(L10n.Ledger.manageCategories.localized, systemImage: "folder.badge.gearshape") {
+                                        manageCategoriesInitialType = type
+                                        isShowingCategoryManager = true
+                                    }
+                                    Button(L10n.Ledger.deleteCategory.localized, systemImage: "trash", role: .destructive) {
+                                        attemptDelete(category)
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -215,9 +301,10 @@ struct FamilyExpenseDashboardView: View {
         HStack(alignment: .center) {
             if allowsExpenseManagement {
                 Button {
+                    manageCategoriesInitialType = .expense
                     isShowingCategoryManager = true
                 } label: {
-                    Image(systemName: "lightbulb")
+                    Image(systemName: "folder.badge.gearshape")
                         .font(.title3)
                         .frame(width: 44, height: 44)
                 }
@@ -272,6 +359,33 @@ struct FamilyExpenseDashboardView: View {
 
     private func currencyText(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(0...2)))
+    }
+
+    private func attemptDelete(_ category: ExpenseCategory) {
+        if viewModel.canDeleteCategory(category) {
+            LedgerCategoryDeleteLogger.step(
+                .confirmPresented,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: viewModel.currentHouseholdIdValue,
+                detail: "source=dashboard_context_menu"
+            )
+            categoryPendingDelete = category
+            isConfirmingCategoryDelete = true
+        } else {
+            LedgerCategoryDeleteLogger.step(
+                .blockedHasTransactions,
+                categoryId: category.id,
+                categoryName: category.name,
+                householdId: viewModel.currentHouseholdIdValue,
+                detail: "source=dashboard_context_menu"
+            )
+            AnalyticsManager.log(event: .ledgerCategoryDeleteBlocked(reason: "has_linked_transactions"))
+            deleteBlockedMessage = AppLocalized.string(
+                L10n.Ledger.cannotDeleteCategoryWithEntries,
+                locale: locale
+            )
+        }
     }
 }
 
