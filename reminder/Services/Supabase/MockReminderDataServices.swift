@@ -3,7 +3,7 @@ import Foundation
 // MARK: - Tasks
 
 actor MockTaskDataService: TaskDataService {
-    private var tasks: [FamilyTask] = FamilyTask.mockTasks + FamilyTask.mockLedgerTasks
+    private var tasks: [FamilyTask] = FamilyTask.mockTasks
 
     func fetchTasks(in householdId: UUID) async throws -> [FamilyTask] {
         // Mock：与线上一致，不按 user id 过滤 involvedMemberIds（该数组为 membership id）。
@@ -406,50 +406,148 @@ actor MockHouseholdRoutingService: HouseholdRoutingService {
 // MARK: - Ledger
 
 actor MockLedgerDataService: LedgerDataService {
-    private let taskService: TaskDataService
-    private var categoriesByHousehold: [UUID: [ExpenseCategory]] = [:]
-    private var pointsEntries: [PointsLedgerEntry]
+    private var categories: [ExpenseCategory]
+    private var tags: [CategoryTag]
+    private var transactions: [LedgerTransaction]
+    private var mappings: [TransactionTagMapping]
 
-    init(taskService: TaskDataService, seedPoints: [PointsLedgerEntry] = MockLedgerData.mockPointsEntries) {
-        self.taskService = taskService
-        self.pointsEntries = seedPoints
+    init() {
+        let seed = MockLedgerData.seedBundle(householdId: MockIDs.household)
+        self.categories = seed.categories
+        self.tags = seed.tags
+        self.transactions = seed.transactions
+        self.mappings = seed.mappings
     }
 
-    func fetchCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
-        categoriesByHousehold[householdId] ?? []
+    func fetchCategories(
+        in householdId: UUID,
+        type: LedgerEntryType?,
+        includeDeleted: Bool
+    ) async throws -> [ExpenseCategory] {
+        categories
+            .filter { $0.householdId == householdId }
+            .filter { includeDeleted || $0.isDeleted == false }
+            .filter { type == nil || $0.type == type }
+            .sorted { $0.sortOrder < $1.sortOrder }
     }
 
-    func ensureDefaultCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
-        if let existing = categoriesByHousehold[householdId], existing.isEmpty == false {
-            return existing
-        }
+    func fetchTags(
+        in householdId: UUID,
+        categoryId: UUID?,
+        includeDeleted: Bool
+    ) async throws -> [CategoryTag] {
+        tags
+            .filter { $0.householdId == householdId }
+            .filter { includeDeleted || $0.isDeleted == false }
+            .filter { categoryId == nil || $0.categoryId == categoryId }
+    }
+
+    func fetchTransactions(in householdId: UUID) async throws -> [LedgerTransaction] {
+        transactions
+            .filter { $0.householdId == householdId }
+            .sorted { $0.transactionTime > $1.transactionTime }
+    }
+
+    func fetchTagMappings(for transactionIds: [UUID]) async throws -> [TransactionTagMapping] {
+        let idSet = Set(transactionIds)
+        return mappings.filter { idSet.contains($0.transactionId) }
+    }
+
+    func createTransaction(_ draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
         let now = Date()
-        let seeded = ExpenseCategory.defaultSeedTemplates.map { template in
-            ExpenseCategory(
-                id: UUID(),
-                householdId: householdId,
-                name: template.name,
-                icon: template.icon,
-                createdAt: now
+        var row = LedgerTransaction(
+            id: UUID(),
+            householdId: draft.householdId,
+            creatorId: draft.creatorProfileId,
+            type: draft.type,
+            amount: draft.amount,
+            currency: draft.currency,
+            transactionTime: draft.transactionTime,
+            categoryId: draft.category.id,
+            categoryNameSnapshot: draft.category.name,
+            categoryIconSnapshot: draft.category.icon,
+            payerId: draft.payerId,
+            targetMemberIds: draft.targetMemberIds,
+            note: draft.note,
+            attachmentUrls: [],
+            source: "manual",
+            createdAt: now,
+            updatedAt: now,
+            tagSnapshots: draft.selectedTags.map(\.name)
+        )
+        transactions.insert(row, at: 0)
+        for tag in draft.selectedTags {
+            mappings.append(
+                TransactionTagMapping(
+                    transactionId: row.id,
+                    tagId: tag.id,
+                    tagNameSnapshot: tag.name,
+                    createdAt: now
+                )
             )
         }
-        categoriesByHousehold[householdId] = seeded
-        return seeded
+        return row
     }
 
-    func fetchPointsLedger(in householdId: UUID, targetProfileId: UUID?) async throws -> [PointsLedgerEntry] {
-        pointsEntries
-            .filter { $0.householdId == householdId }
-            .filter { targetProfileId == nil || $0.targetProfileId == targetProfileId }
-            .sorted { $0.createdAt > $1.createdAt }
+    func softDeleteCategory(id: UUID) async throws {
+        guard let index = categories.firstIndex(where: { $0.id == id }) else { return }
+        categories[index].isDeleted = true
+        categories[index].updatedAt = Date()
     }
 
-    func insertPointsLedgerEntry(_ entry: PointsLedgerEntry) async throws -> PointsLedgerEntry {
-        pointsEntries.append(entry)
-        return entry
+    func softDeleteTag(id: UUID) async throws {
+        guard let index = tags.firstIndex(where: { $0.id == id }) else { return }
+        tags[index].isDeleted = true
     }
 
-    func createLedgerTask(_ task: FamilyTask) async throws -> FamilyTask {
-        try await taskService.createTask(task)
+    func createCategory(
+        householdId: UUID,
+        type: LedgerEntryType,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory {
+        let now = Date()
+        let row = ExpenseCategory(
+            id: UUID(),
+            householdId: householdId,
+            type: type,
+            name: name,
+            presetKey: nil,
+            icon: icon,
+            colorHex: colorHex ?? "#007AFF",
+            isPreset: false,
+            sortOrder: 100,
+            isDeleted: false,
+            createdAt: now,
+            updatedAt: now
+        )
+        categories.append(row)
+        return row
+    }
+
+    func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag {
+        let row = CategoryTag(
+            id: UUID(),
+            categoryId: categoryId,
+            householdId: householdId,
+            name: name,
+            presetKey: nil,
+            isPreset: false,
+            isDeleted: false,
+            createdAt: Date()
+        )
+        tags.append(row)
+        return row
+    }
+
+    func ensurePresetCategories(in householdId: UUID) async throws {
+        let hasActive = categories.contains {
+            $0.householdId == householdId && $0.isDeleted == false
+        }
+        guard hasActive == false else { return }
+        let seed = MockLedgerData.seedBundle(householdId: householdId)
+        categories.append(contentsOf: seed.categories)
+        tags.append(contentsOf: seed.tags)
     }
 }

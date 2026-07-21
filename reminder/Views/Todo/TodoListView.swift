@@ -67,7 +67,8 @@ struct TodoListView: View {
     private var todoStackContent: some View {
         todoMainContent
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .navigationTitle(L10n.Common.toDos.localized)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar { todoToolbar }
             .sheet(isPresented: $showCompletedSheet) { completedTasksSheet }
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }

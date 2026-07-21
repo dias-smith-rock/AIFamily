@@ -84,10 +84,21 @@ protocol FamilyProfileDataService {
 }
 
 protocol LedgerDataService {
-    func fetchCategories(in householdId: UUID) async throws -> [ExpenseCategory]
-    func ensureDefaultCategories(in householdId: UUID) async throws -> [ExpenseCategory]
-    func fetchPointsLedger(in householdId: UUID, targetProfileId: UUID?) async throws -> [PointsLedgerEntry]
-    func insertPointsLedgerEntry(_ entry: PointsLedgerEntry) async throws -> PointsLedgerEntry
-    /// 公账/收入行：直接 insert `tasks`，不经空间 RPC。
-    func createLedgerTask(_ task: FamilyTask) async throws -> FamilyTask
+    func fetchCategories(in householdId: UUID, type: LedgerEntryType?, includeDeleted: Bool) async throws -> [ExpenseCategory]
+    func fetchTags(in householdId: UUID, categoryId: UUID?, includeDeleted: Bool) async throws -> [CategoryTag]
+    func fetchTransactions(in householdId: UUID) async throws -> [LedgerTransaction]
+    func fetchTagMappings(for transactionIds: [UUID]) async throws -> [TransactionTagMapping]
+    func createTransaction(_ draft: LedgerTransactionDraft) async throws -> LedgerTransaction
+    func softDeleteCategory(id: UUID) async throws
+    func softDeleteTag(id: UUID) async throws
+    func createCategory(
+        householdId: UUID,
+        type: LedgerEntryType,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory
+    func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag
+    /// 若组织缺少默认分类，幂等补齐（任意活跃成员可调用，含 member）。
+    func ensurePresetCategories(in householdId: UUID) async throws
 }

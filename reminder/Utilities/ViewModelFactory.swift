@@ -27,7 +27,6 @@ final class ViewModelFactory: ObservableObject {
 
     func makeLedgerViewModel() -> FamilyLedgerViewModel {
         FamilyLedgerViewModel(
-            taskService: services.taskService,
             ledgerService: services.ledgerService,
             membershipService: services.membershipService,
             familyProfileService: services.familyProfileService

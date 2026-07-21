@@ -1,9 +1,11 @@
 ---
 name: supabase-schema
 description: >-
-  WeFamily / WeSync Supabase 表结构与 iOS 模型映射（tasks 空间字段、RPC、身份 ID 维度）。
+  WeFamily / WeSync Supabase 表结构与 iOS 模型映射（tasks 空间字段、RPC、身份 ID 维度、
+  ledger_transactions、expense_categories、category_tags、transaction_tag_mappings）。
   Use when editing FamilyTask, TaskDataService, RLS-related filters, create_task_with_spatial,
-  complete_task_with_spatial, geofence, completion_location, migrations, or database ERD alignment.
+  complete_task_with_spatial, geofence, completion_location, ledger_transactions,
+  expense_categories, category_tags, migrations, or database ERD alignment.
 ---
 
 # Supabase  schema ↔ iOS 客户端
@@ -26,7 +28,15 @@ description: >-
 | 4 | `20260627120001_location_states_ghost_default.sql` | 位置隐身默认 false |
 | 5 | `20260627120002_live_huddle_realtime_rls.sql` | Live Huddle Realtime RLS |
 | 6 | `20260627120003_revenuecat_entitlement_sync.sql` | RevenueCat → user_entitlements |
-| 7 | `20260627120004_wallet_ledger_schema.sql` | 公账 / 积分 MVP |
+| 7 | `20260627120004_wallet_ledger_schema.sql` | **历史**公账/积分 MVP（tasks 扩展列 + 精简 `expense_categories`）；公账部分已被目标四表架构取代 |
+| 8 | `20260627130000_fix_membership_role_helpers.sql` | `can_manage_household` / `current_user_role` 对齐 `household_memberships.role` |
+| 9 | `20260627135000_ledger_four_tables_schema.sql` | **正式四表 DDL**：升级 `expense_categories` + 创建 `category_tags` / `ledger_transactions` / `transaction_tag_mappings` |
+| 10 | `20260627140000_ledger_four_tables_rls.sql` | 公账四表 POLICY + `seed_household_presets` SECURITY DEFINER |
+| 11 | `20260627150000_ledger_member_income_rls.sql` | member 可读/写 `type=income`；支出仍仅 manager |
+| 12 | `20260627160000_ledger_seed_backfill.sql` | `seed_household_presets_for` + 既有家庭回填 |
+| 13 | `20260627170000_ensure_ledger_presets_rpc.sql` | RPC `ensure_household_ledger_presets`（成员/游客可幂等补种） |
+
+**公账目标 schema**（`expense_categories` 完整列、`category_tags`、`ledger_transactions`、`transaction_tag_mappings`、`seed_household_presets`）见 `20260627135000_ledger_four_tables_schema.sql` 起。
 
 废弃历史 SQL（勿加入 migrations 链）：`supabase/schema-history/`。
 
@@ -50,14 +60,14 @@ description: >-
 | `recurrence_end_date` | `recurrenceEndDate` | 线上实际列名；解码可兼容 `recurrence_end_at`（ERD 草案，未上线前勿写入） |
 | `issue` | `issue` | `text`，任务「遇到问题」说明；≠ `TaskStatus.issue` 枚举 |
 | `alarm_set_by` | `alarmSetBy` | JSONB `[String: AlarmConfig]`（按成员称呼键） |
-| `task_type` | `taskType` | `scheduled` / `flexible` / `birthday_reminder` / **`expense`** / **`income`** |
+| `task_type` | `taskType` | 日程/待办：`scheduled` / `flexible` / `birthday_reminder`。**`expense` / `income`：历史兼容，新公账勿再写入** → 见 `ledger_transactions` |
 | `estimated_cost` | `estimatedCost` | 任务预估费用（日程创建 UI）；≠ 公账实付 |
-| `list_id` | `listId` | 购物清单等外键（账本预留） |
-| `actual_amount` | `actualAmount` | 公账实付/实收（NUMERIC → `Double`） |
-| `payer_id` | `payerId` | **membership id** — 垫付人 |
-| `split_member_ids` | `splitMemberIds` | **membership id[]** — 均摊 |
-| `expense_category` | `expenseCategory` | 分类快照文本，如 `🍔 餐饮美食` |
-| `reward_points` | `rewardPoints` | 任务可获积分（审批流预留） |
+| `list_id` | `listId` | 购物清单等外键（预留） |
+| `actual_amount` | `actualAmount` | **已废弃 · 公账勿写入** → `ledger_transactions.amount` |
+| `payer_id` | `payerId` | **已废弃 · 公账勿写入** → `ledger_transactions.payer_id`（**profile id**） |
+| `split_member_ids` | `splitMemberIds` | **已废弃 · 公账勿写入**（旧均摊 membership id[]）；目标人见 `ledger_transactions.target_member_ids` |
+| `expense_category` | `expenseCategory` | **已废弃 · 公账勿写入** → `ledger_transactions.category_name_snapshot` + `category_icon_snapshot` |
+| `reward_points` | `rewardPoints` | 任务可获积分（行为积分审批流预留） |
 | `point_approved_by` | `pointApprovedBy` | **membership id** — 审批家长 |
 | `end_datetime` | `endDatetime` | |
 | `duration_minutes` | `durationMinutes` | |
@@ -109,29 +119,150 @@ description: >-
 - 「是否派给我」→ `AppRouter.selectedMembershipId` + `FamilyTask.involvesMembership(id:)`
 - 「是否我创建」→ `task.creatorId == selectedMembershipId`（不是 auth user id）
 
+### 账本 ID 维度（与 tasks 不同）
+
+| 字段 | 维度 |
+|------|------|
+| `tasks.creator_id` / `payer_id`（废弃公账列） | **membership id** |
+| `ledger_transactions.creator_id` | **`family_profiles.id`**（操作人档案） |
+| `ledger_transactions.payer_id` | **`family_profiles.id`**（付款人，可选） |
+| `ledger_transactions.target_member_ids` | **`family_profiles.id[]`**（为了谁，多选） |
+| `points_ledger.target_profile_id` | **`family_profiles.id`** |
+
+## 家庭公账（Ledger）— 目标权威架构
+
+公账流水**不再**写入 `tasks`。目标表结构如下（产品确认脚本；正式 migration 待补进 `supabase/migrations/`）。
+
+### `expense_categories`
+
+每个家庭独立的收支分类；支持预设 i18n key 与软删除。
+
+| 数据库列 | 说明 |
+|----------|------|
+| `id` | UUID PK |
+| `household_id` | → `households.id` ON DELETE CASCADE |
+| `type` | `expense` \| `income` |
+| `name` | 默认/保底英文名（如 `Dining`） |
+| `preset_key` | 预设英文 Key（如 `cat_dining`），供前端 i18n；可空 |
+| `icon` | Emoji / SF Symbol 字符串，默认 `🏷️` |
+| `color_hex` | 主题色，默认 `#007AFF` |
+| `is_preset` | 是否系统预设 |
+| `sort_order` | 排序权重 |
+| `is_deleted` | 软删除（历史报表仍靠交易快照） |
+| `created_at` / `updated_at` | TIMESTAMPTZ |
+
+唯一约束：`(household_id, type, name)`。索引：`(household_id, type)`。
+
+**已废弃**：MVP 精简版仅 `name`/`icon`、唯一键 `(household_id, name)`，以及客户端 `ensureDefaultCategories` 本地种子路径。新家庭依赖 `seed_household_presets` 触发器。
+
+### `category_tags`
+
+强绑定到某一 `expense_categories.id`（每分类标签集独立）。
+
+| 数据库列 | 说明 |
+|----------|------|
+| `id` | UUID PK |
+| `category_id` | → `expense_categories.id` ON DELETE CASCADE |
+| `household_id` | → `households.id` ON DELETE CASCADE |
+| `name` | 保底英文名（如 `Breakfast`） |
+| `preset_key` | 如 `tag_breakfast`；可空 |
+| `is_preset` / `is_deleted` | 预设 / 软删除 |
+| `created_at` | TIMESTAMPTZ |
+
+唯一约束：`(category_id, name)`。索引：`category_id`。
+
+### `ledger_transactions`
+
+单笔收支主流水。
+
+| 数据库列 | 说明 |
+|----------|------|
+| `id` | UUID PK |
+| `household_id` | → `households.id` |
+| `creator_id` | **`family_profiles.id`** — 创建操作人 |
+| `type` | `expense` \| `income` |
+| `amount` | `NUMERIC(12,2)`，`CHECK (amount > 0)` |
+| `currency` | `VARCHAR(3)`，默认 `HKD` |
+| `transaction_time` | 实际发生时间，默认 `now()` |
+| `category_id` | → `expense_categories.id` ON DELETE SET NULL |
+| `category_name_snapshot` | 分类名快照（必填） |
+| `category_icon_snapshot` | 分类图标快照 |
+| `payer_id` | **`family_profiles.id`**，可选 |
+| `target_member_ids` | **`family_profiles.id[]`**，默认 `{}` |
+| `note` | 备注 |
+| `attachment_urls` | 凭证 URL 数组，默认 `{}` |
+| `source` | `manual` \| `ai_vision` \| `ai_voice`，默认 `manual` |
+| `created_at` / `updated_at` | TIMESTAMPTZ |
+
+索引：`(household_id, transaction_time DESC)`、`category_id`。
+
+### `transaction_tag_mappings`
+
+交易 ↔ 标签多对多；保存标签名快照。
+
+| 数据库列 | 说明 |
+|----------|------|
+| `transaction_id` | → `ledger_transactions.id` ON DELETE CASCADE |
+| `tag_id` | → `category_tags.id` ON DELETE SET NULL |
+| `tag_name_snapshot` | 标签文字快照（必填） |
+| `created_at` | TIMESTAMPTZ |
+
+主键：`(transaction_id, tag_name_snapshot)`。索引：`transaction_id`。
+
+### 种子触发器 `seed_household_presets`
+
+- `AFTER INSERT ON households` → `seed_household_presets()` → `seed_household_presets_for(household_id)`。
+- 自动注入英文预设：**支出** Dining / Transportation / Shopping / Sports & Fitness / Travel / Home Repairs（各带标签）；**收入** Salary & Income / Refunds（各带标签）。
+- **仅新建家庭自动种子**；既有家庭需执行 `20260627160000_ledger_seed_backfill.sql`（幂等：已有未删除分类则跳过）。
+- **客户端向前兼容**：进入 Wallet 拉取分类为空时调用 RPC `ensure_household_ledger_presets(p_household_id)`（任意活跃成员含 member）；服务端 `SECURITY DEFINER` 幂等补齐（按 `preset_key`）。见 `20260627170000_ensure_ledger_presets_rpc.sql`。
+- 客户端**不要**再依赖 `ExpenseCategory.defaultSeedTemplates` / `ensureDefaultCategories` 作为权威种子（该路径已废弃）。
+
+### 新四表 RLS
+
+四表均已开启行级安全（`ENABLE ROW LEVEL SECURITY`）：
+
+```sql
+ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE category_tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ledger_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE transaction_tag_mappings ENABLE ROW LEVEL SECURITY;
+```
+
+| 表 | RLS | POLICY |
+|----|-----|--------|
+| `expense_categories` | 已启用 | manager 全权限；member **SELECT** 仅 `type=income` |
+| `category_tags` | 已启用 | manager 全权限；member **SELECT** 仅挂在 income 分类下 |
+| `ledger_transactions` | 已启用 | manager 全权限；member **SELECT/INSERT** 仅 `type=income`；UPDATE/DELETE 仍仅 manager |
+| `transaction_tag_mappings` | 已启用 | 与关联流水可见范围对齐（income 对 member 可写） |
+
+脚本：`20260627140000_ledger_four_tables_rls.sql` + `20260627150000_ledger_member_income_rls.sql`。前置：`20260627130000_fix_membership_role_helpers.sql`。
+
 ## 相关表（简述）
 
 | 表 | iOS 模型 / 服务 |
 |----|-----------------|
-| `households` | `Household` |
+| `households` | `Household`；新建后触发 `seed_household_presets` |
 | `household_memberships` | `HouseholdMembership` |
 | `family_profiles` | `FamilyProfile` |
 | `feedbacks` | `Feedback` |
 | `task_attachments` | `TaskAttachment` |
-| `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `current_location` / `history_location_*` → `LocationPayload`（`lat`/`lng`/`address_name`） |
+| `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `locations` → `LocationPayload` |
 | `subscription_orders` | `SubscriptionOrder`；历史 Apple IAP 订单（可选）；新购走路径见 RevenueCat |
-| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**写入**仅 `service_role`（`sync_user_entitlement_from_revenuecat`）；**读取** authenticated `user_id = auth.uid()`（`20260618_user_entitlements_select_rls.sql`） |
+| `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**写入**仅 `service_role`（`sync_user_entitlement_from_revenuecat`）；**读取** authenticated `user_id = auth.uid()` |
 | `households.is_premium` | 购买激活时由 RPC 写入的缓存位；**客户端 VIP 判断不依赖此列**，改用 RPC `household_creator_has_active_pro` |
 | `resolve_household_creator_user_id` | RPC 内部辅助：优先 `household_memberships.role=creator` → `user_id`；回退 `households.creator_id` 作 auth user id 或 membership id |
 | `household_creator_has_active_pro` | RPC（authenticated 成员可调用）：`resolve_household_creator_user_id` → `user_entitlements` 判断创建者 Pro 是否有效 |
 | IAP / RevenueCat | Entitlement `premium`；服务端 `resolveEntitlementState` 与 iOS 一致（`premium` 或 `subscriptions` 中 `wesync.vip.*` 未过期）；Webhook + `sync-revenuecat-entitlement` 写入 |
 | VIP 权限（客户端） | `AppRouter.hasPremiumAccess`：`PremiumAccess`（本人 `user_entitlements.isActive` **或** `household_creator_has_active_pro`）**或** `RevenueCatSubscriptionService.hasActiveProEntitlement` |
 | `invite_link_nonces` | `InviteLinkNonce` |
-| `expense_categories` | `ExpenseCategory`；`household_id` + `name` 唯一；`icon` + `name` 展示为 `displayLabel` |
+| `expense_categories` | 目标：`type` + `preset_key` + 软删除等（见上节）；iOS 模型待对齐 |
+| `category_tags` | 分类专属标签；iOS 模型待对齐 |
+| `ledger_transactions` | 公账主流水；iOS 模型待对齐 |
+| `transaction_tag_mappings` | 交易-标签映射 + 快照 |
 | `points_ledger` | `PointsLedgerEntry`；`target_profile_id` = **`family_profiles.id`**；`amount` 正=赚取负=兑换 |
 | `household_rewards` | Phase 2 愿望商城；`required_points` |
 
-迁移：`supabase/migrations/20260627120004_wallet_ledger_schema.sql`（tasks 增量列 + 三表 + 公账 RLS 增补）；`20260627130000_fix_membership_role_helpers.sql`（`can_manage_household` / `current_user_role` 对齐 `household_memberships.role`，勿用已废弃 `user_role` 列）。
+迁移备注：`20260627120004_wallet_ledger_schema.sql` 中的精简 `expense_categories` 与「公账写 tasks」为历史 MVP；`20260627130000_fix_membership_role_helpers.sql` 仍有效。
 
 ### 角色 helper（RLS）
 
@@ -139,14 +270,24 @@ description: >-
 |------|------|
 | `get_user_role_in_household` | 返回当前用户在群组的 `role::text`（`creator` / `admin` / `member`），仅 `status=active` |
 | `can_manage_household` | `role in ('creator','admin')` |
+| `is_active_household_member` | `get_user_role_in_household(...) is not null`（含 member） |
+| `seed_household_presets_for` | 幂等写入默认分类/标签（`SECURITY DEFINER`；触发器 / service_role） |
+| `ensure_household_ledger_presets` | 成员可调用的补种 RPC → `seed_household_presets_for` |
 | `current_user_role` | 委托 `get_user_role_in_household`（**禁止**引用 `user_role` 列） |
 
-## 账本写入路径（MVP）
+## 账本写入路径
 
-- **公账/收入**：`LedgerDataService.createLedgerTask` → 直接 `insert` `tasks`（`task_type` = `expense` / `income`），不经 `create_task_with_spatial`。
-- **积分流水**：`LedgerDataService.insertPointsLedgerEntry` → `points_ledger`。
-- **分类 seed**：`ensureDefaultCategories` 首次为空时写入 8 条预设模板（`ExpenseCategory.defaultSeedTemplates`）。
-- **沙盒**：客户端 `LedgerAccessControl` — `creator`/`admin` 见公账分段；`member` 锁定积分视图。DB RLS：`expense`/`income` 行仅 `can_manage_household` 可读。
+### 公账（目标 · 客户端已对齐）
+
+- **写入**：`LedgerDataService.createTransaction` → `ledger_transactions` + `transaction_tag_mappings`（`payer_id` / `target_member_ids` / `creator_id` 均为 **profile id**）。
+- **分类/标签读取**：`expense_categories` / `category_tags`，过滤 `is_deleted = false`。
+- **新建家庭**：依赖 `seed_household_presets`；客户端不再本地种子。
+- **行为积分**：本期不做 UI；`points_ledger` 表保留。
+
+### 废弃路径（勿再用于公账）
+
+- **勿** `insert` `tasks`（`task_type` = `expense` / `income`）。
+- **勿** 客户端 `ensureDefaultCategories` 种子。
 
 ## 编解码
 
@@ -156,8 +297,11 @@ description: >-
 
 ## 修改检查清单
 
-1. 新列是否加入 `FamilyTask` + `CodingKeys`（或 payload 显式键）？
-2. `involved_member_ids` / `creator_id` 是否仍为 **membership id**？
+1. 新列是否加入对应 Model + `CodingKeys`（或 payload 显式键）？
+2. `involved_member_ids` / `tasks.creator_id` 是否仍为 **membership id**？
 3. 空间 JSONB 是否带 `TaskSpatial` 的 `CodingKeys`？
 4. Mock / `RecurrenceEngine` / `familyTaskFromInsertPayload` 是否补全新属性？
-5. 本地化若涉及新 UI 文案 → `chinese-localization-keys` skill。
+5. 本地化若涉及新 UI 文案 → `english-localization-keys` skill（`preset_key` 映射）。
+6. **公账是否写入 `ledger_transactions`（而非 `tasks`）？**
+7. **分类/标签软删后，交易是否仍写入 `category_*_snapshot` / `tag_name_snapshot`？**
+8. 账本人物字段是否使用 **`family_profiles.id`**（勿误写成 membership id）？

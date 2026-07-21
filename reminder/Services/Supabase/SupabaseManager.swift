@@ -9,23 +9,13 @@ import Supabase
 /// 按编译配置切换本地 / 云端，避免把本地与线上 URL、密钥混在同一套常量里。
 /// - Note: 本地 REST API 端口以 `supabase/config.toml` 的 `[api].port` 为准（默认 54321）；54323 一般为 Studio。
 enum SupabaseEnvironment {
+    /// WeSync 生产 master：`dirgcwziayipwvwztjbb`
     static var supabaseURL: URL {
-        #if DEBUG
-//        return urlOrFail("https://murkiness-gamma-sporting.ngrok-free.dev")
-        return urlOrFail("https://yicoeujcnfiufglefeew.supabase.co")
-        #else
-        return urlOrFail("https://dirgcwziayipwvwztjbb.supabase.co")
-        #endif
+        urlOrFail("https://dirgcwziayipwvwztjbb.supabase.co")
     }
 
     static var supabaseAnonKey: String {
-        #if DEBUG
-        // 运行 `supabase status` 核对本地 anon key；未改动时为 CLI 默认 JWT。
-//        return "sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH"
-        return "sb_publishable_e1ac_qDyblZn2ZQzINNucQ_os-E2t7b"
-        #else
-        return "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
-        #endif
+        "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y"
     }
 
     private static func urlOrFail(_ string: String) -> URL {

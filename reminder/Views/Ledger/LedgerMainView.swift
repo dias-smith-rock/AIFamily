@@ -1,77 +1,67 @@
 import SwiftUI
 
 struct LedgerMainView: View {
-    @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeLedgerViewModel()
-    @State private var currentSegment: FamilyLedgerViewModel.Segment = .expense
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            Group {
                 if canAccessFamilyExpense {
-                    Picker("", selection: $currentSegment) {
-                        Text(L10n.Ledger.familyExpense.localized).tag(FamilyLedgerViewModel.Segment.expense)
-                        Text(L10n.Ledger.behaviorPoints.localized).tag(FamilyLedgerViewModel.Segment.points)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 4)
-                }
-
-                Group {
-                    switch effectiveSegment {
-                    case .expense:
-                        FamilyExpenseDashboardView(viewModel: viewModel)
-                    case .points:
-                        KidsPointsDashboardView(
-                            viewModel: viewModel,
-                            canManageHousehold: canAccessFamilyExpense
+                    FamilyExpenseDashboardView(
+                        viewModel: viewModel,
+                        allowsExpenseManagement: true
+                    )
+                } else if canRecordIncome {
+                    FamilyExpenseDashboardView(
+                        viewModel: viewModel,
+                        allowsExpenseManagement: false
+                    )
+                } else {
+                    ContentUnavailableView {
+                        Label(
+                            L10n.Ledger.memberExpenseUnavailable.localized,
+                            systemImage: "lock.fill"
                         )
+                    } description: {
+                        Text(L10n.Ledger.memberExpenseUnavailableMessage.localized)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
-            .navigationTitle(L10n.Ledger.wallet.localized)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     GroupSwitcherToolbarButton()
                 }
             }
             .task(id: ledgerLoadTrigger) {
-                bindHouseholdContext()
+                viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
                 guard appRouter.hasCompletedAuthBootstrap else { return }
-                await viewModel.loadInitialDataIfNeeded()
-                applySegmentSandbox()
-                viewModel.configurePointsContext(
-                    membershipId: appRouter.selectedMembershipId,
-                    canManageHousehold: canAccessFamilyExpense
-                )
+                await viewModel.loadRoster()
+                if canAccessWalletData {
+                    await viewModel.loadLedgerData(force: false)
+                }
             }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
                 viewModel.setHouseholdContext(newValue)
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
-                    await viewModel.loadInitialData(force: true)
-                    applySegmentSandbox()
-                    viewModel.configurePointsContext(
-                        membershipId: appRouter.selectedMembershipId,
-                        canManageHousehold: canAccessFamilyExpense
-                    )
+                    await viewModel.loadRoster()
+                    if canAccessWalletData {
+                        await viewModel.loadLedgerData(force: true)
+                    }
                 }
             }
             .onChange(of: appRouter.selectedMembershipId) { _, _ in
-                applySegmentSandbox()
-                viewModel.configurePointsContext(
-                    membershipId: appRouter.selectedMembershipId,
-                    canManageHousehold: canAccessFamilyExpense
-                )
-            }
-            .onChange(of: canAccessFamilyExpense) { _, _ in
-                applySegmentSandbox()
+                Task {
+                    await viewModel.loadRoster()
+                    if canAccessWalletData {
+                        await viewModel.loadLedgerData(force: true)
+                    }
+                }
             }
         }
         .appLocaleEnvironment(using: appSettings)
@@ -89,27 +79,26 @@ struct LedgerMainView: View {
         LedgerAccessControl.canAccessFamilyExpense(role: resolvedMembershipRole)
     }
 
-    private var effectiveSegment: FamilyLedgerViewModel.Segment {
-        canAccessFamilyExpense ? currentSegment : .points
+    private var canRecordIncome: Bool {
+        LedgerAccessControl.canRecordIncome(role: resolvedMembershipRole)
+    }
+
+    private var canAccessWalletData: Bool {
+        canAccessFamilyExpense || canRecordIncome
     }
 
     private var resolvedMembershipRole: MembershipRole {
         guard let membershipId = appRouter.selectedMembershipId,
               let membership = viewModel.householdMembers.first(where: { $0.id == membershipId }),
               let role = membership.parsedRole else {
+            // Before roster loads, try not to flash expense UI for members:
+            // default deny until we know role (safer for privacy).
+            if viewModel.householdMembers.isEmpty, appRouter.selectedMembershipId != nil {
+                return .member
+            }
             return .member
         }
         return role
-    }
-
-    private func bindHouseholdContext() {
-        viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-    }
-
-    private func applySegmentSandbox() {
-        if canAccessFamilyExpense == false {
-            currentSegment = .points
-        }
     }
 }
 

@@ -5,8 +5,9 @@ import Supabase
 
 private enum LedgerSupabaseTable {
     static let expenseCategories = "expense_categories"
-    static let pointsLedger = "points_ledger"
-    static let tasks = "tasks"
+    static let categoryTags = "category_tags"
+    static let ledgerTransactions = "ledger_transactions"
+    static let transactionTagMappings = "transaction_tag_mappings"
 }
 
 final class SupabaseLedgerDataService: LedgerDataService {
@@ -16,76 +17,211 @@ final class SupabaseLedgerDataService: LedgerDataService {
         self.provider = provider
     }
 
-    func fetchCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
-        try await provider.client
+    func fetchCategories(
+        in householdId: UUID,
+        type: LedgerEntryType?,
+        includeDeleted: Bool
+    ) async throws -> [ExpenseCategory] {
+        var query = provider.client
             .from(LedgerSupabaseTable.expenseCategories)
             .select()
             .eq("household_id", value: householdId.uuidString.lowercased())
+
+        if includeDeleted == false {
+            query = query.eq("is_deleted", value: false)
+        }
+        if let type {
+            query = query.eq("type", value: type.rawValue)
+        }
+
+        return try await query
+            .order("sort_order")
             .order("created_at")
             .execute()
             .value
     }
 
-    func ensureDefaultCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
-        let existing = try await fetchCategories(in: householdId)
-        if existing.isEmpty == false {
-            return existing
-        }
-
-        let now = Date()
-        let seeds = ExpenseCategory.defaultSeedTemplates.map { template in
-            ExpenseCategory(
-                id: UUID(),
-                householdId: householdId,
-                name: template.name,
-                icon: template.icon,
-                createdAt: now
-            )
-        }
-
-        _ = try await provider.client
-            .from(LedgerSupabaseTable.expenseCategories)
-            .insert(seeds)
-            .execute()
-
-        return try await fetchCategories(in: householdId)
-    }
-
-    func fetchPointsLedger(in householdId: UUID, targetProfileId: UUID?) async throws -> [PointsLedgerEntry] {
+    func fetchTags(
+        in householdId: UUID,
+        categoryId: UUID?,
+        includeDeleted: Bool
+    ) async throws -> [CategoryTag] {
         var query = provider.client
-            .from(LedgerSupabaseTable.pointsLedger)
+            .from(LedgerSupabaseTable.categoryTags)
             .select()
             .eq("household_id", value: householdId.uuidString.lowercased())
 
-        if let targetProfileId {
-            query = query.eq("target_profile_id", value: targetProfileId.uuidString.lowercased())
+        if includeDeleted == false {
+            query = query.eq("is_deleted", value: false)
+        }
+        if let categoryId {
+            query = query.eq("category_id", value: categoryId.uuidString.lowercased())
         }
 
         return try await query
-            .order("created_at", ascending: false)
+            .order("created_at")
             .execute()
             .value
     }
 
-    func insertPointsLedgerEntry(_ entry: PointsLedgerEntry) async throws -> PointsLedgerEntry {
+    func fetchTransactions(in householdId: UUID) async throws -> [LedgerTransaction] {
         try await provider.client
-            .from(LedgerSupabaseTable.pointsLedger)
-            .insert(entry)
+            .from(LedgerSupabaseTable.ledgerTransactions)
+            .select()
+            .eq("household_id", value: householdId.uuidString.lowercased())
+            .order("transaction_time", ascending: false)
+            .execute()
+            .value
+    }
+
+    func fetchTagMappings(for transactionIds: [UUID]) async throws -> [TransactionTagMapping] {
+        guard transactionIds.isEmpty == false else { return [] }
+        let ids = transactionIds.map { $0.uuidString.lowercased() }
+        return try await provider.client
+            .from(LedgerSupabaseTable.transactionTagMappings)
+            .select()
+            .in("transaction_id", values: ids)
+            .execute()
+            .value
+    }
+
+    func createTransaction(_ draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
+        let now = Date()
+        let transaction = LedgerTransaction(
+            id: UUID(),
+            householdId: draft.householdId,
+            creatorId: draft.creatorProfileId,
+            type: draft.type,
+            amount: draft.amount,
+            currency: draft.currency,
+            transactionTime: draft.transactionTime,
+            categoryId: draft.category.id,
+            categoryNameSnapshot: draft.category.name,
+            categoryIconSnapshot: draft.category.icon,
+            payerId: draft.payerId,
+            targetMemberIds: draft.targetMemberIds,
+            note: draft.note?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+            attachmentUrls: [],
+            source: "manual",
+            createdAt: now,
+            updatedAt: now
+        )
+
+        let created: LedgerTransaction = try await provider.client
+            .from(LedgerSupabaseTable.ledgerTransactions)
+            .insert(transaction)
+            .select()
+            .single()
+            .execute()
+            .value
+
+        if draft.selectedTags.isEmpty == false {
+            let mappings = draft.selectedTags.map { tag in
+                TransactionTagMapping(
+                    transactionId: created.id,
+                    tagId: tag.id,
+                    tagNameSnapshot: tag.name,
+                    createdAt: now
+                )
+            }
+            _ = try await provider.client
+                .from(LedgerSupabaseTable.transactionTagMappings)
+                .insert(mappings)
+                .execute()
+        }
+
+        var result = created
+        result.tagSnapshots = draft.selectedTags.map(\.name)
+        return result
+    }
+
+    func softDeleteCategory(id: UUID) async throws {
+        let patch = CategorySoftDeletePatch(isDeleted: true, updatedAt: Date())
+        _ = try await provider.client
+            .from(LedgerSupabaseTable.expenseCategories)
+            .update(patch)
+            .eq("id", value: id.uuidString.lowercased())
+            .execute()
+    }
+
+    func softDeleteTag(id: UUID) async throws {
+        let patch = TagSoftDeletePatch(isDeleted: true)
+        _ = try await provider.client
+            .from(LedgerSupabaseTable.categoryTags)
+            .update(patch)
+            .eq("id", value: id.uuidString.lowercased())
+            .execute()
+    }
+
+    func createCategory(
+        householdId: UUID,
+        type: LedgerEntryType,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory {
+        let now = Date()
+        let row = ExpenseCategory(
+            id: UUID(),
+            householdId: householdId,
+            type: type,
+            name: name,
+            presetKey: nil,
+            icon: icon,
+            colorHex: colorHex ?? "#007AFF",
+            isPreset: false,
+            sortOrder: 100,
+            isDeleted: false,
+            createdAt: now,
+            updatedAt: now
+        )
+        return try await provider.client
+            .from(LedgerSupabaseTable.expenseCategories)
+            .insert(row)
             .select()
             .single()
             .execute()
             .value
     }
 
-    func createLedgerTask(_ task: FamilyTask) async throws -> FamilyTask {
-        try await provider.client
-            .from(LedgerSupabaseTable.tasks)
-            .insert(task.sanitizedForPersistence())
+    func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag {
+        let row = CategoryTag(
+            id: UUID(),
+            categoryId: categoryId,
+            householdId: householdId,
+            name: name,
+            presetKey: nil,
+            isPreset: false,
+            isDeleted: false,
+            createdAt: Date()
+        )
+        return try await provider.client
+            .from(LedgerSupabaseTable.categoryTags)
+            .insert(row)
             .select()
             .single()
             .execute()
             .value
     }
+
+    func ensurePresetCategories(in householdId: UUID) async throws {
+        let params = EnsureHouseholdLedgerPresetsParams(householdId: householdId)
+        try await provider.client
+            .rpc("ensure_household_ledger_presets", params: params)
+            .execute()
+    }
+}
+
+private struct EnsureHouseholdLedgerPresetsParams: Encodable, Sendable {
+    let householdId: UUID
+
+    enum CodingKeys: String, CodingKey {
+        case householdId = "p_household_id"
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
 
 #else
@@ -95,29 +231,59 @@ final class SupabaseLedgerDataService: LedgerDataService {
         _ = provider
     }
 
-    func fetchCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
+    func fetchCategories(in householdId: UUID, type: LedgerEntryType?, includeDeleted: Bool) async throws -> [ExpenseCategory] {
+        _ = householdId; _ = type; _ = includeDeleted
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func fetchTags(in householdId: UUID, categoryId: UUID?, includeDeleted: Bool) async throws -> [CategoryTag] {
+        _ = householdId; _ = categoryId; _ = includeDeleted
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func fetchTransactions(in householdId: UUID) async throws -> [LedgerTransaction] {
         _ = householdId
         throw SupabaseServiceError.sdkUnavailable
     }
 
-    func ensureDefaultCategories(in householdId: UUID) async throws -> [ExpenseCategory] {
+    func fetchTagMappings(for transactionIds: [UUID]) async throws -> [TransactionTagMapping] {
+        _ = transactionIds
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func createTransaction(_ draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
+        _ = draft
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func softDeleteCategory(id: UUID) async throws {
+        _ = id
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func softDeleteTag(id: UUID) async throws {
+        _ = id
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func createCategory(
+        householdId: UUID,
+        type: LedgerEntryType,
+        name: String,
+        icon: String,
+        colorHex: String?
+    ) async throws -> ExpenseCategory {
+        _ = householdId; _ = type; _ = name; _ = icon; _ = colorHex
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag {
+        _ = householdId; _ = categoryId; _ = name
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func ensurePresetCategories(in householdId: UUID) async throws {
         _ = householdId
-        throw SupabaseServiceError.sdkUnavailable
-    }
-
-    func fetchPointsLedger(in householdId: UUID, targetProfileId: UUID?) async throws -> [PointsLedgerEntry] {
-        _ = householdId
-        _ = targetProfileId
-        throw SupabaseServiceError.sdkUnavailable
-    }
-
-    func insertPointsLedgerEntry(_ entry: PointsLedgerEntry) async throws -> PointsLedgerEntry {
-        _ = entry
-        throw SupabaseServiceError.sdkUnavailable
-    }
-
-    func createLedgerTask(_ task: FamilyTask) async throws -> FamilyTask {
-        _ = task
         throw SupabaseServiceError.sdkUnavailable
     }
 }

@@ -41,13 +41,12 @@ struct ReminderServiceContainer {
     }
 
     static func mock() -> ReminderServiceContainer {
-        let taskService = MockTaskDataService()
-        return ReminderServiceContainer(
-            taskService: taskService,
+        ReminderServiceContainer(
+            taskService: MockTaskDataService(),
             feedbackService: MockFeedbackDataService(),
             membershipService: MockHouseholdMembershipDataService(),
             familyProfileService: MockFamilyProfileDataService(),
-            ledgerService: MockLedgerDataService(taskService: taskService),
+            ledgerService: MockLedgerDataService(),
             authService: MockAuthService(),
             voiceStorageService: MockVoiceStorageService(),
             avatarStorageService: MockAvatarStorageService(),
