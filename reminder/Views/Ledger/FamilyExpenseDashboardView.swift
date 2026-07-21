@@ -60,7 +60,12 @@ struct FamilyExpenseDashboardView: View {
             .padding(.bottom, 88)
         }
         .refreshable {
-            await viewModel.loadInitialData(force: true)
+            LedgerWalletLoadLogger.step(
+                .reloadTapped,
+                source: "pull_to_refresh",
+                householdId: viewModel.currentHouseholdIdValue
+            )
+            await viewModel.loadInitialData(force: true, source: "pull_to_refresh")
             await exchangeRates.ensureRatesFresh()
         }
         .task {
@@ -270,7 +275,13 @@ struct FamilyExpenseDashboardView: View {
                         Text(L10n.Ledger.noCategoriesHint.localized)
                     } actions: {
                         Button(L10n.Common.reload) {
-                            Task { await viewModel.loadLedgerData(force: true) }
+                            LedgerWalletLoadLogger.step(
+                                .reloadTapped,
+                                source: "empty_ui",
+                                householdId: viewModel.currentHouseholdIdValue,
+                                detail: "type=\(type.rawValue)"
+                            )
+                            Task { await viewModel.loadLedgerData(force: true, source: "reload_button") }
                         }
                         if allowsExpenseManagement {
                             Button(L10n.Ledger.manageCategories.localized) {
@@ -281,6 +292,14 @@ struct FamilyExpenseDashboardView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
+                    .onAppear {
+                        LedgerWalletLoadLogger.step(
+                            .emptyUIShown,
+                            source: "dashboard",
+                            householdId: viewModel.currentHouseholdIdValue,
+                            detail: "type=\(type.rawValue) loading=\(viewModel.isLoading) error=\(viewModel.errorMessage ?? "nil") cats=\(viewModel.categories.count)"
+                        )
+                    }
                 } else {
                     LazyVGrid(columns: gridColumns, spacing: 12) {
                         ForEach(categories) { category in

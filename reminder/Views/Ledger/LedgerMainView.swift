@@ -38,31 +38,89 @@ struct LedgerMainView: View {
                 }
             }
             .task(id: ledgerLoadTrigger) {
+                let token = LedgerWalletLoadLogger.nextToken()
+                LedgerWalletLoadLogger.step(
+                    .mainTaskStart,
+                    token: token,
+                    source: "main_task",
+                    householdId: appRouter.selectedHouseholdId,
+                    detail: "trigger=\(ledgerLoadTrigger) bootstrap=\(appRouter.hasCompletedAuthBootstrap) access=\(canAccessWalletData) cats=\(viewModel.categories.count)"
+                )
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-                guard appRouter.hasCompletedAuthBootstrap else { return }
-                await viewModel.loadRoster()
+                guard appRouter.hasCompletedAuthBootstrap else {
+                    LedgerWalletLoadLogger.step(
+                        .mainTaskSkipBootstrap,
+                        token: token,
+                        source: "main_task",
+                        householdId: appRouter.selectedHouseholdId
+                    )
+                    return
+                }
+                await viewModel.loadRoster(loadToken: token, source: "main_task")
                 if canAccessWalletData {
                     // 分类为空时强制重拉，避免错误缓存
                     let forceReload = viewModel.categories.isEmpty
-                    await viewModel.loadLedgerData(force: forceReload)
+                    await viewModel.loadLedgerData(
+                        force: forceReload,
+                        loadToken: token,
+                        source: "main_task"
+                    )
+                } else {
+                    LedgerWalletLoadLogger.step(
+                        .mainTaskSkipAccess,
+                        token: token,
+                        source: "main_task",
+                        householdId: appRouter.selectedHouseholdId,
+                        detail: "role=\(resolvedMembershipRole.rawValue)"
+                    )
                 }
                 await ExchangeRateStore.shared.ensureRatesFresh()
+                LedgerWalletLoadLogger.step(
+                    .mainTaskEnd,
+                    token: token,
+                    source: "main_task",
+                    householdId: appRouter.selectedHouseholdId,
+                    detail: "cats=\(viewModel.categories.count) members=\(viewModel.householdMembers.count)"
+                )
             }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
+                let token = LedgerWalletLoadLogger.nextToken()
+                LedgerWalletLoadLogger.step(
+                    .onChangeHousehold,
+                    token: token,
+                    source: "on_change_household",
+                    householdId: newValue
+                )
                 viewModel.setHouseholdContext(newValue)
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
-                    await viewModel.loadRoster()
+                    await viewModel.loadRoster(loadToken: token, source: "on_change_household")
                     if canAccessWalletData {
-                        await viewModel.loadLedgerData(force: true)
+                        await viewModel.loadLedgerData(
+                            force: true,
+                            loadToken: token,
+                            source: "on_change_household"
+                        )
                     }
                 }
             }
             .onChange(of: appRouter.selectedMembershipId) { _, _ in
+                let token = LedgerWalletLoadLogger.nextToken()
+                LedgerWalletLoadLogger.step(
+                    .onChangeMembership,
+                    token: token,
+                    source: "on_change_membership",
+                    householdId: appRouter.selectedHouseholdId,
+                    detail: "membership=\(appRouter.selectedMembershipId?.uuidString.lowercased() ?? "nil")"
+                )
                 Task {
-                    await viewModel.loadRoster()
+                    await viewModel.loadRoster(loadToken: token, source: "on_change_membership")
                     if canAccessWalletData {
-                        await viewModel.loadLedgerData(force: true)
+                        await viewModel.loadLedgerData(
+                            force: true,
+                            loadToken: token,
+                            source: "on_change_membership"
+                        )
                     }
                 }
             }

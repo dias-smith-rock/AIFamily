@@ -40,7 +40,14 @@ final class FamilyLedgerViewModel: ObservableObject {
             .publisher(for: .ledgerDataDidChange)
             .sink { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    await self?.loadInitialData(force: true)
+                    let token = LedgerWalletLoadLogger.nextToken()
+                    LedgerWalletLoadLogger.step(
+                        .notificationReload,
+                        token: token,
+                        source: "ledgerDataDidChange",
+                        householdId: self?.currentHouseholdId
+                    )
+                    await self?.loadInitialData(force: true, loadToken: token, source: "notification")
                 }
             }
     }
@@ -53,6 +60,12 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     func setHouseholdContext(_ householdId: UUID?) {
         let changed = currentHouseholdId != householdId
+        LedgerWalletLoadLogger.step(
+            .setHousehold,
+            source: "setHouseholdContext",
+            householdId: householdId,
+            detail: "changed=\(changed) prev=\(currentHouseholdId?.uuidString.lowercased() ?? "nil")"
+        )
         currentHouseholdId = householdId
         if householdId == nil {
             transactions = []
@@ -76,8 +89,15 @@ final class FamilyLedgerViewModel: ObservableObject {
         await loadLedgerData(force: false)
     }
 
-    func loadRoster() async {
+    func loadRoster(loadToken: Int? = nil, source: String = "unspecified") async {
         guard let householdId = currentHouseholdId else { return }
+        let token = loadToken ?? LedgerWalletLoadLogger.nextToken()
+        LedgerWalletLoadLogger.step(
+            .rosterStart,
+            token: token,
+            source: source,
+            householdId: householdId
+        )
         do {
             let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
                 .filteredToActiveMembers(in: householdId)
@@ -86,8 +106,32 @@ final class FamilyLedgerViewModel: ObservableObject {
                 profiles: roster.profiles,
                 memberships: roster.memberships
             )
+            LedgerWalletLoadLogger.step(
+                .rosterEnd,
+                token: token,
+                source: source,
+                householdId: householdId,
+                detail: "members=\(householdMembers.count) profiles=\(familyProfiles.count)"
+            )
         } catch {
-            errorMessage = error.localizedDescription
+            if error is CancellationError || Task.isCancelled {
+                LedgerWalletLoadLogger.step(
+                    .rosterCancel,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: error.localizedDescription
+                )
+            } else {
+                LedgerWalletLoadLogger.failure(
+                    step: .rosterFail,
+                    error: error,
+                    token: token,
+                    source: source,
+                    householdId: householdId
+                )
+            }
+            recordLoadError(error)
         }
     }
 
@@ -114,12 +158,34 @@ final class FamilyLedgerViewModel: ObservableObject {
         }
     }
 
-    func loadLedgerData(force: Bool) async {
+    func loadLedgerData(force: Bool, loadToken: Int? = nil, source: String = "unspecified") async {
         guard let householdId = currentHouseholdId else { return }
+        let token = loadToken ?? LedgerWalletLoadLogger.nextToken()
+        let beforeCounts = Self.activeCategoryCounts(categories)
+        LedgerWalletLoadLogger.step(
+            .ledgerStart,
+            token: token,
+            source: source,
+            householdId: householdId,
+            detail: "force=\(force) loaded=\(loadedHouseholdId?.uuidString.lowercased() ?? "nil") before=\(LedgerWalletLoadLogger.categoryCounts(expense: beforeCounts.expense, income: beforeCounts.income, tags: tags.count, transactions: transactions.count))"
+        )
+
         // 分类为空视为未就绪：禁止缓存命中，避免「补种失败一次 → 永远空白」
         if force == false,
            loadedHouseholdId == householdId,
            categories.contains(where: { $0.isDeleted == false }) {
+            LedgerWalletLoadLogger.step(
+                .ledgerCacheHit,
+                token: token,
+                source: source,
+                householdId: householdId,
+                detail: LedgerWalletLoadLogger.categoryCounts(
+                    expense: beforeCounts.expense,
+                    income: beforeCounts.income,
+                    tags: tags.count,
+                    transactions: transactions.count
+                )
+            )
             return
         }
 
@@ -128,35 +194,197 @@ final class FamilyLedgerViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
+            LedgerWalletLoadLogger.step(
+                .ensurePresetStart,
+                token: token,
+                source: source,
+                householdId: householdId,
+                detail: "pass=1"
+            )
             try await ledgerService.ensurePresetCategories(in: householdId)
+            LedgerWalletLoadLogger.step(
+                .ensurePresetOk,
+                token: token,
+                source: source,
+                householdId: householdId,
+                detail: "pass=1"
+            )
         } catch {
-            errorMessage = error.localizedDescription
+            if error is CancellationError || Task.isCancelled {
+                LedgerWalletLoadLogger.step(
+                    .ensurePresetCancel,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: "pass=1 \(error.localizedDescription)"
+                )
+            } else {
+                LedgerWalletLoadLogger.failure(
+                    step: .ensurePresetFail,
+                    error: error,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: "pass=1"
+                )
+            }
+            recordLoadError(error)
         }
 
         do {
+            LedgerWalletLoadLogger.step(
+                .payloadStart,
+                token: token,
+                source: source,
+                householdId: householdId,
+                detail: "pass=1"
+            )
             try await reloadLedgerPayload(householdId: householdId)
+            let afterPass1 = Self.activeCategoryCounts(categories)
+            LedgerWalletLoadLogger.step(
+                .payloadOk,
+                token: token,
+                source: source,
+                householdId: householdId,
+                detail: "pass=1 \(LedgerWalletLoadLogger.categoryCounts(expense: afterPass1.expense, income: afterPass1.income, tags: tags.count, transactions: transactions.count))"
+            )
 
             // 成员端只能看到 income：若仍空，再补种并重拉一次（覆盖竞态 / 仅有支出分类的家庭）
             if visibleCategoriesNeedRetry {
+                LedgerWalletLoadLogger.step(
+                    .retryNeeded,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: LedgerWalletLoadLogger.categoryCounts(
+                        expense: afterPass1.expense,
+                        income: afterPass1.income,
+                        tags: tags.count,
+                        transactions: transactions.count
+                    )
+                )
                 do {
+                    LedgerWalletLoadLogger.step(
+                        .ensurePresetStart,
+                        token: token,
+                        source: source,
+                        householdId: householdId,
+                        detail: "pass=2"
+                    )
                     try await ledgerService.ensurePresetCategories(in: householdId)
+                    LedgerWalletLoadLogger.step(
+                        .ensurePresetOk,
+                        token: token,
+                        source: source,
+                        householdId: householdId,
+                        detail: "pass=2"
+                    )
                 } catch {
-                    errorMessage = error.localizedDescription
+                    if error is CancellationError || Task.isCancelled {
+                        LedgerWalletLoadLogger.step(
+                            .ensurePresetCancel,
+                            token: token,
+                            source: source,
+                            householdId: householdId,
+                            detail: "pass=2 \(error.localizedDescription)"
+                        )
+                    } else {
+                        LedgerWalletLoadLogger.failure(
+                            step: .ensurePresetFail,
+                            error: error,
+                            token: token,
+                            source: source,
+                            householdId: householdId,
+                            detail: "pass=2"
+                        )
+                    }
+                    recordLoadError(error)
                 }
+                LedgerWalletLoadLogger.step(
+                    .payloadStart,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: "pass=2"
+                )
                 try await reloadLedgerPayload(householdId: householdId)
+                let afterPass2 = Self.activeCategoryCounts(categories)
+                LedgerWalletLoadLogger.step(
+                    .payloadOk,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: "pass=2 \(LedgerWalletLoadLogger.categoryCounts(expense: afterPass2.expense, income: afterPass2.income, tags: tags.count, transactions: transactions.count))"
+                )
             }
 
             loadedHouseholdId = householdId
+            let finalCounts = Self.activeCategoryCounts(categories)
+            let countsDetail = LedgerWalletLoadLogger.categoryCounts(
+                expense: finalCounts.expense,
+                income: finalCounts.income,
+                tags: tags.count,
+                transactions: transactions.count
+            )
             if categories.contains(where: { $0.isDeleted == false }) {
                 errorMessage = nil
+                LedgerWalletLoadLogger.step(
+                    .ledgerEndOk,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: countsDetail
+                )
+            } else {
+                LedgerWalletLoadLogger.step(
+                    .ledgerEndEmpty,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: countsDetail
+                )
             }
         } catch {
-            errorMessage = error.localizedDescription
+            if error is CancellationError || Task.isCancelled {
+                LedgerWalletLoadLogger.step(
+                    .payloadCancel,
+                    token: token,
+                    source: source,
+                    householdId: householdId,
+                    detail: error.localizedDescription
+                )
+            } else {
+                LedgerWalletLoadLogger.failure(
+                    step: .payloadFail,
+                    error: error,
+                    token: token,
+                    source: source,
+                    householdId: householdId
+                )
+            }
+            recordLoadError(error)
             // 失败时不要记为已加载，下次进入可重试
+            if error is CancellationError || Task.isCancelled {
+                return
+            }
             if loadedHouseholdId == householdId {
                 loadedHouseholdId = nil
             }
         }
+    }
+
+    func loadInitialData(force: Bool, loadToken: Int? = nil, source: String = "unspecified") async {
+        let token = loadToken ?? LedgerWalletLoadLogger.nextToken()
+        await loadRoster(loadToken: token, source: source)
+        await loadLedgerData(force: force, loadToken: token, source: source)
+    }
+
+    private static func activeCategoryCounts(_ categories: [ExpenseCategory]) -> (expense: Int, income: Int) {
+        let active = categories.filter { $0.isDeleted == false }
+        return (
+            expense: active.filter { $0.type == .expense }.count,
+            income: active.filter { $0.type == .income }.count
+        )
     }
 
     /// 当前缓存里是否仍缺少可用分类（含「仅有支出、收入为空」对成员不可见的情况）。
@@ -190,11 +418,6 @@ final class FamilyLedgerViewModel: ObservableObject {
             rows[index].tagSnapshots = (tagsByTx[rows[index].id] ?? []).map(\.tagNameSnapshot)
         }
         transactions = rows
-    }
-
-    func loadInitialData(force: Bool) async {
-        await loadRoster()
-        await loadLedgerData(force: force)
     }
 
     func categories(for type: LedgerEntryType) -> [ExpenseCategory] {
@@ -488,6 +711,13 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     // MARK: - Private
+
+    /// `.task(id:)` / 切群组时取消进行中的请求属正常，勿当成加载失败展示。
+    private func recordLoadError(_ error: Error) {
+        if error is CancellationError { return }
+        if Task.isCancelled { return }
+        errorMessage = error.localizedDescription
+    }
 
     private func sumConverted(_ rows: [LedgerTransaction]) -> Double {
         let target = displayCurrencyCode

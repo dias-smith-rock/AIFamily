@@ -44,13 +44,16 @@ struct LedgerReportsView: View {
     }
 
     private var filterPickers: some View {
-        VStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             Picker(L10n.Ledger.payer.localized, selection: $viewModel.reportPayerFilterId) {
                 Text(L10n.Ledger.allPayers.localized).tag(UUID?.none)
                 ForEach(viewModel.familyProfiles) { profile in
                     Text(profile.displayName).tag(Optional(profile.id))
                 }
             }
+            .labelsHidden()
+
+            Spacer(minLength: 8)
 
             Picker(L10n.Ledger.forWhom.localized, selection: $viewModel.reportTargetFilterId) {
                 Text(L10n.Ledger.allTargets.localized).tag(UUID?.none)
@@ -58,6 +61,7 @@ struct LedgerReportsView: View {
                     Text(profile.displayName).tag(Optional(profile.id))
                 }
             }
+            .labelsHidden()
         }
     }
 
