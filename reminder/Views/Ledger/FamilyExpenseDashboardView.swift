@@ -149,58 +149,73 @@ struct FamilyExpenseDashboardView: View {
 
     private var periodChrome: some View {
         HStack(spacing: 8) {
-            Button {
-                viewModel.shiftPeriod(by: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 36, height: 36)
-            }
-            .accessibilityLabel(L10n.Ledger.previousPeriod.localized)
+            // 与右侧粒度入口对称占位，保持中间日期居中
+            granularityMenu
+                .hidden()
+                .accessibilityHidden(true)
 
             Spacer(minLength: 4)
 
-            Menu {
-                ForEach(LedgerReportPeriod.allCases) { period in
-                    Button {
-                        viewModel.ledgerGranularity = period
-                    } label: {
-                        HStack {
-                            Text(granularityLabel(for: period))
-                            if viewModel.ledgerGranularity == period {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
+            HStack(spacing: 8) {
+                Button {
+                    viewModel.shiftPeriod(by: -1)
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 36, height: 36)
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(granularityLabel(for: viewModel.ledgerGranularity))
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                }
-                .foregroundStyle(.primary)
-            }
+                .accessibilityLabel(L10n.Ledger.previousPeriod.localized)
 
-            Text(viewModel.periodTitle(locale: locale))
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                Text(viewModel.periodTitle(locale: locale))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+
+                Button {
+                    viewModel.shiftPeriod(by: 1)
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 36, height: 36)
+                }
+                .accessibilityLabel(L10n.Ledger.nextPeriod.localized)
+            }
 
             Spacer(minLength: 4)
 
-            Button {
-                viewModel.shiftPeriod(by: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 36, height: 36)
-            }
-            .accessibilityLabel(L10n.Ledger.nextPeriod.localized)
+            granularityMenu
         }
         .buttonStyle(.plain)
         .padding(.vertical, 2)
+    }
+
+    private var granularityMenu: some View {
+        Menu {
+            ForEach(LedgerReportPeriod.allCases) { period in
+                Button {
+                    viewModel.ledgerGranularity = period
+                } label: {
+                    HStack {
+                        Text(granularityLabel(for: period))
+                        if viewModel.ledgerGranularity == period {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(granularityLabel(for: viewModel.ledgerGranularity))
+                    .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.down")
+                    .font(.caption2.weight(.semibold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color(.secondarySystemFill))
+            .clipShape(Capsule())
+        }
     }
 
     // MARK: - Sections

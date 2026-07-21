@@ -48,7 +48,8 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
     var categoryId: UUID?
     var categoryNameSnapshot: String
     var categoryIconSnapshot: String?
-    var payerId: UUID?
+    /// `ledger_transactions.payer_ids` — 垫付人 **family_profiles.id[]**。
+    var payerIds: [UUID]
     var targetMemberIds: [UUID]
     var note: String?
     var attachmentUrls: [String]
@@ -58,6 +59,9 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
 
     /// 列表展示用的标签快照（非库表列，由客户端组装）。
     var tagSnapshots: [String] = []
+
+    /// 兼容旧单垫付人调用；权威字段为 `payerIds`。
+    var payerId: UUID? { payerIds.first }
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -70,6 +74,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         case categoryId
         case categoryNameSnapshot
         case categoryIconSnapshot
+        case payerIds
         case payerId
         case targetMemberIds
         case note
@@ -90,7 +95,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         categoryId: UUID?,
         categoryNameSnapshot: String,
         categoryIconSnapshot: String?,
-        payerId: UUID?,
+        payerIds: [UUID],
         targetMemberIds: [UUID],
         note: String?,
         attachmentUrls: [String],
@@ -109,7 +114,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         self.categoryId = categoryId
         self.categoryNameSnapshot = categoryNameSnapshot
         self.categoryIconSnapshot = categoryIconSnapshot
-        self.payerId = payerId
+        self.payerIds = payerIds
         self.targetMemberIds = targetMemberIds
         self.note = note
         self.attachmentUrls = attachmentUrls
@@ -131,7 +136,14 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         categoryId = try container.decodeIfPresent(UUID.self, forKey: .categoryId)
         categoryNameSnapshot = try container.decode(String.self, forKey: .categoryNameSnapshot)
         categoryIconSnapshot = try container.decodeIfPresent(String.self, forKey: .categoryIconSnapshot)
-        payerId = try container.decodeIfPresent(UUID.self, forKey: .payerId)
+        let decodedPayerIds = try container.decodeIfPresent([UUID].self, forKey: .payerIds) ?? []
+        if decodedPayerIds.isEmpty == false {
+            payerIds = decodedPayerIds
+        } else if let legacyPayerId = try container.decodeIfPresent(UUID.self, forKey: .payerId) {
+            payerIds = [legacyPayerId]
+        } else {
+            payerIds = []
+        }
         targetMemberIds = try container.decodeIfPresent([UUID].self, forKey: .targetMemberIds) ?? []
         note = try container.decodeIfPresent(String.self, forKey: .note)
         attachmentUrls = try container.decodeIfPresent([String].self, forKey: .attachmentUrls) ?? []
@@ -153,7 +165,7 @@ struct LedgerTransaction: Identifiable, Codable, Equatable, Sendable {
         try container.encodeIfPresent(categoryId, forKey: .categoryId)
         try container.encode(categoryNameSnapshot, forKey: .categoryNameSnapshot)
         try container.encodeIfPresent(categoryIconSnapshot, forKey: .categoryIconSnapshot)
-        try container.encodeIfPresent(payerId, forKey: .payerId)
+        try container.encode(payerIds, forKey: .payerIds)
         try container.encode(targetMemberIds, forKey: .targetMemberIds)
         try container.encodeIfPresent(note, forKey: .note)
         try container.encode(attachmentUrls, forKey: .attachmentUrls)

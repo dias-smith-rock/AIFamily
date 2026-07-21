@@ -50,11 +50,19 @@ struct HouseholdMemberRoster: Equatable {
     func filteredToActiveMembers(in householdId: UUID) -> HouseholdMemberRoster {
         let activeMemberships = memberships.filter { $0.isActiveMembership() }
         let activeProfileIds = Set(activeMemberships.compactMap(\.profileId))
+        let activeUserIds = Set(activeMemberships.compactMap(\.userId))
         let activeProfiles = profiles.filter { profile in
             if profile.isVirtualUser {
                 return profile.householdId == householdId
             }
-            return activeProfileIds.contains(profile.id)
+            if activeProfileIds.contains(profile.id) {
+                return true
+            }
+            // membership.profile_id 为空时仍可能通过 user_id 关联到正式档案
+            if let uid = profile.userId, activeUserIds.contains(uid) {
+                return true
+            }
+            return false
         }
         return HouseholdMemberRoster(profiles: activeProfiles, memberships: activeMemberships)
     }
@@ -89,6 +97,8 @@ protocol LedgerDataService {
     func fetchTransactions(in householdId: UUID) async throws -> [LedgerTransaction]
     func fetchTagMappings(for transactionIds: [UUID]) async throws -> [TransactionTagMapping]
     func createTransaction(_ draft: LedgerTransactionDraft) async throws -> LedgerTransaction
+    func updateTransaction(id: UUID, draft: LedgerTransactionDraft) async throws -> LedgerTransaction
+    func deleteTransaction(id: UUID) async throws
     func softDeleteCategory(id: UUID) async throws
     func softDeleteTag(id: UUID) async throws
     func createCategory(

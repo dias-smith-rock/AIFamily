@@ -80,10 +80,37 @@ final class FamilyLedgerViewModel: ObservableObject {
         guard let householdId = currentHouseholdId else { return }
         do {
             let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
+                .filteredToActiveMembers(in: householdId)
             householdMembers = roster.memberships
-            familyProfiles = roster.profiles
+            familyProfiles = Self.profilesEnsuringMembershipCoverage(
+                profiles: roster.profiles,
+                memberships: roster.memberships
+            )
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    /// 合并 membership 昵称，并为缺档案的 active membership 补 synthetic，避免垫付人列表缺当前用户。
+    private static func profilesEnsuringMembershipCoverage(
+        profiles: [FamilyProfile],
+        memberships: [HouseholdMembership]
+    ) -> [FamilyProfile] {
+        var result = FamilyProfile.mergingMembershipRows(profiles, memberships: memberships)
+        for membership in memberships {
+            guard let profileId = membership.profileId else { continue }
+            guard result.contains(where: { $0.id == profileId }) == false else { continue }
+            let related = memberships.filter { $0.profileId == profileId }
+            result.append(
+                FamilyProfile.syntheticPlaceholder(
+                    from: membership,
+                    profileId: profileId,
+                    relatedMemberships: related.isEmpty ? [membership] : related
+                )
+            )
+        }
+        return result.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
         }
     }
 
@@ -192,7 +219,7 @@ final class FamilyLedgerViewModel: ObservableObject {
     var filteredTransactionsForReport: [LedgerTransaction] {
         transactions.filter { tx in
             guard isInSelectedPeriod(tx.transactionTime) else { return false }
-            if let payerId = reportPayerFilterId, tx.payerId != payerId {
+            if let payerId = reportPayerFilterId, tx.payerIds.contains(payerId) == false {
                 return false
             }
             if let targetId = reportTargetFilterId,
@@ -308,6 +335,45 @@ final class FamilyLedgerViewModel: ObservableObject {
         let created = try await ledgerService.createTransaction(draft)
         transactions.insert(created, at: 0)
         NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+    }
+
+    func updateTransaction(id: UUID, draft: LedgerTransactionDraft) async throws {
+        let updated = try await ledgerService.updateTransaction(id: id, draft: draft)
+        if let index = transactions.firstIndex(where: { $0.id == id }) {
+            transactions[index] = updated
+        } else {
+            transactions.insert(updated, at: 0)
+        }
+        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+    }
+
+    func deleteTransaction(id: UUID) async throws {
+        try await ledgerService.deleteTransaction(id: id)
+        transactions.removeAll { $0.id == id }
+        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+    }
+
+    /// 指定分类下的全部流水（按时间倒序）。
+    func transactions(forCategoryId categoryId: UUID) -> [LedgerTransaction] {
+        transactions
+            .filter { $0.categoryId == categoryId }
+            .sorted { $0.transactionTime > $1.transactionTime }
+    }
+
+    func entryCount(forCategoryId categoryId: UUID) -> Int {
+        transactions(forCategoryId: categoryId).count
+    }
+
+    func totalAmount(forCategoryId categoryId: UUID) -> Double {
+        sumConverted(transactions(forCategoryId: categoryId))
+    }
+
+    func convertedAmount(for transaction: LedgerTransaction) -> Double {
+        ExchangeRateStore.shared.convert(
+            amount: transaction.amount,
+            from: transaction.currency,
+            to: displayCurrencyCode
+        )
     }
 
     func softDeleteCategory(_ category: ExpenseCategory) async throws {

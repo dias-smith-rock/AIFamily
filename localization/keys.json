@@ -6021,5 +6021,75 @@
     "table": "Settings",
     "swift_property": "ledgerDisplayCurrencyFooter",
     "orphan": false
+  },
+  {
+    "legacy_key": "添加成员",
+    "new_key": "ledger_add_member",
+    "table": "Ledger",
+    "swift_property": "addMember",
+    "orphan": false
+  },
+  {
+    "legacy_key": "暂无成员。添加成员后即可选择垫付人与受益人。",
+    "new_key": "ledger_no_members_hint",
+    "table": "Ledger",
+    "swift_property": "noMembersHint",
+    "orphan": false
+  },
+  {
+    "legacy_key": "受益人",
+    "new_key": "ledger_beneficiaries",
+    "table": "Ledger",
+    "swift_property": "beneficiaries",
+    "orphan": false
+  },
+  {
+    "legacy_key": "共 %lld 笔 · %@",
+    "new_key": "ledger_category_entries_summary",
+    "table": "Ledger",
+    "swift_property": "categoryEntriesSummary",
+    "orphan": false
+  },
+  {
+    "legacy_key": "记账记录",
+    "new_key": "ledger_category_entries",
+    "table": "Ledger",
+    "swift_property": "categoryEntries",
+    "orphan": false
+  },
+  {
+    "legacy_key": "暂无记账",
+    "new_key": "ledger_no_category_entries",
+    "table": "Ledger",
+    "swift_property": "noCategoryEntries",
+    "orphan": false
+  },
+  {
+    "legacy_key": "记账详情",
+    "new_key": "ledger_entry_detail",
+    "table": "Ledger",
+    "swift_property": "entryDetail",
+    "orphan": false
+  },
+  {
+    "legacy_key": "编辑记账",
+    "new_key": "ledger_edit_entry",
+    "table": "Ledger",
+    "swift_property": "editEntry",
+    "orphan": false
+  },
+  {
+    "legacy_key": "删除记账",
+    "new_key": "ledger_delete_entry",
+    "table": "Ledger",
+    "swift_property": "deleteEntry",
+    "orphan": false
+  },
+  {
+    "legacy_key": "删除后无法恢复。",
+    "new_key": "ledger_delete_entry_message",
+    "table": "Ledger",
+    "swift_property": "deleteEntryMessage",
+    "orphan": false
   }
 ]

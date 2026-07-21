@@ -49,6 +49,9 @@ extension L10n {
         static let categoryBreakdown = Entry(key: "ledger_category_breakdown", table: .ledger)
         static let addCategory = Entry(key: "ledger_add_category", table: .ledger)
         static let addTag = Entry(key: "ledger_add_tag", table: .ledger)
+        static let addMember = Entry(key: "ledger_add_member", table: .ledger)
+        static let noMembersHint = Entry(key: "ledger_no_members_hint", table: .ledger)
+        static let beneficiaries = Entry(key: "ledger_beneficiaries", table: .ledger)
         static let deleteCategory = Entry(key: "ledger_delete_category", table: .ledger)
         static let deleteCategoryFailed = Entry(key: "ledger_delete_category_failed", table: .ledger)
         static let deleteTag = Entry(key: "ledger_delete_tag", table: .ledger)
@@ -69,5 +72,13 @@ extension L10n {
             key: "ledger_cannot_delete_category_with_entries",
             table: .ledger
         )
+        static let categoryEntriesSummary = Entry(key: "ledger_category_entries_summary", table: .ledger)
+        static let categoryEntries = Entry(key: "ledger_category_entries", table: .ledger)
+        static let noCategoryEntries = Entry(key: "ledger_no_category_entries", table: .ledger)
+        static let entryDetail = Entry(key: "ledger_entry_detail", table: .ledger)
+        static let editEntry = Entry(key: "ledger_edit_entry", table: .ledger)
+        static let deleteEntry = Entry(key: "ledger_delete_entry", table: .ledger)
+        static let deleteEntryMessage = Entry(key: "ledger_delete_entry_message", table: .ledger)
     }
 }
+

@@ -98,7 +98,7 @@ final class SupabaseLedgerDataService: LedgerDataService {
             categoryId: draft.category.id,
             categoryNameSnapshot: draft.category.name,
             categoryIconSnapshot: draft.category.icon,
-            payerId: draft.payerId,
+            payerIds: draft.payerIds,
             targetMemberIds: draft.targetMemberIds,
             note: draft.note?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
             attachmentUrls: [],
@@ -133,6 +133,65 @@ final class SupabaseLedgerDataService: LedgerDataService {
         var result = created
         result.tagSnapshots = draft.selectedTags.map(\.name)
         return result
+    }
+
+    func updateTransaction(id: UUID, draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
+        let now = Date()
+        let patch = LedgerTransactionUpdatePatch(
+            type: draft.type,
+            amount: draft.amount,
+            currency: draft.currency,
+            transactionTime: draft.transactionTime,
+            categoryId: draft.category.id,
+            categoryNameSnapshot: draft.category.name,
+            categoryIconSnapshot: draft.category.icon,
+            payerIds: draft.payerIds,
+            targetMemberIds: draft.targetMemberIds,
+            note: draft.note?.trimmingCharacters(in: .whitespacesAndNewlines).nilIfEmpty,
+            updatedAt: now
+        )
+
+        let updated: LedgerTransaction = try await provider.client
+            .from(LedgerSupabaseTable.ledgerTransactions)
+            .update(patch)
+            .eq("id", value: id.uuidString.lowercased())
+            .select()
+            .single()
+            .execute()
+            .value
+
+        _ = try await provider.client
+            .from(LedgerSupabaseTable.transactionTagMappings)
+            .delete()
+            .eq("transaction_id", value: id.uuidString.lowercased())
+            .execute()
+
+        if draft.selectedTags.isEmpty == false {
+            let mappings = draft.selectedTags.map { tag in
+                TransactionTagMapping(
+                    transactionId: id,
+                    tagId: tag.id,
+                    tagNameSnapshot: tag.name,
+                    createdAt: now
+                )
+            }
+            _ = try await provider.client
+                .from(LedgerSupabaseTable.transactionTagMappings)
+                .insert(mappings)
+                .execute()
+        }
+
+        var result = updated
+        result.tagSnapshots = draft.selectedTags.map(\.name)
+        return result
+    }
+
+    func deleteTransaction(id: UUID) async throws {
+        try await provider.client
+            .from(LedgerSupabaseTable.ledgerTransactions)
+            .delete()
+            .eq("id", value: id.uuidString.lowercased())
+            .execute()
     }
 
     func softDeleteCategory(id: UUID) async throws {
@@ -322,6 +381,16 @@ final class SupabaseLedgerDataService: LedgerDataService {
 
     func createTransaction(_ draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
         _ = draft
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func updateTransaction(id: UUID, draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
+        _ = id; _ = draft
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func deleteTransaction(id: UUID) async throws {
+        _ = id
         throw SupabaseServiceError.sdkUnavailable
     }
 

@@ -466,7 +466,7 @@ actor MockLedgerDataService: LedgerDataService {
             categoryId: draft.category.id,
             categoryNameSnapshot: draft.category.name,
             categoryIconSnapshot: draft.category.icon,
-            payerId: draft.payerId,
+            payerIds: draft.payerIds,
             targetMemberIds: draft.targetMemberIds,
             note: draft.note,
             attachmentUrls: [],
@@ -487,6 +487,45 @@ actor MockLedgerDataService: LedgerDataService {
             )
         }
         return row
+    }
+
+    func updateTransaction(id: UUID, draft: LedgerTransactionDraft) async throws -> LedgerTransaction {
+        guard let index = transactions.firstIndex(where: { $0.id == id }) else {
+            throw SupabaseServiceError.sdkUnavailable
+        }
+        let now = Date()
+        var row = transactions[index]
+        row.type = draft.type
+        row.amount = draft.amount
+        row.currency = draft.currency
+        row.transactionTime = draft.transactionTime
+        row.categoryId = draft.category.id
+        row.categoryNameSnapshot = draft.category.name
+        row.categoryIconSnapshot = draft.category.icon
+        row.payerIds = draft.payerIds
+        row.targetMemberIds = draft.targetMemberIds
+        row.note = draft.note
+        row.updatedAt = now
+        row.tagSnapshots = draft.selectedTags.map(\.name)
+        transactions[index] = row
+
+        mappings.removeAll { $0.transactionId == id }
+        for tag in draft.selectedTags {
+            mappings.append(
+                TransactionTagMapping(
+                    transactionId: id,
+                    tagId: tag.id,
+                    tagNameSnapshot: tag.name,
+                    createdAt: now
+                )
+            )
+        }
+        return row
+    }
+
+    func deleteTransaction(id: UUID) async throws {
+        transactions.removeAll { $0.id == id }
+        mappings.removeAll { $0.transactionId == id }
     }
 
     func softDeleteCategory(id: UUID) async throws {

@@ -355,19 +355,41 @@ extension FamilyProfile {
     }
 
     /// 千组织千面：优先 `household_memberships[0].nickname` → 回退 `family_profiles.name` → 兜底。
+    /// 正式登录用户若仍落在「新成员」占位名上，改为「我」，避免与虚拟成员占位混淆。
     var displayName: String {
         if let list = householdMemberships,
            let firstMembership = list.first {
             let nickname = firstMembership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if nickname.isEmpty == false {
-                return StoredDisplayNameResolver.selfName(nickname)
+                let resolved = StoredDisplayNameResolver.selfName(nickname)
+                if userId != nil, Self.isNewMemberPlaceholder(resolved) {
+                    return AppLocalized.localizedSync(L10n.Common.me)
+                }
+                return resolved
             }
         }
         let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if profileName.isEmpty == false, profileName != L10n.Family.unnamedMember.string() {
-            return StoredDisplayNameResolver.selfName(profileName)
+            let resolved = StoredDisplayNameResolver.selfName(profileName)
+            if userId != nil, Self.isNewMemberPlaceholder(resolved) {
+                return AppLocalized.localizedSync(L10n.Common.me)
+            }
+            return resolved
+        }
+        if userId != nil {
+            return AppLocalized.localizedSync(L10n.Common.me)
         }
         return MemberDisplayName.unknownFallback
+    }
+
+    /// 库中默认占位名（含已本地化后的「新成员」）。
+    static func isNewMemberPlaceholder(_ name: String) -> Bool {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.isEmpty == false else { return false }
+        if trimmed == L10n.Family.newMember.key { return true }
+        if trimmed == "New member" || trimmed == "新成员" || trimmed == "新成員" { return true }
+        let localized = AppLocalized.localizedSync(L10n.Family.newMember)
+        return trimmed == localized
     }
 
     /// 当前组织内嵌套 membership 的有效 nickname（若有）。
