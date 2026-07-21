@@ -57,7 +57,7 @@ struct FamilyExpenseDashboardView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.bottom, 88)
         }
         .refreshable {
             await viewModel.loadInitialData(force: true)
@@ -66,8 +66,8 @@ struct FamilyExpenseDashboardView: View {
         .task {
             await exchangeRates.ensureRatesFresh()
         }
-        .safeAreaInset(edge: .bottom) {
-            bottomBar
+        .overlay(alignment: .bottomTrailing) {
+            logEntryFAB
         }
         .toolbar {
             if allowsExpenseManagement {
@@ -301,55 +301,29 @@ struct FamilyExpenseDashboardView: View {
         }
     }
 
-    // MARK: - Bottom bar
+    // MARK: - FAB
 
-    private var bottomBar: some View {
-        HStack(alignment: .center) {
-            if allowsExpenseManagement {
-                Button {
-                    manageCategoriesInitialType = .expense
-                    isShowingCategoryManager = true
-                } label: {
-                    Image(systemName: "folder.badge.gearshape")
-                        .font(.title3)
-                        .frame(width: 44, height: 44)
-                }
-                .accessibilityLabel(L10n.Ledger.manageCategories.localized)
-            } else {
-                Color.clear
-                    .frame(width: 44, height: 44)
-            }
-
-            Spacer()
-
-            Button {
-                let defaultType: LedgerEntryType = allowsExpenseManagement ? .expense : .income
-                entryPrefill = ManualEntryPrefill(type: defaultType, categoryId: nil)
-            } label: {
-                Label(
-                    allowsExpenseManagement
-                        ? L10n.Ledger.logEntry.localized
-                        : L10n.Ledger.logIncome.localized,
-                    systemImage: "plus"
-                )
-                .font(.headline)
-                .padding(.horizontal, 28)
-                .padding(.vertical, 14)
-                .background(Color.accentColor)
+    private var logEntryFAB: some View {
+        Button {
+            let defaultType: LedgerEntryType = allowsExpenseManagement ? .expense : .income
+            entryPrefill = ManualEntryPrefill(type: defaultType, categoryId: nil)
+        } label: {
+            Image(systemName: "plus")
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(.white)
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            Color.clear
-                .frame(width: 44, height: 44)
+                .frame(width: 56, height: 56)
+                .background(Color.accentColor)
+                .clipShape(Circle())
+                .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .background(.bar)
+        .buttonStyle(.plain)
+        .padding(.trailing, 20)
+        .padding(.bottom, 20)
+        .accessibilityLabel(
+            allowsExpenseManagement
+                ? L10n.Ledger.logEntry.localized
+                : L10n.Ledger.logIncome.localized
+        )
     }
 
     // MARK: - Helpers
