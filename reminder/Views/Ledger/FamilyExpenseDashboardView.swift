@@ -304,7 +304,8 @@ struct FamilyExpenseDashboardView: View {
                     LazyVGrid(columns: gridColumns, spacing: 12) {
                         ForEach(categories) { category in
                             LedgerCategoryCard(
-                                name: category.name,
+                                nameResource: category.localizedNameResource,
+                                fallbackName: category.localizedName(locale: locale),
                                 icon: category.icon,
                                 amountText: currencyText(viewModel.amount(for: category.id, type: type)),
                                 colorHex: category.colorHex
@@ -329,6 +330,14 @@ struct FamilyExpenseDashboardView: View {
                                 }
                             }
                         }
+                    }
+                    .onAppear {
+                        LedgerPresetLocalizationLogger.probeDashboard(
+                            categories: viewModel.categories,
+                            locale: locale,
+                            householdId: viewModel.currentHouseholdIdValue,
+                            source: "dashboard_grid_\(type.rawValue)"
+                        )
                     }
                 }
             }

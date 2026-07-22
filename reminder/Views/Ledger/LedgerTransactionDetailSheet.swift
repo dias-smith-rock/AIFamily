@@ -43,13 +43,12 @@ struct LedgerTransactionDetailSheet: View {
                         Section {
                             detailRow(
                                 title: L10n.Ledger.category.localized,
-                                value: "\(transaction.categoryIconSnapshot ?? "") \(transaction.categoryNameSnapshot)"
-                                    .trimmingCharacters(in: .whitespaces)
+                                value: categoryDisplay(for: transaction)
                             )
                             if transaction.tagSnapshots.isEmpty == false {
                                 detailRow(
                                     title: L10n.Ledger.tags.localized,
-                                    value: transaction.tagSnapshots.joined(separator: ", ")
+                                    value: tagsDisplay(for: transaction)
                                 )
                             }
                         }
@@ -161,6 +160,26 @@ struct LedgerTransactionDetailSheet: View {
         formatter.locale = locale
         formatter.setLocalizedDateFormatFromTemplate("yyyyMMMd HH:mm")
         return formatter.string(from: date)
+    }
+
+    private func categoryDisplay(for transaction: LedgerTransaction) -> String {
+        if let categoryId = transaction.categoryId,
+           let category = viewModel.categories.first(where: { $0.id == categoryId }) {
+            return category.localizedDisplayLabel(locale: locale)
+        }
+        return "\(transaction.categoryIconSnapshot ?? "") \(transaction.categoryNameSnapshot)"
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    private func tagsDisplay(for transaction: LedgerTransaction) -> String {
+        guard let categoryId = transaction.categoryId else {
+            return transaction.tagSnapshots.joined(separator: ", ")
+        }
+        let tags = viewModel.tags(for: categoryId)
+        let localized = transaction.tagSnapshots.map { snapshot in
+            tags.first(where: { $0.name == snapshot })?.localizedName(locale: locale) ?? snapshot
+        }
+        return localized.joined(separator: ", ")
     }
 
     private func memberNames(_ ids: [UUID]) -> String {

@@ -119,7 +119,7 @@ struct ManualExpenseEntrySheet: View {
                     Section {
                         Picker(L10n.Ledger.category.localized, selection: categoryBinding) {
                             ForEach(viewModel.categories(for: entryType)) { category in
-                                Text(category.displayLabel).tag(category.id)
+                                Text(category.localizedDisplayLabel(locale: locale)).tag(category.id)
                             }
                         }
                         .onChange(of: selectedCategoryId) { _, _ in
@@ -130,7 +130,7 @@ struct ManualExpenseEntrySheet: View {
                             LedgerTagCapsuleFlow(spacing: 8) {
                                 ForEach(availableTags) { tag in
                                     selectableCapsule(
-                                        title: tag.name,
+                                        title: tag.localizedName(locale: locale),
                                         isSelected: selectedTagIds.contains(tag.id)
                                     ) {
                                         toggleTag(tag.id)
@@ -271,7 +271,7 @@ struct ManualExpenseEntrySheet: View {
                     CategoryLedgerEntriesSheet(
                         viewModel: viewModel,
                         categoryId: selectedCategoryId,
-                        categoryTitle: selectedCategory?.displayLabel ?? ""
+                        categoryTitle: selectedCategory?.localizedDisplayLabel(locale: locale) ?? ""
                     )
                     .environment(\.locale, appSettings.appLocale)
                     .environment(\.layoutDirection, appSettings.layoutDirection)
@@ -300,7 +300,7 @@ struct ManualExpenseEntrySheet: View {
                         .font(.body.weight(.semibold))
                         .foregroundStyle(.primary)
                     if let category = selectedCategory {
-                        Text(category.displayLabel)
+                        Text(category.localizedDisplayLabel(locale: locale))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

@@ -36,12 +36,7 @@ enum L10n {
         }
 
         func string(locale: Locale) -> String {
-            String(
-                localized: String.LocalizationValue(key),
-                table: table.rawValue,
-                bundle: .main,
-                locale: locale
-            )
+            AppLocalized.string(key, table: table, locale: locale)
         }
 
         @MainActor

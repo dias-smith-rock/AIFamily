@@ -31,6 +31,7 @@ enum AnalyticsManager {
         case ledgerCategoryDeleteSucceeded
         case ledgerCategoryDeleteBlocked(reason: String)
         case ledgerWalletLoad(step: String, detail: String)
+        case ledgerPresetL10n(step: String, detail: String)
     }
 
     /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
@@ -185,6 +186,15 @@ enum AnalyticsManager {
                     "detail": detail,
                 ]
             )
+
+        case .ledgerPresetL10n(let step, let detail):
+            return (
+                "ledger_preset_l10n",
+                [
+                    "step": step,
+                    "detail": detail,
+                ]
+            )
         }
     }
 
@@ -244,6 +254,8 @@ enum AnalyticsManager {
             return "ledger_category_delete_blocked reason=\(reason)"
         case .ledgerWalletLoad(let step, let detail):
             return "ledger_wallet_load step=\(step) \(detail)"
+        case .ledgerPresetL10n(let step, let detail):
+            return "ledger_preset_l10n step=\(step) \(detail)"
         }
     }
 }

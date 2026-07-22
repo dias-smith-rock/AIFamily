@@ -1,16 +1,55 @@
 import SwiftUI
 
 struct LedgerCategoryCard: View {
-    let name: String
+    /// 预设分类：用 catalog resource（跟随 `\.locale`）；自定义分类：用纯文案。
+    let nameResource: LocalizedStringResource?
+    let fallbackName: String
     let icon: String
     let amountText: String
     let colorHex: String?
     let action: () -> Void
 
+    init(
+        name: String,
+        icon: String,
+        amountText: String,
+        colorHex: String?,
+        action: @escaping () -> Void
+    ) {
+        self.nameResource = nil
+        self.fallbackName = name
+        self.icon = icon
+        self.amountText = amountText
+        self.colorHex = colorHex
+        self.action = action
+    }
+
+    init(
+        nameResource: LocalizedStringResource?,
+        fallbackName: String,
+        icon: String,
+        amountText: String,
+        colorHex: String?,
+        action: @escaping () -> Void
+    ) {
+        self.nameResource = nameResource
+        self.fallbackName = fallbackName
+        self.icon = icon
+        self.amountText = amountText
+        self.colorHex = colorHex
+        self.action = action
+    }
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 10) {
-                Text(name)
+                Group {
+                    if let nameResource {
+                        Text(nameResource)
+                    } else {
+                        Text(fallbackName)
+                    }
+                }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)

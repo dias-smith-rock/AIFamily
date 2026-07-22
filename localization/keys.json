@@ -6105,5 +6105,222 @@
     "table": "Ledger",
     "swift_property": "visibilityEveryoneWithAccess",
     "orphan": false
+  },
+  {
+    "legacy_key": "餐饮",
+    "new_key": "cat_dining",
+    "table": "Ledger",
+    "swift_property": "catDining",
+    "orphan": false
+  },
+  {
+    "legacy_key": "交通",
+    "new_key": "cat_transport",
+    "table": "Ledger",
+    "swift_property": "catTransport",
+    "orphan": false
+  },
+  {
+    "legacy_key": "购物",
+    "new_key": "cat_shopping",
+    "table": "Ledger",
+    "swift_property": "catShopping",
+    "orphan": false
+  },
+  {
+    "legacy_key": "运动健身",
+    "new_key": "cat_sports",
+    "table": "Ledger",
+    "swift_property": "catSports",
+    "orphan": false
+  },
+  {
+    "legacy_key": "旅行",
+    "new_key": "cat_travel",
+    "table": "Ledger",
+    "swift_property": "catTravel",
+    "orphan": false
+  },
+  {
+    "legacy_key": "家居维修",
+    "new_key": "cat_repairs",
+    "table": "Ledger",
+    "swift_property": "catRepairs",
+    "orphan": false
+  },
+  {
+    "legacy_key": "薪资收入",
+    "new_key": "cat_income",
+    "table": "Ledger",
+    "swift_property": "catIncome",
+    "orphan": false
+  },
+  {
+    "legacy_key": "退款",
+    "new_key": "cat_refunds",
+    "table": "Ledger",
+    "swift_property": "catRefunds",
+    "orphan": false
+  },
+  {
+    "legacy_key": "早餐",
+    "new_key": "tag_breakfast",
+    "table": "Ledger",
+    "swift_property": "tagBreakfast",
+    "orphan": false
+  },
+  {
+    "legacy_key": "午餐",
+    "new_key": "tag_lunch",
+    "table": "Ledger",
+    "swift_property": "tagLunch",
+    "orphan": false
+  },
+  {
+    "legacy_key": "晚餐",
+    "new_key": "tag_dinner",
+    "table": "Ledger",
+    "swift_property": "tagDinner",
+    "orphan": false
+  },
+  {
+    "legacy_key": "外卖",
+    "new_key": "tag_takeout",
+    "table": "Ledger",
+    "swift_property": "tagTakeout",
+    "orphan": false
+  },
+  {
+    "legacy_key": "咖啡饮品",
+    "new_key": "tag_coffee",
+    "table": "Ledger",
+    "swift_property": "tagCoffee",
+    "orphan": false
+  },
+  {
+    "legacy_key": "公共交通",
+    "new_key": "tag_public_transit",
+    "table": "Ledger",
+    "swift_property": "tagPublicTransit",
+    "orphan": false
+  },
+  {
+    "legacy_key": "打车",
+    "new_key": "tag_taxi",
+    "table": "Ledger",
+    "swift_property": "tagTaxi",
+    "orphan": false
+  },
+  {
+    "legacy_key": "加油",
+    "new_key": "tag_gas",
+    "table": "Ledger",
+    "swift_property": "tagGas",
+    "orphan": false
+  },
+  {
+    "legacy_key": "停车",
+    "new_key": "tag_parking",
+    "table": "Ledger",
+    "swift_property": "tagParking",
+    "orphan": false
+  },
+  {
+    "legacy_key": "日用百货",
+    "new_key": "tag_groceries",
+    "table": "Ledger",
+    "swift_property": "tagGroceries",
+    "orphan": false
+  },
+  {
+    "legacy_key": "服饰",
+    "new_key": "tag_clothing",
+    "table": "Ledger",
+    "swift_property": "tagClothing",
+    "orphan": false
+  },
+  {
+    "legacy_key": "电子产品",
+    "new_key": "tag_electronics",
+    "table": "Ledger",
+    "swift_property": "tagElectronics",
+    "orphan": false
+  },
+  {
+    "legacy_key": "健身会员",
+    "new_key": "tag_gym",
+    "table": "Ledger",
+    "swift_property": "tagGym",
+    "orphan": false
+  },
+  {
+    "legacy_key": "运动装备",
+    "new_key": "tag_sports_equipment",
+    "table": "Ledger",
+    "swift_property": "tagSportsEquipment",
+    "orphan": false
+  },
+  {
+    "legacy_key": "机票火车",
+    "new_key": "tag_flights_trains",
+    "table": "Ledger",
+    "swift_property": "tagFlightsTrains",
+    "orphan": false
+  },
+  {
+    "legacy_key": "酒店住宿",
+    "new_key": "tag_hotels",
+    "table": "Ledger",
+    "swift_property": "tagHotels",
+    "orphan": false
+  },
+  {
+    "legacy_key": "家电维修",
+    "new_key": "tag_appliance_repair",
+    "table": "Ledger",
+    "swift_property": "tagApplianceRepair",
+    "orphan": false
+  },
+  {
+    "legacy_key": "水电五金",
+    "new_key": "tag_plumbing",
+    "table": "Ledger",
+    "swift_property": "tagPlumbing",
+    "orphan": false
+  },
+  {
+    "legacy_key": "基本工资",
+    "new_key": "tag_salary",
+    "table": "Ledger",
+    "swift_property": "tagSalary",
+    "orphan": false
+  },
+  {
+    "legacy_key": "奖金",
+    "new_key": "tag_bonus",
+    "table": "Ledger",
+    "swift_property": "tagBonus",
+    "orphan": false
+  },
+  {
+    "legacy_key": "副业",
+    "new_key": "tag_side_hustle",
+    "table": "Ledger",
+    "swift_property": "tagSideHustle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "商家退款",
+    "new_key": "tag_merchant_refund",
+    "table": "Ledger",
+    "swift_property": "tagMerchantRefund",
+    "orphan": false
+  },
+  {
+    "legacy_key": "押金退还",
+    "new_key": "tag_deposit_return",
+    "table": "Ledger",
+    "swift_property": "tagDepositReturn",
+    "orphan": false
   }
 ]

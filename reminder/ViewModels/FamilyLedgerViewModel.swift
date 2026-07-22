@@ -485,13 +485,30 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     var categoryExpenseBreakdown: [(name: String, icon: String?, amount: Double)] {
+        let locale = AppSettingsManager.shared.appLocale
         let expenses = filteredTransactionsForReport.filter { $0.type == .expense }
-        let grouped = Dictionary(grouping: expenses, by: \.categoryNameSnapshot)
+        let grouped = Dictionary(grouping: expenses) { transaction -> String in
+            if let categoryId = transaction.categoryId {
+                return "id:\(categoryId.uuidString)"
+            }
+            return "snap:\(transaction.categoryNameSnapshot)"
+        }
         return grouped
-            .map { name, rows in
-                (
-                    name: name,
-                    icon: rows.first?.categoryIconSnapshot,
+            .map { _, rows in
+                let first = rows.first
+                let resolvedName: String
+                let resolvedIcon: String?
+                if let categoryId = first?.categoryId,
+                   let category = categories.first(where: { $0.id == categoryId }) {
+                    resolvedName = category.localizedName(locale: locale)
+                    resolvedIcon = category.icon
+                } else {
+                    resolvedName = first?.categoryNameSnapshot ?? ""
+                    resolvedIcon = first?.categoryIconSnapshot
+                }
+                return (
+                    name: resolvedName,
+                    icon: resolvedIcon,
                     amount: sumConverted(rows)
                 )
             }

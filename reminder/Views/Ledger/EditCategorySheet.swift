@@ -16,7 +16,7 @@ struct EditCategorySheet: View {
     init(viewModel: FamilyLedgerViewModel, category: ExpenseCategory) {
         self.viewModel = viewModel
         self.category = category
-        _nameText = State(initialValue: category.name)
+        _nameText = State(initialValue: category.localizedName(locale: AppSettingsManager.shared.appLocale))
         _iconText = State(initialValue: LedgerCategoryIconPresets.resolvedSelection(from: category.icon))
     }
 
@@ -103,7 +103,7 @@ struct EditCategorySheet: View {
     @ViewBuilder
     private func editableTagCapsule(_ tag: CategoryTag) -> some View {
         HStack(spacing: 4) {
-            Text(tag.name)
+            Text(tag.localizedName(locale: locale))
                 .font(.caption.weight(.medium))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
@@ -135,10 +135,18 @@ struct EditCategorySheet: View {
         isSaving = true
         defer { isSaving = false }
 
+        let nameToPersist: String
+        if category.presetKey != nil {
+            let localized = category.localizedName(locale: locale)
+            nameToPersist = (name == localized) ? category.name : name
+        } else {
+            nameToPersist = name
+        }
+
         do {
             try await viewModel.updateCategory(
                 category,
-                name: name,
+                name: nameToPersist,
                 icon: icon.isEmpty ? "🏷️" : icon,
                 colorHex: category.colorHex
             )

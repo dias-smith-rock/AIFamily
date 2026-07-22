@@ -89,7 +89,7 @@ struct CategoryLedgerEntriesSheet: View {
     private func entryRow(_ transaction: LedgerTransaction) -> some View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(transaction.note?.nilIfEmpty ?? transaction.categoryNameSnapshot)
+                Text(transaction.note?.nilIfEmpty ?? fallbackCategoryTitle(for: transaction))
                     .font(.body.weight(.medium))
                     .foregroundStyle(.primary)
                     .lineLimit(2)
@@ -99,7 +99,7 @@ struct CategoryLedgerEntriesSheet: View {
                     .foregroundStyle(.secondary)
 
                 if transaction.tagSnapshots.isEmpty == false {
-                    Text(transaction.tagSnapshots.joined(separator: " · "))
+                    Text(localizedTagLine(for: transaction))
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .lineLimit(1)
@@ -114,6 +114,22 @@ struct CategoryLedgerEntriesSheet: View {
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
+    }
+
+    private func fallbackCategoryTitle(for transaction: LedgerTransaction) -> String {
+        if let category = viewModel.categories.first(where: { $0.id == categoryId }) {
+            return category.localizedName(locale: locale)
+        }
+        return transaction.categoryNameSnapshot
+    }
+
+    private func localizedTagLine(for transaction: LedgerTransaction) -> String {
+        let tags = viewModel.tags(for: categoryId)
+        return transaction.tagSnapshots
+            .map { snapshot in
+                tags.first(where: { $0.name == snapshot })?.localizedName(locale: locale) ?? snapshot
+            }
+            .joined(separator: " · ")
     }
 
     private func moneyText(for transaction: LedgerTransaction) -> String {

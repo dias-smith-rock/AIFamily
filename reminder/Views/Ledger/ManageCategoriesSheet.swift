@@ -34,7 +34,7 @@ struct ManageCategoriesSheet: View {
                         ForEach(viewModel.categories(for: manageType)) { category in
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack {
-                                    Text(category.displayLabel)
+                                    Text(category.localizedDisplayLabel(locale: locale))
                                         .font(.body.weight(.semibold))
                                     Spacer()
                                     Button {
@@ -58,7 +58,7 @@ struct ManageCategoriesSheet: View {
                                 if tags.isEmpty == false {
                                     LedgerTagCapsuleFlow(spacing: 8) {
                                         ForEach(tags) { tag in
-                                            Text(tag.name)
+                                            Text(tag.localizedName(locale: locale))
                                                 .font(.caption.weight(.medium))
                                                 .foregroundStyle(.primary)
                                                 .lineLimit(1)
