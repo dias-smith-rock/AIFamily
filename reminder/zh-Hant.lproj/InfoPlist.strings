@@ -1,6 +1,6 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "同圈";
-"CFBundleName" = "同圈";
+"CFBundleDisplayName" = "記事本";
+"CFBundleName" = "記事本";
 
 "NSCameraUsageDescription" = "WeSync 需要存取您的相機以掃描邀請碼、拍攝通知單或收據並自動產生任務。";
 "NSPhotoLibraryAddUsageDescription" = "用於將任務附件圖片儲存到你的相簿。";

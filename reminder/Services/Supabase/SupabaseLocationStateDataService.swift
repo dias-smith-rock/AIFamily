@@ -243,6 +243,57 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         #endif
     }
 
+    func replaceLocationsForDebug(
+        householdId: UUID,
+        profileId: UUID,
+        locations: [LocationPayload],
+        isGhostMode: Bool
+    ) async throws {
+        #if canImport(Supabase)
+        let params = DebugReplaceLocationStatesParams(
+            pHouseholdId: householdId,
+            pEntityId: profileId,
+            pLocations: locations,
+            pIsGhostMode: isGhostMode
+        )
+        do {
+            try await provider.client
+                .rpc("debug_replace_location_states", params: params)
+                .execute()
+            return
+        } catch {
+            // RPC 未部署时：仅当前用户自己的 profile 可走表级 upsert（RLS）。
+            let payload = LocationStateUpsertPayload(
+                householdId: householdId,
+                profileId: profileId,
+                locations: locations,
+                isGhostMode: isGhostMode,
+                updatedAt: Date()
+            )
+            let existing = try? await fetchLocationState(householdId: householdId, profileId: profileId)
+            if existing == nil {
+                _ = try await provider.client
+                    .from(Self.tableName)
+                    .insert(payload)
+                    .execute()
+            } else {
+                _ = try await provider.client
+                    .from(Self.tableName)
+                    .update(payload)
+                    .eq("entity_id", value: profileId.uuidString.lowercased())
+                    .eq("household_id", value: householdId.uuidString.lowercased())
+                    .execute()
+            }
+        }
+        #else
+        _ = householdId
+        _ = profileId
+        _ = locations
+        _ = isGhostMode
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
     private func logLocationPersistSkip(
         _ skipOutcome: LocationPersistOutcome,
         coordinate: LocationPayload,

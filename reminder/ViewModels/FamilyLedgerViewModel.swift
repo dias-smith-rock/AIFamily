@@ -27,6 +27,7 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     private var currentHouseholdId: UUID?
     private var loadedHouseholdId: UUID?
+    private var reloadCancellable: AnyCancellable?
 
     init(
         ledgerService: LedgerDataService,
@@ -36,6 +37,22 @@ final class FamilyLedgerViewModel: ObservableObject {
         self.ledgerService = ledgerService
         self.membershipService = membershipService
         self.familyProfileService = familyProfileService
+
+        // 仅响应外部灌数（如 DEBUG Seeder）；本地增删改不再 post，避免整页闪白。
+        reloadCancellable = NotificationCenter.default
+            .publisher(for: .ledgerDataDidChange)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    let token = LedgerWalletLoadLogger.nextToken()
+                    LedgerWalletLoadLogger.step(
+                        .notificationReload,
+                        token: token,
+                        source: "ledgerDataDidChange",
+                        householdId: self?.currentHouseholdId
+                    )
+                    await self?.loadLedgerData(force: true, loadToken: token, source: "notification")
+                }
+            }
     }
 
     var currentHouseholdIdValue: UUID? { currentHouseholdId }

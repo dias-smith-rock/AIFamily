@@ -1,6 +1,6 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "同圈";
-"CFBundleName" = "同圈";
+"CFBundleDisplayName" = "记事本";
+"CFBundleName" = "记事本";
 
 "NSCameraUsageDescription" = "WeSync 需要访问您的相机以扫描邀请码、拍摄通知单或收据并自动生成任务。";
 "NSPhotoLibraryAddUsageDescription" = "用于将任务附件图片保存到你的相册。";

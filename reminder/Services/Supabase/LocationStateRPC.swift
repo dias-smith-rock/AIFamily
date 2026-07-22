@@ -28,4 +28,19 @@ enum LocationStateRPCSupport {
     }
 }
 
+/// `debug_replace_location_states`：DEBUG 灌数整表替换 locations。
+struct DebugReplaceLocationStatesParams: Encodable, Sendable {
+    let pHouseholdId: UUID
+    let pEntityId: UUID
+    let pLocations: [LocationPayload]
+    let pIsGhostMode: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case pHouseholdId = "p_household_id"
+        case pEntityId = "p_entity_id"
+        case pLocations = "p_locations"
+        case pIsGhostMode = "p_is_ghost_mode"
+    }
+}
+
 #endif

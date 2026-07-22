@@ -22,6 +22,11 @@ struct SettingsMainView: View {
     @State private var showPrivacySheet = false
     @State private var showClearGuestDataAlert = false
     @State private var isClearingGuestData = false
+    #if DEBUG
+    @State private var isSeedingMockData = false
+    @State private var mockSeedResultMessage: String?
+    @State private var mockSeedErrorMessage: String?
+    #endif
 
     var body: some View {
         settingsNavigationWithLifecycle
@@ -357,6 +362,10 @@ struct SettingsMainView: View {
                 showsProfileHeader: false,
                 showsInlineVIPEntry: false
             )
+
+            #if DEBUG
+            debugMockDataSection
+            #endif
         }
         .listStyle(.insetGrouped)
         .environment(\.editMode, .constant(isSortingMembers ? .active : .inactive))
@@ -365,7 +374,102 @@ struct SettingsMainView: View {
             await familyViewModel.loadMembers()
             await mineViewModel.loadAccountSummary()
         }
+        #if DEBUG
+        .alert("Mock Data", isPresented: Binding(
+            get: { mockSeedResultMessage != nil },
+            set: { if $0 == false { mockSeedResultMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { mockSeedResultMessage = nil }
+        } message: {
+            Text(verbatim: mockSeedResultMessage ?? "")
+        }
+        .alert("Mock Seed Failed", isPresented: Binding(
+            get: { mockSeedErrorMessage != nil },
+            set: { if $0 == false { mockSeedErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { mockSeedErrorMessage = nil }
+        } message: {
+            Text(verbatim: mockSeedErrorMessage ?? "")
+        }
+        #endif
     }
+
+    #if DEBUG
+    private var debugMockDataSection: some View {
+        Section {
+            Button {
+                Task { await seedDebugMockData() }
+            } label: {
+                HStack {
+                    Label("Seed Calendar / Todos / Wallet / Location", systemImage: "hammer.fill")
+                    Spacer()
+                    if isSeedingMockData {
+                        ProgressView()
+                    }
+                }
+            }
+            .disabled(isSeedingMockData || appRouter.selectedHouseholdId == nil)
+
+            Button {
+                Task { await seedDebugLocationData() }
+            } label: {
+                Label("Seed Location (San Jose ×2 members)", systemImage: "mappin.and.ellipse")
+            }
+            .disabled(isSeedingMockData || appRouter.selectedHouseholdId == nil)
+        } header: {
+            Text(verbatim: "Developer")
+        } footer: {
+            Text(verbatim: "DEBUG only. Full seed: ~30×5 schedules, 13 todos, 2 ledger entries/category, plus 2 members × 3 San Jose downtown points. Location-only seed needs migration debug_replace_location_states (or falls back to current user only).")
+        }
+    }
+
+    private func seedDebugMockData() async {
+        isSeedingMockData = true
+        defer { isSeedingMockData = false }
+        do {
+            let extraProfileIds = familyViewModel.profiles.map(\.id)
+            let result = try await DebugMockDataSeeder.seedCalendarTodosAndWallet(
+                services: appBootstrap.services,
+                householdId: appRouter.selectedHouseholdId,
+                membershipId: appRouter.selectedMembershipId,
+                profileId: appRouter.selectedProfileId,
+                extraProfileIds: extraProfileIds
+            )
+            mockSeedResultMessage = [
+                "Scheduled: \(result.scheduledTasks)",
+                "Todos active: \(result.flexibleTodos)",
+                "Todos overdue: \(result.overdueTodos)",
+                "Todos completed: \(result.completedTodos)",
+                "Wallet tx: \(result.ledgerTransactions)",
+                "Location members: \(result.locationMembers) · points: \(result.locationPoints)",
+                "Switch tabs to refresh if needed.",
+            ].joined(separator: "\n")
+        } catch {
+            mockSeedErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func seedDebugLocationData() async {
+        isSeedingMockData = true
+        defer { isSeedingMockData = false }
+        do {
+            let result = try await DebugMockDataSeeder.seedSanJoseLocationsOnly(
+                services: appBootstrap.services,
+                householdId: appRouter.selectedHouseholdId,
+                profileId: appRouter.selectedProfileId,
+                extraProfileIds: familyViewModel.profiles.map(\.id)
+            )
+            mockSeedResultMessage = [
+                "San Jose location mock ready.",
+                "Members: \(result.members)",
+                "Points: \(result.points)",
+                "Open Location tab to view.",
+            ].joined(separator: "\n")
+        } catch {
+            mockSeedErrorMessage = error.localizedDescription
+        }
+    }
+    #endif
 
     private func openOrganizationSettings() {
         renameErrorMessage = nil

@@ -112,4 +112,26 @@ actor MockLocationStateDataService: LocationStateDataService {
         records.append(row)
         return row
     }
+
+    func replaceLocationsForDebug(
+        householdId: UUID,
+        profileId: UUID,
+        locations: [LocationPayload],
+        isGhostMode: Bool
+    ) async throws {
+        let now = Date()
+        let row = LocationStateRecord(
+            databaseId: records.first(where: { $0.profileId == profileId })?.databaseId ?? UUID(),
+            householdId: householdId,
+            profileId: profileId,
+            locations: locations,
+            isGhostMode: isGhostMode,
+            updatedAt: now
+        )
+        if let index = records.firstIndex(where: { $0.profileId == profileId }) {
+            records[index] = row
+        } else {
+            records.append(row)
+        }
+    }
 }

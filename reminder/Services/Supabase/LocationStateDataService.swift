@@ -17,4 +17,12 @@ protocol LocationStateDataService: Sendable {
         profileId: UUID,
         isGhostMode: Bool
     ) async throws -> LocationStateRecord
+
+    /// DEBUG 灌数：整表替换 `locations`（newest-first）。Release 实现可抛错。
+    func replaceLocationsForDebug(
+        householdId: UUID,
+        profileId: UUID,
+        locations: [LocationPayload],
+        isGhostMode: Bool
+    ) async throws
 }

@@ -100,6 +100,14 @@ struct LocationMainView: View {
         } message: {
             Text(L10n.Family.afterYouLeaveTheGroupWillNoLongerReceive.localized)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .locationStatesDidChange)) { _ in
+            guard isTabActive else { return }
+            Task {
+                await viewModel.refresh()
+                liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
+                fitCameraToLiveAndDisplayedMembers()
+            }
+        }
         .task(id: locationRefreshToken) {
             guard isTabActive else { return }
             _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
