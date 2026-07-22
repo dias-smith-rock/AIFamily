@@ -34,7 +34,8 @@ struct FamilyExpenseDashboardView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                if viewModel.isLoading {
+                // 已有缓存时保留网格，仅在首次空态显示全屏 Progress（避免记账后整页闪白）。
+                if viewModel.isLoading, viewModel.categories.isEmpty {
                     ProgressView()
                         .frame(maxWidth: .infinity)
                         .padding(.top, 40)

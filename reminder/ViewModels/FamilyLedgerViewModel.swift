@@ -27,7 +27,6 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     private var currentHouseholdId: UUID?
     private var loadedHouseholdId: UUID?
-    private var reloadCancellable: AnyCancellable?
 
     init(
         ledgerService: LedgerDataService,
@@ -37,21 +36,6 @@ final class FamilyLedgerViewModel: ObservableObject {
         self.ledgerService = ledgerService
         self.membershipService = membershipService
         self.familyProfileService = familyProfileService
-
-        reloadCancellable = NotificationCenter.default
-            .publisher(for: .ledgerDataDidChange)
-            .sink { [weak self] _ in
-                Task { @MainActor [weak self] in
-                    let token = LedgerWalletLoadLogger.nextToken()
-                    LedgerWalletLoadLogger.step(
-                        .notificationReload,
-                        token: token,
-                        source: "ledgerDataDidChange",
-                        householdId: self?.currentHouseholdId
-                    )
-                    await self?.loadInitialData(force: true, loadToken: token, source: "notification")
-                }
-            }
     }
 
     var currentHouseholdIdValue: UUID? { currentHouseholdId }
@@ -592,24 +576,17 @@ final class FamilyLedgerViewModel: ObservableObject {
 
     func createTransaction(_ draft: LedgerTransactionDraft) async throws {
         let created = try await ledgerService.createTransaction(draft)
-        transactions.insert(created, at: 0)
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        upsertTransactionLocally(created)
     }
 
     func updateTransaction(id: UUID, draft: LedgerTransactionDraft) async throws {
         let updated = try await ledgerService.updateTransaction(id: id, draft: draft)
-        if let index = transactions.firstIndex(where: { $0.id == id }) {
-            transactions[index] = updated
-        } else {
-            transactions.insert(updated, at: 0)
-        }
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        upsertTransactionLocally(updated)
     }
 
     func deleteTransaction(id: UUID) async throws {
         try await ledgerService.deleteTransaction(id: id)
         transactions.removeAll { $0.id == id }
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
     }
 
     /// 指定分类下对当前查看者可见的流水（按时间倒序）。
@@ -718,7 +695,6 @@ final class FamilyLedgerViewModel: ObservableObject {
             colorHex: "#007AFF"
         )
         categories.append(created)
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
         return created
     }
 
@@ -732,7 +708,6 @@ final class FamilyLedgerViewModel: ObservableObject {
         if let index = categories.firstIndex(where: { $0.id == updated.id }) {
             categories[index] = updated
         }
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
     }
 
     func addTag(categoryId: UUID, name: String) async throws {
@@ -743,10 +718,19 @@ final class FamilyLedgerViewModel: ObservableObject {
             name: name
         )
         tags.append(created)
-        NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
     }
 
     // MARK: - Private
+
+    /// 本地增量写入流水，避免再触发整页 `loadInitialData`。
+    private func upsertTransactionLocally(_ transaction: LedgerTransaction) {
+        if let index = transactions.firstIndex(where: { $0.id == transaction.id }) {
+            transactions[index] = transaction
+        } else {
+            transactions.append(transaction)
+        }
+        transactions.sort { $0.transactionTime > $1.transactionTime }
+    }
 
     /// `.task(id:)` / 切群组时取消进行中的请求属正常，勿当成加载失败展示。
     private func recordLoadError(_ error: Error) {
