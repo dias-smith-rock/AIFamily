@@ -39,6 +39,16 @@ struct CategoryUpdatePatch: Encodable {
     }
 }
 
+struct CategorySortOrderPatch: Encodable {
+    let sortOrder: Int
+    let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case sortOrder = "sort_order"
+        case updatedAt = "updated_at"
+    }
+}
+
 struct TagSoftDeletePatch: Encodable {
     let isDeleted: Bool
 

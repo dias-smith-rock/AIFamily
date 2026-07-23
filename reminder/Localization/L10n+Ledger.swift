@@ -39,6 +39,7 @@ extension L10n {
         static let tags = Entry(key: "ledger_tags", table: .ledger)
         static let forWhom = Entry(key: "ledger_for_whom", table: .ledger)
         static let manageCategories = Entry(key: "ledger_manage_categories", table: .ledger)
+        static let sortCategories = Entry(key: "ledger_sort_categories", table: .ledger)
         static let reports = Entry(key: "ledger_reports", table: .ledger)
         static let periodDay = Entry(key: "ledger_period_day", table: .ledger)
         static let periodWeek = Entry(key: "ledger_period_week", table: .ledger)

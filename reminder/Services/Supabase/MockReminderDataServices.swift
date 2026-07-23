@@ -583,6 +583,15 @@ actor MockLedgerDataService: LedgerDataService {
         return categories[index]
     }
 
+    func updateCategorySortOrders(_ updates: [(id: UUID, sortOrder: Int)]) async throws {
+        let now = Date()
+        for update in updates {
+            guard let index = categories.firstIndex(where: { $0.id == update.id }) else { continue }
+            categories[index].sortOrder = update.sortOrder
+            categories[index].updatedAt = now
+        }
+    }
+
     func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag {
         let row = CategoryTag(
             id: UUID(),

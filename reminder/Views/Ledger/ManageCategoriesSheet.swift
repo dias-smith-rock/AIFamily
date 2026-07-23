@@ -11,10 +11,15 @@ struct ManageCategoriesSheet: View {
     @State private var categoryPendingEdit: ExpenseCategory?
     @State private var isShowingCreateCategory = false
     @State private var deleteBlockedMessage: String?
+    @State private var isSortingCategories = false
 
     init(viewModel: FamilyLedgerViewModel, initialType: LedgerEntryType = .expense) {
         self.viewModel = viewModel
         _manageType = State(initialValue: initialType)
+    }
+
+    private var managedCategories: [ExpenseCategory] {
+        viewModel.categories(for: manageType)
     }
 
     var body: some View {
@@ -28,30 +33,33 @@ struct ManageCategoriesSheet: View {
                         }
                         .pickerStyle(.segmented)
                         .listRowBackground(Color.clear)
+                        .disabled(isSortingCategories)
                     }
 
                     Section {
-                        ForEach(viewModel.categories(for: manageType)) { category in
+                        ForEach(managedCategories) { category in
                             VStack(alignment: .leading, spacing: 10) {
                                 HStack {
                                     Text(category.localizedDisplayLabel(locale: locale))
                                         .font(.body.weight(.semibold))
                                     Spacer()
-                                    Button {
-                                        categoryPendingEdit = category
-                                    } label: {
-                                        Image(systemName: "pencil")
-                                    }
-                                    .buttonStyle(.borderless)
-                                    .accessibilityLabel(L10n.Ledger.editCategory.localized)
+                                    if isSortingCategories == false {
+                                        Button {
+                                            categoryPendingEdit = category
+                                        } label: {
+                                            Image(systemName: "pencil")
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .accessibilityLabel(L10n.Ledger.editCategory.localized)
 
-                                    Button(role: .destructive) {
-                                        attemptDelete(category)
-                                    } label: {
-                                        Image(systemName: "trash")
+                                        Button(role: .destructive) {
+                                            attemptDelete(category)
+                                        } label: {
+                                            Image(systemName: "trash")
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .accessibilityLabel(L10n.Ledger.deleteCategory.localized)
                                     }
-                                    .buttonStyle(.borderless)
-                                    .accessibilityLabel(L10n.Ledger.deleteCategory.localized)
                                 }
 
                                 let tags = viewModel.tags(for: category.id)
@@ -73,28 +81,38 @@ struct ManageCategoriesSheet: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .onMove { indexSet, destination in
+                            guard isSortingCategories else { return }
+                            viewModel.moveCategories(
+                                for: manageType,
+                                fromOffsets: indexSet,
+                                toOffset: destination
+                            )
+                        }
                     } header: {
-                        Text(L10n.Ledger.manageCategories.localized)
-                            .textCase(nil)
+                        categoriesSectionHeader
                     }
                 }
                 .contentMargins(.bottom, 88, for: .scrollContent)
+                .environment(\.editMode, .constant(isSortingCategories ? .active : .inactive))
 
-                Button {
-                    isShowingCreateCategory = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(width: 56, height: 56)
-                        .background(Color.accentColor)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
+                if isSortingCategories == false {
+                    Button {
+                        isShowingCreateCategory = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.accentColor)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.18), radius: 8, y: 4)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 20)
+                    .padding(.bottom, 20)
+                    .accessibilityLabel(L10n.Ledger.addCategory.localized)
                 }
-                .buttonStyle(.plain)
-                .padding(.trailing, 20)
-                .padding(.bottom, 20)
-                .accessibilityLabel(L10n.Ledger.addCategory.localized)
             }
             .navigationTitle(L10n.Ledger.manageCategories.localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -102,6 +120,9 @@ struct ManageCategoriesSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.close) { dismiss() }
                 }
+            }
+            .onChange(of: manageType) { _, _ in
+                isSortingCategories = false
             }
             .sheet(item: $categoryPendingEdit) { category in
                 EditCategorySheet(viewModel: viewModel, category: category)
@@ -168,6 +189,35 @@ struct ManageCategoriesSheet: View {
                 }
             }
         }
+    }
+
+    private var categoriesSectionHeader: some View {
+        HStack(spacing: 16) {
+            Text(L10n.Ledger.manageCategories.localized)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 8)
+
+            if managedCategories.count >= 2 {
+                Button {
+                    withAnimation(.snappy) {
+                        isSortingCategories.toggle()
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.body)
+                        .foregroundStyle(.blue)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(
+                    isSortingCategories
+                        ? AppLocalized.string(L10n.Common.completeSorting, locale: locale)
+                        : AppLocalized.string(L10n.Ledger.sortCategories, locale: locale)
+                )
+            }
+        }
+        .textCase(nil)
     }
 
     private func attemptDelete(_ category: ExpenseCategory) {

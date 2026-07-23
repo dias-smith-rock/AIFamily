@@ -114,6 +114,8 @@ protocol LedgerDataService {
         icon: String,
         colorHex: String?
     ) async throws -> ExpenseCategory
+    /// 批量更新分类 `sort_order`（同一 type 内的展示顺序）。
+    func updateCategorySortOrders(_ updates: [(id: UUID, sortOrder: Int)]) async throws
     func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag
     /// 若组织缺少默认分类，幂等补齐（任意活跃成员可调用，含 member）。
     func ensurePresetCategories(in householdId: UUID) async throws

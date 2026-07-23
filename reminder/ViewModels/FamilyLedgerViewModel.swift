@@ -727,6 +727,36 @@ final class FamilyLedgerViewModel: ObservableObject {
         }
     }
 
+    /// 拖动排序当前 type 下的分类，并持久化 `sort_order`。
+    func moveCategories(for type: LedgerEntryType, fromOffsets source: IndexSet, toOffset destination: Int) {
+        var ordered = categories(for: type)
+        let moving = source.sorted().map { ordered[$0] }
+        for index in source.sorted(by: >) {
+            ordered.remove(at: index)
+        }
+        let insertAt = destination - source.filter { $0 < destination }.count
+        ordered.insert(contentsOf: moving, at: insertAt)
+
+        let now = Date()
+        var updates: [(id: UUID, sortOrder: Int)] = []
+        for (index, category) in ordered.enumerated() {
+            guard let storageIndex = categories.firstIndex(where: { $0.id == category.id }) else { continue }
+            if categories[storageIndex].sortOrder != index {
+                categories[storageIndex].sortOrder = index
+                categories[storageIndex].updatedAt = now
+            }
+            updates.append((id: category.id, sortOrder: index))
+        }
+        guard updates.isEmpty == false else { return }
+        Task {
+            do {
+                try await ledgerService.updateCategorySortOrders(updates)
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     func addTag(categoryId: UUID, name: String) async throws {
         guard let householdId = currentHouseholdId else { return }
         let created = try await ledgerService.createTag(

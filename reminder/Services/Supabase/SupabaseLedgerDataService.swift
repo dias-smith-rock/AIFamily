@@ -314,6 +314,19 @@ final class SupabaseLedgerDataService: LedgerDataService {
             .value
     }
 
+    func updateCategorySortOrders(_ updates: [(id: UUID, sortOrder: Int)]) async throws {
+        guard updates.isEmpty == false else { return }
+        let now = Date()
+        for update in updates {
+            let patch = CategorySortOrderPatch(sortOrder: update.sortOrder, updatedAt: now)
+            try await provider.client
+                .from(LedgerSupabaseTable.expenseCategories)
+                .update(patch)
+                .eq("id", value: update.id.uuidString.lowercased())
+                .execute()
+        }
+    }
+
     func createTag(householdId: UUID, categoryId: UUID, name: String) async throws -> CategoryTag {
         let row = CategoryTag(
             id: UUID(),
@@ -424,6 +437,11 @@ final class SupabaseLedgerDataService: LedgerDataService {
         colorHex: String?
     ) async throws -> ExpenseCategory {
         _ = id; _ = name; _ = icon; _ = colorHex
+        throw SupabaseServiceError.sdkUnavailable
+    }
+
+    func updateCategorySortOrders(_ updates: [(id: UUID, sortOrder: Int)]) async throws {
+        _ = updates
         throw SupabaseServiceError.sdkUnavailable
     }
 
