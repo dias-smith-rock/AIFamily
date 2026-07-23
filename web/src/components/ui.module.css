@@ -199,6 +199,10 @@
   cursor: pointer;
 }
 
+.sheetBackdropDark {
+  background: rgba(0, 0, 0, 0.55);
+}
+
 .sheetPanel {
   position: relative;
   width: min(100%, 480px);
@@ -210,12 +214,26 @@
   box-shadow: 0 -12px 40px rgba(15, 28, 46, 0.12);
 }
 
+.sheetPanelDark {
+  background: #1c1c1e;
+  color: #ffffff;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.sheetPanelDark .sheetTitle {
+  color: #ffffff;
+}
+
 .sheetHandle {
   width: 40px;
   height: 4px;
   margin: 0.25rem auto 0.75rem;
   border-radius: 999px;
   background: var(--paper-deep);
+}
+
+.sheetHandleDark {
+  background: #636366;
 }
 
 .sheetTitle {

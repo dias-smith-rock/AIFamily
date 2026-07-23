@@ -189,11 +189,15 @@ export function Sheet({
   open,
   onClose,
   title,
+  header,
+  variant = "default",
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title?: string;
+  header?: ReactNode;
+  variant?: "default" | "dark";
   children: ReactNode;
 }) {
   useEffect(() => {
@@ -211,17 +215,28 @@ export function Sheet({
 
   if (!open) return null;
 
+  const dark = variant === "dark";
+
   return (
     <div className={styles.sheetRoot} role="presentation">
       <button
         type="button"
-        className={styles.sheetBackdrop}
+        className={[styles.sheetBackdrop, dark ? styles.sheetBackdropDark : ""]
+          .filter(Boolean)
+          .join(" ")}
         aria-label="Close"
         onClick={onClose}
       />
-      <div className={styles.sheetPanel} role="dialog" aria-modal="true">
-        <div className={styles.sheetHandle} aria-hidden />
-        {title ? <h2 className={styles.sheetTitle}>{title}</h2> : null}
+      <div
+        className={[styles.sheetPanel, dark ? styles.sheetPanelDark : ""].filter(Boolean).join(" ")}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div
+          className={[styles.sheetHandle, dark ? styles.sheetHandleDark : ""].filter(Boolean).join(" ")}
+          aria-hidden
+        />
+        {header ? header : title ? <h2 className={styles.sheetTitle}>{title}</h2> : null}
         <div className={styles.sheetBody}>{children}</div>
       </div>
     </div>

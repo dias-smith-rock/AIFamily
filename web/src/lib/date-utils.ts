@@ -50,9 +50,36 @@ export function formatMonthLabel(month: Date, locale: AppLocale): string {
   return format(month, "MMMM yyyy", { locale: LOCALES[locale] });
 }
 
-export function formatWeekLabel(anchor: Date, locale: AppLocale): string {
-  const start = startOfWeek(anchor, { weekStartsOn: 1 });
-  const end = endOfWeek(anchor, { weekStartsOn: 1 });
+/** Short weekday labels for a week starting on `weekStartsOn` (0 = Sunday). */
+export function weekdayHeaders(locale: AppLocale, weekStartsOn: 0 | 1 = 0): string[] {
+  const base = startOfWeek(new Date(), { weekStartsOn });
+  return Array.from({ length: 7 }, (_, i) =>
+    format(addDays(base, i), "EEE", { locale: LOCALES[locale] })
+  );
+}
+
+/** Month grid cells; leading/trailing empties are `null` (Sunday-first by default). */
+export function monthGridCells(month: Date, weekStartsOn: 0 | 1 = 0): (Date | null)[] {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const firstWeekday = startOfWeek(monthStart, { weekStartsOn });
+  const leading = Math.round((monthStart.getTime() - firstWeekday.getTime()) / 86_400_000);
+  const daysInMonth = monthEnd.getDate();
+
+  const cells: (Date | null)[] = Array.from({ length: leading }, () => null);
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    cells.push(new Date(monthStart.getFullYear(), monthStart.getMonth(), day));
+  }
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
+  return cells;
+}
+
+/** Schedule week strip follows iOS/US Sunday-first (matches day Schedule UI). */
+export function formatWeekLabel(anchor: Date, locale: AppLocale, weekStartsOn: 0 | 1 = 0): string {
+  const start = startOfWeek(anchor, { weekStartsOn });
+  const end = endOfWeek(anchor, { weekStartsOn });
   const left = format(start, "MMM d", { locale: LOCALES[locale] });
   const right = format(end, "MMM d", { locale: LOCALES[locale] });
   return `${left} – ${right}`;
@@ -86,8 +113,9 @@ export function todayStart(): Date {
   return startOfDay(new Date());
 }
 
-export function weekDays(anchor: Date): Date[] {
-  const start = startOfWeek(anchor, { weekStartsOn: 1 });
+/** Sunday-first by default to match iOS Schedule day strip. */
+export function weekDays(anchor: Date, weekStartsOn: 0 | 1 = 0): Date[] {
+  const start = startOfWeek(anchor, { weekStartsOn });
   return Array.from({ length: 7 }, (_, i) => startOfDay(addDays(start, i)));
 }
 

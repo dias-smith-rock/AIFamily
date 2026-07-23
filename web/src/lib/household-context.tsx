@@ -91,15 +91,20 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     await ensureCurrentUserFamilyProfile().catch(() => null);
 
     const memberships = await listMyMemberships();
-    const summaries: HouseholdSummary[] = memberships
-      .filter((m) => m.household)
-      .map((m) => ({
+    const summaries: HouseholdSummary[] = [];
+    const seenHouseholdIds = new Set<string>();
+    for (const m of memberships) {
+      if (!m.household) continue;
+      if (seenHouseholdIds.has(m.household_id)) continue;
+      seenHouseholdIds.add(m.household_id);
+      summaries.push({
         id: m.household_id,
-        name: m.household?.name ?? "Household",
+        name: m.household.name ?? "Household",
         role: m.role,
         membershipId: m.id,
         profileId: m.profile_id,
-      }));
+      });
+    }
 
     setHouseholds(summaries);
 

@@ -38,6 +38,45 @@ export interface UiStrings {
   emptyMembers: string;
   noOrgSelected: string;
   switchOrg: string;
+  today: string;
+  newEvent: string;
+  whatWouldYouLikeToDo: string;
+  addAttachment: string;
+  timeSetting: string;
+  allDay: string;
+  executionTime: string;
+  duration: string;
+  repeat: string;
+  doesNotRepeat: string;
+  repeatDaily: string;
+  repeatWeekly: string;
+  repeatMonthly: string;
+  forWhom: string;
+  everyone: string;
+  me: string;
+  showMoreOptions: string;
+  hideMoreOptions: string;
+  notes: string;
+  remind: string;
+  remindNone: string;
+  remindOnTime: string;
+  remind5Min: string;
+  remind15Min: string;
+  remind30Min: string;
+  remind1Hour: string;
+  taskPriority: string;
+  urgent: string;
+  generally: string;
+  emergencyContact: string;
+  enterNumberOrLink: string;
+  assignee: string;
+  searchOrAddLocation: string;
+  moreDetails: string;
+  addNote: string;
+  financeAndNotes: string;
+  expenses: string;
+  detailedDescription: string;
+  expenseDetailsPlaceholder: string;
 }
 
 export const UI: Record<AppLocale, UiStrings> = {
@@ -73,6 +112,45 @@ export const UI: Record<AppLocale, UiStrings> = {
     emptyMembers: "No members yet",
     noOrgSelected: "Select a household to continue",
     switchOrg: "Switch",
+    today: "Today",
+    newEvent: "New Event",
+    whatWouldYouLikeToDo: "What would you like to do?",
+    addAttachment: "Add attachment",
+    timeSetting: "Time setting",
+    allDay: "All day",
+    executionTime: "Execution time",
+    duration: "Duration",
+    repeat: "Repeat",
+    doesNotRepeat: "Does not repeat",
+    repeatDaily: "Daily",
+    repeatWeekly: "Weekly",
+    repeatMonthly: "Monthly",
+    forWhom: "For whom (FOR)",
+    everyone: "Everyone",
+    me: "Me",
+    showMoreOptions: "Show more options",
+    hideMoreOptions: "Collapse more options",
+    notes: "Notes",
+    remind: "Remind",
+    remindNone: "None",
+    remindOnTime: "At time of event",
+    remind5Min: "5 minutes before",
+    remind15Min: "15 minutes before",
+    remind30Min: "30 minutes before",
+    remind1Hour: "1 hour before",
+    taskPriority: "Task priority",
+    urgent: "Urgent",
+    generally: "Generally",
+    emergencyContact: "Emergency contact number/meeting link",
+    enterNumberOrLink: "Enter number or link",
+    assignee: "Assignee",
+    searchOrAddLocation: "Search or add a location",
+    moreDetails: "More details",
+    addNote: "Add note...",
+    financeAndNotes: "Finance and Notes",
+    expenses: "Expenses",
+    detailedDescription: "Detailed description",
+    expenseDetailsPlaceholder: "You can fill in expense details, payment methods, etc...",
   },
   "zh-Hans": {
     loginTitle: "登录记事本",
@@ -106,6 +184,45 @@ export const UI: Record<AppLocale, UiStrings> = {
     emptyMembers: "暂无成员",
     noOrgSelected: "请选择一个家庭",
     switchOrg: "切换",
+    today: "今天",
+    newEvent: "新建日程",
+    whatWouldYouLikeToDo: "你想做什么？",
+    addAttachment: "添加附件",
+    timeSetting: "时间设置",
+    allDay: "全天",
+    executionTime: "执行时间",
+    duration: "时长",
+    repeat: "重复",
+    doesNotRepeat: "不重复",
+    repeatDaily: "每天",
+    repeatWeekly: "每周",
+    repeatMonthly: "每月",
+    forWhom: "为了谁 (FOR)",
+    everyone: "所有人",
+    me: "我",
+    showMoreOptions: "显示更多选项",
+    hideMoreOptions: "收起更多选项",
+    notes: "备注",
+    remind: "提醒",
+    remindNone: "无",
+    remindOnTime: "事件开始时",
+    remind5Min: "提前 5 分钟",
+    remind15Min: "提前 15 分钟",
+    remind30Min: "提前 30 分钟",
+    remind1Hour: "提前 1 小时",
+    taskPriority: "任务优先级",
+    urgent: "紧急",
+    generally: "一般",
+    emergencyContact: "紧急联系电话 / 会议链接",
+    enterNumberOrLink: "输入号码或链接",
+    assignee: "执行人",
+    searchOrAddLocation: "搜索或添加地点",
+    moreDetails: "更多详情",
+    addNote: "添加备注…",
+    financeAndNotes: "财务与备注",
+    expenses: "费用",
+    detailedDescription: "详细说明",
+    expenseDetailsPlaceholder: "可填写费用明细、支付方式等…",
   },
   "zh-Hant": {
     loginTitle: "登入記事本",
@@ -139,6 +256,45 @@ export const UI: Record<AppLocale, UiStrings> = {
     emptyMembers: "暫無成員",
     noOrgSelected: "請選擇一個家庭",
     switchOrg: "切換",
+    today: "今天",
+    newEvent: "新建日程",
+    whatWouldYouLikeToDo: "你想做什麼？",
+    addAttachment: "新增附件",
+    timeSetting: "時間設定",
+    allDay: "全天",
+    executionTime: "執行時間",
+    duration: "時長",
+    repeat: "重複",
+    doesNotRepeat: "不重複",
+    repeatDaily: "每天",
+    repeatWeekly: "每週",
+    repeatMonthly: "每月",
+    forWhom: "為了誰 (FOR)",
+    everyone: "所有人",
+    me: "我",
+    showMoreOptions: "顯示更多選項",
+    hideMoreOptions: "收起更多選項",
+    notes: "備註",
+    remind: "提醒",
+    remindNone: "無",
+    remindOnTime: "事件開始時",
+    remind5Min: "提前 5 分鐘",
+    remind15Min: "提前 15 分鐘",
+    remind30Min: "提前 30 分鐘",
+    remind1Hour: "提前 1 小時",
+    taskPriority: "任務優先級",
+    urgent: "緊急",
+    generally: "一般",
+    emergencyContact: "緊急聯絡電話 / 會議連結",
+    enterNumberOrLink: "輸入號碼或連結",
+    assignee: "執行人",
+    searchOrAddLocation: "搜尋或新增地點",
+    moreDetails: "更多詳情",
+    addNote: "新增備註…",
+    financeAndNotes: "財務與備註",
+    expenses: "費用",
+    detailedDescription: "詳細說明",
+    expenseDetailsPlaceholder: "可填寫費用明細、支付方式等…",
   },
 };
 

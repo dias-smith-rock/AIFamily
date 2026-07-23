@@ -81,14 +81,21 @@ export default function WalletPage() {
     setError(null);
     try {
       await ensurePresets(session.householdId);
-      const [cats, txs, members] = await Promise.all([
+      const [catsResult, txsResult, rosterResult] = await Promise.allSettled([
         fetchCategories(session.householdId),
         fetchTransactions(session.householdId),
         fetchRoster(session.householdId),
       ]);
-      setCategories(cats);
-      setTransactions(txs);
-      setRoster(members);
+      if (catsResult.status !== "fulfilled") throw catsResult.reason;
+      if (txsResult.status !== "fulfilled") throw txsResult.reason;
+      setCategories(catsResult.value);
+      setTransactions(txsResult.value);
+      if (rosterResult.status === "fulfilled") {
+        setRoster(rosterResult.value);
+      } else {
+        console.warn("[wallet] roster:", rosterResult.reason);
+        setRoster([]);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : strings.error);
     } finally {

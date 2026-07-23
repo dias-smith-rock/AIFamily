@@ -51,7 +51,7 @@ export async function fetchRoster(householdId: string): Promise<RosterEntry[]> {
       status,
       nickname,
       created_at,
-      profile:family_profiles (
+      profile:family_profiles!profile_id (
         id,
         household_id,
         user_id,
@@ -64,12 +64,12 @@ export async function fetchRoster(householdId: string): Promise<RosterEntry[]> {
     `
     )
     .eq("household_id", householdId)
-    .in("status", ["active", "archived", "inactive"])
+    .eq("status", "active")
     .order("created_at", { ascending: true });
 
   if (error) throw error;
 
-  return (data ?? []).map((row) => {
+  const registered: RosterEntry[] = (data ?? []).map((row) => {
     const membership = mapMembership(row as MembershipRow);
     const profileRaw = (row as { profile?: ProfileRow | ProfileRow[] | null }).profile;
     const profileRow = Array.isArray(profileRaw) ? profileRaw[0] : profileRaw;
@@ -78,6 +78,44 @@ export async function fetchRoster(householdId: string): Promise<RosterEntry[]> {
       profile: profileRow ? mapProfile(profileRow) : null,
     };
   });
+
+  // 虚拟成员：仅有 family_profiles、无 membership（与 iOS 双轨名册一致）
+  const linkedProfileIds = new Set(
+    registered.map((r) => r.profile?.id).filter((id): id is string => Boolean(id))
+  );
+
+  const { data: virtualRows, error: virtualError } = await supabase
+    .from("family_profiles")
+    .select("id, household_id, user_id, name, avatar_url, birth_date, created_at, updated_at")
+    .eq("household_id", householdId)
+    .is("user_id", null)
+    .order("created_at", { ascending: true });
+
+  if (virtualError) {
+    console.warn("[roster] virtual profiles:", virtualError.message);
+    return registered;
+  }
+
+  const virtualEntries: RosterEntry[] = (virtualRows ?? [])
+    .filter((row) => !linkedProfileIds.has(String((row as ProfileRow).id)))
+    .map((row) => {
+      const profile = mapProfile(row as ProfileRow);
+      return {
+        membership: {
+          id: profile.id,
+          household_id: householdId,
+          user_id: null,
+          profile_id: profile.id,
+          role: "member",
+          status: "active",
+          display_name: profile.display_name,
+          created_at: profile.created_at,
+        },
+        profile,
+      };
+    });
+
+  return [...registered, ...virtualEntries];
 }
 
 export async function createVirtualProfile(

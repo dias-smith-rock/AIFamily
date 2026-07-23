@@ -76,7 +76,10 @@ export async function ensurePresets(householdId: string): Promise<void> {
   const { error } = await supabase.rpc("ensure_household_ledger_presets", {
     p_household_id: householdId,
   });
-  if (error) throw error;
+  // 预设补种失败不阻断账本主流程（可能已有分类或 RPC 暂不可用）
+  if (error) {
+    console.warn("[ledger] ensure_household_ledger_presets:", error.message);
+  }
 }
 
 export async function fetchCategories(householdId: string): Promise<ExpenseCategory[]> {

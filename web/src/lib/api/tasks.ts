@@ -55,6 +55,10 @@ export interface CreateTaskInput {
   recurrenceRule?: string | null;
   recurrenceEndDate?: string | null;
   estimatedCost?: number | null;
+  priority?: string | null;
+  emergencyPhone?: string | null;
+  reminderOffsets?: number[] | null;
+  locationData?: { name: string } | null;
 }
 
 export async function fetchTasks(householdId: string): Promise<FamilyTask[]> {
@@ -63,7 +67,7 @@ export async function fetchTasks(householdId: string): Promise<FamilyTask[]> {
     .from("tasks")
     .select("*")
     .eq("household_id", householdId)
-    .order("due_date", { ascending: true, nullsFirst: false })
+    .order("due_date", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -79,7 +83,6 @@ async function insertTaskFallback(input: CreateTaskInput): Promise<FamilyTask> {
     title: input.title.trim(),
     description: input.notes?.trim() ?? null,
     status: "new",
-    priority: "normal",
     task_type: input.taskType ?? "scheduled",
     due_date: input.dueDate ?? null,
     end_datetime: input.endDatetime ?? null,
@@ -91,6 +94,10 @@ async function insertTaskFallback(input: CreateTaskInput): Promise<FamilyTask> {
     recurrence_rule: input.recurrenceRule ?? null,
     recurrence_end_date: input.recurrenceEndDate ?? null,
     estimated_cost: input.estimatedCost ?? 0,
+    priority: input.priority ?? "normal",
+    emergency_phone: input.emergencyPhone ?? null,
+    reminder_offsets: input.reminderOffsets ?? null,
+    location_data: input.locationData ?? null,
     source: "manual",
     created_at: now,
     updated_at: now,
@@ -126,6 +133,10 @@ async function createTaskViaRpc(input: CreateTaskInput): Promise<FamilyTask> {
   if (input.recurrenceRule !== undefined) patch.recurrence_rule = input.recurrenceRule;
   if (input.recurrenceEndDate !== undefined) patch.recurrence_end_date = input.recurrenceEndDate;
   if (input.estimatedCost !== undefined) patch.estimated_cost = input.estimatedCost;
+  if (input.priority !== undefined) patch.priority = input.priority;
+  if (input.emergencyPhone !== undefined) patch.emergency_phone = input.emergencyPhone;
+  if (input.reminderOffsets !== undefined) patch.reminder_offsets = input.reminderOffsets;
+  if (input.locationData !== undefined) patch.location_data = input.locationData;
 
   if (Object.keys(patch).length > 0) {
     task = await updateTask(task.id, patch);
