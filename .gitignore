@@ -60,3 +60,16 @@ fastlane/report.xml
 fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
+
+# Website (Astro / Node)
+website/node_modules/
+website/dist/
+website/.astro/
+
+# Web App (Next.js)
+web/node_modules/
+web/.next/
+web/out/
+web/.env.local
+
+

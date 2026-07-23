@@ -1,0 +1,54 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "./SiteHeader.astro";
+import SiteFooter from "./SiteFooter.astro";
+import type { Locale } from "../i18n/ui";
+import { getMessages, localePath, productName } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+  kind: "privacy" | "terms";
+}
+
+const { locale, kind } = Astro.props;
+const t = getMessages(locale);
+const brand = productName(locale);
+const title = kind === "privacy" ? t.privacyTitle : t.termsTitle;
+const paragraphs = kind === "privacy" ? t.privacyBody : t.termsBody;
+---
+
+<BaseLayout locale={locale} title={`${title} · ${brand}`} description={title}>
+  <SiteHeader locale={locale} />
+  <main id="main" class="legal container">
+    <a class="legal__back" href={localePath(locale)}>{t.legalBack}</a>
+    <h1>{title}</h1>
+    {paragraphs.map((p) => <p>{p}</p>)}
+  </main>
+  <SiteFooter locale={locale} />
+</BaseLayout>
+
+<style>
+  .legal {
+    padding: 2rem 0 3rem;
+    max-width: 720px;
+  }
+
+  .legal__back {
+    display: inline-block;
+    margin-bottom: 1.25rem;
+    color: var(--accent-deep);
+    font-weight: 600;
+    font-size: 0.92rem;
+  }
+
+  .legal h1 {
+    margin: 0 0 1.25rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+  }
+
+  .legal p {
+    margin: 0 0 1rem;
+    color: var(--ink-soft);
+  }
+</style>

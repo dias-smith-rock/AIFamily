@@ -1,0 +1,107 @@
+---
+import type { Locale } from "../i18n/ui";
+import { getMessages } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getMessages(locale);
+---
+
+<section class="section" id="scenarios">
+  <div class="container">
+    <header class="section__head">
+      <h2>{t.scenariosTitle}</h2>
+      <p>{t.scenariosIntro}</p>
+    </header>
+
+    <div class="scenario-rail">
+      {
+        t.scenarios.map((item) => (
+          <article class="scenario">
+            <div class="scenario__icon" aria-hidden="true">
+              {item.icon}
+            </div>
+            <h3>{item.title}</h3>
+            <p class="scenario__problem">{item.problem}</p>
+            <p class="scenario__solution">{item.solution}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding: 3.5rem 0 1rem;
+  }
+
+  .section__head {
+    max-width: 40rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .section__head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    letter-spacing: -0.02em;
+  }
+
+  .section__head p {
+    margin: 0.75rem 0 0;
+    color: var(--ink-soft);
+  }
+
+  .scenario-rail {
+    display: grid;
+    gap: 1rem;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(240px, 280px);
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  @media (min-width: 960px) {
+    .scenario-rail {
+      grid-auto-flow: unset;
+      grid-template-columns: repeat(3, 1fr);
+      overflow: visible;
+    }
+  }
+
+  .scenario {
+    scroll-snap-align: start;
+    padding: 1.25rem 1.2rem 1.4rem;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.62);
+    border: 1px solid var(--line);
+  }
+
+  .scenario__icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .scenario h3 {
+    margin: 0;
+    font-size: 1.08rem;
+  }
+
+  .scenario__problem,
+  .scenario__solution {
+    margin: 0.55rem 0 0;
+    font-size: 0.94rem;
+    color: var(--ink-soft);
+  }
+
+  .scenario__solution {
+    color: var(--ink);
+    font-weight: 500;
+  }
+</style>

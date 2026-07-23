@@ -1,0 +1,80 @@
+---
+import type { Locale } from "../i18n/ui";
+import { getMessages, localePath, productName, site } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const brand = productName(locale);
+const company = locale === "en" ? site.companyEn : `${site.companyZh} · ${site.companyEn}`;
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <strong>{brand}</strong>
+      <p>© {site.year} {brand}. {t.footerRights}</p>
+      <p class="footer__company">{company}</p>
+      <a href={`mailto:${site.contactEmail}`}>{site.contactEmail}</a>
+    </div>
+    <nav class="footer__links" aria-label="Legal">
+      <a href={localePath(locale, "privacy")}>{t.privacy}</a>
+      <a href={localePath(locale, "terms")}>{t.terms}</a>
+      <a href={`mailto:${site.contactEmail}`}>{t.contact}</a>
+    </nav>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    margin-top: 4rem;
+    border-top: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  .footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 2.5rem 0 3rem;
+  }
+
+  .footer__brand {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--ink-soft);
+    font-size: 0.92rem;
+  }
+
+  .footer__brand strong {
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+  }
+
+  .footer__brand p {
+    margin: 0;
+  }
+
+  .footer__company {
+    font-size: 0.82rem;
+    opacity: 0.85;
+  }
+
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.25rem;
+    align-items: flex-start;
+    font-size: 0.92rem;
+    font-weight: 500;
+  }
+
+  .footer__links a:hover {
+    color: var(--accent-deep);
+  }
+</style>

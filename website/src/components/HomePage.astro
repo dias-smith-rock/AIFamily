@@ -1,0 +1,25 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import Hero from "../components/Hero.astro";
+import Scenarios from "../components/Scenarios.astro";
+import Features from "../components/Features.astro";
+import type { Locale } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+---
+
+<BaseLayout locale={locale}>
+  <SiteHeader locale={locale} />
+  <main id="main">
+    <Hero locale={locale} />
+    <Scenarios locale={locale} />
+    <Features locale={locale} />
+  </main>
+  <SiteFooter locale={locale} />
+</BaseLayout>

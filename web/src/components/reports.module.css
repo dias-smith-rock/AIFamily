@@ -1,0 +1,115 @@
+.root {
+  display: grid;
+  gap: 1rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.navLabel {
+  margin: 0;
+  font-weight: 650;
+  text-align: center;
+  flex: 1;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+}
+
+.filter {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.filter select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  background: white;
+  color: var(--ink);
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+
+.tile {
+  padding: 0.7rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 0.25rem;
+}
+
+.tileLabel {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.tile strong {
+  font-size: 0.92rem;
+}
+
+.expense {
+  color: #b42318;
+}
+
+.income {
+  color: #067647;
+}
+
+.breakdown h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.empty {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  padding: 1rem 0;
+}
+
+.bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.barHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  margin-bottom: 0.3rem;
+}
+
+.barTrack {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--paper-deep, #e4ebf2);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), #3db8a5);
+}

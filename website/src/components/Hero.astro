@@ -1,0 +1,230 @@
+---
+import type { Locale } from "../i18n/ui";
+import { getMessages, productName, site } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getMessages(locale);
+const brand = productName(locale);
+const headlineLines = t.heroHeadline.split("\n");
+---
+
+<section class="hero">
+  <div class="container hero__grid">
+    <div class="hero__copy">
+      <p class="hero__brand">{brand}</p>
+      <h1 class="hero__title">
+        {headlineLines.map((line, i) => (
+          <>
+            {i > 0 && <br />}
+            {line}
+          </>
+        ))}
+      </h1>
+      <p class="hero__sub">{t.heroSub}</p>
+      <div class="hero__cta">
+        <a class="cta cta--primary" href={site.appStoreUrl}>{t.ctaAppStore}</a>
+        <a class="cta cta--secondary" href={site.appUrl}>{t.ctaWeb}</a>
+      </div>
+    </div>
+
+    <div class="hero__visual" aria-hidden="true">
+      <div class="phone phone--back">
+        <div class="phone__screen phone__screen--wallet"></div>
+      </div>
+      <div class="phone phone--front">
+        <div class="phone__notch"></div>
+        <div class="phone__screen phone__screen--calendar">
+          <div class="mock-row"></div>
+          <div class="mock-card"></div>
+          <div class="mock-card mock-card--accent"></div>
+          <div class="mock-row mock-row--short"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    padding: 2.25rem 0 1rem;
+    overflow: clip;
+  }
+
+  .hero__grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  @media (min-width: 900px) {
+    .hero {
+      padding: 3.5rem 0 2rem;
+    }
+
+    .hero__grid {
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 2rem;
+      min-height: min(72vh, 640px);
+    }
+  }
+
+  .hero__brand {
+    margin: 0 0 0.75rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 8vw, 3.6rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    color: var(--ink);
+  }
+
+  .hero__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.55rem, 4.8vw, 2.35rem);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--ink);
+    max-width: 16ch;
+  }
+
+  .hero__sub {
+    margin: 1.1rem 0 0;
+    max-width: 36rem;
+    color: var(--ink-soft);
+    font-size: 1.02rem;
+  }
+
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.6rem;
+  }
+
+  .cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .cta--primary {
+    background: var(--accent);
+    color: white;
+    box-shadow: 0 10px 28px rgba(13, 143, 122, 0.28);
+  }
+
+  .cta--primary:hover {
+    background: var(--accent-deep);
+  }
+
+  .cta--secondary {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--line);
+    color: var(--ink);
+  }
+
+  .hero__visual {
+    position: relative;
+    height: 360px;
+    display: grid;
+    place-items: center;
+  }
+
+  @media (min-width: 900px) {
+    .hero__visual {
+      height: 480px;
+    }
+  }
+
+  .phone {
+    position: absolute;
+    width: 200px;
+    height: 400px;
+    border-radius: 28px;
+    background: linear-gradient(160deg, #1a2a3d, #0f1c2e);
+    padding: 10px;
+    box-shadow: 0 30px 60px rgba(15, 28, 46, 0.28);
+  }
+
+  .phone--back {
+    transform: translate(-18%, 8%) rotate(-8deg) scale(0.92);
+    opacity: 0.88;
+  }
+
+  .phone--front {
+    transform: translate(12%, -2%) rotate(4deg);
+    animation: float 5.5s ease-in-out infinite;
+  }
+
+  .phone__notch {
+    width: 42%;
+    height: 10px;
+    margin: 4px auto 8px;
+    border-radius: 999px;
+    background: #060d16;
+  }
+
+  .phone__screen {
+    height: calc(100% - 18px);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .phone__screen--calendar {
+    background: linear-gradient(180deg, #f7fafc, #e8eef5);
+    padding: 1rem 0.85rem;
+    display: grid;
+    gap: 0.65rem;
+    align-content: start;
+  }
+
+  .phone__screen--wallet {
+    background:
+      linear-gradient(180deg, rgba(13, 143, 122, 0.35), transparent 40%),
+      linear-gradient(180deg, #102033, #1a3348);
+  }
+
+  .mock-row,
+  .mock-card {
+    border-radius: 12px;
+    background: rgba(15, 28, 46, 0.08);
+  }
+
+  .mock-row {
+    height: 12px;
+    width: 55%;
+  }
+
+  .mock-row--short {
+    width: 35%;
+  }
+
+  .mock-card {
+    height: 64px;
+  }
+
+  .mock-card--accent {
+    background: linear-gradient(120deg, rgba(13, 143, 122, 0.35), rgba(126, 200, 255, 0.35));
+  }
+
+  @keyframes float {
+    0%,
+    100% {
+      transform: translate(12%, -2%) rotate(4deg);
+    }
+    50% {
+      transform: translate(12%, -4%) rotate(3deg);
+    }
+  }
+</style>

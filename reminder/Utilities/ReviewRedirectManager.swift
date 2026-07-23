@@ -23,7 +23,7 @@ final class ReviewRedirectManager: ObservableObject {
 
     @Published var showReviewAlert = false
 
-    let appStoreReviewURL = "https://apps.apple.com/app/idYOUR_APP_ID?action=write-review"
+    let appStoreReviewURL = "https://apps.apple.com/app/id6775353963?action=write-review"
 
     func checkAndTriggerAlert(for milestone: Milestone) {
         guard shouldPrompt(for: milestone) else { return }

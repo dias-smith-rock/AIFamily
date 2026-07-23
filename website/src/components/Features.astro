@@ -1,0 +1,101 @@
+---
+import type { Locale } from "../i18n/ui";
+import { getMessages } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = getMessages(locale);
+---
+
+<section class="section" id="features">
+  <div class="container">
+    <header class="section__head">
+      <h2>{t.featuresTitle}</h2>
+      <p>{t.featuresIntro}</p>
+    </header>
+
+    <div class="features">
+      {
+        t.features.map((item) => (
+          <article class="feature">
+            <div class="feature__icon" aria-hidden="true">
+              {item.icon}
+            </div>
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.body}</p>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding: 3.25rem 0 2rem;
+  }
+
+  .section__head {
+    max-width: 40rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .section__head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 4vw, 2.1rem);
+    letter-spacing: -0.02em;
+  }
+
+  .section__head p {
+    margin: 0.75rem 0 0;
+    color: var(--ink-soft);
+  }
+
+  .features {
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (min-width: 800px) {
+    .features {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .feature {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.9rem;
+    padding: 1.25rem 1.2rem;
+    border-radius: var(--radius);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.42));
+    border: 1px solid var(--line);
+  }
+
+  .feature__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: grid;
+    place-items: center;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    font-size: 1.2rem;
+  }
+
+  .feature h3 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .feature p {
+    margin: 0.45rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+  }
+</style>
