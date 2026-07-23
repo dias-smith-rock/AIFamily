@@ -179,7 +179,7 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             HStack(spacing: 8) {
                 DatePicker(
                     "",
-                    selection: $dueDate,
+                    selection: datePickerDueDateBinding,
                     displayedComponents: [.date]
                 )
                 .labelsHidden()
@@ -198,6 +198,25 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
             }
             .layoutPriority(0)
         }
+    }
+
+    /// 仅改日期时：把执行时间重置为当天 08:00；仅改时刻时不触发。
+    private var datePickerDueDateBinding: Binding<Date> {
+        Binding(
+            get: { dueDate },
+            set: { newValue in
+                let calendar = Calendar.current
+                guard calendar.isDate(newValue, inSameDayAs: dueDate) == false else {
+                    dueDate = newValue
+                    return
+                }
+                var parts = calendar.dateComponents([.year, .month, .day], from: newValue)
+                parts.hour = 8
+                parts.minute = 0
+                parts.second = 0
+                dueDate = calendar.date(from: parts) ?? newValue
+            }
+        )
     }
 
     private var taskDurationRow: some View {
