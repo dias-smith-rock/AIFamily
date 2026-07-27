@@ -67,17 +67,29 @@ struct ScheduleTaskAnchorFlow: View {
                             onTap: { onTaskTap(task) }
                         )
                         .background {
-                            GeometryReader { proxy in
-                                Color.clear.preference(
-                                    key: ScheduleTaskRowFramePreferenceKey.self,
-                                    value: [task.id: proxy.frame(in: .named(ScheduleTaskAnchorFlowCoordinateSpace.id))]
-                                )
+                            // 仅「今天」需要此刻指示器几何；其它日收集 Preference 会在换日动画中连帧写 State，易卡顿。
+                            if viewingToday {
+                                GeometryReader { proxy in
+                                    Color.clear.preference(
+                                        key: ScheduleTaskRowFramePreferenceKey.self,
+                                        value: [task.id: proxy.frame(in: .named(ScheduleTaskAnchorFlowCoordinateSpace.id))]
+                                    )
+                                }
                             }
                         }
                         .id("task-\(task.id.uuidString)")
                     }
                 }
-                .onPreferenceChange(ScheduleTaskRowFramePreferenceKey.self) { taskRowFrames = $0 }
+                .onPreferenceChange(ScheduleTaskRowFramePreferenceKey.self) { newFrames in
+                    guard viewingToday else {
+                        if taskRowFrames.isEmpty == false {
+                            taskRowFrames = [:]
+                        }
+                        return
+                    }
+                    guard framesMeaningfullyChanged(from: taskRowFrames, to: newFrames) else { return }
+                    taskRowFrames = newFrames
+                }
 
                 if viewingToday,
                    let nowY = nowIndicatorOffsetY(for: now),
@@ -152,6 +164,23 @@ struct ScheduleTaskAnchorFlow: View {
             return lastFrame.maxY
         }
         return nil
+    }
+
+    private func framesMeaningfullyChanged(
+        from old: [UUID: CGRect],
+        to new: [UUID: CGRect]
+    ) -> Bool {
+        guard old.count == new.count else { return true }
+        for (id, rect) in new {
+            guard let previous = old[id] else { return true }
+            if abs(previous.minX - rect.minX) > 0.5
+                || abs(previous.minY - rect.minY) > 0.5
+                || abs(previous.width - rect.width) > 0.5
+                || abs(previous.height - rect.height) > 0.5 {
+                return true
+            }
+        }
+        return false
     }
 }
 

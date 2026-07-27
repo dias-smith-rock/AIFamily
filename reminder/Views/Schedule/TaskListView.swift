@@ -266,11 +266,8 @@ struct TaskListView: View {
                 let normalized = dayID(for: newValue)
                 if selectedDate != normalized {
                     selectedDate = normalized
-                    return
                 }
-                Task {
-                    await viewModel.loadTasks()
-                }
+                // 日/周侧滑仅本地按日过滤，勿在此 loadTasks（会清空列表并打网，易卡死）。
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
