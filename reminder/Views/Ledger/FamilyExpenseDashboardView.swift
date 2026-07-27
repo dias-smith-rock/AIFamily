@@ -20,6 +20,7 @@ struct FamilyExpenseDashboardView: View {
     @State private var isShowingReports = false
     @State private var isShowingSearch = false
     @State private var transactionForDetail: LedgerTransaction?
+    @State private var pendingSearchTransaction: LedgerTransaction?
     @State private var categoryPendingEdit: ExpenseCategory?
     @State private var categoryPendingDelete: ExpenseCategory?
     @State private var isConfirmingCategoryDelete = false
@@ -102,11 +103,18 @@ struct FamilyExpenseDashboardView: View {
                 }
             }
         }
-        .sheet(isPresented: $isShowingSearch) {
+        .sheet(isPresented: $isShowingSearch, onDismiss: {
+            guard let pending = pendingSearchTransaction else { return }
+            pendingSearchTransaction = nil
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                transactionForDetail = pending
+            }
+        }) {
             ScheduleSearchView(
                 onOpenTask: { _ in },
                 onOpenLedger: { transaction in
-                    transactionForDetail = transaction
+                    pendingSearchTransaction = transaction
                 },
                 onOpenMember: { _, householdId in
                     if let option = appRouter.selectableHouseholds.first(where: { $0.id == householdId }) {
@@ -115,6 +123,7 @@ struct FamilyExpenseDashboardView: View {
                 }
             )
             .environmentObject(appRouter)
+            .environmentObject(appSettings)
             .environment(\.locale, appSettings.appLocale)
         }
         .sheet(item: $transactionForDetail) { transaction in

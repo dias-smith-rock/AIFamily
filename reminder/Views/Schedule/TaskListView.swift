@@ -110,9 +110,7 @@ struct TaskListView: View {
             }
             .sheet(isPresented: $isShowingSearch) {
                 ScheduleSearchView(
-                    onOpenTask: { task in
-                        taskForDetailSheet = task
-                    },
+                    onOpenTask: { _ in },
                     onOpenLedger: { _ in
                         // 账本详情在 Wallet Tab；搜索结果先切到主组织上下文即可。
                     },
@@ -123,6 +121,7 @@ struct TaskListView: View {
                     }
                 )
                 .environmentObject(appRouter)
+                .environmentObject(appSettings)
                 .environment(\.locale, appSettings.appLocale)
             }
             .sheet(item: $viewModel.prefilledTaskForAI) { draft in

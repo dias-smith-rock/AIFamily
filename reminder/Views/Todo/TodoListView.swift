@@ -92,9 +92,7 @@ struct TodoListView: View {
             }
             .sheet(isPresented: $isShowingSearch) {
                 ScheduleSearchView(
-                    onOpenTask: { task in
-                        taskForDetailSheet = task
-                    },
+                    onOpenTask: { _ in },
                     onOpenLedger: { _ in },
                     onOpenMember: { _, householdId in
                         if let option = appRouter.selectableHouseholds.first(where: { $0.id == householdId }) {
@@ -103,6 +101,7 @@ struct TodoListView: View {
                     }
                 )
                 .environmentObject(appRouter)
+                .environmentObject(appSettings)
                 .environment(\.locale, appSettings.appLocale)
             }
             .task(id: todoLoadTrigger) {

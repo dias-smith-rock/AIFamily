@@ -1,10 +1,19 @@
 import SwiftUI
 
+#if canImport(Supabase)
+import Supabase
+#endif
+
 struct ScheduleSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel: ScheduleSearchViewModel
+    @StateObject private var scheduleViewModel = AppViewModels.makeScheduleViewModel()
+
+    @State private var taskForDetail: FamilyTask?
+    @State private var currentMembershipRole: MembershipRole = .member
 
     var onOpenTask: (FamilyTask) -> Void
     var onOpenLedger: (LedgerTransaction) -> Void
@@ -39,25 +48,29 @@ struct ScheduleSearchView: View {
                     title: L10n.Schedule.searchSectionTasks,
                     items: viewModel.taskResults
                 ) { item in
-                    if let task = item.task { onOpenTask(task) }
+                    openTaskResult(item)
                 }
                 resultSection(
                     title: L10n.Schedule.searchSectionTodos,
                     items: viewModel.todoResults
                 ) { item in
-                    if let task = item.task { onOpenTask(task) }
+                    openTaskResult(item)
                 }
                 resultSection(
                     title: L10n.Schedule.searchSectionLedger,
                     items: viewModel.ledgerResults
                 ) { item in
-                    if let tx = item.transaction { onOpenLedger(tx) }
+                    if let tx = item.transaction {
+                        dismiss()
+                        onOpenLedger(tx)
+                    }
                 }
                 resultSection(
                     title: L10n.Schedule.searchSectionMembers,
                     items: viewModel.memberResults
                 ) { item in
                     if let profile = item.profile {
+                        dismiss()
                         onOpenMember(profile, item.householdId)
                     }
                 }
@@ -79,6 +92,21 @@ struct ScheduleSearchView: View {
             }
             .onAppear {
                 triggerSearch()
+            }
+            .sheet(item: $taskForDetail) { task in
+                NavigationStack {
+                    TaskDetailView(
+                        initialTask: task,
+                        currentUserRole: currentMembershipRole,
+                        assigneeDisplayName: scheduleViewModel.assigneeLabel(for: task, locale: locale),
+                        scheduleViewModel: scheduleViewModel
+                    )
+                    .environmentObject(appRouter)
+                }
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -102,7 +130,6 @@ struct ScheduleSearchView: View {
             Section(title) {
                 ForEach(items) { item in
                     Button {
-                        dismiss()
                         onTap(item)
                     } label: {
                         HStack(spacing: 10) {
@@ -116,9 +143,22 @@ struct ScheduleSearchView: View {
                             }
                             Spacer()
                         }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                 }
             }
+        }
+    }
+
+    private func openTaskResult(_ item: ScheduleSearchViewModel.ResultItem) {
+        guard let task = item.task else { return }
+        scheduleViewModel.setHouseholdContext(item.householdId)
+        scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+        Task { @MainActor in
+            await refreshMembershipRole(for: item.householdId)
+            taskForDetail = task
+            onOpenTask(task)
         }
     }
 
@@ -130,5 +170,35 @@ struct ScheduleSearchView: View {
             householdIds: appRouter.selectedHouseholdIds,
             householdNames: names
         )
+    }
+
+    private func refreshMembershipRole(for householdId: UUID) async {
+        guard let membershipId = appRouter.selectableHouseholds
+            .first(where: { $0.id == householdId })?
+            .membershipId
+            ?? appRouter.selectedMembershipId
+        else {
+            currentMembershipRole = .member
+            return
+        }
+        #if canImport(Supabase)
+        struct MembershipRoleRow: Decodable {
+            let role: MembershipRole
+        }
+        do {
+            let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client
+                .from("household_memberships")
+                .select("role")
+                .eq("id", value: membershipId.uuidString)
+                .limit(1)
+                .execute()
+                .value
+            currentMembershipRole = rows.first?.role ?? .member
+        } catch {
+            currentMembershipRole = .member
+        }
+        #else
+        currentMembershipRole = .member
+        #endif
     }
 }
