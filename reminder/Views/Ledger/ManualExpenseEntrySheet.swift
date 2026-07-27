@@ -79,8 +79,8 @@ struct ManualExpenseEntrySheet: View {
                 if isEditing == false, selectedCategoryId != nil {
                     categoryEntriesSummaryButton
                         .padding(.horizontal, 16)
-                        .padding(.top, 8)
-                        .padding(.bottom, 4)
+                        .padding(.top, 10)
+                        .padding(.bottom, 8)
                 }
 
                 if locksToIncome == false && isEditing == false {
@@ -89,9 +89,10 @@ struct ManualExpenseEntrySheet: View {
                         Text(L10n.Ledger.income.localized).tag(LedgerEntryType.income)
                     }
                     .pickerStyle(.segmented)
+                    .controlSize(.small)
                     .padding(.horizontal, 16)
-                    .padding(.top, 4)
-                    .padding(.bottom, 0)
+                    .padding(.top, 6)
+                    .padding(.bottom, 4)
                     .onChange(of: entryType) { _, _ in
                         selectedCategoryId = viewModel.categories(for: entryType).first?.id
                         selectedTagIds = []
@@ -102,17 +103,30 @@ struct ManualExpenseEntrySheet: View {
                     Section {
                         TextField(AppLocalized.string(L10n.Ledger.amount, locale: locale), text: $amountText)
                             .keyboardType(.decimalPad)
+                            .font(.footnote)
+
                         Picker(L10n.Ledger.currency.localized, selection: $currency) {
                             ForEach(currencies, id: \.self) { code in
                                 Text(code).tag(code)
                             }
                         }
-                        DatePicker(
-                            L10n.Ledger.transactionTime.localized,
-                            selection: $transactionTime,
-                            displayedComponents: [.date, .hourAndMinute]
-                        )
+                        .font(.footnote)
+
+                        HStack {
+                            Text(L10n.Ledger.transactionTime.localized)
+                                .font(.footnote)
+                            Spacer(minLength: 8)
+                            CreateTaskFormDateTimePicker(
+                                selection: $transactionTime,
+                                mode: .dateAndTime,
+                                locale: locale,
+                                accent: .accentColor
+                            )
+                        }
+                        .listRowInsets(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
+
                         TextField(AppLocalized.string(L10n.Ledger.note, locale: locale), text: $noteText, axis: .vertical)
+                            .font(.footnote)
                             .lineLimit(2...4)
                     }
 
@@ -122,6 +136,7 @@ struct ManualExpenseEntrySheet: View {
                                 Text(category.localizedDisplayLabel(locale: locale)).tag(category.id)
                             }
                         }
+                        .font(.footnote)
                         .onChange(of: selectedCategoryId) { _, _ in
                             selectedTagIds = []
                         }
@@ -137,72 +152,41 @@ struct ManualExpenseEntrySheet: View {
                                     }
                                 }
                             }
-                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 14, trailing: 16))
                         }
                     }
 
                     Section {
                         if selectableProfiles.isEmpty == false {
-                            VStack(alignment: .leading, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(L10n.Ledger.payer.localized)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: 16) {
+                                participantChipGroup(
+                                    title: AppLocalized.string(L10n.Ledger.payer, locale: locale),
+                                    selection: selectedPayerIds,
+                                    onToggle: togglePayer
+                                )
 
-                                    LedgerTagCapsuleFlow(spacing: 8) {
-                                        ForEach(selectableProfiles) { profile in
-                                            selectableCapsule(
-                                                title: memberLabel(for: profile),
-                                                isSelected: selectedPayerIds.contains(profile.id)
-                                            ) {
-                                                togglePayer(profile.id)
-                                            }
-                                        }
-                                    }
-                                }
+                                participantChipGroup(
+                                    title: AppLocalized.string(L10n.Ledger.beneficiaries, locale: locale),
+                                    selection: selectedTargetIds,
+                                    onToggle: toggleTarget
+                                )
 
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(L10n.Ledger.beneficiaries.localized)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-
-                                    LedgerTagCapsuleFlow(spacing: 8) {
-                                        ForEach(selectableProfiles) { profile in
-                                            selectableCapsule(
-                                                title: memberLabel(for: profile),
-                                                isSelected: selectedTargetIds.contains(profile.id)
-                                            ) {
-                                                toggleTarget(profile.id)
-                                            }
-                                        }
-                                    }
-                                }
-
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(L10n.Ledger.visibility.localized)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-
-                                    LedgerTagCapsuleFlow(spacing: 8) {
-                                        ForEach(selectableProfiles) { profile in
-                                            selectableCapsule(
-                                                title: memberLabel(for: profile),
-                                                isSelected: selectedVisibleIds.contains(profile.id)
-                                            ) {
-                                                toggleVisible(profile.id)
-                                            }
-                                        }
-                                    }
-                                }
+                                participantChipGroup(
+                                    title: AppLocalized.string(L10n.Ledger.visibility, locale: locale),
+                                    selection: selectedVisibleIds,
+                                    onToggle: toggleVisible
+                                )
                             }
-                            .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+                            .listRowInsets(EdgeInsets(top: 14, leading: 16, bottom: 14, trailing: 16))
                         }
                     } header: {
                         Text(L10n.Ledger.forWhom.localized)
+                            .font(.footnote.weight(.semibold))
                     } footer: {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 10) {
                             if selectableProfiles.isEmpty {
                                 Text(L10n.Ledger.noMembersHint.localized)
+                                    .font(.caption)
                             }
                             if canCreateVirtualProfile {
                                 Button {
@@ -210,25 +194,30 @@ struct ManualExpenseEntrySheet: View {
                                     isPresentingCreateLocalProfile = true
                                 } label: {
                                     Label(L10n.Ledger.addMember.localized, systemImage: "person.badge.plus")
+                                        .font(.footnote.weight(.medium))
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                     }
                 }
-                .contentMargins(.top, 4, for: .scrollContent)
-                .listSectionSpacing(12)
+                .font(.footnote)
+                .environment(\.dynamicTypeSize, .medium)
+                .contentMargins(.top, 8, for: .scrollContent)
+                .listSectionSpacing(16)
             }
             .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(L10n.Common.cancel) { dismiss() }
+                        .font(.body)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Ledger.saveEntry.localized) {
                         Task { await saveEntry() }
                     }
+                    .font(.body.weight(.semibold))
                     .disabled(canSave == false || isSaving)
                 }
             }
@@ -282,22 +271,45 @@ struct ManualExpenseEntrySheet: View {
 
     // MARK: - Capsules
 
+    private func participantChipGroup(
+        title: String,
+        selection: Set<UUID>,
+        onToggle: @escaping (UUID) -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            LedgerTagCapsuleFlow(spacing: 8) {
+                ForEach(selectableProfiles) { profile in
+                    selectableCapsule(
+                        title: memberLabel(for: profile),
+                        isSelected: selection.contains(profile.id)
+                    ) {
+                        onToggle(profile.id)
+                    }
+                }
+            }
+        }
+    }
+
     @ViewBuilder
     private var categoryEntriesSummaryButton: some View {
         Button {
             isShowingCategoryEntries = true
         } label: {
-            HStack(spacing: 14) {
+            HStack(spacing: 12) {
                 Image(systemName: "list.bullet.rectangle.portrait.fill")
-                    .font(.title3)
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 34, height: 34)
                     .background(Color.accentColor.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(categoryEntriesSummaryTitle)
-                        .font(.body.weight(.semibold))
+                        .font(.footnote.weight(.semibold))
                         .foregroundStyle(.primary)
                     if let category = selectedCategory {
                         Text(category.localizedDisplayLabel(locale: locale))
@@ -309,11 +321,11 @@ struct ManualExpenseEntrySheet: View {
                 Spacer(minLength: 0)
 
                 Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundStyle(Color.accentColor)
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.accentColor.opacity(0.08))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -335,7 +347,7 @@ struct ManualExpenseEntrySheet: View {
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.vertical, 7)
                 .background(isSelected ? Color.accentColor : Color(.secondarySystemFill))
                 .clipShape(Capsule())
         }
