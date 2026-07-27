@@ -6434,5 +6434,33 @@
     "table": "Common",
     "swift_property": "select",
     "orphan": false
+  },
+  {
+    "legacy_key": "Save as memo",
+    "new_key": "schedule_save_as_memo",
+    "table": "Schedule",
+    "swift_property": "saveAsMemo",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Color",
+    "new_key": "schedule_task_color",
+    "table": "Schedule",
+    "swift_property": "taskColor",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Starts",
+    "new_key": "schedule_starts",
+    "table": "Schedule",
+    "swift_property": "starts",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Ends",
+    "new_key": "schedule_ends",
+    "table": "Schedule",
+    "swift_property": "ends",
+    "orphan": false
   }
 ]

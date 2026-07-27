@@ -727,6 +727,16 @@ private struct TodoFlexibleRow: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(rowBackground)
+        .overlay(alignment: .leading) {
+            if let accent = task.cardHeaderAccentColor {
+                Capsule()
+                    .fill(accent)
+                    .frame(width: 4)
+                    .padding(.vertical, 8)
+                    .padding(.leading, 5)
+                    .allowsHitTesting(false)
+            }
+        }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -735,7 +745,7 @@ private struct TodoFlexibleRow: View {
     }
 
     private var orgColor: Color {
-        HouseholdColorStore.color(for: task.householdId)
+        task.cardBackgroundColor
     }
 
     private var rowBackground: Color {

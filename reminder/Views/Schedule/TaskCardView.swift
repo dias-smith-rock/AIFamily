@@ -129,16 +129,11 @@ struct TaskCardView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .background(orgColor)
-        .clipShape(cardShape)
+        .taskCardSurface(for: task, cornerRadius: 12)
         .overlay {
             cardShape.strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
         }
         .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
-    }
-
-    private var orgColor: Color {
-        HouseholdColorStore.color(for: task.householdId)
     }
 
     // MARK: - Header

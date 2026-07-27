@@ -5,10 +5,7 @@ import SwiftUI
 extension Color {
     /// 列表卡片左侧强调条：`nil`/非法十六进制时返回 **系统强调色**（与 `taskCardListBackground` 的「卡片底色」语义不同）。
     static func taskCardLeadingAccent(fromHex hex: String?) -> Color {
-        guard let raw = hex?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false else {
-            return Color.accentColor
-        }
-        guard let rgb = RGBComponents.parseHexString(raw) else {
+        guard let rgb = RGBComponents.parseOptionalHex(hex) else {
             return Color.accentColor
         }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
@@ -16,12 +13,15 @@ extension Color {
 
     /// 列表卡片：无自定义色或解析失败时使用系统二级分组背景。
     static func taskCardListBackground(fromHex hex: String?) -> Color {
-        guard let raw = hex?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false else {
+        guard let rgb = RGBComponents.parseOptionalHex(hex) else {
             return Color(.secondarySystemGroupedBackground)
         }
-        guard let rgb = RGBComponents.parseHexString(raw) else {
-            return Color(.secondarySystemGroupedBackground)
-        }
+        return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+
+    /// 解析任务自定义色；无效或未设置时返回 `nil`。
+    static func taskCardCustomColor(fromHex hex: String?) -> Color? {
+        guard let rgb = RGBComponents.parseOptionalHex(hex) else { return nil }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
     }
 
@@ -42,11 +42,69 @@ extension Color {
 
     /// 从已存十六进制初始化取色器状态；无效或空则回退为白（与默认卡片一致）。
     static func taskCardPickerTint(fromStoredHex hex: String?) -> Color {
-        guard let raw = hex?.trimmingCharacters(in: .whitespacesAndNewlines), raw.isEmpty == false,
-              let rgb = RGBComponents.parseHexString(raw) else {
+        guard let rgb = RGBComponents.parseOptionalHex(hex) else {
             return .white
         }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+}
+
+extension FamilyTask {
+    /// 卡片铺底色：始终使用组织色。
+    var cardBackgroundColor: Color {
+        HouseholdColorStore.color(for: householdId)
+    }
+
+    /// 左侧「卡片头」色条：仅创建/编辑时选定了颜色才返回。
+    var cardHeaderAccentColor: Color? {
+        Color.taskCardCustomColor(fromHex: backgroundColor)
+    }
+}
+
+/// 在卡片内容上叠加组织色底 + 左侧任务色头条。
+struct TaskCardSurfaceModifier: ViewModifier {
+    let backgroundColor: Color
+    let headerAccentColor: Color?
+    var cornerRadius: CGFloat = 12
+    var headerBarWidth: CGFloat = 4
+    var headerVerticalInset: CGFloat = 8
+    var headerLeadingInset: CGFloat = 5
+
+    func body(content: Content) -> some View {
+        content
+            .background(backgroundColor)
+            .overlay(alignment: .leading) {
+                if let headerAccentColor {
+                    Capsule()
+                        .fill(headerAccentColor)
+                        .frame(width: headerBarWidth)
+                        .padding(.vertical, headerVerticalInset)
+                        .padding(.leading, headerLeadingInset)
+                        .allowsHitTesting(false)
+                }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+    }
+}
+
+extension View {
+    func taskCardSurface(
+        for task: FamilyTask,
+        cornerRadius: CGFloat = 12,
+        headerBarWidth: CGFloat = 4,
+        headerVerticalInset: CGFloat = 8,
+        headerLeadingInset: CGFloat = 5
+    ) -> some View {
+        modifier(
+            TaskCardSurfaceModifier(
+                backgroundColor: task.cardBackgroundColor,
+                headerAccentColor: task.cardHeaderAccentColor,
+                cornerRadius: cornerRadius,
+                headerBarWidth: headerBarWidth,
+                headerVerticalInset: headerVerticalInset,
+                headerLeadingInset: headerLeadingInset
+            )
+        )
     }
 }
 
@@ -56,6 +114,14 @@ private struct RGBComponents {
     let red: Double
     let green: Double
     let blue: Double
+
+    static func parseOptionalHex(_ source: String?) -> RGBComponents? {
+        guard let raw = source?.trimmingCharacters(in: .whitespacesAndNewlines),
+              raw.isEmpty == false else {
+            return nil
+        }
+        return parseHexString(raw)
+    }
 
     static func parseHexString(_ source: String) -> RGBComponents? {
         var s = source.trimmingCharacters(in: .whitespacesAndNewlines)

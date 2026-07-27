@@ -167,10 +167,6 @@ private struct TaskModeListMinimalRow: View {
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
 
-    private var orgColor: Color {
-        HouseholdColorStore.color(for: task.householdId)
-    }
-
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
@@ -199,8 +195,7 @@ private struct TaskModeListMinimalRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(orgColor)
-        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .taskCardSurface(for: task, cornerRadius: 8, headerVerticalInset: 6, headerLeadingInset: 4)
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .stroke(Color.white.opacity(0.18), lineWidth: 1)

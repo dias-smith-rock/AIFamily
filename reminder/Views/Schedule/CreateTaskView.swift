@@ -303,6 +303,13 @@ struct CreateTaskView: View {
     @State private var selectedBackgroundHex: String?
     @State private var emergencyPhone = ""
     @State private var isShowingMoreOptions = false
+    @State private var saveAsMemo = false
+    @State private var insertedSections: Set<CreateTaskOptionalSection> = []
+    /// 底部 chip / 摘要行打开的字段编辑 Sheet。
+    @State private var chipEditorSection: CreateTaskOptionalSection?
+    @State private var isShowingWriteTargetPicker = false
+    @State private var isShowingAssigneePicker = false
+    @State private var isShowingColorPicker = false
     @State private var formPriority: TaskPriority = .normal
     @State private var locationName = ""
     @State private var isSaving = false
@@ -344,7 +351,24 @@ struct CreateTaskView: View {
     private let onAlarmSync: ((FamilyTask) -> Void)?
 
     private var isFlexibleMode: Bool {
-        formMode == .flexible
+        if editingTask != nil {
+            return formMode == .flexible
+        }
+        if formMode == .flexible {
+            return true
+        }
+        return saveAsMemo
+    }
+
+    private var showsMemoToggle: Bool {
+        editingTask == nil && formMode == .scheduled
+    }
+
+    private var titleFieldPlaceholder: String {
+        AppLocalized.string(
+            isFlexibleMode ? L10n.Common.newToDo : L10n.Schedule.newEvent,
+            locale: locale
+        )
     }
 
     init(
@@ -586,79 +610,810 @@ struct CreateTaskView: View {
                 .font(AppTheme.FontToken.caption)
                 .foregroundStyle(.red)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
         }
     }
 
     @ViewBuilder
-    private var formMoreOptionsSection: some View {
-        if isShowingMoreOptions {
-            repeatReminderPriorityCard
-            emergencyContactCard
-            assigneeWhoDoesCard
-            locationCard
-            moreDetailsCard
-            financeCard
+    private var createTaskChipTrayInset: some View {
+        if availableChipSections.isEmpty {
+            EmptyView()
+        } else {
+            LedgerTagCapsuleFlow(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(formIconAccent)
+                    .frame(width: 28, height: 28)
+
+                ForEach(availableChipSections) { section in
+                    Button {
+                        dismissKeyboard()
+                        chipEditorSection = section
+                    } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: section.systemImage)
+                                .font(.caption2.weight(.semibold))
+                            Text(section.title(locale: locale))
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                        }
+                        .foregroundStyle(.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(Color(.tertiarySystemFill), in: Capsule())
+                        .fixedSize(horizontal: true, vertical: false)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+            }
         }
+    }
+
+    private var availableChipSections: [CreateTaskOptionalSection] {
+        CreateTaskOptionalSection.chipCases.filter { insertedSections.contains($0) == false }
+    }
+
+    private var formIconAccent: Color {
+        formHouseholdId.map { HouseholdColorStore.color(for: $0) } ?? formAccentTint
     }
 
     @ViewBuilder
     private var formScrollContent: some View {
         VStack(spacing: 14) {
-            titleEditorCard
-            taskAttachmentCard
-            taskTimeSettingsSection
-            forWhomCard
-            formMoreOptionsSection
-            expandCollapseButton
             formErrorBanner
+            titleInputCard
+            primarySettingsGroup
+            if isFlexibleMode {
+                flexibleDeadlineGroup
+            }
+            createTaskChipTrayInset
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
+        .padding(.bottom, 24)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .font(.footnote)
         .contentShape(Rectangle())
         .onTapGesture {
             dismissKeyboard()
         }
     }
 
-    @ToolbarContentBuilder
-    private var formToolbar: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.body.weight(.semibold))
+    private var titleInputCard: some View {
+        TextField(titleFieldPlaceholder, text: $title, axis: .vertical)
+            .font(.headline.weight(.semibold))
+            .lineLimit(1...3)
+            .focused($focusedField, equals: .title)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
             }
-            .disabled(isSaving)
-            .accessibilityLabel(L10n.Common.cancel)
-        }
-        ToolbarItem(placement: .principal) {
-            Text(formHouseholdNavigationTitle)
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(
-                    formHouseholdId.map { HouseholdColorStore.color(for: $0) } ?? formAccentTint
-                )
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-        }
-        ToolbarItem(placement: .confirmationAction) {
-            Button {
-                Task {
-                    await saveTask()
+    }
+
+    private var primarySettingsGroup: some View {
+        VStack(spacing: 0) {
+            orgFlatRow
+            flatDivider
+            attachmentsFlatRow
+
+            if showsMemoToggle {
+                flatDivider
+                CreateTaskFlatRow(
+                    systemImage: "pin.fill",
+                    title: AppLocalized.string(L10n.Schedule.saveAsMemo, locale: locale),
+                    iconColor: formIconAccent
+                ) {
+                    Toggle("", isOn: $saveAsMemo)
+                        .labelsHidden()
+                        .createTaskFormCompactControl()
                 }
-            } label: {
-                Image(systemName: "checkmark")
-                    .font(.body.weight(.semibold))
             }
-            .disabled(isSaving || normalizedTitle.isEmpty)
-            .accessibilityLabel(L10n.Common.save)
+
+            if isFlexibleMode == false {
+                flatDivider
+                CreateTaskFlatRow(
+                    systemImage: "clock",
+                    title: AppLocalized.string(L10n.Common.allDay, locale: locale),
+                    iconColor: formIconAccent
+                ) {
+                    Toggle("", isOn: $isAllDay)
+                        .labelsHidden()
+                        .createTaskFormCompactControl()
+                }
+                flatDivider
+                startEndFlatRows
+            }
+
+            flatDivider
+            colorFlatRow
+            flatDivider
+            reminderFlatRow
+
+            ForEach(CreateTaskOptionalSection.summaryCases) { section in
+                if insertedSections.contains(section) {
+                    flatDivider
+                    optionalSectionSummaryRow(section)
+                }
+            }
         }
-        ToolbarItemGroup(placement: .keyboard) {
-            Spacer()
-            Button(L10n.Common.finish.localized) {
-                dismissKeyboard()
+        .padding(.vertical, 6)
+        .environment(\.controlSize, .mini)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        }
+    }
+
+    private var attachmentsFlatRow: some View {
+        Button {
+            dismissKeyboard()
+            chipEditorSection = .files
+        } label: {
+            CreateTaskFlatRow(
+                systemImage: "paperclip",
+                title: AppLocalized.string(L10n.Common.attachments, locale: locale),
+                iconColor: formIconAccent,
+                showsChevron: true
+            ) {
+                Text(attachmentsSummaryText)
+                    .foregroundStyle(totalAttachmentCount == 0 ? .secondary : formIconAccent)
+                    .lineLimit(1)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var attachmentsSummaryText: String {
+        if totalAttachmentCount == 0 {
+            return AppLocalized.string(L10n.Common.addAttachment, locale: locale)
+        }
+        return "\(totalAttachmentCount)"
+    }
+
+    private var flexibleDeadlineGroup: some View {
+        VStack(spacing: 0) {
+            CreateTaskFlatRow(
+                systemImage: "flag",
+                title: AppLocalized.string(L10n.Common.dueBy, locale: locale),
+                iconColor: formIconAccent
+            ) {
+                CreateTaskFormDateTimePicker(
+                    selection: $flexibleDeadlineDate,
+                    mode: .date,
+                    locale: locale,
+                    accent: formIconAccent
+                )
+            }
+        }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        }
+    }
+
+    private var flatDivider: some View {
+        Divider()
+            .padding(.leading, 40)
+    }
+
+    private var orgFlatRow: some View {
+        Button {
+            if editingTask == nil, appRouter.selectableHouseholds.count > 1 {
+                isShowingWriteTargetPicker = true
+            }
+        } label: {
+            CreateTaskFlatRow(
+                systemImage: "calendar",
+                title: formHouseholdNavigationTitle,
+                iconColor: formIconAccent,
+                showsChevron: editingTask == nil && appRouter.selectableHouseholds.count > 1
+            ) {
+                if let id = formHouseholdId {
+                    HouseholdColorDot(householdId: id, size: 14)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(editingTask != nil || appRouter.selectableHouseholds.count <= 1)
+    }
+
+    @ViewBuilder
+    private var startEndFlatRows: some View {
+        CreateTaskFlatRow(
+            systemImage: "calendar",
+            title: AppLocalized.string(L10n.Schedule.starts, locale: locale),
+            iconColor: formIconAccent
+        ) {
+            CreateTaskFormDateTimePicker(
+                selection: isAllDay ? flatDatePickerDueDateBinding : $dueDate,
+                mode: isAllDay ? .date : .dateAndTime,
+                locale: locale,
+                accent: formIconAccent
+            )
+        }
+        flatDivider
+        CreateTaskFlatRow(
+            systemImage: "calendar",
+            title: AppLocalized.string(L10n.Schedule.ends, locale: locale),
+            iconColor: formIconAccent
+        ) {
+            if isAllDay {
+                Text(L10n.Common.allDay.localized)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            } else {
+                CreateTaskFormDateTimePicker(
+                    selection: endDateBinding,
+                    mode: .dateAndTime,
+                    locale: locale,
+                    accent: formIconAccent
+                )
+            }
+        }
+        flatDivider
+        CreateTaskFlatRow(
+            systemImage: "hourglass",
+            title: AppLocalized.string(L10n.Schedule.duration, locale: locale),
+            iconColor: formIconAccent
+        ) {
+            CreateTaskFormDateTimePicker(
+                selection: $durationPickerDate,
+                mode: .time,
+                locale: locale,
+                accent: formIconAccent
+            )
+            .disabled(isAllDay)
+            .opacity(isAllDay ? 0.45 : 1)
+        }
+    }
+
+    /// 结束时间 = 开始 + 时长；改结束时反推时长。
+    private var endDateBinding: Binding<Date> {
+        Binding(
+            get: {
+                let minutes = CreateTaskView.durationMinutes(from: durationPickerDate)
+                return dueDate.addingTimeInterval(TimeInterval(minutes * 60))
+            },
+            set: { newEnd in
+                let delta = max(1, Int(newEnd.timeIntervalSince(dueDate) / 60))
+                durationPickerDate = CreateTaskView.makeDurationPickerDate(minutes: min(delta, 24 * 60))
+            }
+        )
+    }
+
+    private var flatDatePickerDueDateBinding: Binding<Date> {
+        Binding(
+            get: { dueDate },
+            set: { newValue in
+                let calendar = Calendar.current
+                guard calendar.isDate(newValue, inSameDayAs: dueDate) == false else {
+                    dueDate = newValue
+                    return
+                }
+                var parts = calendar.dateComponents([.year, .month, .day], from: newValue)
+                parts.hour = isAllDay ? 0 : 8
+                parts.minute = 0
+                parts.second = 0
+                dueDate = calendar.date(from: parts) ?? newValue
+            }
+        )
+    }
+
+    private var colorFlatRow: some View {
+        Button {
+            dismissKeyboard()
+            isShowingColorPicker = true
+        } label: {
+            CreateTaskFlatRow(
+                systemImage: "tag.fill",
+                title: AppLocalized.string(L10n.Schedule.taskColor, locale: locale),
+                iconColor: formIconAccent,
+                showsChevron: true
+            ) {
+                Circle()
+                    .fill(Color.taskCardLeadingAccent(fromHex: selectedBackgroundHex))
+                    .frame(width: 16, height: 16)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var colorPickerSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 20) {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 4),
+                    spacing: 16
+                ) {
+                    colorSwatchButton(
+                        color: Color(.tertiarySystemFill),
+                        isSelected: selectedBackgroundHex == nil,
+                        usesDarkCheckmark: true,
+                        accessibilityTitle: AppLocalized.string(L10n.Common.none, locale: locale),
+                        action: {
+                            selectedBackgroundHex = nil
+                            isShowingColorPicker = false
+                        }
+                    )
+
+                    ForEach(CreateTaskColorPreset.allCases) { preset in
+                        colorSwatchButton(
+                            color: preset.color,
+                            isSelected: selectedBackgroundHex == preset.rawValue,
+                            usesDarkCheckmark: false,
+                            accessibilityTitle: preset.accessibilityTitle,
+                            action: {
+                                selectedBackgroundHex = preset.rawValue
+                                isShowingColorPicker = false
+                            }
+                        )
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(AppLocalized.string(L10n.Schedule.taskColor, locale: locale))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        isShowingColorPicker = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+            }
+        }
+        .environment(\.locale, locale)
+        .tint(formAccentTint)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func colorSwatchButton(
+        color: Color,
+        isSelected: Bool,
+        usesDarkCheckmark: Bool,
+        accessibilityTitle: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 44, height: 44)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+                    }
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.bold))
+                        .foregroundStyle(usesDarkCheckmark ? Color.primary : Color.white)
+                        .shadow(color: .black.opacity(usesDarkCheckmark ? 0 : 0.35), radius: 1, y: 0.5)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(accessibilityTitle))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var assigneePickerList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(assignees.filter(\.hasRegisteredAccount).enumerated()), id: \.element.id) { index, person in
+                if index > 0 {
+                    Divider()
+                        .padding(.leading, 14)
+                }
+                Button {
+                    toggleAssignee(person.id)
+                } label: {
+                    HStack {
+                        Text(person.name)
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        if selectedAssigneeIds.contains(person.id) {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(formIconAccent)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            if assignees.contains(where: \.hasRegisteredAccount) == false {
+                Text(L10n.Common.everyone.localized)
+                    .foregroundStyle(.secondary)
+                    .padding(14)
+            } else {
+                Text(L10n.Common.everyone.localized)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemGroupedBackground))
+    }
+
+    @ViewBuilder
+    private var assigneeSummaryAvatars: some View {
+        let people = assignees.filter { selectedAssigneeIds.contains($0.id) }
+        if people.isEmpty {
+            Text(L10n.Common.everyone.localized)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        } else {
+            HStack(spacing: -5) {
+                ForEach(Array(people.prefix(3))) { person in
+                    Text(String(person.name.prefix(1)))
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 18, height: 18)
+                        .background(formIconAccent, in: Circle())
+                }
+            }
+        }
+    }
+
+    private var reminderFlatRow: some View {
+        CreateTaskFlatRow(
+            systemImage: "alarm.fill",
+            title: AppLocalized.string(L10n.Schedule.remind, locale: locale),
+            iconColor: formIconAccent
+        ) {
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(TaskReminderOption.allCases) { option in
+                        Button {
+                            reminderOption = option
+                        } label: {
+                            Text(option.titleKey)
+                        }
+                    }
+                } label: {
+                    Text(reminderOption.titleKey)
+                        .font(.footnote)
+                        .foregroundStyle(formIconAccent)
+                }
+
+                if reminderOption != .none {
+                    Button {
+                        reminderOption = .none
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(L10n.Common.none)
+                }
+            }
+        }
+    }
+
+    private func optionalSectionSummaryRow(_ section: CreateTaskOptionalSection) -> some View {
+        Button {
+            dismissKeyboard()
+            chipEditorSection = section
+        } label: {
+            CreateTaskFlatRow(
+                systemImage: section.systemImage,
+                title: AppLocalized.string(section.titleKey, locale: locale),
+                iconColor: formIconAccent,
+                showsChevron: true
+            ) {
+                if section == .assignee {
+                    assigneeSummaryAvatars
+                } else {
+                    Text(optionalSectionSummaryText(section))
+                        .foregroundStyle(optionalSectionSummaryIsPlaceholder(section) ? .secondary : formIconAccent)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func optionalSectionSummaryIsPlaceholder(_ section: CreateTaskOptionalSection) -> Bool {
+        switch section {
+        case .repeatRule:
+            return selectedRecurrence == .none
+        case .location:
+            return locationName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .note:
+            return note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .files:
+            return totalAttachmentCount == 0
+        case .assignee:
+            return selectedAssigneeIds.isEmpty
+        case .forWhom:
+            return selectedTargetProfileIds.isEmpty
+        case .priority:
+            return formPriority == .normal
+        case .emergency:
+            return emergencyPhone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .expenses:
+            return costInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+    }
+
+    private func optionalSectionSummaryText(_ section: CreateTaskOptionalSection) -> String {
+        switch section {
+        case .repeatRule:
+            return String(localized: selectedRecurrence.titleKey)
+        case .location:
+            let trimmed = locationName.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? AppLocalized.string(L10n.Location.searchOrAddALocation, locale: locale)
+                : trimmed
+        case .note:
+            let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? AppLocalized.string(L10n.Common.addNote, locale: locale)
+                : trimmed
+        case .files:
+            if totalAttachmentCount == 0 {
+                return AppLocalized.string(L10n.Common.addAttachment, locale: locale)
+            }
+            return "\(totalAttachmentCount)"
+        case .assignee:
+            if selectedAssigneeIds.isEmpty {
+                return AppLocalized.string(L10n.Common.everyone, locale: locale)
+            }
+            let names = assignees
+                .filter { selectedAssigneeIds.contains($0.id) }
+                .map(\.name)
+            return names.isEmpty
+                ? AppLocalized.string(L10n.Common.everyone, locale: locale)
+                : names.joined(separator: ", ")
+        case .forWhom:
+            if selectedTargetProfileIds.isEmpty {
+                return AppLocalized.string(L10n.Common.everyone, locale: locale)
+            }
+            let names = forWhomProfileOptions
+                .filter { selectedTargetProfileIds.contains($0.id) }
+                .map(\.name)
+            return names.isEmpty
+                ? AppLocalized.string(L10n.Common.everyone, locale: locale)
+                : names.joined(separator: ", ")
+        case .priority:
+            return AppLocalized.string(
+                formPriority == .urgent ? L10n.Common.urgent : L10n.Common.generally,
+                locale: locale
+            )
+        case .emergency:
+            let trimmed = emergencyPhone.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty
+                ? AppLocalized.string(L10n.Common.enterNumberOrLink, locale: locale)
+                : trimmed
+        case .expenses:
+            let trimmed = costInput.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? "0" : "\(currencySymbol)\(trimmed)"
+        }
+    }
+
+    @ViewBuilder
+    private func optionalFieldSheetContent(_ section: CreateTaskOptionalSection) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            switch section {
+            case .repeatRule:
+                repeatFlatSection
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .location:
+                TextField(
+                    AppLocalized.string(L10n.Location.searchOrAddALocation, locale: locale),
+                    text: $locationName,
+                    axis: .vertical
+                )
+                .lineLimit(2...4)
+                .focused($focusedField, equals: .locationSearch)
+                .padding(14)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .note:
+                moreDetailNoteEditor
+                    .padding(12)
+                    .frame(minHeight: 180, alignment: .topLeading)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .files:
+                taskAttachmentSection
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .assignee:
+                assigneePickerList
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .forWhom:
+                forWhomChipsRow
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.secondarySystemGroupedBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .priority:
+                Picker("", selection: $formPriority) {
+                    Text(L10n.Common.urgent.localized).tag(TaskPriority.urgent)
+                    Text(L10n.Common.generally.localized).tag(TaskPriority.normal)
+                }
+                .pickerStyle(.segmented)
+                .padding(14)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .emergency:
+                TextField(
+                    AppLocalized.string(L10n.Common.enterNumberOrLink, locale: locale),
+                    text: $emergencyPhone
+                )
+                .keyboardType(.phonePad)
+                .focused($focusedField, equals: .emergency)
+                .padding(14)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            case .expenses:
+                HStack(spacing: 8) {
+                    Text(currencySymbol)
+                        .foregroundStyle(.secondary)
+                    TextField("0", text: $costInput)
+                        .keyboardType(.decimalPad)
+                        .focused($focusedField, equals: .cost)
+                }
+                .padding(14)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    private func optionalFieldEditorSheet(for section: CreateTaskOptionalSection) -> some View {
+        NavigationStack {
+            ScrollView {
+                optionalFieldSheetContent(section)
+            }
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(section.title(locale: locale))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        chipEditorSection = nil
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        confirmOptionalFieldSheet(section)
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
+                        dismissKeyboard()
+                    }
+                }
+            }
+        }
+        .environment(\.locale, locale)
+        .tint(formAccentTint)
+        .presentationDetents(optionalFieldSheetDetents(for: section))
+        .presentationDragIndicator(.visible)
+    }
+
+    private func optionalFieldSheetDetents(for section: CreateTaskOptionalSection) -> Set<PresentationDetent> {
+        switch section {
+        case .note, .files, .forWhom, .repeatRule, .assignee:
+            return [.medium, .large]
+        case .location, .priority, .emergency, .expenses:
+            return [.medium]
+        }
+    }
+
+    private func confirmOptionalFieldSheet(_ section: CreateTaskOptionalSection) {
+        if section != .files {
+            withAnimation(Animation.easeInOut(duration: 0.2)) {
+                insertedSections = insertedSections.union([section])
+            }
+        }
+        chipEditorSection = nil
+        dismissKeyboard()
+    }
+
+    private var repeatFlatSection: some View {
+        VStack(spacing: 0) {
+            CreateTaskFlatRow(
+                systemImage: "repeat",
+                title: AppLocalized.string(L10n.Common.repeatLabel, locale: locale),
+                iconColor: formIconAccent
+            ) {
+                Menu {
+                    ForEach(TaskRecurrenceRule.allCases) { rule in
+                        Button {
+                            selectedRecurrence = rule
+                            applyDefaultRecurrenceEndDate(for: rule)
+                        } label: {
+                            Text(rule.titleKey)
+                        }
+                    }
+                } label: {
+                    Text(selectedRecurrence.titleKey)
+                        .font(.callout)
+                        .foregroundStyle(formIconAccent)
+                }
+            }
+
+            if selectedRecurrence == .custom {
+                flatDivider
+                Stepper(value: $recurrenceInterval, in: 2 ... 365) {
+                    Text(L10n.Common.everyLldDays.formatted(locale: locale, recurrenceInterval))
+                        .padding(.leading, 58)
+                }
+                .padding(.trailing, 16)
+                .padding(.vertical, 8)
+            }
+
+            if selectedRecurrence != .none {
+                flatDivider
+                CreateTaskFlatRow(
+                    systemImage: "calendar.badge.clock",
+                    title: AppLocalized.string(L10n.Common.specifyEndDate, locale: locale),
+                    iconColor: formIconAccent
+                ) {
+                    Toggle("", isOn: $showEndDate)
+                        .labelsHidden()
+                }
+                if showEndDate {
+                    flatDivider
+                    CreateTaskFlatRow(
+                        systemImage: "calendar",
+                        title: AppLocalized.string(L10n.Common.end, locale: locale),
+                        iconColor: formIconAccent
+                    ) {
+                        DatePicker("", selection: $recurrenceEndDate, displayedComponents: .date)
+                            .labelsHidden()
+                            .datePickerStyle(.compact)
+                    }
+                }
             }
         }
     }
@@ -668,7 +1423,7 @@ struct CreateTaskView: View {
             Color(.systemGroupedBackground)
                 .ignoresSafeArea()
 
-            ScrollView {
+            ScrollView(.vertical) {
                 formScrollContent
             }
             .scrollDismissesKeyboard(.interactively)
@@ -683,12 +1438,56 @@ struct CreateTaskView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .tint(formAccentTint)
-        .toolbar { formToolbar }
+        .sheet(isPresented: $isShowingWriteTargetPicker) {
+            WriteTargetHouseholdPicker { _ in }
+                .environmentObject(appRouter)
+                .presentationDetents([.medium])
+        }
+        .sheet(isPresented: $isShowingColorPicker) {
+            colorPickerSheet
+        }
+        .sheet(item: $chipEditorSection) { section in
+            optionalFieldEditorSheet(for: section)
+                .environmentObject(appRouter)
+        }
+        .sheet(isPresented: $isShowingAssigneePicker) {
+            NavigationStack {
+                List {
+                    Section {
+                        ForEach(assignees.filter(\.hasRegisteredAccount)) { person in
+                            Button {
+                                toggleAssignee(person.id)
+                            } label: {
+                                HStack {
+                                    Text(person.name)
+                                    Spacer()
+                                    if selectedAssigneeIds.contains(person.id) {
+                                        Image(systemName: "checkmark")
+                                            .foregroundStyle(formIconAccent)
+                                    }
+                                }
+                            }
+                        }
+                    } footer: {
+                        Text(L10n.Common.everyone.localized)
+                    }
+                }
+                .navigationTitle(L10n.Common.assignee.localized)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
+                            isShowingAssigneePicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
         .onAppear {
+            seedInsertedSectionsIfNeeded()
             if editingTask == nil {
                 focusedField = .title
-            } else {
-                isShowingMoreOptions = true
             }
         }
         .task(id: editingTask?.parentTaskId) {
@@ -699,9 +1498,57 @@ struct CreateTaskView: View {
         }
     }
 
+    private func seedInsertedSectionsIfNeeded() {
+        guard insertedSections.isEmpty else { return }
+        var seeded = Set<CreateTaskOptionalSection>()
+        if selectedRecurrence != .none { seeded.insert(.repeatRule) }
+        if locationName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            seeded.insert(.location)
+        }
+        if note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            seeded.insert(.note)
+        }
+        if selectedTargetProfileIds.isEmpty == false { seeded.insert(.forWhom) }
+        if selectedAssigneeIds.isEmpty == false { seeded.insert(.assignee) }
+        if formPriority == .urgent { seeded.insert(.priority) }
+        if emergencyPhone.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            seeded.insert(.emergency)
+        }
+        if costInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
+            seeded.insert(.expenses)
+        }
+        insertedSections = seeded
+    }
+
     private var formStackWithDialogs: some View {
         NavigationStack {
             formNavigationContent
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .disabled(isSaving)
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button {
+                            Task { await saveTask() }
+                        } label: {
+                            Image(systemName: "checkmark")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .disabled(isSaving || normalizedTitle.isEmpty)
+                    }
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
+                            dismissKeyboard()
+                        }
+                    }
+                }
         }
         .task(id: appRouter.selectedHouseholdId ?? editingTask?.householdId) {
             await loadAssignees()
@@ -1329,14 +2176,14 @@ struct CreateTaskView: View {
     private var moreDetailNoteEditor: some View {
         ZStack(alignment: .topLeading) {
             TextEditor(text: $note)
-                .font(AppTheme.FontToken.body)
-                .frame(minHeight: 80)
+                .font(.callout)
+                .frame(minHeight: 72)
                 .scrollContentBackground(.hidden)
                 .focused($focusedField, equals: .note)
 
             if note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 Text(L10n.Common.addNote.localized)
-                    .font(AppTheme.FontToken.body)
+                    .font(.callout)
                     .foregroundStyle(.tertiary)
                     .padding(.top, 8)
                     .padding(.leading, 4)
@@ -2636,7 +3483,7 @@ private extension CreateTaskView {
     }
 
     func resolvedTaskTypeForPayload() -> String {
-        EditTaskViewModel.taskType(for: formMode)
+        EditTaskViewModel.taskType(for: isFlexibleMode ? .flexible : .scheduled)
     }
 
     func resolvedDueDateForPayload() -> Date? {

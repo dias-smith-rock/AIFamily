@@ -169,41 +169,32 @@ struct LedgerTagCapsuleFlow: Layout {
     var spacing: CGFloat = 8
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var totalHeight: CGFloat = 0
-        var totalWidth: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + spacing + size.width > maxWidth {
-                y += rowHeight + spacing
-                x = 0
-                rowHeight = 0
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        // 宽度未知时不能按 infinity 测算，否则不换行、高度偏小，背景会盖住相邻内容。
+        guard let proposedWidth = proposal.width, proposedWidth.isFinite, proposedWidth > 0 else {
+            var totalWidth: CGFloat = 0
+            var height: CGFloat = 0
+            for (index, size) in sizes.enumerated() {
+                if index > 0 { totalWidth += spacing }
+                totalWidth += size.width
+                height = max(height, size.height)
             }
-            if x > 0 { x += spacing }
-            x += size.width
-            rowHeight = max(rowHeight, size.height)
-            totalWidth = max(totalWidth, x)
-            totalHeight = max(totalHeight, y + rowHeight)
+            return CGSize(width: totalWidth, height: height)
         }
 
-        return CGSize(
-            width: proposal.width ?? totalWidth,
-            height: totalHeight
-        )
+        return flowSize(sizes: sizes, maxWidth: proposedWidth)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
         var x = bounds.minX
         var y = bounds.minY
         var rowHeight: CGFloat = 0
+        let maxX = bounds.maxX
 
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + spacing + size.width > bounds.maxX {
+        for (index, subview) in subviews.enumerated() {
+            let size = sizes[index]
+            if x > bounds.minX, x + spacing + size.width > maxX {
                 y += rowHeight + spacing
                 x = bounds.minX
                 rowHeight = 0
@@ -216,5 +207,28 @@ struct LedgerTagCapsuleFlow: Layout {
             x += size.width
             rowHeight = max(rowHeight, size.height)
         }
+    }
+
+    private func flowSize(sizes: [CGSize], maxWidth: CGFloat) -> CGSize {
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var totalHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+
+        for size in sizes {
+            if x > 0, x + spacing + size.width > maxWidth {
+                y += rowHeight + spacing
+                x = 0
+                rowHeight = 0
+            }
+            if x > 0 { x += spacing }
+            x += size.width
+            rowHeight = max(rowHeight, size.height)
+            totalWidth = max(totalWidth, x)
+            totalHeight = max(totalHeight, y + rowHeight)
+        }
+
+        return CGSize(width: maxWidth, height: totalHeight)
     }
 }

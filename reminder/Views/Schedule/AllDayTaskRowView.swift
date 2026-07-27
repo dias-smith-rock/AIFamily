@@ -1,7 +1,7 @@
 import SwiftUI
 import Kingfisher
 
-/// 全天任务紧凑卡片：组织色铺底，与周视图任务块一致。
+/// 全天任务紧凑卡片：组织色铺底，任务自定义色为左侧卡片头。
 struct AllDayTaskRowView: View {
     let task: FamilyTask
     let displayTitle: String
@@ -15,10 +15,6 @@ struct AllDayTaskRowView: View {
         self.task = task
         self.displayTitle = displayTitle ?? task.title
         self.forWhomAvatars = forWhomAvatars
-    }
-
-    private var orgColor: Color {
-        HouseholdColorStore.color(for: task.householdId)
     }
 
     var body: some View {
@@ -47,8 +43,7 @@ struct AllDayTaskRowView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(orgColor)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .taskCardSurface(for: task, cornerRadius: 10, headerVerticalInset: 6, headerLeadingInset: 4)
         .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
     }
 

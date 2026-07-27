@@ -451,7 +451,6 @@ struct TaskWeekGridView: View {
                 Button {
                     onTaskSelect(task)
                 } label: {
-                    let orgColor = HouseholdColorStore.color(for: task.householdId)
                     Text(viewModel.displayTitle(for: task))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(.white)
@@ -460,8 +459,13 @@ struct TaskWeekGridView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 3)
-                        .background(orgColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                        .taskCardSurface(
+                            for: task,
+                            cornerRadius: 4,
+                            headerBarWidth: 3,
+                            headerVerticalInset: 2,
+                            headerLeadingInset: 2
+                        )
                 }
                 .buttonStyle(.plain)
             }
@@ -955,10 +959,6 @@ private struct WeekTaskEventCard: View {
     let task: FamilyTask
     let title: String
 
-    private var orgColor: Color {
-        HouseholdColorStore.color(for: task.householdId)
-    }
-
     var body: some View {
         Text(title)
             .font(.caption2.weight(.semibold))
@@ -968,12 +968,17 @@ private struct WeekTaskEventCard: View {
             .padding(.horizontal, 5)
             .padding(.vertical, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(orgColor)
+            .taskCardSurface(
+                for: task,
+                cornerRadius: 4,
+                headerBarWidth: 3,
+                headerVerticalInset: 2,
+                headerLeadingInset: 2
+            )
             .overlay {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(orgColor.opacity(0.9), lineWidth: 0.5)
+                    .stroke(task.cardBackgroundColor.opacity(0.9), lineWidth: 0.5)
             }
-            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
             .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
     }
 }
