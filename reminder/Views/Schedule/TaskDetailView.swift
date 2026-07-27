@@ -15,6 +15,26 @@ private enum RecurringDeleteScope {
     case thisAndFuture
 }
 
+private struct TaskDetailFormCardStyle: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+
+    func body(content: Content) -> some View {
+        content
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
+            }
+            .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 3)
+    }
+}
+
+private extension View {
+    func taskDetailFormCardStyled() -> some View {
+        modifier(TaskDetailFormCardStyle())
+    }
+}
+
 struct TaskDetailView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @Environment(\.dismiss) private var dismiss
@@ -279,8 +299,7 @@ struct TaskDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .taskDetailFormCardStyled()
     }
 
     // MARK: - 核心信息卡片（始终）
@@ -320,9 +339,7 @@ struct TaskDetailView: View {
                 Text(task.status.localizedName)
             }
         }
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+        .taskDetailFormCardStyled()
     }
 
     private var inferredRecurrenceRule: TaskRecurrenceRule {
@@ -425,9 +442,7 @@ struct TaskDetailView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+        .taskDetailFormCardStyled()
     }
 
     private func timePlanningLine<Content: View>(
@@ -482,9 +497,7 @@ struct TaskDetailView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+        .taskDetailFormCardStyled()
     }
 
     @ViewBuilder
@@ -535,9 +548,7 @@ struct TaskDetailView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+        .taskDetailFormCardStyled()
     }
 
     private var forWhomEveryoneChip: some View {
@@ -879,9 +890,7 @@ struct TaskDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+        .taskDetailFormCardStyled()
     }
 
     @ViewBuilder

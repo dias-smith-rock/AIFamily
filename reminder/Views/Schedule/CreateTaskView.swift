@@ -9,13 +9,19 @@ import Supabase
 // MARK: - 表单卡片样式（供隔离子视图复用）
 
 private struct CreateTaskFormCardStyle: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+
     func body(content: Content) -> some View {
         content
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .shadow(color: Color.black.opacity(0.06), radius: 10, x: 0, y: 3)
+            // 相对页面 `systemGroupedBackground` 抬升一层，深色模式下也能和底部分开。
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(shape)
+            .overlay {
+                shape.strokeBorder(Color.primary.opacity(0.14), lineWidth: 1)
+            }
+            .shadow(color: Color.black.opacity(0.18), radius: 8, x: 0, y: 3)
     }
 }
 
