@@ -6343,5 +6343,89 @@
     "table": "Ledger",
     "swift_property": "sortCategories",
     "orphan": false
+  },
+  {
+    "legacy_key": "Select groups to view",
+    "new_key": "family_select_groups_to_view",
+    "table": "Family",
+    "swift_property": "selectGroupsToView",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Select one or more groups. Create still uses the active group.",
+    "new_key": "family_multi_select_groups_hint",
+    "table": "Family",
+    "swift_property": "multiSelectGroupsHint",
+    "orphan": false
+  },
+  {
+    "legacy_key": "%d groups",
+    "new_key": "family_viewing_groups_count",
+    "table": "Family",
+    "swift_property": "viewingGroupsCount",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Active for new items",
+    "new_key": "family_active_write_group",
+    "table": "Family",
+    "swift_property": "activeWriteGroup",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Set active",
+    "new_key": "family_set_as_active_group",
+    "table": "Family",
+    "swift_property": "setAsActiveGroup",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Search",
+    "new_key": "schedule_search",
+    "table": "Schedule",
+    "swift_property": "search",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Search tasks, to-dos, ledger, and members",
+    "new_key": "schedule_search_placeholder",
+    "table": "Schedule",
+    "swift_property": "searchPlaceholder",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Tasks",
+    "new_key": "schedule_search_section_tasks",
+    "table": "Schedule",
+    "swift_property": "searchSectionTasks",
+    "orphan": false
+  },
+  {
+    "legacy_key": "To-Dos",
+    "new_key": "schedule_search_section_todos",
+    "table": "Schedule",
+    "swift_property": "searchSectionTodos",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Ledger",
+    "new_key": "schedule_search_section_ledger",
+    "table": "Schedule",
+    "swift_property": "searchSectionLedger",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Members",
+    "new_key": "schedule_search_section_members",
+    "table": "Schedule",
+    "swift_property": "searchSectionMembers",
+    "orphan": false
+  },
+  {
+    "legacy_key": "No results",
+    "new_key": "schedule_search_no_results",
+    "table": "Schedule",
+    "swift_property": "searchNoResults",
+    "orphan": false
   }
 ]

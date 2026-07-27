@@ -15,6 +15,7 @@ struct TaskWeekGridView: View {
 
     let onTaskSelect: (FamilyTask) -> Void
     let onRefresh: (() async -> Void)?
+    let onOpenMonthPicker: (() -> Void)?
 
     @State private var weekEpochStart: Date = ScheduleWeekCalendar.startOfWeek(for: Date())
     @State private var weekOffset: Int = 0
@@ -34,12 +35,14 @@ struct TaskWeekGridView: View {
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
-        onRefresh: (() async -> Void)? = nil
+        onRefresh: (() async -> Void)? = nil,
+        onOpenMonthPicker: (() -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onRefresh = onRefresh
+        self.onOpenMonthPicker = onOpenMonthPicker
     }
 
     var body: some View {
@@ -116,11 +119,13 @@ struct TaskWeekGridView: View {
             : nil
 
         return VStack(alignment: .leading, spacing: 10) {
-            weekHeaderSection(
-                previous: previousBundle,
-                current: currentBundle,
-                next: nextBundle
-            )
+            ScheduleWeekDayStripChrome(monthYearTitle: monthYearTitle, onOpenMonthPicker: onOpenMonthPicker) {
+                weekHeaderSection(
+                    previous: previousBundle,
+                    current: currentBundle,
+                    next: nextBundle
+                )
+            }
 
             weekBodySection(
                 previous: previousBundle,
@@ -133,6 +138,15 @@ struct TaskWeekGridView: View {
             WeekViewPerformanceTracer.mark("weekPager.onAppear")
             scheduleFirstPaintExpansion()
         }
+    }
+
+    private var monthYearTitle: String {
+        selectedDate.formatted(
+            .dateTime
+                .month(.wide)
+                .year()
+                .locale(locale)
+        )
     }
 
     private func weekHeaderSection(
@@ -156,13 +170,11 @@ struct TaskWeekGridView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(height: 84, alignment: .top)
         .allowsHitTesting(isAdjacentWeekPagesReady)
     }
 
     private func weekHeaderPage(bundle: WeekPageBundle, slot: Int) -> some View {
         weekHeaderRow(days: bundle.days, weekTasks: bundle.tasks)
-            .padding(.horizontal, horizontalPadding)
             .tag(slot)
             .onAppear {
                 WeekViewPerformanceTracer.recordWeekHeaderPageAppear(offset: bundle.offset)
@@ -397,74 +409,17 @@ struct TaskWeekGridView: View {
 
     private func weekHeaderRow(days: [Date], weekTasks: [FamilyTask]) -> some View {
         HStack(spacing: 0) {
-            Color.clear
-                .frame(width: ScheduleTimelineMetrics.timeColumnWidth)
-
-            HStack(spacing: 0) {
-                ForEach(days, id: \.self) { day in
-                    weekDayHeaderCell(for: day, weekTasks: weekTasks)
-                        .frame(maxWidth: .infinity)
+            ForEach(days, id: \.self) { day in
+                ScheduleWeekDayStripCell(
+                    date: day,
+                    isSelected: Calendar.current.isDate(day, inSameDayAs: selectedDate),
+                    taskCount: taskCount(for: day, in: weekTasks),
+                    locale: locale
+                ) {
+                    selectedDate = Calendar.current.startOfDay(for: day)
                 }
             }
         }
-    }
-
-    private func weekDayHeaderCell(for day: Date, weekTasks: [FamilyTask]) -> some View {
-        let selected = Calendar.current.isDate(day, inSameDayAs: selectedDate)
-        let isToday = Calendar.current.isDateInToday(day)
-        let count = taskCount(for: day, in: weekTasks)
-
-        return Button {
-            selectedDate = Calendar.current.startOfDay(for: day)
-        } label: {
-            VStack(spacing: 4) {
-                Text(day.formatted(.dateTime.weekday(.abbreviated).locale(locale)))
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                    .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
-
-                Text(String(Calendar.current.component(.day, from: day)))
-                    .font(.callout)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(selected ? .white : .primary)
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(maxWidth: 36, maxHeight: 36)
-                    .background(
-                        Group {
-                            if selected {
-                                Circle()
-                                    .fill(AppTheme.ColorToken.accent)
-                            } else if isToday {
-                                Circle()
-                                    .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
-                            }
-                        }
-                    )
-
-                HStack(spacing: 3) {
-                    if count >= 1 {
-                        Circle()
-                            .fill(.blue)
-                            .frame(width: 4, height: 4)
-                    }
-                    if count >= 3 {
-                        Circle()
-                            .fill(.orange)
-                            .frame(width: 4, height: 4)
-                    }
-                    if count >= 5 {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 4, height: 4)
-                    }
-                }
-                .frame(height: 6)
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 2)
-        }
-        .buttonStyle(.plain)
     }
 
     private func taskCount(for date: Date, in weekTasks: [FamilyTask]) -> Int {

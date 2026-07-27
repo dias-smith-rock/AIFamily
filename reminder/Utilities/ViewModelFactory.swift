@@ -102,6 +102,14 @@ final class ViewModelFactory: ObservableObject {
     func makeLiveLocationManager() -> LiveLocationManager {
         LiveLocationManager(locationStateService: services.locationStateService)
     }
+
+    func makeScheduleSearchViewModel() -> ScheduleSearchViewModel {
+        ScheduleSearchViewModel(
+            taskService: services.taskService,
+            ledgerService: services.ledgerService,
+            membershipService: services.membershipService
+        )
+    }
 }
 
 @MainActor
@@ -162,6 +170,10 @@ enum AppViewModels {
 
     static func makeLiveLocationManager() -> LiveLocationManager {
         factory.makeLiveLocationManager()
+    }
+
+    static func makeScheduleSearchViewModel() -> ScheduleSearchViewModel {
+        factory.makeScheduleSearchViewModel()
     }
 }
 

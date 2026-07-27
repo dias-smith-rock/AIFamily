@@ -26,6 +26,9 @@ struct TaskListView: View {
     @State private var isShowingCalendarSheet = false
     /// 用 `sheet(item:)` 携带预填标题，避免 `isPresented` 首次弹出时读到旧 state。
     @State private var createTaskSheetRequest: CreateTaskSheetRequest?
+    @State private var pendingCreateAfterWritePick: CreateTaskSheetRequest?
+    @State private var isShowingWriteTargetPicker = false
+    @State private var isShowingSearch = false
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
@@ -86,6 +89,41 @@ struct TaskListView: View {
                 )
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $isShowingWriteTargetPicker) {
+                WriteTargetHouseholdPicker { _ in
+                    let pending = pendingCreateAfterWritePick
+                    pendingCreateAfterWritePick = nil
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(350))
+                        createTaskSheetRequest = pending
+                    }
+                }
+                .environmentObject(appRouter)
+                .presentationDetents([.medium])
+            }
+            .onChange(of: isShowingWriteTargetPicker) { _, isPresented in
+                if isPresented == false, createTaskSheetRequest == nil {
+                    // 用户取消选择组织时丢弃 pending，避免误开创建页。
+                    pendingCreateAfterWritePick = nil
+                }
+            }
+            .sheet(isPresented: $isShowingSearch) {
+                ScheduleSearchView(
+                    onOpenTask: { task in
+                        taskForDetailSheet = task
+                    },
+                    onOpenLedger: { _ in
+                        // 账本详情在 Wallet Tab；搜索结果先切到主组织上下文即可。
+                    },
+                    onOpenMember: { _, householdId in
+                        if let option = appRouter.selectableHouseholds.first(where: { $0.id == householdId }) {
+                            appRouter.chooseHousehold(option)
+                        }
+                    }
+                )
+                .environmentObject(appRouter)
+                .environment(\.locale, appSettings.appLocale)
             }
             .sheet(item: $viewModel.prefilledTaskForAI) { draft in
                 EditTaskView(
@@ -168,6 +206,7 @@ struct TaskListView: View {
             }
             .task(id: taskLoadTrigger) {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+                viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
                 guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasks()
                 openPendingScheduledTaskIfNeeded()
@@ -183,10 +222,16 @@ struct TaskListView: View {
                 viewModel.setHouseholdContext(newValue)
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
-                    await viewModel.loadTasks()
-                    openPendingScheduledTaskIfNeeded()
                     await refreshCurrentMembershipRole()
                     await viewModel.setupRealtimeListener()
+                }
+            }
+            .onChange(of: appRouter.viewHouseholdIdsToken) { _, _ in
+                viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+                Task {
+                    guard appRouter.hasCompletedAuthBootstrap else { return }
+                    await viewModel.loadTasks()
+                    openPendingScheduledTaskIfNeeded()
                 }
             }
             .onChange(of: appRouter.selectedMembershipId) { _, _ in
@@ -249,12 +294,15 @@ struct TaskListView: View {
             Group {
                 switch currentViewMode {
                 case .list:
-                    TaskModeListView(
-                        viewModel: viewModel,
-                        listScrollToken: listScrollToken,
-                        onTaskTap: { taskForDetailSheet = $0 },
-                        onRefresh: refreshTasks
-                    )
+                    VStack(spacing: 0) {
+                        scheduleSecondRowMonthBar
+                        TaskModeListView(
+                            viewModel: viewModel,
+                            listScrollToken: listScrollToken,
+                            onTaskTap: { taskForDetailSheet = $0 },
+                            onRefresh: refreshTasks
+                        )
+                    }
                 case .day:
                     TaskModeDayView(
                         selectedDate: $selectedDate,
@@ -263,14 +311,20 @@ struct TaskListView: View {
                         onQuickCreate: { prefill, dueOverride in
                             openCreateTask(prefill: prefill, defaultDueDateOverride: dueOverride)
                         },
-                        onRefresh: refreshTasks
+                        onRefresh: refreshTasks,
+                        onOpenMonthPicker: {
+                            isShowingCalendarSheet = true
+                        }
                     )
                 case .week:
                     TaskWeekGridView(
                         selectedDate: $selectedDate,
                         viewModel: viewModel,
                         onTaskSelect: { taskForDetailSheet = $0 },
-                        onRefresh: refreshTasks
+                        onRefresh: refreshTasks,
+                        onOpenMonthPicker: {
+                            isShowingCalendarSheet = true
+                        }
                     )
                 case .year:
                     TaskYearView(
@@ -283,7 +337,15 @@ struct TaskListView: View {
                             drillDownFromYear(to: date)
                         }
                     )
-                case .threeDay, .month:
+                case .month:
+                    VStack(spacing: 0) {
+                        scheduleSecondRowMonthBar
+                        Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                case .threeDay:
                     Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -293,6 +355,19 @@ struct TaskListView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             quickTaskInputBar
         }
+    }
+
+    /// 周 / 列表 / 月视图第二行右侧的月份入口（日视图在周条内；年视图无此入口）。
+    private var scheduleSecondRowMonthBar: some View {
+        HStack {
+            Spacer(minLength: 0)
+            ScheduleMonthYearPickerButton(title: navigationMonthYearTitle) {
+                isShowingCalendarSheet = true
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+        .padding(.bottom, 2)
     }
 
     private var quickTaskInputBar: some View {
@@ -352,8 +427,7 @@ struct TaskListView: View {
 
     /// household 或 auth bootstrap 完成后触发任务加载，避免 JWT 刷新前过早请求。
     private var taskLoadTrigger: String {
-        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
-        return "\(household)-\(appRouter.hasCompletedAuthBootstrap)"
+        "\(appRouter.viewHouseholdIdsToken)-\(appRouter.hasCompletedAuthBootstrap)"
     }
 
     private func submitQuickTaskInput() {
@@ -388,22 +462,20 @@ struct TaskListView: View {
 
     @ToolbarContentBuilder
     private var scheduleToolbar: some ToolbarContent {
-        ToolbarItemGroup(placement: .topBarLeading) {
+        ToolbarItem(placement: .topBarLeading) {
             GroupSwitcherToolbarButton()
-            Button {
-                isShowingCalendarSheet = true
-            } label: {
-                HStack(spacing: 4) {
-                    Text(navigationMonthYearTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(1)
-                    Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.semibold))
-                }
-            }
         }
         ToolbarItem(placement: .topBarTrailing) {
-            calendarViewModeMenu
+            HStack(spacing: 12) {
+                Button {
+                    isShowingSearch = true
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .accessibilityLabel(L10n.Schedule.search)
+                calendarViewModeMenu
+            }
         }
     }
 
@@ -472,10 +544,16 @@ struct TaskListView: View {
     }
 
     private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {
-        createTaskSheetRequest = CreateTaskSheetRequest(
+        let request = CreateTaskSheetRequest(
             prefillTitle: prefill,
             defaultDueDate: defaultDueDateOverride
         )
+        if appRouter.selectableHouseholds.count > 1 {
+            pendingCreateAfterWritePick = request
+            isShowingWriteTargetPicker = true
+        } else {
+            createTaskSheetRequest = request
+        }
     }
 
     private func dayID(for date: Date) -> Date {

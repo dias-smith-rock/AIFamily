@@ -19,6 +19,7 @@ final class LocationMainViewModel: ObservableObject {
     private let membershipService: HouseholdMembershipDataService
 
     private var householdId: UUID?
+    private var viewHouseholdIds: [UUID] = []
     private var currentMembershipId: UUID?
     private var currentProfileId: UUID?
     /// 实时模式期间暂停隐身展示与上报拦截（不改变用户已保存的隐身偏好）。
@@ -85,6 +86,16 @@ final class LocationMainViewModel: ObservableObject {
         objectWillChange.send()
     }
 
+    func setViewHouseholdIds(_ ids: [UUID]) {
+        viewHouseholdIds = ids
+    }
+
+    private var effectiveViewHouseholdIds: [UUID] {
+        if viewHouseholdIds.isEmpty == false { return viewHouseholdIds }
+        if let householdId { return [householdId] }
+        return []
+    }
+
     func applyCachedDeviceLocationForMap() {
         guard currentMembershipId != nil else { return }
         guard let cached = LastKnownDeviceLocation.cachedCoordinate() else { return }
@@ -139,7 +150,8 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     func refresh() async {
-        guard let householdId else {
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else {
             members = []
             selectedMemberIDs = []
             currentUserLiveLocation = nil
@@ -147,26 +159,35 @@ final class LocationMainViewModel: ObservableObject {
         }
 
         if await NetworkMonitor.shared.isConnected == false {
-            if let cachedMembers = await HouseholdLocalCache.loadMembers(for: householdId) {
-                let filtered = cachedMembers.filteredToActiveMembers(in: householdId)
-                let locationRecords = await HouseholdLocalCache.loadLocationStates(for: householdId) ?? []
-                members = LocationMemberAssembler.buildMembers(
-                    roster: HouseholdMemberRoster(
-                        profiles: filtered.profiles,
-                        memberships: filtered.members
-                    ),
-                    locationRecords: locationRecords,
-                    householdId: householdId,
-                    currentMembershipId: currentMembershipId
-                )
-                profileIdByMembershipId = Dictionary(
-                    uniqueKeysWithValues: filtered.members.compactMap { membership in
-                        guard let profileId = membership.profileId else { return nil }
-                        return (membership.id, profileId)
+            var offlineMembers: [UserLocationState] = []
+            var profileMap: [UUID: UUID] = [:]
+            var seen = Set<UUID>()
+            for householdId in householdIds {
+                if let cachedMembers = await HouseholdLocalCache.loadMembers(for: householdId) {
+                    let filtered = cachedMembers.filteredToActiveMembers(in: householdId)
+                    let locationRecords = await HouseholdLocalCache.loadLocationStates(for: householdId) ?? []
+                    let built = LocationMemberAssembler.buildMembers(
+                        roster: HouseholdMemberRoster(
+                            profiles: filtered.profiles,
+                            memberships: filtered.members
+                        ),
+                        locationRecords: locationRecords,
+                        householdId: householdId,
+                        currentMembershipId: currentMembershipId
+                    )
+                    for member in built where seen.insert(member.id).inserted {
+                        offlineMembers.append(member)
                     }
-                )
-                reconcileSelectionAfterReload()
+                    for membership in filtered.members {
+                        if let profileId = membership.profileId {
+                            profileMap[membership.id] = profileId
+                        }
+                    }
+                }
             }
+            members = offlineMembers
+            profileIdByMembershipId = profileMap
+            reconcileSelectionAfterReload()
             return
         }
 
@@ -175,31 +196,39 @@ final class LocationMainViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: false)
-            var locationRecords: [LocationStateRecord] = []
-            do {
-                locationRecords = try await locationStateService.fetchLocationStates(in: householdId)
-            } catch {
-                #if DEBUG
-                print("[LocationMainViewModel] location_states fetch failed: \(error.localizedDescription)")
-                #endif
-            }
-
-            profileIdByMembershipId = Dictionary(
-                uniqueKeysWithValues: roster.memberships.compactMap { membership in
-                    guard let profileId = membership.profileId else { return nil }
-                    return (membership.id, profileId)
+            var mergedMembers: [UserLocationState] = []
+            var profileMap: [UUID: UUID] = [:]
+            var seen = Set<UUID>()
+            for householdId in householdIds {
+                let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: false)
+                var locationRecords: [LocationStateRecord] = []
+                do {
+                    locationRecords = try await locationStateService.fetchLocationStates(in: householdId)
+                } catch {
+                    #if DEBUG
+                    print("[LocationMainViewModel] location_states fetch failed: \(error.localizedDescription)")
+                    #endif
                 }
-            )
-            members = LocationMemberAssembler.buildMembers(
-                roster: roster,
-                locationRecords: locationRecords,
-                householdId: householdId,
-                currentMembershipId: currentMembershipId
-            )
-            if !locationRecords.isEmpty {
-                HouseholdLocalCache.saveLocationStates(locationRecords, for: householdId)
+                for membership in roster.memberships {
+                    if let profileId = membership.profileId {
+                        profileMap[membership.id] = profileId
+                    }
+                }
+                let built = LocationMemberAssembler.buildMembers(
+                    roster: roster,
+                    locationRecords: locationRecords,
+                    householdId: householdId,
+                    currentMembershipId: currentMembershipId
+                )
+                for member in built where seen.insert(member.id).inserted {
+                    mergedMembers.append(member)
+                }
+                if !locationRecords.isEmpty {
+                    HouseholdLocalCache.saveLocationStates(locationRecords, for: householdId)
+                }
             }
+            profileIdByMembershipId = profileMap
+            members = mergedMembers
             syncCurrentUserBatteryFromDevice()
             reconcileSelectionAfterReload()
         } catch {

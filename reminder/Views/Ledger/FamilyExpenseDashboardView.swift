@@ -3,6 +3,7 @@ import SwiftUI
 struct FamilyExpenseDashboardView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @EnvironmentObject private var appRouter: AppRouter
     @ObservedObject var viewModel: FamilyLedgerViewModel
     @ObservedObject private var exchangeRates = ExchangeRateStore.shared
 
@@ -12,9 +13,13 @@ struct FamilyExpenseDashboardView: View {
     @State private var expenseExpanded = true
     @State private var incomeExpanded = true
     @State private var entryPrefill: ManualEntryPrefill?
+    @State private var isShowingWriteTargetPicker = false
+    @State private var pendingEntryType: LedgerEntryType = .expense
     @State private var isShowingCategoryManager = false
     @State private var manageCategoriesInitialType: LedgerEntryType = .expense
     @State private var isShowingReports = false
+    @State private var isShowingSearch = false
+    @State private var transactionForDetail: LedgerTransaction?
     @State private var categoryPendingEdit: ExpenseCategory?
     @State private var categoryPendingDelete: ExpenseCategory?
     @State private var isConfirmingCategoryDelete = false
@@ -76,16 +81,47 @@ struct FamilyExpenseDashboardView: View {
             logEntryFAB
         }
         .toolbar {
-            if allowsExpenseManagement {
-                ToolbarItem(placement: .topBarTrailing) {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 12) {
                     Button {
-                        isShowingReports = true
+                        isShowingSearch = true
                     } label: {
-                        Image(systemName: "dollarsign.circle")
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 17, weight: .semibold))
                     }
-                    .accessibilityLabel(L10n.Ledger.reports.localized)
+                    .accessibilityLabel(L10n.Schedule.search)
+
+                    if allowsExpenseManagement {
+                        Button {
+                            isShowingReports = true
+                        } label: {
+                            Image(systemName: "dollarsign.circle")
+                        }
+                        .accessibilityLabel(L10n.Ledger.reports.localized)
+                    }
                 }
             }
+        }
+        .sheet(isPresented: $isShowingSearch) {
+            ScheduleSearchView(
+                onOpenTask: { _ in },
+                onOpenLedger: { transaction in
+                    transactionForDetail = transaction
+                },
+                onOpenMember: { _, householdId in
+                    if let option = appRouter.selectableHouseholds.first(where: { $0.id == householdId }) {
+                        appRouter.chooseHousehold(option)
+                    }
+                }
+            )
+            .environmentObject(appRouter)
+            .environment(\.locale, appSettings.appLocale)
+        }
+        .sheet(item: $transactionForDetail) { transaction in
+            LedgerTransactionDetailSheet(
+                viewModel: viewModel,
+                transactionId: transaction.id
+            )
         }
         .sheet(item: $entryPrefill) { prefill in
             ManualExpenseEntrySheet(
@@ -94,6 +130,17 @@ struct FamilyExpenseDashboardView: View {
                 prefillCategoryId: prefill.categoryId,
                 locksToIncome: allowsExpenseManagement == false
             )
+        }
+        .sheet(isPresented: $isShowingWriteTargetPicker) {
+            WriteTargetHouseholdPicker { _ in
+                let type = pendingEntryType
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(350))
+                    entryPrefill = ManualEntryPrefill(type: type, categoryId: nil)
+                }
+            }
+            .environmentObject(appRouter)
+            .presentationDetents([.medium])
         }
         .sheet(isPresented: $isShowingCategoryManager) {
             ManageCategoriesSheet(
@@ -350,7 +397,12 @@ struct FamilyExpenseDashboardView: View {
     private var logEntryFAB: some View {
         Button {
             let defaultType: LedgerEntryType = allowsExpenseManagement ? .expense : .income
-            entryPrefill = ManualEntryPrefill(type: defaultType, categoryId: nil)
+            if appRouter.selectableHouseholds.count > 1 {
+                pendingEntryType = defaultType
+                isShowingWriteTargetPicker = true
+            } else {
+                entryPrefill = ManualEntryPrefill(type: defaultType, categoryId: nil)
+            }
         } label: {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))

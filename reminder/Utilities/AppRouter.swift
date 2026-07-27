@@ -24,6 +24,8 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectableHouseholds: [HouseholdOption] = []
     @Published private(set) var recentHouseholds: [HouseholdOption] = []
     @Published private(set) var selectedHouseholdId: UUID?
+    /// 多组织查看集合（有序）；搜索与各 Tab 展示用。写入仍用 `selectedHouseholdId`。
+    @Published private(set) var selectedHouseholdIds: [UUID] = []
     @Published private(set) var selectedMembershipId: UUID?
     /// 当前用户在 `location_states` 中的 `entity_id`（`family_profiles.id`）。
     @Published private(set) var selectedProfileId: UUID?
@@ -285,6 +287,18 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
         selectedHouseholdCreatorHasActivePro = snapshot.creatorHasActivePro
+        if let userId = authUserId {
+            var stored = loadViewHouseholdIds(for: userId)
+            if stored.isEmpty { stored = [snapshot.householdId] }
+            else if stored.contains(snapshot.householdId) == false {
+                stored.insert(snapshot.householdId, at: 0)
+            }
+            selectedHouseholdIds = stored
+            HouseholdColorStore.ensureAssigned(ids: stored)
+        } else if selectedHouseholdIds.isEmpty {
+            selectedHouseholdIds = [snapshot.householdId]
+            HouseholdColorStore.ensureAssigned(snapshot.householdId)
+        }
         appState = .activeMember
         LoginFlowPerformanceTracing.logAlways(
             "refreshState.offlineSnapshotFastPath",
@@ -447,12 +461,7 @@ final class AppRouter: ObservableObject {
                 }
                 selectableHouseholds = []
                 recentHouseholds = []
-                selectedHouseholdId = nil
-                selectedMembershipId = nil
-        selectedProfileId = nil
-                selectedHouseholdName = nil
-                selectedHouseholdDescription = ""
-                selectedHouseholdCreatorHasActivePro = false
+                clearSelectedHouseholdContext()
                 return
             }
 
@@ -532,12 +541,7 @@ final class AppRouter: ObservableObject {
                 return
             }
 
-            selectedHouseholdId = nil
-            selectedMembershipId = nil
-        selectedProfileId = nil
-            selectedHouseholdName = nil
-            selectedHouseholdDescription = ""
-            selectedHouseholdCreatorHasActivePro = false
+            clearSelectedHouseholdContext()
             appState = .householdSelection
             LoginFlowPerformanceTracing.mark(
                 "refreshState.route.householdSelection",
@@ -559,12 +563,7 @@ final class AppRouter: ObservableObject {
                 LoginFlowPerformanceTracing.mark("refreshState.route.unauthenticated", note: "auth_error", appRouter: self)
                 selectableHouseholds = []
                 recentHouseholds = []
-                selectedHouseholdId = nil
-                selectedMembershipId = nil
-        selectedProfileId = nil
-                selectedHouseholdName = nil
-                selectedHouseholdDescription = ""
-                selectedHouseholdCreatorHasActivePro = false
+                clearSelectedHouseholdContext()
                 resetAuthenticatedPremiumState()
                 debugLog("route.unauthenticated reason=auth_error")
             } else if appState == .unauthenticated {
@@ -585,12 +584,7 @@ final class AppRouter: ObservableObject {
 
     func goToOrgRouting() {
         appState = .orgRouting
-        selectedHouseholdId = nil
-        selectedMembershipId = nil
-        selectedProfileId = nil
-        selectedHouseholdName = nil
-        selectedHouseholdDescription = ""
-        selectedHouseholdCreatorHasActivePro = false
+        clearSelectedHouseholdContext()
         selectableHouseholds = []
         recentHouseholds = []
         if isResolvingHouseholdRouting {
@@ -610,12 +604,7 @@ final class AppRouter: ObservableObject {
     /// 游客软退出：回到登录页，不清 Keychain 会话。
     func prepareForSoftExitToLogin() {
         appState = .unauthenticated
-        selectedHouseholdId = nil
-        selectedMembershipId = nil
-        selectedProfileId = nil
-        selectedHouseholdName = nil
-        selectedHouseholdDescription = ""
-        selectedHouseholdCreatorHasActivePro = false
+        clearSelectedHouseholdContext()
         selectableHouseholds = []
         recentHouseholds = []
     }
@@ -630,11 +619,7 @@ final class AppRouter: ObservableObject {
 
     func goToPendingApproval() {
         appState = .pendingApproval
-        selectedHouseholdId = nil
-        selectedMembershipId = nil
-        selectedProfileId = nil
-        selectedHouseholdName = nil
-        selectedHouseholdDescription = ""
+        clearSelectedHouseholdContext()
         selectableHouseholds = []
         recentHouseholds = []
     }
@@ -642,12 +627,7 @@ final class AppRouter: ObservableObject {
     /// 当通知目标组织已不存在时，回到组织选择页（保留最新可选组织列表）。
     func goToHouseholdSelection() {
         appState = .householdSelection
-        selectedHouseholdId = nil
-        selectedMembershipId = nil
-        selectedProfileId = nil
-        selectedHouseholdName = nil
-        selectedHouseholdDescription = ""
-        selectedHouseholdCreatorHasActivePro = false
+        clearSelectedHouseholdContext()
     }
 
     func goToActiveMember() {
@@ -656,11 +636,7 @@ final class AppRouter: ObservableObject {
 
     /// 解散群组后清空当前组织上下文并回到入口枢纽页。
     func exitToOrgHubAfterDisband() {
-        selectedHouseholdId = nil
-        selectedMembershipId = nil
-        selectedProfileId = nil
-        selectedHouseholdName = nil
-        selectedHouseholdDescription = ""
+        clearSelectedHouseholdContext()
         selectableHouseholds = []
         appState = .orgRouting
         #if DEBUG
@@ -878,6 +854,52 @@ final class AppRouter: ObservableObject {
         #else
         appState = .activeMember
         #endif
+    }
+
+    /// Sheet 多选确认：更新查看集合；若当前主组织不在集合内则切到集合首项。
+    func setViewHouseholdIds(_ ids: [UUID]) {
+        let allowed = Set(selectableHouseholds.map(\.id))
+        var ordered: [UUID] = []
+        var seen = Set<UUID>()
+        for id in ids where allowed.contains(id) && seen.insert(id).inserted {
+            ordered.append(id)
+        }
+        guard ordered.isEmpty == false else { return }
+        selectedHouseholdIds = ordered
+        HouseholdColorStore.ensureAssigned(ids: ordered)
+        if let userId = authUserId {
+            saveViewHouseholdIds(ordered, for: userId)
+        }
+        if let current = selectedHouseholdId, ordered.contains(current) {
+            return
+        }
+        if let first = selectableHouseholds.first(where: { $0.id == ordered[0] }) {
+            chooseHousehold(first)
+        }
+    }
+
+    /// 创建流选择写入组织：同步设为主组织，并保证出现在查看集合中。
+    func chooseHouseholdForWrite(_ option: HouseholdOption) {
+        var ids = selectedHouseholdIds
+        if ids.contains(option.id) == false {
+            ids.insert(option.id, at: 0)
+        }
+        selectedHouseholdIds = ids
+        HouseholdColorStore.ensureAssigned(option.id)
+        if let userId = authUserId {
+            saveViewHouseholdIds(ids, for: userId)
+            selectHouseholdAndEnter(option: option, userId: userId)
+            Task {
+                await refreshSelectedHouseholdCreatorPro(householdId: option.id)
+            }
+        } else {
+            chooseHousehold(option)
+        }
+    }
+
+    /// 查看集合的稳定 token，供 `.task(id:)` / `onChange` 使用。
+    var viewHouseholdIdsToken: String {
+        selectedHouseholdIds.map(\.uuidString).sorted().joined(separator: ",")
     }
 
     #if canImport(Supabase)
@@ -1150,7 +1172,51 @@ final class AppRouter: ObservableObject {
         saveLastHouseholdId(option.id, for: userId)
         saveRecentHouseholdId(option.id, for: userId)
         saveOfflineHouseholdSnapshot(option: option)
+        restoreOrMergeViewHouseholdIds(primaryId: option.id, userId: userId)
+        HouseholdColorStore.ensureAssigned(option.id)
         appState = .activeMember
+    }
+
+    private func restoreOrMergeViewHouseholdIds(primaryId: UUID, userId: UUID) {
+        let allowed = Set(selectableHouseholds.map(\.id))
+        var stored = loadViewHouseholdIds(for: userId).filter { allowed.contains($0) }
+        if stored.isEmpty {
+            stored = [primaryId]
+        } else if stored.contains(primaryId) == false {
+            stored.insert(primaryId, at: 0)
+        }
+        selectedHouseholdIds = stored
+        saveViewHouseholdIds(stored, for: userId)
+        HouseholdColorStore.ensureAssigned(ids: stored)
+    }
+
+    private func clearSelectedHouseholdContext() {
+        selectedHouseholdId = nil
+        selectedHouseholdIds = []
+        selectedMembershipId = nil
+        selectedProfileId = nil
+        selectedHouseholdName = nil
+        selectedHouseholdDescription = ""
+        selectedHouseholdCreatorHasActivePro = false
+    }
+
+    private func saveViewHouseholdIds(_ ids: [UUID], for userId: UUID) {
+        UserDefaults.standard.set(ids.map(\.uuidString), forKey: viewHouseholdIdsKey(for: userId))
+    }
+
+    private func loadViewHouseholdIds(for userId: UUID) -> [UUID] {
+        let raw = UserDefaults.standard.stringArray(forKey: viewHouseholdIdsKey(for: userId)) ?? []
+        var seen = Set<UUID>()
+        var result: [UUID] = []
+        for string in raw {
+            guard let id = UUID(uuidString: string), seen.insert(id).inserted else { continue }
+            result.append(id)
+        }
+        return result
+    }
+
+    private func viewHouseholdIdsKey(for userId: UUID) -> String {
+        "aifamily.viewHouseholdIds.\(userId.uuidString)"
     }
 
     #if canImport(Supabase)

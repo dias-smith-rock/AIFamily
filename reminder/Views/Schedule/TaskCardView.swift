@@ -129,8 +129,20 @@ struct TaskCardView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
+        .padding(.leading, 6)
         .background(Color(.systemBackground))
         .clipShape(cardShape)
+        .overlay(alignment: .leading) {
+            UnevenRoundedRectangle(
+                topLeadingRadius: 12,
+                bottomLeadingRadius: 12,
+                bottomTrailingRadius: 0,
+                topTrailingRadius: 0,
+                style: .continuous
+            )
+            .fill(HouseholdColorStore.color(for: task.householdId))
+            .frame(width: 4)
+        }
         .overlay {
             cardShape.strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
         }

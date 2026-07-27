@@ -232,9 +232,8 @@ struct LocationMainView: View {
     }
 
     private var locationRefreshToken: String {
-        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
         let membership = appRouter.selectedMembershipId?.uuidString ?? "none"
-        return "\(isTabActive)-\(household)-\(membership)"
+        return "\(isTabActive)-\(appRouter.viewHouseholdIdsToken)-\(membership)"
     }
 
     private var mapDismissOverlay: some View {
@@ -339,7 +338,9 @@ struct LocationMainView: View {
         let displayCount = effectiveMapHistoryDisplayCount
         let visibleLocations = member.mapVisibleLocations(displayCount: displayCount)
         let coordinates = member.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
-        let accent = LocationMemberMapColors.accent(for: member.id)
+        let accent = appRouter.selectedHouseholdIds.count > 1
+            ? HouseholdColorStore.color(for: member.householdId)
+            : LocationMemberMapColors.accent(for: member.id)
         let segmentCount = max(0, coordinates.count - 1)
 
         Group {
@@ -813,6 +814,7 @@ struct LocationMainView: View {
             currentMembershipId: appRouter.selectedMembershipId,
             currentProfileId: appRouter.selectedProfileId
         )
+        viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
 
         var authUserId: UUID?
         #if canImport(Supabase)

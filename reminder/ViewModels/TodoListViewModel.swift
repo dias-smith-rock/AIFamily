@@ -19,9 +19,10 @@ final class TodoListViewModel: ObservableObject {
     private let membershipService: HouseholdMembershipDataService
     private let familyProfileService: FamilyProfileDataService
     private var currentHouseholdId: UUID?
+    private var viewHouseholdIds: [UUID] = []
     private var rosterLoadedForHouseholdId: UUID?
-    /// 当前群组是否已有内存数据；切 Tab 回来时不重复拉网。
-    private var loadedHouseholdId: UUID?
+    /// 当前查看集合是否已有内存数据；切 Tab 回来时不重复拉网。
+    private var loadedViewToken: String?
     private var reloadCancellable: AnyCancellable?
 
     init(
@@ -51,13 +52,30 @@ final class TodoListViewModel: ObservableObject {
             householdMembers = []
             familyProfiles = []
             rosterLoadedForHouseholdId = nil
-            loadedHouseholdId = nil
+            loadedViewToken = nil
         } else if householdChanged {
-            loadedHouseholdId = nil
+            loadedViewToken = nil
             if rosterLoadedForHouseholdId != householdId {
                 rosterLoadedForHouseholdId = nil
             }
         }
+    }
+
+    func setViewHouseholdIds(_ ids: [UUID]) {
+        if viewHouseholdIds != ids {
+            loadedViewToken = nil
+        }
+        viewHouseholdIds = ids
+    }
+
+    private var effectiveViewHouseholdIds: [UUID] {
+        if viewHouseholdIds.isEmpty == false { return viewHouseholdIds }
+        if let currentHouseholdId { return [currentHouseholdId] }
+        return []
+    }
+
+    private var viewToken: String {
+        effectiveViewHouseholdIds.map(\.uuidString).sorted().joined(separator: ",")
     }
 
     private static func tasksCacheKey(for householdId: UUID) -> String {
@@ -66,14 +84,15 @@ final class TodoListViewModel: ObservableObject {
 
     /// 首次进入或切换群组时加载；已有内存缓存则跳过网络请求。
     func loadTasksIfNeeded() async {
-        guard let householdId = currentHouseholdId else {
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else {
             flexibleTasks = []
             completedTasks = []
             errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
 
-        if loadedHouseholdId == householdId {
+        if loadedViewToken == viewToken {
             return
         }
 
@@ -81,29 +100,40 @@ final class TodoListViewModel: ObservableObject {
     }
 
     func loadTasks(silent: Bool = false, force: Bool = false) async {
-        guard let householdId = currentHouseholdId else {
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else {
             flexibleTasks = []
             completedTasks = []
-            loadedHouseholdId = nil
+            loadedViewToken = nil
             if !silent {
                 errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             }
             return
         }
 
-        let cacheKey = Self.tasksCacheKey(for: householdId)
-
+        let token = viewToken
         var restoredFromDisk = false
-        if force == false, silent == false,
-           let cached = await HouseholdLocalCache.loadTasks(for: householdId) {
-            applyFlexibleTasks(from: cached)
-            errorMessage = nil
-            restoredFromDisk = true
-            loadedHouseholdId = householdId
+        if force == false, silent == false {
+            var mergedCache: [FamilyTask] = []
+            var seen = Set<UUID>()
+            for householdId in householdIds {
+                if let cached = await HouseholdLocalCache.loadTasks(for: householdId) {
+                    for task in cached where seen.insert(task.id).inserted {
+                        mergedCache.append(task)
+                    }
+                }
+            }
+            if mergedCache.isEmpty == false {
+                applyFlexibleTasks(from: mergedCache)
+                errorMessage = nil
+                restoredFromDisk = true
+                loadedViewToken = token
+            }
         }
 
-        if rosterLoadedForHouseholdId != householdId {
-            await loadHouseholdRosterFromCache(in: householdId)
+        let primaryId = currentHouseholdId ?? householdIds[0]
+        if rosterLoadedForHouseholdId != primaryId {
+            await loadHouseholdRosterFromCache(in: primaryId)
         }
 
         let showLoading = !silent && !restoredFromDisk && flexibleTasks.isEmpty
@@ -122,13 +152,27 @@ final class TodoListViewModel: ObservableObject {
         }
 
         do {
-            if rosterLoadedForHouseholdId != householdId {
-                await loadHouseholdRosterFromNetwork(in: householdId)
+            if rosterLoadedForHouseholdId != primaryId {
+                await loadHouseholdRosterFromNetwork(in: primaryId)
             }
-            let fresh = try await taskService.fetchTasks(in: householdId)
-            applyFlexibleTasks(from: fresh)
-            LocalCacheManager.shared.save(fresh, forKey: cacheKey)
-            loadedHouseholdId = householdId
+            var merged: [FamilyTask] = []
+            var seen = Set<UUID>()
+            let service = taskService
+            try await withThrowingTaskGroup(of: (UUID, [FamilyTask]).self) { group in
+                for householdId in householdIds {
+                    group.addTask {
+                        (householdId, try await service.fetchTasks(in: householdId))
+                    }
+                }
+                for try await (householdId, batch) in group {
+                    LocalCacheManager.shared.save(batch, forKey: Self.tasksCacheKey(for: householdId))
+                    for task in batch where seen.insert(task.id).inserted {
+                        merged.append(task)
+                    }
+                }
+            }
+            applyFlexibleTasks(from: merged)
+            loadedViewToken = token
             if !silent {
                 errorMessage = nil
             }

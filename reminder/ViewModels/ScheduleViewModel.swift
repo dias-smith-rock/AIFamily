@@ -43,6 +43,8 @@ final class ScheduleViewModel: ObservableObject {
     private let membershipService: HouseholdMembershipDataService
     private let familyProfileService: FamilyProfileDataService
     private var currentHouseholdId: UUID?
+    /// 多组织查看集合；为空时回退 `currentHouseholdId`。
+    private var viewHouseholdIds: [UUID] = []
     /// 避免在仅切换日期时重复拉取成员与档案。
     private var rosterLoadedForHouseholdId: UUID?
 
@@ -98,12 +100,23 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
+    func setViewHouseholdIds(_ ids: [UUID]) {
+        viewHouseholdIds = ids
+    }
+
+    private var effectiveViewHouseholdIds: [UUID] {
+        if viewHouseholdIds.isEmpty == false { return viewHouseholdIds }
+        if let currentHouseholdId { return [currentHouseholdId] }
+        return []
+    }
+
     private static func tasksCacheKey(for householdId: UUID) -> String {
         HouseholdLocalCache.tasksCacheKey(for: householdId)
     }
 
     func loadTasks(silent: Bool = false) async {
-        guard let householdId = currentHouseholdId else {
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else {
             tasks = []
             if !silent {
                 errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
@@ -111,15 +124,21 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
 
-        let cacheKey = Self.tasksCacheKey(for: householdId)
+        tasks = []
+        var restoredFromDisk = false
+        for householdId in householdIds {
+            if await restoreTasksFromDiskIfNeeded(
+                householdId: householdId,
+                allowWhenSilent: silent == false,
+                merge: true
+            ) {
+                restoredFromDisk = true
+            }
+        }
 
-        var restoredFromDisk = await restoreTasksFromDiskIfNeeded(
-            householdId: householdId,
-            allowWhenSilent: silent == false
-        )
-
-        if rosterLoadedForHouseholdId != householdId {
-            await loadHouseholdRosterFromCache(in: householdId)
+        let primaryId = currentHouseholdId ?? householdIds[0]
+        if rosterLoadedForHouseholdId != primaryId {
+            await loadHouseholdRosterFromCache(in: primaryId)
         }
 
         let showLoading = !silent && !restoredFromDisk
@@ -138,19 +157,35 @@ final class ScheduleViewModel: ObservableObject {
                 errorMessage = nil
             }
             #if DEBUG
-            print("[ScheduleViewModel] loadTasks skipped reason=offline household=\(householdId.uuidString.prefix(8)) tasks=\(tasks.count)")
+            print("[ScheduleViewModel] loadTasks skipped reason=offline households=\(householdIds.count) tasks=\(tasks.count)")
             #endif
             return
         }
 
         do {
-            if rosterLoadedForHouseholdId != householdId {
-                await loadHouseholdRosterFromNetwork(in: householdId)
+            if rosterLoadedForHouseholdId != primaryId {
+                await loadHouseholdRosterFromNetwork(in: primaryId)
             }
-            // `tasks` 已由 RLS 裁剪为当前登录用户在该群组下可见的行；列表 UI 仅按日期再过滤，勿按 user id 比对 `involvedMemberIds`（其为 membership id）。
-            let fresh = try await taskService.fetchTasks(in: householdId)
-            tasks = fresh
-            LocalCacheManager.shared.save(fresh, forKey: cacheKey)
+            var merged: [FamilyTask] = []
+            var seen = Set<UUID>()
+            let service = taskService
+            try await withThrowingTaskGroup(of: [FamilyTask].self) { group in
+                for householdId in householdIds {
+                    group.addTask {
+                        try await service.fetchTasks(in: householdId)
+                    }
+                }
+                for try await batch in group {
+                    for task in batch where seen.insert(task.id).inserted {
+                        merged.append(task)
+                    }
+                }
+            }
+            for householdId in householdIds {
+                let subset = merged.filter { $0.householdId == householdId }
+                LocalCacheManager.shared.save(subset, forKey: Self.tasksCacheKey(for: householdId))
+            }
+            tasks = merged
             if yearCalendarSnapshot != nil {
                 rebuildYearViewSnapshot(locale: AppSettingsManager.shared.appLocale)
             }
@@ -158,11 +193,11 @@ final class ScheduleViewModel: ObservableObject {
                 errorMessage = nil
             }
             #if DEBUG
-            print("[ScheduleViewModel] loadTasks ok household=\(householdId.uuidString.prefix(8)) count=\(fresh.count)")
+            print("[ScheduleViewModel] loadTasks ok households=\(householdIds.count) count=\(merged.count)")
             #endif
         } catch {
             #if DEBUG
-            print("[ScheduleViewModel] loadTasks failed household=\(householdId.uuidString.prefix(8)) error=\(error.localizedDescription)")
+            print("[ScheduleViewModel] loadTasks failed error=\(error.localizedDescription)")
             #endif
             if !silent {
                 if restoredFromDisk == false {
@@ -175,13 +210,23 @@ final class ScheduleViewModel: ObservableObject {
     /// 非 silent 加载或列表为空时（含 silent 离线刷新）尝试恢复磁盘任务快照。
     private func restoreTasksFromDiskIfNeeded(
         householdId: UUID,
-        allowWhenSilent: Bool
+        allowWhenSilent: Bool,
+        merge: Bool = false
     ) async -> Bool {
-        guard allowWhenSilent || tasks.isEmpty else { return false }
+        guard allowWhenSilent || tasks.isEmpty || merge else { return false }
         guard let cached = await HouseholdLocalCache.loadTasks(for: householdId) else {
             return false
         }
-        tasks = cached
+        if merge {
+            var seen = Set(tasks.map(\.id))
+            var next = tasks
+            for task in cached where seen.insert(task.id).inserted {
+                next.append(task)
+            }
+            tasks = next
+        } else {
+            tasks = cached
+        }
         errorMessage = nil
         return true
     }

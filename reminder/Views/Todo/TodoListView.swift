@@ -17,6 +17,8 @@ struct TodoListView: View {
     @State private var showOverdueSheet = false
     @State private var showCompletedSheet = false
     @State private var isShowingCreateFlexibleSheet = false
+    @State private var isShowingWriteTargetPicker = false
+    @State private var isShowingSearch = false
     @State private var createTaskFormInstanceID = UUID()
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var completionCheckedTaskIDs: Set<UUID> = []
@@ -65,7 +67,10 @@ struct TodoListView: View {
     }
 
     private var todoStackContent: some View {
-        todoMainContent
+        ZStack(alignment: .bottomTrailing) {
+            todoMainContent
+            createTodoFAB
+        }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -74,6 +79,32 @@ struct TodoListView: View {
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
             .sheet(item: $taskForDetailSheet) { task in taskDetailSheet(task: task) }
             .sheet(isPresented: $isShowingCreateFlexibleSheet) { createFlexibleSheet }
+            .sheet(isPresented: $isShowingWriteTargetPicker) {
+                WriteTargetHouseholdPicker { _ in
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(350))
+                        createTaskFormInstanceID = UUID()
+                        isShowingCreateFlexibleSheet = true
+                    }
+                }
+                .environmentObject(appRouter)
+                .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $isShowingSearch) {
+                ScheduleSearchView(
+                    onOpenTask: { task in
+                        taskForDetailSheet = task
+                    },
+                    onOpenLedger: { _ in },
+                    onOpenMember: { _, householdId in
+                        if let option = appRouter.selectableHouseholds.first(where: { $0.id == householdId }) {
+                            appRouter.chooseHousehold(option)
+                        }
+                    }
+                )
+                .environmentObject(appRouter)
+                .environment(\.locale, appSettings.appLocale)
+            }
             .task(id: todoLoadTrigger) {
                 bindHouseholdContext()
                 guard appRouter.hasCompletedAuthBootstrap else { return }
@@ -101,10 +132,31 @@ struct TodoListView: View {
             GroupSwitcherToolbarButton()
         }
         ToolbarItem(placement: .topBarTrailing) {
-            AccentPlusToolbarButton(accessibilityLabel: L10n.Common.newToDo) {
-                presentCreateFlexible()
+            Button {
+                isShowingSearch = true
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 17, weight: .semibold))
             }
+            .accessibilityLabel(L10n.Schedule.search)
         }
+    }
+
+    private var createTodoFAB: some View {
+        Button {
+            presentCreateFlexible()
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(AppTheme.ColorToken.accent, in: Circle())
+                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 20)
+        .padding(.bottom, showsTodoSummaryFooter ? 148 : 72)
+        .accessibilityLabel(L10n.Common.newToDo)
     }
 
     private var completedTasksSheet: some View {
@@ -429,19 +481,24 @@ struct TodoListView: View {
     }
 
     private func presentCreateFlexible() {
-        createTaskFormInstanceID = UUID()
-        isShowingCreateFlexibleSheet = true
+        if appRouter.selectableHouseholds.count > 1 {
+            isShowingWriteTargetPicker = true
+        } else {
+            createTaskFormInstanceID = UUID()
+            isShowingCreateFlexibleSheet = true
+        }
     }
 
     /// household 或 auth bootstrap 完成后触发待办加载，避免 JWT 刷新前过早请求。
     private var todoLoadTrigger: String {
-        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
-        return "\(household)-\(appRouter.hasCompletedAuthBootstrap)"
+        "\(appRouter.viewHouseholdIdsToken)-\(appRouter.hasCompletedAuthBootstrap)"
     }
 
     private func bindHouseholdContext() {
         viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+        viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
         scheduleViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+        scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
     }
 
     #if canImport(Supabase)

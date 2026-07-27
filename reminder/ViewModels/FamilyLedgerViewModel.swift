@@ -26,7 +26,9 @@ final class FamilyLedgerViewModel: ObservableObject {
     private let familyProfileService: FamilyProfileDataService
 
     private var currentHouseholdId: UUID?
+    private var viewHouseholdIds: [UUID] = []
     private var loadedHouseholdId: UUID?
+    private var loadedViewToken: String?
     private var reloadCancellable: AnyCancellable?
 
     init(
@@ -77,10 +79,30 @@ final class FamilyLedgerViewModel: ObservableObject {
             householdMembers = []
             familyProfiles = []
             loadedHouseholdId = nil
+            loadedViewToken = nil
             viewerProfileId = nil
         } else if changed {
             loadedHouseholdId = nil
+            loadedViewToken = nil
         }
+    }
+
+    func setViewHouseholdIds(_ ids: [UUID]) {
+        if viewHouseholdIds != ids {
+            loadedViewToken = nil
+            loadedHouseholdId = nil
+        }
+        viewHouseholdIds = ids
+    }
+
+    private var effectiveViewHouseholdIds: [UUID] {
+        if viewHouseholdIds.isEmpty == false { return viewHouseholdIds }
+        if let currentHouseholdId { return [currentHouseholdId] }
+        return []
+    }
+
+    private var viewToken: String {
+        effectiveViewHouseholdIds.map(\.uuidString).sorted().joined(separator: ",")
     }
 
     /// 根据当前 membership / profile 更新可见度查看者。
@@ -110,7 +132,9 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     func loadRoster(loadToken: Int? = nil, source: String = "unspecified") async {
-        guard let householdId = currentHouseholdId else { return }
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else { return }
+        let householdId = currentHouseholdId ?? householdIds[0]
         let token = loadToken ?? LedgerWalletLoadLogger.nextToken()
         LedgerWalletLoadLogger.step(
             .rosterStart,
@@ -119,12 +143,24 @@ final class FamilyLedgerViewModel: ObservableObject {
             householdId: householdId
         )
         do {
-            let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
-                .filteredToActiveMembers(in: householdId)
-            householdMembers = roster.memberships
+            var members: [HouseholdMembership] = []
+            var profiles: [FamilyProfile] = []
+            var seenMember = Set<UUID>()
+            var seenProfile = Set<UUID>()
+            for id in householdIds {
+                let roster = try await membershipService.fetchMemberRoster(in: id, activeOnly: true)
+                    .filteredToActiveMembers(in: id)
+                for membership in roster.memberships where seenMember.insert(membership.id).inserted {
+                    members.append(membership)
+                }
+                for profile in roster.profiles where seenProfile.insert(profile.id).inserted {
+                    profiles.append(profile)
+                }
+            }
+            householdMembers = members
             familyProfiles = Self.profilesEnsuringMembershipCoverage(
-                profiles: roster.profiles,
-                memberships: roster.memberships
+                profiles: profiles,
+                memberships: members
             )
             LedgerWalletLoadLogger.step(
                 .rosterEnd,
@@ -179,7 +215,9 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     func loadLedgerData(force: Bool, loadToken: Int? = nil, source: String = "unspecified") async {
-        guard let householdId = currentHouseholdId else { return }
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else { return }
+        let householdId = currentHouseholdId ?? householdIds[0]
         let token = loadToken ?? LedgerWalletLoadLogger.nextToken()
         let beforeCounts = Self.activeCategoryCounts(categories)
         LedgerWalletLoadLogger.step(
@@ -192,7 +230,7 @@ final class FamilyLedgerViewModel: ObservableObject {
 
         // 分类为空视为未就绪：禁止缓存命中，避免「补种失败一次 → 永远空白」
         if force == false,
-           loadedHouseholdId == householdId,
+           loadedViewToken == viewToken,
            categories.contains(where: { $0.isDeleted == false }) {
             LedgerWalletLoadLogger.step(
                 .ledgerCacheHit,
@@ -416,28 +454,41 @@ final class FamilyLedgerViewModel: ObservableObject {
     }
 
     private func reloadLedgerPayload(householdId: UUID) async throws {
-        async let categoriesTask = ledgerService.fetchCategories(
-            in: householdId,
-            type: nil,
-            includeDeleted: false
-        )
-        async let tagsTask = ledgerService.fetchTags(
-            in: householdId,
-            categoryId: nil,
-            includeDeleted: false
-        )
-        async let txTask = ledgerService.fetchTransactions(in: householdId)
+        let householdIds = effectiveViewHouseholdIds.isEmpty ? [householdId] : effectiveViewHouseholdIds
+        var allCategories: [ExpenseCategory] = []
+        var allTags: [CategoryTag] = []
+        var allRows: [LedgerTransaction] = []
+        var seenCategory = Set<UUID>()
+        var seenTag = Set<UUID>()
+        var seenTx = Set<UUID>()
 
-        categories = try await categoriesTask
-        tags = try await tagsTask
-        var rows = try await txTask
+        for id in householdIds {
+            try? await ledgerService.ensurePresetCategories(in: id)
+            let cats = try await ledgerService.fetchCategories(in: id, type: nil, includeDeleted: false)
+            let tagRows = try await ledgerService.fetchTags(in: id, categoryId: nil, includeDeleted: false)
+            let txs = try await ledgerService.fetchTransactions(in: id)
+            for category in cats where seenCategory.insert(category.id).inserted {
+                allCategories.append(category)
+            }
+            for tag in tagRows where seenTag.insert(tag.id).inserted {
+                allTags.append(tag)
+            }
+            for tx in txs where seenTx.insert(tx.id).inserted {
+                allRows.append(tx)
+            }
+        }
 
+        categories = allCategories
+        tags = allTags
+        var rows = allRows
         let mappings = try await ledgerService.fetchTagMappings(for: rows.map(\.id))
         let tagsByTx = Dictionary(grouping: mappings, by: \.transactionId)
         for index in rows.indices {
             rows[index].tagSnapshots = (tagsByTx[rows[index].id] ?? []).map(\.tagNameSnapshot)
         }
-        transactions = rows
+        transactions = rows.sorted { $0.transactionTime > $1.transactionTime }
+        loadedViewToken = viewToken
+        loadedHouseholdId = currentHouseholdId ?? householdId
     }
 
     func categories(for type: LedgerEntryType) -> [ExpenseCategory] {

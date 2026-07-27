@@ -33,25 +33,27 @@ struct TaskModeDayView: View {
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
     let onRefresh: (() async -> Void)?
+    let onOpenMonthPicker: (() -> Void)?
 
     init(
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
         onQuickCreate: @escaping (String, Date?) -> Void,
-        onRefresh: (() async -> Void)? = nil
+        onRefresh: (() async -> Void)? = nil,
+        onOpenMonthPicker: (() -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onQuickCreate = onQuickCreate
         self.onRefresh = onRefresh
+        self.onOpenMonthPicker = onOpenMonthPicker
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             weekSection
-                .padding(.horizontal, 16)
 
             if viewModel.tasks.isEmpty, viewModel.isLoading {
                 ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
@@ -114,17 +116,27 @@ struct TaskModeDayView: View {
     }
 
     private var weekSection: some View {
-        TabView(selection: $weekOffset) {
-            ForEach(Self.weekPageRange, id: \.self) { offset in
-                weekStrip(for: offset)
-                    .tag(offset)
+        ScheduleWeekDayStripChrome(monthYearTitle: monthYearTitle, onOpenMonthPicker: onOpenMonthPicker) {
+            TabView(selection: $weekOffset) {
+                ForEach(Self.weekPageRange, id: \.self) { offset in
+                    weekStrip(for: offset)
+                        .tag(offset)
+                }
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(height: 84, alignment: .top)
         .onAppear {
             weekOffset = weekOffsetForDate(selectedDate)
         }
+    }
+
+    private var monthYearTitle: String {
+        selectedDate.formatted(
+            .dateTime
+                .month(.wide)
+                .year()
+                .locale(locale)
+        )
     }
 
     /// 根据周偏移生成当周 7 天（从系统 locale 的「每周起始日」算起）。
@@ -155,59 +167,15 @@ struct TaskModeDayView: View {
 
     private func weekDayCell(for loopDate: Date) -> some View {
         let loopDay = dayID(for: loopDate)
-        let selected = loopDay == selectedDay
-        let isToday = loopDay == dayID(for: Date())
-        let count = taskCount(for: loopDate)
-        return Button {
+        return ScheduleWeekDayStripCell(
+            date: loopDate,
+            isSelected: loopDay == selectedDay,
+            taskCount: taskCount(for: loopDate),
+            locale: locale
+        ) {
             let forward = loopDay > selectedDay
             applySelectedDate(loopDay, insertionEdge: forward ? .trailing : .leading)
-        } label: {
-            VStack(spacing: 4) {
-                Text(loopDate.formatted(.dateTime.weekday(.abbreviated).locale(locale)))
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                    .foregroundStyle(selected ? AppTheme.ColorToken.accent : .secondary)
-                Text(String(Calendar.current.component(.day, from: loopDate)))
-                    .font(.callout)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(selected ? .white : .primary)
-                    .frame(maxWidth: .infinity)
-                    .aspectRatio(1, contentMode: .fit)
-                    .frame(maxWidth: 36, maxHeight: 36)
-                    .background(
-                        Group {
-                            if selected {
-                                Circle()
-                                    .fill(AppTheme.ColorToken.accent)
-                            } else if isToday {
-                                Circle()
-                                    .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
-                            }
-                        }
-                    )
-                HStack(spacing: 3) {
-                    if count >= 1 {
-                        Circle()
-                            .fill(.blue)
-                            .frame(width: 4, height: 4)
-                    }
-                    if count >= 3 {
-                        Circle()
-                            .fill(.orange)
-                            .frame(width: 4, height: 4)
-                    }
-                    if count >= 5 {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 4, height: 4)
-                    }
-                }
-                .frame(height: 6)
-            }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 2)
         }
-        .buttonStyle(.plain)
     }
 
     private static let weekPageRange = -500...500
