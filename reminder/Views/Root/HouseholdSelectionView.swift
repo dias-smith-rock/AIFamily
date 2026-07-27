@@ -438,9 +438,6 @@ struct HouseholdSelectionView: View {
         guard let createdId else { return }
         showCreateSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdId)
-        if appRouter.isAnonymousUser {
-            AnonymousBindPromptStore.scheduleAfterGroupAction()
-        }
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
@@ -465,9 +462,6 @@ struct HouseholdSelectionView: View {
         let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
         guard success else { return }
         showJoinSheet = false
-        if appRouter.isAnonymousUser {
-            AnonymousBindPromptStore.scheduleAfterGroupAction()
-        }
         await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
         if let groupId = appRouter.selectedHouseholdId {

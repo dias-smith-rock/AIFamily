@@ -5953,6 +5953,20 @@
     "orphan": true
   },
   {
+    "legacy_key": "Save your progress with a real account?",
+    "new_key": "auth_anonymous_bind_prompt_title",
+    "table": "Auth",
+    "swift_property": "anonymousBindPromptTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same.",
+    "new_key": "auth_anonymous_bind_prompt_message",
+    "table": "Auth",
+    "swift_property": "anonymousBindPromptMessage",
+    "orphan": false
+  },
+  {
     "legacy_key": "Account linking is not enabled on the server.",
     "new_key": "auth_manual_linking_disabled",
     "table": "Auth",

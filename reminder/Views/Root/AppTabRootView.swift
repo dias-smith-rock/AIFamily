@@ -78,13 +78,20 @@ struct AppTabRootView: View {
             }
             presentAnonymousBindPromptIfNeeded()
         }
-        .alert(L10n.Auth.anonymousBindAfterGroupTitle.localized, isPresented: $showAnonymousBindPrompt) {
+        .onReceive(NotificationCenter.default.publisher(for: .anonymousBindPromptDidSchedule)) { _ in
+            Task { @MainActor in
+                // 等创建 Sheet 先 dismiss，再弹出绑定引导。
+                try? await Task.sleep(for: .milliseconds(450))
+                presentAnonymousBindPromptIfNeeded()
+            }
+        }
+        .alert(L10n.Auth.anonymousBindPromptTitle.localized, isPresented: $showAnonymousBindPrompt) {
             Button(L10n.Auth.guestBindAccount) {
                 showAnonymousBindLinkSheet = true
             }
             Button(L10n.Common.later, role: .cancel) {}
         } message: {
-            Text(L10n.Auth.anonymousBindAfterGroupMessage.localized)
+            Text(L10n.Auth.anonymousBindPromptMessage.localized)
         }
         .sheet(isPresented: $showAnonymousBindLinkSheet) {
             NavigationStack {

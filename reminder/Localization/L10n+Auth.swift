@@ -52,6 +52,8 @@ extension L10n {
     static let returnToLogin = Entry(key: "auth_return_to_login", table: .auth)
     static let anonymousBindAfterGroupTitle = Entry(key: "auth_anonymous_bind_after_group_title", table: .auth)
     static let anonymousBindAfterGroupMessage = Entry(key: "auth_anonymous_bind_after_group_message", table: .auth)
+    static let anonymousBindPromptTitle = Entry(key: "auth_anonymous_bind_prompt_title", table: .auth)
+    static let anonymousBindPromptMessage = Entry(key: "auth_anonymous_bind_prompt_message", table: .auth)
     static let tryWithoutSigningIn = Entry(key: "auth_try_without_signing_in", table: .auth)
     static let manualLinkingDisabled = Entry(key: "auth_manual_linking_disabled", table: .auth)
     static let identityAlreadyLinkedTitle = Entry(key: "auth_identity_already_linked_title", table: .auth)

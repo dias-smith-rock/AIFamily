@@ -2194,6 +2194,10 @@ struct CreateTaskView: View {
             AnalyticsManager.log(event: .taskCreated(hasAttachment: hasAttachment))
             ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstTask)
 
+            if appRouter.isAnonymousUser {
+                AnonymousBindPromptStore.schedule()
+            }
+
             clearAttachmentSelection()
             onSaveSuccess?(isFlexibleMode ? flexibleDeadlineDate : dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)

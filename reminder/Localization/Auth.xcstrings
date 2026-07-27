@@ -2352,6 +2352,34 @@
         "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } }
       }
     },
+    "auth_anonymous_bind_prompt_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定账号，保存你的进度？" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定帳號，保存你的進度？" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } }
+      }
+    },
+    "auth_anonymous_bind_prompt_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定 Apple 或 Google，换机后仍可保留任务、待办、记账与成员，用户 ID 不变。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定 Apple 或 Google，換機後仍可保留任務、待辦、記帳與成員，使用者 ID 不變。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } }
+      }
+    },
     "auth_no_saved_guest_session_was_found_on_this_device": {
       "extractionState": "manual",
       "localizations": {

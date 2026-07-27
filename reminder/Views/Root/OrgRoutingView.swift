@@ -386,9 +386,6 @@ struct OrgRoutingView: View {
         guard let createdId else { return }
         showCreateSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdId)
-        if appRouter.isAnonymousUser {
-            AnonymousBindPromptStore.scheduleAfterGroupAction()
-        }
         appRouter.goToActiveMember()
         await appRouter.refreshStateFromBackend()
     }
@@ -412,9 +409,6 @@ struct OrgRoutingView: View {
         let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
         guard success else { return }
         showJoinSheet = false
-        if appRouter.isAnonymousUser {
-            AnonymousBindPromptStore.scheduleAfterGroupAction()
-        }
         await appRouter.refreshStateFromBackend()
         if let groupId = appRouter.selectedHouseholdId {
             AnalyticsManager.log(event: .groupJoined(groupId: groupId))

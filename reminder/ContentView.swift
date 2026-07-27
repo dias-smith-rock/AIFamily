@@ -325,6 +325,7 @@ struct ContentView: View {
         }
 
         let isFreshInstall = AuthSessionHints.prepareForFreshInstallIfNeeded()
+        AnonymousBindPromptStore.clearStaleGroupActionPendingIfNeeded()
         LaunchBootstrapPerformanceTracing.mark("launchBootstrap.prepareFreshInstall.done", appRouter: appRouter)
 
         LegacyGuestDataCleaner.removeLegacyLocalTrialKeysIfNeeded()
@@ -363,17 +364,27 @@ struct ContentView: View {
             ? await SupabaseAuthManager.isAnonymousUser()
             : SupabaseAuthManager.isAnonymousUserFromPersistedSession()
 
+        let shouldAutoEnterAsGuest =
+            isAnonymousUser
+            || (isUserLoggedIn == false && AuthSessionHints.showsGuestLoginEntry)
+
         if isAnonymousUser, isUserLoggedIn == false, networkConnectedAtStart == false {
             OfflineColdStartPerformanceTracer.beginTrace(networkConnectedAtStart: networkConnectedAtStart)
         }
 
-        if isAnonymousUser {
+        if shouldAutoEnterAsGuest {
             LaunchBootstrapPerformanceTracing.mark(
                 "launchBootstrap.branch.guestAutoLogin",
-                note: "networkConnectedAtStart=\(networkConnectedAtStart)",
+                note: "networkConnectedAtStart=\(networkConnectedAtStart) hadAnonymousSession=\(isAnonymousUser)",
                 appRouter: appRouter
             )
-            GuestLoginPerformanceTracer.beginTrace(entryPath: "guestColdStart")
+            GuestLoginPerformanceTracer.beginTrace(
+                entryPath: isAnonymousUser ? "guestColdStart" : "guestColdStartDefault"
+            )
+            // 新游客首次进入：清掉残留 pending，避免未做实质操作就弹绑定引导。
+            if isAnonymousUser == false {
+                AnonymousBindPromptStore.clearPending()
+            }
 
             appRouter.beginHouseholdRoutingResolve()
             defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
@@ -453,7 +464,7 @@ struct ContentView: View {
         } else {
             LaunchBootstrapPerformanceTracing.mark(
                 "launchBootstrap.branch.loginScreen",
-                note: "isUserLoggedIn=false",
+                note: "isUserLoggedIn=false showsGuestLoginEntry=\(AuthSessionHints.showsGuestLoginEntry)",
                 appRouter: appRouter
             )
             LaunchBootstrapPerformanceTracing.cancelTrace(reason: "notLoggedIn")

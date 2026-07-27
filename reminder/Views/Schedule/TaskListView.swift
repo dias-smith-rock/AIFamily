@@ -5,6 +5,12 @@ import UIKit
 import Supabase
 #endif
 
+private struct CreateTaskSheetRequest: Identifiable {
+    let id = UUID()
+    let prefillTitle: String
+    let defaultDueDate: Date?
+}
+
 /// 任务 / 日程主页：顶栏日历风格导航 + 多视图模式路由。
 struct TaskListView: View {
     @Environment(\.locale) private var locale
@@ -18,10 +24,8 @@ struct TaskListView: View {
     @State private var yearDrillDownViewMode: CalendarViewMode = .day
 
     @State private var isShowingCalendarSheet = false
-    @State private var isShowingCreateTaskSheet = false
-    @State private var createTaskFormInstanceID = UUID()
-    @State private var prefillTitle = ""
-    @State private var createTaskDueDateOverride: Date?
+    /// 用 `sheet(item:)` 携带预填标题，避免 `isPresented` 首次弹出时读到旧 state。
+    @State private var createTaskSheetRequest: CreateTaskSheetRequest?
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
@@ -64,11 +68,11 @@ struct TaskListView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $isShowingCreateTaskSheet) {
+            .sheet(item: $createTaskSheetRequest) { request in
                 EditTaskView(
                     formMode: .scheduled,
-                    initialTitle: prefillTitle,
-                    defaultDueDate: createTaskDueDateOverride ?? dayID(for: selectedDate),
+                    initialTitle: request.prefillTitle,
+                    defaultDueDate: request.defaultDueDate ?? dayID(for: selectedDate),
                     defaultAllDayForNewTask: false,
                     onSaveSuccess: { createdDueDate in
                         selectedDate = dayID(for: createdDueDate)
@@ -80,7 +84,6 @@ struct TaskListView: View {
                         viewModel.syncAlarms(for: task)
                     }
                 )
-                .id(createTaskFormInstanceID)
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
             }
@@ -258,10 +261,7 @@ struct TaskListView: View {
                         viewModel: viewModel,
                         onTaskSelect: { taskForDetailSheet = $0 },
                         onQuickCreate: { prefill, dueOverride in
-                            prefillTitle = prefill
-                            createTaskDueDateOverride = dueOverride
-                            createTaskFormInstanceID = UUID()
-                            isShowingCreateTaskSheet = true
+                            openCreateTask(prefill: prefill, defaultDueDateOverride: dueOverride)
                         },
                         onRefresh: refreshTasks
                     )
@@ -472,10 +472,10 @@ struct TaskListView: View {
     }
 
     private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {
-        prefillTitle = prefill
-        createTaskDueDateOverride = defaultDueDateOverride
-        createTaskFormInstanceID = UUID()
-        isShowingCreateTaskSheet = true
+        createTaskSheetRequest = CreateTaskSheetRequest(
+            prefillTitle: prefill,
+            defaultDueDate: defaultDueDateOverride
+        )
     }
 
     private func dayID(for date: Date) -> Date {

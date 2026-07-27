@@ -65,7 +65,9 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
 
         switch manager.authorizationStatus {
         case .notDetermined:
-            manager.requestWhenInUseAuthorization()
+            // 延后到位置 Tab（`LocationAuthorizationRequester`）再弹系统授权，避免一进 App 就申请。
+            print("[LocationPersist] backgroundCoordinator deferred reason=notDetermined")
+            stopMonitoring()
         case .authorizedWhenInUse:
             manager.requestAlwaysAuthorization()
             startForegroundStyleUpdatesIfPossible()

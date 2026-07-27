@@ -40,7 +40,8 @@ private final class OneShotCoordinateFetcher: NSObject, CLLocationManagerDelegat
         case .authorizedAlways, .authorizedWhenInUse:
             manager.requestLocation()
         case .notDetermined:
-            manager.requestWhenInUseAuthorization()
+            // 不在此处弹权限；由位置 Tab 的 `LocationAuthorizationRequester` 显式申请。
+            finish(with: nil)
         default:
             finish(with: nil)
         }

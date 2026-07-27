@@ -1,7 +1,7 @@
 import CoreLocation
 import Foundation
 
-/// 进入位置 Tab 等场景：未授权时触发系统「使用期间」定位权限弹窗。
+/// 进入位置 Tab：未授权时触发系统「使用期间」定位权限弹窗（全 App 唯一主动申请 WhenInUse 的入口）。
 @MainActor
 final class LocationAuthorizationRequester: NSObject, CLLocationManagerDelegate {
     static let shared = LocationAuthorizationRequester()

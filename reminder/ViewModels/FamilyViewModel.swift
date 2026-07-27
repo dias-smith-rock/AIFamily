@@ -670,6 +670,11 @@ final class FamilyViewModel: ObservableObject {
                 await syncBirthdayTasks(for: createdProfile)
             }
             postScheduleHouseholdRosterChangedIfNeeded()
+            #if canImport(Supabase)
+            if await SupabaseAuthManager.isAnonymousUser() {
+                AnonymousBindPromptStore.schedule()
+            }
+            #endif
             return nil
         } catch {
             errorMessage = error.localizedDescription

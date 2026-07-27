@@ -42,6 +42,7 @@ enum AuthSessionHints {
 
         UserDefaults.standard.set(UUID().uuidString, forKey: installInstanceKey)
         UserDefaults.standard.set(false, forKey: formalAccountUsedKey)
+        AnonymousBindPromptStore.clearPending()
         GuestSessionArchive.clear()
         FormalSessionArchive.clear()
         #if DEBUG

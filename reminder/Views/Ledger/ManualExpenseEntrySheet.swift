@@ -594,6 +594,9 @@ struct ManualExpenseEntrySheet: View {
                 try await viewModel.updateTransaction(id: editingTransaction.id, draft: draft)
             } else {
                 try await viewModel.createTransaction(draft)
+                if appRouter.isAnonymousUser {
+                    AnonymousBindPromptStore.schedule()
+                }
             }
             dismiss()
         } catch {

@@ -35,6 +35,8 @@ description: >-
 | 11 | `20260627150000_ledger_member_income_rls.sql` | member 可读/写 `type=income`；支出仍仅 manager |
 | 12 | `20260627160000_ledger_seed_backfill.sql` | `seed_household_presets_for` + 既有家庭回填 |
 | 13 | `20260627170000_ensure_ledger_presets_rpc.sql` | RPC `ensure_household_ledger_presets`（成员/游客可幂等补种） |
+| 14 | `20260627180000_ledger_payer_ids.sql` | `ledger_transactions.payer_ids uuid[]` + 从 `payer_id` 回填 |
+| 15 | `20260627190000_ledger_visible_member_ids.sql` | `visible_member_ids` + SELECT RLS 可见度 |
 
 **公账目标 schema**（`expense_categories` 完整列、`category_tags`、`ledger_transactions`、`transaction_tag_mappings`、`seed_household_presets`）见 `20260627135000_ledger_four_tables_schema.sql` 起。
 
@@ -64,7 +66,7 @@ description: >-
 | `estimated_cost` | `estimatedCost` | 任务预估费用（日程创建 UI）；≠ 公账实付 |
 | `list_id` | `listId` | 购物清单等外键（预留） |
 | `actual_amount` | `actualAmount` | **已废弃 · 公账勿写入** → `ledger_transactions.amount` |
-| `payer_id` | `payerId` | **已废弃 · 公账勿写入** → `ledger_transactions.payer_id`（**profile id**） |
+| `payer_id` | `payerId` | **已废弃 · 公账勿写入** → `ledger_transactions.payer_ids`（**profile id[]**） |
 | `split_member_ids` | `splitMemberIds` | **已废弃 · 公账勿写入**（旧均摊 membership id[]）；目标人见 `ledger_transactions.target_member_ids` |
 | `expense_category` | `expenseCategory` | **已废弃 · 公账勿写入** → `ledger_transactions.category_name_snapshot` + `category_icon_snapshot` |
 | `reward_points` | `rewardPoints` | 任务可获积分（行为积分审批流预留） |
@@ -125,8 +127,10 @@ description: >-
 |------|------|
 | `tasks.creator_id` / `payer_id`（废弃公账列） | **membership id** |
 | `ledger_transactions.creator_id` | **`family_profiles.id`**（操作人档案） |
-| `ledger_transactions.payer_id` | **`family_profiles.id`**（付款人，可选） |
+| `ledger_transactions.payer_ids` | **`family_profiles.id[]`**（垫付人，多选） |
+| `ledger_transactions.payer_id` | **只读兼容** — 旧单垫付人；新写入勿再填 |
 | `ledger_transactions.target_member_ids` | **`family_profiles.id[]`**（为了谁，多选） |
+| `ledger_transactions.visible_member_ids` | **`family_profiles.id[]`**（可见度；`{}` = 不额外限制） |
 | `points_ledger.target_profile_id` | **`family_profiles.id`** |
 
 ## 家庭公账（Ledger）— 目标权威架构
@@ -187,8 +191,10 @@ description: >-
 | `category_id` | → `expense_categories.id` ON DELETE SET NULL |
 | `category_name_snapshot` | 分类名快照（必填） |
 | `category_icon_snapshot` | 分类图标快照 |
-| `payer_id` | **`family_profiles.id`**，可选 |
+| `payer_ids` | **`family_profiles.id[]`**，默认 `{}`（多选垫付人；权威字段） |
+| `payer_id` | **只读兼容** — 旧单垫付人；migration 已回填进 `payer_ids`；客户端不再写入 |
 | `target_member_ids` | **`family_profiles.id[]`**，默认 `{}` |
+| `visible_member_ids` | **`family_profiles.id[]`**，默认 `{}`；非空时仅列表内 profile（及 `creator_id`）可读；空 = 不额外限制 |
 | `note` | 备注 |
 | `attachment_urls` | 凭证 URL 数组，默认 `{}` |
 | `source` | `manual` \| `ai_vision` \| `ai_voice`，默认 `manual` |
@@ -279,7 +285,10 @@ ALTER TABLE transaction_tag_mappings ENABLE ROW LEVEL SECURITY;
 
 ### 公账（目标 · 客户端已对齐）
 
-- **写入**：`LedgerDataService.createTransaction` → `ledger_transactions` + `transaction_tag_mappings`（`payer_id` / `target_member_ids` / `creator_id` 均为 **profile id**）。
+- **写入**：`LedgerDataService.createTransaction` → `ledger_transactions` + `transaction_tag_mappings`（`payer_ids` / `target_member_ids` / `visible_member_ids` / `creator_id` 均为 **profile id**；勿再写 `payer_id`）。
+- **读取**：`LedgerTransaction` 优先 `payer_ids`；若为空则回退 `[payer_id]`。可见度由 RLS `visible_member_ids` 过滤（`current_user_profile_id_in_household`）。
+- **新建默认可见度**：客户端默认勾选 active `creator`/`admin` 的 profile id；**Me 必选**。
+- **客户端统计**：Wallet / 分类列表 / 报表均基于 `visibleTransactions`（`isVisible(to: viewerProfileId)`），与 RLS 语义一致。
 - **分类/标签读取**：`expense_categories` / `category_tags`，过滤 `is_deleted = false`。
 - **新建家庭**：依赖 `seed_household_presets`；客户端不再本地种子。
 - **行为积分**：本期不做 UI；`points_ledger` 表保留。
