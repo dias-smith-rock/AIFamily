@@ -6427,5 +6427,12 @@
     "table": "Schedule",
     "swift_property": "searchNoResults",
     "orphan": false
+  },
+  {
+    "legacy_key": "Select",
+    "new_key": "common_select",
+    "table": "Common",
+    "swift_property": "select",
+    "orphan": false
   }
 ]

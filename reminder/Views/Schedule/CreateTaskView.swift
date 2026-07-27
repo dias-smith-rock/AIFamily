@@ -554,11 +554,19 @@ struct CreateTaskView: View {
         }
     }
 
-    private var formNavigationTitle: LocalizedStringResource {
-        if editingTask != nil {
-            return isFlexibleMode ? L10n.Common.editToDo.localized : L10n.Schedule.editEvent.localized
+    private var formHouseholdId: UUID? {
+        editingTask?.householdId ?? appRouter.selectedHouseholdId
+    }
+
+    private var formHouseholdNavigationTitle: String {
+        if let id = formHouseholdId,
+           let name = appRouter.selectableHouseholds.first(where: { $0.id == id })?.name {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty == false {
+                return trimmed
+            }
         }
-        return isFlexibleMode ? L10n.Common.newToDo.localized : L10n.Schedule.newEvent.localized
+        return AppLocalized.string(L10n.Family.unnamedGroup, locale: locale)
     }
 
     private var formAccentTint: Color {
@@ -611,19 +619,35 @@ struct CreateTaskView: View {
     @ToolbarContentBuilder
     private var formToolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarLeading) {
-            Button(L10n.Common.cancel.localized) {
+            Button {
                 dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.body.weight(.semibold))
             }
             .disabled(isSaving)
+            .accessibilityLabel(L10n.Common.cancel)
+        }
+        ToolbarItem(placement: .principal) {
+            Text(formHouseholdNavigationTitle)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(
+                    formHouseholdId.map { HouseholdColorStore.color(for: $0) } ?? formAccentTint
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         ToolbarItem(placement: .confirmationAction) {
-            Button(L10n.Common.save.localized) {
+            Button {
                 Task {
                     await saveTask()
                 }
+            } label: {
+                Image(systemName: "checkmark")
+                    .font(.body.weight(.semibold))
             }
-            .fontWeight(.semibold)
             .disabled(isSaving || normalizedTitle.isEmpty)
+            .accessibilityLabel(L10n.Common.save)
         }
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()
@@ -650,7 +674,7 @@ struct CreateTaskView: View {
                     .scaleEffect(1.1)
             }
         }
-        .navigationTitle(formNavigationTitle)
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .tint(formAccentTint)
         .toolbar { formToolbar }

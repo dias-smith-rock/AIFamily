@@ -40,7 +40,7 @@ struct WriteTargetHouseholdPicker: View {
                     Button(L10n.Common.cancel) { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(L10n.Common.finish) {
+                    Button(L10n.Common.select) {
                         guard let selectedId,
                               let option = organizations.first(where: { $0.id == selectedId }) else {
                             return

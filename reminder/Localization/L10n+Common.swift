@@ -376,6 +376,7 @@ extension L10n {
     static let savedToPhotos = Entry(key: "common_saved_to_photos", table: .common)
     static let scanToJoin = Entry(key: "common_scan_to_join", table: .common)
     static let school = Entry(key: "common_school", table: .common)
+    static let select = Entry(key: "common_select", table: .common)
     static let selectFromAddressBook = Entry(key: "common_select_from_address_book", table: .common)
     static let selectIdentificationMethod = Entry(key: "common_select_identification_method", table: .common)
     static let selectTheAreaToRecognize = Entry(key: "common_select_the_area_to_recognize", table: .common)

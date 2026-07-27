@@ -37,6 +37,9 @@ struct TaskDetailView: View {
     @State private var displayRecurrenceInterval: Int?
     @State private var isShowingDeleteAlert = false
     @State private var attachmentGalleryPresentation: AttachmentGalleryPresentation?
+    /// 导航内容区宽度，用于让标题在左右工具区之间居中留白。
+    @State private var navigationContentWidth: CGFloat = 0
+
     init(
         initialTask: FamilyTask,
         currentUserRole: MembershipRole,
@@ -47,6 +50,17 @@ struct TaskDetailView: View {
         self.assigneeDisplayNameFallback = assigneeDisplayName
         self.scheduleViewModel = scheduleViewModel
         _task = State(initialValue: initialTask)
+    }
+
+    /// 导航栏显示任务所属组织名（多组织场景下便于区分）。
+    private var householdNavigationTitle: String {
+        if let name = appRouter.selectableHouseholds.first(where: { $0.id == task.householdId })?.name {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty == false {
+                return trimmed
+            }
+        }
+        return AppLocalized.string(L10n.Family.unnamedGroup, locale: locale)
     }
 
     private var detailScrollContent: some View {
@@ -112,38 +126,68 @@ struct TaskDetailView: View {
             detailScrollContent
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle(L10n.Schedule.missionDetails.localized)
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(
+                    key: TaskDetailNavigationWidthKey.self,
+                    value: proxy.size.width
+                )
+            }
+        }
+        .onPreferenceChange(TaskDetailNavigationWidthKey.self) { navigationContentWidth = $0 }
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.automatic, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button(L10n.Common.close.localized) {
-                    dismiss()
-                }
-                .fontWeight(.medium)
-                .disabled(isUpdatingStatus || isDeletingTask)
-            }
-            if canEditTask {
-                ToolbarItem(placement: .topBarTrailing) {
-                    HStack(spacing: 14) {
-                        if canShowEditButton {
-                            Button {
-                                showingEditSheet = true
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: 0) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.body.weight(.semibold))
+                    }
+                    .disabled(isUpdatingStatus || isDeletingTask)
+                    .accessibilityLabel(L10n.Common.close)
+
+                    Spacer(minLength: 12)
+
+                    Text(householdNavigationTitle)
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(HouseholdColorStore.color(for: task.householdId))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .multilineTextAlignment(.center)
+
+                    Spacer(minLength: 12)
+
+                    if canEditTask {
+                        HStack(spacing: 14) {
+                            if canShowEditButton {
+                                Button {
+                                    showingEditSheet = true
+                                } label: {
+                                    Image(systemName: "pencil")
+                                        .font(.body.weight(.semibold))
+                                }
+                                .disabled(isUpdatingStatus || isDeletingTask)
+                                .accessibilityLabel(L10n.Common.edit)
+                            }
+
+                            Button(role: .destructive) {
+                                isShowingDeleteAlert = true
                             } label: {
-                                Text(L10n.Common.edit.localized)
-                                    .fontWeight(.semibold)
+                                Image(systemName: "trash")
                             }
                             .disabled(isUpdatingStatus || isDeletingTask)
+                            .accessibilityLabel(L10n.Schedule.deleteTask)
                         }
-
-                        Button(role: .destructive) {
-                            isShowingDeleteAlert = true
-                        } label: {
-                            Image(systemName: "trash")
-                        }
-                        .disabled(isUpdatingStatus || isDeletingTask)
                     }
                 }
+                .frame(
+                    width: navigationContentWidth > 16 ? navigationContentWidth - 16 : nil,
+                    alignment: .center
+                )
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -1211,6 +1255,14 @@ struct TaskDetailView: View {
 private struct AttachmentGalleryPresentation: Identifiable {
     let id = UUID()
     let startIndex: Int
+}
+
+private struct TaskDetailNavigationWidthKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }
 
 #Preview("成员 · 待接受") {
