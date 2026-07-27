@@ -480,7 +480,7 @@ struct TodoListView: View {
     }
 
     private func presentCreateFlexible() {
-        if appRouter.selectableHouseholds.count > 1 {
+        if appRouter.needsWriteTargetSelection {
             isShowingWriteTargetPicker = true
         } else {
             createTaskFormInstanceID = UUID()
@@ -726,12 +726,20 @@ private struct TodoFlexibleRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(Color(.secondarySystemBackground))
+        .background(rowBackground)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(cardBorderColor, lineWidth: 1)
         }
+    }
+
+    private var orgColor: Color {
+        HouseholdColorStore.color(for: task.householdId)
+    }
+
+    private var rowBackground: Color {
+        style == .completed ? orgColor.opacity(0.55) : orgColor
     }
 
     @ViewBuilder
@@ -740,7 +748,7 @@ private struct TodoFlexibleRow: View {
             Button(action: onToggleComplete) {
                 Image(systemName: isCompletionChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(isCompletionChecked ? .green : Color.secondary)
+                    .foregroundStyle(isCompletionChecked ? .green : Color.white.opacity(0.95))
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
@@ -757,9 +765,9 @@ private struct TodoFlexibleRow: View {
     private var cardBorderColor: Color {
         switch style {
         case .completed:
-            return Color.green.opacity(0.45)
+            return Color.green.opacity(0.55)
         case .active, .overdue:
-            return Color.gray.opacity(0.25)
+            return Color.white.opacity(0.18)
         }
     }
 
@@ -779,20 +787,20 @@ private struct TodoFlexibleRow: View {
         case .completed:
             return .green
         case .active:
-            return Color.accentColor
+            return .white
         }
     }
 
     private var titleColor: Color {
-        style == .completed ? .secondary : .primary
+        .white
     }
 
     private var subtitleColor: Color {
         switch style {
         case .overdue:
-            return .red
+            return Color.white.opacity(0.95)
         case .completed, .active:
-            return .secondary
+            return Color.white.opacity(0.85)
         }
     }
 }

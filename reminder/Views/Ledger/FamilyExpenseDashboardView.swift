@@ -406,7 +406,7 @@ struct FamilyExpenseDashboardView: View {
     private var logEntryFAB: some View {
         Button {
             let defaultType: LedgerEntryType = allowsExpenseManagement ? .expense : .income
-            if appRouter.selectableHouseholds.count > 1 {
+            if appRouter.needsWriteTargetSelection {
                 pendingEntryType = defaultType
                 isShowingWriteTargetPicker = true
             } else {

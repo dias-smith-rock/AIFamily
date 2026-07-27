@@ -1,7 +1,7 @@
 import SwiftUI
 import Kingfisher
 
-/// 全天任务紧凑卡片：仅两行——标题 + 「为了谁」头像区；左侧贴边色条与整卡圆角一体。
+/// 全天任务紧凑卡片：组织色铺底，与周视图任务块一致。
 struct AllDayTaskRowView: View {
     let task: FamilyTask
     let displayTitle: String
@@ -17,18 +17,22 @@ struct AllDayTaskRowView: View {
         self.forWhomAvatars = forWhomAvatars
     }
 
+    private var orgColor: Color {
+        HouseholdColorStore.color(for: task.householdId)
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(cardTitleText)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(.white)
                 .lineLimit(1)
 
             if forWhomAvatars.isEmpty == false {
                 HStack(spacing: 8) {
                     Text(L10n.Common.forLabel.localized)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.85))
 
                     Spacer(minLength: 0)
 
@@ -43,14 +47,9 @@ struct AllDayTaskRowView: View {
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.tertiarySystemBackground))
-        .overlay(alignment: .leading) {
-            Rectangle()
-                .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
-                .frame(width: 4)
-        }
+        .background(orgColor)
         .clipShape(RoundedRectangle(cornerRadius: 10))
-        .shadow(color: Color.black.opacity(0.04), radius: 3, x: 0, y: 1)
+        .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
     }
 
     private var cardTitleText: String {
@@ -62,16 +61,16 @@ struct AllDayTaskRowView: View {
         ZStack {
             if let url = source.imageURL {
                 KFImage.url(url)
-                    .placeholder { Circle().fill(Color(.tertiarySystemFill)) }
+                    .placeholder { Circle().fill(Color.white.opacity(0.25)) }
                     .resizable()
                     .scaledToFill()
             } else {
                 Circle()
-                    .fill(Color(.tertiarySystemFill))
+                    .fill(Color.white.opacity(0.25))
                     .overlay {
                         Text(String(source.displayName.prefix(1)))
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white)
                     }
             }
         }
@@ -79,7 +78,7 @@ struct AllDayTaskRowView: View {
         .clipShape(Circle())
         .overlay {
             Circle()
-                .stroke(Color(.systemBackground), lineWidth: 1.5)
+                .stroke(Color.white.opacity(0.9), lineWidth: 1.5)
         }
     }
 }

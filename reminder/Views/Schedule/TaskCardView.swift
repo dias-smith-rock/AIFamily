@@ -129,24 +129,16 @@ struct TaskCardView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
-        .padding(.leading, 6)
-        .background(Color(.systemBackground))
+        .background(orgColor)
         .clipShape(cardShape)
-        .overlay(alignment: .leading) {
-            UnevenRoundedRectangle(
-                topLeadingRadius: 12,
-                bottomLeadingRadius: 12,
-                bottomTrailingRadius: 0,
-                topTrailingRadius: 0,
-                style: .continuous
-            )
-            .fill(HouseholdColorStore.color(for: task.householdId))
-            .frame(width: 4)
-        }
         .overlay {
-            cardShape.strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+            cardShape.strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
         }
-        .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
+        .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
+    }
+
+    private var orgColor: Color {
+        HouseholdColorStore.color(for: task.householdId)
     }
 
     // MARK: - Header
@@ -154,7 +146,7 @@ struct TaskCardView: View {
     private var headerRow: some View {
         Text(cardTitleText)
             .font(.headline)
-            .foregroundStyle(.primary)
+            .foregroundStyle(.white)
             .multilineTextAlignment(.leading)
             .lineLimit(2)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -171,10 +163,16 @@ struct TaskCardView: View {
         HStack(spacing: 8) {
             Label(metaTimeText, systemImage: task.isAllDay ? "calendar" : "clock")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.9))
                 .labelStyle(.titleAndIcon)
 
-            TaskDurationBadge(minutes: task.durationMinutes)
+            Text(TaskDurationFormatting.readableDuration(minutes: task.durationMinutes, locale: locale))
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.95))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.22))
+                .clipShape(Capsule())
 
             Spacer(minLength: 0)
         }
@@ -206,7 +204,7 @@ struct TaskCardView: View {
         HStack(alignment: .center) {
             Label(place, systemImage: "mappin.and.ellipse")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.9))
                 .labelStyle(.titleAndIcon)
                 .lineLimit(1)
             Spacer(minLength: 0)

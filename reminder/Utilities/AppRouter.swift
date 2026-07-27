@@ -897,6 +897,11 @@ final class AppRouter: ObservableObject {
         }
     }
 
+    /// 查看集合多于 1 个时，创建任务 / Todo / 记账前需选择写入组织。
+    var needsWriteTargetSelection: Bool {
+        selectedHouseholdIds.count > 1
+    }
+
     /// 查看集合的稳定 token，供 `.task(id:)` / `onChange` 使用。
     var viewHouseholdIdsToken: String {
         selectedHouseholdIds.map(\.uuidString).sorted().joined(separator: ",")

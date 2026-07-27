@@ -5,6 +5,8 @@ struct TaskModeListView: View {
     @Environment(\.locale) private var locale
     @ObservedObject var viewModel: ScheduleViewModel
     var listScrollToken: Int = 0
+    /// 切换到列表时定位的目标日（通常为今天 / 当前选中日）。
+    var scrollAnchorDate: Date = Date()
     var onTaskTap: ((FamilyTask) -> Void)?
     var onRefresh: (() async -> Void)?
 
@@ -61,13 +63,13 @@ struct TaskModeListView: View {
                                             displayTitle: viewModel.displayTitle(for: task),
                                             forWhomAvatars: viewModel.forWhomAvatarSources(for: task)
                                         )
-                                        .id(task.id)
                                         .contentShape(Rectangle())
                                         .onTapGesture {
                                             onTaskTap?(task)
                                         }
                                     }
                                 }
+                                .id(section.id)
                             }
                         }
                         .padding(.horizontal, 16)
@@ -78,10 +80,10 @@ struct TaskModeListView: View {
                         await onRefresh?()
                     }
                     .onChange(of: listScrollToken) { _, _ in
-                        scrollToTargetTask(using: proxy)
+                        scrollToCurrentDate(using: proxy)
                     }
                     .onAppear {
-                        scrollToTargetTask(using: proxy)
+                        scrollToCurrentDate(using: proxy)
                     }
                 }
             }
@@ -125,14 +127,27 @@ struct TaskModeListView: View {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
     }
 
-    private func scrollToTargetTask(using proxy: ScrollViewProxy) {
+    /// 定位到目标日分组；无当天任务则落到之后最近一天，再否则最后一天。
+    private func scrollToCurrentDate(using proxy: ScrollViewProxy) {
         Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(100))
-            guard let targetId = viewModel.getTargetTaskId() else { return }
-            withAnimation(.easeInOut(duration: 0.3)) {
-                proxy.scrollTo(targetId, anchor: .top)
+            try? await Task.sleep(for: .milliseconds(180))
+            guard let destination = scrollDestinationDay() else { return }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                proxy.scrollTo(destination, anchor: .top)
             }
         }
+    }
+
+    private func scrollDestinationDay() -> Date? {
+        let cal = Calendar.current
+        let target = cal.startOfDay(for: scrollAnchorDate)
+        if let exact = daySections.first(where: { cal.isDate($0.id, inSameDayAs: target) }) {
+            return exact.id
+        }
+        if let future = daySections.first(where: { $0.id > target }) {
+            return future.id
+        }
+        return daySections.last?.id
     }
 }
 
@@ -152,26 +167,26 @@ private struct TaskModeListMinimalRow: View {
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
 
+    private var orgColor: Color {
+        HouseholdColorStore.color(for: task.householdId)
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
-            Circle()
-                .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
-                .frame(width: 10, height: 10)
-
             VStack(alignment: .leading, spacing: 4) {
                 Text(cardTitleText)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .lineLimit(2)
 
                 Text(timeRangeLabel)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.9))
 
                 if let trail = locationTrail {
                     Text(trail)
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.white.opacity(0.85))
                         .lineLimit(1)
                 }
             }
@@ -184,16 +199,12 @@ private struct TaskModeListMinimalRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(rowFill)
+        .background(orgColor)
         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                .stroke(Color.white.opacity(0.18), lineWidth: 1)
         )
-    }
-
-    private var rowFill: Color {
-        Color(.secondarySystemBackground)
     }
 
     private var cardTitleText: String {

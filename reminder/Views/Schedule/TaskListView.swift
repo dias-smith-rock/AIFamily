@@ -249,7 +249,9 @@ struct TaskListView: View {
                     WeekViewPerformanceTracer.cancelTrace(reason: "leftWeekMode->\(mode.rawValue)")
                 }
                 if mode == .list {
-                    viewModel.noteVisibleMonth(containing: Date())
+                    let today = dayID(for: Date())
+                    selectedDate = today
+                    viewModel.noteVisibleMonth(containing: today)
                     listScrollToken += 1
                 }
                 if mode == .year {
@@ -298,6 +300,7 @@ struct TaskListView: View {
                         TaskModeListView(
                             viewModel: viewModel,
                             listScrollToken: listScrollToken,
+                            scrollAnchorDate: selectedDate,
                             onTaskTap: { taskForDetailSheet = $0 },
                             onRefresh: refreshTasks
                         )
@@ -547,7 +550,7 @@ struct TaskListView: View {
             prefillTitle: prefill,
             defaultDueDate: defaultDueDateOverride
         )
-        if appRouter.selectableHouseholds.count > 1 {
+        if appRouter.needsWriteTargetSelection {
             pendingCreateAfterWritePick = request
             isShowingWriteTargetPicker = true
         } else {

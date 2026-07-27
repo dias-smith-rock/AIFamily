@@ -451,20 +451,16 @@ struct TaskWeekGridView: View {
                 Button {
                     onTaskSelect(task)
                 } label: {
+                    let orgColor = HouseholdColorStore.color(for: task.householdId)
                     Text(viewModel.displayTitle(for: task))
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(.white)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 3)
-                        .background(Color(.tertiarySystemBackground).opacity(0.9))
-                        .overlay(alignment: .leading) {
-                            Rectangle()
-                                .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
-                                .frame(width: 2)
-                        }
+                        .background(orgColor)
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
                 .buttonStyle(.plain)
@@ -959,27 +955,26 @@ private struct WeekTaskEventCard: View {
     let task: FamilyTask
     let title: String
 
+    private var orgColor: Color {
+        HouseholdColorStore.color(for: task.householdId)
+    }
+
     var body: some View {
         Text(title)
             .font(.caption2.weight(.semibold))
-            .foregroundStyle(.primary)
+            .foregroundStyle(.white)
             .lineLimit(3)
             .multilineTextAlignment(.leading)
             .padding(.horizontal, 5)
             .padding(.vertical, 3)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(Color(.tertiarySystemBackground))
-            .overlay(alignment: .leading) {
-                Rectangle()
-                    .fill(Color.taskCardLeadingAccent(fromHex: task.backgroundColor))
-                    .frame(width: 3)
-            }
+            .background(orgColor)
             .overlay {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(AppTheme.ColorToken.border, lineWidth: 0.5)
+                    .stroke(orgColor.opacity(0.9), lineWidth: 0.5)
             }
             .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-            .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+            .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
     }
 }
 
