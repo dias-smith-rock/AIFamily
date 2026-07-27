@@ -811,8 +811,7 @@ struct CreateTaskView: View {
     }
 
     private var flatDivider: some View {
-        Divider()
-            .padding(.leading, 40)
+        CreateTaskFlatDivider()
     }
 
     private var orgFlatRow: some View {

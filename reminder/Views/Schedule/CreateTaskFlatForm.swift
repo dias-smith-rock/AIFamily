@@ -73,6 +73,8 @@ struct CreateTaskFlatRow<Trailing: View>: View {
     let title: String
     var iconColor: Color = .accentColor
     var showsChevron: Bool = false
+    /// 与创建/详情共用；略紧以匹配表单视觉密度。
+    var verticalPadding: CGFloat = CreateTaskFlatRowMetrics.verticalPadding
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
@@ -99,8 +101,26 @@ struct CreateTaskFlatRow<Trailing: View>: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .padding(.vertical, verticalPadding)
         .contentShape(Rectangle())
+    }
+}
+
+enum CreateTaskFlatRowMetrics {
+    static let verticalPadding: CGFloat = 8
+    static let dividerLeadingInset: CGFloat = 40
+}
+
+/// 创建/详情扁平行之间的分隔线（高度固定，避免系统 Divider 额外占位不一致）。
+struct CreateTaskFlatDivider: View {
+    var leadingInset: CGFloat = CreateTaskFlatRowMetrics.dividerLeadingInset
+
+    var body: some View {
+        Rectangle()
+            .fill(Color.primary.opacity(0.1))
+            .frame(height: 0.5)
+            .frame(maxWidth: .infinity)
+            .padding(.leading, leadingInset)
     }
 }
 
@@ -189,7 +209,7 @@ struct CreateTaskFormDateTimePicker: View {
             .font(.footnote)
             .foregroundStyle(.primary)
             .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.vertical, 6)
             .background(
                 Color(.tertiarySystemFill),
                 in: RoundedRectangle(cornerRadius: 7, style: .continuous)

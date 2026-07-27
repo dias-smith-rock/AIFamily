@@ -47,7 +47,6 @@ struct TaskDetailView: View {
     private let assigneeDisplayNameFallback: String
 
     @State private var task: FamilyTask
-    @State private var showMoreOptions = false
     @State private var showingEditSheet = false
     @State private var isUpdatingStatus = false
     @State private var isDeletingTask = false
@@ -84,61 +83,26 @@ struct TaskDetailView: View {
     }
 
     private var detailScrollContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 14) {
             if task.source.isReadOnly {
                 externalSyncReadOnlyBanner
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
             }
 
-            titleHeader
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
+            titleCard
 
-            timePlanningCard
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-
-            forWhomSection
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-
-            if taskDetailViewModel.attachments.isEmpty == false {
-                attachmentsSection
-                    .padding(.horizontal, 16)
-                    .padding(.top, 16)
-            }
-
-            coreInfoCard
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
-
-            if showMoreOptions == false {
-                expandMoreControl
-                    .padding(.horizontal, 16)
-                    .padding(.top, 14)
-            }
-
-            if showMoreOptions {
-                expandedReadonlySection
-                    .padding(.horizontal, 16)
-                    .padding(.top, 14)
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-
-                collapseMoreControl
-                    .padding(.horizontal, 16)
-                    .padding(.top, 10)
-            }
+            primaryDetailSettingsGroup
 
             if let statusError {
                 Text(statusError)
-                    .font(AppTheme.FontToken.caption)
+                    .font(.footnote)
                     .foregroundStyle(.red)
-                    .padding(.horizontal, 20)
-                    .padding(.top, 16)
             }
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .padding(.bottom, bottomScrollPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .font(.footnote)
     }
 
     var body: some View {
@@ -277,14 +241,396 @@ struct TaskDetailView: View {
         120
     }
 
-    private var titleHeader: some View {
+    private var detailIconAccent: Color {
+        HouseholdColorStore.color(for: task.householdId)
+    }
+
+    private var titleCard: some View {
         Text(scheduleViewModel.displayTitle(for: task))
-            .font(.largeTitle)
-            .fontWeight(.bold)
+            .font(.headline.weight(.semibold))
             .foregroundStyle(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .multilineTextAlignment(.leading)
-            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+            }
+    }
+
+    private var primaryDetailSettingsGroup: some View {
+        VStack(spacing: 0) {
+            CreateTaskFlatRow(
+                systemImage: "calendar",
+                title: householdNavigationTitle,
+                iconColor: detailIconAccent
+            ) {
+                HouseholdColorDot(householdId: task.householdId, size: 14)
+            }
+
+            if showsDetailAttachments {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "paperclip",
+                    title: AppLocalized.string(L10n.Common.attachments, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(attachmentsSummaryText)
+                        .foregroundStyle(detailIconAccent)
+                        .lineLimit(1)
+                }
+                detailAttachmentThumbnails
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+            }
+
+            if task.isFlexibleTodo {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "flag",
+                    title: AppLocalized.string(L10n.Common.dueBy, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(flexibleDeadlineDetailText)
+                        .foregroundStyle(detailIconAccent)
+                        .lineLimit(1)
+                }
+            } else {
+                if task.isAllDay {
+                    detailFlatDivider
+                    CreateTaskFlatRow(
+                        systemImage: "clock",
+                        title: AppLocalized.string(L10n.Common.allDay, locale: locale),
+                        iconColor: detailIconAccent
+                    ) {
+                        Text(AppLocalized.string(L10n.Common.yes, locale: locale))
+                            .foregroundStyle(detailIconAccent)
+                    }
+                }
+
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "calendar",
+                    title: AppLocalized.string(L10n.Schedule.starts, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    detailDateTimeCapsules(for: scheduledAt, allDay: task.isAllDay)
+                }
+
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "calendar",
+                    title: AppLocalized.string(L10n.Schedule.ends, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    if task.isAllDay {
+                        Text(L10n.Common.allDay.localized)
+                            .foregroundStyle(detailIconAccent)
+                    } else if let end = plannedEndDate {
+                        detailDateTimeCapsules(for: end, allDay: false)
+                    } else {
+                        Text(L10n.Common.none.localized)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "hourglass",
+                    title: AppLocalized.string(L10n.Schedule.duration, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(TaskDurationFormatting.readableDuration(minutes: task.durationMinutes, locale: locale))
+                        .foregroundStyle(detailIconAccent)
+                }
+            }
+
+            if showsDetailColor {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "tag.fill",
+                    title: AppLocalized.string(L10n.Schedule.taskColor, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Circle()
+                        .fill(Color.taskCardCustomColor(fromHex: task.backgroundColor) ?? detailIconAccent)
+                        .frame(width: 16, height: 16)
+                }
+            }
+
+            if showsDetailReminder {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "alarm.fill",
+                    title: AppLocalized.string(L10n.Schedule.remind, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    TaskReminderLabel.valueView(offsets: task.reminderOffsets)
+                        .foregroundStyle(detailIconAccent)
+                }
+            }
+
+            if showsDetailRepeat {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "repeat",
+                    title: AppLocalized.string(L10n.Common.repeatLabel, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(inferredRecurrenceRule.titleKey)
+                        .foregroundStyle(detailIconAccent)
+                        .lineLimit(1)
+                }
+            }
+
+            if showsDetailLocation {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "mappin.and.ellipse",
+                    title: AppLocalized.string(L10n.Location.location, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(locationLine ?? "")
+                        .foregroundStyle(detailIconAccent)
+                        .lineLimit(1)
+                }
+            }
+
+            if showsDetailMoreDetails {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "note.text",
+                    title: AppLocalized.string(L10n.Common.moreDetails, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(descriptionMoreDetailsPart ?? "")
+                        .foregroundStyle(detailIconAccent)
+                        .lineLimit(2)
+                }
+            }
+
+            if showsDetailAssignee {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "person.fill",
+                    title: AppLocalized.string(L10n.Common.assignee, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    TaskAssigneeLabelView(
+                        task: task,
+                        members: scheduleViewModel.householdMembers,
+                        profiles: scheduleViewModel.familyProfiles,
+                        fallback: assigneeDisplayNameFallback
+                    )
+                    .foregroundStyle(detailIconAccent)
+                    .lineLimit(1)
+                }
+            }
+
+            if showsDetailForWhom {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "person.3",
+                    title: AppLocalized.string(L10n.Common.forWhomFor, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(forWhomSummaryText)
+                        .foregroundStyle(detailIconAccent)
+                        .lineLimit(1)
+                }
+            }
+
+            if showsDetailPriority {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "flag",
+                    title: AppLocalized.string(L10n.Schedule.taskPriority2, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    Text(AppLocalized.string(L10n.Common.urgent, locale: locale))
+                        .foregroundStyle(detailIconAccent)
+                }
+            }
+
+            if showsDetailExpenses {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "banknote",
+                    title: AppLocalized.string(L10n.Common.expenses, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    costValueView
+                        .foregroundStyle(detailIconAccent)
+                }
+            }
+
+            if showsDetailEmergency {
+                detailFlatDivider
+                CreateTaskFlatRow(
+                    systemImage: "phone",
+                    title: AppLocalized.string(L10n.Common.emergencyContactNumberMeetingLink, locale: locale),
+                    iconColor: detailIconAccent
+                ) {
+                    emergencyTrailingValue
+                }
+            }
+
+            detailFlatDivider
+            CreateTaskFlatRow(
+                systemImage: "tag",
+                title: AppLocalized.string(L10n.Common.currentStatus, locale: locale),
+                iconColor: detailIconAccent
+            ) {
+                Text(task.status.localizedName)
+                    .foregroundStyle(task.status == .new ? Color.accentColor : detailIconAccent)
+            }
+        }
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        }
+    }
+
+    private var showsDetailAttachments: Bool {
+        taskDetailViewModel.attachments.isEmpty == false
+    }
+
+    private var showsDetailColor: Bool {
+        Color.taskCardCustomColor(fromHex: task.backgroundColor) != nil
+    }
+
+    private var showsDetailReminder: Bool {
+        guard let offsets = task.reminderOffsets else { return false }
+        return offsets.isEmpty == false
+    }
+
+    private var showsDetailRepeat: Bool {
+        inferredRecurrenceRule != .none
+    }
+
+    private var showsDetailLocation: Bool {
+        locationLine != nil
+    }
+
+    private var showsDetailMoreDetails: Bool {
+        descriptionMoreDetailsPart != nil
+    }
+
+    private var showsDetailAssignee: Bool {
+        task.involvesWholeHousehold == false
+            && (task.involvedMemberIds?.isEmpty == false)
+    }
+
+    private var showsDetailForWhom: Bool {
+        isForWhomEveryone == false
+    }
+
+    private var showsDetailPriority: Bool {
+        task.priority == .urgent || task.priority == .high
+    }
+
+    private var showsDetailExpenses: Bool {
+        costIsEmpty == false
+    }
+
+    private var showsDetailEmergency: Bool {
+        let trimmed = task.emergencyPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty == false
+    }
+
+    private var detailFlatDivider: some View {
+        CreateTaskFlatDivider()
+    }
+
+    private var attachmentsSummaryText: String {
+        let count = taskDetailViewModel.attachments.count
+        if count == 0 {
+            return AppLocalized.string(L10n.Common.none, locale: locale)
+        }
+        return "\(count)"
+    }
+
+    private var forWhomSummaryText: String {
+        if isForWhomEveryone {
+            return AppLocalized.string(L10n.Common.everyone, locale: locale)
+        }
+        let names = selectedForWhomProfiles.map(\.displayName)
+        if names.isEmpty {
+            return AppLocalized.string(L10n.Common.everyone, locale: locale)
+        }
+        return names.joined(separator: ", ")
+    }
+
+    @ViewBuilder
+    private var emergencyTrailingValue: some View {
+        let trimmed = task.emergencyPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if trimmed.isEmpty {
+            Text(L10n.Common.none.localized)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        } else if let url = dialOrWebURL(from: trimmed) {
+            Text(trimmed)
+                .foregroundStyle(detailIconAccent)
+                .lineLimit(1)
+                .underline()
+                .onTapGesture { openURL(url) }
+        } else {
+            Text(trimmed)
+                .foregroundStyle(detailIconAccent)
+                .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder
+    private func detailDateTimeCapsules(for date: Date, allDay: Bool) -> some View {
+        HStack(spacing: 4) {
+            Text(
+                date.formatted(
+                    .dateTime.year().month(.abbreviated).day().locale(locale)
+                )
+            )
+            .font(.footnote)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(
+                Color(.tertiarySystemFill),
+                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+            )
+
+            if allDay == false {
+                Text(ScheduleTimeFormatting.timelineClockTime(date, locale: locale))
+                    .font(.footnote)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Color(.tertiarySystemFill),
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    )
+            }
+        }
+        .foregroundStyle(.primary)
+    }
+
+    private var detailAttachmentThumbnails: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(Array(taskDetailViewModel.attachments.enumerated()), id: \.element.id) { index, attachment in
+                    Button {
+                        attachmentGalleryPresentation = AttachmentGalleryPresentation(startIndex: index)
+                    } label: {
+                        attachmentThumbnail(attachment)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(attachment.displayImageURL == nil)
+                }
+            }
+            .padding(.vertical, 4)
+        }
     }
 
     private var externalSyncReadOnlyBanner: some View {
@@ -299,46 +645,6 @@ struct TaskDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .taskDetailFormCardStyled()
-    }
-
-    // MARK: - 核心信息卡片（始终）
-
-    private var coreInfoCard: some View {
-        VStack(spacing: 0) {
-            TaskDetailRowView(systemImage: "repeat", label: L10n.Common.repeat2) {
-                Text(inferredRecurrenceRule.titleKey)
-            }
-            cardDivider
-            TaskDetailRowView(systemImage: "bell", label: L10n.Schedule.remind) {
-                TaskReminderLabel.valueView(offsets: task.reminderOffsets)
-            }
-            cardDivider
-            TaskDetailRowView(systemImage: "person", label: L10n.Common.assignee) {
-                TaskAssigneeLabelView(
-                    task: task,
-                    members: scheduleViewModel.householdMembers,
-                    profiles: scheduleViewModel.familyProfiles,
-                    fallback: assigneeDisplayNameFallback
-                )
-            }
-            cardDivider
-            TaskDetailRowView(
-                systemImage: "banknote",
-                label: L10n.Common.expenses,
-                valueIsPlaceholder: costIsEmpty
-            ) {
-                costValueView
-            }
-            cardDivider
-            TaskDetailRowView(
-                systemImage: "tag",
-                label: L10n.Common.currentStatus,
-                valueAccent: task.status == .new
-            ) {
-                Text(task.status.localizedName)
-            }
-        }
         .taskDetailFormCardStyled()
     }
 
@@ -402,103 +708,7 @@ struct TaskDetailView: View {
         #endif
     }
 
-    private var timePlanningCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "clock")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(L10n.Common.time.localized)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: 10) {
-                if task.isFlexibleTodo {
-                    timePlanningLine(label: L10n.Common.dueDate.localized) {
-                        Text(flexibleDeadlineDetailText)
-                    }
-                    Text(L10n.Common.canBeCompletedAnytimeBeforeThisDate.localized)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if task.isAllDay {
-                    timePlanningLine(label: L10n.Common.time2.localized) {
-                        Text(L10n.Common.allDay.localized)
-                    }
-                } else {
-                    timePlanningLine(label: L10n.Common.startTime.localized) {
-                        Text(timePlanningStartText)
-                    }
-                    if let endText = timePlanningEndText {
-                        timePlanningLine(label: L10n.Common.endTime.localized) {
-                            Text(endText)
-                        }
-                    }
-                    timePlanningLine(label: L10n.Common.totalDuration.localized) {
-                        TaskDurationText(minutes: task.durationMinutes)
-                    }
-                }
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .taskDetailFormCardStyled()
-    }
-
-    private func timePlanningLine<Content: View>(
-        label: LocalizedStringResource,
-        @ViewBuilder value: () -> Content
-    ) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text("\(Text(label)):")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            value()
-                .font(.body.weight(.medium))
-                .foregroundStyle(.primary)
-            Spacer(minLength: 0)
-        }
-    }
-
-    private var cardDivider: some View {
-        Divider()
-            .padding(.leading, 50)
-    }
-
     // MARK: - 附件
-
-    private var attachmentsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 6) {
-                Image(systemName: "paperclip")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(L10n.Common.attachments.localized)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(Array(taskDetailViewModel.attachments.enumerated()), id: \.element.id) { index, attachment in
-                        Button {
-                            attachmentGalleryPresentation = AttachmentGalleryPresentation(startIndex: index)
-                        } label: {
-                            attachmentThumbnail(attachment)
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(attachment.displayImageURL == nil)
-                        .accessibilityLabel(L10n.Common.viewAttachment.localized)
-                        .accessibilityHint(L10n.Common.doubleTapForFullScreenSwipeLeftOrRightT.localized)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .taskDetailFormCardStyled()
-    }
 
     @ViewBuilder
     private func attachmentThumbnail(_ attachment: TaskAttachment) -> some View {
@@ -517,119 +727,6 @@ struct TaskDetailView: View {
                 Image(systemName: systemName)
                     .foregroundStyle(.secondary)
             }
-    }
-
-    // MARK: - 为了谁（纯展示）
-
-    private var forWhomSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 6) {
-                Image(systemName: "person.3")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(L10n.Common.forLabel.localized)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    if isForWhomEveryone {
-                        forWhomEveryoneChip
-                    } else {
-                        ForEach(selectedForWhomProfiles) { profile in
-                            forWhomProfileChip(profile: profile, selected: true)
-                        }
-                    }
-                }
-                .padding(.horizontal, 4)
-                .padding(.vertical, 6)
-            }
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .taskDetailFormCardStyled()
-    }
-
-    private var forWhomEveryoneChip: some View {
-        let selected = isForWhomEveryone
-        return VStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .fill(selected ? Color.accentColor.opacity(0.2) : Color(.secondarySystemFill))
-                    .frame(width: 52, height: 52)
-                Image(systemName: "person.3.fill")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(selected ? Color.accentColor : Color.secondary)
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Color.accentColor)
-                        .offset(x: 18, y: 18)
-                }
-            }
-            .frame(width: 60, height: 60)
-            Text(L10n.Common.everyone.localized)
-                .font(.caption)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Family.forWhomAllMembers.localized)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private func forWhomProfileChip(profile: FamilyProfile, selected: Bool) -> some View {
-        VStack(spacing: 6) {
-            ZStack {
-                Circle()
-                    .fill(Color(.secondarySystemFill))
-                    .frame(width: 52, height: 52)
-
-                if let urlString = profile.avatarUrl?.trimmingCharacters(in: .whitespacesAndNewlines),
-                   let url = URL(string: urlString), urlString.isEmpty == false {
-                    KFImage(url)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 52, height: 52)
-                        .clipShape(Circle())
-                } else {
-                    Text(profileInitials(profile.displayName))
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.primary)
-                }
-
-                if selected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Color.accentColor)
-                        .offset(x: 18, y: 18)
-                }
-            }
-            .frame(width: 60, height: 60)
-            .overlay {
-                Circle()
-                    .strokeBorder(selected ? Color.accentColor : Color.clear, lineWidth: 2.5)
-                    .frame(width: 56, height: 56)
-            }
-
-            Text(profile.displayName)
-                .font(.caption)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .frame(maxWidth: 72)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(profile.displayName)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-
-    private func profileInitials(_ name: String) -> String {
-        let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let c = t.first else { return "?" }
-        return String(c).uppercased()
     }
 
     private var highlightedProfileIds: Set<UUID> {
@@ -661,96 +758,6 @@ struct TaskDetailView: View {
         return orderedIds.compactMap { profileById[$0] }
     }
 
-    // MARK: - 渐进展开
-
-    private var expandMoreControl: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.22)) {
-                showMoreOptions = true
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Text(L10n.Common.showMoreOptions.localized)
-                    .font(.subheadline.weight(.semibold))
-                Text(verbatim: "˅")
-                    .font(.subheadline.weight(.bold))
-            }
-            .foregroundStyle(.tint)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var collapseMoreControl: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.22)) {
-                showMoreOptions = false
-            }
-        } label: {
-            HStack(spacing: 6) {
-                Text(L10n.Common.collapseMoreOptions.localized)
-                    .font(.subheadline.weight(.semibold))
-                Text(verbatim: "˄")
-                    .font(.subheadline.weight(.bold))
-            }
-            .foregroundStyle(.tint)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - 展开区（只读，对齐设计稿）
-
-    private var expandedReadonlySection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            expandedCard(title: L10n.Schedule.taskPriority2.localized) {
-                priorityReadonlySegmentVisual
-            }
-
-            expandedCard(title: L10n.Common.emergencyContactNumberMeetingLink.localized) {
-                emergencyReadonlyBlock
-            }
-
-            expandedCard(title: L10n.Location.location.localized) {
-                locationReadonlyRow
-            }
-
-            expandedCard(title: L10n.Common.moreDetails.localized) {
-                readonlyMultilineBlock(
-                    text: descriptionMoreDetailsPart,
-                    emptyPlaceholder: L10n.Common.noNotesYet.localized
-                )
-            }
-
-            expandedCard(title: L10n.Common.financeAndNotes.localized) {
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        Text(L10n.Common.expenses.localized)
-                            .font(.body)
-                            .foregroundStyle(.primary)
-                        Spacer(minLength: 12)
-                        costValueView
-                            .font(.body.weight(.medium))
-                            .foregroundStyle(financeCostIsPlaceholder ? .tertiary : .primary)
-                            .multilineTextAlignment(.trailing)
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(L10n.Common.detailedDescription.localized)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        readonlyMultilineBlock(
-                            text: descriptionFinancePart,
-                            emptyPlaceholder: L10n.Common.youCanFillInExpenseDetailsPaymentMethods.localized,
-                            emptyAsCaptionHint: true
-                        )
-                    }
-                }
-            }
-        }
-    }
 
     /// 与新建任务表单一致：`更多细节` 与 `财务详细说明` 以双换行拼在 `description`。
     private var descriptionParts: (more: String?, finance: String?) {
@@ -775,143 +782,6 @@ struct TaskDetailView: View {
 
     private var financeCostIsPlaceholder: Bool {
         costIsEmpty
-    }
-
-    /// 只读分段外观（非 `Picker`）：展示当前优先级对应选中态。
-    private var priorityReadonlySegmentVisual: some View {
-        let isUrgent = (task.priority == .urgent || task.priority == .high)
-        return HStack(spacing: 0) {
-            Text(L10n.Common.urgent.localized)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .foregroundStyle(isUrgent ? Color.accentColor : Color.secondary)
-                .background(isUrgent ? Color.accentColor.opacity(0.18) : Color.clear)
-
-            Text(L10n.Common.generally.localized)
-                .font(.subheadline.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .foregroundStyle(isUrgent ? Color.secondary : Color.accentColor)
-                .background(isUrgent ? Color.clear : Color.accentColor.opacity(0.18))
-        }
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Schedule.taskPriority2.localized)
-        .accessibilityValue(task.priority.localizedName)
-    }
-
-    private var emergencyReadonlyBlock: some View {
-        let trimmed = task.emergencyPhone?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return HStack(alignment: .center, spacing: 10) {
-            Group {
-                if trimmed.isEmpty {
-                    Text(L10n.Common.none.localized)
-                        .font(.body)
-                        .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    emergencyReadonlyContent(trimmed)
-                }
-            }
-            Image(systemName: "person.crop.circle.fill")
-                .font(.title2)
-                .foregroundStyle(trimmed.isEmpty ? Color.secondary.opacity(0.35) : Color.accentColor)
-                .accessibilityHidden(true)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    private var locationReadonlyRow: some View {
-        let has = locationLine != nil
-        return HStack(spacing: 12) {
-            Image(systemName: "mappin.and.ellipse")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Group {
-                if has, let line = locationLine {
-                    Text(verbatim: line)
-                } else {
-                    Text(L10n.Location.locationNotAdded.localized)
-                }
-            }
-                .font(.body)
-                .foregroundStyle(has ? .primary : .tertiary)
-            Spacer(minLength: 8)
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.tertiary)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-
-    @ViewBuilder
-    private func readonlyMultilineBlock(
-        text: String?,
-        emptyPlaceholder: LocalizedStringResource,
-        emptyAsCaptionHint: Bool = false
-    ) -> some View {
-        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if trimmed.isEmpty {
-            Text(emptyPlaceholder)
-                .font(emptyAsCaptionHint ? .subheadline : .body)
-                .italic(emptyAsCaptionHint == false)
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .frame(minHeight: emptyAsCaptionHint ? 72 : 88, alignment: .topLeading)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        } else {
-            Text(trimmed)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(12)
-                .frame(minHeight: 88, alignment: .topLeading)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-    }
-
-    private func expandedCard<Content: View>(title: LocalizedStringResource, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            content()
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .taskDetailFormCardStyled()
-    }
-
-    @ViewBuilder
-    private func emergencyReadonlyContent(_ raw: String) -> some View {
-        if let url = dialOrWebURL(from: raw) {
-            Text(raw)
-                .font(.body)
-                .foregroundStyle(.tint)
-                .underline()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    openURL(url)
-                }
-                .accessibilityHint(L10n.Common.doubleTapToCallOrOpenTheLink.localized)
-        } else {
-            Text(raw)
-                .font(.body)
-                .foregroundStyle(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
     }
 
     private func dialOrWebURL(from raw: String) -> URL? {
