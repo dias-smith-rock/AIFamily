@@ -141,17 +141,20 @@ extension View {
 
 /// 自定义日期/时间选择：行内 footnote 胶囊 + Sheet 内缩小字号，与主表单一致。
 /// `dateAndTime` 模式下日期胶囊与时间胶囊分别打开对应 Sheet，互不混排。
+/// `duration` 模式表示「持续时长」，展示为 Xh Ym，不受 12/24 小时制影响。
 struct CreateTaskFormDateTimePicker: View {
     enum Mode: Hashable, Identifiable {
         case date
         case time
         case dateAndTime
+        case duration
 
         var id: String {
             switch self {
             case .date: return "date"
             case .time: return "time"
             case .dateAndTime: return "dateAndTime"
+            case .duration: return "duration"
             }
         }
     }
@@ -179,6 +182,13 @@ struct CreateTaskFormDateTimePicker: View {
                     presentedPicker = .time
                 } label: {
                     capsuleLabel(timeText)
+                }
+                .buttonStyle(.plain)
+            case .duration:
+                Button {
+                    presentedPicker = .duration
+                } label: {
+                    capsuleLabel(durationText)
                 }
                 .buttonStyle(.plain)
             case .dateAndTime:
@@ -230,6 +240,14 @@ struct CreateTaskFormDateTimePicker: View {
         ScheduleTimeFormatting.timelineClockTime(selection, locale: locale)
     }
 
+    /// 时长：小时+分钟文案，非钟点格式。
+    private var durationText: String {
+        TaskDurationFormatting.readableDuration(
+            minutes: Self.durationMinutes(from: selection),
+            locale: locale
+        )
+    }
+
     private func pickerSheet(for picker: Mode) -> some View {
         NavigationStack {
             ScrollView {
@@ -241,6 +259,16 @@ struct CreateTaskFormDateTimePicker: View {
                             .labelsHidden()
                             .padding(.horizontal, 4)
                     case .time:
+                        DatePicker("", selection: $selection, displayedComponents: [.hourAndMinute])
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                            .frame(maxHeight: 132)
+                            .environment(
+                                \.locale,
+                                ScheduleTimeFormatting.twentyFourHourLocale(basedOn: locale)
+                            )
+                    case .duration:
+                        // 滚轮用时:分分量表达时长；强制 h23，避免 AM/PM 被当成钟点。
                         DatePicker("", selection: $selection, displayedComponents: [.hourAndMinute])
                             .datePickerStyle(.wheel)
                             .labelsHidden()
@@ -275,8 +303,17 @@ struct CreateTaskFormDateTimePicker: View {
         }
         .environment(\.locale, locale)
         .tint(accent)
-        .presentationDetents(picker == .time ? [.height(280), .medium] : [.medium, .large])
+        .presentationDetents(
+            (picker == .time || picker == .duration) ? [.height(280), .medium] : [.medium, .large]
+        )
         .presentationDragIndicator(.visible)
+    }
+
+    private static func durationMinutes(from pickerDate: Date) -> Int {
+        let calendar = Calendar.current
+        let hours = calendar.component(.hour, from: pickerDate)
+        let minutes = calendar.component(.minute, from: pickerDate)
+        return max(1, hours * 60 + minutes)
     }
 }
 

@@ -231,15 +231,12 @@ private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
 
             Spacer(minLength: 8)
 
-            DatePicker(
-                "",
+            CreateTaskFormDateTimePicker(
                 selection: $durationPickerDate,
-                displayedComponents: [.hourAndMinute]
+                mode: .duration,
+                locale: locale,
+                accent: .accentColor
             )
-            .labelsHidden()
-            .datePickerStyle(.compact)
-            // 时长是“持续时间”而不是一天中的时间点，统一使用 24 小时制避免 AM/PM 歧义。
-            .environment(\.locale, ScheduleTimeFormatting.twentyFourHourLocale(basedOn: locale))
             .accessibilityLabel(L10n.Schedule.duration)
             .layoutPriority(0)
         }
@@ -911,7 +908,7 @@ struct CreateTaskView: View {
         ) {
             CreateTaskFormDateTimePicker(
                 selection: $durationPickerDate,
-                mode: .time,
+                mode: .duration,
                 locale: locale,
                 accent: formIconAccent
             )
