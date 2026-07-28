@@ -37,6 +37,7 @@ description: >-
 | 13 | `20260627170000_ensure_ledger_presets_rpc.sql` | RPC `ensure_household_ledger_presets`（成员/游客可幂等补种） |
 | 14 | `20260627180000_ledger_payer_ids.sql` | `ledger_transactions.payer_ids uuid[]` + 从 `payer_id` 回填 |
 | 15 | `20260627190000_ledger_visible_member_ids.sql` | `visible_member_ids` + SELECT RLS 可见度 |
+| 16 | `20260728120000_tasks_timezone.sql` | `tasks.timezone`（IANA；全天/重复日历日语义） |
 
 **公账目标 schema**（`expense_categories` 完整列、`category_tags`、`ledger_transactions`、`transaction_tag_mappings`、`seed_household_presets`）见 `20260627135000_ledger_four_tables_schema.sql` 起。
 
@@ -63,6 +64,7 @@ description: >-
 | `issue` | `issue` | `text`，任务「遇到问题」说明；≠ `TaskStatus.issue` 枚举 |
 | `alarm_set_by` | `alarmSetBy` | JSONB `[String: AlarmConfig]`（按成员称呼键） |
 | `task_type` | `taskType` | 日程/待办：`scheduled` / `flexible` / `birthday_reminder`。**`expense` / `income`：历史兼容，新公账勿再写入** → 见 `ledger_transactions` |
+| `timezone` | `timezone` | IANA（如 `Asia/Shanghai`）；全天/重复按此解释日历日；`nil` 回退显示时区/系统时区 |
 | `estimated_cost` | `estimatedCost` | 任务预估费用（日程创建 UI）；≠ 公账实付 |
 | `list_id` | `listId` | 购物清单等外键（预留） |
 | `actual_amount` | `actualAmount` | **已废弃 · 公账勿写入** → `ledger_transactions.amount` |

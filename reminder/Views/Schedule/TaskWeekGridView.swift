@@ -9,9 +9,12 @@ private struct WeekPageBundle {
 /// Week 模式：7 日 × 24 小时时间网格（由 `TaskListView` 嵌入）。
 struct TaskWeekGridView: View {
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var appSettings: AppSettingsManager
 
     @ObservedObject var viewModel: ScheduleViewModel
     @Binding var selectedDate: Date
+
+    private var displayCalendar: Calendar { appSettings.effectiveCalendar }
 
     let onTaskSelect: (FamilyTask) -> Void
     let onRefresh: (() async -> Void)?
@@ -409,18 +412,23 @@ struct TaskWeekGridView: View {
             ForEach(days, id: \.self) { day in
                 ScheduleWeekDayStripCell(
                     date: day,
-                    isSelected: Calendar.current.isDate(day, inSameDayAs: selectedDate),
+                    isSelected: displayCalendar.isDate(day, inSameDayAs: selectedDate),
                     taskCount: taskCount(for: day, in: weekTasks),
                     locale: locale
                 ) {
-                    selectedDate = Calendar.current.startOfDay(for: day)
+                    selectedDate = displayCalendar.startOfDay(for: day)
                 }
             }
         }
     }
 
     private func taskCount(for date: Date, in weekTasks: [FamilyTask]) -> Int {
-        weekTasks.filter { Calendar.current.isDate(taskDisplayDate($0), inSameDayAs: date) }.count
+        weekTasks.filter {
+            displayCalendar.isDate(
+                $0.scheduleDisplayDay(displayCalendar: displayCalendar),
+                inSameDayAs: date
+            )
+        }.count
     }
 
     // MARK: - All-day strip
@@ -485,7 +493,7 @@ struct TaskWeekGridView: View {
 
     private func jumpToCurrentWeek() {
         ensureFirstPaintExpanded()
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = displayCalendar.startOfDay(for: Date())
         let targetOffset = ScheduleWeekCalendar.weekOffset(for: today, epochStart: weekEpochStart)
         WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "jumpToCurrentWeek")
         pendingTimelineScrollMode = .currentTime
@@ -500,14 +508,14 @@ struct TaskWeekGridView: View {
 
     private func filteredTasks(for days: [Date]) -> [FamilyTask] {
         guard let first = days.first, let last = days.last else { return [] }
-        let cal = Calendar.current
+        let cal = displayCalendar
         let weekStart = cal.startOfDay(for: first)
         let weekEnd = cal.startOfDay(for: last)
         return WeekViewPerformanceTracer.measureTasksFilter(
             scheduledTaskCount: viewModel.scheduledTasks.count
         ) {
             viewModel.scheduledTasks.filter { task in
-                let day = cal.startOfDay(for: taskDisplayDate(task))
+                let day = task.scheduleDisplayDay(displayCalendar: cal)
                 return day >= weekStart && day <= weekEnd
             }
         }
@@ -515,7 +523,11 @@ struct TaskWeekGridView: View {
 
     private func allDayTasks(for day: Date, in weekTasks: [FamilyTask]) -> [FamilyTask] {
         weekTasks.filter { task in
-            task.isAllDay && Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: day)
+            task.isAllDay
+                && displayCalendar.isDate(
+                    task.scheduleDisplayDay(displayCalendar: displayCalendar),
+                    inSameDayAs: day
+                )
         }
     }
 
@@ -567,7 +579,8 @@ private struct WeekTimelineScrollArea: View {
 
     private var isActiveWeekPage: Bool { displayedWeekOffset == weekOffset }
     private var containsToday: Bool {
-        days.contains(where: { Calendar.current.isDateInToday($0) })
+        let calendar = AppDisplayTimeZone.calendar()
+        return days.contains(where: { calendar.isDateInToday($0) })
     }
 
     private var nowY: CGFloat? {

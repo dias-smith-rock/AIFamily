@@ -10,7 +10,7 @@ enum RecurrenceEngine {
     static func generateInstances(from motherTask: FamilyTask) -> [FamilyTask] {
         let dates = occurrenceDates(for: motherTask)
         guard dates.count > 1 else { return [] }
-        let calendar = Calendar.current
+        let calendar = motherTask.taskCalendar
         let now = Date()
         return dates.dropFirst().map { dayAnchor in
             childCopy(mother: motherTask, occurrenceDay: dayAnchor, calendar: calendar, materializedAt: now)
@@ -32,7 +32,7 @@ enum RecurrenceEngine {
         }
         guard let anchor = motherTask.dueDate else { return [] }
 
-        let calendar = Calendar.current
+        let calendar = motherTask.taskCalendar
         let parsed = ParsedRecurrence(raw: rule, recurrenceInterval: motherTask.recurrenceInterval)
         let endCap = motherTask.recurrenceEndDate
             ?? calendar.date(byAdding: .year, value: 2, to: anchor)
@@ -56,7 +56,12 @@ enum RecurrenceEngine {
     // MARK: - 时间合并（批量「修改此后所有」）
 
     /// 将编辑器上的时分秒套到「某次发生」的日历日上，**不改动**该次发生的年月日（全日任务则对齐到该日日初）。
-    static func mergeEditorTime(editorDue: Date, ontoOccurrence occurrence: Date?, allDay: Bool, calendar: Calendar = .current) -> Date {
+    static func mergeEditorTime(
+        editorDue: Date,
+        ontoOccurrence occurrence: Date?,
+        allDay: Bool,
+        calendar: Calendar = AppDisplayTimeZone.calendar()
+    ) -> Date {
         guard let occurrence else { return editorDue }
         if allDay {
             return calendar.startOfDay(for: occurrence)
@@ -216,6 +221,7 @@ enum RecurrenceEngine {
             endDatetime: newEnd,
             durationMinutes: mother.durationMinutes,
             isAllDay: mother.isAllDay,
+            timezone: mother.timezone,
             recurrenceRule: nil,
             recurrenceEndDate: nil,
             issue: nil,

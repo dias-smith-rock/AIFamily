@@ -45,6 +45,9 @@ final class AppSettingsManager: ObservableObject {
     @AppStorage("ledger_display_currency")
     private var ledgerDisplayCurrencyStorage = LedgerCurrency.defaultCode
 
+    @AppStorage(AppDisplayTimeZone.storageKey)
+    private var displayTimeZoneStorage = ""
+
     var appearance: AppAppearance {
         get { AppAppearance(rawValue: appearanceStorage) ?? .system }
         set {
@@ -76,6 +79,40 @@ final class AppSettingsManager: ObservableObject {
             objectWillChange.send()
             ledgerDisplayCurrencyStorage = LedgerCurrency.normalized(newValue)
         }
+    }
+
+    /// `nil` = 跟随系统；否则为 IANA 时区 id。
+    var displayTimeZoneIdentifier: String? {
+        get {
+            let trimmed = displayTimeZoneStorage.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        set {
+            objectWillChange.send()
+            if let newValue {
+                let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                displayTimeZoneStorage = trimmed
+            } else {
+                displayTimeZoneStorage = ""
+            }
+        }
+    }
+
+    /// 日程展示 / 「今天」切日用的时区。
+    var effectiveTimeZone: TimeZone {
+        AppDisplayTimeZone.effectiveTimeZone
+    }
+
+    var effectiveCalendar: Calendar {
+        AppDisplayTimeZone.calendar(for: effectiveTimeZone)
+    }
+
+    /// 设置行副标题。
+    var displayTimeZoneSettingsValue: String {
+        if displayTimeZoneIdentifier == nil {
+            return AppLocalized.localized(L10n.Settings.timezoneFollowSystem)
+        }
+        return AppDisplayTimeZone.displayName(for: effectiveTimeZone, locale: appLocale)
     }
 
     /// 用户是否在应用内手动指定了语言（非跟随系统）。

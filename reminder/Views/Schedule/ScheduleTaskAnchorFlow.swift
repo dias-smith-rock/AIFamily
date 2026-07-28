@@ -26,7 +26,7 @@ struct ScheduleTaskAnchorFlow: View {
     }
 
     private var viewingToday: Bool {
-        Calendar.current.isDateInToday(selectedCalendarDay)
+        AppDisplayTimeZone.calendar().isDateInToday(selectedCalendarDay)
     }
 
     var body: some View {

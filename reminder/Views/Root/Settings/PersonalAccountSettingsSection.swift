@@ -66,6 +66,18 @@ struct PersonalAccountSettingsSection: View {
             }
 
             NavigationLink {
+                TimeZoneSettingsView()
+            } label: {
+                SettingsRowView(
+                    title: L10n.Settings.timezone,
+                    systemImage: "globe.badge.clock",
+                    iconTint: .orange,
+                    value: appSettings.displayTimeZoneSettingsValue,
+                    showsChevron: false
+                )
+            }
+
+            NavigationLink {
                 LedgerDisplayCurrencySettingsView()
             } label: {
                 SettingsRowView(

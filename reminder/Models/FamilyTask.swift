@@ -43,6 +43,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     /// 对应 `tasks.duration_minutes`（任务时长，单位：分钟；库表 NOT NULL）。
     var durationMinutes: Int = FamilyTask.defaultDurationMinutes
     var isAllDay: Bool
+    /// `tasks.timezone`：IANA（如 `Asia/Shanghai`）；全天/重复按此解释日历日。
+    var timezone: String? = nil
     var recurrenceRule: String?
     /// `tasks.recurrence_end_date`（TIMESTAMPTZ）；无重复规则时必须为 `nil`。
     var recurrenceEndDate: Date? = nil
@@ -120,6 +122,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         endDatetime: Date? = nil,
         durationMinutes: Int = FamilyTask.defaultDurationMinutes,
         isAllDay: Bool,
+        timezone: String? = nil,
         recurrenceRule: String? = nil,
         recurrenceEndDate: Date? = nil,
         issue: String? = nil,
@@ -166,6 +169,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         self.endDatetime = endDatetime
         self.durationMinutes = durationMinutes
         self.isAllDay = isAllDay
+        self.timezone = timezone
         self.recurrenceRule = recurrenceRule
         self.recurrenceEndDate = recurrenceEndDate
         self.issue = issue
@@ -214,6 +218,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         case endDatetime
         case durationMinutes
         case isAllDay
+        case timezone
         case recurrenceRule
         case recurrenceEndDate = "recurrence_end_date"
         case legacyRecurrenceEndAt = "recurrence_end_at"
@@ -273,6 +278,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         durationMinutes = try container.decodeIfPresent(Int.self, forKey: .durationMinutes)
             ?? Self.legacyCacheFallbackDurationMinutes
         isAllDay = try container.decodeIfPresent(Bool.self, forKey: .isAllDay) ?? false
+        timezone = try container.decodeIfPresent(String.self, forKey: .timezone)
         recurrenceRule = try container.decodeIfPresent(String.self, forKey: .recurrenceRule)
         if let recurrenceEnd = try container.decodeIfPresent(Date.self, forKey: .recurrenceEndDate) {
             recurrenceEndDate = recurrenceEnd
@@ -327,6 +333,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(endDatetime, forKey: .endDatetime)
         try container.encode(durationMinutes, forKey: .durationMinutes)
         try container.encode(isAllDay, forKey: .isAllDay)
+        try container.encodeIfPresent(timezone, forKey: .timezone)
         try container.encodeIfPresent(recurrenceRule, forKey: .recurrenceRule)
         try container.encodeIfPresent(recurrenceEndDate, forKey: .recurrenceEndDate)
         try container.encodeIfPresent(issue, forKey: .issue)

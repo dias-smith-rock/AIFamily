@@ -6037,6 +6037,27 @@
     "orphan": false
   },
   {
+    "legacy_key": "时区",
+    "new_key": "settings_timezone",
+    "table": "Settings",
+    "swift_property": "timezone",
+    "orphan": false
+  },
+  {
+    "legacy_key": "跟随系统",
+    "new_key": "settings_timezone_follow_system",
+    "table": "Settings",
+    "swift_property": "timezoneFollowSystem",
+    "orphan": false
+  },
+  {
+    "legacy_key": "仅影响本机日程显示与「今天」切日；提醒仍按实际时刻响铃。",
+    "new_key": "settings_timezone_footer",
+    "table": "Settings",
+    "swift_property": "timezoneFooter",
+    "orphan": false
+  },
+  {
     "legacy_key": "添加成员",
     "new_key": "ledger_add_member",
     "table": "Ledger",

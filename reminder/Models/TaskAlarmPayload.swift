@@ -14,6 +14,8 @@ struct TaskAlarmPayload: Sendable {
     let isAllDay: Bool
     let isFlexibleTodo: Bool
     let dueDate: Date?
+    /// IANA；全天提醒按任务时区确定「前一日」。
+    let timezone: String?
     /// 与 `FamilyTask.reminderOffsets` 一致：每条为「截止前提前分钟数」；`nil` 或空表示不设提前量。
     let reminderOffsets: [Int]?
 }
@@ -37,6 +39,7 @@ extension TaskAlarmPayload {
             isAllDay: task.isAllDay,
             isFlexibleTodo: task.isFlexibleTodo,
             dueDate: task.alarmAnchorDate,
+            timezone: task.timezone,
             reminderOffsets: task.reminderOffsets
         )
     }
@@ -55,6 +58,7 @@ extension TaskAlarmPayload {
             isAllDay: isAllDay,
             isFlexibleTodo: isFlexibleTodo,
             dueDate: dueDate,
+            timezone: timezone.map { String($0) },
             reminderOffsets: offsetsCopy
         )
     }

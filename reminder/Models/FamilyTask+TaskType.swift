@@ -44,7 +44,7 @@ extension FamilyTask {
     /// 灵活待办截止日（`end_datetime` 的日历日）；无则 `nil`。
     var flexibleDeadlineDay: Date? {
         guard isFlexibleTodo, let endDatetime else { return nil }
-        return Calendar.current.startOfDay(for: endDatetime)
+        return taskCalendar.startOfDay(for: endDatetime)
     }
 
     /// 本地通知与排序用的时刻：定时用开始 `due_date`，灵活用截止 `end_datetime`。

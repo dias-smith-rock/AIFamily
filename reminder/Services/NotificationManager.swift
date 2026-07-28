@@ -146,10 +146,14 @@ actor NotificationManager {
         }
 
         guard let due = payload.dueDate else { return (false, "allday_missing_dueDate") }
-        let cal = Calendar.current
-        let startOfDue = cal.startOfDay(for: due)
-        let startOfToday = cal.startOfDay(for: now)
-        if startOfDue < startOfToday { return (false, "allday_due_day_passed") }
+        let taskCal = TaskCalendar.calendar(forTaskTimezone: payload.timezone)
+        let startOfDue = taskCal.startOfDay(for: due)
+        let deviceCal = Calendar.current
+        let startOfToday = deviceCal.startOfDay(for: now)
+        // 将任务时区下的执行日映射到设备日历日再与「今天」比较。
+        let dueYMD = taskCal.dateComponents([.year, .month, .day], from: startOfDue)
+        let dueOnDevice = deviceCal.date(from: dueYMD).map { deviceCal.startOfDay(for: $0) } ?? startOfDue
+        if dueOnDevice < startOfToday { return (false, "allday_due_day_passed") }
         return (true, nil)
     }
 
@@ -195,25 +199,27 @@ actor NotificationManager {
         return scheduled
     }
 
-    /// 全天任务：在执行日「前一天」的 18:00 与 21:00 各一条。返回成功加入系统的请求数。
+    /// 全天任务：在任务时区下「执行日前一天」的日历日，于**设备本地** 18:00 与 21:00 各一条。
     @discardableResult
     private func scheduleAllDayAlarms(for payload: TaskAlarmPayload) async -> Int {
         guard let due = payload.dueDate else {
             Self.debugLog("allday schedule skip taskId=\(payload.id.uuidString) reason=no_dueDate")
             return 0
         }
-        let cal = Calendar.current
-        let startOfDue = cal.startOfDay(for: due)
-        guard let previousDay = cal.date(byAdding: .day, value: -1, to: startOfDue) else {
+        let taskCal = TaskCalendar.calendar(forTaskTimezone: payload.timezone)
+        let startOfDue = taskCal.startOfDay(for: due)
+        guard let previousDay = taskCal.date(byAdding: .day, value: -1, to: startOfDue) else {
             Self.debugLog("allday schedule skip taskId=\(payload.id.uuidString) reason=calendar_previousDay_nil")
             return 0
         }
 
-        let ymd = cal.dateComponents([.year, .month, .day], from: previousDay)
+        let ymd = taskCal.dateComponents([.year, .month, .day], from: previousDay)
+        // 触发组件始终用设备时区，保证本机墙钟 18:00/21:00 响起。
+        let deviceCal = Calendar.current
 
         var c18 = DateComponents()
-        c18.calendar = cal
-        c18.timeZone = cal.timeZone
+        c18.calendar = deviceCal
+        c18.timeZone = deviceCal.timeZone
         c18.year = ymd.year
         c18.month = ymd.month
         c18.day = ymd.day
@@ -224,7 +230,7 @@ actor NotificationManager {
         var c21 = c18
         c21.hour = 21
 
-        guard let fire18 = cal.date(from: c18), let fire21 = cal.date(from: c21) else {
+        guard let fire18 = deviceCal.date(from: c18), let fire21 = deviceCal.date(from: c21) else {
             Self.debugLog("allday schedule skip taskId=\(payload.id.uuidString) reason=calendar_fireDate_nil")
             return 0
         }

@@ -4,11 +4,14 @@ import Kingfisher
 /// Day 模式：周历条 + 全天条 + 锚点时间轴（由 `TaskListView` 嵌入）。
 struct TaskModeDayView: View {
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var appSettings: AppSettingsManager
 
     private let taskFlowCompactGapHeight: CGFloat = ScheduleTimelineMetrics.taskFlowGapHeight
     private let taskFlowLongIdleThreshold: TimeInterval = 3600
     /// 未收到 ScrollView 宽度前占位，避免首张卡片过窄（约等于常见屏宽减去左右边距与时间列）。
     private let allDayCardFallbackWidth: CGFloat = 300
+
+    private var displayCalendar: Calendar { appSettings.effectiveCalendar }
 
     private var resolvedAllDayCardWidth: CGFloat {
         allDayCardSlotWidth > 8 ? allDayCardSlotWidth : allDayCardFallbackWidth
@@ -129,7 +132,7 @@ struct TaskModeDayView: View {
 
     /// 根据周偏移生成当周 7 天（从系统 locale 的「每周起始日」算起）。
     private func daysInWeek(weekOffset offset: Int) -> [Date] {
-        let cal = Calendar.current
+        let cal = displayCalendar
         guard let weekStart = cal.date(byAdding: .day, value: offset * 7, to: weekEpochStart) else {
             return []
         }
@@ -138,8 +141,8 @@ struct TaskModeDayView: View {
 
     /// `date` 所在自然周相对 `weekEpochStart` 是第几周。
     private func weekOffsetForDate(_ date: Date) -> Int {
-        let targetWeekStart = Self.startOfWeek(for: dayID(for: date))
-        let days = Calendar.current.dateComponents([.day], from: weekEpochStart, to: targetWeekStart).day ?? 0
+        let targetWeekStart = Self.startOfWeek(for: dayID(for: date), calendar: displayCalendar)
+        let days = displayCalendar.dateComponents([.day], from: weekEpochStart, to: targetWeekStart).day ?? 0
         return days / 7
     }
 
@@ -168,8 +171,7 @@ struct TaskModeDayView: View {
 
     private static let weekPageRange = -500...500
 
-    private static func startOfWeek(for date: Date) -> Date {
-        let cal = Calendar.current
+    private static func startOfWeek(for date: Date, calendar cal: Calendar = AppDisplayTimeZone.calendar()) -> Date {
         let day = cal.startOfDay(for: date)
         let weekday = cal.component(.weekday, from: day)
         let firstWeekday = cal.firstWeekday
@@ -281,13 +283,13 @@ struct TaskModeDayView: View {
     }
 
     private func goToPreviousDay() {
-        let calendar = Calendar.current
+        let calendar = displayCalendar
         guard let newDate = calendar.date(byAdding: .day, value: -1, to: selectedDay) else { return }
         applySelectedDate(calendar.startOfDay(for: newDate), insertionEdge: .leading)
     }
 
     private func goToNextDay() {
-        let calendar = Calendar.current
+        let calendar = displayCalendar
         guard let newDate = calendar.date(byAdding: .day, value: 1, to: selectedDay) else { return }
         applySelectedDate(calendar.startOfDay(for: newDate), insertionEdge: .trailing)
     }
@@ -384,7 +386,7 @@ struct TaskModeDayView: View {
 
     private func scrollTaskAnchorFlowToInitial(proxy: ScrollViewProxy, animated: Bool = true) {
         guard timedTasks.isEmpty == false else { return }
-        let cal = Calendar.current
+        let cal = displayCalendar
         let viewingToday = cal.isDateInToday(selectedDay)
         let sorted = ScheduleTimelineMetrics.sortedForTimeline(timedTasks, anchor: taskDisplayDate)
         guard let first = sorted.first else { return }
@@ -464,7 +466,7 @@ struct TaskModeDayView: View {
     private var selectedDateTasks: [FamilyTask] {
         viewModel.scheduledTasks
             .filter { task in
-                Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: selectedDate)
+                displayCalendar.isDate(task.scheduleDisplayDay(displayCalendar: displayCalendar), inSameDayAs: selectedDate)
             }
             .sorted { lhs, rhs in
                 ScheduleTimelineMetrics.timelineSortsBefore(lhs, rhs, anchor: taskDisplayDate)
@@ -480,7 +482,7 @@ struct TaskModeDayView: View {
     }
 
     private func dayID(for date: Date) -> Date {
-        Calendar.current.startOfDay(for: date)
+        displayCalendar.startOfDay(for: date)
     }
 
     private enum QuickCreateDueDateKind {
@@ -504,7 +506,7 @@ struct TaskModeDayView: View {
     }
 
     private func calendarDayByAdding(_ days: Int, to anchor: Date) -> Date {
-        let cal = Calendar.current
+        let cal = displayCalendar
         let base = dayID(for: anchor)
         guard let shifted = cal.date(byAdding: .day, value: days, to: base) else { return base }
         return cal.startOfDay(for: shifted)
@@ -512,7 +514,7 @@ struct TaskModeDayView: View {
 
     /// `weekday` 与 `Calendar.Component.weekday` 一致（如美国历：1=周日 … 7=周六）。
     private func nextSaturdayOnOrAfter(_ anchor: Date) -> Date {
-        let cal = Calendar.current
+        let cal = displayCalendar
         let base = dayID(for: anchor)
         for offset in 0..<14 {
             guard let d = cal.date(byAdding: .day, value: offset, to: base) else { continue }
@@ -529,7 +531,7 @@ struct TaskModeDayView: View {
 
     private func taskCount(for date: Date) -> Int {
         viewModel.scheduledTasks.reduce(into: 0) { result, task in
-            if Calendar.current.isDate(taskDisplayDate(task), inSameDayAs: date) {
+            if displayCalendar.isDate(task.scheduleDisplayDay(displayCalendar: displayCalendar), inSameDayAs: date) {
                 result += 1
             }
         }
@@ -538,7 +540,7 @@ struct TaskModeDayView: View {
     private var monthTaskDots: [Date: [Color]] {
         var result: [Date: [Color]] = [:]
         for task in viewModel.scheduledTasks {
-            let day = Calendar.current.startOfDay(for: taskDisplayDate(task))
+            let day = task.scheduleDisplayDay(displayCalendar: displayCalendar)
             let color = statusColor(for: task.status)
             var colors = result[day, default: []]
             if colors.contains(where: { $0.description == color.description }) == false {
@@ -550,7 +552,7 @@ struct TaskModeDayView: View {
     }
 
     private func isSelected(_ date: Date) -> Bool {
-        Calendar.current.isDate(date, inSameDayAs: selectedDate)
+        displayCalendar.isDate(date, inSameDayAs: selectedDate)
     }
 
     private func taskDisplayDate(_ task: FamilyTask) -> Date {

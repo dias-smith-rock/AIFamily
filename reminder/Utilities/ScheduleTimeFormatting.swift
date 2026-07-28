@@ -2,29 +2,38 @@ import Foundation
 
 /// 日程 Tab 时间展示：固定 24 小时制，避免跟随系统 12/24 小时设置。
 enum ScheduleTimeFormatting {
-    private static let clockFormatter: DateFormatter = {
+    private static func clockFormatter(timeZone: TimeZone) -> DateFormatter {
         let formatter = DateFormatter()
-        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.calendar = AppDisplayTimeZone.calendar(for: timeZone)
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
+        formatter.timeZone = timeZone
         formatter.dateFormat = "HH:mm"
         return formatter
-    }()
-
-    static func timelineClockTime(_ date: Date, locale: Locale = .current) -> String {
-        _ = locale
-        return clockFormatter.string(from: date)
     }
 
-    static func timelineClockRange(start: Date, end: Date, locale: Locale = .current) -> String {
+    static func timelineClockTime(
+        _ date: Date,
+        locale: Locale = .current,
+        timeZone: TimeZone = AppDisplayTimeZone.effectiveTimeZone
+    ) -> String {
         _ = locale
-        let calendar = Calendar.current
+        return clockFormatter(timeZone: timeZone).string(from: date)
+    }
+
+    static func timelineClockRange(
+        start: Date,
+        end: Date,
+        locale: Locale = .current,
+        timeZone: TimeZone = AppDisplayTimeZone.effectiveTimeZone
+    ) -> String {
+        _ = locale
+        let calendar = AppDisplayTimeZone.calendar(for: timeZone)
         let startDay = calendar.startOfDay(for: start)
         let endDay = calendar.startOfDay(for: end)
         if startDay != endDay {
             return "00:00 – 23:59"
         }
-        return "\(timelineClockTime(start)) – \(timelineClockTime(end))"
+        return "\(timelineClockTime(start, timeZone: timeZone)) – \(timelineClockTime(end, timeZone: timeZone))"
     }
 
     /// SwiftUI `DatePicker` 强制 24 小时滚轮（`-u-hc-h23`）。

@@ -28,7 +28,7 @@ struct ScheduleWeekDayStripCell: View {
                     .fontWeight(.medium)
                     .foregroundStyle(isSelected ? AppTheme.ColorToken.accent : .secondary)
 
-                Text(String(Calendar.current.component(.day, from: date)))
+                Text(String(AppDisplayTimeZone.calendar().component(.day, from: date)))
                     .font(.callout)
                     .fontWeight(.semibold)
                     .foregroundStyle(isSelected ? .white : .primary)
@@ -39,7 +39,7 @@ struct ScheduleWeekDayStripCell: View {
                         if isSelected {
                             Circle()
                                 .fill(AppTheme.ColorToken.accent)
-                        } else if Calendar.current.isDateInToday(date) {
+                        } else if AppDisplayTimeZone.calendar().isDateInToday(date) {
                             Circle()
                                 .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
                         }

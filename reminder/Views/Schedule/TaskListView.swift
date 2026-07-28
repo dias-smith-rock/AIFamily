@@ -555,7 +555,7 @@ struct TaskListView: View {
     }
 
     private func dayID(for date: Date) -> Date {
-        Calendar.current.startOfDay(for: date)
+        appSettings.effectiveCalendar.startOfDay(for: date)
     }
 
     private func drillDownFromYear(to date: Date) {
@@ -569,7 +569,7 @@ struct TaskListView: View {
     private var monthTaskDots: [Date: [Color]] {
         var result: [Date: [Color]] = [:]
         for task in viewModel.scheduledTasks {
-            let day = Calendar.current.startOfDay(for: taskDisplayDate(task))
+            let day = task.scheduleDisplayDay(displayCalendar: appSettings.effectiveCalendar)
             let color = statusColor(for: task.status)
             var colors = result[day, default: []]
             if colors.contains(where: { $0.description == color.description }) == false {

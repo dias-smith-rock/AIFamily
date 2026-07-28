@@ -358,6 +358,7 @@ struct SupabaseTaskDataService: TaskDataService {
             endDatetime: sanitized.endDatetime,
             durationMinutes: sanitized.durationMinutes,
             isAllDay: sanitized.isAllDay,
+            timezone: sanitized.timezone,
             recurrenceRule: sanitized.recurrenceRule,
             recurrenceEndDate: sanitized.recurrenceEndDate,
             issue: sanitized.issue,

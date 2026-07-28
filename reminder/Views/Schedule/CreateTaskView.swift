@@ -938,7 +938,7 @@ struct CreateTaskView: View {
         Binding(
             get: { dueDate },
             set: { newValue in
-                let calendar = Calendar.current
+                let calendar = AppDisplayTimeZone.calendar()
                 guard calendar.isDate(newValue, inSameDayAs: dueDate) == false else {
                     dueDate = newValue
                     return
@@ -2620,6 +2620,7 @@ struct CreateTaskView: View {
                     endDatetime: resolvedEndDatetimeForPayload(),
                     durationMinutes: resolvedDurationMinutesForPayload(),
                     isAllDay: resolvedIsAllDayForPayload(),
+                    timezone: resolvedTimezoneForPayload(),
                     recurrenceRule: resolvedRecurrenceRuleForPayload(),
                     recurrenceEndDate: resolvedRecurrenceEndDateForPayloadStrict(),
                     recurrenceInterval: resolvedRecurrenceIntervalForPayloadStrict(),
@@ -2733,6 +2734,7 @@ struct CreateTaskView: View {
                             ? row.durationMinutes
                             : Self.durationMinutes(from: durationPickerDate),
                         isAllDay: isAllDay,
+                        timezone: resolvedTimezoneForPayload(),
                         recurrenceRule: recurrenceRulePayload,
                         recurrenceEndDate: recurrenceEndPayload,
                         recurrenceInterval: recurrenceIntervalPayload,
@@ -2962,6 +2964,7 @@ struct CreateTaskView: View {
                     endDatetime: resolvedEndDatetimeForPayload(),
                     durationMinutes: resolvedDurationMinutesForPayload(),
                     isAllDay: resolvedIsAllDayForPayload(),
+                    timezone: resolvedTimezoneForPayload(),
                     recurrenceRule: nil,
                     recurrenceEndDate: nil,
                     recurrenceInterval: nil,
@@ -3005,6 +3008,7 @@ struct CreateTaskView: View {
                         endDatetime: singlePayload.endDatetime,
                         durationMinutes: singlePayload.durationMinutes,
                         isAllDay: singlePayload.isAllDay,
+                        timezone: singlePayload.timezone,
                         recurrenceRule: singlePayload.recurrenceRule,
                         recurrenceEndDate: singlePayload.recurrenceEndDate,
                         recurrenceInterval: singlePayload.recurrenceInterval,
@@ -3062,6 +3066,7 @@ struct CreateTaskView: View {
                     endDatetime: resolvedEndDatetime(for: dueDate),
                     durationMinutes: resolvedDurationMinutes(for: dueDate),
                     isAllDay: isAllDay,
+                    timezone: resolvedTimezoneForPayload(),
                     recurrenceRule: recurrence,
                     recurrenceEndDate: resolvedRecurrenceEndDateForPayload(),
                     recurrenceInterval: resolvedRecurrenceIntervalForPayload(),
@@ -3106,6 +3111,7 @@ struct CreateTaskView: View {
                             endDatetime: child.endDatetime,
                             durationMinutes: child.durationMinutes,
                             isAllDay: isAllDay,
+                            timezone: resolvedTimezoneForPayload(),
                             recurrenceRule: nil,
                             recurrenceEndDate: nil,
                             recurrenceInterval: nil,
@@ -3296,6 +3302,7 @@ private struct TaskInsertPayload: Encodable {
     let endDatetime: Date?
     let durationMinutes: Int
     let isAllDay: Bool
+    let timezone: String?
     let recurrenceRule: String?
     let recurrenceEndDate: Date?
     let recurrenceInterval: Int?
@@ -3325,6 +3332,7 @@ private struct TaskInsertPayload: Encodable {
         case endDatetime = "end_datetime"
         case durationMinutes = "duration_minutes"
         case isAllDay = "is_all_day"
+        case timezone
         case recurrenceRule = "recurrence_rule"
         case recurrenceEndDate = "recurrence_end_date"
         case recurrenceInterval = "recurrence_interval"
@@ -3376,6 +3384,11 @@ private struct TaskInsertPayload: Encodable {
         }
         try container.encode(durationMinutes, forKey: .durationMinutes)
         try container.encode(isAllDay, forKey: .isAllDay)
+        if let timezone {
+            try container.encode(timezone, forKey: .timezone)
+        } else {
+            try container.encodeNil(forKey: .timezone)
+        }
         if let recurrenceRule {
             try container.encode(recurrenceRule, forKey: .recurrenceRule)
         } else {
@@ -3428,6 +3441,7 @@ private struct TaskUpdatePayload: Encodable {
     let endDatetime: Date?
     let durationMinutes: Int
     let isAllDay: Bool
+    let timezone: String?
     let recurrenceRule: String?
     let recurrenceEndDate: Date?
     let recurrenceInterval: Int?
@@ -3449,6 +3463,7 @@ private struct TaskUpdatePayload: Encodable {
         case endDatetime = "end_datetime"
         case durationMinutes = "duration_minutes"
         case isAllDay = "is_all_day"
+        case timezone
         case recurrenceRule = "recurrence_rule"
         case recurrenceEndDate = "recurrence_end_date"
         case recurrenceInterval = "recurrence_interval"
@@ -3488,6 +3503,11 @@ private struct TaskUpdatePayload: Encodable {
         }
         try container.encode(durationMinutes, forKey: .durationMinutes)
         try container.encode(isAllDay, forKey: .isAllDay)
+        if let timezone {
+            try container.encode(timezone, forKey: .timezone)
+        } else {
+            try container.encodeNil(forKey: .timezone)
+        }
         if let recurrenceRule {
             try container.encode(recurrenceRule, forKey: .recurrenceRule)
         } else {
@@ -3559,7 +3579,12 @@ private extension CreateTaskView {
     }
 
     func resolvedDueDateForPayload() -> Date? {
-        isFlexibleMode ? nil : dueDate
+        if isFlexibleMode { return nil }
+        if isAllDay {
+            let cal = TaskCalendar.calendar(forTaskTimezone: resolvedTimezoneForPayload())
+            return cal.startOfDay(for: dueDate)
+        }
+        return dueDate
     }
 
     func resolvedEndDatetimeForPayload() -> Date? {
@@ -3576,6 +3601,15 @@ private extension CreateTaskView {
 
     func resolvedIsAllDayForPayload() -> Bool {
         isFlexibleMode ? false : isAllDay
+    }
+
+    /// 新建用显示时区；编辑保留任务原时区（无则回退显示时区）。
+    func resolvedTimezoneForPayload() -> String {
+        if let existing = editingTask?.timezone?.trimmingCharacters(in: .whitespacesAndNewlines),
+           existing.isEmpty == false {
+            return existing
+        }
+        return AppDisplayTimeZone.effectiveTimeZone.identifier
     }
 
     func resolvedRecurrenceRuleForPayload() -> String? {
@@ -3787,6 +3821,7 @@ private extension CreateTaskView {
             endDatetime: payload.endDatetime,
             durationMinutes: payload.durationMinutes,
             isAllDay: payload.isAllDay,
+            timezone: payload.timezone,
             recurrenceRule: payload.recurrenceRule,
             recurrenceEndDate: payload.recurrenceEndDate,
             issue: nil,

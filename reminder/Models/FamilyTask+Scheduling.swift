@@ -61,7 +61,7 @@ extension FamilyTask {
     /// 计划结束时刻：优先 `end_datetime`，但不短于 `scheduleStartDate + duration_minutes`。
     var resolvedEndDate: Date? {
         let start = scheduleStartDate
-        let durationEnd = Calendar.current.date(
+        let durationEnd = taskCalendar.date(
             byAdding: .minute,
             value: max(1, durationMinutes),
             to: start
@@ -77,7 +77,7 @@ extension FamilyTask {
 
     /// 时间轴「此刻」指示器与区间计算用的结束时刻（非可选，保证晚于开始时刻）。
     var timelineEndDate: Date {
-        resolvedEndDate ?? Calendar.current.date(
+        resolvedEndDate ?? taskCalendar.date(
             byAdding: .minute,
             value: max(1, durationMinutes),
             to: scheduleStartDate
