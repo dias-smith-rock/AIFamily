@@ -2,7 +2,7 @@ import SwiftUI
 import Kingfisher
 
 //
-//  任务详情：纯只读 + 底部状态扭转；编辑经右上角进入 `EditTaskView`。
+//  任务详情：只读 + 底部状态扭转；编辑在同页切入 `CreateTaskView`（不再另弹 sheet）。
 //  由 `TaskListView` 以 `.sheet(item:)` 弹出，外层包 `NavigationStack`。
 //
 
@@ -47,7 +47,9 @@ struct TaskDetailView: View {
     private let assigneeDisplayNameFallback: String
 
     @State private var task: FamilyTask
-    @State private var showingEditSheet = false
+    @State private var isEditing = false
+    /// 递增以触发嵌套 `CreateTaskView` 保存。
+    @State private var embeddedSaveTrigger = 0
     @State private var isUpdatingStatus = false
     @State private var isDeletingTask = false
     @State private var statusError: String?
@@ -58,6 +60,10 @@ struct TaskDetailView: View {
     @State private var attachmentGalleryPresentation: AttachmentGalleryPresentation?
     /// 导航内容区宽度，用于让标题在左右工具区之间居中留白。
     @State private var navigationContentWidth: CGFloat = 0
+
+    /// 与详情「铅笔+删除」同宽，避免切换编辑时 X / 组织名位移。
+    private static let navigationTrailingSlotWidth: CGFloat = 72
+    private static let navigationLeadingSlotWidth: CGFloat = 44
 
     init(
         initialTask: FamilyTask,
@@ -106,8 +112,12 @@ struct TaskDetailView: View {
     }
 
     var body: some View {
-        ScrollView {
-            detailScrollContent
+        Group {
+            if isEditing {
+                embeddedEditForm
+            } else {
+                detailReadOnlyContent
+            }
         }
         .background(Color(.systemGroupedBackground))
         .background {
@@ -122,89 +132,18 @@ struct TaskDetailView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.automatic, for: .navigationBar)
+        .tint(HouseholdColorStore.color(for: task.householdId))
         .toolbar {
             ToolbarItem(placement: .principal) {
-                HStack(spacing: 0) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.body.weight(.semibold))
-                    }
-                    .disabled(isUpdatingStatus || isDeletingTask)
-                    .accessibilityLabel(L10n.Common.close)
-
-                    Spacer(minLength: 12)
-
-                    Text(householdNavigationTitle)
-                        .font(.headline.weight(.semibold))
-                        .foregroundStyle(HouseholdColorStore.color(for: task.householdId))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .multilineTextAlignment(.center)
-
-                    Spacer(minLength: 12)
-
-                    if canEditTask {
-                        HStack(spacing: 14) {
-                            if canShowEditButton {
-                                Button {
-                                    showingEditSheet = true
-                                } label: {
-                                    Image(systemName: "pencil")
-                                        .font(.body.weight(.semibold))
-                                }
-                                .disabled(isUpdatingStatus || isDeletingTask)
-                                .accessibilityLabel(L10n.Common.edit)
-                            }
-
-                            Button(role: .destructive) {
-                                isShowingDeleteAlert = true
-                            } label: {
-                                Image(systemName: "trash")
-                            }
-                            .disabled(isUpdatingStatus || isDeletingTask)
-                            .accessibilityLabel(L10n.Schedule.deleteTask)
-                        }
-                    }
-                }
-                .frame(
-                    width: navigationContentWidth > 16 ? navigationContentWidth - 16 : nil,
-                    alignment: .center
-                )
+                sharedNavigationChrome
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if task.source.isReadOnly == false {
-                statusMachineFooter
-            }
-        }
+        .interactiveDismissDisabled(isEditing)
         .fullScreenCover(item: $attachmentGalleryPresentation) { presentation in
             TaskAttachmentImageGallery(
                 attachments: taskDetailViewModel.attachments,
                 startIndex: presentation.startIndex
             )
-        }
-        .sheet(isPresented: $showingEditSheet) {
-            EditTaskView(
-                task: task,
-                familyProfiles: scheduleViewModel.familyProfiles,
-                onUpdateSuccess: { updated in
-                    task = updated
-                    displayRecurrenceRule = nil
-                    displayRecurrenceInterval = nil
-                    Task {
-                        await scheduleViewModel.loadTasks()
-                        await loadForWhomProfiles()
-                        await loadSeriesRecurrenceIfNeeded()
-                        await taskDetailViewModel.loadAttachments(taskId: updated.id)
-                    }
-                },
-                onAlarmSync: { updated in
-                    scheduleViewModel.syncAlarms(for: updated)
-                }
-            )
-            .environmentObject(appRouter)
         }
         .task(id: task.id) {
             await loadForWhomProfiles()
@@ -231,6 +170,113 @@ struct TaskDetailView: View {
         .onChange(of: appRouter.selectedHouseholdId) { _, _ in
             Task {
                 await loadForWhomProfiles()
+            }
+        }
+    }
+
+    private var sharedNavigationChrome: some View {
+        HStack(spacing: 0) {
+            Button {
+                if isEditing {
+                    isEditing = false
+                } else {
+                    dismiss()
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.body.weight(.semibold))
+                    .frame(width: Self.navigationLeadingSlotWidth, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .disabled(isUpdatingStatus || isDeletingTask)
+            .accessibilityLabel(isEditing ? L10n.Common.cancel : L10n.Common.close)
+
+            Spacer(minLength: 12)
+
+            Text(householdNavigationTitle)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(HouseholdColorStore.color(for: task.householdId))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.center)
+
+            Spacer(minLength: 12)
+
+            Group {
+                if isEditing {
+                    Button {
+                        embeddedSaveTrigger += 1
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.body.weight(.semibold))
+                    }
+                    .accessibilityLabel(L10n.Common.save)
+                } else if canEditTask {
+                    HStack(spacing: 14) {
+                        if canShowEditButton {
+                            Button {
+                                isEditing = true
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.body.weight(.semibold))
+                            }
+                            .disabled(isUpdatingStatus || isDeletingTask)
+                            .accessibilityLabel(L10n.Common.edit)
+                        }
+
+                        Button(role: .destructive) {
+                            isShowingDeleteAlert = true
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .disabled(isUpdatingStatus || isDeletingTask)
+                        .accessibilityLabel(L10n.Schedule.deleteTask)
+                    }
+                }
+            }
+            .frame(width: Self.navigationTrailingSlotWidth, alignment: .trailing)
+        }
+        .frame(
+            width: navigationContentWidth > 16 ? navigationContentWidth - 16 : nil,
+            alignment: .center
+        )
+    }
+
+    private var embeddedEditForm: some View {
+        CreateTaskView(
+            editingTask: task,
+            familyProfiles: scheduleViewModel.familyProfiles,
+            embedMode: .embeddedInParent,
+            onUpdateSuccess: { updated in
+                task = updated
+                displayRecurrenceRule = nil
+                displayRecurrenceInterval = nil
+                isEditing = false
+                Task {
+                    await scheduleViewModel.loadTasks()
+                    await loadForWhomProfiles()
+                    await loadSeriesRecurrenceIfNeeded()
+                    await taskDetailViewModel.loadAttachments(taskId: updated.id)
+                }
+            },
+            onAlarmSync: { updated in
+                scheduleViewModel.syncAlarms(for: updated)
+            },
+            onCancelEdit: {
+                isEditing = false
+            },
+            embeddedSaveTrigger: $embeddedSaveTrigger
+        )
+        .environmentObject(appRouter)
+    }
+
+    private var detailReadOnlyContent: some View {
+        ScrollView {
+            detailScrollContent
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if task.source.isReadOnly == false {
+                statusMachineFooter
             }
         }
     }

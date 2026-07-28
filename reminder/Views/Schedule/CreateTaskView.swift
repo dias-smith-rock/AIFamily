@@ -272,6 +272,12 @@ private struct TaskClearSeriesLinksPatch: Encodable {
     }
 }
 
+/// 创建/编辑表单呈现方式：独立 sheet 或嵌在详情页内。
+enum CreateTaskEmbedMode {
+    case standalone
+    case embeddedInParent
+}
+
 struct CreateTaskView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
@@ -330,6 +336,7 @@ struct CreateTaskView: View {
     private let editingTask: FamilyTask?
     private let formMode: EditTaskViewModel.TaskMode
     private let familyProfiles: [FamilyProfile]
+    private let embedMode: CreateTaskEmbedMode
     private let initialTitle: String?
     private let initialNote: String?
     private let initialLocationName: String?
@@ -349,6 +356,14 @@ struct CreateTaskView: View {
     private let onUpdateSuccess: ((FamilyTask) -> Void)?
     /// 保存成功后同步本地通知（由外层注入 `ScheduleViewModel.syncAlarms`）。须为同步闭包，避免再经 `async` 传递 `FamilyTask`。
     private let onAlarmSync: ((FamilyTask) -> Void)?
+    /// 嵌在详情页编辑时点取消回调（不 dismiss 外层详情 sheet）。
+    private let onCancelEdit: (() -> Void)?
+    /// 由详情页导航栏勾选触发保存；仅 `embeddedInParent` 使用。
+    @Binding private var embeddedSaveTrigger: Int
+
+    private var isEmbeddedInParent: Bool {
+        embedMode == .embeddedInParent
+    }
 
     private var isFlexibleMode: Bool {
         if editingTask != nil {
@@ -375,6 +390,7 @@ struct CreateTaskView: View {
         editingTask: FamilyTask? = nil,
         formMode: EditTaskViewModel.TaskMode = .scheduled,
         familyProfiles: [FamilyProfile] = [],
+        embedMode: CreateTaskEmbedMode = .standalone,
         initialTitle: String? = nil,
         initialNote: String? = nil,
         initialLocationName: String? = nil,
@@ -392,11 +408,14 @@ struct CreateTaskView: View {
         defaultAllDayForNewTask: Bool = false,
         onSaveSuccess: ((Date) -> Void)? = nil,
         onUpdateSuccess: ((FamilyTask) -> Void)? = nil,
-        onAlarmSync: ((FamilyTask) -> Void)? = nil
+        onAlarmSync: ((FamilyTask) -> Void)? = nil,
+        onCancelEdit: (() -> Void)? = nil,
+        embeddedSaveTrigger: Binding<Int> = .constant(0)
     ) {
         self.editingTask = editingTask
         self.formMode = editingTask.map { EditTaskViewModel.mode(forEditing: $0) } ?? formMode
         self.familyProfiles = familyProfiles
+        self.embedMode = embedMode
         self.initialTitle = initialTitle
         self.initialNote = initialNote
         self.initialLocationName = initialLocationName
@@ -415,6 +434,8 @@ struct CreateTaskView: View {
         self.onSaveSuccess = onSaveSuccess
         self.onUpdateSuccess = onUpdateSuccess
         self.onAlarmSync = onAlarmSync
+        self.onCancelEdit = onCancelEdit
+        self._embeddedSaveTrigger = embeddedSaveTrigger
 
         if let task = editingTask {
             let resolvedTitle: String
@@ -690,19 +711,33 @@ struct CreateTaskView: View {
     }
 
     private var titleInputCard: some View {
-        TextField(titleFieldPlaceholder, text: $title, axis: .vertical)
-            .font(.headline.weight(.semibold))
-            .lineLimit(1...3)
-            .focused($focusedField, equals: .title)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        Group {
+            if isEmbeddedInParent {
+                // 与详情只读标题同为单行高度，避免 vertical TextField 额外撑高。
+                TextField(titleFieldPlaceholder, text: $title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .textFieldStyle(.plain)
+                    .focused($focusedField, equals: .title)
+            } else {
+                TextField(titleFieldPlaceholder, text: $title, axis: .vertical)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...3)
+                    .focused($focusedField, equals: .title)
             }
+        }
+        // 与详情 `titleCard` 同一套修饰顺序，避免切换时高度跳动。
+        .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        }
     }
 
     private var primarySettingsGroup: some View {
@@ -1436,7 +1471,7 @@ struct CreateTaskView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .tint(formAccentTint)
+        .tint(isEmbeddedInParent ? formIconAccent : formAccentTint)
         .sheet(isPresented: $isShowingWriteTargetPicker) {
             WriteTargetHouseholdPicker { _ in }
                 .environmentObject(appRouter)
@@ -1520,34 +1555,27 @@ struct CreateTaskView: View {
     }
 
     private var formStackWithDialogs: some View {
-        NavigationStack {
-            formNavigationContent
-                .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .disabled(isSaving)
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button {
-                            Task { await saveTask() }
-                        } label: {
-                            Image(systemName: "checkmark")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .disabled(isSaving || normalizedTitle.isEmpty)
-                    }
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
-                            dismissKeyboard()
+        Group {
+            if isEmbeddedInParent {
+                formNavigationContent
+                    .toolbar {
+                        // 导航栏由 TaskDetailView 固定承载，避免切换时 X/标题跳动。
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
+                                dismissKeyboard()
+                            }
                         }
                     }
+                    .onChange(of: embeddedSaveTrigger) { _, _ in
+                        Task { await saveTask() }
+                    }
+            } else {
+                NavigationStack {
+                    formNavigationContent
+                        .toolbar { formChromeToolbar }
                 }
+            }
         }
         .task(id: appRouter.selectedHouseholdId ?? editingTask?.householdId) {
             await loadAssignees()
@@ -1590,6 +1618,51 @@ struct CreateTaskView: View {
             Button(L10n.Common.cancel.localized, role: .cancel) {}
         }
         .forcesNonPopoverDialogPresentation()
+    }
+
+    @ToolbarContentBuilder
+    private var formChromeToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button {
+                cancelForm()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .disabled(isSaving)
+        }
+        ToolbarItem(placement: .confirmationAction) {
+            Button {
+                Task { await saveTask() }
+            } label: {
+                Image(systemName: "checkmark")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .disabled(isSaving || normalizedTitle.isEmpty)
+        }
+        ToolbarItemGroup(placement: .keyboard) {
+            Spacer()
+            Button(AppLocalized.string(L10n.Common.finish, locale: locale)) {
+                dismissKeyboard()
+            }
+        }
+    }
+
+    private func cancelForm() {
+        if isEmbeddedInParent {
+            onCancelEdit?()
+        } else {
+            dismiss()
+        }
+    }
+
+    /// 更新成功后关闭表单：嵌详情时不 dismiss 外层 sheet。
+    private func finishAfterSuccessfulUpdate() {
+        if isEmbeddedInParent {
+            // 父级 `onUpdateSuccess` 负责把 `isEditing` 置回 false。
+            return
+        }
+        dismiss()
     }
 
     var body: some View {
@@ -2716,7 +2789,7 @@ struct CreateTaskView: View {
                 clearAttachmentSelection()
             }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-            dismiss()
+            finishAfterSuccessfulUpdate()
         } catch {
             #if DEBUG
             print("[CreateTaskView] performUpdate failed: \(error.localizedDescription)")
