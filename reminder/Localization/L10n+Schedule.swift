@@ -83,6 +83,7 @@ extension L10n {
     static let theTaskHasBeenWrittenIntoTheScheduleAnd = Entry(key: "schedule_the_task_has_been_written_into_the_schedule_and", table: .schedule)
     static let thisIsARecurringTask = Entry(key: "schedule_this_is_a_recurring_task", table: .schedule)
     static let thisScheduleIsSynchronizedExternallyAndDoe = Entry(key: "schedule_this_schedule_is_synchronized_externally_and_doe", table: .schedule)
+    static let syncedFromSystemCalendarEditable = Entry(key: "schedule_synced_from_system_calendar_editable", table: .schedule)
     static let thisTaskHasBeenCompleted = Entry(key: "schedule_this_task_has_been_completed", table: .schedule)
     static let thisTaskHasBeenCompleted2 = Entry(key: "schedule_this_task_has_been_completed_2", table: .schedule)
     static let uponDismissalAllMembersWillBeRemovedAndT = Entry(key: "schedule_upon_dismissal_all_members_will_be_removed_and_t", table: .schedule)

@@ -6462,5 +6462,137 @@
     "table": "Schedule",
     "swift_property": "ends",
     "orphan": false
+  },
+  {
+    "legacy_key": "Calendar Sync",
+    "new_key": "settings_calendar_sync_nav_title",
+    "table": "Settings",
+    "swift_property": "calendarSyncNavTitle"
+  },
+  {
+    "legacy_key": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back.",
+    "new_key": "settings_calendar_sync_footer",
+    "table": "Settings",
+    "swift_property": "calendarSyncFooter"
+  },
+  {
+    "legacy_key": "Calendar access is required to import events.",
+    "new_key": "settings_calendar_sync_permission_needed",
+    "table": "Settings",
+    "swift_property": "calendarSyncPermissionNeeded"
+  },
+  {
+    "legacy_key": "Grant Access",
+    "new_key": "settings_calendar_sync_grant_access",
+    "table": "Settings",
+    "swift_property": "calendarSyncGrantAccess"
+  },
+  {
+    "legacy_key": "Open Settings",
+    "new_key": "settings_calendar_sync_open_settings",
+    "table": "Settings",
+    "swift_property": "calendarSyncOpenSettings"
+  },
+  {
+    "legacy_key": "Target Group",
+    "new_key": "settings_calendar_sync_target_group",
+    "table": "Settings",
+    "swift_property": "calendarSyncTargetGroup"
+  },
+  {
+    "legacy_key": "Select a group first",
+    "new_key": "settings_calendar_sync_select_group",
+    "table": "Settings",
+    "swift_property": "calendarSyncSelectGroup"
+  },
+  {
+    "legacy_key": "Calendars",
+    "new_key": "settings_calendar_sync_calendars_section",
+    "table": "Settings",
+    "swift_property": "calendarSyncCalendarsSection"
+  },
+  {
+    "legacy_key": "Start Sync",
+    "new_key": "settings_calendar_sync_start",
+    "table": "Settings",
+    "swift_property": "calendarSyncStart"
+  },
+  {
+    "legacy_key": "Last synced: %@",
+    "new_key": "settings_calendar_sync_last_synced",
+    "table": "Settings",
+    "swift_property": "calendarSyncLastSynced"
+  },
+  {
+    "legacy_key": "Not synced yet",
+    "new_key": "settings_calendar_sync_never",
+    "table": "Settings",
+    "swift_property": "calendarSyncNever"
+  },
+  {
+    "legacy_key": "Syncing…",
+    "new_key": "settings_calendar_sync_in_progress",
+    "table": "Settings",
+    "swift_property": "calendarSyncInProgress"
+  },
+  {
+    "legacy_key": "Synced %1$lld events (%2$lld new, %3$lld updated)",
+    "new_key": "settings_calendar_sync_result",
+    "table": "Settings",
+    "swift_property": "calendarSyncResult"
+  },
+  {
+    "legacy_key": "No calendars available",
+    "new_key": "settings_calendar_sync_no_calendars",
+    "table": "Settings",
+    "swift_property": "calendarSyncNoCalendars"
+  },
+  {
+    "legacy_key": "Select at least one calendar",
+    "new_key": "settings_calendar_sync_no_calendars_selected",
+    "table": "Settings",
+    "swift_property": "calendarSyncNoCalendarsSelected"
+  },
+  {
+    "legacy_key": "Apple",
+    "new_key": "settings_calendar_sync_source_apple",
+    "table": "Settings",
+    "swift_property": "calendarSyncSourceApple"
+  },
+  {
+    "legacy_key": "Google",
+    "new_key": "settings_calendar_sync_source_google",
+    "table": "Settings",
+    "swift_property": "calendarSyncSourceGoogle"
+  },
+  {
+    "legacy_key": "Other",
+    "new_key": "settings_calendar_sync_source_other",
+    "table": "Settings",
+    "swift_property": "calendarSyncSourceOther"
+  },
+  {
+    "legacy_key": "Keep syncing when calendars change",
+    "new_key": "settings_calendar_sync_continuous",
+    "table": "Settings",
+    "swift_property": "calendarSyncContinuous"
+  },
+  {
+    "legacy_key": "Change Group",
+    "new_key": "settings_calendar_sync_change_group",
+    "table": "Settings",
+    "swift_property": "calendarSyncChangeGroup"
+  },
+  {
+    "legacy_key": "Untitled Event",
+    "new_key": "settings_calendar_sync_untitled",
+    "table": "Settings",
+    "swift_property": "calendarSyncUntitled"
+  },
+  {
+    "legacy_key": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar.",
+    "new_key": "schedule_synced_from_system_calendar_editable",
+    "table": "Schedule",
+    "swift_property": "syncedFromSystemCalendarEditable"
   }
 ]

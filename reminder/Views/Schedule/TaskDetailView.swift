@@ -84,7 +84,7 @@ struct TaskDetailView: View {
 
     private var detailScrollContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if task.source.isReadOnly {
+            if task.source == .appleCalendar || task.source == .googleCalendar {
                 externalSyncReadOnlyBanner
             }
 
@@ -635,10 +635,10 @@ struct TaskDetailView: View {
 
     private var externalSyncReadOnlyBanner: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "calendar.badge.lock")
+            Image(systemName: "calendar.badge.clock")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-            Text(L10n.Schedule.thisScheduleIsSynchronizedExternallyAndDoe.localized)
+            Text(L10n.Schedule.syncedFromSystemCalendarEditable.localized)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

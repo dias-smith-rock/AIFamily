@@ -57,6 +57,10 @@ struct WeFamilyApp: App {
                 .applyAppTextSize()
                 .tint(AppTheme.ColorToken.accent)
                 .id(appSettings.selectedLanguage.id)
+                .onAppear {
+                    AppBootstrapLocator.shared = appBootstrap
+                    CalendarInboundSyncCoordinator.shared.ensureChangeObservationStarted()
+                }
         }
         .modelContainer(sharedModelContainer)
     }

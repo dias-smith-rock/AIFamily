@@ -401,14 +401,14 @@ struct SettingsMainView: View {
                 Task { await seedDebugMockData() }
             } label: {
                 HStack {
-                    Label("Seed Calendar / Todos / Wallet / Location", systemImage: "hammer.fill")
+                    Label("Seed 3 Orgs + Month Data", systemImage: "hammer.fill")
                     Spacer()
                     if isSeedingMockData {
                         ProgressView()
                     }
                 }
             }
-            .disabled(isSeedingMockData || appRouter.selectedHouseholdId == nil)
+            .disabled(isSeedingMockData)
 
             Button {
                 Task { await seedDebugLocationData() }
@@ -419,7 +419,7 @@ struct SettingsMainView: View {
         } header: {
             Text(verbatim: "Developer")
         } footer: {
-            Text(verbatim: "DEBUG only. Full seed: ~30×5 schedules, 13 todos, 2 ledger entries/category, plus 2 members × 3 San Jose downtown points. Location-only seed needs migration debug_replace_location_states (or falls back to current user only).")
+            Text(verbatim: "DEBUG only. Creates 3 orgs; each gets this month’s schedules (10–20/week), todos (10–20/week), ledger (10–20/month). First org also gets San Jose location points. May take a minute.")
         }
     }
 
@@ -427,23 +427,30 @@ struct SettingsMainView: View {
         isSeedingMockData = true
         defer { isSeedingMockData = false }
         do {
-            let extraProfileIds = familyViewModel.profiles.map(\.id)
-            let result = try await DebugMockDataSeeder.seedCalendarTodosAndWallet(
-                services: appBootstrap.services,
-                householdId: appRouter.selectedHouseholdId,
-                membershipId: appRouter.selectedMembershipId,
-                profileId: appRouter.selectedProfileId,
-                extraProfileIds: extraProfileIds
+            let result = try await DebugMockDataSeeder.seedThreeOrganizationsWithCurrentMonthData(
+                services: appBootstrap.services
             )
-            mockSeedResultMessage = [
-                "Scheduled: \(result.scheduledTasks)",
-                "Todos active: \(result.flexibleTodos)",
-                "Todos overdue: \(result.overdueTodos)",
-                "Todos completed: \(result.completedTodos)",
-                "Wallet tx: \(result.ledgerTransactions)",
-                "Location members: \(result.locationMembers) · points: \(result.locationPoints)",
-                "Switch tabs to refresh if needed.",
-            ].joined(separator: "\n")
+            if let firstId = result.firstHouseholdId {
+                appRouter.preferHouseholdOnNextRefresh(firstId)
+            }
+            await appRouter.refreshStateFromBackend()
+            await orgRoutingViewModel.fetchMyHouseholds(appRouter: appRouter)
+            await familyViewModel.loadMembers()
+
+            let orgLines = result.organizationNames.enumerated().map { "\($0.offset + 1). \($0.element)" }
+            mockSeedResultMessage = (
+                ["Orgs: \(result.organizations)"]
+                    + orgLines
+                    + [
+                        "Scheduled: \(result.scheduledTasks)",
+                        "Todos active: \(result.flexibleTodos)",
+                        "Todos overdue: \(result.overdueTodos)",
+                        "Todos completed: \(result.completedTodos)",
+                        "Wallet tx: \(result.ledgerTransactions)",
+                        "Location members: \(result.locationMembers) · points: \(result.locationPoints)",
+                        "Switched to first mock org if available.",
+                    ]
+            ).joined(separator: "\n")
         } catch {
             mockSeedErrorMessage = error.localizedDescription
         }

@@ -105,12 +105,12 @@ enum TaskSource: String, Codable, Equatable {
     case publicHoliday = "public_holiday"
     case hermesWechat = "hermes_wechat"
 
-    /// 外部同步日程：应用内不可编辑。
+    /// 外部同步日程：公共假日只读；系统日历导入可编辑（不写回系统日历）。
     var isReadOnly: Bool {
         switch self {
-        case .googleCalendar, .appleCalendar, .publicHoliday:
+        case .publicHoliday:
             return true
-        case .manual, .hermesWechat:
+        case .googleCalendar, .appleCalendar, .manual, .hermesWechat:
             return false
         }
     }

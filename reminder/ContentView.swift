@@ -172,6 +172,7 @@ struct ContentView: View {
                     }
                     guard isUserLoggedIn, isLaunchBootstrapComplete else { return }
                     await runForegroundLocationBootstrap(vipLogTrigger: "App回到前台")
+                    _ = try? await CalendarInboundSyncCoordinator.shared.syncIfConfigured(reason: "scenePhaseActive")
                 }
             } else if newPhase == .inactive {
                 ForegroundLocationPersistScheduler.shared.stop(reason: "sceneInactive")

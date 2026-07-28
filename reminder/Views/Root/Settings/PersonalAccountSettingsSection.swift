@@ -27,7 +27,7 @@ struct PersonalAccountSettingsSection: View {
     private static let settingsRowSeparatorLeading: CGFloat = 30 + 12
 
     private enum FeatureVisibility {
-        static let showsIntegrationsSection = false
+        static let showsIntegrationsSection = true
     }
 
     var body: some View {
@@ -188,21 +188,15 @@ struct PersonalAccountSettingsSection: View {
 
         if FeatureVisibility.showsIntegrationsSection {
             Section {
-                mineNavigationRow(
-                    title: L10n.Common.integrations,
-                    systemImage: "link",
-                    iconTint: .orange,
-                    subtitle: L10n.Common.facetimeWhatsapp
-                ) {
-                    viewModel.tapRow(feature: AppLocalized.string(L10n.Common.integrations, locale: locale))
-                }
-                mineNavigationRow(
-                    title: L10n.Schedule.importEvents,
-                    systemImage: "calendar",
-                    iconTint: .green,
-                    subtitle: L10n.Common.syncCalendarPublicHolidays
-                ) {
-                    viewModel.tapRow(feature: AppLocalized.string(L10n.Schedule.importEvents, locale: locale))
+                NavigationLink {
+                    CalendarSyncSettingsView()
+                } label: {
+                    SettingsRowView(
+                        title: L10n.Settings.calendarSyncNavTitle,
+                        systemImage: "calendar.badge.clock",
+                        iconTint: .green,
+                        showsChevron: false
+                    )
                 }
             } header: {
                 mineSectionHeader(L10n.Common.integrationsData)

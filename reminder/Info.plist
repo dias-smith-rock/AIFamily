@@ -44,6 +44,10 @@
 	<string>Used to show your approximate location and members on the map, and record locations when completing tasks.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>WeSync needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>WeSync needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>

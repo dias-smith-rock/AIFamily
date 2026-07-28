@@ -5192,6 +5192,65 @@
           }
         }
       }
+    },
+    "schedule_synced_from_system_calendar_editable": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Synced from system calendar. You can edit in the app; changes won’t write back to the system calendar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "来自系统日历同步。可在 App 内编辑，但不会写回系统日历。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "來自系統日曆同步。可在 App 內編輯，但不會寫回系統日曆。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
