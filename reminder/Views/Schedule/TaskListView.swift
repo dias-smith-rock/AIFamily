@@ -32,17 +32,21 @@ struct TaskListView: View {
     @State private var taskForDetailSheet: FamilyTask?
     @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
-    @State private var quickTaskInput = ""
     @State private var aiPrefillFormInstanceID = UUID()
+    /// 周视图「回到本周」：由 `TaskWeekGridView` 同步可见性；递增 trigger 触发跳转。
+    @State private var showsWeekBackToCurrentWeekButton = false
+    @State private var weekBackToCurrentWeekTrigger = 0
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottomTrailing) {
+            ZStack {
                 mainContent
-                createTaskFAB
                 if viewModel.isAIProcessing {
                     aiProcessingOverlay
                 }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                bottomAccessoryBar
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
             .navigationTitle("")
@@ -61,14 +65,6 @@ struct TaskListView: View {
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
                 .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            }
-            .sheet(isPresented: $isShowingCalendarSheet) {
-                CalendarSheetView(
-                    selectedDate: $selectedDate,
-                    monthTaskDots: monthTaskDots
-                )
-                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
             }
             .sheet(item: $createTaskSheetRequest) { request in
@@ -292,16 +288,13 @@ struct TaskListView: View {
             Group {
                 switch currentViewMode {
                 case .list:
-                    VStack(spacing: 0) {
-                        scheduleSecondRowMonthBar
-                        TaskModeListView(
-                            viewModel: viewModel,
-                            listScrollToken: listScrollToken,
-                            scrollAnchorDate: selectedDate,
-                            onTaskTap: { taskForDetailSheet = $0 },
-                            onRefresh: refreshTasks
-                        )
-                    }
+                    TaskModeListView(
+                        viewModel: viewModel,
+                        listScrollToken: listScrollToken,
+                        scrollAnchorDate: selectedDate,
+                        onTaskTap: { taskForDetailSheet = $0 },
+                        onRefresh: refreshTasks
+                    )
                 case .day:
                     TaskModeDayView(
                         selectedDate: $selectedDate,
@@ -310,10 +303,7 @@ struct TaskListView: View {
                         onQuickCreate: { prefill, dueOverride in
                             openCreateTask(prefill: prefill, defaultDueDateOverride: dueOverride)
                         },
-                        onRefresh: refreshTasks,
-                        onOpenMonthPicker: {
-                            isShowingCalendarSheet = true
-                        }
+                        onRefresh: refreshTasks
                     )
                 case .week:
                     TaskWeekGridView(
@@ -321,9 +311,8 @@ struct TaskListView: View {
                         viewModel: viewModel,
                         onTaskSelect: { taskForDetailSheet = $0 },
                         onRefresh: refreshTasks,
-                        onOpenMonthPicker: {
-                            isShowingCalendarSheet = true
-                        }
+                        showsBackToCurrentWeekButton: $showsWeekBackToCurrentWeekButton,
+                        backToCurrentWeekTrigger: $weekBackToCurrentWeekTrigger
                     )
                 case .year:
                     TaskYearView(
@@ -337,13 +326,10 @@ struct TaskListView: View {
                         }
                     )
                 case .month:
-                    VStack(spacing: 0) {
-                        scheduleSecondRowMonthBar
-                        Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
+                    Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .threeDay:
                     Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
                         .font(.subheadline)
@@ -352,44 +338,70 @@ struct TaskListView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            quickTaskInputBar
         }
     }
 
-    /// 周 / 列表 / 月视图第二行右侧的月份入口（日视图在周条内；年视图无此入口）。
-    private var scheduleSecondRowMonthBar: some View {
-        HStack {
-            Spacer(minLength: 0)
-            ScheduleMonthYearPickerButton(title: navigationMonthYearTitle) {
-                isShowingCalendarSheet = true
+    /// 底部：左侧回到本周（仅周视图）+ 居中月份入口 + 右侧创建 FAB。
+    private var bottomAccessoryBar: some View {
+        HStack(spacing: 0) {
+            bottomLeadingAccessory
+                .frame(width: 56, height: 56)
+
+            Spacer(minLength: 8)
+                .allowsHitTesting(false)
+
+            if showsBottomMonthPicker {
+                ScheduleMonthYearPickerButton(title: navigationMonthYearTitle) {
+                    isShowingCalendarSheet = true
+                }
+                .sheet(isPresented: $isShowingCalendarSheet) {
+                    CalendarSheetView(
+                        selectedDate: $selectedDate,
+                        monthTaskDots: monthTaskDots
+                    )
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                }
             }
+
+            Spacer(minLength: 8)
+                .allowsHitTesting(false)
+
+            createTaskFAB
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
-        .padding(.bottom, 2)
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
     }
 
-    private var quickTaskInputBar: some View {
-        HStack(spacing: 10) {
-            TextField(AppLocalized.string(L10n.Schedule.enterTaskTitle, locale: appSettings.appLocale), text: $quickTaskInput)
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
-                .onSubmit(submitQuickTaskInput)
-
-            Button(action: openAIPhotoTaskCreationFlow) {
-                Image(systemName: "camera.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(AppTheme.ColorToken.accent)
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+    @ViewBuilder
+    private var bottomLeadingAccessory: some View {
+        if currentViewMode == .week, showsWeekBackToCurrentWeekButton {
+            Button {
+                weekBackToCurrentWeekTrigger += 1
+            } label: {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(AppTheme.ColorToken.accent, in: Circle())
+                    .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
             }
             .buttonStyle(.plain)
-            .disabled(viewModel.isAIProcessing)
-            .accessibilityLabel(L10n.Schedule.createTaskFromPhoto)
+            .accessibilityLabel(L10n.Common.today)
+        } else {
+            Color.clear
+                .allowsHitTesting(false)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.bar)
+    }
+
+    private var showsBottomMonthPicker: Bool {
+        switch currentViewMode {
+        case .year:
+            return false
+        case .day, .week, .list, .month, .threeDay:
+            return true
+        }
     }
 
     private var aiProcessingOverlay: some View {
@@ -427,17 +439,6 @@ struct TaskListView: View {
     /// household 或 auth bootstrap 完成后触发任务加载，避免 JWT 刷新前过早请求。
     private var taskLoadTrigger: String {
         "\(appRouter.viewHouseholdIdsToken)-\(appRouter.hasCompletedAuthBootstrap)"
-    }
-
-    private func submitQuickTaskInput() {
-        let trimmed = quickTaskInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.isEmpty == false else { return }
-        quickTaskInput = ""
-        openCreateTask(prefill: trimmed)
-    }
-
-    private func openAIPhotoTaskCreationFlow() {
-        viewModel.isShowingCamera = true
     }
 
     // MARK: - Notification deep link
@@ -490,8 +491,6 @@ struct TaskListView: View {
                 .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
-        .padding(.trailing, 20)
-        .padding(.bottom, 72)
         .accessibilityLabel(L10n.Schedule.createNewTask)
     }
 

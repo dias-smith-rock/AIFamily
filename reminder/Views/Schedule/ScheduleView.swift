@@ -33,22 +33,19 @@ struct TaskModeDayView: View {
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
     let onRefresh: (() async -> Void)?
-    let onOpenMonthPicker: (() -> Void)?
 
     init(
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
         onQuickCreate: @escaping (String, Date?) -> Void,
-        onRefresh: (() async -> Void)? = nil,
-        onOpenMonthPicker: (() -> Void)? = nil
+        onRefresh: (() async -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onQuickCreate = onQuickCreate
         self.onRefresh = onRefresh
-        self.onOpenMonthPicker = onOpenMonthPicker
     }
 
     var body: some View {
@@ -116,7 +113,7 @@ struct TaskModeDayView: View {
     }
 
     private var weekSection: some View {
-        ScheduleWeekDayStripChrome(monthYearTitle: monthYearTitle, onOpenMonthPicker: onOpenMonthPicker) {
+        ScheduleWeekDayStripChrome {
             TabView(selection: $weekOffset) {
                 ForEach(Self.weekPageRange, id: \.self) { offset in
                     weekStrip(for: offset)
@@ -128,15 +125,6 @@ struct TaskModeDayView: View {
         .onAppear {
             weekOffset = weekOffsetForDate(selectedDate)
         }
-    }
-
-    private var monthYearTitle: String {
-        selectedDate.formatted(
-            .dateTime
-                .month(.wide)
-                .year()
-                .locale(locale)
-        )
     }
 
     /// 根据周偏移生成当周 7 天（从系统 locale 的「每周起始日」算起）。

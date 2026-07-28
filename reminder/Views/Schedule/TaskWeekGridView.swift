@@ -15,7 +15,8 @@ struct TaskWeekGridView: View {
 
     let onTaskSelect: (FamilyTask) -> Void
     let onRefresh: (() async -> Void)?
-    let onOpenMonthPicker: (() -> Void)?
+    @Binding var showsBackToCurrentWeekButton: Bool
+    @Binding var backToCurrentWeekTrigger: Int
 
     @State private var weekEpochStart: Date = ScheduleWeekCalendar.startOfWeek(for: Date())
     @State private var weekOffset: Int = 0
@@ -36,13 +37,15 @@ struct TaskWeekGridView: View {
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
         onRefresh: (() async -> Void)? = nil,
-        onOpenMonthPicker: (() -> Void)? = nil
+        showsBackToCurrentWeekButton: Binding<Bool> = .constant(false),
+        backToCurrentWeekTrigger: Binding<Int> = .constant(0)
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onRefresh = onRefresh
-        self.onOpenMonthPicker = onOpenMonthPicker
+        self._showsBackToCurrentWeekButton = showsBackToCurrentWeekButton
+        self._backToCurrentWeekTrigger = backToCurrentWeekTrigger
     }
 
     var body: some View {
@@ -77,13 +80,16 @@ struct TaskWeekGridView: View {
             )
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
             scheduleFirstPaintExpansion()
+            syncBackToCurrentWeekButtonVisibility()
         }
         .onDisappear {
             firstPaintExpansionTask?.cancel()
             firstPaintExpansionTask = nil
+            showsBackToCurrentWeekButton = false
         }
         .onChange(of: weekOffset) { oldOffset, newOffset in
             WeekViewPerformanceTracer.recordWeekOffsetChange(from: oldOffset, to: newOffset)
+            syncBackToCurrentWeekButtonVisibility()
         }
         .onChange(of: pagerSlot) { oldSlot, newSlot in
             handlePagerSlotChange(from: oldSlot, to: newSlot)
@@ -104,6 +110,10 @@ struct TaskWeekGridView: View {
                 note: "from=\(oldValue) to=\(newValue) weekOffset=\(weekOffset)"
             )
         }
+        .onChange(of: backToCurrentWeekTrigger) { oldValue, newValue in
+            guard newValue != oldValue else { return }
+            jumpToCurrentWeek()
+        }
     }
 
     // MARK: - Week pager
@@ -119,7 +129,7 @@ struct TaskWeekGridView: View {
             : nil
 
         return VStack(alignment: .leading, spacing: 10) {
-            ScheduleWeekDayStripChrome(monthYearTitle: monthYearTitle, onOpenMonthPicker: onOpenMonthPicker) {
+            ScheduleWeekDayStripChrome {
                 weekHeaderSection(
                     previous: previousBundle,
                     current: currentBundle,
@@ -138,15 +148,6 @@ struct TaskWeekGridView: View {
             WeekViewPerformanceTracer.mark("weekPager.onAppear")
             scheduleFirstPaintExpansion()
         }
-    }
-
-    private var monthYearTitle: String {
-        selectedDate.formatted(
-            .dateTime
-                .month(.wide)
-                .year()
-                .locale(locale)
-        )
     }
 
     private func weekHeaderSection(
@@ -252,14 +253,6 @@ struct TaskWeekGridView: View {
                                 isCurrentWeekTimelineReady: isCurrentWeekTimelineReady
                             )
                         }
-                }
-            }
-            .overlay(alignment: .bottomLeading) {
-                if isDisplayingCurrentWeek(offset: offset) == false, shouldShowTimeline {
-                    backToCurrentWeekButton
-                        .padding(.leading, horizontalPadding + 4)
-                        .padding(.bottom, 16)
-                        .transition(.scale.combined(with: .opacity))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -409,6 +402,10 @@ struct TaskWeekGridView: View {
 
     private func weekHeaderRow(days: [Date], weekTasks: [FamilyTask]) -> some View {
         HStack(spacing: 0) {
+            // 与下方时间轴 gutter 对齐，使日列落在网格列中心。
+            Color.clear
+                .frame(width: ScheduleTimelineMetrics.timeColumnWidth)
+
             ForEach(days, id: \.self) { day in
                 ScheduleWeekDayStripCell(
                     date: day,
@@ -475,18 +472,11 @@ struct TaskWeekGridView: View {
 
     // MARK: - Back to current week
 
-    private var backToCurrentWeekButton: some View {
-        Button(action: jumpToCurrentWeek) {
-            Image(systemName: "calendar.badge.clock")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 44, height: 44)
-                .background(AppTheme.ColorToken.accent)
-                .clipShape(Circle())
-                .shadow(color: Color.black.opacity(0.2), radius: 6, x: 0, y: 2)
+    private func syncBackToCurrentWeekButtonVisibility() {
+        let shouldShow = isDisplayingCurrentWeek(offset: weekOffset) == false
+        if showsBackToCurrentWeekButton != shouldShow {
+            showsBackToCurrentWeekButton = shouldShow
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.Common.today.localized)
     }
 
     private func isDisplayingCurrentWeek(offset: Int) -> Bool {

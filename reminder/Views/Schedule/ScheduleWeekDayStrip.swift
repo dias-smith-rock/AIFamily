@@ -1,22 +1,14 @@
 import SwiftUI
 
-/// 日视图 / 周视图共用的顶部周条外框（7 日条 + 右侧月份入口）。
+/// 日视图 / 周视图共用的顶部周条外框。
 struct ScheduleWeekDayStripChrome<Content: View>: View {
-    let monthYearTitle: String
-    let onOpenMonthPicker: (() -> Void)?
     @ViewBuilder var strip: () -> Content
 
     var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            strip()
-                .frame(maxWidth: .infinity)
-                .frame(height: 84, alignment: .top)
-
-            ScheduleMonthYearPickerButton(title: monthYearTitle) {
-                onOpenMonthPicker?()
-            }
-        }
-        .padding(.horizontal, 16)
+        strip()
+            .frame(maxWidth: .infinity)
+            .frame(height: 84, alignment: .top)
+            .padding(.horizontal, 16)
     }
 }
 

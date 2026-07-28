@@ -154,7 +154,7 @@ struct TodoListView: View {
         }
         .buttonStyle(.plain)
         .padding(.trailing, 20)
-        .padding(.bottom, showsTodoSummaryFooter ? 148 : 72)
+        .padding(.bottom, showsTodoSummaryFooter ? 96 : 20)
         .accessibilityLabel(L10n.Common.newToDo)
     }
 
