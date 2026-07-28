@@ -95,6 +95,16 @@ final class FamilyLedgerViewModel: ObservableObject {
         viewHouseholdIds = ids
     }
 
+    /// 账盘强制单组织：读写范围锁定到活动组织，忽略全局多选查看集合。
+    func setSingleHouseholdScope(_ householdId: UUID?) {
+        setHouseholdContext(householdId)
+        if let householdId {
+            setViewHouseholdIds([householdId])
+        } else {
+            setViewHouseholdIds([])
+        }
+    }
+
     private var effectiveViewHouseholdIds: [UUID] {
         if viewHouseholdIds.isEmpty == false { return viewHouseholdIds }
         if let currentHouseholdId { return [currentHouseholdId] }
@@ -494,6 +504,22 @@ final class FamilyLedgerViewModel: ObservableObject {
     func categories(for type: LedgerEntryType) -> [ExpenseCategory] {
         categories.filter { $0.type == type && $0.isDeleted == false }
             .sorted { $0.sortOrder < $1.sortOrder }
+    }
+
+    /// 切换写入组织后，按 presetKey / 同名匹配当前户分类。
+    func resolvedCategoryId(matching template: ExpenseCategory) -> UUID? {
+        let pool = categories(for: template.type)
+        if pool.contains(where: { $0.id == template.id }) {
+            return template.id
+        }
+        if let key = template.presetKey?.trimmingCharacters(in: .whitespacesAndNewlines),
+           key.isEmpty == false,
+           let match = pool.first(where: { $0.presetKey == key }) {
+            return match.id
+        }
+        return pool.first {
+            $0.name.caseInsensitiveCompare(template.name) == .orderedSame
+        }?.id
     }
 
     func tags(for categoryId: UUID) -> [CategoryTag] {

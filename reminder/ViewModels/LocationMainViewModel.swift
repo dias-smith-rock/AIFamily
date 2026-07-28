@@ -90,6 +90,16 @@ final class LocationMainViewModel: ObservableObject {
         viewHouseholdIds = ids
     }
 
+    /// Location 强制单组织：地图与成员列表只展示活动组织。
+    func setSingleHouseholdScope(_ householdId: UUID?) {
+        self.householdId = householdId
+        if let householdId {
+            setViewHouseholdIds([householdId])
+        } else {
+            setViewHouseholdIds([])
+        }
+    }
+
     private var effectiveViewHouseholdIds: [UUID] {
         if viewHouseholdIds.isEmpty == false { return viewHouseholdIds }
         if let householdId { return [householdId] }

@@ -213,7 +213,7 @@ struct FamilyGroupSettingsSection: View {
             .disabled(canManageHousehold == false || appRouter.selectedHouseholdId == nil)
 
             Button {
-                groupSwitcher.showSwitchGroupDialog = true
+                groupSwitcher.present(mode: .singleActive)
             } label: {
                 Image(systemName: "chevron.down")
                     .font(.caption.weight(.semibold))

@@ -49,13 +49,16 @@ struct GroupSwitcherToolbarButton: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
 
+    /// Schedule / Todo 用多选；Wallet 用单选活动组织。
+    var presentationMode: GroupSwitcherCoordinator.PresentationMode = .multiView
+
     private var selectedCount: Int {
         max(appRouter.selectedHouseholdIds.count, appRouter.selectedHouseholdId == nil ? 0 : 1)
     }
 
     var body: some View {
         Button {
-            groupSwitcher.showSwitchGroupDialog = true
+            groupSwitcher.present(mode: presentationMode)
         } label: {
             HStack(spacing: 6) {
                 if let primaryId = appRouter.selectedHouseholdId {
@@ -64,7 +67,7 @@ struct GroupSwitcherToolbarButton: View {
                 Text(GroupSwitcherData.currentName(for: appRouter))
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                if selectedCount > 1 {
+                if presentationMode == .multiView, selectedCount > 1 {
                     Text("\(selectedCount)")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(.white)
@@ -118,6 +121,10 @@ struct SwitchGroupSheetView: View {
         GroupSwitcherData.organizations(for: appRouter)
     }
 
+    private var isMultiView: Bool {
+        coordinator.presentationMode == .multiView
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack {
@@ -125,68 +132,48 @@ struct SwitchGroupSheetView: View {
                     coordinator.showSwitchGroupDialog = false
                 }
                 Spacer()
-                Text(L10n.Family.selectGroupsToView.localized)
+                Text(
+                    isMultiView
+                        ? L10n.Family.selectGroupsToView.localized
+                        : L10n.Family.selectGroup.localized
+                )
                     .font(.headline)
                 Spacer()
-                Button(L10n.Common.finish) {
-                    applySelectionAndDismiss()
+                if isMultiView {
+                    Button(L10n.Common.finish) {
+                        applySelectionAndDismiss()
+                    }
+                    .disabled(draftSelectedIds.isEmpty)
+                    .fontWeight(.semibold)
+                } else {
+                    // 与取消对称占位，保持标题居中
+                    Color.clear
+                        .frame(width: 44, height: 1)
+                        .accessibilityHidden(true)
                 }
-                .disabled(draftSelectedIds.isEmpty)
-                .fontWeight(.semibold)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 16)
 
-            Text(L10n.Family.multiSelectGroupsHint.localized)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.bottom, 8)
+            if isMultiView {
+                Text(L10n.Family.multiSelectGroupsHint.localized)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+            }
 
             Divider()
 
             ScrollView {
                 VStack(spacing: 0) {
                     ForEach(organizations) { organization in
-                        let isChecked = draftSelectedIds.contains(organization.id)
-                        let isActive = organization.id == appRouter.selectedHouseholdId
-                        HStack(spacing: 12) {
-                            Button {
-                                toggleSelection(organization.id)
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
-                                        .foregroundStyle(isChecked ? Color.accentColor : .secondary)
-                                    HouseholdColorDot(householdId: organization.id, size: 10)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(organization.name)
-                                            .foregroundStyle(.primary)
-                                        if isActive {
-                                            Text(L10n.Family.activeWriteGroup.localized)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                    }
-                                    Spacer(minLength: 8)
-                                }
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-
-                            if isChecked, isActive == false {
-                                Button {
-                                    appRouter.chooseHousehold(organization)
-                                } label: {
-                                    Text(L10n.Family.setAsActiveGroup.localized)
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(Color.accentColor)
-                                }
-                                .buttonStyle(.plain)
-                            }
+                        if isMultiView {
+                            multiViewRow(for: organization)
+                        } else {
+                            singleActiveRow(for: organization)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 14)
 
                         if organization.id != organizations.last?.id {
                             Divider()
@@ -244,6 +231,71 @@ struct SwitchGroupSheetView: View {
             }
             HouseholdColorStore.ensureAssigned(ids: organizations.map(\.id))
         }
+    }
+
+    @ViewBuilder
+    private func multiViewRow(for organization: AppRouter.HouseholdOption) -> some View {
+        let isChecked = draftSelectedIds.contains(organization.id)
+        let isActive = organization.id == appRouter.selectedHouseholdId
+        HStack(spacing: 12) {
+            Button {
+                toggleSelection(organization.id)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: isChecked ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isChecked ? Color.accentColor : .secondary)
+                    HouseholdColorDot(householdId: organization.id, size: 10)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(organization.name)
+                            .foregroundStyle(.primary)
+                        if isActive {
+                            Text(L10n.Family.activeWriteGroup.localized)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if isChecked, isActive == false {
+                Button {
+                    appRouter.chooseHousehold(organization)
+                } label: {
+                    Text(L10n.Family.setAsActiveGroup.localized)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 14)
+    }
+
+    private func singleActiveRow(for organization: AppRouter.HouseholdOption) -> some View {
+        let isActive = organization.id == appRouter.selectedHouseholdId
+        return Button {
+            appRouter.chooseHousehold(organization)
+            coordinator.showSwitchGroupDialog = false
+        } label: {
+            HStack(spacing: 12) {
+                HouseholdColorDot(householdId: organization.id, size: 10)
+                Text(organization.name)
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 8)
+                if isActive {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
     }
 
     private func toggleSelection(_ id: UUID) {

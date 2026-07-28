@@ -4,7 +4,15 @@ import SwiftUI
 /// 群组切换弹窗状态：由 `ContentView` 根视图持有，子页面仅通过纯 Button 触发。
 @MainActor
 final class GroupSwitcherCoordinator: ObservableObject {
+    enum PresentationMode: Equatable {
+        /// Schedule / Todo 等：多选查看集合。
+        case multiView
+        /// Location / Settings / Wallet：只切换活动组织。
+        case singleActive
+    }
+
     @Published var showSwitchGroupDialog = false
+    @Published var presentationMode: PresentationMode = .multiView
     @Published var isShowingCreateOrganizationSheet = false
     @Published var newOrganizationName = ""
     @Published var newOrganizationDescription = ""
@@ -22,6 +30,11 @@ final class GroupSwitcherCoordinator: ObservableObject {
 
     convenience init() {
         self.init(orgRoutingViewModel: AppViewModels.makeOrgRoutingViewModel())
+    }
+
+    func present(mode: PresentationMode = .multiView) {
+        presentationMode = mode
+        showSwitchGroupDialog = true
     }
 
     var normalizedInviteCode: String {

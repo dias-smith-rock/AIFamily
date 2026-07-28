@@ -34,7 +34,7 @@ struct LedgerMainView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    GroupSwitcherToolbarButton()
+                    GroupSwitcherToolbarButton(presentationMode: .singleActive)
                 }
             }
             .task(id: ledgerLoadTrigger) {
@@ -46,8 +46,8 @@ struct LedgerMainView: View {
                     householdId: appRouter.selectedHouseholdId,
                     detail: "trigger=\(ledgerLoadTrigger) bootstrap=\(appRouter.hasCompletedAuthBootstrap) access=\(canAccessWalletData) cats=\(viewModel.categories.count)"
                 )
-                viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
-                viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+                // 账盘强制单组织：忽略全局多选查看集合。
+                viewModel.setSingleHouseholdScope(appRouter.selectedHouseholdId)
                 guard appRouter.hasCompletedAuthBootstrap else {
                     LedgerWalletLoadLogger.step(
                         .mainTaskSkipBootstrap,
@@ -96,8 +96,7 @@ struct LedgerMainView: View {
                     source: "on_change_household",
                     householdId: newValue
                 )
-                viewModel.setHouseholdContext(newValue)
-                viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+                viewModel.setSingleHouseholdScope(newValue)
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
                     await viewModel.loadRoster(loadToken: token, source: "on_change_household")
@@ -110,25 +109,6 @@ struct LedgerMainView: View {
                             force: true,
                             loadToken: token,
                             source: "on_change_household"
-                        )
-                    }
-                }
-            }
-            .onChange(of: appRouter.viewHouseholdIdsToken) { _, _ in
-                viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
-                Task {
-                    guard appRouter.hasCompletedAuthBootstrap else { return }
-                    let token = LedgerWalletLoadLogger.nextToken()
-                    await viewModel.loadRoster(loadToken: token, source: "on_change_view_households")
-                    viewModel.setViewerContext(
-                        membershipId: appRouter.selectedMembershipId,
-                        fallbackProfileId: appRouter.selectedProfileId
-                    )
-                    if canAccessWalletData {
-                        await viewModel.loadLedgerData(
-                            force: true,
-                            loadToken: token,
-                            source: "on_change_view_households"
                         )
                     }
                 }
@@ -163,7 +143,7 @@ struct LedgerMainView: View {
 
     private var ledgerLoadTrigger: String {
         [
-            appRouter.viewHouseholdIdsToken,
+            appRouter.selectedHouseholdId?.uuidString ?? "none",
             appRouter.selectedMembershipId?.uuidString ?? "none",
             appSettings.selectedLanguage.id,
             appSettings.ledgerDisplayCurrency,

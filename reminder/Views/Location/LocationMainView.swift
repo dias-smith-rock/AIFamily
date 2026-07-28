@@ -232,8 +232,9 @@ struct LocationMainView: View {
     }
 
     private var locationRefreshToken: String {
+        let household = appRouter.selectedHouseholdId?.uuidString ?? "none"
         let membership = appRouter.selectedMembershipId?.uuidString ?? "none"
-        return "\(isTabActive)-\(appRouter.viewHouseholdIdsToken)-\(membership)"
+        return "\(isTabActive)-\(household)-\(membership)"
     }
 
     private var mapDismissOverlay: some View {
@@ -338,9 +339,7 @@ struct LocationMainView: View {
         let displayCount = effectiveMapHistoryDisplayCount
         let visibleLocations = member.mapVisibleLocations(displayCount: displayCount)
         let coordinates = member.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
-        let accent = appRouter.selectedHouseholdIds.count > 1
-            ? HouseholdColorStore.color(for: member.householdId)
-            : LocationMemberMapColors.accent(for: member.id)
+        let accent = LocationMemberMapColors.accent(for: member.id)
         let segmentCount = max(0, coordinates.count - 1)
 
         Group {
@@ -756,7 +755,7 @@ struct LocationMainView: View {
     private var organizationSwitcherRow: some View {
         Button {
             liveManager.recordUserInteraction()
-            groupSwitcher.showSwitchGroupDialog = true
+            groupSwitcher.present(mode: .singleActive)
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill")
@@ -814,7 +813,8 @@ struct LocationMainView: View {
             currentMembershipId: appRouter.selectedMembershipId,
             currentProfileId: appRouter.selectedProfileId
         )
-        viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+        // Location 强制单组织：忽略全局多选查看集合。
+        viewModel.setSingleHouseholdScope(appRouter.selectedHouseholdId)
 
         var authUserId: UUID?
         #if canImport(Supabase)

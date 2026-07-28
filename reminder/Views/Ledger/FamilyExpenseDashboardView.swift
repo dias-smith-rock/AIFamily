@@ -15,6 +15,8 @@ struct FamilyExpenseDashboardView: View {
     @State private var entryPrefill: ManualEntryPrefill?
     @State private var isShowingWriteTargetPicker = false
     @State private var pendingEntryType: LedgerEntryType = .expense
+    /// 多选时点分类卡：先选写入组织，再按此模板匹配新组织分类。
+    @State private var pendingCategoryTemplate: ExpenseCategory?
     @State private var isShowingCategoryManager = false
     @State private var manageCategoriesInitialType: LedgerEntryType = .expense
     @State private var isShowingReports = false
@@ -140,12 +142,21 @@ struct FamilyExpenseDashboardView: View {
                 locksToIncome: allowsExpenseManagement == false
             )
         }
-        .sheet(isPresented: $isShowingWriteTargetPicker) {
+        .sheet(isPresented: $isShowingWriteTargetPicker, onDismiss: {
+            // 取消选择时清掉分类模板，避免下次 FAB 误带分类。
+            if entryPrefill == nil {
+                pendingCategoryTemplate = nil
+            }
+        }) {
             WriteTargetHouseholdPicker { _ in
                 let type = pendingEntryType
+                let template = pendingCategoryTemplate
+                pendingCategoryTemplate = nil
                 Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(350))
-                    entryPrefill = ManualEntryPrefill(type: type, categoryId: nil)
+                    // 等活动组织切换后的账盘重载落稳，再匹配分类打开记账。
+                    try? await Task.sleep(for: .milliseconds(450))
+                    let categoryId = template.flatMap { viewModel.resolvedCategoryId(matching: $0) }
+                    entryPrefill = ManualEntryPrefill(type: type, categoryId: categoryId)
                 }
             }
             .environmentObject(appRouter)
@@ -367,10 +378,7 @@ struct FamilyExpenseDashboardView: View {
                                 amountText: currencyText(viewModel.amount(for: category.id, type: type)),
                                 colorHex: category.colorHex
                             ) {
-                                entryPrefill = ManualEntryPrefill(
-                                    type: type,
-                                    categoryId: category.id
-                                )
+                                beginManualEntry(type: type, category: category)
                             }
                             .contextMenu {
                                 if allowsExpenseManagement {
@@ -403,15 +411,20 @@ struct FamilyExpenseDashboardView: View {
 
     // MARK: - FAB
 
+    private func beginManualEntry(type: LedgerEntryType, category: ExpenseCategory?) {
+        if appRouter.needsWriteTargetSelection {
+            pendingEntryType = type
+            pendingCategoryTemplate = category
+            isShowingWriteTargetPicker = true
+        } else {
+            entryPrefill = ManualEntryPrefill(type: type, categoryId: category?.id)
+        }
+    }
+
     private var logEntryFAB: some View {
         Button {
             let defaultType: LedgerEntryType = allowsExpenseManagement ? .expense : .income
-            if appRouter.needsWriteTargetSelection {
-                pendingEntryType = defaultType
-                isShowingWriteTargetPicker = true
-            } else {
-                entryPrefill = ManualEntryPrefill(type: defaultType, categoryId: nil)
-            }
+            beginManualEntry(type: defaultType, category: nil)
         } label: {
             Image(systemName: "plus")
                 .font(.title2.weight(.semibold))
