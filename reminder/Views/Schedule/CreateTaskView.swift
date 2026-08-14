@@ -325,7 +325,6 @@ struct CreateTaskView: View {
     @State private var selectedAttachmentJPEGData: [Data] = []
     @State private var existingAttachments: [TaskAttachment] = []
     @State private var attachmentsToDelete: [TaskAttachment] = []
-    @State private var showAttachmentOptions = false
     @State private var isPresentingPhotoLibrary = false
     @State private var isPresentingCamera = false
     @State private var attachmentPreviewPresentation: AttachmentPreviewPresentation?
@@ -737,7 +736,7 @@ struct CreateTaskView: View {
         VStack(spacing: 0) {
             orgFlatRow
             flatDivider
-            attachmentsFlatRow
+            attachmentsSection
 
             if showsMemoToggle {
                 flatDivider
@@ -789,23 +788,71 @@ struct CreateTaskView: View {
         }
     }
 
-    private var attachmentsFlatRow: some View {
-        Button {
-            dismissKeyboard()
-            chipEditorSection = .files
-        } label: {
-            CreateTaskFlatRow(
-                systemImage: "paperclip",
-                title: AppLocalized.string(L10n.Common.attachments, locale: locale),
-                iconColor: formIconAccent,
-                showsChevron: true
-            ) {
-                Text(attachmentsSummaryText)
-                    .foregroundStyle(totalAttachmentCount == 0 ? .secondary : formIconAccent)
-                    .lineLimit(1)
+    private var attachmentsSection: some View {
+        VStack(spacing: 0) {
+            attachmentsFlatRow
+            if totalAttachmentCount > 0 {
+                attachmentThumbnailStrip
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
             }
         }
-        .buttonStyle(.plain)
+    }
+
+    private var attachmentsFlatRowLabel: some View {
+        CreateTaskFlatRow(
+            systemImage: "paperclip",
+            title: AppLocalized.string(L10n.Common.attachments, locale: locale),
+            iconColor: formIconAccent,
+            showsChevron: true
+        ) {
+            Text(attachmentsSummaryText)
+                .foregroundStyle(totalAttachmentCount == 0 ? .secondary : formIconAccent)
+                .lineLimit(1)
+        }
+    }
+
+    @ViewBuilder
+    private var attachmentsFlatRow: some View {
+        if canAddMoreAttachments {
+            Menu {
+                attachmentPickerMenuContent
+            } label: {
+                attachmentsFlatRowLabel
+            }
+        } else {
+            Button {
+                dismissKeyboard()
+                presentAttachmentLimitFeedback()
+            } label: {
+                attachmentsFlatRowLabel
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var attachmentPickerMenuContent: some View {
+        Button {
+            isPresentingPhotoLibrary = true
+        } label: {
+            Label(L10n.Common.photoLibrary.localized, systemImage: "photo.on.rectangle")
+        }
+        if UIImagePickerController.isSourceTypeAvailable(.camera) {
+            Button {
+                isPresentingCamera = true
+            } label: {
+                Label(L10n.Common.takePhoto.localized, systemImage: "camera")
+            }
+        }
+    }
+
+    private func presentAttachmentLimitFeedback() {
+        if appRouter.hasPremiumAccess {
+            errorMessage = L10n.Common.attachmentLimitReached.string(locale: locale)
+        } else {
+            appRouter.presentPremiumUpgrade()
+        }
     }
 
     private var attachmentsSummaryText: String {
@@ -1599,18 +1646,6 @@ struct CreateTaskView: View {
             Text(L10n.Common.pleaseSelectAModificationScope.localized)
         }
         .forcesNonPopoverDialogPresentation()
-        .confirmationDialog(L10n.Common.addAttachment.localized, isPresented: $showAttachmentOptions, titleVisibility: .visible) {
-            Button(L10n.Common.photoLibrary.localized) {
-                isPresentingPhotoLibrary = true
-            }
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button(L10n.Common.takePhoto.localized) {
-                    isPresentingCamera = true
-                }
-            }
-            Button(L10n.Common.cancel.localized, role: .cancel) {}
-        }
-        .forcesNonPopoverDialogPresentation()
     }
 
     @ToolbarContentBuilder
@@ -2089,28 +2124,35 @@ struct CreateTaskView: View {
 
     private var taskAttachmentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Button {
-                dismissKeyboard()
-                guard canAddMoreAttachments else {
-                    if appRouter.hasPremiumAccess {
-                        errorMessage = L10n.Common.attachmentLimitReached.string(locale: locale)
-                    } else {
-                        appRouter.presentPremiumUpgrade()
+            if canAddMoreAttachments {
+                Menu {
+                    attachmentPickerMenuContent
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "paperclip")
+                            .font(.body.weight(.semibold))
+                        Text(L10n.Common.addAttachment.localized)
+                            .font(.subheadline.weight(.semibold))
                     }
-                    return
+                    .foregroundStyle(.tint)
                 }
-                showAttachmentOptions = true
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "paperclip")
-                        .font(.body.weight(.semibold))
-                    Text(L10n.Common.addAttachment.localized)
-                        .font(.subheadline.weight(.semibold))
+                .accessibilityLabel(L10n.Common.addAttachment)
+            } else {
+                Button {
+                    dismissKeyboard()
+                    presentAttachmentLimitFeedback()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "paperclip")
+                            .font(.body.weight(.semibold))
+                        Text(L10n.Common.addAttachment.localized)
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(.tint)
                 }
-                .foregroundStyle(.tint)
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Common.addAttachment)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.Common.addAttachment)
 
             if existingAttachments.isEmpty == false || selectedImages.isEmpty == false {
                 attachmentThumbnailStrip
@@ -2128,10 +2170,29 @@ struct CreateTaskView: View {
                 ForEach(selectedImages.indices, id: \.self) { index in
                     attachmentThumbnail(image: selectedImages[index], index: index)
                 }
+                if canAddMoreAttachments {
+                    addAttachmentChip
+                }
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 4)
         }
+    }
+
+    private var addAttachmentChip: some View {
+        Menu {
+            attachmentPickerMenuContent
+        } label: {
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                .frame(width: 80, height: 80)
+                .overlay {
+                    Image(systemName: "plus")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(formIconAccent)
+                }
+        }
+        .accessibilityLabel(L10n.Common.addAttachment)
     }
 
     private func existingAttachmentThumbnail(_ attachment: TaskAttachment, listOffset: Int) -> some View {
