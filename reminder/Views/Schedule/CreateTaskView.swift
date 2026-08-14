@@ -701,28 +701,24 @@ struct CreateTaskView: View {
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .font(.footnote)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            dismissKeyboard()
-        }
     }
 
     private var titleInputCard: some View {
-        Group {
-            if isEmbeddedInParent {
-                // 与详情只读标题同为单行高度，避免 vertical TextField 额外撑高。
-                TextField(titleFieldPlaceholder, text: $title)
+        ZStack(alignment: .topLeading) {
+            TextEditor(text: $title)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 52, maxHeight: 120, alignment: .topLeading)
+                .focused($focusedField, equals: .title)
+
+            if title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                Text(titleFieldPlaceholder)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .textFieldStyle(.plain)
-                    .focused($focusedField, equals: .title)
-            } else {
-                TextField(titleFieldPlaceholder, text: $title, axis: .vertical)
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...3)
-                    .focused($focusedField, equals: .title)
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 8)
+                    .padding(.leading, 5)
+                    .allowsHitTesting(false)
             }
         }
         // 与详情 `titleCard` 同一套修饰顺序，避免切换时高度跳动。
