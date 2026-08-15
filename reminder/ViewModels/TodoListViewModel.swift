@@ -382,6 +382,7 @@ final class TodoListViewModel: ObservableObject {
         flexibleTasks.removeAll { $0.id == updated.id }
         completedTasks.removeAll { $0.id == updated.id }
         completedTasks.insert(updated, at: 0)
+        AnalyticsManager.log(event: .taskCompleted(taskId: updated.id))
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
     }
 }

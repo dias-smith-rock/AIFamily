@@ -3,7 +3,8 @@ import Foundation
 /// 免费版 / Pro 版客户端配额（与 VIP 页宣传一致）。
 enum PremiumLimits {
     static let freeMaxHouseholds = 1
-    static let freeMaxMembersPerHousehold = 2
+    /// 免费版每组活跃成员上限（含创建者）；双职工家庭试用需容纳配偶与孩子档案/真人。
+    static let freeMaxMembersPerHousehold = 6
     static let freeMaxTaskAttachments = 1
     static let proMaxTaskAttachments = 10
     /// 免费版地图最多展示 3 个历史点；Pro 最高可选 20 个。

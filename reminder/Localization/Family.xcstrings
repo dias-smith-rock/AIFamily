@@ -7913,55 +7913,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ما يصل إلى مجموعة واحدة، عضوين لكل مجموعة."
+            "value": "ما يصل إلى مجموعة واحدة، 6 أعضاء لكل مجموعة."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Up to 1 group, 2 members per group."
+            "value": "Up to 1 group, 6 members per group."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hasta 1 grupo, 2 miembros por grupo."
+            "value": "Hasta 1 grupo, 6 miembros por grupo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jusqu'à 1 groupe, 2 membres par groupe."
+            "value": "Jusqu'à 1 groupe, 6 membres par groupe."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 समूह तक, प्रति समूह 2 सदस्य।"
+            "value": "1 समूह तक, प्रति समूह 6 सदस्य।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Até 1 grupo, 2 membros por grupo."
+            "value": "Até 1 grupo, 6 membros por grupo."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "1 குழு வரை, ஒரு குழுவிற்கு 2 உறுப்பினர்கள்."
+            "value": "1 குழு வரை, ஒரு குழுவிற்கு 6 உறுப்பினர்கள்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "最多 1 个群组，每组上限 2 人。"
+            "value": "最多 1 个群组，每组上限 6 人。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "最多 1 個群組，每組上限 2 人。"
+            "value": "最多 1 個群組，每組上限 6 人。"
           }
         }
       }
@@ -9083,6 +9083,478 @@
           "stringUnit": {
             "state": "translated",
             "value": "Set active"
+          }
+        }
+      }
+    },
+    "family_org_onboarding_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set up your family calendar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开始设置家庭日历"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開始設定家庭日曆"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configura el calendario familiar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurez l’agenda familial"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configure o calendário da família"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपना पारिवारिक कैलेंडर सेट करें"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குடும்ப நாட்காட்டியை அமைக்கவும்"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أعد تقويم العائلة"
+          }
+        }
+      }
+    },
+    "family_org_onboarding_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share schedules and to-dos with your partner. Create a family, or join with their invite."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "与伴侣共享日程和待办。创建家庭，或用对方的邀请加入。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "與伴侶共享日程和待辦。建立家庭，或用對方的邀請加入。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparte agendas y tareas con tu pareja. Crea una familia o únete con su invitación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partagez agendas et tâches avec votre partenaire. Créez une famille ou rejoignez via son invitation."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partilhe agendas e tarefas com o seu parceiro. Crie uma família ou entre com o convite dele."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साथी के साथ शेड्यूल और कार्य साझा करें। परिवार बनाएँ, या उनके आमंत्रण से जुड़ें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் துணையுடன் அட்டவணைகளையும் பணிகளையும் பகிருங்கள். குடும்பம் உருவாக்கவும் அல்லது அழைப்பினால் சேரவும்."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شارك الجداول والمهام مع شريكك. أنشئ عائلة أو انضم بدعوته."
+          }
+        }
+      }
+    },
+    "family_org_onboarding_choose_path": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How do you want to start?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你想怎么开始？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你想怎麼開始？"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Cómo quieres empezar?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment voulez-vous commencer ?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como quer começar?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप कैसे शुरू करना चाहते हैं?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "எப்படி தொடங்க விரும்புகிறீர்கள்?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كيف تريد أن تبدأ؟"
+          }
+        }
+      }
+    },
+    "family_start_our_family_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start our family"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建我们的家庭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立我們的家庭"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar nuestra familia"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Créer notre famille"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Começar a nossa família"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हमारा परिवार शुरू करें"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "எங்கள் குடும்பத்தைத் தொடங்கவும்"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابدأ عائلتنا"
+          }
+        }
+      }
+    },
+    "family_start_our_family_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Then invite your partner in one tap"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "创建后一键邀请伴侣"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "建立後一鍵邀請伴侶"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Después invita a tu pareja en un toque"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invitez ensuite votre partenaire en un tap"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depois convide o seu parceiro num toque"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फिर एक टैप में साथी को आमंत्रित करें"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பின் ஒரு தட்டலில் துணையை அழைக்கவும்"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ثم ادعُ شريكك بنقرة واحدة"
+          }
+        }
+      }
+    },
+    "family_join_with_invite_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join with an invite"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用邀请加入"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "用邀請加入"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unirse con una invitación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rejoindre avec une invitation"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entrar com um convite"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आमंत्रण से जुड़ें"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அழைப்புடன் சேரவும்"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انضم بدعوة"
+          }
+        }
+      }
+    },
+    "family_join_with_invite_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan a QR code or enter a 6-digit code"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描二维码或输入 6 位邀请码"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掃描二維碼或輸入 6 位邀請碼"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanea un QR o introduce un código de 6 dígitos"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scannez un QR ou saisissez un code à 6 caractères"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digitalize um QR ou introduza um código de 6 dígitos"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR स्कैन करें या 6 अंकों का कोड डालें"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "QR ஸ்கேன் செய்யவும் அல்லது 6 இலக்கக் குறியீடு உள்ளிடவும்"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "امسح رمز QR أو أدخل رمزًا من 6 خانات"
+          }
+        }
+      }
+    },
+    "family_example_family_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. The Lees"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例如：李家"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "例如：李家"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "p. ej. Familia Lee"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ex. Famille Lee"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ex. Família Lee"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जैसे: ली परिवार"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "எ.கா. லீ குடும்பம்"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مثلًا: عائلة لي"
           }
         }
       }

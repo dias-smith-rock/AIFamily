@@ -146,7 +146,8 @@ struct OrgRoutingView: View {
                                         locale: locale
                                     )
                                 )
-                                .foregroundStyle(.secondary)
+                                .font(.subheadline)
+                                .foregroundStyle(.tertiary)
                             }
                         }
                         .disabled(isSigningOut)
@@ -160,13 +161,16 @@ struct OrgRoutingView: View {
             VStack(alignment: .leading, spacing: 18) {
                 joinedHouseholdsSection
 
-                Text(AppLocalized.string(L10n.Common.pleaseChooseAWayToContinue, locale: locale))
-                    .font(AppTheme.FontToken.subtitle)
-                    .foregroundStyle(AppTheme.ColorToken.textSecondary)
+                if viewModel.joinedHouseholds.isEmpty == false {
+                    Text(AppLocalized.string(L10n.Family.orgOnboardingChoosePath, locale: locale))
+                        .font(AppTheme.FontToken.subtitle)
+                        .foregroundStyle(AppTheme.ColorToken.textSecondary)
+                }
 
                 RouteActionCard(
                     icon: "house.fill",
-                    title: AppLocalized.string(L10n.Family.createBrandNewGroupSpace, locale: locale),
+                    title: AppLocalized.string(L10n.Family.startOurFamilyTitle, locale: locale),
+                    subtitle: AppLocalized.string(L10n.Family.startOurFamilySubtitle, locale: locale),
                     backgroundColor: Color.orange.opacity(0.12)
                 ) {
                     createInputError = nil
@@ -175,7 +179,8 @@ struct OrgRoutingView: View {
 
                 RouteActionCard(
                     icon: "qrcode.viewfinder",
-                    title: AppLocalized.string(L10n.Family.joinViaScanOrInviteCode, locale: locale),
+                    title: AppLocalized.string(L10n.Family.joinWithInviteTitle, locale: locale),
+                    subtitle: AppLocalized.string(L10n.Family.joinWithInviteSubtitle, locale: locale),
                     backgroundColor: Color.green.opacity(0.12)
                 ) {
                     joinInputError = nil
@@ -209,21 +214,32 @@ struct OrgRoutingView: View {
     }
 
     private var emptyJoinedHouseholdsPlaceholder: some View {
-        VStack(spacing: 10) {
-            Image(systemName: "house.and.flag")
-                .font(.system(size: 36))
-                .foregroundStyle(.tertiary)
+        VStack(spacing: 12) {
+            Image(systemName: "calendar.badge.plus")
+                .font(.system(size: 40, weight: .medium))
+                .foregroundStyle(Color.orange.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text(AppLocalized.string(L10n.Family.youHavenTJoinedAnyGroupsYet, locale: locale))
-                .font(.headline)
+                .padding(.bottom, 4)
+
+            Text(AppLocalized.string(L10n.Family.orgOnboardingTitle, locale: locale))
+                .font(.title3.weight(.bold))
                 .foregroundStyle(.primary)
-            Text(AppLocalized.string(L10n.Family.createANewGroupOrJoinSomeoneElseSExisti, locale: locale))
+                .multilineTextAlignment(.center)
+
+            Text(AppLocalized.string(L10n.Family.orgOnboardingSubtitle, locale: locale))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(AppLocalized.string(L10n.Family.orgOnboardingChoosePath, locale: locale))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.top, 8)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 4)
     }
 
     private func loadJoinedHouseholdsForOrgRouting() async {
@@ -384,6 +400,7 @@ struct OrgRoutingView: View {
             isPremium: appRouter.hasPremiumAccess
         )
         guard let createdId else { return }
+        AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.createGroup)
         showCreateSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdId)
         appRouter.goToActiveMember()
@@ -409,9 +426,11 @@ struct OrgRoutingView: View {
         let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
         guard success else { return }
         showJoinSheet = false
+        AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.joinGroup)
         await appRouter.refreshStateFromBackend()
         if let groupId = appRouter.selectedHouseholdId {
             AnalyticsManager.log(event: .groupJoined(groupId: groupId))
+            AnalyticsManager.logInviteAccepted(householdId: groupId)
         }
     }
 
@@ -431,6 +450,7 @@ struct OrgRoutingView: View {
 private struct RouteActionCard: View {
     let icon: String
     let title: String
+    var subtitle: String? = nil
     let backgroundColor: Color
     let onTap: () -> Void
 
@@ -444,12 +464,20 @@ private struct RouteActionCard: View {
                     .background(Color(.systemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
-                Text(title)
-                    .font(AppTheme.FontToken.section)
-                    .foregroundStyle(.primary)
-                    .multilineTextAlignment(.leading)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(AppTheme.FontToken.section)
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.leading)
+                    if let subtitle, subtitle.isEmpty == false {
+                        Text(subtitle)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.leading)
+                    }
+                }
 
-                Spacer()
+                Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.tertiary)
             }
@@ -475,7 +503,7 @@ private struct CreateHouseholdSheet: View {
             VStack(alignment: .leading, spacing: 14) {
                 Text(AppLocalized.string(L10n.Family.pleaseEnterAGroupName2, locale: locale))
                     .font(.system(size: 15, weight: .semibold))
-                TextField(AppLocalized.string(L10n.Common.forExampleWangGroupCourtyard, locale: locale), text: $householdName)
+                TextField(AppLocalized.string(L10n.Family.exampleFamilyName, locale: locale), text: $householdName)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 11)
@@ -522,7 +550,7 @@ private struct CreateHouseholdSheet: View {
                 Spacer()
             }
             .padding(16)
-            .navigationTitle(AppLocalized.string(L10n.Family.createGroup, locale: locale))
+            .navigationTitle(AppLocalized.string(L10n.Family.startOurFamilyTitle, locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

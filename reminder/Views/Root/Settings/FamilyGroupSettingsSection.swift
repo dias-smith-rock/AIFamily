@@ -125,6 +125,10 @@ struct FamilyGroupSettingsSection: View {
                 .foregroundStyle(.secondary)
 
             Button(L10n.Family.addGroupMembers) {
+                AnalyticsManager.logEmptyStateCTATapped(
+                    surface: AnalyticsManager.EmptyStateSurface.family,
+                    cta: AnalyticsManager.EmptyStateCTA.invite
+                )
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)
@@ -159,6 +163,10 @@ struct FamilyGroupSettingsSection: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 8)
             Button(L10n.Family.addGroupMembers) {
+                AnalyticsManager.logEmptyStateCTATapped(
+                    surface: AnalyticsManager.EmptyStateSurface.family,
+                    cta: AnalyticsManager.EmptyStateCTA.invite
+                )
                 presentAddMemberFlow()
             }
             .buttonStyle(.borderedProminent)

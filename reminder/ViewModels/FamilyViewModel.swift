@@ -376,6 +376,7 @@ final class FamilyViewModel: ObservableObject {
             errorMessage = nil
             hasLoadedOnce = true
             requiresLogin = false
+            AnalyticsManager.updateHouseholdMemberUserProperties(activeHumanCount: activeMemberCount)
         }
 
         if await NetworkMonitor.shared.isConnected == false {
@@ -440,6 +441,7 @@ final class FamilyViewModel: ObservableObject {
 
         do {
             try await applyMemberRoster(householdId: householdId, persistToDiskCache: true)
+            AnalyticsManager.updateHouseholdMemberUserProperties(activeHumanCount: activeMemberCount)
             #if DEBUG
             print("✅ [FamilyDebug] loadMembers success - profiles=\(profiles.count), memberships=\(members.count)")
             #endif

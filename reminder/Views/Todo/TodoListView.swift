@@ -55,6 +55,10 @@ struct TodoListView: View {
                     Text(L10n.Schedule.addTasksWithoutASetStartTimeCompleteThem.localized)
                 } actions: {
                     Button(L10n.Common.newToDo) {
+                        AnalyticsManager.logEmptyStateCTATapped(
+                            surface: AnalyticsManager.EmptyStateSurface.todo,
+                            cta: AnalyticsManager.EmptyStateCTA.create
+                        )
                         presentCreateFlexible()
                     }
                 }

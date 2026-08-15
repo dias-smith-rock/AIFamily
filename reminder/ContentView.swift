@@ -161,7 +161,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
-                Self.logAppOpenedIfNeeded()
+                Self.logAppOpenedIfNeeded(isGuest: appRouter.isAnonymousUser)
                 shouldHideAppSwitcherSnapshot = false
                 Task {
                     await NotificationManager.shared.clearBadgeCount()
@@ -292,10 +292,12 @@ struct ContentView: View {
     private static var hasReportedLocationOnLaunchThisSession = false
     private static var launchBootstrapFinishedAt: CFAbsoluteTime?
 
-    private static func logAppOpenedIfNeeded() {
+    private static func logAppOpenedIfNeeded(isGuest: Bool) {
         guard hasLoggedAppOpenThisSession == false else { return }
         hasLoggedAppOpenThisSession = true
         AnalyticsManager.log(event: .appOpened)
+        AnalyticsManager.logFirstOpenIfNeeded(isGuest: isGuest)
+        AnalyticsManager.updateGuestUserProperty(isGuest: isGuest)
     }
 
     private var newCreatorAlertBinding: Binding<Bool> {
@@ -320,6 +322,9 @@ struct ContentView: View {
             note: "networkConnectedAtStart=\(networkConnectedAtStart)",
             appRouter: appRouter
         )
+
+        AnalyticsManager.logFirstOpenIfNeeded(isGuest: appRouter.isAnonymousUser)
+        AnalyticsManager.updateGuestUserProperty(isGuest: appRouter.isAnonymousUser)
 
         if isUserLoggedIn, networkConnectedAtStart == false {
             OfflineColdStartPerformanceTracer.beginTrace(networkConnectedAtStart: networkConnectedAtStart)

@@ -75,6 +75,7 @@ struct PendingView: View {
         }
         .onAppear {
             breathing = true
+            AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.pending)
         }
     }
 }

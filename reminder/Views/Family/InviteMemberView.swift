@@ -82,6 +82,14 @@ struct InviteMemberView: View {
                         .background(Color.orange)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
+                    .simultaneousGesture(
+                        TapGesture().onEnded {
+                            AnalyticsManager.logInviteShared(
+                                channel: AnalyticsManager.InviteChannel.link,
+                                householdId: currentHouseholdId
+                            )
+                        }
+                    )
                     .buttonStyle(.plain)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
@@ -209,6 +217,10 @@ struct InviteMemberView: View {
                 )
             }
             inviteCode = code
+            AnalyticsManager.logInviteShared(
+                channel: AnalyticsManager.InviteChannel.qr,
+                householdId: currentHouseholdId
+            )
         } catch {
             if isMissingGetOrCreateInviteNonceRPC(error) {
                 errorMessage = AppLocalized.string(L10n.Family.backendInviteRpcMissing, locale: locale)

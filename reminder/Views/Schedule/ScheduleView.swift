@@ -35,6 +35,7 @@ struct TaskModeDayView: View {
 
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
+    let onInviteFamily: (() -> Void)?
     let onRefresh: (() async -> Void)?
 
     init(
@@ -42,12 +43,14 @@ struct TaskModeDayView: View {
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
         onQuickCreate: @escaping (String, Date?) -> Void,
+        onInviteFamily: (() -> Void)? = nil,
         onRefresh: (() async -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
         self.onQuickCreate = onQuickCreate
+        self.onInviteFamily = onInviteFamily
         self.onRefresh = onRefresh
     }
 
@@ -409,54 +412,123 @@ struct TaskModeDayView: View {
         }
     }
 
+    private var showsSoloHouseholdInviteCTA: Bool {
+        let activeHumans = viewModel.householdMembers.filter { $0.isActiveMembership() }.count
+        return activeHumans <= 1
+    }
+
     @ViewBuilder
     private func emptyStateView() -> some View {
-        VStack(spacing: 24) {
-            ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.13))
-                    .frame(width: 120, height: 120)
-                Image(systemName: "sun.max.fill")
-                    .font(.system(size: 44, weight: .medium))
-                    .foregroundStyle(.orange)
-                    .symbolRenderingMode(.hierarchical)
-            }
+        ScrollView {
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(Color.orange.opacity(0.13))
+                        .frame(width: 88, height: 88)
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 36, weight: .medium))
+                        .foregroundStyle(.orange)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .padding(.top, 8)
 
-            VStack(spacing: 8) {
-                Text(L10n.Schedule.noTasksScheduledToday.localized)
-                    .font(.title3.bold())
+                VStack(spacing: 8) {
+                    Text(L10n.Schedule.emptyFamilyReadyTitle.localized)
+                        .font(.title3.bold())
+                        .foregroundStyle(.primary)
+                        .multilineTextAlignment(.center)
+                    Text(L10n.Schedule.emptyFamilyReadySubtitle.localized)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if let onInviteFamily {
+                    Button {
+                        AnalyticsManager.logEmptyStateCTATapped(
+                            surface: AnalyticsManager.EmptyStateSurface.schedule,
+                            cta: AnalyticsManager.EmptyStateCTA.invite
+                        )
+                        onInviteFamily()
+                    } label: {
+                        Label {
+                            Text(L10n.Schedule.emptyInvitePartner.localized)
+                                .font(.body.weight(.semibold))
+                        } icon: {
+                            Image(systemName: "person.badge.plus")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .foregroundStyle(.white)
+                        .background(Color.accentColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, showsSoloHouseholdInviteCTA ? 4 : 0)
+                }
+
+                Button {
+                    AnalyticsManager.logEmptyStateCTATapped(
+                        surface: AnalyticsManager.EmptyStateSurface.schedule,
+                        cta: AnalyticsManager.EmptyStateCTA.create
+                    )
+                    onQuickCreate("", defaultDueDate(for: .selectedDay))
+                } label: {
+                    Label {
+                        Text(L10n.Schedule.emptyNewTask.localized)
+                            .font(.body.weight(.semibold))
+                    } icon: {
+                        Image(systemName: "plus.circle.fill")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
                     .foregroundStyle(.primary)
-                Text(L10n.Common.enjoyYourTimeTogetherOrPlanSomethingNew.localized)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
+                    .background(AppTheme.ColorToken.surfaceMuted)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+                .buttonStyle(.plain)
 
-            VStack(spacing: 12) {
-                actionChip(emoji: "✨", title: L10n.Common.dinnerTogether, dueDateKind: .selectedDay)
-                actionChip(emoji: "🛒", title: L10n.Common.groceryList, dueDateKind: .dayAfterSelected)
-                actionChip(emoji: "🧸", title: L10n.Common.kidsActivity, dueDateKind: .nextSaturdayFromSelected)
+                VStack(spacing: 12) {
+                    Text(L10n.Schedule.emptyQuickAddSection.localized)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    FlowLayout(spacing: 10) {
+                        actionChip(emoji: "✨", title: L10n.Common.dinnerTogether, dueDateKind: .selectedDay)
+                        actionChip(emoji: "🛒", title: L10n.Common.groceryList, dueDateKind: .dayAfterSelected)
+                        actionChip(emoji: "🧸", title: L10n.Common.kidsActivity, dueDateKind: .nextSaturdayFromSelected)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.top, 4)
             }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .offset(y: -50)
     }
 
     /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
     private func actionChip(emoji: String, title: L10n.Entry, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
         Button {
+            AnalyticsManager.logEmptyStateCTATapped(
+                surface: AnalyticsManager.EmptyStateSurface.schedule,
+                cta: AnalyticsManager.EmptyStateCTA.create
+            )
             onQuickCreate(AppLocalized.string(title, locale: locale), defaultDueDate(for: dueDateKind))
         } label: {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Text(emoji)
-                    .font(.system(size: 22))
+                    .font(.system(size: 18))
                     .fixedSize()
                 Text(title.localized)
-                    .font(.body.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
+                    .lineLimit(1)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
             .background(AppTheme.ColorToken.surfaceMuted)
             .clipShape(Capsule())
         }
@@ -611,6 +683,54 @@ private enum TaskEmergencyDialURLs {
         selectedDate: .constant(Date()),
         viewModel: AppViewModels.makeScheduleViewModel(),
         onTaskSelect: { _ in },
-        onQuickCreate: { _, _ in }
+        onQuickCreate: { _, _ in },
+        onInviteFamily: {}
     )
+}
+
+/// 简易横向换行布局，用于空态快捷 chip。
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var height: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > 0, x + size.width > maxWidth {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+            height = max(height, y + rowHeight)
+        }
+        return CGSize(width: maxWidth.isFinite ? maxWidth : x, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(
+                at: CGPoint(x: x, y: y),
+                proposal: ProposedViewSize(width: size.width, height: size.height)
+            )
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+        }
+    }
 }

@@ -36,6 +36,7 @@ struct TaskListView: View {
     /// 周视图「回到本周」：由 `TaskWeekGridView` 同步可见性；递增 trigger 触发跳转。
     @State private var showsWeekBackToCurrentWeekButton = false
     @State private var weekBackToCurrentWeekTrigger = 0
+    @State private var isShowingInviteSheet = false
 
     var body: some View {
         NavigationStack {
@@ -85,6 +86,19 @@ struct TaskListView: View {
                 )
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $isShowingInviteSheet) {
+                InviteMemberView(
+                    currentHouseholdId: appRouter.selectedHouseholdId,
+                    creatorMembershipId: appRouter.selectedMembershipId,
+                    activeMemberCount: viewModel.householdMembers.filter { $0.isActiveMembership() }.count,
+                    hasPremiumAccess: appRouter.hasPremiumAccess
+                )
+                .environmentObject(appRouter)
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $isShowingWriteTargetPicker) {
                 WriteTargetHouseholdPicker { _ in
@@ -302,6 +316,9 @@ struct TaskListView: View {
                         onTaskSelect: { taskForDetailSheet = $0 },
                         onQuickCreate: { prefill, dueOverride in
                             openCreateTask(prefill: prefill, defaultDueDateOverride: dueOverride)
+                        },
+                        onInviteFamily: {
+                            isShowingInviteSheet = true
                         },
                         onRefresh: refreshTasks
                     )

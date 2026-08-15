@@ -299,15 +299,16 @@ struct HouseholdSelectionView: View {
     }
 
     private var emptyHouseholdsPlaceholder: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "house.and.flag")
-                .font(.system(size: 44))
-                .foregroundStyle(.tertiary)
+        VStack(spacing: 12) {
+            Image(systemName: "calendar.badge.plus")
+                .font(.system(size: 44, weight: .medium))
+                .foregroundStyle(Color.orange.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-            Text(AppLocalized.string(L10n.Family.youHavenTJoinedAnyGroupsYet, locale: locale))
+            Text(AppLocalized.string(L10n.Family.orgOnboardingTitle, locale: locale))
                 .font(.headline)
                 .foregroundStyle(.primary)
-            Text(AppLocalized.string(L10n.Family.createANewGroupOrJoinSomeoneElseSExisti, locale: locale))
+                .multilineTextAlignment(.center)
+            Text(AppLocalized.string(L10n.Family.orgOnboardingSubtitle, locale: locale))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -436,6 +437,7 @@ struct HouseholdSelectionView: View {
             isPremium: appRouter.hasPremiumAccess
         )
         guard let createdId else { return }
+        AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.createGroup)
         showCreateSheet = false
         appRouter.preferHouseholdOnNextRefresh(createdId)
         appRouter.goToActiveMember()
@@ -462,12 +464,15 @@ struct HouseholdSelectionView: View {
         let success = await viewModel.joinHousehold(inviteCode: normalizedInviteCode)
         guard success else { return }
         showJoinSheet = false
+        AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.joinGroup)
         await appRouter.refreshStateFromBackend()
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
         if let groupId = appRouter.selectedHouseholdId {
             AnalyticsManager.log(event: .groupJoined(groupId: groupId))
+            AnalyticsManager.logInviteAccepted(householdId: groupId)
         } else if let joinedId = viewModel.joinedHouseholds.first?.householdId {
             AnalyticsManager.log(event: .groupJoined(groupId: joinedId))
+            AnalyticsManager.logInviteAccepted(householdId: joinedId)
         }
     }
 }

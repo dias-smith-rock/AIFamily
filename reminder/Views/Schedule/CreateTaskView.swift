@@ -2838,6 +2838,7 @@ struct CreateTaskView: View {
 
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
+            AnalyticsManager.log(event: .taskEdited(taskId: updated.id))
             if attachmentsToDelete.isEmpty == false {
                 attachmentsToDelete = []
             }

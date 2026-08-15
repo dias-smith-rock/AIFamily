@@ -13,6 +13,12 @@ enum AnalyticsManager {
     /// 核心转化漏斗事件（snake_case 与 Firebase 控制台一致）。
     enum AppEvent {
         case appOpened
+        case firstOpen(isGuest: Bool)
+        case onboardingStep(step: String)
+        case inviteShared(channel: String, householdId: UUID?)
+        case inviteAccepted(householdId: UUID?, hoursSinceGroupCreated: Int?)
+        case emptyStateCTATapped(surface: String, cta: String)
+        case meaningfulSession(action: String, householdId: UUID?)
         case signUpCompleted
         case loginCompleted
         case groupCreated(groupId: UUID, isPremium: Bool)
@@ -20,6 +26,7 @@ enum AnalyticsManager {
         case virtualMemberAdded(profileId: UUID, groupId: UUID)
         case taskCreated(hasAttachment: Bool)
         case taskCompleted(taskId: UUID)
+        case taskEdited(taskId: UUID)
         case vipPageViewed
         case vipClaimed
         case vipPurchased(plan: String)
@@ -34,13 +41,63 @@ enum AnalyticsManager {
         case ledgerPresetL10n(step: String, detail: String)
     }
 
+    enum OnboardingStep {
+        static let createGroup = "create_group"
+        static let joinGroup = "join_group"
+        static let pending = "pending"
+        static let enteredMain = "entered_main"
+    }
+
+    enum InviteChannel {
+        static let link = "link"
+        static let qr = "qr"
+        static let copy = "copy"
+    }
+
+    enum EmptyStateSurface {
+        static let schedule = "schedule"
+        static let todo = "todo"
+        static let family = "family"
+    }
+
+    enum EmptyStateCTA {
+        static let create = "create"
+        static let invite = "invite"
+    }
+
+    enum MeaningfulAction {
+        static let create = "create"
+        static let complete = "complete"
+        static let edit = "edit"
+    }
+
     /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
     private static let newRegistrationWindow: TimeInterval = 120
 
     /// Firebase Analytics 字符串参数上限（见 ACS013000）。
     private static let firebaseMaxParameterLength = 100
 
+    private static let firstOpenDefaultsKey = "analytics.has_logged_first_open"
+    private static let enteredMainDefaultsKey = "analytics.has_logged_onboarding_entered_main"
+    private static let meaningfulSessionDayKey = "analytics.meaningful_session.day"
+
     static func log(event: AppEvent) {
+        emit(event)
+
+        switch event {
+        case .taskCreated:
+            noteMeaningfulSession(action: MeaningfulAction.create, householdId: nil)
+        case .taskCompleted:
+            noteMeaningfulSession(action: MeaningfulAction.complete, householdId: nil)
+        case .taskEdited:
+            noteMeaningfulSession(action: MeaningfulAction.edit, householdId: nil)
+        default:
+            break
+        }
+    }
+
+    /// 仅上报，不触发派生事件（避免 meaningful_session 嵌套）。
+    private static func emit(_ event: AppEvent) {
         #if canImport(FirebaseAnalytics)
         let (name, parameters) = firebasePayload(for: event)
         Analytics.logEvent(name, parameters: sanitizedFirebaseParameters(parameters))
@@ -49,6 +106,68 @@ enum AnalyticsManager {
         print("[Analytics] \(debugDescription(for: event))")
         #endif
     }
+
+    // MARK: - P0 helpers
+
+    /// 安装后首次打开（含游客）；幂等。
+    static func logFirstOpenIfNeeded(isGuest: Bool) {
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: firstOpenDefaultsKey) == false else { return }
+        defaults.set(true, forKey: firstOpenDefaultsKey)
+        log(event: .firstOpen(isGuest: isGuest))
+        setUserProperty(isGuest ? "1" : "0", forName: "is_guest")
+    }
+
+    /// 组织路由关键步。`entered_main` 终身只记一次。
+    static func logOnboardingStep(_ step: String) {
+        if step == OnboardingStep.enteredMain {
+            let defaults = UserDefaults.standard
+            guard defaults.bool(forKey: enteredMainDefaultsKey) == false else { return }
+            defaults.set(true, forKey: enteredMainDefaultsKey)
+        }
+        log(event: .onboardingStep(step: step))
+    }
+
+    static func logInviteShared(channel: String, householdId: UUID?) {
+        log(event: .inviteShared(channel: channel, householdId: householdId))
+    }
+
+    static func logInviteAccepted(householdId: UUID?, hoursSinceGroupCreated: Int? = nil) {
+        log(event: .inviteAccepted(householdId: householdId, hoursSinceGroupCreated: hoursSinceGroupCreated))
+    }
+
+    static func logEmptyStateCTATapped(surface: String, cta: String) {
+        log(event: .emptyStateCTATapped(surface: surface, cta: cta))
+    }
+
+    /// 当日首次任务 create/complete/edit 记一次 meaningful_session。
+    static func noteMeaningfulSession(action: String, householdId: UUID?) {
+        let day = Self.currentDayStamp()
+        let defaults = UserDefaults.standard
+        guard defaults.string(forKey: meaningfulSessionDayKey) != day else { return }
+        defaults.set(day, forKey: meaningfulSessionDayKey)
+        emit(.meaningfulSession(action: action, householdId: householdId))
+    }
+
+    static func updateGuestUserProperty(isGuest: Bool) {
+        setUserProperty(isGuest ? "1" : "0", forName: "is_guest")
+    }
+
+    static func updateHouseholdMemberUserProperties(activeHumanCount: Int) {
+        let hasSecond = activeHumanCount >= 2
+        setUserProperty(hasSecond ? "1" : "0", forName: "has_second_member")
+        let bucket: String
+        switch activeHumanCount {
+        case ...0: bucket = "0"
+        case 1: bucket = "1"
+        case 2: bucket = "2"
+        case 3...5: bucket = "3_5"
+        default: bucket = "6_plus"
+        }
+        setUserProperty(bucket, forName: "member_count_bucket")
+    }
+
+    // MARK: - Auth session
 
     /// 在 OAuth / 登录会话建立成功后调用：依据 `auth.users.created_at` 区分注册与登录。
     static func logAuthSessionSucceeded() {
@@ -79,11 +198,65 @@ enum AnalyticsManager {
         Date().timeIntervalSince(createdAt) < newRegistrationWindow
     }
 
+    private static func currentDayStamp() -> String {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: Date())
+    }
+
+    private static func setUserProperty(_ value: String?, forName name: String) {
+        #if canImport(FirebaseAnalytics)
+        Analytics.setUserProperty(value, forName: name)
+        #endif
+    }
+
     #if canImport(FirebaseAnalytics)
     private static func firebasePayload(for event: AppEvent) -> (String, [String: Any]?) {
         switch event {
         case .appOpened:
             return ("app_opened", nil)
+
+        case .firstOpen(let isGuest):
+            return ("first_open", ["is_guest": isGuest ? 1 : 0])
+
+        case .onboardingStep(let step):
+            return ("onboarding_step", ["step": step])
+
+        case .inviteShared(let channel, let householdId):
+            var params: [String: Any] = ["channel": channel]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            return ("invite_shared", params)
+
+        case .inviteAccepted(let householdId, let hoursSinceGroupCreated):
+            var params: [String: Any] = [:]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            if let hoursSinceGroupCreated {
+                params["hours_since_group_created"] = hoursSinceGroupCreated
+            }
+            return ("invite_accepted", params.isEmpty ? nil : params)
+
+        case .emptyStateCTATapped(let surface, let cta):
+            return (
+                "empty_state_cta_tapped",
+                [
+                    "surface": surface,
+                    "cta": cta,
+                ]
+            )
+
+        case .meaningfulSession(let action, let householdId):
+            var params: [String: Any] = ["action": action]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            return ("meaningful_session", params)
 
         case .signUpCompleted:
             return ("sign_up_completed", nil)
@@ -125,6 +298,12 @@ enum AnalyticsManager {
         case .taskCompleted(let taskId):
             return (
                 "task_completed",
+                ["task_id": taskId.uuidString.lowercased()]
+            )
+
+        case .taskEdited(let taskId):
+            return (
+                "task_edited",
                 ["task_id": taskId.uuidString.lowercased()]
             )
 
@@ -218,6 +397,18 @@ enum AnalyticsManager {
         switch event {
         case .appOpened:
             return "app_opened"
+        case .firstOpen(let isGuest):
+            return "first_open is_guest=\(isGuest)"
+        case .onboardingStep(let step):
+            return "onboarding_step step=\(step)"
+        case .inviteShared(let channel, let householdId):
+            return "invite_shared channel=\(channel) household_id=\(householdId?.uuidString ?? "nil")"
+        case .inviteAccepted(let householdId, let hours):
+            return "invite_accepted household_id=\(householdId?.uuidString ?? "nil") hours=\(hours.map(String.init) ?? "nil")"
+        case .emptyStateCTATapped(let surface, let cta):
+            return "empty_state_cta_tapped surface=\(surface) cta=\(cta)"
+        case .meaningfulSession(let action, let householdId):
+            return "meaningful_session action=\(action) household_id=\(householdId?.uuidString ?? "nil")"
         case .signUpCompleted:
             return "sign_up_completed"
         case .loginCompleted:
@@ -232,6 +423,8 @@ enum AnalyticsManager {
             return "task_created has_attachment=\(hasAttachment)"
         case .taskCompleted(let taskId):
             return "task_completed task_id=\(taskId.uuidString)"
+        case .taskEdited(let taskId):
+            return "task_edited task_id=\(taskId.uuidString)"
         case .vipPageViewed:
             return "vip_page_viewed"
         case .vipClaimed:

@@ -224,14 +224,14 @@
     "orphan": true
   },
   {
-    "legacy_key": "免费版每组最多 2 名成员，升级 Pro 后可添加更多。",
+    "legacy_key": "免费版每组最多 6 名成员，升级 Pro 后可添加更多。",
     "new_key": "vip_free_plan_allows_2_members_per_group_upgrade_to",
     "table": "VIP",
     "swift_property": "freePlanAllows2MembersPerGroupUpgradeTo",
     "orphan": true
   },
   {
-    "legacy_key": "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。",
+    "legacy_key": "免费版每组最多 6 名成员，升级 Pro 后可邀请更多。",
     "new_key": "vip_free_plan_allows_2_members_per_group_upgrade_to_2",
     "table": "VIP",
     "swift_property": "freePlanAllows2MembersPerGroupUpgradeTo2",
@@ -798,7 +798,7 @@
     "orphan": true
   },
   {
-    "legacy_key": "最多 1 个群组，每组上限 2 人。",
+    "legacy_key": "最多 1 个群组，每组上限 6 人。",
     "new_key": "family_up_to_1_group_2_members_per_group",
     "table": "Family",
     "swift_property": "upTo1Group2MembersPerGroup",
@@ -952,7 +952,7 @@
     "orphan": true
   },
   {
-    "legacy_key": "从混乱到清晰。\n一起，完美同步。",
+    "legacy_key": "家庭共享日历与待办。\n接送、家务，谁负责一目了然。",
     "new_key": "common_from_chaos_to_clarity_together_perfectly_synced",
     "table": "Common",
     "swift_property": "fromChaosToClarityTogetherPerfectlySynced",
@@ -2240,7 +2240,7 @@
     "orphan": true
   },
   {
-    "legacy_key": "一起，完美同步。",
+    "legacy_key": "接送、家务，谁负责一目了然。",
     "new_key": "common_together_perfectly_synced",
     "table": "Common",
     "swift_property": "togetherPerfectlySynced",
@@ -2520,7 +2520,7 @@
     "orphan": true
   },
   {
-    "legacy_key": "从混乱到清晰。",
+    "legacy_key": "家庭共享日历与待办。",
     "new_key": "common_from_chaos_to_clarity",
     "table": "Common",
     "swift_property": "fromChaosToClarity",
@@ -6615,5 +6615,83 @@
     "new_key": "schedule_synced_from_system_calendar_editable",
     "table": "Schedule",
     "swift_property": "syncedFromSystemCalendarEditable"
+  },
+  {
+    "legacy_key": "开始设置家庭日历",
+    "new_key": "family_org_onboarding_title",
+    "table": "Family",
+    "swift_property": "orgOnboardingTitle"
+  },
+  {
+    "legacy_key": "与伴侣共享日程和待办。创建家庭，或用对方的邀请加入。",
+    "new_key": "family_org_onboarding_subtitle",
+    "table": "Family",
+    "swift_property": "orgOnboardingSubtitle"
+  },
+  {
+    "legacy_key": "你想怎么开始？",
+    "new_key": "family_org_onboarding_choose_path",
+    "table": "Family",
+    "swift_property": "orgOnboardingChoosePath"
+  },
+  {
+    "legacy_key": "创建我们的家庭",
+    "new_key": "family_start_our_family_title",
+    "table": "Family",
+    "swift_property": "startOurFamilyTitle"
+  },
+  {
+    "legacy_key": "创建后一键邀请伴侣",
+    "new_key": "family_start_our_family_subtitle",
+    "table": "Family",
+    "swift_property": "startOurFamilySubtitle"
+  },
+  {
+    "legacy_key": "用邀请加入",
+    "new_key": "family_join_with_invite_title",
+    "table": "Family",
+    "swift_property": "joinWithInviteTitle"
+  },
+  {
+    "legacy_key": "扫描二维码或输入 6 位邀请码",
+    "new_key": "family_join_with_invite_subtitle",
+    "table": "Family",
+    "swift_property": "joinWithInviteSubtitle"
+  },
+  {
+    "legacy_key": "例如：李家",
+    "new_key": "family_example_family_name",
+    "table": "Family",
+    "swift_property": "exampleFamilyName"
+  },
+  {
+    "legacy_key": "家庭日历已准备好",
+    "new_key": "schedule_empty_family_ready_title",
+    "table": "Schedule",
+    "swift_property": "emptyFamilyReadyTitle"
+  },
+  {
+    "legacy_key": "先邀请伴侣，再把本周接送和家务加进来。",
+    "new_key": "schedule_empty_family_ready_subtitle",
+    "table": "Schedule",
+    "swift_property": "emptyFamilyReadySubtitle"
+  },
+  {
+    "legacy_key": "邀请家庭成员",
+    "new_key": "schedule_empty_invite_partner",
+    "table": "Schedule",
+    "swift_property": "emptyInvitePartner"
+  },
+  {
+    "legacy_key": "或者先加一条计划",
+    "new_key": "schedule_empty_quick_add_section",
+    "table": "Schedule",
+    "swift_property": "emptyQuickAddSection"
+  },
+  {
+    "legacy_key": "创建新任务",
+    "new_key": "schedule_empty_new_task",
+    "table": "Schedule",
+    "swift_property": "emptyNewTask"
   }
 ]

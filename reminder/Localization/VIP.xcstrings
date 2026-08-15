@@ -788,55 +788,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "الخطة المجانية تسمح بعضوين لكل مجموعة. قم بالترقية إلى Pro للمزيد."
+            "value": "الخطة المجانية تسمح بـ 6 أعضاء لكل مجموعة. قم بالترقية إلى Pro للمزيد."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Free plan allows 2 members per group. Upgrade to Pro for more."
+            "value": "Free plan allows 6 members per group. Upgrade to Pro for more."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El plan gratuito permite 2 miembros por grupo. Actualiza a Pro para más."
+            "value": "El plan gratuito permite 6 miembros por grupo. Actualiza a Pro para más."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le plan gratuit permet 2 membres par groupe. Passez à Pro pour plus."
+            "value": "Le plan gratuit permet 6 membres par groupe. Passez à Pro pour plus."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "मुफ्त योजना में प्रति समूह 2 सदस्य। अधिक के लिए Pro में अपग्रेड करें।"
+            "value": "मुफ्त योजना में प्रति समूह 6 सदस्य। अधिक के लिए Pro में अपग्रेड करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "O plano gratuito permite 2 membros por grupo. Atualize para Pro para mais."
+            "value": "O plano gratuito permite 6 membros por grupo. Atualize para Pro para mais."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "இலவச திட்டம் ஒரு குழuvukku 2 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
+            "value": "இலவச திட்டம் ஒரு குழுவிற்கு 6 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "免费版每组最多 2 名成员，升级 Pro 后可添加更多。"
+            "value": "免费版每组最多 6 名成员，升级 Pro 后可添加更多。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "免費版每組最多 2 名成員，升級 Pro 後可新增更多。"
+            "value": "免費版每組最多 6 名成員，升級 Pro 後可新增更多。"
           }
         }
       }
@@ -847,55 +847,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "الخطة المجانية تسمح بعضوين لكل مجموعة. قم بالترقية إلى Pro لدعوة المزيد."
+            "value": "الخطة المجانية تسمح بـ 6 أعضاء لكل مجموعة. قم بالترقية إلى Pro لدعوة المزيد."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Free plan allows 2 members per group. Upgrade to Pro to invite more."
+            "value": "Free plan allows 6 members per group. Upgrade to Pro to invite more."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El plan gratuito permite 2 miembros por grupo. Actualiza a Pro para invitar más."
+            "value": "El plan gratuito permite 6 miembros por grupo. Actualiza a Pro para invitar más."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le plan gratuit permet 2 membres par groupe. Passez à Pro pour inviter plus."
+            "value": "Le plan gratuit permet 6 membres par groupe. Passez à Pro pour inviter plus."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "मुफ्त योजना में प्रति समूह 2 सदस्य। अधिक आमंत्रित करने के लिए Pro में अपग्रेड करें।"
+            "value": "मुफ्त योजना में प्रति समूह 6 सदस्य। अधिक आमंत्रित करने के लिए Pro में अपग्रेड करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "O plano gratuito permite 2 membros por grupo. Atualize para Pro para convidar mais."
+            "value": "O plano gratuito permite 6 membros por grupo. Atualize para Pro para convidar mais."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "இலவச திட்டம் ஒரு குழuvukku 2 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
+            "value": "இலவச திட்டம் ஒரு குழுவிற்கு 6 உறுப்பினர்கள். Pro-க்கு மேம்படுத்தவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "免费版每组最多 2 名成员，升级 Pro 后可邀请更多。"
+            "value": "免费版每组最多 6 名成员，升级 Pro 后可邀请更多。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "免費版每組最多 2 名成員，升級 Pro 後可邀請更多。"
+            "value": "免費版每組最多 6 名成員，升級 Pro 後可邀請更多。"
           }
         }
       }
