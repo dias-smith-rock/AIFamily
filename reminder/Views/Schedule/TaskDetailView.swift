@@ -1122,7 +1122,11 @@ struct TaskDetailView: View {
                 ReviewRedirectManager.shared.checkAndTriggerAlert(for: .taskAcceptance)
             }
             if newStatus == .completed {
-                AnalyticsManager.log(event: .taskCompleted(taskId: task.id))
+                AnalyticsManager.logTaskCompleted(
+                    taskId: task.id,
+                    householdId: task.householdId,
+                    taskType: AnalyticsManager.analyticsTaskType(for: task)
+                )
                 ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstCompletion)
             }
             if previousStatus == .completed || newStatus == .completed {

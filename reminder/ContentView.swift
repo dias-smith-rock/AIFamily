@@ -297,6 +297,7 @@ struct ContentView: View {
         hasLoggedAppOpenThisSession = true
         AnalyticsManager.log(event: .appOpened)
         AnalyticsManager.logFirstOpenIfNeeded(isGuest: isGuest)
+        AnalyticsManager.logCoreSessionIfNeeded(isGuest: isGuest)
         AnalyticsManager.updateGuestUserProperty(isGuest: isGuest)
     }
 
@@ -324,6 +325,7 @@ struct ContentView: View {
         )
 
         AnalyticsManager.logFirstOpenIfNeeded(isGuest: appRouter.isAnonymousUser)
+        AnalyticsManager.logCoreSessionIfNeeded(isGuest: appRouter.isAnonymousUser)
         AnalyticsManager.updateGuestUserProperty(isGuest: appRouter.isAnonymousUser)
 
         if isUserLoggedIn, networkConnectedAtStart == false {

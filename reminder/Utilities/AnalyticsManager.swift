@@ -9,12 +9,16 @@ import Supabase
 #endif
 
 /// 集中管理 Firebase Analytics 埋点；事件命名遵循「群组 (Group)」产品线规范。
+/// 核心漏斗（北极星 W1 Active Household）：first_open → group → invite → second_member → task → meaningful_session。
 enum AnalyticsManager {
     /// 核心转化漏斗事件（snake_case 与 Firebase 控制台一致）。
     enum AppEvent {
         case appOpened
         case firstOpen(isGuest: Bool)
+        case coreSession(dayN: Int, isGuest: Bool)
         case onboardingStep(step: String)
+        case activationMilestone(step: String, householdId: UUID?)
+        case tabSelected(tab: String)
         case inviteShared(channel: String, householdId: UUID?)
         case inviteAccepted(householdId: UUID?, hoursSinceGroupCreated: Int?)
         case emptyStateCTATapped(surface: String, cta: String)
@@ -24,9 +28,9 @@ enum AnalyticsManager {
         case groupCreated(groupId: UUID, isPremium: Bool)
         case groupJoined(groupId: UUID?)
         case virtualMemberAdded(profileId: UUID, groupId: UUID)
-        case taskCreated(hasAttachment: Bool)
-        case taskCompleted(taskId: UUID)
-        case taskEdited(taskId: UUID)
+        case taskCreated(hasAttachment: Bool, householdId: UUID?, taskType: String)
+        case taskCompleted(taskId: UUID, householdId: UUID?, taskType: String)
+        case taskEdited(taskId: UUID, householdId: UUID?, taskType: String)
         case vipPageViewed
         case vipClaimed
         case vipPurchased(plan: String)
@@ -46,6 +50,17 @@ enum AnalyticsManager {
         static let joinGroup = "join_group"
         static let pending = "pending"
         static let enteredMain = "entered_main"
+    }
+
+    enum ActivationStep {
+        static let firstOpen = "first_open"
+        static let groupCreated = "group_created"
+        static let enteredMain = "entered_main"
+        static let inviteSent = "invite_sent"
+        static let inviteAccepted = "invite_accepted"
+        static let secondMember = "second_member"
+        static let firstTaskCreated = "first_task_created"
+        static let firstTaskCompleted = "first_task_completed"
     }
 
     enum InviteChannel {
@@ -71,6 +86,20 @@ enum AnalyticsManager {
         static let edit = "edit"
     }
 
+    enum TaskTypeParam {
+        static let scheduled = "scheduled"
+        static let flexible = "flexible"
+        static let unknown = "unknown"
+    }
+
+    enum TabName {
+        static let schedule = "schedule"
+        static let todos = "todos"
+        static let expenses = "expenses"
+        static let location = "location"
+        static let settings = "settings"
+    }
+
     /// 新用户判定窗口：Auth 用户创建时间在此时长内视为「注册完成」。
     private static let newRegistrationWindow: TimeInterval = 120
 
@@ -78,25 +107,37 @@ enum AnalyticsManager {
     private static let firebaseMaxParameterLength = 100
 
     private static let firstOpenDefaultsKey = "analytics.has_logged_first_open"
+    private static let firstOpenDateDefaultsKey = "analytics.first_open_date"
     private static let enteredMainDefaultsKey = "analytics.has_logged_onboarding_entered_main"
     private static let meaningfulSessionDayKey = "analytics.meaningful_session.day"
+    private static let coreSessionDayKey = "analytics.core_session.day"
+    private static let activationPrefix = "analytics.activation."
+    private static let hadSecondMemberKey = "analytics.had_second_member"
 
     static func log(event: AppEvent) {
         emit(event)
 
         switch event {
-        case .taskCreated:
-            noteMeaningfulSession(action: MeaningfulAction.create, householdId: nil)
-        case .taskCompleted:
-            noteMeaningfulSession(action: MeaningfulAction.complete, householdId: nil)
-        case .taskEdited:
-            noteMeaningfulSession(action: MeaningfulAction.edit, householdId: nil)
+        case .taskCreated(_, let householdId, _):
+            noteMeaningfulSession(action: MeaningfulAction.create, householdId: householdId)
+            logActivationMilestoneIfNeeded(ActivationStep.firstTaskCreated, householdId: householdId)
+        case .taskCompleted(_, let householdId, _):
+            noteMeaningfulSession(action: MeaningfulAction.complete, householdId: householdId)
+            logActivationMilestoneIfNeeded(ActivationStep.firstTaskCompleted, householdId: householdId)
+        case .taskEdited(_, let householdId, _):
+            noteMeaningfulSession(action: MeaningfulAction.edit, householdId: householdId)
+        case .groupCreated(let groupId, _):
+            logActivationMilestoneIfNeeded(ActivationStep.groupCreated, householdId: groupId)
+        case .inviteShared(_, let householdId):
+            logActivationMilestoneIfNeeded(ActivationStep.inviteSent, householdId: householdId)
+        case .inviteAccepted(let householdId, _):
+            logActivationMilestoneIfNeeded(ActivationStep.inviteAccepted, householdId: householdId)
         default:
             break
         }
     }
 
-    /// 仅上报，不触发派生事件（避免 meaningful_session 嵌套）。
+    /// 仅上报，不触发派生事件（避免嵌套）。
     private static func emit(_ event: AppEvent) {
         #if canImport(FirebaseAnalytics)
         let (name, parameters) = firebasePayload(for: event)
@@ -107,15 +148,31 @@ enum AnalyticsManager {
         #endif
     }
 
-    // MARK: - P0 helpers
+    // MARK: - Core funnel helpers
 
     /// 安装后首次打开（含游客）；幂等。
     static func logFirstOpenIfNeeded(isGuest: Bool) {
         let defaults = UserDefaults.standard
         guard defaults.bool(forKey: firstOpenDefaultsKey) == false else { return }
         defaults.set(true, forKey: firstOpenDefaultsKey)
+        defaults.set(Date().timeIntervalSince1970, forKey: firstOpenDateDefaultsKey)
         log(event: .firstOpen(isGuest: isGuest))
         setUserProperty(isGuest ? "1" : "0", forName: "is_guest")
+        logActivationMilestoneIfNeeded(ActivationStep.firstOpen, householdId: nil)
+    }
+
+    /// 每次冷/热启动会话：按自然日记一次 `core_session`，并写 `day_n` user property。
+    static func logCoreSessionIfNeeded(isGuest: Bool) {
+        let day = currentDayStamp()
+        let defaults = UserDefaults.standard
+        guard defaults.string(forKey: coreSessionDayKey) != day else {
+            refreshDayNUserProperty()
+            return
+        }
+        defaults.set(day, forKey: coreSessionDayKey)
+        let dayN = daysSinceFirstOpen()
+        refreshDayNUserProperty(explicitDayN: dayN)
+        emit(.coreSession(dayN: dayN, isGuest: isGuest))
     }
 
     /// 组织路由关键步。`entered_main` 终身只记一次。
@@ -124,8 +181,21 @@ enum AnalyticsManager {
             let defaults = UserDefaults.standard
             guard defaults.bool(forKey: enteredMainDefaultsKey) == false else { return }
             defaults.set(true, forKey: enteredMainDefaultsKey)
+            logActivationMilestoneIfNeeded(ActivationStep.enteredMain, householdId: nil)
         }
         log(event: .onboardingStep(step: step))
+    }
+
+    static func logActivationMilestoneIfNeeded(_ step: String, householdId: UUID?) {
+        let key = activationPrefix + step
+        let defaults = UserDefaults.standard
+        guard defaults.bool(forKey: key) == false else { return }
+        defaults.set(true, forKey: key)
+        emit(.activationMilestone(step: step, householdId: householdId))
+    }
+
+    static func logTabSelected(_ tab: String) {
+        emit(.tabSelected(tab: tab))
     }
 
     static func logInviteShared(channel: String, householdId: UUID?) {
@@ -138,6 +208,30 @@ enum AnalyticsManager {
 
     static func logEmptyStateCTATapped(surface: String, cta: String) {
         log(event: .emptyStateCTATapped(surface: surface, cta: cta))
+    }
+
+    static func logTaskCreated(hasAttachment: Bool, householdId: UUID?, taskType: String) {
+        log(event: .taskCreated(hasAttachment: hasAttachment, householdId: householdId, taskType: taskType))
+    }
+
+    static func logTaskCompleted(taskId: UUID, householdId: UUID?, taskType: String) {
+        log(event: .taskCompleted(taskId: taskId, householdId: householdId, taskType: taskType))
+    }
+
+    static func logTaskEdited(taskId: UUID, householdId: UUID?, taskType: String) {
+        log(event: .taskEdited(taskId: taskId, householdId: householdId, taskType: taskType))
+    }
+
+    static func analyticsTaskType(for task: FamilyTask) -> String {
+        switch task.resolvedTaskType {
+        case .flexible: TaskTypeParam.flexible
+        case .scheduled: TaskTypeParam.scheduled
+        case .expense, .income: task.resolvedTaskType.rawValue
+        }
+    }
+
+    static func analyticsTaskType(isFlexible: Bool) -> String {
+        isFlexible ? TaskTypeParam.flexible : TaskTypeParam.scheduled
     }
 
     /// 当日首次任务 create/complete/edit 记一次 meaningful_session。
@@ -165,6 +259,13 @@ enum AnalyticsManager {
         default: bucket = "6_plus"
         }
         setUserProperty(bucket, forName: "member_count_bucket")
+
+        let defaults = UserDefaults.standard
+        let previouslyHadSecond = defaults.bool(forKey: hadSecondMemberKey)
+        if hasSecond, previouslyHadSecond == false {
+            defaults.set(true, forKey: hadSecondMemberKey)
+            logActivationMilestoneIfNeeded(ActivationStep.secondMember, householdId: nil)
+        }
     }
 
     // MARK: - Auth session
@@ -198,6 +299,22 @@ enum AnalyticsManager {
         Date().timeIntervalSince(createdAt) < newRegistrationWindow
     }
 
+    private static func daysSinceFirstOpen() -> Int {
+        let defaults = UserDefaults.standard
+        let ts = defaults.double(forKey: firstOpenDateDefaultsKey)
+        guard ts > 0 else { return 0 }
+        let first = Date(timeIntervalSince1970: ts)
+        let startFirst = Calendar.current.startOfDay(for: first)
+        let startToday = Calendar.current.startOfDay(for: Date())
+        let days = Calendar.current.dateComponents([.day], from: startFirst, to: startToday).day ?? 0
+        return max(0, days)
+    }
+
+    private static func refreshDayNUserProperty(explicitDayN: Int? = nil) {
+        let dayN = explicitDayN ?? daysSinceFirstOpen()
+        setUserProperty(String(dayN), forName: "day_n")
+    }
+
     private static func currentDayStamp() -> String {
         let formatter = DateFormatter()
         formatter.calendar = Calendar(identifier: .gregorian)
@@ -222,8 +339,27 @@ enum AnalyticsManager {
         case .firstOpen(let isGuest):
             return ("first_open", ["is_guest": isGuest ? 1 : 0])
 
+        case .coreSession(let dayN, let isGuest):
+            return (
+                "core_session",
+                [
+                    "day_n": dayN,
+                    "is_guest": isGuest ? 1 : 0,
+                ]
+            )
+
         case .onboardingStep(let step):
             return ("onboarding_step", ["step": step])
+
+        case .activationMilestone(let step, let householdId):
+            var params: [String: Any] = ["step": step]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            return ("activation_milestone", params)
+
+        case .tabSelected(let tab):
+            return ("tab_selected", ["tab": tab])
 
         case .inviteShared(let channel, let householdId):
             var params: [String: Any] = ["channel": channel]
@@ -289,23 +425,35 @@ enum AnalyticsManager {
                 ]
             )
 
-        case .taskCreated(let hasAttachment):
-            return (
-                "task_created",
-                ["has_attachment": hasAttachment ? 1 : 0]
-            )
+        case .taskCreated(let hasAttachment, let householdId, let taskType):
+            var params: [String: Any] = [
+                "has_attachment": hasAttachment ? 1 : 0,
+                "task_type": taskType,
+            ]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            return ("task_created", params)
 
-        case .taskCompleted(let taskId):
-            return (
-                "task_completed",
-                ["task_id": taskId.uuidString.lowercased()]
-            )
+        case .taskCompleted(let taskId, let householdId, let taskType):
+            var params: [String: Any] = [
+                "task_id": taskId.uuidString.lowercased(),
+                "task_type": taskType,
+            ]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            return ("task_completed", params)
 
-        case .taskEdited(let taskId):
-            return (
-                "task_edited",
-                ["task_id": taskId.uuidString.lowercased()]
-            )
+        case .taskEdited(let taskId, let householdId, let taskType):
+            var params: [String: Any] = [
+                "task_id": taskId.uuidString.lowercased(),
+                "task_type": taskType,
+            ]
+            if let householdId {
+                params["household_id"] = householdId.uuidString.lowercased()
+            }
+            return ("task_edited", params)
 
         case .vipPageViewed:
             return ("vip_page_viewed", nil)
@@ -399,8 +547,14 @@ enum AnalyticsManager {
             return "app_opened"
         case .firstOpen(let isGuest):
             return "first_open is_guest=\(isGuest)"
+        case .coreSession(let dayN, let isGuest):
+            return "core_session day_n=\(dayN) is_guest=\(isGuest)"
         case .onboardingStep(let step):
             return "onboarding_step step=\(step)"
+        case .activationMilestone(let step, let householdId):
+            return "activation_milestone step=\(step) household_id=\(householdId?.uuidString ?? "nil")"
+        case .tabSelected(let tab):
+            return "tab_selected tab=\(tab)"
         case .inviteShared(let channel, let householdId):
             return "invite_shared channel=\(channel) household_id=\(householdId?.uuidString ?? "nil")"
         case .inviteAccepted(let householdId, let hours):
@@ -419,12 +573,12 @@ enum AnalyticsManager {
             return "group_joined group_id=\(groupId?.uuidString ?? "nil")"
         case .virtualMemberAdded(let profileId, let groupId):
             return "virtual_member_added profile_id=\(profileId.uuidString) group_id=\(groupId.uuidString)"
-        case .taskCreated(let hasAttachment):
-            return "task_created has_attachment=\(hasAttachment)"
-        case .taskCompleted(let taskId):
-            return "task_completed task_id=\(taskId.uuidString)"
-        case .taskEdited(let taskId):
-            return "task_edited task_id=\(taskId.uuidString)"
+        case .taskCreated(let hasAttachment, let householdId, let taskType):
+            return "task_created has_attachment=\(hasAttachment) task_type=\(taskType) household_id=\(householdId?.uuidString ?? "nil")"
+        case .taskCompleted(let taskId, let householdId, let taskType):
+            return "task_completed task_id=\(taskId.uuidString) task_type=\(taskType) household_id=\(householdId?.uuidString ?? "nil")"
+        case .taskEdited(let taskId, let householdId, let taskType):
+            return "task_edited task_id=\(taskId.uuidString) task_type=\(taskType) household_id=\(householdId?.uuidString ?? "nil")"
         case .vipPageViewed:
             return "vip_page_viewed"
         case .vipClaimed:

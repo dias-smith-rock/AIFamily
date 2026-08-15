@@ -2838,7 +2838,11 @@ struct CreateTaskView: View {
 
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
-            AnalyticsManager.log(event: .taskEdited(taskId: updated.id))
+            AnalyticsManager.logTaskEdited(
+                taskId: updated.id,
+                householdId: updated.householdId,
+                taskType: AnalyticsManager.analyticsTaskType(for: updated)
+            )
             if attachmentsToDelete.isEmpty == false {
                 attachmentsToDelete = []
             }
@@ -3201,7 +3205,11 @@ struct CreateTaskView: View {
             }
 
             let hasAttachment = resolvedAttachmentUploads.isEmpty == false
-            AnalyticsManager.log(event: .taskCreated(hasAttachment: hasAttachment))
+            AnalyticsManager.logTaskCreated(
+                hasAttachment: hasAttachment,
+                householdId: householdId,
+                taskType: AnalyticsManager.analyticsTaskType(isFlexible: isFlexibleMode)
+            )
             ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstTask)
 
             if appRouter.isAnonymousUser {

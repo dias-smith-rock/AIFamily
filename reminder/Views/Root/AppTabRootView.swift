@@ -34,6 +34,16 @@ struct AppTabRootView: View {
             case .settings: "gearshape.2"
             }
         }
+
+        var analyticsName: String {
+            switch self {
+            case .schedule: AnalyticsManager.TabName.schedule
+            case .todos: AnalyticsManager.TabName.todos
+            case .expenses: AnalyticsManager.TabName.expenses
+            case .location: AnalyticsManager.TabName.location
+            case .settings: AnalyticsManager.TabName.settings
+            }
+        }
     }
 
     var body: some View {
@@ -75,10 +85,14 @@ struct AppTabRootView: View {
             GuestLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
             AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.enteredMain)
             AnalyticsManager.updateGuestUserProperty(isGuest: appRouter.isAnonymousUser)
+            AnalyticsManager.logTabSelected(selectedTab.analyticsName)
             if let tap = appRouter.pendingTaskReminderTap {
                 selectedTab = tap.isFlexibleTodo ? .todos : .schedule
             }
             presentAnonymousBindPromptIfNeeded()
+        }
+        .onChange(of: selectedTab) { _, newTab in
+            AnalyticsManager.logTabSelected(newTab.analyticsName)
         }
         .onReceive(NotificationCenter.default.publisher(for: .anonymousBindPromptDidSchedule)) { _ in
             Task { @MainActor in
