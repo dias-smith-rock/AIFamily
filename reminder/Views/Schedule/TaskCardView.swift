@@ -20,6 +20,8 @@ struct TaskCardForWhomTrailing: View {
     let sources: [TaskCardAvatarSource]
     var style: Style = .standard
     var showsEmptyPlaceholder: Bool = false
+    /// 头像描边：组织主题色；未传入时保持中性白边。
+    var accentColor: Color = .white
 
     private var avatarSize: CGFloat {
         style == .compact ? 22 : 24
@@ -47,7 +49,11 @@ struct TaskCardForWhomTrailing: View {
             } else {
                 HStack(spacing: style == .compact ? -6 : -8) {
                     ForEach(Array(sources.prefix(3))) { source in
-                        TaskCardOverlappingAvatar(source: source, size: avatarSize)
+                        TaskCardOverlappingAvatar(
+                            source: source,
+                            size: avatarSize,
+                            borderColor: accentColor
+                        )
                     }
                 }
             }
@@ -58,7 +64,11 @@ struct TaskCardForWhomTrailing: View {
     @ViewBuilder
     private func singleLabelOrAvatar(_ source: TaskCardAvatarSource) -> some View {
         if source.imageURL != nil {
-            TaskCardOverlappingAvatar(source: source, size: avatarSize)
+            TaskCardOverlappingAvatar(
+                source: source,
+                size: avatarSize,
+                borderColor: accentColor
+            )
         } else {
             Text(source.displayName)
                 .font(.caption)
@@ -73,13 +83,15 @@ struct TaskCardForWhomTrailing: View {
 struct TaskCardAssigneeTrailing: View {
     let forWhomAvatars: [TaskCardAvatarSource]
     var style: TaskCardForWhomTrailing.Style = .standard
+    var accentColor: Color = .white
 
     var body: some View {
         if forWhomAvatars.isEmpty == false {
             TaskCardForWhomTrailing(
                 sources: forWhomAvatars,
                 style: style,
-                showsEmptyPlaceholder: false
+                showsEmptyPlaceholder: false,
+                accentColor: accentColor
             )
         }
     }
@@ -119,7 +131,10 @@ struct TaskCardView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                TaskCardAssigneeTrailing(forWhomAvatars: forWhomAvatars)
+                TaskCardAssigneeTrailing(
+                    forWhomAvatars: forWhomAvatars,
+                    accentColor: task.cardThemeAccentColor
+                )
                     .padding(.trailing, 2)
             }
 
@@ -131,7 +146,7 @@ struct TaskCardView: View {
         .padding(.horizontal, 12)
         .taskCardSurface(for: task, cornerRadius: 12)
         .overlay {
-            cardShape.strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
+            cardShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
         }
         .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
     }
@@ -156,17 +171,22 @@ struct TaskCardView: View {
 
     private var metaRow: some View {
         HStack(spacing: 8) {
-            Label(metaTimeText, systemImage: task.isAllDay ? "calendar" : "clock")
+            Label {
+                Text(metaTimeText)
+                    .foregroundStyle(Color.white.opacity(0.55))
+            } icon: {
+                Image(systemName: task.isAllDay ? "calendar" : "clock")
+                    .foregroundStyle(task.cardThemeAccentColor)
+            }
                 .font(.footnote)
-                .foregroundStyle(.white.opacity(0.9))
                 .labelStyle(.titleAndIcon)
 
             Text(TaskDurationFormatting.readableDuration(minutes: task.durationMinutes, locale: locale))
                 .font(.caption)
-                .foregroundStyle(.white.opacity(0.95))
+                .foregroundStyle(Color.white.opacity(0.55))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(Color.white.opacity(0.22))
+                .background(Color.white.opacity(0.12))
                 .clipShape(Capsule())
 
             Spacer(minLength: 0)
@@ -197,9 +217,14 @@ struct TaskCardView: View {
 
     private func locationRow(place: String) -> some View {
         HStack(alignment: .center) {
-            Label(place, systemImage: "mappin.and.ellipse")
+            Label {
+                Text(place)
+                    .foregroundStyle(Color.white.opacity(0.55))
+            } icon: {
+                Image(systemName: "mappin.and.ellipse")
+                    .foregroundStyle(task.cardThemeAccentColor)
+            }
                 .font(.footnote)
-                .foregroundStyle(.white.opacity(0.9))
                 .labelStyle(.titleAndIcon)
                 .lineLimit(1)
             Spacer(minLength: 0)
@@ -212,6 +237,7 @@ struct TaskCardView: View {
 struct TaskCardOverlappingAvatar: View {
     let source: TaskCardAvatarSource
     var size: CGFloat = 24
+    var borderColor: Color = .white
 
     var body: some View {
         ZStack {
@@ -234,7 +260,7 @@ struct TaskCardOverlappingAvatar: View {
         .clipShape(Circle())
         .overlay {
             Circle()
-                .stroke(Color.white, lineWidth: 1.5)
+                .stroke(borderColor, lineWidth: 1.5)
         }
     }
 }

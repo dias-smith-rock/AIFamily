@@ -177,12 +177,12 @@ private struct TaskModeListMinimalRow: View {
 
                 Text(timeRangeLabel)
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(Color.white.opacity(0.55))
 
                 if let trail = locationTrail {
                     Text(trail)
                         .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.85))
+                        .foregroundStyle(Color.white.opacity(0.45))
                         .lineLimit(1)
                 }
             }
@@ -190,15 +190,19 @@ private struct TaskModeListMinimalRow: View {
 
             Spacer(minLength: 8)
 
-            TaskCardAssigneeTrailing(forWhomAvatars: forWhomAvatars, style: .compact)
+            TaskCardAssigneeTrailing(
+                forWhomAvatars: forWhomAvatars,
+                style: .compact,
+                accentColor: task.cardThemeAccentColor
+            )
                 .padding(.trailing, 2)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .taskCardSurface(for: task, cornerRadius: 8, headerVerticalInset: 6, headerLeadingInset: 4)
+        .taskCardSurface(for: task, cornerRadius: 8)
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
     }
 

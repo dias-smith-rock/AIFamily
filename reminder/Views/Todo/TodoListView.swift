@@ -725,21 +725,22 @@ private struct TodoFlexibleRow: View {
             }
 
             if forWhomAvatars.isEmpty == false {
-                TaskCardForWhomTrailing(sources: forWhomAvatars, style: .compact, showsEmptyPlaceholder: false)
+                TaskCardForWhomTrailing(
+                    sources: forWhomAvatars,
+                    style: .compact,
+                    showsEmptyPlaceholder: false,
+                    accentColor: task.cardThemeAccentColor
+                )
             }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(rowBackground)
         .overlay(alignment: .leading) {
-            if let accent = task.cardHeaderAccentColor {
-                Capsule()
-                    .fill(accent)
-                    .frame(width: 4)
-                    .padding(.vertical, 8)
-                    .padding(.leading, 5)
-                    .allowsHitTesting(false)
-            }
+            Rectangle()
+                .fill(task.cardHeaderAccentColor)
+                .frame(width: 4)
+                .allowsHitTesting(false)
         }
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
@@ -748,12 +749,10 @@ private struct TodoFlexibleRow: View {
         }
     }
 
-    private var orgColor: Color {
-        task.cardBackgroundColor
-    }
-
     private var rowBackground: Color {
-        style == .completed ? orgColor.opacity(0.55) : orgColor
+        style == .completed
+            ? Color.taskCardDarkSurface.opacity(0.55)
+            : Color.taskCardDarkSurface
     }
 
     @ViewBuilder
@@ -762,7 +761,7 @@ private struct TodoFlexibleRow: View {
             Button(action: onToggleComplete) {
                 Image(systemName: isCompletionChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
-                    .foregroundStyle(isCompletionChecked ? .green : Color.white.opacity(0.95))
+                    .foregroundStyle(isCompletionChecked ? .green : task.cardThemeAccentColor)
                     .frame(width: 24, height: 24)
             }
             .buttonStyle(.plain)
@@ -801,7 +800,7 @@ private struct TodoFlexibleRow: View {
         case .completed:
             return .green
         case .active:
-            return .white
+            return task.cardThemeAccentColor
         }
     }
 
@@ -812,9 +811,9 @@ private struct TodoFlexibleRow: View {
     private var subtitleColor: Color {
         switch style {
         case .overdue:
-            return Color.white.opacity(0.95)
+            return .red.opacity(0.9)
         case .completed, .active:
-            return Color.white.opacity(0.85)
+            return Color.white.opacity(0.55)
         }
     }
 }

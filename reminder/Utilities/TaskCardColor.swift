@@ -3,6 +3,11 @@ import SwiftUI
 // MARK: - Hex ↔ SwiftUI（任务卡片 `background_color`）
 
 extension Color {
+    /// 任务卡片暗色表面（海军灰底，不随组织色铺满）。
+    static var taskCardDarkSurface: Color {
+        Color(red: 22 / 255, green: 30 / 255, blue: 46 / 255)
+    }
+
     /// 列表卡片左侧强调条：`nil`/非法十六进制时返回 **系统强调色**（与 `taskCardListBackground` 的「卡片底色」语义不同）。
     static func taskCardLeadingAccent(fromHex hex: String?) -> Color {
         guard let rgb = RGBComponents.parseOptionalHex(hex) else {
@@ -50,38 +55,37 @@ extension Color {
 }
 
 extension FamilyTask {
-    /// 卡片铺底色：始终使用组织色。
+    /// 卡片铺底：固定暗色表面（不同家庭靠强调色区分）。
     var cardBackgroundColor: Color {
+        .taskCardDarkSurface
+    }
+
+    /// 组织主题强调色：左侧条 / 图标 / 头像描边（每家庭不同）。
+    var cardThemeAccentColor: Color {
         HouseholdColorStore.color(for: householdId)
     }
 
-    /// 左侧「卡片头」色条：仅创建/编辑时选定了颜色才返回。
-    var cardHeaderAccentColor: Color? {
-        Color.taskCardCustomColor(fromHex: backgroundColor)
+    /// 左侧强调条：任务自定义色优先，否则组织主题色。
+    var cardHeaderAccentColor: Color {
+        Color.taskCardCustomColor(fromHex: backgroundColor) ?? cardThemeAccentColor
     }
 }
 
-/// 在卡片内容上叠加组织色底 + 左侧任务色头条。
+/// 在卡片内容上叠加暗色底 + 左侧主题色条（贴齐左边缘，由卡片圆角裁切）。
 struct TaskCardSurfaceModifier: ViewModifier {
     let backgroundColor: Color
-    let headerAccentColor: Color?
+    let headerAccentColor: Color
     var cornerRadius: CGFloat = 12
     var headerBarWidth: CGFloat = 4
-    var headerVerticalInset: CGFloat = 8
-    var headerLeadingInset: CGFloat = 5
 
     func body(content: Content) -> some View {
         content
             .background(backgroundColor)
             .overlay(alignment: .leading) {
-                if let headerAccentColor {
-                    Capsule()
-                        .fill(headerAccentColor)
-                        .frame(width: headerBarWidth)
-                        .padding(.vertical, headerVerticalInset)
-                        .padding(.leading, headerLeadingInset)
-                        .allowsHitTesting(false)
-                }
+                Rectangle()
+                    .fill(headerAccentColor)
+                    .frame(width: headerBarWidth)
+                    .allowsHitTesting(false)
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
@@ -91,18 +95,14 @@ extension View {
     func taskCardSurface(
         for task: FamilyTask,
         cornerRadius: CGFloat = 12,
-        headerBarWidth: CGFloat = 4,
-        headerVerticalInset: CGFloat = 8,
-        headerLeadingInset: CGFloat = 5
+        headerBarWidth: CGFloat = 4
     ) -> some View {
         modifier(
             TaskCardSurfaceModifier(
                 backgroundColor: task.cardBackgroundColor,
                 headerAccentColor: task.cardHeaderAccentColor,
                 cornerRadius: cornerRadius,
-                headerBarWidth: headerBarWidth,
-                headerVerticalInset: headerVerticalInset,
-                headerLeadingInset: headerLeadingInset
+                headerBarWidth: headerBarWidth
             )
         )
     }

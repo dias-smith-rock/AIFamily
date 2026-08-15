@@ -467,9 +467,7 @@ struct TaskWeekGridView: View {
                         .taskCardSurface(
                             for: task,
                             cornerRadius: 4,
-                            headerBarWidth: 3,
-                            headerVerticalInset: 2,
-                            headerLeadingInset: 2
+                            headerBarWidth: 3
                         )
                 }
                 .buttonStyle(.plain)
@@ -974,13 +972,11 @@ private struct WeekTaskEventCard: View {
             .taskCardSurface(
                 for: task,
                 cornerRadius: 4,
-                headerBarWidth: 3,
-                headerVerticalInset: 2,
-                headerLeadingInset: 2
+                headerBarWidth: 3
             )
             .overlay {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .stroke(task.cardBackgroundColor.opacity(0.9), lineWidth: 0.5)
+                    .stroke(task.cardThemeAccentColor.opacity(0.9), lineWidth: 0.5)
             }
             .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
     }
