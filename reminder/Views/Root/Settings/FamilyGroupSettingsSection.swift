@@ -35,57 +35,49 @@ struct FamilyGroupSettingsSection: View {
     @ViewBuilder
     private var familyListContent: some View {
         if viewModel.isLoading && viewModel.hasLoadedOnce == false {
-            ProgressView(AppLocalized.string(L10n.Family.loadingMemberProfiles, locale: locale))
-                .frame(maxWidth: .infinity, minHeight: 220)
-                .listRowBackground(Color.clear)
+            Section {
+                ProgressView(AppLocalized.string(L10n.Family.loadingMemberProfiles, locale: locale))
+                    .frame(maxWidth: .infinity, minHeight: 120)
+            }
         } else if let errorMessage = viewModel.errorMessage {
-            ContentUnavailableView {
-                Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(errorMessage)
-            } actions: {
-                Button(AppLocalized.string(L10n.Common.reload, locale: locale)) {
-                    Task {
-                        await viewModel.loadMembers()
+            Section {
+                ContentUnavailableView {
+                    Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(errorMessage)
+                } actions: {
+                    Button(AppLocalized.string(L10n.Common.reload, locale: locale)) {
+                        Task {
+                            await viewModel.loadMembers()
+                        }
                     }
                 }
+                .frame(maxWidth: .infinity, minHeight: 160)
             }
-            .frame(maxWidth: .infinity, minHeight: 220)
-            .listRowBackground(Color.clear)
         } else if viewModel.orderedProfiles.isEmpty {
             Section {
                 householdSummaryRow
                 profilesEmptyState
+            } header: {
+                familySectionHeader
             }
-            .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 8, trailing: 16))
-            .listRowBackground(Color.clear)
         } else {
             Section {
                 householdSummaryRow
-                    .listRowInsets(
-                        EdgeInsets(
-                            top: 2,
-                            leading: 16,
-                            bottom: creatorProfile != nil ? 2 : 8,
-                            trailing: 16
-                        )
-                    )
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(creatorProfile == nil ? .automatic : .hidden, edges: .bottom)
 
                 if let creator = creatorProfile {
                     FamilyMemberRowView(
                         profile: creator,
                         isVirtualUser: creator.isVirtualUser,
                         isCurrentUser: isCurrentUserProfile(creator),
-                        prominentRole: prominentListRole(for: creator)
+                        prominentRole: prominentListRole(for: creator),
+                        chrome: .plain
                     ) {
                         presentMemberFlow(for: creator)
                     }
-                    .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 8, trailing: 16))
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden, edges: .top)
                 }
+            } header: {
+                familySectionHeader
             }
 
             Section {
@@ -97,12 +89,11 @@ struct FamilyGroupSettingsSection: View {
                             profile: profile,
                             isVirtualUser: profile.isVirtualUser,
                             isCurrentUser: isCurrentUserProfile(profile),
-                            prominentRole: prominentListRole(for: profile)
+                            prominentRole: prominentListRole(for: profile),
+                            chrome: .plain
                         ) {
                             presentMemberFlow(for: profile)
                         }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        .listRowBackground(Color.clear)
                     }
                     .onMove { indexSet, destination in
                         guard isSortingMembers else { return }
@@ -115,28 +106,55 @@ struct FamilyGroupSettingsSection: View {
         }
     }
 
-    private var otherMembersEmptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "person.crop.circle.badge.plus")
-                .font(.largeTitle)
-                .foregroundStyle(Color.accentColor)
+    private var familySectionHeader: some View {
+        Text(L10n.Family.currentGroup.localized)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
-            Text(L10n.Family.noOtherMembersYet.localized)
-                .foregroundStyle(.secondary)
-
-            Button(L10n.Family.addGroupMembers) {
-                AnalyticsManager.logEmptyStateCTATapped(
-                    surface: AnalyticsManager.EmptyStateSurface.family,
-                    cta: AnalyticsManager.EmptyStateCTA.invite
-                )
-                presentAddMemberFlow()
-            }
-            .buttonStyle(.borderedProminent)
+    private var householdThemeColor: Color {
+        guard let householdId = appRouter.selectedHouseholdId else {
+            return .orange
         }
-        .frame(maxWidth: .infinity, minHeight: 200)
-        .padding()
-        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-        .listRowBackground(Color.clear)
+        return HouseholdColorStore.color(for: householdId)
+    }
+
+    private var otherMembersEmptyState: some View {
+        Button {
+            AnalyticsManager.logEmptyStateCTATapped(
+                surface: AnalyticsManager.EmptyStateSurface.family,
+                cta: AnalyticsManager.EmptyStateCTA.invite
+            )
+            presentAddMemberFlow()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(householdThemeColor)
+                    .frame(width: 30, height: 30)
+                    .background(householdThemeColor.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Family.addGroupMembers.localized)
+                        .font(AppTheme.FontToken.bodyStrong)
+                        .foregroundStyle(.primary)
+                    Text(L10n.Family.noOtherMembersYet.localized)
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .contentShape(Rectangle())
+            .padding(.vertical, 2)
+        }
+        .buttonStyle(.plain)
     }
 
     private func presentAddMemberFlow() {
@@ -150,89 +168,100 @@ struct FamilyGroupSettingsSection: View {
     }
 
     private var profilesEmptyState: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "heart.circle.fill")
-                .font(.system(size: 44))
-                .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.85))
-                .symbolRenderingMode(.hierarchical)
-            Text(L10n.Family.noMemberProfileYet.localized)
-                .font(.headline)
-            Text(L10n.Schedule.addTheFirstMemberToShareTasksAndGentleD.localized)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 8)
-            Button(L10n.Family.addGroupMembers) {
-                AnalyticsManager.logEmptyStateCTATapped(
-                    surface: AnalyticsManager.EmptyStateSurface.family,
-                    cta: AnalyticsManager.EmptyStateCTA.invite
-                )
-                presentAddMemberFlow()
+        Button {
+            AnalyticsManager.logEmptyStateCTATapped(
+                surface: AnalyticsManager.EmptyStateSurface.family,
+                cta: AnalyticsManager.EmptyStateCTA.invite
+            )
+            presentAddMemberFlow()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(householdThemeColor)
+                    .frame(width: 30, height: 30)
+                    .background(householdThemeColor.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L10n.Family.addGroupMembers.localized)
+                        .font(AppTheme.FontToken.bodyStrong)
+                        .foregroundStyle(.primary)
+                    Text(L10n.Family.noMemberProfileYet.localized)
+                        .font(AppTheme.FontToken.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .buttonStyle(.borderedProminent)
+            .contentShape(Rectangle())
+            .padding(.vertical, 2)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
+        .buttonStyle(.plain)
     }
 
-    /// 组织名称 + 图标：标题区切换组织，副标题进入组织设置。
+    /// 组织名称：主区进入组织设置；右侧切换组织。
     private var householdSummaryRow: some View {
-        householdSummaryRowContent
-            .accessibilityElement(children: .contain)
-    }
-
-    private var householdSummaryRowContent: some View {
         HStack(alignment: .center, spacing: 0) {
             Button {
                 onOpenOrganizationSettings()
             } label: {
-                HStack(alignment: .center, spacing: 12) {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.orange.opacity(0.2))
-                        .frame(width: 50, height: 50)
-                        .overlay {
-                            Image(systemName: "person.2.fill")
-                                .font(.system(size: 20, weight: .semibold))
-                                .foregroundStyle(.orange)
-                        }
+                HStack(spacing: 12) {
+                    Image(systemName: "person.2.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(householdThemeColor)
+                        .frame(width: 30, height: 30)
+                        .background(householdThemeColor.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text(currentOrganizationDisplayName)
-                                .font(.headline)
+                                .font(AppTheme.FontToken.bodyStrong)
                                 .foregroundStyle(.primary)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
+                                .lineLimit(1)
 
                             if canManageHousehold {
                                 Image(systemName: "square.and.pencil")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
                             }
                         }
 
-                        organizationDescriptionSubtitle
+                        Text(householdSubtitle)
+                            .font(AppTheme.FontToken.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .contentShape(Rectangle())
+                .padding(.vertical, 2)
             }
             .buttonStyle(.plain)
             .disabled(canManageHousehold == false || appRouter.selectedHouseholdId == nil)
+            .accessibilityHint(AppLocalized.string(L10n.Family.groupSettings, locale: locale))
 
             Button {
                 groupSwitcher.present(mode: .singleActive)
             } label: {
-                Image(systemName: "chevron.down")
+                Image(systemName: "chevron.up.chevron.down")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: 44, height: 44)
+                    .frame(width: 36, height: 36)
+                    .background(Color.primary.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.Family.switchGroup)
+            .padding(.leading, 8)
         }
-        .padding(.vertical, 6)
+        .accessibilityElement(children: .contain)
     }
 
     private var currentOrganizationDisplayName: String {
@@ -241,24 +270,21 @@ struct FamilyGroupSettingsSection: View {
         return StoredDisplayNameResolver.householdName(trimmed)
     }
 
-    @ViewBuilder
-    private var organizationDescriptionSubtitle: some View {
+    private var householdSubtitle: String {
         let trimmed = appRouter.selectedHouseholdDescription
             .trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty == false {
-            Text(trimmed)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
+            return trimmed
         }
+        return L10n.Family.activeMemberCountLabel.formatted(locale: locale, viewModel.activeMemberCount)
     }
 
     private var otherMembersSectionHeader: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             Text(L10n.Family.groupMembers.localized)
-                .font(.subheadline)
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
+                .textCase(.uppercase)
 
             Spacer(minLength: 8)
 
@@ -269,8 +295,11 @@ struct FamilyGroupSettingsSection: View {
                     }
                 } label: {
                     Image(systemName: "arrow.up.arrow.down")
-                        .font(.body)
-                        .foregroundStyle(.blue)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28, height: 28)
+                        .background(Color.accentColor.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(
@@ -285,8 +314,11 @@ struct FamilyGroupSettingsSection: View {
                     presentAddMemberFlow()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.body.weight(.bold))
-                        .foregroundStyle(.blue)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color.accentColor)
+                        .frame(width: 28, height: 28)
+                        .background(Color.accentColor.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(AppLocalized.string(L10n.Family.addGroupMembers, locale: locale))

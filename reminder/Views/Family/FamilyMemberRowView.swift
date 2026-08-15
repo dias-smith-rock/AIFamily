@@ -2,6 +2,13 @@ import SwiftUI
 import Kingfisher
 
 struct FamilyMemberRowView: View {
+    enum Chrome {
+        /// 独立圆角卡片（旧样式）。
+        case card
+        /// 融入 insetGrouped List 行（与 VIP / 设置行一致）。
+        case plain
+    }
+
     let profile: FamilyProfile
     /// 当前行是否为 **虚拟档案**（无 `household_memberships` 关联）。
     var isVirtualUser: Bool = false
@@ -9,6 +16,7 @@ struct FamilyMemberRowView: View {
     var isCurrentUser: Bool = false
     /// 列表行内显著角色：仅传 `.creator` 或 `.admin`；普通成员传 `nil`。
     var prominentRole: MembershipRole? = nil
+    var chrome: Chrome = .card
     var onTap: (() -> Void)? = nil
     @State private var revealsFullPhone = false
 
@@ -88,7 +96,7 @@ struct FamilyMemberRowView: View {
         Button {
             onTap?()
         } label: {
-            HStack(alignment: .center, spacing: 14) {
+            HStack(alignment: .center, spacing: chrome == .plain ? 12 : 14) {
                 Group {
                     if let avatarURLString = profile.avatarUrl,
                        let avatarURL = URL(string: avatarURLString) {
@@ -101,13 +109,13 @@ struct FamilyMemberRowView: View {
                         avatarFallback
                     }
                 }
-                .frame(width: 48, height: 48)
+                .frame(width: avatarSize, height: avatarSize)
                 .clipShape(Circle())
 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .center, spacing: 6) {
                         titleView
-                            .font(.headline)
+                            .font(chrome == .plain ? AppTheme.FontToken.bodyStrong : .headline)
                             .foregroundStyle(.primary)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
@@ -144,12 +152,20 @@ struct FamilyMemberRowView: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal, chrome == .plain ? 0 : 14)
+            .padding(.vertical, chrome == .plain ? 4 : 12)
+            .background {
+                if chrome == .card {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color(.systemBackground))
+                }
+            }
         }
         .buttonStyle(.plain)
+    }
+
+    private var avatarSize: CGFloat {
+        chrome == .plain ? 36 : 48
     }
 
     @ViewBuilder

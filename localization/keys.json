@@ -6693,5 +6693,12 @@
     "new_key": "schedule_empty_new_task",
     "table": "Schedule",
     "swift_property": "emptyNewTask"
+  },
+  {
+    "legacy_key": "%lld members",
+    "new_key": "family_active_member_count",
+    "table": "Family",
+    "swift_property": "activeMemberCountLabel",
+    "orphan": true
   }
 ]

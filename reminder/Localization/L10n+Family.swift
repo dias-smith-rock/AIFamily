@@ -30,6 +30,7 @@ extension L10n {
     static let createNewOrganization = Entry(key: "family_create_new_organization", table: .family)
     static let createOrganization = Entry(key: "family_create_organization", table: .family)
     static let currentGroup = Entry(key: "family_current_group", table: .family)
+    static let activeMemberCountLabel = Entry(key: "family_active_member_count", table: .family)
     static let currentMembershipIsInvalidPleaseReEnterTh = Entry(key: "family_current_membership_is_invalid_please_re_enter_th", table: .family)
     static let currentMembershipIsInvalidReEnterTheGroup = Entry(key: "family_current_membership_is_invalid_re_enter_the_group", table: .family)
     static let deleteMemberProfile = Entry(key: "family_delete_member_profile", table: .family)
