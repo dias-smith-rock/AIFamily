@@ -3,6 +3,10 @@ import PhotosUI
 import UIKit
 import Kingfisher
 
+#if canImport(Supabase)
+import Supabase
+#endif
+
 struct ProfileEditView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
@@ -81,7 +85,7 @@ struct ProfileEditView: View {
         _weight = State(initialValue: profile?.weight.map { "\($0)" } ?? "")
         _school = State(initialValue: profile?.school ?? "")
         _grade = State(initialValue: profile?.grade ?? "")
-        _email = State(initialValue: profile?.email ?? "")
+        _email = State(initialValue: Self.initialEmailFieldValue(for: profile))
         _mainPhone = State(initialValue: profile?.mainPhone ?? "")
         _secondPhone = State(initialValue: profile?.secondPhone ?? "")
         _idCardNum = State(initialValue: profile?.idCardNum ?? "")
@@ -507,6 +511,42 @@ struct ProfileEditView: View {
             return nickname
         }
         return profile.name
+    }
+
+    private static func initialEmailFieldValue(for profile: FamilyProfile?) -> String {
+        let stored = profile?.email?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if stored.isEmpty == false {
+            return stored
+        }
+        guard let profile, isOwnAuthProfile(profile) else { return "" }
+        return authAccountEmail() ?? ""
+    }
+
+    private static func isOwnAuthProfile(_ profile: FamilyProfile) -> Bool {
+        #if canImport(Supabase)
+        guard let authId = SupabaseManager.shared.client.auth.currentSession?.user.id else {
+            return false
+        }
+        if let profileUserId = profile.userId, profileUserId == authId {
+            return true
+        }
+        if let membershipUserId = profile.primaryMembership?.userId, membershipUserId == authId {
+            return true
+        }
+        return false
+        #else
+        return false
+        #endif
+    }
+
+    private static func authAccountEmail() -> String? {
+        #if canImport(Supabase)
+        let raw = SupabaseManager.shared.client.auth.currentSession?.user.email
+        let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
+        #else
+        return nil
+        #endif
     }
 
     private static let birthDateFormatter: DateFormatter = {

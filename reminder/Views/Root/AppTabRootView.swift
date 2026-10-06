@@ -12,8 +12,8 @@ struct AppTabRootView: View {
     enum Tab: Hashable {
         case schedule
         case todos
-        case expenses
         case location
+        case expenses
         case settings
 
         var titleKey: LocalizedStringResource {
@@ -155,17 +155,17 @@ struct AppTabRootView: View {
                 }
                 .tag(Tab.todos)
 
-            ExpenseMainView()
-                .tabItem {
-                    Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
-                }
-                .tag(Tab.expenses)
-
             LocationMainView(isTabActive: selectedTab == .location)
                 .tabItem {
                     Label(Tab.location.titleKey, systemImage: Tab.location.systemImage)
                 }
                 .tag(Tab.location)
+
+            ExpenseMainView()
+                .tabItem {
+                    Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
+                }
+                .tag(Tab.expenses)
 
             SettingsMainView()
                 .tabItem {
