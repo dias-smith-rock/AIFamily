@@ -6,6 +6,7 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
     let householdId: UUID
     let profileId: UUID?
     let role: String?
+    let isTrackedDevice: Bool
     let household: HouseholdBasicInfo?
 
     enum CodingKeys: String, CodingKey {
@@ -13,6 +14,7 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
         case householdId
         case profileId
         case role
+        case isTrackedDevice
         case household = "households"
     }
 
@@ -21,12 +23,14 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
         householdId: UUID,
         profileId: UUID? = nil,
         role: String?,
+        isTrackedDevice: Bool = false,
         household: HouseholdBasicInfo?
     ) {
         self.id = id
         self.householdId = householdId
         self.profileId = profileId
         self.role = role
+        self.isTrackedDevice = isTrackedDevice
         self.household = household
     }
 
@@ -36,6 +40,7 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
         householdId = try Self.decodeHouseholdId(from: container)
         profileId = try container.decodeIfPresent(UUID.self, forKey: .profileId)
         role = try container.decodeIfPresent(String.self, forKey: .role)
+        isTrackedDevice = (try? container.decodeIfPresent(Bool.self, forKey: .isTrackedDevice)) ?? false
         household = try Self.decodeHouseholdEmbed(from: container)
     }
 

@@ -30,7 +30,8 @@ enum GroupSwitcherData {
                 profileId: appRouter.selectedProfileId,
                 name: name.isEmpty ? AppLocalized.localizedSync(L10n.Family.unnamedGroup) : StoredDisplayNameResolver.householdName(name),
                 creatorHasActivePro: appRouter.selectedHouseholdCreatorHasActivePro,
-                description: appRouter.selectedHouseholdDescription
+                description: appRouter.selectedHouseholdDescription,
+                isTrackedDevice: appRouter.isTrackedDeviceMembership
             )
         ]
     }

@@ -15,6 +15,7 @@ struct SettingsMainView: View {
     @State private var isShowingRenameHouseholdSheet = false
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
+    @State private var profilePendingTrackedBind: FamilyProfile?
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
     @State private var editingSelfProfile: FamilyProfile?
@@ -243,13 +244,30 @@ struct SettingsMainView: View {
                 profile: profile,
                 roleLabel: detailRoleLabel(for: profile),
                 canEdit: familyViewModel.canEditProfile(profile),
+                canBindTrackedDevice: familyViewModel.canEditProfile(profile),
                 onEdit: {
                     selectedProfileForDetail = nil
                     editingProfile = profile
+                },
+                onBindTrackedDevice: {
+                    selectedProfileForDetail = nil
+                    profilePendingTrackedBind = profile
                 }
             )
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
+        }
+        .sheet(item: $profilePendingTrackedBind) { profile in
+            if let householdId = appRouter.selectedHouseholdId,
+               let membershipId = appRouter.selectedMembershipId {
+                BindTrackedDeviceView(
+                    profile: profile,
+                    householdId: householdId,
+                    managerMembershipId: membershipId
+                )
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+            }
         }
         .fullScreenCover(item: $editingSelfProfile) { profile in
             ProfileEditView(
@@ -339,6 +357,18 @@ struct SettingsMainView: View {
 
     private var settingsListBody: some View {
         List {
+            if appRouter.isTrackedDeviceMembership, appRouter.isTrackedDevicePINUnlocked {
+                Section {
+                    Button(role: .destructive) {
+                        appRouter.lockTrackedDeviceShell()
+                    } label: {
+                        Label(L10n.Location.trackedLockShellAgain.localized, systemImage: "lock.fill")
+                    }
+                } footer: {
+                    Text(L10n.Location.trackedLockShellFooter.localized)
+                }
+            }
+
             PersonalVIPSubscriptionSection()
 
             FamilyGroupSettingsSection(

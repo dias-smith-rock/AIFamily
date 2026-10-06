@@ -31,9 +31,32 @@ final class AppRouter: ObservableObject {
     @Published private(set) var selectedProfileId: UUID?
     @Published private(set) var selectedHouseholdName: String?
     @Published private(set) var selectedHouseholdDescription: String = ""
+    /// 当前选中 membership 是否为儿童追踪设备（服务端 `is_tracked_device`）。
+    @Published private(set) var isTrackedDeviceMembership = false
+    /// 家长 PIN 临时解锁（本地会话，驱动追踪壳 ↔ 全 Tab 切换）。
+    @Published private(set) var isTrackedDevicePINUnlocked = false
     @Published private(set) var userEntitlement: UserEntitlement?
     @Published private(set) var authUserId: UUID?
     @Published private(set) var selectedHouseholdCreatorHasActivePro = false
+
+    /// 追踪端：服务端标记为追踪设备，且未通过家长 PIN 解锁。
+    var isTrackedDeviceShellActive: Bool {
+        isTrackedDeviceMembership && isTrackedDevicePINUnlocked == false
+    }
+
+    func unlockTrackedDeviceWithPIN() {
+        TrackedDeviceSession.unlock()
+        isTrackedDevicePINUnlocked = true
+    }
+
+    func lockTrackedDeviceShell() {
+        TrackedDeviceSession.lock()
+        isTrackedDevicePINUnlocked = false
+    }
+
+    func syncTrackedDeviceUnlockStateFromSession() {
+        isTrackedDevicePINUnlocked = TrackedDeviceSession.isUnlocked
+    }
 
     @Published var showNewCreatorAlert = false
     @Published var newlyAssignedHousehold: JoinedHousehold?
@@ -76,6 +99,25 @@ final class AppRouter: ObservableObject {
         let householdName: String?
         let householdDescription: String
         let creatorHasActivePro: Bool
+        let isTrackedDevice: Bool?
+
+        init(
+            householdId: UUID,
+            membershipId: UUID?,
+            profileId: UUID?,
+            householdName: String?,
+            householdDescription: String,
+            creatorHasActivePro: Bool,
+            isTrackedDevice: Bool = false
+        ) {
+            self.householdId = householdId
+            self.membershipId = membershipId
+            self.profileId = profileId
+            self.householdName = householdName
+            self.householdDescription = householdDescription
+            self.creatorHasActivePro = creatorHasActivePro
+            self.isTrackedDevice = isTrackedDevice
+        }
     }
 
     struct HouseholdOption: Identifiable, Equatable {
@@ -86,6 +128,8 @@ final class AppRouter: ObservableObject {
         /// 该组织创建者是否享有有效 Pro（用于组织内继承判断）。
         var creatorHasActivePro: Bool
         var description: String
+        /// 当前 membership 是否为儿童追踪设备。
+        var isTrackedDevice: Bool
 
         func hasPremiumAccess(userEntitlement: UserEntitlement?) -> Bool {
             PremiumAccess.hasPremiumAccess(
@@ -287,6 +331,12 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = snapshot.householdName
         selectedHouseholdDescription = snapshot.householdDescription
         selectedHouseholdCreatorHasActivePro = snapshot.creatorHasActivePro
+        isTrackedDeviceMembership = snapshot.isTrackedDevice ?? false
+        if isTrackedDeviceMembership {
+            syncTrackedDeviceUnlockStateFromSession()
+        } else {
+            lockTrackedDeviceShell()
+        }
         if let userId = authUserId {
             var stored = loadViewHouseholdIds(for: userId)
             if stored.isEmpty { stored = [snapshot.householdId] }
@@ -692,7 +742,8 @@ final class AppRouter: ObservableObject {
                 profileId: joined.profileId,
                 name: joined.displayHouseholdName,
                 creatorHasActivePro: creatorHasActivePro,
-                description: ""
+                description: "",
+                isTrackedDevice: joined.isTrackedDevice
             )
             chooseHousehold(option)
         }
@@ -703,7 +754,8 @@ final class AppRouter: ObservableObject {
             profileId: joined.profileId,
             name: joined.displayHouseholdName,
             creatorHasActivePro: false,
-            description: ""
+            description: "",
+            isTrackedDevice: joined.isTrackedDevice
         )
         chooseHousehold(option)
         #endif
@@ -913,12 +965,14 @@ final class AppRouter: ObservableObject {
         let householdId: UUID
         let profileId: UUID?
         let status: String
+        let isTrackedDevice: Bool
 
         enum CodingKeys: String, CodingKey {
             case id
             case householdId
             case profileId
             case status
+            case isTrackedDevice
         }
 
         init(from decoder: Decoder) throws {
@@ -927,6 +981,7 @@ final class AppRouter: ObservableObject {
             householdId = try container.decode(UUID.self, forKey: .householdId)
             profileId = try container.decodeIfPresent(UUID.self, forKey: .profileId)
             status = try container.decode(String.self, forKey: .status)
+            isTrackedDevice = (try? container.decodeIfPresent(Bool.self, forKey: .isTrackedDevice)) ?? false
         }
     }
 
@@ -1004,15 +1059,28 @@ final class AppRouter: ObservableObject {
 
     private func fetchMemberships(client: SupabaseClient, userId: UUID) async throws -> [MembershipRow] {
         debugLog("query.memberships.start user=\(userId.uuidString)")
-        let rows: [MembershipRow] = try await client
-            .from("household_memberships")
-            .select("id,household_id,profile_id,status")
-            .eq("user_id", value: userId.uuidString)
-            .order("created_at", ascending: false)
-            .execute()
-            .value
-        debugLog("query.memberships.success count=\(rows.count)")
-        return rows
+        do {
+            let rows: [MembershipRow] = try await client
+                .from("household_memberships")
+                .select("id,household_id,profile_id,status,is_tracked_device")
+                .eq("user_id", value: userId.uuidString)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            debugLog("query.memberships.success count=\(rows.count)")
+            return rows
+        } catch {
+            // 列未部署时回退（解码侧 isTrackedDevice 默认 false）。
+            let rows: [MembershipRow] = try await client
+                .from("household_memberships")
+                .select("id,household_id,profile_id,status")
+                .eq("user_id", value: userId.uuidString)
+                .order("created_at", ascending: false)
+                .execute()
+                .value
+            debugLog("query.memberships.success fallback count=\(rows.count)")
+            return rows
+        }
     }
 
     private func fetchHouseholdOptions(
@@ -1090,7 +1158,8 @@ final class AppRouter: ObservableObject {
                         profileId: membership.profileId,
                         name: household.name,
                         creatorHasActivePro: creatorHasActivePro,
-                        description: household.description ?? ""
+                        description: household.description ?? "",
+                        isTrackedDevice: membership.isTrackedDevice
                     )
                 )
             } else {
@@ -1102,7 +1171,8 @@ final class AppRouter: ObservableObject {
                         profileId: membership.profileId,
                         name: "Group \(householdID.uuidString.prefix(6))",
                         creatorHasActivePro: creatorHasActivePro,
-                        description: ""
+                        description: "",
+                        isTrackedDevice: membership.isTrackedDevice
                     )
                 )
             }
@@ -1174,6 +1244,12 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = option.name
         selectedHouseholdDescription = option.description
         selectedHouseholdCreatorHasActivePro = option.creatorHasActivePro
+        isTrackedDeviceMembership = option.isTrackedDevice
+        if option.isTrackedDevice {
+            syncTrackedDeviceUnlockStateFromSession()
+        } else {
+            lockTrackedDeviceShell()
+        }
         saveLastHouseholdId(option.id, for: userId)
         saveRecentHouseholdId(option.id, for: userId)
         saveOfflineHouseholdSnapshot(option: option)
@@ -1203,6 +1279,8 @@ final class AppRouter: ObservableObject {
         selectedHouseholdName = nil
         selectedHouseholdDescription = ""
         selectedHouseholdCreatorHasActivePro = false
+        isTrackedDeviceMembership = false
+        lockTrackedDeviceShell()
     }
 
     private func saveViewHouseholdIds(_ ids: [UUID], for userId: UUID) {
@@ -1267,7 +1345,8 @@ final class AppRouter: ObservableObject {
             profileId: option.profileId,
             householdName: option.name,
             householdDescription: option.description,
-            creatorHasActivePro: option.creatorHasActivePro
+            creatorHasActivePro: option.creatorHasActivePro,
+            isTrackedDevice: option.isTrackedDevice
         )
         if let data = try? JSONEncoder().encode(snapshot) {
             UserDefaults.standard.set(data, forKey: Self.offlineHouseholdSnapshotKey)

@@ -6714,5 +6714,292 @@
     "table": "Family",
     "swift_property": "activeMemberCountLabel",
     "orphan": true
+  },
+  {
+    "legacy_key": "Bind location device",
+    "new_key": "location_tracked_bind_title",
+    "table": "Location",
+    "swift_property": "trackedBindTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Ask %@'s device to scan this code in WeSync. No account signup needed.",
+    "new_key": "location_tracked_bind_subtitle",
+    "table": "Location",
+    "swift_property": "trackedBindSubtitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Generating pairing code…",
+    "new_key": "location_tracked_generating_code",
+    "table": "Location",
+    "swift_property": "trackedGeneratingCode",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Code expires in 30 minutes and can be used once.",
+    "new_key": "location_tracked_code_expires_hint",
+    "table": "Location",
+    "swift_property": "trackedCodeExpiresHint",
+    "orphan": false
+  },
+  {
+    "legacy_key": "After scanning, set a parent PIN on the child device to prevent accidental access to family data.",
+    "new_key": "location_tracked_pin_setup_hint",
+    "table": "Location",
+    "swift_property": "trackedPinSetupHint",
+    "orphan": false
+  },
+  {
+    "legacy_key": "6-digit pairing code",
+    "new_key": "location_tracked_enter_pairing_code",
+    "table": "Location",
+    "swift_property": "trackedEnterPairingCode",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Get the code from a parent’s Bind location device screen.",
+    "new_key": "location_tracked_claim_footer",
+    "table": "Location",
+    "swift_property": "trackedClaimFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Parent PIN (4–6 digits)",
+    "new_key": "location_tracked_set_parent_pin",
+    "table": "Location",
+    "swift_property": "trackedSetParentPin",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Confirm PIN",
+    "new_key": "location_tracked_confirm_parent_pin",
+    "table": "Location",
+    "swift_property": "trackedConfirmParentPin",
+    "orphan": false
+  },
+  {
+    "legacy_key": "PIN stays on this device only. Forgot it? Re-pair from a parent phone.",
+    "new_key": "location_tracked_pin_footer",
+    "table": "Location",
+    "swift_property": "trackedPinFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Pair as location device",
+    "new_key": "location_tracked_claim_title",
+    "table": "Location",
+    "swift_property": "trackedClaimTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Scan or enter a parent pairing code. Location only — no signup.",
+    "new_key": "location_tracked_claim_card_subtitle",
+    "table": "Location",
+    "swift_property": "trackedClaimCardSubtitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Group",
+    "new_key": "location_tracked_shell_group",
+    "table": "Location",
+    "swift_property": "trackedShellGroup",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Location permission",
+    "new_key": "location_tracked_shell_location_status",
+    "table": "Location",
+    "swift_property": "trackedShellLocationStatus",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Background reporting",
+    "new_key": "location_tracked_shell_background",
+    "table": "Location",
+    "swift_property": "trackedShellBackground",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Battery",
+    "new_key": "location_tracked_shell_battery",
+    "table": "Location",
+    "swift_property": "trackedShellBattery",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Last report",
+    "new_key": "location_tracked_shell_last_report",
+    "table": "Location",
+    "swift_property": "trackedShellLastReport",
+    "orphan": false
+  },
+  {
+    "legacy_key": "This device reports approximate location about every few minutes when moving. Not real-time like Find My.",
+    "new_key": "location_tracked_shell_footer",
+    "table": "Location",
+    "swift_property": "trackedShellFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Unlock with parent PIN",
+    "new_key": "location_tracked_unlock_with_pin",
+    "table": "Location",
+    "swift_property": "trackedUnlockWithPin",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Parent PIN",
+    "new_key": "location_tracked_enter_parent_pin",
+    "table": "Location",
+    "swift_property": "trackedEnterParentPin",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Temporarily open full app tabs. Auto-locks after 15 minutes.",
+    "new_key": "location_tracked_unlock_message",
+    "table": "Location",
+    "swift_property": "trackedUnlockMessage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Incorrect PIN",
+    "new_key": "location_tracked_pin_incorrect",
+    "table": "Location",
+    "swift_property": "trackedPinIncorrect",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Location device",
+    "new_key": "location_tracked_shell_title",
+    "table": "Location",
+    "swift_property": "trackedShellTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Always",
+    "new_key": "location_tracked_auth_always",
+    "table": "Location",
+    "swift_property": "trackedAuthAlways",
+    "orphan": false
+  },
+  {
+    "legacy_key": "While Using — set Always in Settings",
+    "new_key": "location_tracked_auth_when_in_use",
+    "table": "Location",
+    "swift_property": "trackedAuthWhenInUse",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Denied",
+    "new_key": "location_tracked_auth_denied",
+    "table": "Location",
+    "swift_property": "trackedAuthDenied",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Not granted",
+    "new_key": "location_tracked_auth_needed",
+    "table": "Location",
+    "swift_property": "trackedAuthNeeded",
+    "orphan": false
+  },
+  {
+    "legacy_key": "On",
+    "new_key": "location_tracked_background_on",
+    "table": "Location",
+    "swift_property": "trackedBackgroundOn",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Off or limited",
+    "new_key": "location_tracked_background_off",
+    "table": "Location",
+    "swift_property": "trackedBackgroundOff",
+    "orphan": false
+  },
+  {
+    "legacy_key": "No report yet",
+    "new_key": "location_tracked_no_report_yet",
+    "table": "Location",
+    "swift_property": "trackedNoReportYet",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Invalid pairing code",
+    "new_key": "location_tracked_pairing_invalid_code",
+    "table": "Location",
+    "swift_property": "trackedPairingInvalidCode",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Pairing code expired",
+    "new_key": "location_tracked_pairing_code_expired",
+    "table": "Location",
+    "swift_property": "trackedPairingCodeExpired",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Pairing code already used",
+    "new_key": "location_tracked_pairing_code_used",
+    "table": "Location",
+    "swift_property": "trackedPairingCodeUsed",
+    "orphan": false
+  },
+  {
+    "legacy_key": "This profile is already bound to another device",
+    "new_key": "location_tracked_pairing_profile_bound",
+    "table": "Location",
+    "swift_property": "trackedPairingProfileBound",
+    "orphan": false
+  },
+  {
+    "legacy_key": "This account is already in the group with another profile",
+    "new_key": "location_tracked_pairing_already_member",
+    "table": "Location",
+    "swift_property": "trackedPairingAlreadyMember",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Server update required. Please try again later.",
+    "new_key": "location_tracked_pairing_backend_required",
+    "table": "Location",
+    "swift_property": "trackedPairingBackendRequired",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Bind location device",
+    "new_key": "location_tracked_bind_device_action",
+    "table": "Location",
+    "swift_property": "trackedBindDeviceAction",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Generate a one-time code for a child’s phone to report location only.",
+    "new_key": "location_tracked_bind_device_footer",
+    "table": "Location",
+    "swift_property": "trackedBindDeviceFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Lock location-only mode",
+    "new_key": "location_tracked_lock_shell_again",
+    "table": "Location",
+    "swift_property": "trackedLockShellAgain",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Hide schedule, todos, and wallet again. Requires parent PIN to unlock.",
+    "new_key": "location_tracked_lock_shell_footer",
+    "table": "Location",
+    "swift_property": "trackedLockShellFooter",
+    "orphan": false
+  },
+  {
+    "legacy_key": "May be offline",
+    "new_key": "location_tracked_possibly_offline",
+    "table": "Location",
+    "swift_property": "trackedPossiblyOffline",
+    "orphan": false
   }
 ]

@@ -3,6 +3,7 @@ import SwiftUI
 struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
+    @Environment(\.scenePhase) private var scenePhase
     @State private var selectedTab: Tab = .schedule
     @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
     @State private var showAnonymousBindPrompt = false
@@ -47,38 +48,30 @@ struct AppTabRootView: View {
     }
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            ScheduleMainView()
-                .tabItem {
-                    Label(Tab.schedule.titleKey, systemImage: Tab.schedule.systemImage)
-                }
-                .tag(Tab.schedule)
-
-            TodoMainView()
-                .tabItem {
-                    Label(Tab.todos.titleKey, systemImage: Tab.todos.systemImage)
-                }
-                .tag(Tab.todos)
-
-            ExpenseMainView()
-                .tabItem {
-                    Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
-                }
-                .tag(Tab.expenses)
-
-            LocationMainView(isTabActive: selectedTab == .location)
-                .tabItem {
-                    Label(Tab.location.titleKey, systemImage: Tab.location.systemImage)
-                }
-                .tag(Tab.location)
-
-            SettingsMainView()
-                .tabItem {
-                    Label(Tab.settings.titleKey, systemImage: Tab.settings.systemImage)
-                }
-                .tag(Tab.settings)
+        Group {
+            if appRouter.isTrackedDeviceShellActive {
+                TrackedDeviceShellView()
+            } else {
+                fullTabView
+            }
+        }
+        .onChange(of: appRouter.isTrackedDeviceMembership) { _, isTracked in
+            if isTracked == false {
+                appRouter.lockTrackedDeviceShell()
+            } else {
+                appRouter.syncTrackedDeviceUnlockStateFromSession()
+            }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard appRouter.isTrackedDeviceMembership else { return }
+            if phase == .active {
+                appRouter.syncTrackedDeviceUnlockStateFromSession()
+            }
         }
         .onAppear {
+            if appRouter.isTrackedDeviceMembership {
+                appRouter.syncTrackedDeviceUnlockStateFromSession()
+            }
             AutoLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
             OAuthLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
             OfflineColdStartPerformanceTracer.finishMainPageReached(appRouter: appRouter)
@@ -140,8 +133,43 @@ struct AppTabRootView: View {
         .id(appSettings.selectedLanguage.id)
     }
 
+    private var fullTabView: some View {
+        TabView(selection: $selectedTab) {
+            ScheduleMainView()
+                .tabItem {
+                    Label(Tab.schedule.titleKey, systemImage: Tab.schedule.systemImage)
+                }
+                .tag(Tab.schedule)
+
+            TodoMainView()
+                .tabItem {
+                    Label(Tab.todos.titleKey, systemImage: Tab.todos.systemImage)
+                }
+                .tag(Tab.todos)
+
+            ExpenseMainView()
+                .tabItem {
+                    Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
+                }
+                .tag(Tab.expenses)
+
+            LocationMainView(isTabActive: selectedTab == .location)
+                .tabItem {
+                    Label(Tab.location.titleKey, systemImage: Tab.location.systemImage)
+                }
+                .tag(Tab.location)
+
+            SettingsMainView()
+                .tabItem {
+                    Label(Tab.settings.titleKey, systemImage: Tab.settings.systemImage)
+                }
+                .tag(Tab.settings)
+        }
+    }
+
     private func presentAnonymousBindPromptIfNeeded() {
         guard appRouter.isAnonymousUser,
+              appRouter.isTrackedDeviceMembership == false,
               AnonymousBindPromptStore.consumeIfPending() else {
             return
         }

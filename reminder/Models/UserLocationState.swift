@@ -68,6 +68,12 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
     var currentLocationUpdatedAt: Date? {
         currentLocation?.recordedAt ?? lastUpdatedAt
     }
+
+    /// 超过阈值无新点：家长端展示「可能离线」（非 Live）。
+    var isLikelyOffline: Bool {
+        guard isGhostMode == false else { return false }
+        return LocationStaleness.isLikelyOffline(lastUpdatedAt: currentLocationUpdatedAt)
+    }
 }
 
 extension UserLocationState {

@@ -14,6 +14,8 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
     var nickname: String?
     var status: String?
     var joinedAt: Date?
+    /// 儿童/追踪设备 membership；角色仍为 member，由服务端列标记。
+    var isTrackedDevice: Bool
     let createdAt: Date
     let updatedAt: Date
     /// 连表查询 `profile:family_profiles!profile_id(...)` 时嵌套返回；写入 membership 行时不携带。
@@ -28,6 +30,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         nickname: String?,
         status: String?,
         joinedAt: Date?,
+        isTrackedDevice: Bool = false,
         createdAt: Date,
         updatedAt: Date,
         profile: FamilyProfile? = nil
@@ -40,6 +43,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         self.nickname = nickname
         self.status = status
         self.joinedAt = joinedAt
+        self.isTrackedDevice = isTrackedDevice
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.profile = profile
@@ -56,6 +60,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         case nickname
         case status
         case joinedAt
+        case isTrackedDevice
         case createdAt
         case updatedAt
         case profile
@@ -71,6 +76,7 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         nickname = try container.decodeIfPresent(String.self, forKey: .nickname)
         status = try container.decodeIfPresent(String.self, forKey: .status)
         joinedAt = try Self.decodeOptionalDate(container: container, key: .joinedAt)
+        isTrackedDevice = (try? container.decodeIfPresent(Bool.self, forKey: .isTrackedDevice)) ?? false
         createdAt = try Self.decodeOptionalDate(container: container, key: .createdAt) ?? Date.distantPast
         updatedAt = try Self.decodeOptionalDate(container: container, key: .updatedAt) ?? Date.distantPast
         if let nestedProfile = try container.decodeIfPresent(FamilyProfile.self, forKey: .profile) {
@@ -93,6 +99,10 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(nickname, forKey: .nickname)
         try container.encodeIfPresent(status, forKey: .status)
         try container.encodeIfPresent(joinedAt.map(Self.formatDateForEncoding), forKey: .joinedAt)
+        // 仅在为 true 时写入，避免列尚未部署时 insert 失败；标记由 pairing RPC 在服务端设置。
+        if isTrackedDevice {
+            try container.encode(true, forKey: .isTrackedDevice)
+        }
         try container.encode(Self.formatDateForEncoding(createdAt), forKey: .createdAt)
         try container.encode(Self.formatDateForEncoding(updatedAt), forKey: .updatedAt)
     }
@@ -233,6 +243,7 @@ extension HouseholdMembership {
             nickname: nickname,
             status: status.rawValue,
             joinedAt: joinedAt,
+            isTrackedDevice: false,
             createdAt: createdAt,
             updatedAt: updatedAt
         )

@@ -32,13 +32,21 @@ struct LocationMemberSheetRow: View {
                 isGrayscale: member.isGhostMode
             )
 
-            Text(titleLine)
-                .font(.headline)
-                .foregroundStyle(member.isGhostMode ? .secondary : .primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: avatarSize, alignment: .center)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(titleLine)
+                    .font(.headline)
+                    .foregroundStyle(member.isGhostMode || member.isLikelyOffline ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                if isInLiveHuddle == false, member.isGhostMode == false {
+                    Text(subtitleLine)
+                        .font(.caption)
+                        .foregroundStyle(member.isLikelyOffline ? Color.orange : .secondary)
+                        .lineLimit(1)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: avatarSize, alignment: .center)
 
             if isInLiveHuddle {
                 LiveTrackingBadge()
@@ -52,13 +60,13 @@ struct LocationMemberSheetRow: View {
                     Text("\(member.clampedBatteryLevel)%")
                         .font(.caption.weight(.medium))
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(member.isLikelyOffline ? Color.orange.opacity(0.85) : .secondary)
                 .frame(minWidth: 44, alignment: .trailing)
                 .frame(height: avatarSize)
             }
         }
         .frame(maxWidth: .infinity, minHeight: avatarSize, alignment: .leading)
-        .opacity(member.isGhostMode ? 0.55 : 1)
+        .opacity(member.isGhostMode ? 0.55 : (member.isLikelyOffline ? 0.72 : 1))
         .contentShape(Rectangle())
         .accessibilityLabel(accessibilitySummary)
     }
@@ -79,6 +87,16 @@ struct LocationMemberSheetRow: View {
             )
         }
         return member.displayName
+    }
+
+    private var subtitleLine: String {
+        if member.isLikelyOffline {
+            return AppLocalized.string(L10n.Location.trackedPossiblyOffline, locale: locale)
+        }
+        if let lastUpdatedAt = member.currentLocationUpdatedAt {
+            return lastUpdatedText(since: lastUpdatedAt)
+        }
+        return AppLocalized.string(L10n.Location.trackedNoReportYet, locale: locale)
     }
 
     private var accessibilitySummary: String {

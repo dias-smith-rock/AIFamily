@@ -21,6 +21,8 @@ struct OrgRoutingView: View {
     @State private var localErrorMessage: String?
     @State private var showCreateSheet = false
     @State private var showJoinSheet = false
+    @State private var showClaimTrackedSheet = false
+    @State private var trackedPairingCode = ""
     @State private var createInputError: String?
     @State private var joinInputError: String?
     @State private var isSigningOut = false
@@ -63,6 +65,12 @@ struct OrgRoutingView: View {
             }
             .sheet(isPresented: $showCreateSheet) { createHouseholdSheet }
             .sheet(isPresented: $showJoinSheet) { joinHouseholdSheet }
+            .sheet(isPresented: $showClaimTrackedSheet) {
+                ClaimTrackedDeviceSheet(pairingCode: $trackedPairingCode) {
+                    Task { await appRouter.refreshStateFromBackend() }
+                }
+                .environmentObject(appRouter)
+            }
             .confirmationDialog(L10n.Common.selectIdentificationMethod.localized, isPresented: $showScanOptions, titleVisibility: .visible) {
                 Button(L10n.Common.cameraScanCode) {
                     showCameraScanner = true
@@ -148,67 +156,104 @@ struct OrgRoutingView: View {
     }
 
     private var orgRoutingScrollContent: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                joinedHouseholdsSection
-
-                if viewModel.joinedHouseholds.isEmpty == false {
-                    Text(AppLocalized.string(L10n.Family.orgOnboardingChoosePath, locale: locale))
-                        .font(AppTheme.FontToken.subtitle)
-                        .foregroundStyle(AppTheme.ColorToken.textSecondary)
-                }
-
-                RouteActionCard(
-                    icon: "house.fill",
-                    title: AppLocalized.string(L10n.Family.startOurFamilyTitle, locale: locale),
-                    subtitle: AppLocalized.string(L10n.Family.startOurFamilySubtitle, locale: locale),
-                    backgroundColor: Color.orange.opacity(0.12)
-                ) {
-                    createInputError = nil
-                    showCreateSheet = true
-                }
-
-                RouteActionCard(
-                    icon: "qrcode.viewfinder",
-                    title: AppLocalized.string(L10n.Family.joinWithInviteTitle, locale: locale),
-                    subtitle: AppLocalized.string(L10n.Family.joinWithInviteSubtitle, locale: locale),
-                    backgroundColor: Color.green.opacity(0.12)
-                ) {
-                    joinInputError = nil
-                    showJoinSheet = true
-                }
-
-                if appRouter.isAnonymousUser {
-                    RouteActionCard(
-                        icon: "person.crop.circle.badge.checkmark",
-                        title: AppLocalized.string(
-                            L10n.Auth.iAlreadyHaveAnAccountOrWantToRegister,
-                            locale: locale
-                        ),
-                        subtitle: AppLocalized.string(
-                            L10n.Auth.iAlreadyHaveAnAccountOrWantToRegisterSubtitle,
-                            locale: locale
-                        ),
-                        backgroundColor: Color.blue.opacity(0.10)
-                    ) {
-                        handleExistingAccountOrRegisterTap()
+        GeometryReader { proxy in
+            let compact = proxy.size.height < 760
+            Group {
+                if viewModel.joinedHouseholds.isEmpty {
+                    ViewThatFits(in: .vertical) {
+                        orgRoutingColumn(compact: true, allowsFlexibleHeader: false)
+                        ScrollView {
+                            orgRoutingColumn(compact: true, allowsFlexibleHeader: true)
+                        }
                     }
-                    .disabled(isSigningOut)
+                } else {
+                    ScrollView {
+                        orgRoutingColumn(compact: compact, allowsFlexibleHeader: true)
+                    }
                 }
             }
-            .padding(20)
+            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
         }
         .refreshable {
             await refreshHouseholdRouting()
         }
     }
 
+    private func orgRoutingColumn(compact: Bool, allowsFlexibleHeader: Bool) -> some View {
+        VStack(alignment: .leading, spacing: compact ? 10 : 16) {
+            joinedHouseholdsSection(compact: compact, allowsFlexibleHeader: allowsFlexibleHeader)
+            if viewModel.joinedHouseholds.isEmpty == false {
+                Text(AppLocalized.string(L10n.Family.orgOnboardingChoosePath, locale: locale))
+                    .font(compact ? AppTheme.FontToken.caption : AppTheme.FontToken.subtitle)
+                    .foregroundStyle(AppTheme.ColorToken.textSecondary)
+            }
+            routeActionCards(compact: compact)
+        }
+        .padding(.horizontal, compact ? 16 : 20)
+        .padding(.vertical, compact ? 8 : 16)
+    }
+
     @ViewBuilder
-    private var joinedHouseholdsSection: some View {
+    private func routeActionCards(compact: Bool) -> some View {
+        RouteActionCard(
+            icon: "house.fill",
+            title: AppLocalized.string(L10n.Family.startOurFamilyTitle, locale: locale),
+            subtitle: AppLocalized.string(L10n.Family.startOurFamilySubtitle, locale: locale),
+            backgroundColor: Color.orange.opacity(0.12),
+            isCompact: compact
+        ) {
+            createInputError = nil
+            showCreateSheet = true
+        }
+
+        RouteActionCard(
+            icon: "qrcode.viewfinder",
+            title: AppLocalized.string(L10n.Family.joinWithInviteTitle, locale: locale),
+            subtitle: AppLocalized.string(L10n.Family.joinWithInviteSubtitle, locale: locale),
+            backgroundColor: Color.green.opacity(0.12),
+            isCompact: compact
+        ) {
+            joinInputError = nil
+            showJoinSheet = true
+        }
+
+        RouteActionCard(
+            icon: "location.fill",
+            title: AppLocalized.string(L10n.Location.trackedClaimTitle, locale: locale),
+            subtitle: AppLocalized.string(L10n.Location.trackedClaimCardSubtitle, locale: locale),
+            backgroundColor: Color.teal.opacity(0.12),
+            isCompact: compact
+        ) {
+            trackedPairingCode = ""
+            showClaimTrackedSheet = true
+        }
+
+        if appRouter.isAnonymousUser {
+            RouteActionCard(
+                icon: "person.crop.circle.badge.checkmark",
+                title: AppLocalized.string(
+                    L10n.Auth.iAlreadyHaveAnAccountOrWantToRegister,
+                    locale: locale
+                ),
+                subtitle: AppLocalized.string(
+                    L10n.Auth.iAlreadyHaveAnAccountOrWantToRegisterSubtitle,
+                    locale: locale
+                ),
+                backgroundColor: Color.blue.opacity(0.10),
+                isCompact: compact
+            ) {
+                handleExistingAccountOrRegisterTap()
+            }
+            .disabled(isSigningOut)
+        }
+    }
+
+    @ViewBuilder
+    private func joinedHouseholdsSection(compact: Bool, allowsFlexibleHeader: Bool) -> some View {
         if viewModel.joinedHouseholds.isEmpty {
-            emptyJoinedHouseholdsPlaceholder
+            emptyJoinedHouseholdsPlaceholder(compact: compact, allowsFlexibleHeader: allowsFlexibleHeader)
         } else {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: compact ? 8 : 12) {
                 Text(AppLocalized.string(L10n.Family.myGroups, locale: locale))
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(AppTheme.ColorToken.textSecondary)
@@ -222,32 +267,32 @@ struct OrgRoutingView: View {
         }
     }
 
-    private var emptyJoinedHouseholdsPlaceholder: some View {
-        VStack(spacing: 12) {
+    private func emptyJoinedHouseholdsPlaceholder(compact: Bool, allowsFlexibleHeader: Bool) -> some View {
+        VStack(spacing: compact ? 8 : 12) {
             Image(systemName: "calendar.badge.plus")
-                .font(.system(size: 40, weight: .medium))
+                .font(.system(size: compact ? 28 : 40, weight: .medium))
                 .foregroundStyle(Color.orange.opacity(0.85))
                 .symbolRenderingMode(.hierarchical)
-                .padding(.bottom, 4)
 
             Text(AppLocalized.string(L10n.Family.orgOnboardingTitle, locale: locale))
-                .font(.title3.weight(.bold))
+                .font(compact ? .headline.weight(.bold) : .title3.weight(.bold))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
 
             Text(AppLocalized.string(L10n.Family.orgOnboardingSubtitle, locale: locale))
-                .font(.subheadline)
+                .font(compact ? .footnote : .subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .lineLimit(compact && allowsFlexibleHeader == false ? 2 : 4)
                 .fixedSize(horizontal: false, vertical: true)
 
             Text(AppLocalized.string(L10n.Family.orgOnboardingChoosePath, locale: locale))
-                .font(.subheadline.weight(.semibold))
+                .font(compact ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .padding(.top, 8)
+                .padding(.top, compact ? 2 : 8)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, compact ? 4 : 12)
         .padding(.horizontal, 4)
     }
 
@@ -340,7 +385,14 @@ struct OrgRoutingView: View {
     }
 
     private func handleRecognizedCode(_ raw: String) {
-        guard let code = firstInviteCode(from: raw.uppercased()) else {
+        let upper = raw.uppercased()
+        if upper.contains("WEFAMILY://TRACK"), let code = firstInviteCode(from: upper) {
+            trackedPairingCode = code
+            showJoinSheet = false
+            showClaimTrackedSheet = true
+            return
+        }
+        guard let code = firstInviteCode(from: upper) else {
             joinInputError = AppLocalized.string(L10n.Family.noValidInviteCodeDetected, locale: locale)
             return
         }
@@ -470,38 +522,42 @@ private struct RouteActionCard: View {
     let title: String
     var subtitle: String? = nil
     let backgroundColor: Color
+    var isCompact: Bool = false
     let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 14) {
+            HStack(spacing: isCompact ? 10 : 14) {
                 Image(systemName: icon)
-                    .font(.system(size: 24, weight: .semibold))
+                    .font(.system(size: isCompact ? 18 : 24, weight: .semibold))
                     .foregroundStyle(.blue)
-                    .frame(width: 42, height: 42)
+                    .frame(width: isCompact ? 34 : 42, height: isCompact ? 34 : 42)
                     .background(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .clipShape(RoundedRectangle(cornerRadius: isCompact ? 10 : 12))
 
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: isCompact ? 2 : 4) {
                     Text(title)
-                        .font(AppTheme.FontToken.section)
+                        .font(isCompact ? .subheadline.weight(.semibold) : .body.weight(.semibold))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
+                        .lineLimit(2)
                     if let subtitle, subtitle.isEmpty == false {
                         Text(subtitle)
-                            .font(.subheadline)
+                            .font(isCompact ? .caption : .subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.leading)
+                            .lineLimit(isCompact ? 2 : 3)
                     }
                 }
 
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
+                    .font(isCompact ? .caption.weight(.semibold) : .body)
                     .foregroundStyle(.tertiary)
             }
-            .padding(18)
+            .padding(isCompact ? 12 : 18)
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .clipShape(RoundedRectangle(cornerRadius: isCompact ? 14 : 16))
         }
         .buttonStyle(.plain)
     }

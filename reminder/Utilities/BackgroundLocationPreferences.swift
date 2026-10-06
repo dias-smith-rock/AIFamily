@@ -11,4 +11,8 @@ enum BackgroundLocationPreferences {
     static var isEnabled: Bool {
         UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true
     }
+
+    static func setEnabled(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: storageKey)
+    }
 }

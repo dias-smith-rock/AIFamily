@@ -689,13 +689,28 @@ struct SupabaseHouseholdRoutingService: HouseholdRoutingService {
         #if canImport(Supabase)
         let session = try await provider.client.auth.session
         let userId = session.user.id
-        let rawResponse = try await provider.client
-            .from("household_memberships")
-            .select("id, household_id, profile_id, role, households(id, name, status, is_premium)")
-            .eq("user_id", value: userId.uuidString)
-            .eq("status", value: MembershipStatus.active.rawValue)
-            .order("created_at", ascending: false)
-            .execute()
+        let selectWithTracked =
+            "id, household_id, profile_id, role, is_tracked_device, households(id, name, status, is_premium)"
+        let selectLegacy =
+            "id, household_id, profile_id, role, households(id, name, status, is_premium)"
+        let rawResponse: PostgrestResponse<Data>
+        do {
+            rawResponse = try await provider.client
+                .from("household_memberships")
+                .select(selectWithTracked)
+                .eq("user_id", value: userId.uuidString)
+                .eq("status", value: MembershipStatus.active.rawValue)
+                .order("created_at", ascending: false)
+                .execute()
+        } catch {
+            rawResponse = try await provider.client
+                .from("household_memberships")
+                .select(selectLegacy)
+                .eq("user_id", value: userId.uuidString)
+                .eq("status", value: MembershipStatus.active.rawValue)
+                .order("created_at", ascending: false)
+                .execute()
+        }
         #if DEBUG
         if let rawJSON = String(data: rawResponse.data, encoding: .utf8) {
             print("🔎 [OrgHub] fetchMyJoinedHouseholds raw JSON:\n\(rawJSON)")

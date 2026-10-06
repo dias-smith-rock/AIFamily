@@ -6,7 +6,9 @@ struct ProfileDetailView: View {
     let profile: FamilyProfile
     let roleLabel: LocalizedStringResource
     let canEdit: Bool
+    let canBindTrackedDevice: Bool
     let onEdit: () -> Void
+    var onBindTrackedDevice: (() -> Void)? = nil
 
     @State private var showIdCard = false
     @State private var showPassport = false
@@ -65,6 +67,21 @@ struct ProfileDetailView: View {
                     ProfileDetailRowView(title: L10n.Common.weight, value: profile.weight.map { "\($0) kg" })
                     ProfileDetailRowView(title: L10n.Common.school, value: profile.school)
                     ProfileDetailRowView(title: L10n.Common.grade, value: profile.grade)
+                }
+
+                if canBindTrackedDevice, let onBindTrackedDevice {
+                    Section {
+                        Button {
+                            onBindTrackedDevice()
+                        } label: {
+                            Label(
+                                L10n.Location.trackedBindDeviceAction.localized,
+                                systemImage: "iphone.and.arrow.forward"
+                            )
+                        }
+                    } footer: {
+                        Text(L10n.Location.trackedBindDeviceFooter.localized)
+                    }
                 }
             }
             .listStyle(.insetGrouped)

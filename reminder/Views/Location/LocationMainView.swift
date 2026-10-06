@@ -412,7 +412,8 @@ struct LocationMainView: View {
                             batteryLevel: member.clampedBatteryLevel,
                             isCharging: member.isCharging,
                             lastUpdatedAt: member.currentLocationUpdatedAt,
-                            mapAccentColor: accent
+                            mapAccentColor: accent,
+                            isStale: member.isLikelyOffline
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
                         .animation(.easeInOut(duration: 0.45), value: current.longitude)

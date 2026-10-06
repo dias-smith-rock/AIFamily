@@ -13,6 +13,7 @@ struct FamilyView: View {
     @StateObject private var orgRoutingViewModel = AppViewModels.makeOrgRoutingViewModel()
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
+    @State private var profilePendingTrackedBind: FamilyProfile?
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
 
@@ -174,13 +175,30 @@ struct FamilyView: View {
                 profile: profile,
                 roleLabel: detailRoleLabel(for: profile),
                 canEdit: viewModel.canEditProfile(profile),
+                canBindTrackedDevice: viewModel.canEditProfile(profile),
                 onEdit: {
                     selectedProfileForDetail = nil
                     editingProfile = profile
+                },
+                onBindTrackedDevice: {
+                    selectedProfileForDetail = nil
+                    profilePendingTrackedBind = profile
                 }
             )
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
+        }
+        .sheet(item: $profilePendingTrackedBind) { profile in
+            if let householdId = appRouter.selectedHouseholdId,
+               let membershipId = appRouter.selectedMembershipId {
+                BindTrackedDeviceView(
+                    profile: profile,
+                    householdId: householdId,
+                    managerMembershipId: membershipId
+                )
+                .environment(\.locale, appSettings.appLocale)
+                .environment(\.layoutDirection, appSettings.layoutDirection)
+            }
         }
         .sheet(isPresented: $isShowingRenameHouseholdSheet) {
             OrganizationSettingsSheet(
