@@ -16,16 +16,16 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: {
-    default: "WeSync",
-    template: "%s · WeSync",
+    default: "Family Sync",
+    template: "%s · Family Sync",
   },
   description:
     "Coordinate family schedules, todos, wallet, and location sharing in one place.",
-  applicationName: "WeSync",
+  applicationName: "Family Sync",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "WeSync",
+    title: "Family Sync",
   },
 };
 

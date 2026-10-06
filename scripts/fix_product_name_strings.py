@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Normalize product naming: zh=同圈, en/other=WeSync."""
+"""Normalize product naming: zh=同圈, en/other=Family Sync."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ LOCALES = ["en", "zh-Hans", "zh-Hant", "es", "pt", "ar", "hi", "fr", "ta"]
 OLD_ZH = "家音"
 NEW_ZH = "同圈"
 OLD_EN = "WeFamily"
-NEW_EN = "WeSync"
+NEW_EN = "Family Sync"
 
 
 def make_unit(value: str) -> dict:
@@ -28,85 +28,85 @@ KEY_MIGRATIONS: dict[str, tuple[str, dict[str, str]]] = {
     "关于 WeFamily": (
         "关于同圈",
         {
-            "en": "About WeSync",
+            "en": "About Family Sync",
             "zh-Hans": "关于同圈",
             "zh-Hant": "關於同圈",
-            "es": "Acerca de WeSync",
-            "pt": "Sobre WeSync",
-            "fr": "À propos de WeSync",
-            "ar": "حول WeSync",
-            "hi": "WeSync के बारे में",
-            "ta": "WeSync பற்றி",
+            "es": "Acerca de Family Sync",
+            "pt": "Sobre Family Sync",
+            "fr": "À propos de Family Sync",
+            "ar": "حول Family Sync",
+            "hi": "Family Sync के बारे में",
+            "ta": "Family Sync பற்றி",
         },
     ),
     "欢迎来到 WeFamily": (
         "欢迎来到同圈",
         {
-            "en": "Welcome to WeSync",
+            "en": "Welcome to Family Sync",
             "zh-Hans": "欢迎来到同圈",
             "zh-Hant": "歡迎來到同圈",
-            "es": "Bienvenido a WeSync",
-            "pt": "Bem-vindo ao WeSync",
-            "fr": "Bienvenue sur WeSync",
-            "ar": "مرحبًا بك في WeSync",
-            "hi": "WeSync में आपका स्वागत है",
-            "ta": "WeSyncக்கு வரவேற்கிறோம்",
+            "es": "Bienvenido a Family Sync",
+            "pt": "Bem-vindo ao Family Sync",
+            "fr": "Bienvenue sur Family Sync",
+            "ar": "مرحبًا بك في Family Sync",
+            "hi": "Family Sync में आपका स्वागत है",
+            "ta": "Family Syncக்கு வரவேற்கிறோம்",
         },
     ),
     "登录 家音": (
         "登录同圈",
         {
-            "en": "Sign in to WeSync",
+            "en": "Sign in to Family Sync",
             "zh-Hans": "登录同圈",
             "zh-Hant": "登入同圈",
-            "es": "Iniciar sesión en WeSync",
-            "pt": "Entrar no WeSync",
-            "fr": "Connexion à WeSync",
-            "ar": "تسجيل الدخول إلى WeSync",
-            "hi": "WeSync में साइन इन करें",
-            "ta": "WeSync இல் உள்நுழைக",
+            "es": "Iniciar sesión en Family Sync",
+            "pt": "Entrar no Family Sync",
+            "fr": "Connexion à Family Sync",
+            "ar": "تسجيل الدخول إلى Family Sync",
+            "hi": "Family Sync में साइन इन करें",
+            "ta": "Family Sync இல் உள்நுழைக",
         },
     ),
     "WeFamily": (
-        "WeSync",
+        "Family Sync",
         {
-            "en": "WeSync",
+            "en": "Family Sync",
             "zh-Hans": "同圈",
             "zh-Hant": "同圈",
-            "es": "WeSync",
-            "pt": "WeSync",
-            "fr": "WeSync",
-            "ar": "WeSync",
-            "hi": "WeSync",
-            "ta": "WeSync",
+            "es": "Family Sync",
+            "pt": "Family Sync",
+            "fr": "Family Sync",
+            "ar": "Family Sync",
+            "hi": "Family Sync",
+            "ta": "Family Sync",
         },
     ),
     "让对方使用家音 App 扫码，或输入下方邀请码即可加入。": (
         "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。",
         {
-            "en": "Ask the other party to use the WeSync app to scan the code, or enter the invitation code below to join.",
+            "en": "Ask the other party to use the Family Sync app to scan the code, or enter the invitation code below to join.",
             "zh-Hans": "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。",
             "zh-Hant": "請對方使用同圈 App 掃碼，或輸入下方邀請碼即可加入。",
-            "es": "Pídale a la otra parte que use la aplicación WeSync para escanear el código o ingrese el código de invitación a continuación para unirse.",
-            "pt": "Peça à outra parte para usar o aplicativo WeSync para escanear o código ou insira o código de convite abaixo para participar.",
-            "fr": "Demandez à l'autre partie d'utiliser l'application WeSync pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre.",
-            "ar": "اطلب من الطرف الآخر استخدام تطبيق WeSync لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام.",
-            "hi": "दूसरे पक्ष से कोड स्कैन करने के लिए WeSync ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।",
-            "ta": "குறியீட்டை ஸ்கேன் செய்ய WeSync ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்.",
+            "es": "Pídale a la otra parte que use la aplicación Family Sync para escanear el código o ingrese el código de invitación a continuación para unirse.",
+            "pt": "Peça à outra parte para usar o aplicativo Family Sync para escanear o código ou insira o código de convite abaixo para participar.",
+            "fr": "Demandez à l'autre partie d'utiliser l'application Family Sync pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre.",
+            "ar": "اطلب من الطرف الآخر استخدام تطبيق Family Sync لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام.",
+            "hi": "दूसरे पक्ष से कोड स्कैन करने के लिए Family Sync ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।",
+            "ta": "குறியீட்டை ஸ்கேன் செய்ய Family Sync ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்.",
         },
     ),
     "邀请你加入家音群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。": (
         "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。",
         {
-            "en": "You're invited to join a WeSync group! Copy this invite code: %1$@, or scan the QR code in the app.",
+            "en": "You're invited to join a Family Sync group! Copy this invite code: %1$@, or scan the QR code in the app.",
             "zh-Hans": "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。",
             "zh-Hant": "邀請你加入同圈群組空間！請複製此邀請碼：%1$@，或使用 App 掃碼加入。",
-            "es": "¡Te invitan a unirte a un grupo de WeSync! Copia este código de invitación: %1$@, o escanea el código QR en la app.",
-            "pt": "Você foi convidado a entrar em um grupo WeSync! Copie este código de convite: %1$@, ou escaneie o QR code no app.",
-            "fr": "Vous êtes invité à rejoindre un groupe WeSync ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app.",
-            "ar": "أنت مدعو للانضمام إلى مجموعة WeSync! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق.",
-            "hi": "आपको WeSync समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।",
-            "ta": "WeSync குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்.",
+            "es": "¡Te invitan a unirte a un grupo de Family Sync! Copia este código de invitación: %1$@, o escanea el código QR en la app.",
+            "pt": "Você foi convidado a entrar em um grupo Family Sync! Copie este código de convite: %1$@, ou escaneie o QR code no app.",
+            "fr": "Vous êtes invité à rejoindre un groupe Family Sync ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app.",
+            "ar": "أنت مدعو للانضمام إلى مجموعة Family Sync! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق.",
+            "hi": "आपको Family Sync समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।",
+            "ta": "Family Sync குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்.",
         },
     ),
 }

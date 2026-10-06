@@ -28,7 +28,7 @@ Rules:
 - amount_yuan: parse ￥/¥/HK$/元/港币; ignore thousand separators; 128元 → 128.
 - participant_hints: extract every person/role the task applies to; empty array if none.`
 
-const SYSTEM_PROMPT = `You are an AI assistant for the family task app "WeSync".
+const SYSTEM_PROMPT = `You are an AI assistant for the family task app "Family Sync".
 Convert OCR text from photos (receipts, school notices, calendars, memos, bills, handwritten notes) into structured task JSON for creating a family task.
 Current year context: 2026. Timezone assumption: Asia/Hong_Kong unless the image clearly states otherwise.
 

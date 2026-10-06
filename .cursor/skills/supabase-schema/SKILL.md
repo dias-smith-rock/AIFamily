@@ -1,7 +1,7 @@
 ---
 name: supabase-schema
 description: >-
-  WeFamily / WeSync Supabase 表结构与 iOS 模型映射（tasks 空间字段、RPC、身份 ID 维度、
+  WeFamily / Family Sync Supabase 表结构与 iOS 模型映射（tasks 空间字段、RPC、身份 ID 维度、
   ledger_transactions、expense_categories、category_tags、transaction_tag_mappings）。
   Use when editing FamilyTask, TaskDataService, RLS-related filters, create_task_with_spatial,
   complete_task_with_spatial, geofence, completion_location, ledger_transactions,

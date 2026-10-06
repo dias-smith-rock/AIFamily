@@ -33,7 +33,7 @@ export default function LoginPage() {
   return (
     <div className={styles.page}>
       <div className={styles.hero}>
-        <p className={styles.brand}>WeSync</p>
+        <p className={styles.brand}>Family Sync</p>
         <h1 className={styles.title}>小圈子协作，不必全员装 App</h1>
         <p className={styles.sub}>
           日程、待办、账本、位置 — 与 iOS 同一家庭数据实时同步。

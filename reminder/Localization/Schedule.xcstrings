@@ -4314,43 +4314,43 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في WeSync."
+            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في Family Sync."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verify your identity to access group schedules and tasks in WeSync."
+            "value": "Verify your identity to access group schedules and tasks in Family Sync."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en WeSync."
+            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en Family Sync."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans WeSync."
+            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans Family Sync."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "WeSync में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+            "value": "Family Sync में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no WeSync."
+            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no Family Sync."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "WeSync இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+            "value": "Family Sync இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
           }
         },
         "zh-Hans": {

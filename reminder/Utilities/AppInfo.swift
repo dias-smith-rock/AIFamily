@@ -14,6 +14,6 @@ enum AppInfo {
     }
 
     static var copyrightLine: String {
-        "Copyright © 2026 WeSync. All rights reserved."
+        "Copyright © 2026 Family Sync. All rights reserved."
     }
 }

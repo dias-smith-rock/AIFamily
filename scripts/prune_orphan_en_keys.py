@@ -18,7 +18,7 @@ from audit_i18n_duplicates import (
 # Extra keys removed by safe-merge (no longer referenced after Swift updates).
 EXTRA_REMOVABLE_KEYS = [
     "%lld 分钟",
-    "Enjoying WeSync?",
+    "Enjoying Family Sync?",
     "好",
 ]
 

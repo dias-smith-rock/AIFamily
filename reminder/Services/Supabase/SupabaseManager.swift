@@ -9,7 +9,7 @@ import Supabase
 /// 按编译配置切换本地 / 云端，避免把本地与线上 URL、密钥混在同一套常量里。
 /// - Note: 本地 REST API 端口以 `supabase/config.toml` 的 `[api].port` 为准（默认 54321）；54323 一般为 Studio。
 enum SupabaseEnvironment {
-    /// WeSync 生产 master：`dirgcwziayipwvwztjbb`
+    /// Family Sync 生产 master：`dirgcwziayipwvwztjbb`
     static var supabaseURL: URL {
         urlOrFail("https://dirgcwziayipwvwztjbb.supabase.co")
     }

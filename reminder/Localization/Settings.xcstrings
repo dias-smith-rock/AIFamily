@@ -1069,55 +1069,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back."
+            "value": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "从系统「日历」导入事件（含已在 iOS 设置中添加的 Google 日历）。同步为单向（系统 → WeSync），在 App 内的修改不会写回系统日历。"
+            "value": "从系统「日历」导入事件（含已在 iOS 设置中添加的 Google 日历）。同步为单向（系统 → Family Sync），在 App 内的修改不会写回系统日历。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "從系統「日曆」匯入事件（含已在 iOS 設定中新增的 Google 日曆）。同步為單向（系統 → WeSync），在 App 內的修改不會寫回系統日曆。"
+            "value": "從系統「日曆」匯入事件（含已在 iOS 設定中新增的 Google 日曆）。同步為單向（系統 → Family Sync），在 App 內的修改不會寫回系統日曆。"
           }
         }
       }

@@ -92,7 +92,7 @@ try await SupabaseManager.shared.client.auth.signInWithOAuth(
 
 游客 `linkIdentity` 时若 OAuth 已绑定另一 `auth.users`，GoTrue 返回 `Identity is already linked to another user`。
 
-**WeSync 产品策略（不提供切换登录、不合并数据）：**
+**Family Sync 产品策略（不提供切换登录、不合并数据）：**
 
 - 客户端识别该错误，弹出专用说明（`auth_identity_already_linked_*`）
 - 引导用户：**换一个 Google/Apple 绑定**，或**继续游客**（当前群组保留在本游客 UUID）

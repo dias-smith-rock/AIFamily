@@ -1,4 +1,4 @@
-# WeSync 订阅（RevenueCat + Supabase）部署检查清单
+# Family Sync 订阅（RevenueCat + Supabase）部署检查清单
 
 适用版本：RevenueCat SDK 购买/恢复 + Webhook 主路径 + 客户端 `sync-revenuecat-entitlement` 兜底。
 

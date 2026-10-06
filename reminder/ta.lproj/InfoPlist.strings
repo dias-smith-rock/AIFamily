@@ -1,9 +1,9 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "WeSync";
-"CFBundleName" = "WeSync";
+"CFBundleDisplayName" = "Family Sync";
+"CFBundleName" = "Family Sync";
 
-"NSCameraUsageDescription" = "WeSync-க்கு அழைப்புக் குறியீடுகளை ஸ்கேன் செய்யவும், அறிவிப்புகள் அல்லது ரசீதுகளை படம் எடுத்து தானாக பணிகளை உருவாக்கவும் கேமரா அணுகல் தேவை.";
+"NSCameraUsageDescription" = "Family Sync-க்கு அழைப்புக் குறியீடுகளை ஸ்கேன் செய்யவும், அறிவிப்புகள் அல்லது ரசீதுகளை படம் எடுத்து தானாக பணிகளை உருவாக்கவும் கேமரா அணுகல் தேவை.";
 "NSPhotoLibraryAddUsageDescription" = "பணி இணைப்பு படங்களை உங்கள் புகைப்பட ஆல்பத்தில் சேமிக்க பயன்படுகிறது.";
-"NSFaceIDUsageDescription" = "WeSync உங்கள் தனிப்பட்ட குழு அட்டவணைகள் மற்றும் பணிகளை பாதுகாக்க Face ID-ஐ பயன்படுத்துகிறது.";
+"NSFaceIDUsageDescription" = "Family Sync உங்கள் தனிப்பட்ட குழு அட்டவணைகள் மற்றும் பணிகளை பாதுகாக்க Face ID-ஐ பயன்படுத்துகிறது.";
 "NSLocationWhenInUseUsageDescription" = "வரைபடத்தில் உங்கள் மற்றும் உறுப்பினர்களின் தோராயமான இடத்தைக் காட்டவும், பணிகளை முடிக்கும்போது இடங்களை பதிவு செய்யவும் பயன்படுகிறது.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "பயன்பாடு பின்னணியில் இருக்கும்போது குழு உறுப்பினர்களுக்கு உங்கள் தோராயமான இடத்தை புதுப்பிக்க பயன்படுகிறது; «நான்» இல் பின்னணி இடத்தை அணைக்கலாம்.";

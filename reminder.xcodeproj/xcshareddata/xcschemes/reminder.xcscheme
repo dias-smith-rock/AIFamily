@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "DD17A5EE2F9F4E500059AE67"
-               BuildableName = "WeSync.app"
+               BuildableName = "Family Sync.app"
                BlueprintName = "reminder"
                ReferencedContainer = "container:reminder.xcodeproj">
             </BuildableReference>
@@ -46,7 +46,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DD17A5EE2F9F4E500059AE67"
-            BuildableName = "WeSync.app"
+            BuildableName = "Family Sync.app"
             BlueprintName = "reminder"
             ReferencedContainer = "container:reminder.xcodeproj">
          </BuildableReference>
@@ -63,7 +63,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "DD17A5EE2F9F4E500059AE67"
-            BuildableName = "WeSync.app"
+            BuildableName = "Family Sync.app"
             BlueprintName = "reminder"
             ReferencedContainer = "container:reminder.xcodeproj">
          </BuildableReference>

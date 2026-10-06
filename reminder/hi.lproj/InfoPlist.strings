@@ -1,9 +1,9 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "WeSync";
-"CFBundleName" = "WeSync";
+"CFBundleDisplayName" = "Family Sync";
+"CFBundleName" = "Family Sync";
 
-"NSCameraUsageDescription" = "WeSync को आमंत्रण कोड स्कैन करने और नोटिस या रसीदें फोटो करके स्वचालित रूप से कार्य बनाने के लिए कैमरा एक्सेस चाहिए।";
+"NSCameraUsageDescription" = "Family Sync को आमंत्रण कोड स्कैन करने और नोटिस या रसीदें फोटो करके स्वचालित रूप से कार्य बनाने के लिए कैमरा एक्सेस चाहिए।";
 "NSPhotoLibraryAddUsageDescription" = "कार्य संलग्नक छवियों को आपके फ़ोटो एल्बम में सहेजने के लिए उपयोग किया जाता है।";
-"NSFaceIDUsageDescription" = "WeSync आपके निजी समूह शेड्यूल और कार्यों की सुरक्षा के लिए Face ID का उपयोग करता है।";
+"NSFaceIDUsageDescription" = "Family Sync आपके निजी समूह शेड्यूल और कार्यों की सुरक्षा के लिए Face ID का उपयोग करता है।";
 "NSLocationWhenInUseUsageDescription" = "मानचित्र पर आपकी और सदस्यों की अनुमानित स्थिति दिखाने और कार्य पूरा करते समय स्थान रिकॉर्ड करने के लिए उपयोग किया जाता है।";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "ऐप पृष्ठभूमि में रहते समय समूह सदस्यों को आपकी अनुमानित स्थिति अपडेट करने के लिए उपयोग किया जाता है; आप «मेरा» में पृष्ठभूमि स्थान बंद कर सकते हैं।";

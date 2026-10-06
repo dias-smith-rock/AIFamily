@@ -1,4 +1,4 @@
-# WeFamily / WeSync Web App
+# WeFamily / Family Sync Web App
 
 部署域名：**https://app.wefamily.ai/**
 

@@ -2779,7 +2779,7 @@
     "orphan": true
   },
   {
-    "legacy_key": "WeSync",
+    "legacy_key": "Family Sync",
     "new_key": "common_wesync",
     "table": "Common",
     "swift_property": "wesync",
@@ -5981,7 +5981,7 @@
     "orphan": true
   },
   {
-    "legacy_key": "This Google or Apple account is already linked to another WeSync user.",
+    "legacy_key": "This Google or Apple account is already linked to another Family Sync user.",
     "new_key": "auth_identity_already_linked_message",
     "table": "Auth",
     "swift_property": "identityAlreadyLinkedMessage",
@@ -6491,7 +6491,7 @@
     "swift_property": "calendarSyncNavTitle"
   },
   {
-    "legacy_key": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → WeSync). Edits in the app are not written back.",
+    "legacy_key": "Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Sync). Edits in the app are not written back.",
     "new_key": "settings_calendar_sync_footer",
     "table": "Settings",
     "swift_property": "calendarSyncFooter"

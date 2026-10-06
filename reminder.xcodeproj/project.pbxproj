@@ -20,7 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		DD17A5EF2F9F4E500059AE67 /* WeSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WeSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD17A5EF2F9F4E500059AE67 /* Family Sync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Family Sync.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -78,7 +78,7 @@
 		DD17A5F02F9F4E500059AE67 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DD17A5EF2F9F4E500059AE67 /* WeSync.app */,
+				DD17A5EF2F9F4E500059AE67 /* Family Sync.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -122,8 +122,8 @@
 				DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */,
 				DDE1RC022FC91B21009FE64F /* RevenueCat */,
 			);
-			productName = WeSync;
-			productReference = DD17A5EF2F9F4E500059AE67 /* WeSync.app */;
+			productName = "Family Sync";
+			productReference = DD17A5EF2F9F4E500059AE67 /* Family Sync.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -366,7 +366,7 @@
 				);
 				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = WeSync;
+				PRODUCT_NAME = "Family Sync";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -402,7 +402,7 @@
 				);
 				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = WeSync;
+				PRODUCT_NAME = "Family Sync";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

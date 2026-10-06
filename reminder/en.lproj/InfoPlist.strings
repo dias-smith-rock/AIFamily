@@ -1,9 +1,9 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "WeSync";
-"CFBundleName" = "WeSync";
+"CFBundleDisplayName" = "Family Sync";
+"CFBundleName" = "Family Sync";
 
-"NSCameraUsageDescription" = "WeSync needs camera access to scan invite codes and capture notices or receipts to auto-create tasks.";
+"NSCameraUsageDescription" = "Family Sync needs camera access to scan invite codes and capture notices or receipts to auto-create tasks.";
 "NSPhotoLibraryAddUsageDescription" = "Used to save task attachment images to your photo library.";
-"NSFaceIDUsageDescription" = "WeSync uses Face ID to protect your private group schedules and tasks.";
+"NSFaceIDUsageDescription" = "Family Sync uses Face ID to protect your private group schedules and tasks.";
 "NSLocationWhenInUseUsageDescription" = "Used to show your and members' approximate locations on the map and record locations when completing tasks.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";

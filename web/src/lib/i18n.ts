@@ -1,7 +1,7 @@
 export type AppLocale = "en" | "zh-Hans" | "zh-Hant";
 
 export const PRODUCT_NAMES: Record<AppLocale, string> = {
-  en: "WeSync",
+  en: "Family Sync",
   "zh-Hans": "记事本",
   "zh-Hant": "記事本",
 };
@@ -81,7 +81,7 @@ export interface UiStrings {
 
 export const UI: Record<AppLocale, UiStrings> = {
   en: {
-    loginTitle: "Sign in to WeSync",
+    loginTitle: "Sign in to Family Sync",
     loginSubtitle: "Coordinate schedules, tasks, and family finances together.",
     signInWithGoogle: "Continue with Google",
     signOut: "Sign out",
