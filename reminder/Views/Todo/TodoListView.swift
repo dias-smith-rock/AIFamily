@@ -35,31 +35,37 @@ struct TodoListView: View {
     @ViewBuilder
     private var todoMainContent: some View {
         if viewModel.isLoading {
-            ProgressView(L10n.Schedule.loadingTasks.localized)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            pullToRefreshScrollContainer {
+                ProgressView(L10n.Schedule.loadingTasks.localized)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         } else if let message = viewModel.errorMessage {
-            ContentUnavailableView {
-                Label(L10n.Common.loading.localized, systemImage: "exclamationmark.triangle")
-            } description: {
-                Text(message)
-            } actions: {
-                Button(L10n.Common.reload) {
-                    Task { await viewModel.loadTasks(force: true) }
+            pullToRefreshScrollContainer {
+                ContentUnavailableView {
+                    Label(L10n.Common.loading.localized, systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button(L10n.Common.reload) {
+                        Task { await viewModel.loadTasks(force: true) }
+                    }
                 }
             }
         } else if viewModel.hasOpenFlexibleTasks == false {
             if viewModel.completedTasks.isEmpty {
-                ContentUnavailableView {
-                    Label(L10n.Common.noToDosYet.localized, systemImage: "checklist")
-                } description: {
-                    Text(L10n.Schedule.addTasksWithoutASetStartTimeCompleteThem.localized)
-                } actions: {
-                    Button(L10n.Common.newToDo) {
-                        AnalyticsManager.logEmptyStateCTATapped(
-                            surface: AnalyticsManager.EmptyStateSurface.todo,
-                            cta: AnalyticsManager.EmptyStateCTA.create
-                        )
-                        presentCreateFlexible()
+                pullToRefreshScrollContainer {
+                    ContentUnavailableView {
+                        Label(L10n.Common.noToDosYet.localized, systemImage: "checklist")
+                    } description: {
+                        Text(L10n.Schedule.addTasksWithoutASetStartTimeCompleteThem.localized)
+                    } actions: {
+                        Button(L10n.Common.newToDo) {
+                            AnalyticsManager.logEmptyStateCTATapped(
+                                surface: AnalyticsManager.EmptyStateSurface.todo,
+                                cta: AnalyticsManager.EmptyStateCTA.create
+                            )
+                            presentCreateFlexible()
+                        }
                     }
                 }
             } else {
@@ -331,11 +337,12 @@ struct TodoListView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
+        .scrollBounceBehavior(.always)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             todoSummaryFooterInset
         }
         .refreshable {
-            await viewModel.loadTasks(silent: true, force: true)
+            await refreshTodos()
         }
     }
 
@@ -385,12 +392,32 @@ struct TodoListView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
         }
+        .scrollBounceBehavior(.always)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             todoSummaryFooterInset
         }
         .refreshable {
-            await viewModel.loadTasks(silent: true, force: true)
+            await refreshTodos()
         }
+    }
+
+    private func pullToRefreshScrollContainer<Content: View>(
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        GeometryReader { proxy in
+            ScrollView {
+                content()
+                    .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+            }
+            .scrollBounceBehavior(.always)
+            .refreshable {
+                await refreshTodos()
+            }
+        }
+    }
+
+    private func refreshTodos() async {
+        await viewModel.loadTasks(silent: true, force: true)
     }
 
     private var compactCompletedSummaryCard: some View {

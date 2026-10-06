@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>WeSync</string>
+	<string>Family Sync</string>
 	<key>CFBundleName</key>
-	<string>WeSync</string>
+	<string>Family Sync</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -35,19 +35,19 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>WeSync needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.</string>
+	<string>Family Sync needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Used to save task attachment images to your photo library.</string>
 	<key>NSFaceIDUsageDescription</key>
-	<string>WeSync uses Face ID to protect your private group schedules and tasks.</string>
+	<string>Family Sync uses Face ID to protect your private group schedules and tasks.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Used to show your approximate location and members on the map, and record locations when completing tasks.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>WeSync needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.</string>
+	<string>Family Sync needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>WeSync needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.</string>
+	<string>Family Sync needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
