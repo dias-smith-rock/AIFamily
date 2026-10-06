@@ -2324,6 +2324,34 @@
         "ta": { "stringUnit": { "state": "translated", "value": "Return to login" } }
       }
     },
+    "auth_i_already_have_an_account_or_want_to_register": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "我已有账号或我要注册账号" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "我已有帳號或我要註冊帳號" } },
+        "es": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } }
+      }
+    },
+    "auth_i_already_have_an_account_or_want_to_register_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用 Apple 或 Google 登录 / 注册" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用 Apple 或 Google 登入 / 註冊" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
+        "ar": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } }
+      }
+    },
     "auth_anonymous_bind_after_group_title": {
       "extractionState": "manual",
       "localizations": {

@@ -127,30 +127,21 @@ struct OrgRoutingView: View {
                 .navigationTitle(AppLocalized.string(L10n.Common.welcomeToWesync, locale: locale))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            if appRouter.isAnonymousUser {
-                                showGuestExitDialog = true
-                            } else {
+                    if appRouter.isAnonymousUser == false {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
                                 showRegisteredSignOutAlert = true
+                            } label: {
+                                if isSigningOut {
+                                    ProgressView()
+                                } else {
+                                    Text(AppLocalized.string(L10n.Auth.logOut, locale: locale))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
-                        } label: {
-                            if isSigningOut {
-                                ProgressView()
-                            } else {
-                                Text(
-                                    AppLocalized.string(
-                                        appRouter.isAnonymousUser
-                                            ? L10n.Auth.returnToLogin
-                                            : L10n.Auth.logOut,
-                                        locale: locale
-                                    )
-                                )
-                                .font(.subheadline)
-                                .foregroundStyle(.tertiary)
-                            }
+                            .disabled(isSigningOut)
                         }
-                        .disabled(isSigningOut)
                     }
                 }
         }
@@ -185,6 +176,24 @@ struct OrgRoutingView: View {
                 ) {
                     joinInputError = nil
                     showJoinSheet = true
+                }
+
+                if appRouter.isAnonymousUser {
+                    RouteActionCard(
+                        icon: "person.crop.circle.badge.checkmark",
+                        title: AppLocalized.string(
+                            L10n.Auth.iAlreadyHaveAnAccountOrWantToRegister,
+                            locale: locale
+                        ),
+                        subtitle: AppLocalized.string(
+                            L10n.Auth.iAlreadyHaveAnAccountOrWantToRegisterSubtitle,
+                            locale: locale
+                        ),
+                        backgroundColor: Color.blue.opacity(0.10)
+                    ) {
+                        handleExistingAccountOrRegisterTap()
+                    }
+                    .disabled(isSigningOut)
                 }
             }
             .padding(20)
@@ -257,6 +266,15 @@ struct OrgRoutingView: View {
     private func refreshHouseholdRouting() async {
         guard appRouter.isResolvingHouseholdRouting == false else { return }
         await viewModel.fetchMyHouseholds(appRouter: appRouter)
+    }
+
+    /// 无群组等用户数据时直接回登录页；已有数据则弹出游客退出选项，避免误清。
+    private func handleExistingAccountOrRegisterTap() {
+        if viewModel.joinedHouseholds.isEmpty {
+            SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
+        } else {
+            showGuestExitDialog = true
+        }
     }
 
     private func routingOverlay(message: L10n.Entry) -> some View {

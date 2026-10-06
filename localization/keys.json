@@ -5939,6 +5939,20 @@
     "orphan": true
   },
   {
+    "legacy_key": "我已有账号或我要注册账号",
+    "new_key": "auth_i_already_have_an_account_or_want_to_register",
+    "table": "Auth",
+    "swift_property": "iAlreadyHaveAnAccountOrWantToRegister",
+    "orphan": false
+  },
+  {
+    "legacy_key": "使用 Apple 或 Google 登录 / 注册",
+    "new_key": "auth_i_already_have_an_account_or_want_to_register_subtitle",
+    "table": "Auth",
+    "swift_property": "iAlreadyHaveAnAccountOrWantToRegisterSubtitle",
+    "orphan": false
+  },
+  {
     "legacy_key": "Keep your group on every device?",
     "new_key": "auth_anonymous_bind_after_group_title",
     "table": "Auth",
