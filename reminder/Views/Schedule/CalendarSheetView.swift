@@ -6,16 +6,23 @@ struct CalendarSheetView: View {
     let monthTaskDots: [Date: [Color]]
     @Environment(\.locale) private var locale
     @Environment(\.dismiss) private var dismiss
-    @State private var monthOffset = 0
+    @State private var monthOffset: Int
     @State private var headerMonth: Date
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+    private let weekRowCount = 6
+    private let dayCellMinHeight: CGFloat = 44
+    private let gridSpacing: CGFloat = 8
 
     init(selectedDate: Binding<Date>, monthTaskDots: [Date: [Color]]) {
         self._selectedDate = selectedDate
         self.monthTaskDots = monthTaskDots
-        let monthStart = Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: selectedDate.wrappedValue)) ?? selectedDate.wrappedValue
+        let calendar = Self.displayCalendar()
+        let monthStart = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: selectedDate.wrappedValue)
+        ) ?? selectedDate.wrappedValue
         self._headerMonth = State(initialValue: monthStart)
+        self._monthOffset = State(initialValue: Self.clampedMonthOffset(from: selectedDate.wrappedValue, calendar: calendar))
     }
 
     var body: some View {
@@ -28,6 +35,7 @@ struct CalendarSheetView: View {
                     selectedDate = dayID(Date())
                     withAnimation(.easeInOut(duration: 0.25)) {
                         monthOffset = 0
+                        headerMonth = monthDate(for: 0)
                     }
                 }
                 .font(.system(size: 13, weight: .semibold))
@@ -48,7 +56,7 @@ struct CalendarSheetView: View {
             }
 
             HStack {
-                ForEach(localizedShortWeekdaySymbols, id: \.self) { symbol in
+                ForEach(Array(localizedShortWeekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
@@ -58,50 +66,19 @@ struct CalendarSheetView: View {
 
             TabView(selection: $monthOffset) {
                 ForEach(-12...12, id: \.self) { offset in
-                    let month = monthDate(for: offset)
-                    let cells = monthGridCells(for: month)
-                    LazyVGrid(columns: columns, spacing: 8) {
-                        ForEach(cells.indices, id: \.self) { index in
-                            if let date = cells[index] {
-                                Button {
-                                    selectedDate = dayID(date)
-                                } label: {
-                                    VStack(spacing: 4) {
-                                        Text(String(Calendar.current.component(.day, from: date)))
-                                            .font(.system(size: 14, weight: .semibold))
-                                            .foregroundStyle(isSelected(date) ? .white : .primary)
-
-                                        HStack(spacing: 3) {
-                                            let dots = monthTaskDots[Calendar.current.startOfDay(for: date)] ?? []
-                                            ForEach(Array(dots.prefix(3).enumerated()), id: \.offset) { _, color in
-                                                Circle()
-                                                    .fill(isSelected(date) ? Color.white : color)
-                                                    .frame(width: 5, height: 5)
-                                            }
-                                        }
-                                        .frame(height: 8)
-                                    }
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                                    .background(isSelected(date) ? Color.black : Color.clear)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                                }
-                                .buttonStyle(.plain)
-                            } else {
-                                Color.clear
-                                    .frame(height: 44)
-                            }
-                        }
-                    }
-                    .tag(offset)
+                    monthGrid(for: offset)
+                        .tag(offset)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
+            .frame(height: monthGridHeight)
+            .clipped()
             .onChange(of: monthOffset) { _, newOffset in
                 headerMonth = monthDate(for: newOffset)
             }
             .onChange(of: selectedDate) { _, newDate in
-                let visibleOffset = monthOffsetDateDifference(from: newDate)
-                if (-12...12).contains(visibleOffset), visibleOffset != monthOffset {
+                let visibleOffset = Self.clampedMonthOffset(from: newDate, calendar: calendar)
+                if visibleOffset != monthOffset {
                     monthOffset = visibleOffset
                     headerMonth = monthDate(for: visibleOffset)
                 }
@@ -110,22 +87,67 @@ struct CalendarSheetView: View {
         .padding(16)
     }
 
+    private var monthGridHeight: CGFloat {
+        CGFloat(weekRowCount) * dayCellMinHeight + CGFloat(weekRowCount - 1) * gridSpacing
+    }
+
+    private var calendar: Calendar {
+        Self.displayCalendar(locale: locale)
+    }
+
+    @ViewBuilder
+    private func monthGrid(for offset: Int) -> some View {
+        let month = monthDate(for: offset)
+        let cells = monthGridCells(for: month)
+        LazyVGrid(columns: columns, spacing: gridSpacing) {
+            ForEach(cells.indices, id: \.self) { index in
+                if let date = cells[index] {
+                    Button {
+                        selectedDate = dayID(date)
+                    } label: {
+                        VStack(spacing: 4) {
+                            Text(String(calendar.component(.day, from: date)))
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(isSelected(date) ? .white : .primary)
+
+                            HStack(spacing: 3) {
+                                let dots = monthTaskDots[calendar.startOfDay(for: date)] ?? []
+                                ForEach(Array(dots.prefix(3).enumerated()), id: \.offset) { _, color in
+                                    Circle()
+                                        .fill(isSelected(date) ? Color.white : color)
+                                        .frame(width: 5, height: 5)
+                                }
+                            }
+                            .frame(height: 8)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: dayCellMinHeight)
+                        .background(isSelected(date) ? Color.black : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Color.clear
+                        .frame(height: dayCellMinHeight)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
     private var headerText: String {
         headerMonth.formatted(.dateTime.month(.wide).year().locale(locale))
     }
 
     private var localizedShortWeekdaySymbols: [String] {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.locale = locale
-        return calendar.shortWeekdaySymbols
+        let symbols = calendar.shortWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        guard first > 0, first < symbols.count else { return symbols }
+        return Array(symbols[first...]) + Array(symbols[..<first])
     }
 
     private func monthGridCells(for monthBaseDate: Date) -> [Date?] {
-        let calendar = Calendar.current
-        guard
-            let monthInterval = calendar.dateInterval(of: .month, for: monthBaseDate)
-        else {
-            return []
+        guard let monthInterval = calendar.dateInterval(of: .month, for: monthBaseDate) else {
+            return Array(repeating: nil, count: weekRowCount * 7)
         }
 
         let firstDay = monthInterval.start
@@ -139,32 +161,40 @@ struct CalendarSheetView: View {
                 cells.append(date)
             }
         }
-        while cells.count % 7 != 0 {
+        while cells.count < weekRowCount * 7 {
             cells.append(nil)
         }
-
+        if cells.count > weekRowCount * 7 {
+            cells = Array(cells.prefix(weekRowCount * 7))
+        }
         return cells
     }
 
     private func isSelected(_ date: Date) -> Bool {
-        Calendar.current.isDate(date, inSameDayAs: selectedDate)
+        calendar.isDate(date, inSameDayAs: selectedDate)
     }
 
     private func monthDate(for offset: Int) -> Date {
-        let calendar = Calendar.current
         let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
         return calendar.date(byAdding: .month, value: offset, to: currentMonthStart) ?? currentMonthStart
     }
 
-    private func monthOffsetDateDifference(from date: Date) -> Int {
-        let calendar = Calendar.current
+    private func dayID(_ date: Date) -> Date {
+        calendar.startOfDay(for: date)
+    }
+
+    private static func displayCalendar(locale: Locale? = nil) -> Calendar {
+        var calendar = AppDisplayTimeZone.calendar()
+        if let locale {
+            calendar.locale = locale
+        }
+        return calendar
+    }
+
+    private static func clampedMonthOffset(from date: Date, calendar: Calendar) -> Int {
         let currentMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: Date())) ?? Date()
         let targetMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: date)) ?? date
         let diff = calendar.dateComponents([.month], from: currentMonthStart, to: targetMonthStart).month ?? 0
         return max(-12, min(12, diff))
-    }
-
-    private func dayID(_ date: Date) -> Date {
-        Calendar.current.startOfDay(for: date)
     }
 }
