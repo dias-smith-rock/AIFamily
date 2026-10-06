@@ -25,16 +25,17 @@ enum EditTaskViewModel {
         mode == .flexible
     }
 
-    /// 灵活待办默认截止：当日 23:59。
+    /// 灵活待办默认截止：今天起一个月后的 23:59。
     static func defaultFlexibleDeadlineDate(now: Date = Date()) -> Date {
-        let calendar = Calendar.current
+        let calendar = AppDisplayTimeZone.calendar()
         let dayStart = calendar.startOfDay(for: now)
-        return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: dayStart) ?? dayStart
+        let monthLater = calendar.date(byAdding: .month, value: 1, to: dayStart) ?? dayStart
+        return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: monthLater) ?? monthLater
     }
 
     /// 持久化前归一化：所选自然日的 23:59。
     static func normalizedFlexibleEndDatetime(from pickerDate: Date) -> Date {
-        let calendar = Calendar.current
+        let calendar = AppDisplayTimeZone.calendar()
         let dayStart = calendar.startOfDay(for: pickerDate)
         return calendar.date(bySettingHour: 23, minute: 59, second: 0, of: dayStart) ?? dayStart
     }

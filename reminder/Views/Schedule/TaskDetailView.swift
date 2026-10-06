@@ -879,7 +879,9 @@ struct TaskDetailView: View {
     }
 
     private var flexibleDeadlineDetailText: String {
-        let day = task.flexibleDeadlineDay ?? task.endDatetime ?? task.createdAt
+        guard let day = task.flexibleDeadlineDay ?? task.endDatetime else {
+            return AppLocalized.string(L10n.Common.noDueDate, locale: locale)
+        }
         return day.formatted(
             .dateTime
                 .month(.defaultDigits)

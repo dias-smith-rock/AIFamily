@@ -288,6 +288,7 @@ struct CreateTaskView: View {
     @State private var durationPickerDate = CreateTaskView.makeDurationPickerDate(minutes: FamilyTask.defaultDurationMinutes)
     @State private var isAllDay = false
     @State private var flexibleDeadlineDate = EditTaskViewModel.defaultFlexibleDeadlineDate()
+    @State private var hasFlexibleDeadline = true
     @State private var selectedRecurrence: TaskRecurrenceRule = .none
     /// 「每隔几天」步进值（仅 `custom` 使用，范围 2…365）。
     @State private var recurrenceInterval: Int = 2
@@ -456,6 +457,7 @@ struct CreateTaskView: View {
                 initialValue: task.endDatetime
                     ?? EditTaskViewModel.defaultFlexibleDeadlineDate()
             )
+            _hasFlexibleDeadline = State(initialValue: task.endDatetime != nil)
             let inferred = TaskRecurrenceRule.inferred(from: task.recurrenceRule, recurrenceInterval: task.recurrenceInterval)
             _selectedRecurrence = State(initialValue: inferred)
             let customFromTask = max(2, min(365, task.recurrenceInterval ?? 2))
@@ -505,6 +507,7 @@ struct CreateTaskView: View {
             _flexibleDeadlineDate = State(
                 initialValue: initialEndDatetime ?? EditTaskViewModel.defaultFlexibleDeadlineDate()
             )
+            _hasFlexibleDeadline = State(initialValue: true)
             _selectedRecurrence = State(initialValue: .none)
             _recurrenceInterval = State(initialValue: 2)
             _recurrenceEndDate = State(initialValue: Calendar.current.date(byAdding: .month, value: 6, to: resolvedDue) ?? resolvedDue)
@@ -590,14 +593,7 @@ struct CreateTaskView: View {
 
             Spacer(minLength: 8)
 
-            DatePicker(
-                "",
-                selection: $flexibleDeadlineDate,
-                displayedComponents: [.date]
-            )
-            .labelsHidden()
-            .datePickerStyle(.compact)
-            .accessibilityLabel(L10n.Common.dueBy.localized)
+            flexibleDeadlineTrailingControls
         }
     }
 
@@ -869,12 +865,7 @@ struct CreateTaskView: View {
                 title: AppLocalized.string(L10n.Common.dueBy, locale: locale),
                 iconColor: formIconAccent
             ) {
-                CreateTaskFormDateTimePicker(
-                    selection: $flexibleDeadlineDate,
-                    mode: .date,
-                    locale: locale,
-                    accent: formIconAccent
-                )
+                flexibleDeadlineTrailingControls
             }
         }
         .background(Color(.secondarySystemGroupedBackground))
@@ -882,6 +873,45 @@ struct CreateTaskView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var flexibleDeadlineTrailingControls: some View {
+        HStack(spacing: 8) {
+            if hasFlexibleDeadline {
+                CreateTaskFormDateTimePicker(
+                    selection: $flexibleDeadlineDate,
+                    mode: .date,
+                    locale: locale,
+                    accent: formIconAccent
+                )
+                Button {
+                    hasFlexibleDeadline = false
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.Common.noDueDate)
+            } else {
+                Button {
+                    hasFlexibleDeadline = true
+                    flexibleDeadlineDate = EditTaskViewModel.defaultFlexibleDeadlineDate()
+                } label: {
+                    Text(L10n.Common.noDueDate.localized)
+                        .font(.footnote)
+                        .foregroundStyle(formIconAccent)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            Color(.tertiarySystemFill),
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -3652,6 +3682,7 @@ private extension CreateTaskView {
 
     func resolvedEndDatetimeForPayload() -> Date? {
         if isFlexibleMode {
+            guard hasFlexibleDeadline else { return nil }
             return EditTaskViewModel.normalizedFlexibleEndDatetime(from: flexibleDeadlineDate)
         }
         return resolvedEndDatetime(for: dueDate)
