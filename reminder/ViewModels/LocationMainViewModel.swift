@@ -8,6 +8,7 @@ final class LocationMainViewModel: ObservableObject {
     @Published private(set) var members: [UserLocationState] = []
     @Published var selectedMemberIDs: Set<UUID> = []
     @Published var isMemberListExpanded = false
+    @Published var historyDateRange = LocationHistoryDateRange.today()
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
     /// 本机刚读取的坐标，用于地图展示当前用户（隐身时亦显示，不一定写入服务端）。
@@ -59,6 +60,15 @@ final class LocationMainViewModel: ObservableObject {
             }
             return display
         }
+    }
+
+    func listDisplayMember(_ member: UserLocationState) -> UserLocationState {
+        displayStateForMap(member)
+    }
+
+    func selectPresetHistoryRange(_ kind: LocationHistoryDateRange.Kind) {
+        guard kind != .custom else { return }
+        historyDateRange.kind = kind
     }
 
     /// 本机隐身偏好（不向服务器同步；不受 Live 临时覆盖影响）。
@@ -302,16 +312,34 @@ final class LocationMainViewModel: ObservableObject {
 
     private func displayStateForMap(_ member: UserLocationState) -> UserLocationState {
         var updated = member
-        if member.isCurrentUser, let live = currentUserLiveLocation {
-            updated.currentLocation = live
+        if isLiveModeActive {
+            if member.isCurrentUser, let live = currentUserLiveLocation {
+                updated.currentLocation = live
+            }
+            if member.isCurrentUser {
+                let monitor = DeviceBatteryMonitor.shared
+                updated.batteryLevel = monitor.batteryLevel
+                updated.isCharging = monitor.isCharging
+            }
+            updated.isGhostMode = member.isCurrentUser ? false : updated.isGhostMode
+            return updated
         }
-        if member.isCurrentUser {
+
+        let calendar = AppDisplayTimeZone.calendar()
+        let now = Date()
+        let interval = historyDateRange.interval(now: now, calendar: calendar)
+        let includesNow = historyDateRange.includesNow(now, calendar: calendar)
+        updated = member.applyingHistoryFilter(interval: interval, includesNow: includesNow)
+
+        if includesNow, member.isCurrentUser, let live = currentUserLiveLocation {
+            updated.currentLocation = live
+            updated.hasNoPointsInSelectedRange = false
+            updated.lastUpdatedAt = live.recordedAt ?? now
+        }
+        if includesNow, member.isCurrentUser {
             let monitor = DeviceBatteryMonitor.shared
             updated.batteryLevel = monitor.batteryLevel
             updated.isCharging = monitor.isCharging
-        }
-        if isLiveModeActive, member.isCurrentUser {
-            updated.isGhostMode = false
         }
         return updated
     }

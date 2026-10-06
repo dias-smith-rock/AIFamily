@@ -11,12 +11,17 @@ struct LocationMainView: View {
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
+    @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel: LocationMainViewModel
     @StateObject private var liveManager: LiveLocationManager
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isExitLiveModeAlertPresented = false
     @State private var isRefreshingMapLocations = false
     @State private var isLiveSharingPanelExpanded = false
+    @State private var isHistoryRangeDialogPresented = false
+    @State private var isCustomHistoryRangePresented = false
+    @State private var customHistoryStart = Date()
+    @State private var customHistoryEnd = Date()
     @State private var fitCameraTask: Task<Void, Never>?
     @AppStorage(LocationMapDisplayPreferences.displayCountStorageKey)
     private var mapHistoryDisplayCount = LocationMapDisplayPreferences.defaultHistoryDisplayCount
@@ -80,6 +85,7 @@ struct LocationMainView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.92)))
                 } else {
                     HStack(alignment: .bottom) {
+                        historyRangeControl
                         Spacer(minLength: 0)
                         memberListOverlay
                     }
@@ -92,6 +98,43 @@ struct LocationMainView: View {
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
         .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)
         .animation(.easeInOut(duration: 0.3), value: liveManager.activeParticipants.count)
+        .confirmationDialog(
+            L10n.Location.historyChooseDate,
+            isPresented: $isHistoryRangeDialogPresented,
+            titleVisibility: .visible
+        ) {
+            Button(L10n.Common.today) {
+                viewModel.selectPresetHistoryRange(.today)
+            }
+            Button(L10n.Location.historyYesterday) {
+                viewModel.selectPresetHistoryRange(.yesterday)
+            }
+            Button(L10n.Location.historyLast3Days) {
+                viewModel.selectPresetHistoryRange(.last3Days)
+            }
+            Button(L10n.Location.historyLast7Days) {
+                viewModel.selectPresetHistoryRange(.last7Days)
+            }
+            Button(L10n.Location.historyLast30Days) {
+                viewModel.selectPresetHistoryRange(.last30Days)
+            }
+            Button(L10n.Location.historyCustom) {
+                presentCustomHistoryRange()
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        }
+        .forcesNonPopoverDialogPresentation()
+        .sheet(isPresented: $isCustomHistoryRangePresented) {
+            LocationCustomHistoryRangeSheet(
+                startDay: $customHistoryStart,
+                endDay: $customHistoryEnd,
+                onApply: applyCustomHistoryRange
+            )
+            .environment(\.locale, appSettings.appLocale)
+        }
+        .onChange(of: viewModel.historyDateRange) { _, _ in
+            fitCameraToLiveAndDisplayedMembers()
+        }
         .alert(L10n.Location.exitLiveLocationMode, isPresented: $isExitLiveModeAlertPresented) {
             Button(L10n.Common.exitLiveMode, role: .destructive) {
                 Task { await liveManager.leaveLiveSession() }
@@ -617,6 +660,65 @@ struct LocationMainView: View {
         )
     }
 
+    // MARK: - History date range
+
+    private var historyRangeControl: some View {
+        Button {
+            liveManager.recordUserInteraction()
+            isHistoryRangeDialogPresented = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "calendar")
+                    .font(.subheadline.weight(.semibold))
+                Text(viewModel.historyDateRange.chipTitle(locale: locale))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(Color.blue)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background {
+                Capsule()
+                    .fill(Color(.systemBackground).opacity(0.96))
+                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 3)
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(Color(.separator).opacity(0.85), lineWidth: 1)
+                    }
+            }
+        }
+        .accessibilityLabel(L10n.Location.historyChooseDate)
+        .accessibilityValue(viewModel.historyDateRange.chipTitle(locale: locale))
+    }
+
+    private func presentCustomHistoryRange() {
+        let calendar = AppDisplayTimeZone.calendar()
+        let today = calendar.startOfDay(for: Date())
+        if viewModel.historyDateRange.kind == .custom {
+            customHistoryStart = calendar.startOfDay(for: viewModel.historyDateRange.customStartDay)
+            customHistoryEnd = calendar.startOfDay(for: viewModel.historyDateRange.customEndDay)
+        } else {
+            customHistoryEnd = today
+            customHistoryStart = calendar.date(byAdding: .day, value: -6, to: today) ?? today
+        }
+        isCustomHistoryRangePresented = true
+    }
+
+    private func applyCustomHistoryRange() {
+        let calendar = AppDisplayTimeZone.calendar()
+        let today = calendar.startOfDay(for: Date())
+        var start = calendar.startOfDay(for: min(customHistoryStart, customHistoryEnd))
+        var end = calendar.startOfDay(for: max(customHistoryStart, customHistoryEnd))
+        if start > today { start = today }
+        if end > today { end = today }
+        if start > end { start = end }
+        viewModel.historyDateRange = LocationHistoryDateRange(
+            kind: .custom,
+            customStartDay: start,
+            customEndDay: end
+        )
+    }
+
     // MARK: - Member list
 
     private var memberListOverlay: some View {
@@ -705,7 +807,7 @@ struct LocationMainView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(viewModel.members) { member in
                         LocationMemberSheetRow(
-                            member: member,
+                            member: viewModel.listDisplayMember(member),
                             isSelected: viewModel.isSelected(memberID: member.id),
                             isInLiveHuddle: liveManager.isLiveModeActive
                                 && liveManager.activeParticipants.contains(member.id),
@@ -903,6 +1005,69 @@ struct LocationMainView: View {
 
 }
 
+private struct LocationCustomHistoryRangeSheet: View {
+    @Binding var startDay: Date
+    @Binding var endDay: Date
+    let onApply: () -> Void
+
+    @Environment(\.dismiss) private var dismiss
+
+    private var calendar: Calendar { AppDisplayTimeZone.calendar() }
+    private var today: Date { calendar.startOfDay(for: Date()) }
+    private var selectableRange: ClosedRange<Date> {
+        Date.distantPast ... today
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                DatePicker(
+                    selection: $startDay,
+                    in: selectableRange,
+                    displayedComponents: .date
+                ) {
+                    Text(L10n.Location.historyStartDate.localized)
+                }
+                .environment(\.timeZone, calendar.timeZone)
+                DatePicker(
+                    selection: $endDay,
+                    in: selectableRange,
+                    displayedComponents: .date
+                ) {
+                    Text(L10n.Location.historyEndDate.localized)
+                }
+                .environment(\.timeZone, calendar.timeZone)
+            }
+            .navigationTitle(L10n.Location.historyCustomTitle.localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.Common.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.Common.ok) {
+                        onApply()
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .onChange(of: startDay) { _, newStart in
+            let start = calendar.startOfDay(for: newStart)
+            if start > calendar.startOfDay(for: endDay) {
+                endDay = start
+            }
+        }
+        .onChange(of: endDay) { _, newEnd in
+            let end = calendar.startOfDay(for: newEnd)
+            if end < calendar.startOfDay(for: startDay) {
+                startDay = end
+            }
+        }
+    }
+}
+
 #Preview {
     LocationMainView(
         viewModel: LocationMainViewModel(
@@ -913,4 +1078,5 @@ struct LocationMainView: View {
     )
     .environmentObject(AppRouter())
     .environmentObject(GroupSwitcherCoordinator())
+    .environmentObject(AppSettingsManager.shared)
 }

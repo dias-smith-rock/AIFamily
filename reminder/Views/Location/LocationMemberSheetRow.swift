@@ -52,8 +52,7 @@ struct LocationMemberSheetRow: View {
                 LiveTrackingBadge()
                     .frame(minWidth: 44, alignment: .trailing)
                     .frame(height: avatarSize)
-            } else if member.isGhostMode == false,
-                      member.isVirtualMember == false || member.currentLocation != nil {
+            } else if member.isGhostMode == false, member.currentLocation != nil {
                 HStack(spacing: 4) {
                     Image(systemName: member.isCharging ? "bolt.fill" : batterySymbol)
                         .font(.caption)
@@ -90,6 +89,9 @@ struct LocationMemberSheetRow: View {
     }
 
     private var subtitleLine: String {
+        if member.hasNoPointsInSelectedRange {
+            return AppLocalized.string(L10n.Location.historyNoPointsInRange, locale: locale)
+        }
         if member.isLikelyOffline {
             return AppLocalized.string(L10n.Location.trackedPossiblyOffline, locale: locale)
         }

@@ -93,6 +93,16 @@ extension L10n {
     static let trackedDeviceModelUnknown = Entry(key: "location_tracked_device_model_unknown", table: .location)
     static let trackedDeviceBoundAt = Entry(key: "location_tracked_device_bound_at", table: .location)
     static let trackedDeviceBoundAtUnknown = Entry(key: "location_tracked_device_bound_at_unknown", table: .location)
+    static let historyChooseDate = Entry(key: "location_history_choose_date", table: .location)
+    static let historyYesterday = Entry(key: "location_history_yesterday", table: .location)
+    static let historyLast3Days = Entry(key: "location_history_last_3_days", table: .location)
+    static let historyLast7Days = Entry(key: "location_history_last_7_days", table: .location)
+    static let historyLast30Days = Entry(key: "location_history_last_30_days", table: .location)
+    static let historyCustom = Entry(key: "location_history_custom", table: .location)
+    static let historyCustomTitle = Entry(key: "location_history_custom_title", table: .location)
+    static let historyStartDate = Entry(key: "location_history_start_date", table: .location)
+    static let historyEndDate = Entry(key: "location_history_end_date", table: .location)
+    static let historyNoPointsInRange = Entry(key: "location_history_no_points_in_range", table: .location)
     static let shownOnTheMapWhenSelected = Entry(key: "location_shown_on_the_map_when_selected", table: .location)
     }
 }

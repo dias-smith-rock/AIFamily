@@ -7169,5 +7169,75 @@
     "table": "Location",
     "swift_property": "trackedLocationServicesOffMessage",
     "orphan": false
+  },
+  {
+    "legacy_key": "Choose a date range",
+    "new_key": "location_history_choose_date",
+    "table": "Location",
+    "swift_property": "historyChooseDate",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Yesterday",
+    "new_key": "location_history_yesterday",
+    "table": "Location",
+    "swift_property": "historyYesterday",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Last 3 days",
+    "new_key": "location_history_last_3_days",
+    "table": "Location",
+    "swift_property": "historyLast3Days",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Last 7 days",
+    "new_key": "location_history_last_7_days",
+    "table": "Location",
+    "swift_property": "historyLast7Days",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Last 30 days",
+    "new_key": "location_history_last_30_days",
+    "table": "Location",
+    "swift_property": "historyLast30Days",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Custom",
+    "new_key": "location_history_custom",
+    "table": "Location",
+    "swift_property": "historyCustom",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Custom dates",
+    "new_key": "location_history_custom_title",
+    "table": "Location",
+    "swift_property": "historyCustomTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Start date",
+    "new_key": "location_history_start_date",
+    "table": "Location",
+    "swift_property": "historyStartDate",
+    "orphan": false
+  },
+  {
+    "legacy_key": "End date",
+    "new_key": "location_history_end_date",
+    "table": "Location",
+    "swift_property": "historyEndDate",
+    "orphan": false
+  },
+  {
+    "legacy_key": "No location in this period",
+    "new_key": "location_history_no_points_in_range",
+    "table": "Location",
+    "swift_property": "historyNoPointsInRange",
+    "orphan": false
   }
 ]

@@ -18,6 +18,10 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
     var batteryLevel: Int
     var isCharging: Bool
     var isCurrentUser: Bool
+    /// 历史日期筛选且区间不含「现在」时，不把点标成「可能离线」。
+    var evaluatesStalenessAgainstNow: Bool = true
+    /// 该成员有上报记录，但当前所选日期范围内没有点。
+    var hasNoPointsInSelectedRange: Bool = false
 
     var currentLocation: LocationPayload? {
         get { locations.first }
@@ -71,8 +75,33 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
 
     /// 超过阈值无新点：家长端展示「可能离线」（非 Live）。
     var isLikelyOffline: Bool {
-        guard isGhostMode == false else { return false }
+        guard isGhostMode == false, evaluatesStalenessAgainstNow else { return false }
         return LocationStaleness.isLikelyOffline(lastUpdatedAt: currentLocationUpdatedAt)
+    }
+
+    func applyingHistoryFilter(interval: DateInterval, includesNow: Bool) -> UserLocationState {
+        var copy = self
+        copy.evaluatesStalenessAgainstNow = includesNow
+        copy.locations = locations.enumerated().compactMap { index, payload in
+            let stamp = payload.recordedAt ?? (index == 0 ? lastUpdatedAt : nil)
+            guard let stamp, interval.contains(stamp) else { return nil }
+            return payload
+        }
+        if let latest = copy.locations.first {
+            copy.hasNoPointsInSelectedRange = false
+            copy.lastUpdatedAt = latest.recordedAt ?? copy.lastUpdatedAt
+            if let battery = latest.clampedBatteryLevel {
+                copy.batteryLevel = battery
+            }
+            if let charging = latest.isCharging {
+                copy.isCharging = charging
+            }
+        } else {
+            let hadAnyStamp = locations.isEmpty == false || lastUpdatedAt != nil
+            copy.hasNoPointsInSelectedRange = hadAnyStamp
+            copy.lastUpdatedAt = nil
+        }
+        return copy
     }
 }
 
