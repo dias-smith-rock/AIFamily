@@ -22,6 +22,7 @@ struct LocationMainView: View {
     @State private var isCustomHistoryRangePresented = false
     @State private var customHistoryStart = Date()
     @State private var customHistoryEnd = Date()
+    @State private var didOfferMapHistoryPremium = false
     @State private var fitCameraTask: Task<Void, Never>?
     @AppStorage(LocationMapDisplayPreferences.displayCountStorageKey)
     private var mapHistoryDisplayCount = LocationMapDisplayPreferences.defaultHistoryDisplayCount
@@ -133,7 +134,9 @@ struct LocationMainView: View {
             .environment(\.locale, appSettings.appLocale)
         }
         .onChange(of: viewModel.historyDateRange) { _, _ in
+            didOfferMapHistoryPremium = false
             fitCameraToLiveAndDisplayedMembers()
+            presentPremiumIfHistoryExceedsLimit()
         }
         .alert(L10n.Location.exitLiveLocationMode, isPresented: $isExitLiveModeAlertPresented) {
             Button(L10n.Common.exitLiveMode, role: .destructive) {
@@ -149,6 +152,7 @@ struct LocationMainView: View {
                 await viewModel.refresh()
                 liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
                 fitCameraToLiveAndDisplayedMembers()
+                presentPremiumIfHistoryExceedsLimit()
             }
         }
         .task(id: locationRefreshToken) {
@@ -159,6 +163,7 @@ struct LocationMainView: View {
             liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
             viewModel.applyCachedDeviceLocationForMap()
             fitCameraToLiveAndDisplayedMembers()
+            presentPremiumIfHistoryExceedsLimit()
             Task {
                 if await NetworkMonitor.shared.isConnected {
                     await liveManager.observeHuddleLobby()
@@ -175,6 +180,7 @@ struct LocationMainView: View {
                 bindLiveContext()
                 viewModel.applyCachedDeviceLocationForMap()
                 fitCameraToLiveAndDisplayedMembers()
+                presentPremiumIfHistoryExceedsLimit()
                 Task {
                     _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
                     if await NetworkMonitor.shared.isConnected {
@@ -299,7 +305,10 @@ struct LocationMainView: View {
         Map(position: $cameraPosition) {
             if liveManager.isLiveModeActive == false {
                 ForEach(viewModel.mapDisplayedMembers) { member in
-                    memberMapContent(for: member)
+                    memberMapContent(
+                        for: member,
+                        overlapSlot: overlappingCurrentAvatarSlots[member.id]
+                    )
                 }
             }
 
@@ -310,8 +319,9 @@ struct LocationMainView: View {
                         rosterFallback: viewModel.members.first(where: { $0.id == item.id })
                     )
                     Annotation(
-                        item.displayName,
-                        coordinate: item.coordinate,
+                        "",
+                        coordinate: overlappingLiveAvatarSlots[item.id]?.mapCoordinate(from: item.coordinate)
+                            ?? item.coordinate,
                         anchor: LivePeerMapMarker.mapCoordinateAnchor
                     ) {
                         LivePeerMapMarker(
@@ -325,6 +335,7 @@ struct LocationMainView: View {
                             headingDegrees: item.headingDegrees,
                             avatarURL: item.avatarURL
                         )
+                        .offset(overlappingLiveAvatarSlots[item.id]?.screenOffset ?? .zero)
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.latitude)
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.longitude)
                         .animation(.linear(duration: 0.12), value: item.headingDegrees)
@@ -369,6 +380,24 @@ struct LocationMainView: View {
         .sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending }
     }
 
+    private var overlappingLiveAvatarSlots: [UUID: MapOverlappingMarkerLayout.Slot] {
+        MapOverlappingMarkerLayout.slots(
+            points: liveHuddleMapAnnotations.map { ($0.id, $0.coordinate) }
+        )
+    }
+
+    private var overlappingCurrentAvatarSlots: [UUID: MapOverlappingMarkerLayout.Slot] {
+        let displayCount = effectiveMapHistoryDisplayCount
+        return MapOverlappingMarkerLayout.slots(
+            points: viewModel.mapDisplayedMembers.compactMap { member in
+                guard let coordinate = member.mapVisibleLocations(displayCount: displayCount).first?.coordinate else {
+                    return nil
+                }
+                return (member.id, coordinate)
+            }
+        )
+    }
+
     private func liveAnnotationCoordinate(for membershipId: UUID) -> CLLocationCoordinate2D? {
         if let coordinate = liveManager.livePeerLocations[membershipId] {
             return coordinate
@@ -381,7 +410,10 @@ struct LocationMainView: View {
     }
 
     @MapContentBuilder
-    private func memberMapContent(for member: UserLocationState) -> some MapContent {
+    private func memberMapContent(
+        for member: UserLocationState,
+        overlapSlot: MapOverlappingMarkerLayout.Slot?
+    ) -> some MapContent {
         let displayCount = effectiveMapHistoryDisplayCount
         let visibleLocations = member.mapVisibleLocations(displayCount: displayCount)
         let coordinates = member.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
@@ -433,12 +465,13 @@ struct LocationMainView: View {
             }
 
             if let current = visibleLocations.first?.coordinate {
+                let markerCoordinate = overlapSlot?.mapCoordinate(from: current) ?? current
                 Annotation(
-                    member.displayName,
-                    coordinate: current,
+                    "",
+                    coordinate: markerCoordinate,
                     anchor: liveManager.isLiveModeActive && member.isCurrentUser
                         ? LivePeerMapMarker.mapCoordinateAnchor
-                        : .center
+                        : UserMapAvatarView.mapCoordinateAnchor
                 ) {
                     if liveManager.isLiveModeActive, member.isCurrentUser {
                         let battery = liveManager.batteryDisplay(for: member.id, rosterFallback: member)
@@ -450,6 +483,7 @@ struct LocationMainView: View {
                             headingDegrees: liveManager.currentHeadingDegrees,
                             avatarURL: member.avatarURL
                         )
+                        .offset(overlapSlot?.screenOffset ?? .zero)
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
                         .animation(.easeInOut(duration: 0.45), value: current.longitude)
                         .animation(.linear(duration: 0.12), value: liveManager.currentHeadingDegrees)
@@ -460,9 +494,9 @@ struct LocationMainView: View {
                             isCharging: member.isCharging,
                             lastUpdatedAt: member.currentLocationUpdatedAt,
                             mapAccentColor: accent,
-                            avatarURL: member.avatarURL,
-                            isStale: member.isLikelyOffline
+                            avatarURL: member.avatarURL
                         )
+                        .offset(overlapSlot?.screenOffset ?? .zero)
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
                         .animation(.easeInOut(duration: 0.45), value: current.longitude)
                     }
@@ -702,6 +736,17 @@ struct LocationMainView: View {
             customHistoryStart = calendar.date(byAdding: .day, value: -6, to: today) ?? today
         }
         isCustomHistoryRangePresented = true
+    }
+
+    private func presentPremiumIfHistoryExceedsLimit() {
+        guard isTabActive, liveManager.isLiveModeActive == false else { return }
+        guard didOfferMapHistoryPremium == false else { return }
+        guard viewModel.exceedsMapHistoryDisplayLimit(
+            displayCount: mapHistoryDisplayCount,
+            hasPremium: appRouter.hasPremiumAccess
+        ) else { return }
+        didOfferMapHistoryPremium = true
+        appRouter.presentPremiumUpgrade()
     }
 
     private func applyCustomHistoryRange() {

@@ -67,7 +67,8 @@ struct LocationPersistSettingsView: View {
                     optionRow(
                         title: historyDisplayCountLabel(for: count),
                         isSelected: normalizedMapHistoryDisplayCount == count,
-                        showsProBadge: count > PremiumLimits.freeMaxMapHistoryDisplayCount
+                        showsProBadge: LocationMapDisplayPreferences.isUnlimited(count)
+                            || count > PremiumLimits.freeMaxMapHistoryDisplayCount
                     ) {
                         guard PremiumLimits.canSetMapHistoryDisplayCount(
                             count,
@@ -255,6 +256,8 @@ struct LocationPersistSettingsView: View {
         case 5: L10n.Common.count5.localized
         case 10: L10n.Common.count10.localized
         case 20: L10n.Common.count20.localized
+        case LocationMapDisplayPreferences.unlimitedHistoryDisplayCount:
+            L10n.Common.unlimited.localized
         default: L10n.Common.count3.localized
         }
     }

@@ -7,7 +7,7 @@ enum PremiumLimits {
     static let freeMaxMembersPerHousehold = 6
     static let freeMaxTaskAttachments = 1
     static let proMaxTaskAttachments = 10
-    /// 免费版地图最多展示 3 个历史点；Pro 最高可选 20 个。
+    /// 免费版地图最多展示 3 个历史点；Pro 可选更高档位或不限。
     static let freeMaxMapHistoryDisplayCount = 3
 
     static func canCreateOrJoinAnotherHousehold(currentCount: Int, hasPremium: Bool) -> Bool {
@@ -23,12 +23,16 @@ enum PremiumLimits {
     }
 
     static func canSetMapHistoryDisplayCount(_ count: Int, hasPremium: Bool) -> Bool {
-        hasPremium || count <= freeMaxMapHistoryDisplayCount
+        if LocationMapDisplayPreferences.isUnlimited(count) { return hasPremium }
+        return hasPremium || count <= freeMaxMapHistoryDisplayCount
     }
 
     static func clampedMapHistoryDisplayCount(_ count: Int, hasPremium: Bool) -> Int {
         let normalized = LocationMapDisplayPreferences.normalizedCount(count)
         guard hasPremium else {
+            if LocationMapDisplayPreferences.isUnlimited(normalized) {
+                return freeMaxMapHistoryDisplayCount
+            }
             return min(normalized, freeMaxMapHistoryDisplayCount)
         }
         return normalized

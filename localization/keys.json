@@ -7239,5 +7239,12 @@
     "table": "Location",
     "swift_property": "historyNoPointsInRange",
     "orphan": false
+  },
+  {
+    "legacy_key": "Unlimited",
+    "new_key": "common_unlimited",
+    "table": "Common",
+    "swift_property": "unlimited",
+    "orphan": false
   }
 ]

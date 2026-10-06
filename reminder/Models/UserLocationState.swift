@@ -56,7 +56,10 @@ struct UserLocationState: Identifiable, Hashable, Sendable {
 
     /// 地图上展示的最近 N 个位置点（newest-first 截取；不影响服务端存储）。
     func mapVisibleLocations(displayCount: Int) -> [LocationPayload] {
-        Array(locations.prefix(LocationMapDisplayPreferences.normalizedCount(displayCount)))
+        guard let cap = LocationMapDisplayPreferences.visiblePrefixCount(displayCount) else {
+            return locations
+        }
+        return Array(locations.prefix(cap))
     }
 
     /// 地图轨迹折线用坐标（最旧 → 最新）。

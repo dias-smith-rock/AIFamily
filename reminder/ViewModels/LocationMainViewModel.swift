@@ -71,6 +71,18 @@ final class LocationMainViewModel: ObservableObject {
         historyDateRange.kind = kind
     }
 
+    /// 日期范围内的点数超过当前展示上限（非 VIP 用于引导购买）。
+    func exceedsMapHistoryDisplayLimit(displayCount: Int, hasPremium: Bool) -> Bool {
+        guard hasPremium == false, isLiveModeActive == false else { return false }
+        let cap = PremiumLimits.clampedMapHistoryDisplayCount(displayCount, hasPremium: hasPremium)
+        guard LocationMapDisplayPreferences.isUnlimited(cap) == false else { return false }
+        return members.contains { member in
+            guard selectedMemberIDs.contains(member.id) else { return false }
+            let display = displayStateForMap(member)
+            return display.isVisibleOnMap && display.locations.count > cap
+        }
+    }
+
     /// 本机隐身偏好（不向服务器同步；不受 Live 临时覆盖影响）。
     var isLocationGhostModeEnabled: Bool {
         guard let householdId, let currentProfileId else { return false }

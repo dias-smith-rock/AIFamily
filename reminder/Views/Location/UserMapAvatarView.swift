@@ -12,8 +12,6 @@ struct UserMapAvatarView: View {
     var lastUpdatedAt: Date?
     var mapAccentColor: Color?
     var avatarURL: URL?
-    /// 非 Live：最后上报过久时降饱和，提示「可能离线」。
-    var isStale: Bool = false
 
     var body: some View {
         VStack(spacing: 2) {
@@ -21,7 +19,7 @@ struct UserMapAvatarView: View {
                 displayName: displayName,
                 batteryLevel: batteryLevel,
                 isCharging: isCharging,
-                mapAccentColor: isStale ? .secondary : mapAccentColor,
+                mapAccentColor: mapAccentColor,
                 avatarURL: avatarURL
             )
             MapAvatarInfoBadge(
@@ -29,9 +27,19 @@ struct UserMapAvatarView: View {
                 isCharging: isCharging,
                 lastUpdatedAt: lastUpdatedAt
             )
+            MapAvatarNameCaption(displayName: displayName)
         }
-        .saturation(isStale ? 0.15 : 1)
-        .opacity(isStale ? 0.75 : 1)
+    }
+
+    /// 地图坐标落在头像圆心（名称与电量在下方）。
+    static var mapCoordinateAnchor: UnitPoint {
+        let spacing: CGFloat = 2
+        let totalHeight = avatarDiameter
+            + spacing
+            + MapAvatarBatteryBadge.badgeHeight
+            + spacing
+            + MapAvatarNameCaption.height
+        return UnitPoint(x: 0.5, y: (avatarDiameter / 2) / totalHeight)
     }
 }
 

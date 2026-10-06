@@ -1,11 +1,9 @@
 import Foundation
 
 enum LocationHistoryLimits {
-    static let maxStoredCount = 20
-
-    /// newest-first：新点 prepend，超出上限丢弃最旧条目。
+    /// newest-first：新点 prepend，不截断历史。
     static func prepending(_ new: LocationPayload, to existing: [LocationPayload]) -> [LocationPayload] {
-        Array([new] + existing).prefix(maxStoredCount).map { $0 }
+        [new] + existing
     }
 
     /// newest-first：仅替换 `locations[0]`，历史轨迹不变（ABCD → EBCD）。

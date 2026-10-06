@@ -20,12 +20,17 @@ struct LivePeerMapMarker: View {
     private static let innerRippleScale: CGFloat = 1.75
     private static let batteryAreaHeight: CGFloat = 22
     private static let batterySpacing: CGFloat = 5
+    private static let nameSpacing: CGFloat = 2
     private static let rippleDuration: TimeInterval = 1.8
     private static let innerRippleDelay: TimeInterval = 0.85
 
-    /// 地图坐标落在头像圆心（而非整块标注含电量的几何中心）。
+    /// 地图坐标落在头像圆心（而非整块标注含电量、名称的几何中心）。
     static var mapCoordinateAnchor: UnitPoint {
-        let totalHeight = markerCanvasSide + batterySpacing + batteryAreaHeight
+        let totalHeight = markerCanvasSide
+            + batterySpacing
+            + batteryAreaHeight
+            + nameSpacing
+            + MapAvatarNameCaption.height
         return UnitPoint(x: 0.5, y: (markerCanvasSide / 2) / totalHeight)
     }
 
@@ -53,11 +58,14 @@ struct LivePeerMapMarker: View {
             }
             .frame(width: Self.markerCanvasSide, height: Self.markerCanvasSide)
 
-            MapAvatarInfoBadge(
-                batteryLevel: batteryLevel,
-                isCharging: isCharging,
-                lastUpdatedAt: lastUpdatedAt
-            )
+            VStack(spacing: Self.nameSpacing) {
+                MapAvatarInfoBadge(
+                    batteryLevel: batteryLevel,
+                    isCharging: isCharging,
+                    lastUpdatedAt: lastUpdatedAt
+                )
+                MapAvatarNameCaption(displayName: displayName)
+            }
         }
     }
 
@@ -325,6 +333,25 @@ struct MapAvatarInfoBadge: View {
             }
         }
         .frame(height: MapAvatarBatteryBadge.badgeHeight)
+    }
+}
+
+struct MapAvatarNameCaption: View {
+    let displayName: String
+
+    static let height: CGFloat = 14
+
+    var body: some View {
+        Text(displayName)
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(.ultraThinMaterial, in: Capsule())
+            .frame(maxWidth: 72, minHeight: Self.height)
+            .lineLimit(1)
     }
 }
 

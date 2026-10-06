@@ -459,6 +459,7 @@ extension L10n {
     static let unexpectedServerResponse = Entry(key: "common_unexpected_server_response", table: .common)
     static let unknownError = Entry(key: "common_unknown_error", table: .common)
     static let unknownErrorPleaseTryAgain = Entry(key: "common_unknown_error_please_try_again", table: .common)
+    static let unlimited = Entry(key: "common_unlimited", table: .common)
     static let unlockPremiumFeatures = Entry(key: "common_unlock_premium_features", table: .common)
     static let unlockPremiumForTheWholeGroupOneSubscript = Entry(key: "common_unlock_premium_for_the_whole_group_one_subscript", table: .common)
     static let unlockWithDevicePasscode = Entry(key: "common_unlock_with_device_passcode", table: .common)
