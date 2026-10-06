@@ -20,6 +20,7 @@ final class NetworkMonitor: ObservableObject {
             let connected = path.status == .satisfied
             Task { @MainActor in
                 guard let self else { return }
+                let wasConnected = self.isConnected
                 self.isConnected = connected
                 if self.hasReceivedInitialPathUpdate == false {
                     self.hasReceivedInitialPathUpdate = true
@@ -32,6 +33,9 @@ final class NetworkMonitor: ObservableObject {
                     for waiter in waiters {
                         waiter.resume(returning: connected)
                     }
+                }
+                if connected, wasConnected == false, self.hasReceivedInitialPathUpdate {
+                    NotificationCenter.default.post(name: .networkDidBecomeConnected, object: nil)
                 }
             }
         }

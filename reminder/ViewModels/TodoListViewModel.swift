@@ -148,6 +148,12 @@ final class TodoListViewModel: ObservableObject {
         }
 
         guard await NetworkMonitor.shared.isConnected else {
+            if restoredFromDisk {
+                errorMessage = nil
+            }
+            #if DEBUG
+            print("[TodoListViewModel] loadTasks skipped reason=offline households=\(householdIds.count)")
+            #endif
             return
         }
 
@@ -373,20 +379,72 @@ final class TodoListViewModel: ObservableObject {
     }
 
     func completeFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID?) async throws {
-        let updated = try await taskService.patchTaskStatus(
-            taskId: task.id,
-            to: .completed,
-            completionLocation: nil,
-            actingMembershipId: actingMembershipId
-        )
-        flexibleTasks.removeAll { $0.id == updated.id }
-        completedTasks.removeAll { $0.id == updated.id }
-        completedTasks.insert(updated, at: 0)
-        AnalyticsManager.logTaskCompleted(
-            taskId: updated.id,
-            householdId: updated.householdId,
-            taskType: AnalyticsManager.analyticsTaskType(for: updated)
-        )
-        NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+        var optimistic = task
+        optimistic.status = .completed
+        flexibleTasks.removeAll { $0.id == optimistic.id }
+        completedTasks.removeAll { $0.id == optimistic.id }
+        completedTasks.insert(optimistic, at: 0)
+        HouseholdLocalCache.upsertTaskInCache(optimistic)
+
+        if await NetworkMonitor.shared.isConnected == false {
+            TaskOfflineOutbox.shared.enqueue(
+                .patchStatus(
+                    taskId: task.id,
+                    status: .completed,
+                    completionLocation: nil,
+                    actingMembershipId: actingMembershipId
+                )
+            )
+            AnalyticsManager.logTaskCompleted(
+                taskId: task.id,
+                householdId: task.householdId,
+                taskType: AnalyticsManager.analyticsTaskType(for: task)
+            )
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            return
+        }
+
+        do {
+            let updated = try await taskService.patchTaskStatus(
+                taskId: task.id,
+                to: .completed,
+                completionLocation: nil,
+                actingMembershipId: actingMembershipId
+            )
+            flexibleTasks.removeAll { $0.id == updated.id }
+            completedTasks.removeAll { $0.id == updated.id }
+            completedTasks.insert(updated, at: 0)
+            HouseholdLocalCache.upsertTaskInCache(updated)
+            AnalyticsManager.logTaskCompleted(
+                taskId: updated.id,
+                householdId: updated.householdId,
+                taskType: AnalyticsManager.analyticsTaskType(for: updated)
+            )
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+        } catch {
+            if Self.isLikelyNetworkFailure(error) {
+                TaskOfflineOutbox.shared.enqueue(
+                    .patchStatus(
+                        taskId: task.id,
+                        status: .completed,
+                        completionLocation: nil,
+                        actingMembershipId: actingMembershipId
+                    )
+                )
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+                return
+            }
+            throw error
+        }
+    }
+
+    private static func isLikelyNetworkFailure(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain { return true }
+        let text = error.localizedDescription.lowercased()
+        return text.contains("network")
+            || text.contains("offline")
+            || text.contains("timed out")
+            || text.contains("internet")
     }
 }

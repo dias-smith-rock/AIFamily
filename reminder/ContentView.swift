@@ -102,6 +102,11 @@ struct ContentView: View {
             guard isLaunchBootstrapComplete == false else { return }
             await runLaunchBootstrap()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .networkDidBecomeConnected)) { _ in
+            Task { @MainActor in
+                await TaskOfflineOutbox.shared.flushIfNeeded()
+            }
+        }
         .task(id: postLaunchForegroundBootstrapToken) {
             guard let postLaunchForegroundBootstrapToken else { return }
             _ = postLaunchForegroundBootstrapToken
@@ -351,11 +356,22 @@ struct ContentView: View {
         DualSessionTokenSync.registerIfNeeded()
         LaunchBootstrapPerformanceTracing.mark("launchBootstrap.dualSessionTokenSync.registered", appRouter: appRouter)
 
-        if networkConnectedAtStart {
+        let hasLocalSession = appRouter.hasPersistedSupabaseSession
+        // 有本地会话时不阻塞 Splash：RevenueCat 放到后台。
+        if networkConnectedAtStart, hasLocalSession == false {
             await LaunchBootstrapPerformanceTracing.measure(
                 "launchBootstrap.bootstrapRevenueCatIfNeeded",
                 appRouter: appRouter
             ) {
+                await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
+            }
+        } else if networkConnectedAtStart {
+            LaunchBootstrapPerformanceTracing.mark(
+                "launchBootstrap.bootstrapRevenueCatIfNeeded.deferred",
+                note: "localSessionFastPath",
+                appRouter: appRouter
+            )
+            Task { @MainActor in
                 await SupabaseAuthManager.bootstrapRevenueCatIfNeeded(appRouter: appRouter)
             }
         } else {
@@ -395,41 +411,82 @@ struct ContentView: View {
             }
 
             appRouter.beginHouseholdRoutingResolve()
-            defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
-            let dismissedSplashEarly = dismissLaunchSplashEarlyIfOfflineLoggedIn(
-                networkConnectedAtStart: networkConnectedAtStart
-            )
+            let dismissedSplashEarly = dismissLaunchSplashEarlyIfLocalSessionReady()
             if dismissedSplashEarly == false {
                 appRouter.goToOrgRouting()
                 LaunchBootstrapPerformanceTracing.mark("launchBootstrap.goToOrgRouting", appRouter: appRouter)
             }
 
-            do {
-                let result = try await LaunchBootstrapPerformanceTracing.measure(
-                    "launchBootstrap.guestResumeOrSignIn",
-                    appRouter: appRouter
-                ) {
-                    try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
-                }
-                await LaunchBootstrapPerformanceTracing.measure(
-                    "launchBootstrap.guestFinishSignInBootstrap",
-                    note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)",
-                    appRouter: appRouter
-                ) {
-                    await SupabaseAuthManager.finishGuestSignInBootstrap(
-                        appRouter: appRouter,
-                        userId: result.userId
-                    )
-                }
-                isUserLoggedIn = true
+            if dismissedSplashEarly {
                 revealedMainUI = true
-                reconcileStaleLoginSession()
-                LaunchBootstrapPerformanceTracing.mark("launchBootstrap.reconcileStaleLoginSession.done", appRouter: appRouter)
-            } catch {
-                GuestLoginPerformanceTracer.cancelTrace(reason: "coldStartFailed \(error.localizedDescription)")
-                LaunchBootstrapPerformanceTracing.cancelTrace(reason: "guestColdStartFailed")
-                SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
-                isUserLoggedIn = false
+                isUserLoggedIn = true
+                Task { @MainActor in
+                    defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
+                    do {
+                        let result = try await LaunchBootstrapPerformanceTracing.measure(
+                            "launchBootstrap.guestResumeOrSignIn.deferred",
+                            appRouter: appRouter
+                        ) {
+                            try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
+                        }
+                        await LaunchBootstrapPerformanceTracing.measure(
+                            "launchBootstrap.guestFinishSignInBootstrap.deferred",
+                            note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)",
+                            appRouter: appRouter
+                        ) {
+                            await SupabaseAuthManager.finishGuestSignInBootstrap(
+                                appRouter: appRouter,
+                                userId: result.userId
+                            )
+                        }
+                        reconcileStaleLoginSession()
+                        LaunchBootstrapPerformanceTracing.mark(
+                            "launchBootstrap.reconcileStaleLoginSession.done",
+                            appRouter: appRouter
+                        )
+                        await TaskOfflineOutbox.shared.flushIfNeeded()
+                    } catch {
+                        GuestLoginPerformanceTracer.cancelTrace(
+                            reason: "coldStartFailed \(error.localizedDescription)"
+                        )
+                        LaunchBootstrapPerformanceTracing.cancelTrace(reason: "guestColdStartFailed")
+                        SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
+                        isUserLoggedIn = false
+                    }
+                }
+            } else {
+                defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
+                do {
+                    let result = try await LaunchBootstrapPerformanceTracing.measure(
+                        "launchBootstrap.guestResumeOrSignIn",
+                        appRouter: appRouter
+                    ) {
+                        try await SupabaseAuthManager.resumeOrSignInAsGuest(appRouter: appRouter)
+                    }
+                    await LaunchBootstrapPerformanceTracing.measure(
+                        "launchBootstrap.guestFinishSignInBootstrap",
+                        note: "userId=\(result.userId.uuidString.lowercased()) resumed=\(result.resumed)",
+                        appRouter: appRouter
+                    ) {
+                        await SupabaseAuthManager.finishGuestSignInBootstrap(
+                            appRouter: appRouter,
+                            userId: result.userId
+                        )
+                    }
+                    isUserLoggedIn = true
+                    revealedMainUI = true
+                    reconcileStaleLoginSession()
+                    LaunchBootstrapPerformanceTracing.mark(
+                        "launchBootstrap.reconcileStaleLoginSession.done",
+                        appRouter: appRouter
+                    )
+                    await TaskOfflineOutbox.shared.flushIfNeeded()
+                } catch {
+                    GuestLoginPerformanceTracer.cancelTrace(reason: "coldStartFailed \(error.localizedDescription)")
+                    LaunchBootstrapPerformanceTracing.cancelTrace(reason: "guestColdStartFailed")
+                    SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
+                    isUserLoggedIn = false
+                }
             }
 
             if isLaunchBootstrapComplete == false {
@@ -445,24 +502,45 @@ struct ContentView: View {
                 appRouter: appRouter
             )
             appRouter.beginHouseholdRoutingResolve()
-            defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
-            let dismissedSplashEarly = dismissLaunchSplashEarlyIfOfflineLoggedIn(
-                networkConnectedAtStart: networkConnectedAtStart
-            )
+            let dismissedSplashEarly = dismissLaunchSplashEarlyIfLocalSessionReady()
             if dismissedSplashEarly == false {
                 appRouter.goToOrgRouting()
                 LaunchBootstrapPerformanceTracing.mark("launchBootstrap.goToOrgRouting", appRouter: appRouter)
             }
             revealedMainUI = true
-            await LaunchBootstrapPerformanceTracing.measure(
-                "launchBootstrap.runAuthAndHouseholdBootstrap",
-                note: "vipLogTrigger=冷启动 bootstrapTrigger=coldStart",
-                appRouter: appRouter
-            ) {
-                await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动", bootstrapTrigger: "coldStart")
+            if dismissedSplashEarly {
+                Task { @MainActor in
+                    defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
+                    await LaunchBootstrapPerformanceTracing.measure(
+                        "launchBootstrap.runAuthAndHouseholdBootstrap.deferred",
+                        note: "vipLogTrigger=冷启动 bootstrapTrigger=coldStart",
+                        appRouter: appRouter
+                    ) {
+                        await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动", bootstrapTrigger: "coldStart")
+                    }
+                    reconcileStaleLoginSession()
+                    LaunchBootstrapPerformanceTracing.mark(
+                        "launchBootstrap.reconcileStaleLoginSession.done",
+                        appRouter: appRouter
+                    )
+                    await TaskOfflineOutbox.shared.flushIfNeeded()
+                }
+            } else {
+                defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
+                await LaunchBootstrapPerformanceTracing.measure(
+                    "launchBootstrap.runAuthAndHouseholdBootstrap",
+                    note: "vipLogTrigger=冷启动 bootstrapTrigger=coldStart",
+                    appRouter: appRouter
+                ) {
+                    await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动", bootstrapTrigger: "coldStart")
+                }
+                reconcileStaleLoginSession()
+                LaunchBootstrapPerformanceTracing.mark(
+                    "launchBootstrap.reconcileStaleLoginSession.done",
+                    appRouter: appRouter
+                )
+                await TaskOfflineOutbox.shared.flushIfNeeded()
             }
-            reconcileStaleLoginSession()
-            LaunchBootstrapPerformanceTracing.mark("launchBootstrap.reconcileStaleLoginSession.done", appRouter: appRouter)
             if isLaunchBootstrapComplete == false {
                 withAnimation(.easeInOut) {
                     isLaunchBootstrapComplete = true
@@ -632,21 +710,22 @@ struct ContentView: View {
         appRouter.clearOfflineHouseholdSnapshot()
     }
 
-    /// 离线已登录：尽快收起 Splash，后台继续 bootstrap（有快照进主 Tab，否则先进组织路由页）。
+    /// 本地有会话时立刻收起 Splash（不依赖离线）；有家庭快照进主 Tab，否则先进组织路由页。
     @MainActor
-    private func dismissLaunchSplashEarlyIfOfflineLoggedIn(networkConnectedAtStart: Bool) -> Bool {
-        guard networkConnectedAtStart == false, appRouter.hasPersistedSupabaseSession else { return false }
+    private func dismissLaunchSplashEarlyIfLocalSessionReady() -> Bool {
+        guard appRouter.hasPersistedSupabaseSession else { return false }
         appRouter.syncSessionIdentityFromPersistedSessionIfAvailable()
         let enteredMainTab = appRouter.tryFastEnterFromPersistedHouseholdSnapshot()
         if enteredMainTab == false {
             appRouter.goToOrgRouting()
         }
+        appRouter.markAuthBootstrapCompletedForDeferredRefresh()
         withAnimation(.easeInOut) {
             isLaunchBootstrapComplete = true
         }
         LaunchBootstrapPerformanceTracing.mark(
             "launchBootstrap.splashDismissedEarly",
-            note: enteredMainTab ? "offlineSnapshotFastPath" : "offlineOrgRouting",
+            note: enteredMainTab ? "localSnapshotFastPath" : "localSessionOrgRouting",
             appRouter: appRouter
         )
         return true

@@ -33,6 +33,29 @@ enum HouseholdLocalCache {
         await LocalCacheManager.shared.load(forKey: tasksCacheKey(for: householdId))
     }
 
+    static func saveTasks(_ tasks: [FamilyTask], for householdId: UUID) {
+        LocalCacheManager.shared.save(tasks, forKey: tasksCacheKey(for: householdId))
+    }
+
+    /// 将单条任务合并进对应家庭的磁盘快照（离线乐观写）。
+    static func upsertTaskInCache(_ task: FamilyTask) {
+        let key = tasksCacheKey(for: task.householdId)
+        var cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: key) ?? []
+        if let index = cached.firstIndex(where: { $0.id == task.id }) {
+            cached[index] = task
+        } else {
+            cached.append(task)
+        }
+        LocalCacheManager.shared.save(cached, forKey: key)
+    }
+
+    static func removeTaskFromCache(taskId: UUID, householdId: UUID) {
+        let key = tasksCacheKey(for: householdId)
+        var cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: key) ?? []
+        cached.removeAll { $0.id == taskId }
+        LocalCacheManager.shared.save(cached, forKey: key)
+    }
+
     static func loadLocationStates(for householdId: UUID) async -> [LocationStateRecord]? {
         await LocalCacheManager.shared.load(forKey: locationStatesCacheKey(for: householdId))
     }

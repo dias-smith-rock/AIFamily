@@ -361,14 +361,25 @@ final class ScheduleViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
+        applyOptimisticTaskUpsert(task)
+        HouseholdLocalCache.upsertTaskInCache(task)
+        syncAlarms(for: task)
+
+        if await NetworkMonitor.shared.isConnected == false {
+            TaskOfflineOutbox.shared.enqueue(.create(task))
+            return
+        }
+
         do {
             let createdTask = try await taskService.createTask(task)
-            tasks.append(createdTask)
-            tasks.sort { lhs, rhs in
-                (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
-            }
+            applyOptimisticTaskUpsert(createdTask)
+            HouseholdLocalCache.upsertTaskInCache(createdTask)
             syncAlarms(for: createdTask)
         } catch {
+            if Self.isLikelyNetworkFailure(error) {
+                TaskOfflineOutbox.shared.enqueue(.create(task))
+                return
+            }
             errorMessage = error.localizedDescription
         }
     }
@@ -378,20 +389,48 @@ final class ScheduleViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
+        applyOptimisticTaskUpsert(task)
+        HouseholdLocalCache.upsertTaskInCache(task)
+        syncAlarms(for: task)
+
+        if await NetworkMonitor.shared.isConnected == false {
+            TaskOfflineOutbox.shared.enqueue(.update(task))
+            return
+        }
+
         do {
             let updatedTask = try await taskService.updateTask(task)
-            guard let index = tasks.firstIndex(where: { $0.id == updatedTask.id }) else {
-                await loadTasks()
-                return
-            }
-            tasks[index] = updatedTask
-            tasks.sort { lhs, rhs in
-                (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
-            }
+            applyOptimisticTaskUpsert(updatedTask)
+            HouseholdLocalCache.upsertTaskInCache(updatedTask)
             syncAlarms(for: updatedTask)
         } catch {
+            if Self.isLikelyNetworkFailure(error) {
+                TaskOfflineOutbox.shared.enqueue(.update(task))
+                return
+            }
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func applyOptimisticTaskUpsert(_ task: FamilyTask) {
+        if let index = tasks.firstIndex(where: { $0.id == task.id }) {
+            tasks[index] = task
+        } else {
+            tasks.append(task)
+        }
+        tasks.sort { lhs, rhs in
+            (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
+        }
+    }
+
+    private static func isLikelyNetworkFailure(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSURLErrorDomain { return true }
+        let text = error.localizedDescription.lowercased()
+        return text.contains("network")
+            || text.contains("offline")
+            || text.contains("timed out")
+            || text.contains("internet")
     }
 
     func displayTitle(for task: FamilyTask) -> String {
@@ -437,26 +476,66 @@ final class ScheduleViewModel: ObservableObject {
     ) async throws -> FamilyTask {
         errorMessage = nil
 
-        let updated = try await taskService.patchTaskStatus(
-            taskId: taskId,
-            to: status,
-            completionLocation: completionLocation,
-            actingMembershipId: actingMembershipId
-        )
-        if status == .completed {
-            await NotificationManager.shared.cancelAllPending(for: taskId)
-        } else {
-            syncAlarms(for: updated)
+        var optimistic = tasks.first(where: { $0.id == taskId })
+        if var local = optimistic {
+            local.status = status
+            if let completionLocation {
+                local.completionLocation = completionLocation
+            }
+            applyOptimisticTaskUpsert(local)
+            HouseholdLocalCache.upsertTaskInCache(local)
+            optimistic = local
         }
-        if let index = tasks.firstIndex(where: { $0.id == updated.id }) {
-            tasks[index] = updated
-        } else {
-            tasks.append(updated)
+
+        if await NetworkMonitor.shared.isConnected == false {
+            TaskOfflineOutbox.shared.enqueue(
+                .patchStatus(
+                    taskId: taskId,
+                    status: status,
+                    completionLocation: completionLocation,
+                    actingMembershipId: actingMembershipId
+                )
+            )
+            if status == .completed {
+                await NotificationManager.shared.cancelAllPending(for: taskId)
+            } else if let optimistic {
+                syncAlarms(for: optimistic)
+            }
+            guard let optimistic else {
+                throw TaskOfflineMutationError.taskNotFoundLocally
+            }
+            return optimistic
         }
-        tasks.sort { lhs, rhs in
-            (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
+
+        do {
+            let updated = try await taskService.patchTaskStatus(
+                taskId: taskId,
+                to: status,
+                completionLocation: completionLocation,
+                actingMembershipId: actingMembershipId
+            )
+            if status == .completed {
+                await NotificationManager.shared.cancelAllPending(for: taskId)
+            } else {
+                syncAlarms(for: updated)
+            }
+            applyOptimisticTaskUpsert(updated)
+            HouseholdLocalCache.upsertTaskInCache(updated)
+            return updated
+        } catch {
+            if Self.isLikelyNetworkFailure(error), let optimistic {
+                TaskOfflineOutbox.shared.enqueue(
+                    .patchStatus(
+                        taskId: taskId,
+                        status: status,
+                        completionLocation: completionLocation,
+                        actingMembershipId: actingMembershipId
+                    )
+                )
+                return optimistic
+            }
+            throw error
         }
-        return updated
     }
 
     func noteVisibleMonth(containing day: Date) {
@@ -584,13 +663,27 @@ final class ScheduleViewModel: ObservableObject {
     func deleteTask(taskId: UUID) async {
         errorMessage = nil
         await NotificationManager.shared.cancelAllPending(for: taskId)
+        let householdId = tasks.first(where: { $0.id == taskId })?.householdId ?? currentHouseholdId
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+            tasks.removeAll { $0.id == taskId }
+        }
+        if let householdId {
+            HouseholdLocalCache.removeTaskFromCache(taskId: taskId, householdId: householdId)
+        }
+        syncUpcomingLocalNotifications()
+
+        if await NetworkMonitor.shared.isConnected == false {
+            TaskOfflineOutbox.shared.enqueue(.delete(taskId: taskId))
+            return
+        }
+
         do {
             try await taskService.deleteTask(taskId: taskId)
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                tasks.removeAll { $0.id == taskId }
-            }
-            syncUpcomingLocalNotifications()
         } catch {
+            if Self.isLikelyNetworkFailure(error) {
+                TaskOfflineOutbox.shared.enqueue(.delete(taskId: taskId))
+                return
+            }
             errorMessage = error.localizedDescription
         }
     }

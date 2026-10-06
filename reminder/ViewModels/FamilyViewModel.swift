@@ -422,6 +422,10 @@ final class FamilyViewModel: ObservableObject {
         let hadDiskCache = cachedPayload != nil
 
         guard await NetworkMonitor.shared.isConnected else {
+            if hadDiskCache {
+                errorMessage = nil
+            }
+            hasLoadedOnce = true
             #if DEBUG
             print("🔎 [FamilyDebug] loadMembers skipped network reason=offline hadCache=\(hadDiskCache)")
             #endif
