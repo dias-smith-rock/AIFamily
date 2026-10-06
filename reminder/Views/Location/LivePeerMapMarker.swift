@@ -256,47 +256,15 @@ struct MapAvatarLastUpdatedBadge: View {
     }
 }
 
-/// 历史轨迹点：圆点 + 可选电量/时间轮播（锚点在圆心）。
+/// 历史轨迹点：仅圆点（电量/时间只在当前头像下展示，避免同点叠两套徽章）。
 struct MapHistoryTrajectoryMarker: View {
     let dotDiameter: CGFloat
     let dotColor: Color
-    let batteryLevel: Int?
-    let isCharging: Bool
-    let recordedAt: Date?
-
-    private static let badgeSpacing: CGFloat = 4
-
-    private var showsInfoBadge: Bool {
-        batteryLevel != nil || recordedAt != nil
-    }
-
-    static func mapCoordinateAnchor(dotDiameter: CGFloat, showsInfoBadge: Bool) -> UnitPoint {
-        guard showsInfoBadge else { return .center }
-        let totalHeight = dotDiameter + badgeSpacing + MapAvatarBatteryBadge.badgeHeight
-        return UnitPoint(x: 0.5, y: (dotDiameter / 2) / totalHeight)
-    }
 
     var body: some View {
-        VStack(spacing: Self.badgeSpacing) {
-            Circle()
-                .fill(dotColor)
-                .frame(width: dotDiameter, height: dotDiameter)
-
-            infoBadge
-        }
-    }
-
-    @ViewBuilder
-    private var infoBadge: some View {
-        if let batteryLevel {
-            MapAvatarInfoBadge(
-                batteryLevel: min(100, max(0, batteryLevel)),
-                isCharging: isCharging,
-                lastUpdatedAt: recordedAt
-            )
-        } else if let recordedAt {
-            MapAvatarLastUpdatedBadge(lastUpdatedAt: recordedAt)
-        }
+        Circle()
+            .fill(dotColor)
+            .frame(width: dotDiameter, height: dotDiameter)
     }
 }
 
@@ -313,17 +281,14 @@ struct MapAvatarInfoBadge: View {
             if let lastUpdatedAt {
                 TimelineView(.periodic(from: .now, by: Self.carouselInterval)) { timeline in
                     let showBattery = Int(timeline.date.timeIntervalSinceReferenceDate / Self.carouselInterval) % 2 == 0
-                    ZStack {
+                    if showBattery {
                         MapAvatarBatteryBadge(
                             batteryLevel: batteryLevel,
                             isCharging: isCharging
                         )
-                        .opacity(showBattery ? 1 : 0)
-
+                    } else {
                         MapAvatarLastUpdatedBadge(lastUpdatedAt: lastUpdatedAt)
-                            .opacity(showBattery ? 0 : 1)
                     }
-                    .animation(.easeInOut(duration: 0.28), value: showBattery)
                 }
             } else {
                 MapAvatarBatteryBadge(

@@ -438,17 +438,13 @@ struct LocationMainView: View {
             let history = Array(visibleLocations.dropFirst())
             ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
                 let rank = history.count - 1 - index
-                let showsInfoBadge = historyPoint.batteryLevel != nil || historyPoint.recordedAt != nil
                 let dotDiameter = history.count > 1
                     ? 8.0 + (Double(rank) / Double(history.count - 1)) * 2.0
                     : 9.0
                 Annotation(
                     "",
                     coordinate: historyPoint.coordinate,
-                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(
-                        dotDiameter: dotDiameter,
-                        showsInfoBadge: showsInfoBadge
-                    )
+                    anchor: .center
                 ) {
                     MapHistoryTrajectoryMarker(
                         dotDiameter: dotDiameter,
@@ -456,10 +452,7 @@ struct LocationMainView: View {
                             for: member.id,
                             rank: rank,
                             totalHistoryCount: history.count
-                        ),
-                        batteryLevel: historyPoint.clampedBatteryLevel,
-                        isCharging: historyPoint.isCharging ?? false,
-                        recordedAt: historyPoint.recordedAt
+                        )
                     )
                 }
             }
