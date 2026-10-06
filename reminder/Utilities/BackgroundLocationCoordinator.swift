@@ -35,6 +35,10 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         self.profileId = profileId
     }
 
+    var debugSnapshot: String {
+        "monitoring=\(isMonitoring) auth=\(LocationAuthorizationRequester.statusName(manager.authorizationStatus))/\(manager.authorizationStatus.rawValue) household=\(householdId?.uuidString ?? "nil") profile=\(profileId?.uuidString ?? "nil") dataSvc=\(locationStateService != nil) pausedLive=\(isPausedForLiveMode) prefOn=\(BackgroundLocationPreferences.isEnabled) services=\(CLLocationManager.locationServicesEnabled())"
+    }
+
     func setPausedForLiveMode(_ paused: Bool) {
         isPausedForLiveMode = paused
     }
@@ -43,14 +47,20 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         await setEnabled(BackgroundLocationPreferences.isEnabled)
     }
 
+    private var lastEnabledLog = ""
+
     func setEnabled(_ enabled: Bool) async {
         UserDefaults.standard.set(enabled, forKey: BackgroundLocationPreferences.storageKey)
         refreshAuthorizationNotice()
         print(
             "[LocationPersist] backgroundCoordinator setEnabled=\(enabled) "
-                + "auth=\(manager.authorizationStatus.rawValue) "
-                + "hasContext=\(householdId != nil && profileId != nil && locationStateService != nil)"
+                + debugSnapshot
         )
+        let logDetail = "enabled=\(enabled) \(debugSnapshot)"
+        if logDetail != lastEnabledLog {
+            lastEnabledLog = logDetail
+            TrackedDevicePairingLogger.event("loc_bg_set_enabled", detail: logDetail)
+        }
 
         guard enabled else {
             stopMonitoring()
@@ -154,6 +164,46 @@ final class BackgroundLocationCoordinator: NSObject, ObservableObject {
         manager.allowsBackgroundLocationUpdates = false
         isMonitoring = false
         print("[LocationPersist] backgroundCoordinator monitoring stopped")
+    }
+
+    private var lastImmediateReportAt: Date?
+
+    /// 小孩机启动：授权后立刻取点并写入 `location_states`（不受位移/间隔阈值限制）。
+    @discardableResult
+    func reportImmediateLaunchLocation() async -> Date? {
+        if let lastImmediateReportAt, Date().timeIntervalSince(lastImmediateReportAt) < 8 {
+            TrackedDevicePairingLogger.event("loc_immediate_skip", detail: "throttled \(debugSnapshot)")
+            return nil
+        }
+        guard let householdId, let profileId, let locationStateService else {
+            TrackedDevicePairingLogger.event("loc_immediate_skip", detail: "missingContext \(debugSnapshot)")
+            return nil
+        }
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            break
+        default:
+            TrackedDevicePairingLogger.event(
+                "loc_immediate_skip",
+                detail: "auth=\(LocationAuthorizationRequester.statusName(manager.authorizationStatus)) \(debugSnapshot)"
+            )
+            return nil
+        }
+        lastImmediateReportAt = Date()
+        TrackedDevicePairingLogger.event("loc_immediate_start", detail: debugSnapshot)
+        let entry = await LocationStartupReporter.report(
+            trigger: .appLaunched,
+            householdId: householdId,
+            profileId: profileId,
+            locationStateService: locationStateService,
+            bypassThrottle: true
+        )
+        let detail = entry.map { "outcome=\($0.formattedLine)" } ?? "nil"
+        TrackedDevicePairingLogger.event("loc_immediate_done", detail: detail)
+        if let entry, case .persisted = entry.outcome {
+            return Date()
+        }
+        return nil
     }
 
     private func reportIfNeeded(_ location: CLLocation) async {

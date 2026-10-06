@@ -10,7 +10,8 @@ enum LocationStartupReporter {
         trigger: LocationPersistTrigger,
         householdId: UUID?,
         profileId: UUID?,
-        locationStateService: LocationStateDataService
+        locationStateService: LocationStateDataService,
+        bypassThrottle: Bool = false
     ) async -> LocationPersistLogEntry? {
         guard let householdId, let profileId else {
             log(trigger: trigger, profileId: nil, coordinate: nil, outcome: .failed(reason: "missing household or profile"))
@@ -53,7 +54,8 @@ enum LocationStartupReporter {
                 householdId: householdId,
                 profileId: profileId,
                 coordinate: coordinate,
-                locationStateService: locationStateService
+                locationStateService: locationStateService,
+                bypassThrottle: bypassThrottle
             )
         } catch {
             let entry = LocationPersistLogEntry(
@@ -73,7 +75,8 @@ enum LocationStartupReporter {
         householdId: UUID,
         profileId: UUID,
         coordinate: CLLocationCoordinate2D,
-        locationStateService: LocationStateDataService
+        locationStateService: LocationStateDataService,
+        bypassThrottle: Bool = false
     ) async -> LocationPersistLogEntry {
         let payload = LocationPayload(
             latitude: coordinate.latitude,
@@ -96,8 +99,8 @@ enum LocationStartupReporter {
                 householdId: householdId,
                 profileId: profileId,
                 coordinate: payload,
-                minDistanceMeters: LocationPersistPreferences.minUpdateDistanceMeters,
-                minIntervalSeconds: LocationPersistPreferences.minUpdateIntervalSeconds
+                minDistanceMeters: bypassThrottle ? 0 : LocationPersistPreferences.minUpdateDistanceMeters,
+                minIntervalSeconds: bypassThrottle ? 0 : LocationPersistPreferences.minUpdateIntervalSeconds
             )
             let entry = LocationPersistLogEntry(
                 trigger: trigger,

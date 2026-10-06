@@ -1,14 +1,20 @@
 import Foundation
 import Security
 
-/// 小孩机家长 PIN（仅本机 Keychain；重置靠重新配对）。
+/// 小孩机家长 PIN 的本机缓存（Keychain）。权威值在服务端 `tracked_device_pin`，由管理员改后同步覆盖。
 enum TrackedDevicePINStore {
+    static let defaultPIN = "888888"
+
     private static let service = "com.wesync.tracked-device-pin"
     private static let account = "parent-pin"
 
     static func savePIN(_ pin: String) {
         let normalized = normalize(pin)
-        guard normalized.count >= 4, normalized.count <= 6 else { return }
+        if normalized.isEmpty {
+            clear()
+            return
+        }
+        guard (4 ... 6).contains(normalized.count) else { return }
         guard let data = normalized.data(using: .utf8) else { return }
         clear()
         let query: [String: Any] = [
@@ -66,5 +72,11 @@ enum TrackedDevicePINStore {
     static func isValidFormat(_ pin: String) -> Bool {
         let normalized = normalize(pin)
         return (4 ... 6).contains(normalized.count)
+    }
+
+    /// 空 PIN 表示不设小孩机密码；否则须为 4–6 位数字。
+    static func isAcceptableInput(_ pin: String) -> Bool {
+        let normalized = normalize(pin)
+        return normalized.isEmpty || (4 ... 6).contains(normalized.count)
     }
 }

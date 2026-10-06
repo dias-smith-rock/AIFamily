@@ -162,6 +162,7 @@ private struct TaskModeListDaySection: Identifiable {
 
 private struct TaskModeListMinimalRow: View {
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var colorScheme
 
     let task: FamilyTask
     let displayTitle: String
@@ -172,17 +173,17 @@ private struct TaskModeListMinimalRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(cardTitleText)
                     .font(.body.weight(.semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Color.taskCardTitle(for: colorScheme))
                     .lineLimit(2)
 
                 Text(timeRangeLabel)
                     .font(.caption)
-                    .foregroundStyle(Color.white.opacity(0.55))
+                    .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
 
                 if let trail = locationTrail {
                     Text(trail)
                         .font(.caption2)
-                        .foregroundStyle(Color.white.opacity(0.45))
+                        .foregroundStyle(Color.taskCardTertiary(for: colorScheme))
                         .lineLimit(1)
                 }
             }
@@ -202,7 +203,7 @@ private struct TaskModeListMinimalRow: View {
         .taskCardSurface(for: task, cornerRadius: 8)
         .overlay(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(Color.taskCardStroke(for: colorScheme), lineWidth: 1)
         )
     }
 

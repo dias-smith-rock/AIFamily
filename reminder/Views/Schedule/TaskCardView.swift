@@ -102,6 +102,7 @@ struct TaskCardAssigneeTrailing: View {
 /// 日程列表中的单条任务卡片（分区信息 + 右侧「为了谁」）。
 struct TaskCardView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var colorScheme
 
     let task: FamilyTask
     let displayTitle: String
@@ -146,9 +147,14 @@ struct TaskCardView: View {
         .padding(.horizontal, 12)
         .taskCardSurface(for: task, cornerRadius: 12)
         .overlay {
-            cardShape.strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+            cardShape.strokeBorder(Color.taskCardStroke(for: colorScheme), lineWidth: 1)
         }
-        .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
+        .shadow(
+            color: Color.black.opacity(colorScheme == .dark ? 0.12 : 0.06),
+            radius: 6,
+            x: 0,
+            y: 2
+        )
     }
 
     // MARK: - Header
@@ -156,7 +162,7 @@ struct TaskCardView: View {
     private var headerRow: some View {
         Text(cardTitleText)
             .font(.headline)
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.taskCardTitle(for: colorScheme))
             .multilineTextAlignment(.leading)
             .lineLimit(2)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,7 +179,7 @@ struct TaskCardView: View {
         HStack(spacing: 8) {
             Label {
                 Text(metaTimeText)
-                    .foregroundStyle(Color.white.opacity(0.55))
+                    .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
             } icon: {
                 Image(systemName: task.isAllDay ? "calendar" : "clock")
                     .foregroundStyle(task.cardThemeAccentColor)
@@ -183,10 +189,10 @@ struct TaskCardView: View {
 
             Text(TaskDurationFormatting.readableDuration(minutes: task.durationMinutes, locale: locale))
                 .font(.caption)
-                .foregroundStyle(Color.white.opacity(0.55))
+                .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(Color.white.opacity(0.12))
+                .background(Color.taskCardChipFill(for: colorScheme))
                 .clipShape(Capsule())
 
             Spacer(minLength: 0)
@@ -219,7 +225,7 @@ struct TaskCardView: View {
         HStack(alignment: .center) {
             Label {
                 Text(place)
-                    .foregroundStyle(Color.white.opacity(0.55))
+                    .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
             } icon: {
                 Image(systemName: "mappin.and.ellipse")
                     .foregroundStyle(task.cardThemeAccentColor)
@@ -235,6 +241,8 @@ struct TaskCardView: View {
 // MARK: - 叠层头像
 
 struct TaskCardOverlappingAvatar: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let source: TaskCardAvatarSource
     var size: CGFloat = 24
     var borderColor: Color = .white
@@ -243,16 +251,18 @@ struct TaskCardOverlappingAvatar: View {
         ZStack {
             if let url = source.imageURL {
                 KFImage.url(url)
-                    .placeholder { Circle().fill(Color(.secondarySystemFill)) }
+                    .placeholder {
+                        Circle().fill(Color.taskCardAvatarPlaceholder(for: colorScheme))
+                    }
                     .resizable()
                     .scaledToFill()
             } else {
                 Circle()
-                    .fill(Color(.secondarySystemFill))
+                    .fill(Color.taskCardAvatarPlaceholder(for: colorScheme))
                     .overlay {
                         Text(String(source.displayName.prefix(1)))
                             .font(.system(size: size * 0.42, weight: .bold))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(Color.taskCardTitle(for: colorScheme))
                     }
             }
         }

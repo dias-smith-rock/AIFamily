@@ -3,9 +3,43 @@ import SwiftUI
 // MARK: - Hex ↔ SwiftUI（任务卡片 `background_color`）
 
 extension Color {
-    /// 任务卡片暗色表面（海军灰底，不随组织色铺满）。
+    /// 任务卡片暗色表面（仅深色外观使用）。
     static var taskCardDarkSurface: Color {
         Color(red: 22 / 255, green: 30 / 255, blue: 46 / 255)
+    }
+
+    /// 浅色外观用系统卡片白底，避免海军黑块压在浅灰页面上。
+    static func taskCardSurface(for colorScheme: ColorScheme) -> Color {
+        switch colorScheme {
+        case .dark:
+            return .taskCardDarkSurface
+        default:
+            return Color(.systemBackground)
+        }
+    }
+
+    static func taskCardTitle(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? .white : .primary
+    }
+
+    static func taskCardSecondary(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.55) : .secondary
+    }
+
+    static func taskCardTertiary(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.45) : Color(.tertiaryLabel)
+    }
+
+    static func taskCardChipFill(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.12) : Color.primary.opacity(0.06)
+    }
+
+    static func taskCardStroke(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.12) : Color.black.opacity(0.08)
+    }
+
+    static func taskCardAvatarPlaceholder(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? Color.white.opacity(0.22) : Color(.secondarySystemFill)
     }
 
     /// 列表卡片左侧强调条：`nil`/非法十六进制时返回 **系统强调色**（与 `taskCardListBackground` 的「卡片底色」语义不同）。
@@ -56,8 +90,9 @@ extension Color {
 
 extension FamilyTask {
     /// 卡片铺底：固定暗色表面（不同家庭靠强调色区分）。
-    var cardBackgroundColor: Color {
-        .taskCardDarkSurface
+    /// 卡片铺底：浅色用系统白底，深色用海军表面。
+    func cardBackgroundColor(for colorScheme: ColorScheme) -> Color {
+        Color.taskCardSurface(for: colorScheme)
     }
 
     /// 组织主题强调色：左侧条 / 图标 / 头像描边（每家庭不同）。
@@ -73,14 +108,15 @@ extension FamilyTask {
 
 /// 在卡片内容上叠加暗色底 + 左侧主题色条（贴齐左边缘，由卡片圆角裁切）。
 struct TaskCardSurfaceModifier: ViewModifier {
-    let backgroundColor: Color
+    @Environment(\.colorScheme) private var colorScheme
+
     let headerAccentColor: Color
     var cornerRadius: CGFloat = 12
     var headerBarWidth: CGFloat = 4
 
     func body(content: Content) -> some View {
         content
-            .background(backgroundColor)
+            .background(Color.taskCardSurface(for: colorScheme))
             .overlay(alignment: .leading) {
                 Rectangle()
                     .fill(headerAccentColor)
@@ -99,7 +135,6 @@ extension View {
     ) -> some View {
         modifier(
             TaskCardSurfaceModifier(
-                backgroundColor: task.cardBackgroundColor,
                 headerAccentColor: task.cardHeaderAccentColor,
                 cornerRadius: cornerRadius,
                 headerBarWidth: headerBarWidth

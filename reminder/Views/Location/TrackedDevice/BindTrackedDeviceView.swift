@@ -2,6 +2,9 @@ import CoreImage
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 import UIKit
+#if canImport(Supabase)
+import Supabase
+#endif
 
 /// 家长端：为指定档案生成儿童设备配对码 / 二维码。
 struct BindTrackedDeviceView: View {
@@ -12,10 +15,13 @@ struct BindTrackedDeviceView: View {
     let profile: FamilyProfile
     let householdId: UUID
     let managerMembershipId: UUID
+    var onClose: (() -> Void)? = nil
+    var onBound: (() -> Void)? = nil
 
     @State private var pairingCode: String?
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var didHandleBound = false
 
     private let pairingService: TrackedDevicePairingService = SupabaseTrackedDevicePairingService()
     private let qrContext = CIContext()
@@ -83,12 +89,29 @@ struct BindTrackedDeviceView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(L10n.Common.finish) { dismiss() }
+                    Button(L10n.Common.finish) { close() }
                 }
             }
         }
-        .task {
+        .task(id: profile.id) {
             await generateCode()
+        }
+        .task(id: pairingCode) {
+            guard let pairingCode else { return }
+            await watchUntilClaimed(pairingCode)
+        }
+    }
+
+    private func close() {
+        TrackedDevicePairingLogger.event(
+            "admin_qr_close",
+            code: pairingCode ?? "",
+            detail: "didHandleBound=\(didHandleBound)"
+        )
+        if let onClose {
+            onClose()
+        } else {
+            dismiss()
         }
     }
 
@@ -119,6 +142,60 @@ struct BindTrackedDeviceView: View {
         let scaled = output.transformed(by: CGAffineTransform(scaleX: 10, y: 10))
         guard let cgImage = qrContext.createCGImage(scaled, from: scaled.extent) else { return nil }
         return UIImage(cgImage: cgImage)
+    }
+
+    @MainActor
+    private func handleBound() {
+        guard didHandleBound == false else { return }
+        didHandleBound = true
+        TrackedDevicePairingLogger.event(
+            "admin_bind_consumed",
+            code: pairingCode ?? "",
+            detail: "profile=\(profile.id.uuidString)"
+        )
+        onBound?()
+        close()
+    }
+
+    private func watchUntilClaimed(_ code: String) async {
+        #if canImport(Supabase)
+        let realtimeTask = Task {
+            let client = SupabaseManager.shared.client
+            let channel = client.realtimeV2.channel("tracked-pairing:\(code)")
+            let subscription = channel.onPostgresChange(
+                AnyAction.self,
+                schema: "public",
+                table: "tracked_device_pairing_nonces",
+                filter: "nonce=eq.\(code)"
+            ) { _ in
+                Task {
+                    guard let consumed = try? await pairingService.isPairingNonceConsumed(code), consumed else { return }
+                    await handleBound()
+                }
+            }
+            try? await channel.subscribeWithError()
+            defer {
+                subscription.cancel()
+                Task { await client.realtimeV2.removeChannel(channel) }
+            }
+            while Task.isCancelled == false && didHandleBound == false {
+                try? await Task.sleep(for: .seconds(30))
+            }
+        }
+        defer { realtimeTask.cancel() }
+        #endif
+        while Task.isCancelled == false {
+            if didHandleBound { return }
+            do {
+                if try await pairingService.isPairingNonceConsumed(code) {
+                    await handleBound()
+                    return
+                }
+            } catch {
+                TrackedDevicePairingLogger.failure(error, stage: "admin_watch_poll", code: code)
+            }
+            try? await Task.sleep(for: .seconds(2))
+        }
     }
 
     @MainActor

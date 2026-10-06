@@ -30,7 +30,8 @@ enum SupabaseProfileSelect {
         status,\
         joined_at,\
         created_at,\
-        updated_at
+        updated_at,\
+        is_tracked_device
         """
 
     /// 名册 / 连表拉取时 `family_profiles` 需返回的展示与编辑字段（有账号嵌套与虚拟单表共用）。
@@ -76,6 +77,7 @@ enum SupabaseProfileSelect {
         profile_id,\
         created_at,\
         updated_at,\
+        is_tracked_device,\
         profile:family_profiles!profile_id(\(nestedProfileFieldsForJoin))
         """
 }
@@ -863,14 +865,24 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
 
     func createMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership {
         #if canImport(Supabase)
-        let response: HouseholdMembership = try await provider.client
-            .from(SupabaseTable.memberships)
-            .insert(membership)
-            .select()
-            .single()
-            .execute()
-            .value
-        return response
+        TrackedDevicePairingLogger.event(
+            "create_membership_insert",
+            detail: "id=\(membership.id.uuidString) household=\(membership.householdId.uuidString) profile=\(membership.profileId?.uuidString ?? "nil") nickname=\(membership.nickname ?? "nil") role=\(membership.role ?? "nil") tracked=\(membership.isTrackedDevice)"
+        )
+        do {
+            let response: HouseholdMembership = try await provider.client
+                .from(SupabaseTable.memberships)
+                .insert(membership)
+                .select()
+                .single()
+                .execute()
+                .value
+            TrackedDevicePairingLogger.event("create_membership_ok", detail: response.id.uuidString)
+            return response
+        } catch {
+            TrackedDevicePairingLogger.failure(error, stage: "create_membership")
+            throw error
+        }
         #else
         _ = membership
         throw SupabaseServiceError.sdkUnavailable

@@ -719,6 +719,8 @@ private struct TodoFlexibleRow: View {
         case completed
     }
 
+    @Environment(\.colorScheme) private var colorScheme
+
     let task: FamilyTask
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
@@ -777,9 +779,8 @@ private struct TodoFlexibleRow: View {
     }
 
     private var rowBackground: Color {
-        style == .completed
-            ? Color.taskCardDarkSurface.opacity(0.55)
-            : Color.taskCardDarkSurface
+        let surface = Color.taskCardSurface(for: colorScheme)
+        return style == .completed ? surface.opacity(0.72) : surface
     }
 
     @ViewBuilder
@@ -807,7 +808,7 @@ private struct TodoFlexibleRow: View {
         case .completed:
             return Color.green.opacity(0.55)
         case .active, .overdue:
-            return Color.white.opacity(0.18)
+            return Color.taskCardStroke(for: colorScheme)
         }
     }
 
@@ -832,7 +833,7 @@ private struct TodoFlexibleRow: View {
     }
 
     private var titleColor: Color {
-        .white
+        Color.taskCardTitle(for: colorScheme)
     }
 
     private var subtitleColor: Color {
@@ -840,7 +841,7 @@ private struct TodoFlexibleRow: View {
         case .overdue:
             return .red.opacity(0.9)
         case .completed, .active:
-            return Color.white.opacity(0.55)
+            return Color.taskCardSecondary(for: colorScheme)
         }
     }
 }

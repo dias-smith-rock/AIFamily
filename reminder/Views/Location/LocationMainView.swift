@@ -705,9 +705,6 @@ struct LocationMainView: View {
                             isInLiveHuddle: liveManager.isLiveModeActive
                                 && liveManager.activeParticipants.contains(member.id),
                             onSelectionChange: { selected in
-                                guard viewModel.isCurrentUserSelectionLocked(memberID: member.id) == false else {
-                                    return
-                                }
                                 liveManager.recordUserInteraction()
                                 viewModel.setSelected(selected, for: member.id)
                             }

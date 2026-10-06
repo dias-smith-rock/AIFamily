@@ -7001,5 +7001,173 @@
     "table": "Location",
     "swift_property": "trackedPossiblyOffline",
     "orphan": false
+  },
+  {
+    "legacy_key": "Location device",
+    "new_key": "location_tracked_device_section",
+    "table": "Location",
+    "swift_property": "trackedDeviceSection",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Device bound",
+    "new_key": "location_tracked_device_bound",
+    "table": "Location",
+    "swift_property": "trackedDeviceBound",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Device not bound",
+    "new_key": "location_tracked_device_unbound",
+    "table": "Location",
+    "swift_property": "trackedDeviceUnbound",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Rebind location device",
+    "new_key": "location_tracked_rebind_device_action",
+    "table": "Location",
+    "swift_property": "trackedRebindDeviceAction",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Parent PIN",
+    "new_key": "location_tracked_parent_pin",
+    "table": "Location",
+    "swift_property": "trackedParentPin",
+    "orphan": false
+  },
+  {
+    "legacy_key": "PIN not set yet. Enter 4 to 6 digits and save.",
+    "new_key": "location_tracked_pin_not_set",
+    "table": "Location",
+    "swift_property": "trackedPinNotSet",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Save PIN",
+    "new_key": "location_tracked_save_pin",
+    "table": "Location",
+    "swift_property": "trackedSavePin",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Takes effect the next time the device is online.",
+    "new_key": "location_tracked_pin_takes_effect_hint",
+    "table": "Location",
+    "swift_property": "trackedPinTakesEffectHint",
+    "orphan": false
+  },
+  {
+    "legacy_key": "PIN must be 4 to 6 digits.",
+    "new_key": "location_tracked_pin_invalid",
+    "table": "Location",
+    "swift_property": "trackedPinInvalid",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Scan pairing QR code",
+    "new_key": "location_tracked_scan_qr",
+    "table": "Location",
+    "swift_property": "trackedScanQr",
+    "orphan": false
+  },
+  {
+    "legacy_key": "No valid pairing code in this QR.",
+    "new_key": "location_tracked_no_valid_pairing_code",
+    "table": "Location",
+    "swift_property": "trackedNoValidPairingCode",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Paired successfully",
+    "new_key": "location_tracked_pairing_success",
+    "table": "Location",
+    "swift_property": "trackedPairingSuccess",
+    "orphan": false
+  },
+  {
+    "legacy_key": "This device is now a location device. Parent PIN is managed on the family profile.",
+    "new_key": "location_tracked_pairing_success_message",
+    "table": "Location",
+    "swift_property": "trackedPairingSuccessMessage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Location device paired",
+    "new_key": "location_tracked_admin_bind_success",
+    "table": "Location",
+    "swift_property": "trackedAdminBindSuccess",
+    "orphan": false
+  },
+  {
+    "legacy_key": "%@ is now bound as a location device.",
+    "new_key": "location_tracked_admin_bind_success_message",
+    "table": "Location",
+    "swift_property": "trackedAdminBindSuccessMessage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Device model",
+    "new_key": "location_tracked_device_model",
+    "table": "Location",
+    "swift_property": "trackedDeviceModel",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Unknown device",
+    "new_key": "location_tracked_device_model_unknown",
+    "table": "Location",
+    "swift_property": "trackedDeviceModelUnknown",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Bound at",
+    "new_key": "location_tracked_device_bound_at",
+    "table": "Location",
+    "swift_property": "trackedDeviceBoundAt",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Unknown",
+    "new_key": "location_tracked_device_bound_at_unknown",
+    "table": "Location",
+    "swift_property": "trackedDeviceBoundAtUnknown",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Turn on Location",
+    "new_key": "location_tracked_location_needed_title",
+    "table": "Location",
+    "swift_property": "trackedLocationNeededTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "This location device needs Location set to Always. Open Settings to turn it on.",
+    "new_key": "location_tracked_location_needed_message",
+    "table": "Location",
+    "swift_property": "trackedLocationNeededMessage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Open Settings",
+    "new_key": "location_tracked_open_settings",
+    "table": "Location",
+    "swift_property": "trackedOpenSettings",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Location Services Off",
+    "new_key": "location_tracked_auth_services_off",
+    "table": "Location",
+    "swift_property": "trackedAuthServicesOff",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Turn on Location Services in Settings, then set this app to Always.",
+    "new_key": "location_tracked_location_services_off_message",
+    "table": "Location",
+    "swift_property": "trackedLocationServicesOffMessage",
+    "orphan": false
   }
 ]

@@ -39,9 +39,15 @@ final class AppRouter: ObservableObject {
     @Published private(set) var authUserId: UUID?
     @Published private(set) var selectedHouseholdCreatorHasActivePro = false
 
-    /// 追踪端：服务端标记为追踪设备，且未通过家长 PIN 解锁。
+    /// 追踪端：已设家长 PIN，且当前未解锁。空 PIN 表示不设小孩机密码，不进入追踪壳。
     var isTrackedDeviceShellActive: Bool {
-        isTrackedDeviceMembership && isTrackedDevicePINUnlocked == false
+        isTrackedDeviceMembership
+            && TrackedDevicePINStore.hasPIN
+            && isTrackedDevicePINUnlocked == false
+    }
+
+    func refreshTrackedDeviceShellAfterPINSync() {
+        objectWillChange.send()
     }
 
     func unlockTrackedDeviceWithPIN() {

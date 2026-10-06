@@ -154,6 +154,8 @@ struct FamilyMemberRowView: View {
             }
             .padding(.horizontal, chrome == .plain ? 0 : 14)
             .padding(.vertical, chrome == .plain ? 4 : 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
             .background {
                 if chrome == .card {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -162,6 +164,7 @@ struct FamilyMemberRowView: View {
             }
         }
         .buttonStyle(.plain)
+        .contentShape(Rectangle())
     }
 
     private var avatarSize: CGFloat {

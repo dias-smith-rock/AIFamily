@@ -1,8 +1,10 @@
 import SwiftUI
 import Kingfisher
 
-/// 全天任务紧凑卡片：暗色铺底，组织主题色为左侧强调条与头像描边。
+/// 全天任务紧凑卡片：浅色白底 / 深色海军底，组织主题色为左侧强调条与头像描边。
 struct AllDayTaskRowView: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let task: FamilyTask
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
@@ -21,14 +23,14 @@ struct AllDayTaskRowView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text(cardTitleText)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(Color.taskCardTitle(for: colorScheme))
                 .lineLimit(1)
 
             if forWhomAvatars.isEmpty == false {
                 HStack(spacing: 8) {
                     Text(L10n.Common.forLabel.localized)
                         .font(.caption2)
-                        .foregroundStyle(Color.white.opacity(0.55))
+                        .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
 
                     Spacer(minLength: 0)
 
@@ -56,16 +58,16 @@ struct AllDayTaskRowView: View {
         ZStack {
             if let url = source.imageURL {
                 KFImage.url(url)
-                    .placeholder { Circle().fill(Color.white.opacity(0.25)) }
+                    .placeholder { Circle().fill(Color.taskCardAvatarPlaceholder(for: colorScheme)) }
                     .resizable()
                     .scaledToFill()
             } else {
                 Circle()
-                    .fill(Color.white.opacity(0.25))
+                    .fill(Color.taskCardAvatarPlaceholder(for: colorScheme))
                     .overlay {
                         Text(String(source.displayName.prefix(1)))
                             .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color.taskCardTitle(for: colorScheme))
                     }
             }
         }

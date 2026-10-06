@@ -12,6 +12,8 @@ struct ProfileEditView: View {
     let canEdit: Bool
     let memberRemoval: MemberRemovalAction?
     let adminRoleToggle: AdminRoleToggleAction?
+    let trackedDeviceAdmin: TrackedDeviceAdminConfig?
+    var onTrackedDeviceBound: (() -> Void)? = nil
     let uploadAvatar: @MainActor (Data, UUID?) async -> URL?
     let onSave: @MainActor (UUID, LocalProfileDraft) async -> String?
 
@@ -39,6 +41,9 @@ struct ProfileEditView: View {
     @State private var isUploadingAvatar = false
     @State private var isSaving = false
     @State private var errorMessage: String?
+    @State private var showBindTrackedDevice = false
+    @State private var showTrackedBindSuccess = false
+    @State private var trackedDeviceDidBind = false
 
     init(
         mode: Mode,
@@ -46,16 +51,20 @@ struct ProfileEditView: View {
         canEdit: Bool,
         memberRemoval: MemberRemovalAction? = nil,
         adminRoleToggle: AdminRoleToggleAction? = nil,
+        trackedDeviceAdmin: TrackedDeviceAdminConfig? = nil,
         uploadAvatar: @escaping @MainActor (Data, UUID?) async -> URL?,
-        onSave: @escaping @MainActor (UUID, LocalProfileDraft) async -> String?
+        onSave: @escaping @MainActor (UUID, LocalProfileDraft) async -> String?,
+        onTrackedDeviceBound: (() -> Void)? = nil
     ) {
         self.mode = mode
         self.householdId = householdId
         self.canEdit = canEdit
         self.memberRemoval = memberRemoval
         self.adminRoleToggle = adminRoleToggle
+        self.trackedDeviceAdmin = trackedDeviceAdmin
         self.uploadAvatar = uploadAvatar
         self.onSave = onSave
+        self.onTrackedDeviceBound = onTrackedDeviceBound
 
         let profile = mode.profile
         _name = State(initialValue: Self.initialNameFieldValue(for: profile))
@@ -120,6 +129,15 @@ struct ProfileEditView: View {
                         DatePicker(L10n.Common.birthday.localized, selection: $birthDate, displayedComponents: .date)
                             .datePickerStyle(.compact)
                     }
+                }
+
+                if case .edit(let profile) = mode, let trackedDeviceAdmin {
+                    TrackedDeviceAdminSection(
+                        profile: profile,
+                        config: trackedDeviceAdmin,
+                        onBindDevice: { showBindTrackedDevice = true },
+                        isBoundOverride: trackedDeviceDidBind
+                    )
                 }
 
                 Section(L10n.Common.contactInformation) {
@@ -241,6 +259,40 @@ struct ProfileEditView: View {
             } message: {
                 Text(adminToggleAlertMessage)
             }
+            .alert(L10n.Location.trackedAdminBindSuccess, isPresented: $showTrackedBindSuccess) {
+                Button(L10n.Common.ok, role: .cancel) {}
+            } message: {
+                Text(
+                    L10n.Location.trackedAdminBindSuccessMessage.formatted(
+                        locale: locale,
+                        bindSuccessProfileName
+                    )
+                )
+            }
+            .fullScreenCover(isPresented: $showBindTrackedDevice) {
+                if case .edit(let profile) = mode, let trackedDeviceAdmin {
+                    BindTrackedDeviceView(
+                        profile: profile,
+                        householdId: trackedDeviceAdmin.householdId,
+                        managerMembershipId: trackedDeviceAdmin.managerMembershipId,
+                        onClose: { showBindTrackedDevice = false },
+                        onBound: {
+                            TrackedDevicePairingLogger.event(
+                                "admin_edit_on_bound",
+                                detail: "profile=\(profile.id.uuidString.lowercased())"
+                            )
+                            showBindTrackedDevice = false
+                            trackedDeviceDidBind = true
+                            onTrackedDeviceBound?()
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .milliseconds(400))
+                                showTrackedBindSuccess = true
+                            }
+                        }
+                    )
+                    .environment(\.locale, locale)
+                }
+            }
         }
     }
 
@@ -254,6 +306,13 @@ struct ProfileEditView: View {
         return adminRoleToggle.isPromoting
             ? L10n.Family.adminsCanHelpManageGroupMembersAndSetting.localized
             : L10n.Family.theyWillReturnToRegularMemberPermissions.localized
+    }
+
+    private var bindSuccessProfileName: String {
+        if case .edit(let profile) = mode {
+            return profile.displayName
+        }
+        return name
     }
 
     private func performAdminRoleToggle() {
@@ -461,6 +520,12 @@ struct ProfileEditView: View {
 }
 
 extension ProfileEditView {
+    struct TrackedDeviceAdminConfig {
+        let householdId: UUID
+        let managerMembershipId: UUID
+        let isDeviceBound: Bool
+    }
+
     struct AdminRoleToggleAction {
         let buttonTitle: LocalizedStringResource
         let isPromoting: Bool

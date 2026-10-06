@@ -54,9 +54,6 @@ final class LocationMainViewModel: ObservableObject {
     var mapDisplayedMembers: [UserLocationState] {
         members.compactMap { member in
             let display = displayStateForMap(member)
-            if member.isCurrentUser {
-                return display.currentLocation != nil ? display : nil
-            }
             guard selectedMemberIDs.contains(member.id), display.isVisibleOnMap else {
                 return nil
             }
@@ -248,19 +245,12 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     func isSelected(memberID: UUID) -> Bool {
-        if isCurrentUserSelectionLocked(memberID: memberID) { return true }
-        return selectedMemberIDs.contains(memberID)
+        selectedMemberIDs.contains(memberID)
     }
 
     func setSelected(_ selected: Bool, for memberID: UUID) {
-        if isCurrentUserSelectionLocked(memberID: memberID) { return }
         guard let member = members.first(where: { $0.id == memberID }), member.isSelectableOnMap else { return }
         if selected { selectedMemberIDs.insert(memberID) } else { selectedMemberIDs.remove(memberID) }
-    }
-
-    func isCurrentUserSelectionLocked(memberID: UUID) -> Bool {
-        guard let currentMembershipId, memberID == currentMembershipId else { return false }
-        return members.first(where: { $0.id == memberID })?.isCurrentUser == true
     }
 
     func toggleMemberList() { isMemberListExpanded.toggle() }
@@ -337,12 +327,5 @@ final class LocationMainViewModel: ObservableObject {
         if selectedMemberIDs.isEmpty {
             selectedMemberIDs = defaultVisibleIDs.isEmpty == false ? defaultVisibleIDs : defaultSelectableIDs
         }
-        pinCurrentUserInSelection()
-    }
-
-    private func pinCurrentUserInSelection() {
-        guard let currentMembershipId,
-              members.contains(where: { $0.id == currentMembershipId && $0.isCurrentUser }) else { return }
-        selectedMemberIDs.insert(currentMembershipId)
     }
 }

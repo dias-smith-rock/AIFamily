@@ -830,6 +830,31 @@ final class FamilyViewModel: ObservableObject {
         return false
     }
 
+    func trackedDeviceAdminConfig(
+        for profile: FamilyProfile,
+        householdId: UUID?,
+        managerMembershipId: UUID?
+    ) -> ProfileEditView.TrackedDeviceAdminConfig? {
+        guard canCurrentUserManageHousehold,
+              let householdId,
+              let managerMembershipId
+        else {
+            return nil
+        }
+        let matched = membership(for: profile)
+        let isBound = matched?.isTrackedDevice == true
+        TrackedDevicePairingLogger.event(
+            "admin_config",
+            detail: "profile=\(profile.id.uuidString.lowercased()) virtual=\(profile.isVirtualUser) membership=\(matched?.id.uuidString ?? "nil") tracked=\(matched.map { String($0.isTrackedDevice) } ?? "nil") isBound=\(isBound)"
+        )
+        guard profile.isVirtualUser || isBound else { return nil }
+        return ProfileEditView.TrackedDeviceAdminConfig(
+            householdId: householdId,
+            managerMembershipId: managerMembershipId,
+            isDeviceBound: isBound
+        )
+    }
+
     func isVirtualMember(_ profile: FamilyProfile) -> Bool {
         profile.isVirtualUser
     }

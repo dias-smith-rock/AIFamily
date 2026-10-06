@@ -38,11 +38,13 @@ struct HouseholdSelectionView: View {
         householdNavigationStack
             .task {
                 await viewModel.fetchMyHouseholds(appRouter: appRouter)
+                enterSoleHouseholdIfNeeded()
             }
             .onChange(of: appRouter.appState) { _, newState in
                 guard newState == .orgRouting || newState == .householdSelection else { return }
                 Task {
                     await viewModel.fetchMyHouseholds(appRouter: appRouter)
+                    enterSoleHouseholdIfNeeded()
                 }
             }
             .onChange(of: viewModel.errorMessage) { _, newValue in
@@ -273,7 +275,7 @@ struct HouseholdSelectionView: View {
 
     @ViewBuilder
     private var coreListSection: some View {
-        if viewModel.isLoading {
+        if viewModel.isLoading && displayedHouseholds.isEmpty {
             VStack(spacing: 12) {
                 ProgressView()
                 Text(AppLocalized.string(L10n.Family.loadingYourGroups, locale: locale))
@@ -281,7 +283,7 @@ struct HouseholdSelectionView: View {
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, minHeight: 200)
-        } else if viewModel.joinedHouseholds.isEmpty {
+        } else if displayedHouseholds.isEmpty {
             emptyHouseholdsPlaceholder
         } else {
             VStack(alignment: .leading, spacing: 12) {
@@ -289,13 +291,42 @@ struct HouseholdSelectionView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.secondary)
 
-                ForEach(viewModel.joinedHouseholds) { joined in
+                ForEach(displayedHouseholds) { joined in
                     JoinedHouseholdCard(joined: joined) {
                         appRouter.chooseJoinedHousehold(joined)
                     }
                 }
             }
         }
+    }
+
+    /// 列表优先用 RPC 详情；若详情为空则回退 AppRouter 已拉到的组织（避免新设备误显示空引导）。
+    private var displayedHouseholds: [JoinedHousehold] {
+        if viewModel.joinedHouseholds.isEmpty == false {
+            return viewModel.joinedHouseholds
+        }
+        return appRouter.selectableHouseholds.map { option in
+            JoinedHousehold(
+                id: option.membershipId,
+                householdId: option.id,
+                profileId: option.profileId,
+                role: nil,
+                isTrackedDevice: option.isTrackedDevice,
+                household: HouseholdBasicInfo(
+                    id: option.id,
+                    name: option.name,
+                    status: "active",
+                    isPremium: option.creatorHasActivePro
+                )
+            )
+        }
+    }
+
+    private func enterSoleHouseholdIfNeeded() {
+        guard appRouter.appState == .householdSelection || appRouter.selectedHouseholdId == nil else { return }
+        let households = displayedHouseholds
+        guard households.count == 1, let only = households.first else { return }
+        appRouter.chooseJoinedHousehold(only)
     }
 
     private var emptyHouseholdsPlaceholder: some View {

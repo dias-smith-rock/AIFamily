@@ -1718,55 +1718,55 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "扫码后请在小孩手机上设置家长 PIN，防止误入家庭数据。"
+            "value": "请在成员档案中设置家长 PIN。小孩机配对后会自动同步，无需在本机设置。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "掃碼後請在小孩手機上設定家長 PIN，防止誤入家庭資料。"
+            "value": "請在成員檔案中設定家長 PIN。小孩機配對後會自動同步，無需在本機設定。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "After scanning, set a parent PIN on the child device to prevent accidental access to family data."
+            "value": "Set the parent PIN on the member profile. The child phone uses that PIN after pairing."
           }
         }
       }
@@ -2013,55 +2013,55 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN 仅保存在本机。忘记请让家长重新配对。"
+            "value": "留空则不设置小孩机应用密码。也可设置 4 到 6 位数字。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN 僅保存在本機。忘記請讓家長重新配對。"
+            "value": "留空則不設定小孩機應用程式密碼。也可設定 4 到 6 位數字。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "PIN stays on this device only. Forgot it? Re-pair from a parent phone."
+            "value": "Leave empty to skip the kid-app password. Or set 4 to 6 digits."
           }
         }
       }
@@ -3893,6 +3893,1017 @@
             "value": "May be offline"
           }
         }
+      }
+    },
+    "location_tracked_device_section": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定位设备"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定位裝置"
+          }
+        }
+      }
+    },
+    "location_tracked_device_bound": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bound"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已绑定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已綁定"
+          }
+        }
+      }
+    },
+    "location_tracked_device_unbound": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not bound"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未绑定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未綁定"
+          }
+        }
+      }
+    },
+    "location_tracked_rebind_device_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebind location device"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新绑定定位设备"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重新綁定定位裝置"
+          }
+        }
+      }
+    },
+    "location_tracked_parent_pin": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parent PIN"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "家长 PIN"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "家長 PIN"
+          }
+        }
+      }
+    },
+    "location_tracked_pin_not_set": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leave empty for no kid-app password, or enter 4 to 6 digits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "留空表示不设置小孩机应用密码；也可输入 4 到 6 位数字。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "留空表示不設定小孩機應用程式密碼；也可輸入 4 到 6 位數字。"
+          }
+        }
+      }
+    },
+    "location_tracked_save_pin": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save PIN"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存 PIN"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存 PIN"
+          }
+        }
+      }
+    },
+    "location_tracked_pin_takes_effect_hint": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takes effect the next time this device is online."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将在该设备下次联网后生效。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將在該裝置下次連線後生效。"
+          }
+        }
+      }
+    },
+    "location_tracked_pin_invalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN must be 4 to 6 digits."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN 须为 4 到 6 位数字。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN 須為 4 到 6 位數字。"
+          }
+        }
+      }
+    },
+    "location_tracked_scan_qr": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan QR code"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描二维码"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "掃描二維碼"
+          }
+        }
+      }
+    },
+    "location_tracked_no_valid_pairing_code": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No valid pairing code found. Scan the code from a parent phone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未识别到有效配对码。请扫描家长手机上的二维码。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未識別到有效配對碼。請掃描家長手機上的二維碼。"
+          }
+        }
+      }
+    },
+    "location_tracked_pairing_success": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paired successfully"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配对成功"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配對成功"
+          }
+        }
+      }
+    },
+    "location_tracked_pairing_success_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This phone is now a location device. The parent PIN is set on the family profile."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此手机已绑定为定位设备。家长 PIN 由家庭档案管理，无需在本机设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此手機已綁定為定位裝置。家長 PIN 由家庭檔案管理，無需在本機設定。"
+          }
+        }
+      }
+    },
+    "location_tracked_admin_bind_success": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location device paired"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定位设备已绑定"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "定位裝置已綁定"
+          }
+        }
+      }
+    },
+    "location_tracked_admin_bind_success_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ is now bound as a location device."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 的定位设备已绑定成功。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 的定位裝置已綁定成功。"
+          }
+        }
+      }
+    },
+    "location_tracked_device_model": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Device model" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "设备型号" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "裝置型號" } }
+      }
+    },
+    "location_tracked_device_model_unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Unknown device" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未知设备" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "未知裝置" } }
+      }
+    },
+    "location_tracked_device_bound_at": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Bound at" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定时间" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定時間" } }
+      }
+    },
+    "location_tracked_device_bound_at_unknown": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Unknown" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "未知" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "未知" } }
+      }
+    },
+    "location_tracked_location_needed_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Turn on Location" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "需要定位权限" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "需要定位權限" } }
+      }
+    },
+    "location_tracked_location_needed_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "en": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "es": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "This location device needs Location set to Always. Open Settings to turn it on." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "请在设置中将定位设为「始终」，以便家人看到这台设备的位置。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "請在設定中將定位設為「永遠」，以便家人看到這台裝置的位置。" } }
+      }
+    },
+    "location_tracked_open_settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Open Settings" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "打开设置" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "打開設定" } }
+      }
+    },
+    "location_tracked_auth_services_off": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "en": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Location Services off" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "系统定位已关闭" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "系統定位已關閉" } }
+      }
+    },
+    "location_tracked_location_services_off_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "en": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "es": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "Turn on Location Services in Settings, then set this app to Always." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "系统「定位服务」总开关已关闭，因此权限会显示为已拒绝。请先在设置中打开定位服务，再将本应用设为「始终」。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "系統「定位服務」總開關已關閉，因此權限會顯示為已拒絕。請先在設定中打開定位服務，再將本應用設為「永遠」。" } }
       }
     }
   },

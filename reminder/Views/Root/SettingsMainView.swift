@@ -16,6 +16,8 @@ struct SettingsMainView: View {
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var profilePendingTrackedBind: FamilyProfile?
+    @State private var showTrackedBindSuccess = false
+    @State private var trackedBindSuccessName = ""
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
     @State private var editingSelfProfile: FamilyProfile?
@@ -66,6 +68,16 @@ struct SettingsMainView: View {
                 showTermsSheet: $showTermsSheet,
                 showPrivacySheet: $showPrivacySheet
             )
+            .alert(L10n.Location.trackedAdminBindSuccess, isPresented: $showTrackedBindSuccess) {
+                Button(L10n.Common.ok, role: .cancel) {}
+            } message: {
+                Text(
+                    L10n.Location.trackedAdminBindSuccessMessage.formatted(
+                        locale: locale,
+                        trackedBindSuccessName
+                    )
+                )
+            }
             .alert(L10n.Auth.clearGuestDataConfirmTitle, isPresented: $showClearGuestDataAlert) {
                 Button(L10n.Common.cancel, role: .cancel) {}
                 Button(L10n.Auth.guestStartFreshExperience, role: .destructive) {
@@ -229,11 +241,19 @@ struct SettingsMainView: View {
                 canEdit: familyViewModel.canEditProfile(profile),
                 memberRemoval: memberRemovalAction(for: profile),
                 adminRoleToggle: adminRoleToggleAction(for: profile),
+                trackedDeviceAdmin: familyViewModel.trackedDeviceAdminConfig(
+                    for: profile,
+                    householdId: appRouter.selectedHouseholdId,
+                    managerMembershipId: appRouter.selectedMembershipId
+                ),
                 uploadAvatar: { data, profileId in
                     await familyViewModel.uploadAvatar(data: data, profileId: profileId)
                 },
                 onSave: { _, draft in
                     await familyViewModel.updateProfile(profile, draft: draft)
+                },
+                onTrackedDeviceBound: {
+                    Task { await familyViewModel.loadMembers() }
                 }
             )
             .environment(\.locale, appSettings.appLocale)
@@ -263,7 +283,17 @@ struct SettingsMainView: View {
                 BindTrackedDeviceView(
                     profile: profile,
                     householdId: householdId,
-                    managerMembershipId: membershipId
+                    managerMembershipId: membershipId,
+                    onBound: {
+                        let name = profile.displayName
+                        profilePendingTrackedBind = nil
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(400))
+                            trackedBindSuccessName = name
+                            showTrackedBindSuccess = true
+                            await familyViewModel.loadMembers()
+                        }
+                    }
                 )
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
@@ -357,7 +387,9 @@ struct SettingsMainView: View {
 
     private var settingsListBody: some View {
         List {
-            if appRouter.isTrackedDeviceMembership, appRouter.isTrackedDevicePINUnlocked {
+            if appRouter.isTrackedDeviceMembership,
+               appRouter.isTrackedDevicePINUnlocked,
+               TrackedDevicePINStore.hasPIN {
                 Section {
                     Button(role: .destructive) {
                         appRouter.lockTrackedDeviceShell()

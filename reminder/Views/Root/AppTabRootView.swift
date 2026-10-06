@@ -66,11 +66,19 @@ struct AppTabRootView: View {
             guard appRouter.isTrackedDeviceMembership else { return }
             if phase == .active {
                 appRouter.syncTrackedDeviceUnlockStateFromSession()
+                Task {
+                    await TrackedDevicePINSync.applyFromServer()
+                    appRouter.refreshTrackedDeviceShellAfterPINSync()
+                }
             }
         }
         .onAppear {
             if appRouter.isTrackedDeviceMembership {
                 appRouter.syncTrackedDeviceUnlockStateFromSession()
+                Task {
+                    await TrackedDevicePINSync.applyFromServer()
+                    appRouter.refreshTrackedDeviceShellAfterPINSync()
+                }
             }
             AutoLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
             OAuthLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)

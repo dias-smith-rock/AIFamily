@@ -14,6 +14,8 @@ struct FamilyView: View {
     @State private var editingProfile: FamilyProfile?
     @State private var selectedProfileForDetail: FamilyProfile?
     @State private var profilePendingTrackedBind: FamilyProfile?
+    @State private var showTrackedBindSuccess = false
+    @State private var trackedBindSuccessName = ""
     @State private var isSortingMembers = false
     @State private var renameErrorMessage: String?
 
@@ -157,6 +159,11 @@ struct FamilyView: View {
                 canEdit: viewModel.canEditProfile(profile),
                 memberRemoval: memberRemovalAction(for: profile),
                 adminRoleToggle: adminRoleToggleAction(for: profile),
+                trackedDeviceAdmin: viewModel.trackedDeviceAdminConfig(
+                    for: profile,
+                    householdId: appRouter.selectedHouseholdId,
+                    managerMembershipId: appRouter.selectedMembershipId
+                ),
                 uploadAvatar: { data, profileId in
                     #if DEBUG
                     print("🔎 [FamilyDebug] FamilyView upload closure received data bytes=\(data.count)")
@@ -165,6 +172,9 @@ struct FamilyView: View {
                 },
                 onSave: { _, draft in
                     await viewModel.updateProfile(profile, draft: draft)
+                },
+                onTrackedDeviceBound: {
+                    Task { await viewModel.loadMembers() }
                 }
             )
             .environment(\.locale, appSettings.appLocale)
@@ -194,7 +204,17 @@ struct FamilyView: View {
                 BindTrackedDeviceView(
                     profile: profile,
                     householdId: householdId,
-                    managerMembershipId: membershipId
+                    managerMembershipId: membershipId,
+                    onBound: {
+                        let name = profile.displayName
+                        profilePendingTrackedBind = nil
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(400))
+                            trackedBindSuccessName = name
+                            showTrackedBindSuccess = true
+                            await viewModel.loadMembers()
+                        }
+                    }
                 )
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
@@ -219,6 +239,16 @@ struct FamilyView: View {
             .environment(\.layoutDirection, appSettings.layoutDirection)
             .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .alert(L10n.Location.trackedAdminBindSuccess, isPresented: $showTrackedBindSuccess) {
+            Button(L10n.Common.ok, role: .cancel) {}
+        } message: {
+            Text(
+                L10n.Location.trackedAdminBindSuccessMessage.formatted(
+                    locale: locale,
+                    trackedBindSuccessName
+                )
+            )
         }
         .alert(L10n.Common.notice, isPresented: transferSuccessToastBinding) {
             Button(L10n.Common.ok, role: .cancel) {

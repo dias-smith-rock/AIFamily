@@ -145,12 +145,6 @@ struct LocationMemberSheetRow: View {
                 .font(.body.weight(.medium))
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
-        } else if member.isCurrentUser {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 24))
-                .foregroundStyle(Color.blue)
-                .frame(width: 28, height: 28)
-                .accessibilityLabel(L10n.Location.currentUserAlwaysShownOnTheMap.string(locale: locale))
         } else {
             memberSelectionToggle
         }
