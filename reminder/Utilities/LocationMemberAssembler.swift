@@ -1,7 +1,7 @@
 import Foundation
 
 enum LocationMemberAssembler {
-    /// 将名册与 `location_states` 合并为地图成员行；**不做** active / 隐身等业务过滤（仅合并数据）。
+    /// 将名册与 `location_states` 合并为地图成员行；只展示家庭成员列表中会出现的人。
     static func buildMembers(
         roster: HouseholdMemberRoster,
         locationRecords: [LocationStateRecord],
@@ -16,7 +16,6 @@ enum LocationMemberAssembler {
             roster.profiles,
             memberships: roster.memberships
         )
-        let profileIds = Set(mergedProfiles.map(\.id))
         var servedLocationProfileIds = Set<UUID>()
 
         var members: [UserLocationState] = mergedProfiles.map { profile in
@@ -62,32 +61,8 @@ enum LocationMemberAssembler {
             )
         }
 
-        for membership in roster.memberships {
-            guard let profileId = membership.profileId else {
-                let row = orphanMembershipRow(
-                    membership,
-                    householdId: householdId,
-                    recordsByProfile: recordsByProfile,
-                    currentMembershipId: currentMembershipId,
-                    servedLocationProfileIds: &servedLocationProfileIds
-                )
-                members.append(row)
-                continue
-            }
-            guard profileIds.contains(profileId) == false else { continue }
-            members.append(
-                orphanMembershipRow(
-                    membership,
-                    householdId: householdId,
-                    recordsByProfile: recordsByProfile,
-                    currentMembershipId: currentMembershipId,
-                    servedLocationProfileIds: &servedLocationProfileIds
-                )
-            )
-        }
-
-        appendMembersForUnmappedLocationRecords(
-            into: &members,
+        attachLocationRecordsToExistingMembers(
+            members: &members,
             roster: roster,
             recordsByProfile: recordsByProfile,
             servedLocationProfileIds: servedLocationProfileIds,
@@ -127,98 +102,33 @@ enum LocationMemberAssembler {
         return nil
     }
 
-    private static func orphanMembershipRow(
-        _ membership: HouseholdMembership,
-        householdId: UUID,
-        recordsByProfile: [UUID: LocationStateRecord],
-        currentMembershipId: UUID?,
-        servedLocationProfileIds: inout Set<UUID>
-    ) -> UserLocationState {
-        let record: LocationStateRecord?
-        if let profile = membership.profile {
-            record = resolveLocationRecord(
-                profile: profile,
-                membership: membership,
-                recordsByProfile: recordsByProfile
-            )
-        } else if let profileId = membership.profileId {
-            record = recordsByProfile[profileId]
-        } else {
-            record = nil
-        }
-        if let record {
-            servedLocationProfileIds.insert(record.profileId)
-        }
-        return memberState(
-            id: membership.id,
-            householdId: householdId,
-            displayName: membership.displayName(linkedProfile: membership.profile),
-            profile: membership.profile,
-            record: record,
-            isVirtualMember: membership.userId == nil,
-            currentMembershipId: currentMembershipId
-        )
-    }
-
-    /// 库里有 `location_states` 但名册未挂上档案时，仍生成可展示成员行（避免地图只显示自己）。
-    private static func appendMembersForUnmappedLocationRecords(
-        into members: inout [UserLocationState],
+    /// 名册已有行时补上位置；已退群/无档案的 `location_states` 不再单独占一行。
+    private static func attachLocationRecordsToExistingMembers(
+        members: inout [UserLocationState],
         roster: HouseholdMemberRoster,
         recordsByProfile: [UUID: LocationStateRecord],
         servedLocationProfileIds: Set<UUID>,
         householdId: UUID,
         currentMembershipId: UUID?
     ) {
-        let memberProfileIds = Set(roster.memberships.compactMap(\.profileId))
         for record in recordsByProfile.values {
             guard servedLocationProfileIds.contains(record.profileId) == false else { continue }
-            guard record.latestLocation != nil else { continue }
-
-            if let membership = roster.memberships.first(where: { $0.profileId == record.profileId }) {
-                if let index = members.firstIndex(where: { $0.id == membership.id }) {
-                    if members[index].currentLocation == nil {
-                        members[index] = memberState(
-                            id: membership.id,
-                            householdId: householdId,
-                            displayName: membership.displayName(linkedProfile: membership.profile),
-                            profile: membership.profile,
-                            record: record,
-                            isVirtualMember: membership.userId == nil,
-                            currentMembershipId: currentMembershipId
-                        )
-                    }
-                } else {
-                    members.append(
-                        memberState(
-                            id: membership.id,
-                            householdId: householdId,
-                            displayName: membership.displayName(linkedProfile: membership.profile),
-                            profile: membership.profile,
-                            record: record,
-                            isVirtualMember: membership.userId == nil,
-                            currentMembershipId: currentMembershipId
-                        )
+            guard let membership = roster.memberships.first(where: { $0.profileId == record.profileId }) else {
+                continue
+            }
+            if let index = members.firstIndex(where: { $0.id == membership.id }) {
+                if members[index].currentLocation == nil {
+                    members[index] = memberState(
+                        id: membership.id,
+                        householdId: householdId,
+                        displayName: membership.displayName(linkedProfile: membership.profile),
+                        profile: membership.profile,
+                        record: record,
+                        isVirtualMember: membership.userId == nil,
+                        currentMembershipId: currentMembershipId
                     )
                 }
-                continue
             }
-
-            if memberProfileIds.contains(record.profileId) {
-                continue
-            }
-
-            let profile = roster.profiles.first(where: { $0.id == record.profileId })
-            members.append(
-                memberState(
-                    id: record.profileId,
-                    householdId: householdId,
-                    displayName: profile?.displayName ?? L10n.Family.groupMembers.string(),
-                    profile: profile,
-                    record: record,
-                    isVirtualMember: profile?.isVirtualUser == true,
-                    currentMembershipId: currentMembershipId
-                )
-            )
         }
     }
 

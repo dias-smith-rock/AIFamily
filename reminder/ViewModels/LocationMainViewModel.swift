@@ -229,7 +229,7 @@ final class LocationMainViewModel: ObservableObject {
             var profileMap: [UUID: UUID] = [:]
             var seen = Set<UUID>()
             for householdId in householdIds {
-                let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: false)
+                let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
                 var locationRecords: [LocationStateRecord] = []
                 do {
                     locationRecords = try await locationStateService.fetchLocationStates(in: householdId)
