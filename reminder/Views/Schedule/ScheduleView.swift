@@ -29,9 +29,12 @@ struct TaskModeDayView: View {
     @State private var allDayCardSlotWidth: CGFloat = 0
     @State private var daySlideInsertionEdge: Edge = .trailing
     @State private var interactiveDayDragOffset: CGFloat = 0
+    /// 横向切日滑动进行中时抑制按钮点击，避免“滑完误触”。
+    @State private var isDaySwipeGestureActive = false
 
     private let daySwipeSpring = Animation.spring(response: 0.34, dampingFraction: 0.88)
     private let dayDragMaxOffset: CGFloat = 96
+    private let daySwipeSuppressTapClearDelayNanoseconds: UInt64 = 80_000_000
 
     let onTaskSelect: (FamilyTask) -> Void
     let onQuickCreate: (String, Date?) -> Void
@@ -257,10 +260,14 @@ struct TaskModeDayView: View {
                 let horizontalTranslation = value.translation.width
                 let verticalTranslation = value.translation.height
                 guard abs(horizontalTranslation) > abs(verticalTranslation) else { return }
+                if isDaySwipeGestureActive == false {
+                    isDaySwipeGestureActive = true
+                }
                 let damped = horizontalTranslation * 0.55
                 interactiveDayDragOffset = max(-dayDragMaxOffset, min(dayDragMaxOffset, damped))
             }
             .onEnded { value in
+                defer { scheduleClearDaySwipeTapSuppression() }
                 let horizontalTranslation = value.translation.width
                 let verticalTranslation = value.translation.height
                 guard abs(horizontalTranslation) > abs(verticalTranslation) else {
@@ -277,6 +284,18 @@ struct TaskModeDayView: View {
                     resetInteractiveDayDrag()
                 }
             }
+    }
+
+    private func scheduleClearDaySwipeTapSuppression() {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: daySwipeSuppressTapClearDelayNanoseconds)
+            isDaySwipeGestureActive = false
+        }
+    }
+
+    private func performControlActionUnlessDaySwiping(_ action: () -> Void) {
+        guard isDaySwipeGestureActive == false else { return }
+        action()
     }
 
     private func resetInteractiveDayDrag() {
@@ -446,11 +465,13 @@ struct TaskModeDayView: View {
 
                 if let onInviteFamily {
                     Button {
-                        AnalyticsManager.logEmptyStateCTATapped(
-                            surface: AnalyticsManager.EmptyStateSurface.schedule,
-                            cta: AnalyticsManager.EmptyStateCTA.invite
-                        )
-                        onInviteFamily()
+                        performControlActionUnlessDaySwiping {
+                            AnalyticsManager.logEmptyStateCTATapped(
+                                surface: AnalyticsManager.EmptyStateSurface.schedule,
+                                cta: AnalyticsManager.EmptyStateCTA.invite
+                            )
+                            onInviteFamily()
+                        }
                     } label: {
                         Label {
                             Text(L10n.Schedule.emptyInvitePartner.localized)
@@ -469,11 +490,13 @@ struct TaskModeDayView: View {
                 }
 
                 Button {
-                    AnalyticsManager.logEmptyStateCTATapped(
-                        surface: AnalyticsManager.EmptyStateSurface.schedule,
-                        cta: AnalyticsManager.EmptyStateCTA.create
-                    )
-                    onQuickCreate("", defaultDueDate(for: .selectedDay))
+                    performControlActionUnlessDaySwiping {
+                        AnalyticsManager.logEmptyStateCTATapped(
+                            surface: AnalyticsManager.EmptyStateSurface.schedule,
+                            cta: AnalyticsManager.EmptyStateCTA.create
+                        )
+                        onQuickCreate("", defaultDueDate(for: .selectedDay))
+                    }
                 } label: {
                     Label {
                         Text(L10n.Schedule.emptyNewTask.localized)
@@ -512,11 +535,13 @@ struct TaskModeDayView: View {
     /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
     private func actionChip(emoji: String, title: L10n.Entry, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
         Button {
-            AnalyticsManager.logEmptyStateCTATapped(
-                surface: AnalyticsManager.EmptyStateSurface.schedule,
-                cta: AnalyticsManager.EmptyStateCTA.create
-            )
-            onQuickCreate(AppLocalized.string(title, locale: locale), defaultDueDate(for: dueDateKind))
+            performControlActionUnlessDaySwiping {
+                AnalyticsManager.logEmptyStateCTATapped(
+                    surface: AnalyticsManager.EmptyStateSurface.schedule,
+                    cta: AnalyticsManager.EmptyStateCTA.create
+                )
+                onQuickCreate(AppLocalized.string(title, locale: locale), defaultDueDate(for: dueDateKind))
+            }
         } label: {
             HStack(spacing: 8) {
                 Text(emoji)
