@@ -6,7 +6,7 @@ import Supabase
 
 enum SupportMailHelper {
     static let supportEmail = "music.player.250617@gmail.com"
-    static let subject = "Family Sync Support"
+    static let subject = "Family Link Support"
 
     static func makeSupportMailURL() async -> URL? {
         let body = await supportEmailBody()
@@ -23,7 +23,7 @@ enum SupportMailHelper {
     private static func supportEmailBody() async -> String {
         let userId = await currentUserIDLine()
         return """
-        Hi Family Sync Team,
+        Hi Family Link Team,
 
         Please describe your issue below:
 

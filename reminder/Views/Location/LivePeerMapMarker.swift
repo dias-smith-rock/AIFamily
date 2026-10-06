@@ -7,6 +7,7 @@ struct LivePeerMapMarker: View {
     let isCharging: Bool
     var lastUpdatedAt: Date?
     var headingDegrees: Double?
+    var avatarURL: URL?
 
     private var avatarRadius: CGFloat { UserMapAvatarView.avatarDiameter / 2 }
 
@@ -46,7 +47,8 @@ struct LivePeerMapMarker: View {
                 MapAvatarRingView(
                     displayName: displayName,
                     batteryLevel: batteryLevel,
-                    isCharging: isCharging
+                    isCharging: isCharging,
+                    avatarURL: avatarURL
                 )
             }
             .frame(width: Self.markerCanvasSide, height: Self.markerCanvasSide)
@@ -172,6 +174,7 @@ struct MapAvatarRingView: View {
     let batteryLevel: Int
     let isCharging: Bool
     var mapAccentColor: Color?
+    var avatarURL: URL?
 
     private var ringColor: Color {
         if isCharging { return .green }
@@ -181,15 +184,16 @@ struct MapAvatarRingView: View {
 
     var body: some View {
         ZStack {
+            LocationMemberAvatarView(
+                displayName: displayName,
+                avatarURL: avatarURL,
+                size: UserMapAvatarView.avatarDiameter - UserMapAvatarView.ringLineWidth
+            )
             Circle()
                 .stroke(ringColor, lineWidth: UserMapAvatarView.ringLineWidth)
-
-            Image(systemName: "person.circle.fill")
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(displayName)
         }
         .frame(width: UserMapAvatarView.avatarDiameter, height: UserMapAvatarView.avatarDiameter)
+        .accessibilityLabel(displayName)
     }
 }
 

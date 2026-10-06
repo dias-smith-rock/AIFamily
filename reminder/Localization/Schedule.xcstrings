@@ -4314,55 +4314,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في Family Sync."
+            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في Family Link."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verify your identity to access group schedules and tasks in Family Sync."
+            "value": "Verify your identity to access group schedules and tasks in Family Link."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en Family Sync."
+            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en Family Link."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans Family Sync."
+            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans Family Link."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Sync में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+            "value": "Family Link में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no Family Sync."
+            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no Family Link."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Sync இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+            "value": "Family Link இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请验证身份以访问同圈中的群组日程与任务。"
+            "value": "请验证身份以访问家庭记事中的群组日程与任务。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請驗證身分以存取同圈中的群組日程與任務。"
+            "value": "請驗證身分以存取家庭記事中的群組日程與任務。"
           }
         }
       }

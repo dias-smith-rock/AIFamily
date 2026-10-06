@@ -1423,55 +1423,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسجيل الدخول إلى Family Sync"
+            "value": "تسجيل الدخول إلى Family Link"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sign in to Family Sync"
+            "value": "Sign in to Family Link"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Iniciar sesión en Family Sync"
+            "value": "Iniciar sesión en Family Link"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connexion à Family Sync"
+            "value": "Connexion à Family Link"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Sync में साइन इन करें"
+            "value": "Family Link में साइन इन करें"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Entrar no Family Sync"
+            "value": "Entrar no Family Link"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Sync இல் உள்நுழைக"
+            "value": "Family Link இல் உள்நுழைக"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "登录同圈"
+            "value": "登录家庭记事"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "登入同圈"
+            "value": "登入家庭記事"
           }
         }
       }
@@ -1788,15 +1788,15 @@
     "auth_identity_already_linked_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 账号已绑定其他 Family Sync 用户。请换一个账号绑定，或继续以游客使用——当前群组仍保留在本游客账号下。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 帳號已綁定其他 Family Sync 使用者。請換一個帳號綁定，或繼續以遊客使用——目前群組仍保留在本遊客帳號下。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Sync user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } }
+        "en": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 账号已绑定其他家庭记事用户。请换一个账号绑定，或继续以游客使用——当前群组仍保留在本游客账号下。" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 帳號已綁定其他家庭記事使用者。請換一個帳號綁定，或繼續以遊客使用——目前群組仍保留在本遊客帳號下。" } },
+        "es": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "fr": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "pt": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "ar": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "hi": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
+        "ta": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } }
       }
     },
     "auth_manual_linking_disabled": {

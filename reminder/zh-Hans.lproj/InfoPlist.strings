@@ -1,9 +1,9 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "记事本";
-"CFBundleName" = "记事本";
+"CFBundleDisplayName" = "家庭记事";
+"CFBundleName" = "家庭记事";
 
-"NSCameraUsageDescription" = "Family Sync 需要访问您的相机以扫描邀请码、拍摄通知单或收据并自动生成任务。";
+"NSCameraUsageDescription" = "家庭记事需要访问您的相机以扫描邀请码、拍摄通知单或收据并自动生成任务。";
 "NSPhotoLibraryAddUsageDescription" = "用于将任务附件图片保存到你的相册。";
 "NSFaceIDUsageDescription" = "用于通过 Face ID 保护你的群组日程与任务。";
 "NSLocationWhenInUseUsageDescription" = "用于在地图中展示您与成员的大致位置，并在完成任务时记录地点。";
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "用于在应用后台时向同圈群组成员更新您的大致位置；可在「我的」中关闭后台定位。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "用于在应用后台时向家庭记事群组成员更新您的大致位置；可在「我的」中关闭后台定位。";

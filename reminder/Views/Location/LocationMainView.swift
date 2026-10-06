@@ -279,7 +279,8 @@ struct LocationMainView: View {
                                 for: item.id,
                                 rosterFallback: viewModel.members.first(where: { $0.id == item.id })
                             ),
-                            headingDegrees: item.headingDegrees
+                            headingDegrees: item.headingDegrees,
+                            avatarURL: item.avatarURL
                         )
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.latitude)
                         .animation(.easeInOut(duration: 0.5), value: item.coordinate.longitude)
@@ -297,6 +298,7 @@ struct LocationMainView: View {
     private struct LiveMapAnnotationItem: Identifiable {
         let id: UUID
         let displayName: String
+        let avatarURL: URL?
         let coordinate: CLLocationCoordinate2D
         let headingDegrees: Double?
         let batteryLevel: Int
@@ -314,6 +316,7 @@ struct LocationMainView: View {
             return LiveMapAnnotationItem(
                 id: membershipId,
                 displayName: member?.displayName ?? L10n.Family.groupMembers.string(),
+                avatarURL: member?.avatarURL,
                 coordinate: coordinate,
                 headingDegrees: heading,
                 batteryLevel: battery.level,
@@ -401,7 +404,8 @@ struct LocationMainView: View {
                             batteryLevel: battery.level,
                             isCharging: battery.isCharging,
                             lastUpdatedAt: liveManager.locationUpdatedAt(for: member.id, rosterFallback: member),
-                            headingDegrees: liveManager.currentHeadingDegrees
+                            headingDegrees: liveManager.currentHeadingDegrees,
+                            avatarURL: member.avatarURL
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)
                         .animation(.easeInOut(duration: 0.45), value: current.longitude)
@@ -413,6 +417,7 @@ struct LocationMainView: View {
                             isCharging: member.isCharging,
                             lastUpdatedAt: member.currentLocationUpdatedAt,
                             mapAccentColor: accent,
+                            avatarURL: member.avatarURL,
                             isStale: member.isLikelyOffline
                         )
                         .animation(.easeInOut(duration: 0.45), value: current.latitude)

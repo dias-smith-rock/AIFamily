@@ -11,6 +11,7 @@ struct UserMapAvatarView: View {
     let isCharging: Bool
     var lastUpdatedAt: Date?
     var mapAccentColor: Color?
+    var avatarURL: URL?
     /// 非 Live：最后上报过久时降饱和，提示「可能离线」。
     var isStale: Bool = false
 
@@ -20,7 +21,8 @@ struct UserMapAvatarView: View {
                 displayName: displayName,
                 batteryLevel: batteryLevel,
                 isCharging: isCharging,
-                mapAccentColor: isStale ? .secondary : mapAccentColor
+                mapAccentColor: isStale ? .secondary : mapAccentColor,
+                avatarURL: avatarURL
             )
             MapAvatarInfoBadge(
                 batteryLevel: batteryLevel,

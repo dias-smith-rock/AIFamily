@@ -20,7 +20,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		DD17A5EF2F9F4E500059AE67 /* Family Sync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Family Sync.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD17A5EF2F9F4E500059AE67 /* Family Link.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Family Link.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -78,7 +78,7 @@
 		DD17A5F02F9F4E500059AE67 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DD17A5EF2F9F4E500059AE67 /* Family Sync.app */,
+				DD17A5EF2F9F4E500059AE67 /* Family Link.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -122,8 +122,8 @@
 				DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */,
 				DDE1RC022FC91B21009FE64F /* RevenueCat */,
 			);
-			productName = "Family Sync";
-			productReference = DD17A5EF2F9F4E500059AE67 /* Family Sync.app */;
+			productName = "Family Link";
+			productReference = DD17A5EF2F9F4E500059AE67 /* Family Link.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -353,7 +353,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = reminder/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Family Sync";
+				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -366,7 +366,7 @@
 				);
 				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = "Family Sync";
+				PRODUCT_NAME = "Family Link";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -389,7 +389,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = reminder/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Family Sync";
+				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -402,7 +402,7 @@
 				);
 				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = "Family Sync";
+				PRODUCT_NAME = "Family Link";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

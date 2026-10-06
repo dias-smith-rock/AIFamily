@@ -1,9 +1,9 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "Family Sync";
-"CFBundleName" = "Family Sync";
+"CFBundleDisplayName" = "Family Link";
+"CFBundleName" = "Family Link";
 
-"NSCameraUsageDescription" = "O Family Sync precisa de acesso à câmera para escanear códigos de convite e capturar avisos ou recibos para criar tarefas automaticamente.";
+"NSCameraUsageDescription" = "O Family Link precisa de acesso à câmera para escanear códigos de convite e capturar avisos ou recibos para criar tarefas automaticamente.";
 "NSPhotoLibraryAddUsageDescription" = "Usado para salvar imagens de anexos de tarefas no seu álbum de fotos.";
-"NSFaceIDUsageDescription" = "O Family Sync usa o Face ID para proteger suas agendas e tarefas privadas do grupo.";
+"NSFaceIDUsageDescription" = "O Family Link usa o Face ID para proteger suas agendas e tarefas privadas do grupo.";
 "NSLocationWhenInUseUsageDescription" = "Usado para mostrar sua localização aproximada e a dos membros no mapa, e registrar locais ao concluir tarefas.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Usado para atualizar sua localização aproximada para os membros do grupo enquanto o app está em segundo plano; você pode desativar a localização em segundo plano em «Eu».";
