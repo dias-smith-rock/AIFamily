@@ -6723,7 +6723,7 @@
     "orphan": false
   },
   {
-    "legacy_key": "Ask %@'s device to scan this code in WeSync. No account signup needed.",
+    "legacy_key": "Ask %@'s device to scan this code in Family Link. No account signup needed.",
     "new_key": "location_tracked_bind_subtitle",
     "table": "Location",
     "swift_property": "trackedBindSubtitle",

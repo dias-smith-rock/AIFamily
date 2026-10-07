@@ -2,9 +2,9 @@ import SwiftUI
 
 /// 地图成员标注头像（普通 / Live 模式统一紧凑尺寸）。
 struct UserMapAvatarView: View {
-    static let avatarDiameter: CGFloat = 30
-    static let personIconSize: CGFloat = 24
-    static let ringLineWidth: CGFloat = 2
+    static let avatarDiameter: CGFloat = 34
+    static let personIconSize: CGFloat = 26
+    static let ringLineWidth: CGFloat = 2.5
 
     let displayName: String
     let batteryLevel: Int
@@ -31,15 +31,18 @@ struct UserMapAvatarView: View {
         }
     }
 
+    /// 含白色描边光晕后的头像占位高度。
+    static var avatarPlateDiameter: CGFloat { avatarDiameter + 4 }
+
     /// 地图坐标落在头像圆心（名称与电量在下方）。
     static var mapCoordinateAnchor: UnitPoint {
         let spacing: CGFloat = 2
-        let totalHeight = avatarDiameter
+        let totalHeight = avatarPlateDiameter
             + spacing
             + MapAvatarBatteryBadge.badgeHeight
             + spacing
             + MapAvatarNameCaption.height
-        return UnitPoint(x: 0.5, y: (avatarDiameter / 2) / totalHeight)
+        return UnitPoint(x: 0.5, y: (avatarPlateDiameter / 2) / totalHeight)
     }
 }
 

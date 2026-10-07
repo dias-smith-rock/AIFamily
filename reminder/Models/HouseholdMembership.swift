@@ -249,17 +249,14 @@ extension HouseholdMembership {
         )
     }
 
-    /// 有 membership 时优先 `nickname`；否则回退关联档案的 `name`。
+    /// 有 membership 时优先 `nickname`；否则回退关联档案展示名。
     func displayName(linkedProfile: FamilyProfile?) -> String {
         let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if trimmedNickname.isEmpty == false {
-            return StoredDisplayNameResolver.selfName(trimmedNickname)
+            return MemberDisplayName.nonEmpty(StoredDisplayNameResolver.selfName(trimmedNickname))
         }
         if let linkedProfile {
-            let profileName = linkedProfile.name.trimmingCharacters(in: .whitespacesAndNewlines)
-            if profileName.isEmpty == false, profileName != L10n.Family.unnamedMember.string() {
-                return StoredDisplayNameResolver.selfName(profileName)
-            }
+            return MemberDisplayName.nonEmpty(linkedProfile.displayName)
         }
         return MemberDisplayName.unknownFallback
     }

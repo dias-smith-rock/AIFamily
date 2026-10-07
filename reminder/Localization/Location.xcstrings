@@ -1541,55 +1541,55 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请用%@的手机在 WeSync 中扫描此码。无需注册账号。"
+            "value": "请用%@的手机在 Family Link 中扫描此码。无需注册账号。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請用%@的手機在 WeSync 中掃描此碼。無需註冊帳號。"
+            "value": "請用%@的手機在 Family Link 中掃描此碼。無需註冊帳號。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask %@'s device to scan this code in WeSync. No account signup needed."
+            "value": "Ask %@'s device to scan this code in Family Link. No account signup needed."
           }
         }
       }

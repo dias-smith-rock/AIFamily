@@ -192,6 +192,13 @@ struct MapAvatarRingView: View {
 
     var body: some View {
         ZStack {
+            Circle()
+                .fill(Color.white)
+                .frame(
+                    width: UserMapAvatarView.avatarDiameter + 4,
+                    height: UserMapAvatarView.avatarDiameter + 4
+                )
+                .shadow(color: .black.opacity(0.22), radius: 3, y: 1)
             LocationMemberAvatarView(
                 displayName: displayName,
                 avatarURL: avatarURL,
@@ -200,7 +207,7 @@ struct MapAvatarRingView: View {
             Circle()
                 .stroke(ringColor, lineWidth: UserMapAvatarView.ringLineWidth)
         }
-        .frame(width: UserMapAvatarView.avatarDiameter, height: UserMapAvatarView.avatarDiameter)
+        .frame(width: UserMapAvatarView.avatarDiameter + 4, height: UserMapAvatarView.avatarDiameter + 4)
         .accessibilityLabel(displayName)
     }
 }
@@ -256,15 +263,38 @@ struct MapAvatarLastUpdatedBadge: View {
     }
 }
 
-/// 历史轨迹点：仅圆点（电量/时间只在当前头像下展示，避免同点叠两套徽章）。
+/// 历史轨迹点：中间点为圆点；路径起点（最旧点）为红色定位针。
 struct MapHistoryTrajectoryMarker: View {
     let dotDiameter: CGFloat
     let dotColor: Color
+    var isPathStart: Bool = false
+
+    static let pathStartPinHeight: CGFloat = 28
+
+    /// 起点针尖落在坐标上；圆点居中。
+    static func mapCoordinateAnchor(isPathStart: Bool) -> UnitPoint {
+        isPathStart ? UnitPoint(x: 0.5, y: 1) : .center
+    }
 
     var body: some View {
-        Circle()
-            .fill(dotColor)
-            .frame(width: dotDiameter, height: dotDiameter)
+        if isPathStart {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.88))
+                    .frame(width: 16, height: 16)
+                    .offset(y: -5)
+                Image(systemName: "mappin")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(Color.red)
+                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+            }
+            .frame(width: 28, height: Self.pathStartPinHeight, alignment: .bottom)
+            .accessibilityHidden(true)
+        } else {
+            Circle()
+                .fill(dotColor)
+                .frame(width: dotDiameter, height: dotDiameter)
+        }
     }
 }
 

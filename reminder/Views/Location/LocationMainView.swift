@@ -343,6 +343,14 @@ struct LocationMainView: View {
                 }
             }
         }
+        .mapStyle(
+            .standard(
+                elevation: .flat,
+                emphasis: .muted,
+                pointsOfInterest: .excludingAll,
+                showsTraffic: false
+            )
+        )
         .mapControls {
             MapCompass()
         }
@@ -430,7 +438,7 @@ struct LocationMainView: View {
                                 segmentIndex: index,
                                 totalSegments: segmentCount
                             ),
-                            style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round)
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
                         )
                 }
             }
@@ -438,13 +446,14 @@ struct LocationMainView: View {
             let history = Array(visibleLocations.dropFirst())
             ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
                 let rank = history.count - 1 - index
+                let isPathStart = index == history.count - 1
                 let dotDiameter = history.count > 1
-                    ? 8.0 + (Double(rank) / Double(history.count - 1)) * 2.0
-                    : 9.0
+                    ? 9.0 + (Double(rank) / Double(history.count - 1)) * 3.0
+                    : 10.0
                 Annotation(
                     "",
                     coordinate: historyPoint.coordinate,
-                    anchor: .center
+                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: isPathStart)
                 ) {
                     MapHistoryTrajectoryMarker(
                         dotDiameter: dotDiameter,
@@ -452,7 +461,8 @@ struct LocationMainView: View {
                             for: member.id,
                             rank: rank,
                             totalHistoryCount: history.count
-                        )
+                        ),
+                        isPathStart: isPathStart
                     )
                 }
             }

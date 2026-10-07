@@ -150,7 +150,7 @@ enum LocationMemberAssembler {
         return UserLocationState(
             id: id,
             householdId: record?.householdId ?? householdId,
-            displayName: displayName,
+            displayName: MemberDisplayName.nonEmpty(displayName),
             avatarURL: avatarURL,
             isVirtualMember: isVirtualMember,
             isGhostMode: false,

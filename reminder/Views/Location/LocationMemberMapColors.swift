@@ -27,7 +27,7 @@ enum LocationMemberMapColors {
         let progress = totalSegments > 0
             ? Double(segmentIndex + 1) / Double(totalSegments)
             : 1
-        return base.opacity(0.32 + (0.68 * progress))
+        return base.opacity(0.55 + (0.45 * progress))
     }
 
     /// 历史点：`rank` 0 = 最旧，递增到最新历史点。
@@ -38,7 +38,7 @@ enum LocationMemberMapColors {
         } else {
             progress = 1
         }
-        let opacity = 0.38 + (0.37 * progress)
+        let opacity = 0.55 + (0.4 * progress)
         return accent(for: memberId).opacity(opacity)
     }
 

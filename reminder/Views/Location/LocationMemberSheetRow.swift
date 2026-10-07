@@ -26,7 +26,7 @@ struct LocationMemberSheetRow: View {
                 .frame(width: checkboxColumnWidth, height: avatarSize, alignment: .center)
 
             LocationMemberAvatarView(
-                displayName: member.displayName,
+                displayName: resolvedDisplayName,
                 avatarURL: member.avatarURL,
                 size: avatarSize,
                 isGrayscale: member.isGhostMode
@@ -70,22 +70,26 @@ struct LocationMemberSheetRow: View {
         .accessibilityLabel(accessibilitySummary)
     }
 
+    private var resolvedDisplayName: String {
+        MemberDisplayName.nonEmpty(member.displayName)
+    }
+
     private var titleLine: String {
         if isInLiveHuddle {
             return String(
                 format: L10n.Common.live.string(locale: locale),
                 locale: locale,
-                member.displayName
+                resolvedDisplayName
             )
         }
         if member.isGhostMode {
             return String(
                 format: L10n.Location.locationHidden.string(locale: locale),
                 locale: locale,
-                member.displayName
+                resolvedDisplayName
             )
         }
-        return member.displayName
+        return resolvedDisplayName
     }
 
     private var subtitleLine: String {
@@ -107,23 +111,23 @@ struct LocationMemberSheetRow: View {
                 return String(
                     format: L10n.Location.shownOnTheMapWhenSelected.string(locale: locale),
                     locale: locale,
-                    member.displayName
+                    resolvedDisplayName
                 )
             }
             return String(
                 format: AppLocalized.string(L10n.Location.noLocationYetWillAppearOnTheMapWhenLoca, locale: locale),
                 locale: locale,
-                member.displayName
+                resolvedDisplayName
             )
         }
         if member.isGhostMode {
             return String(
                 format: L10n.Location.locationHidden2.string(locale: locale),
                 locale: locale,
-                member.displayName
+                resolvedDisplayName
             )
         }
-        var parts = [member.displayName]
+        var parts = [resolvedDisplayName]
         if let address = member.addressDescription {
             parts.append(address)
         }
