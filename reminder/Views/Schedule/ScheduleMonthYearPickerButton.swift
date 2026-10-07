@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// 日程底部月份切换按钮（与创建 FAB 同行居中）。
+/// 日程底部月份切换按钮（与创建 FAB 同行，靠左）。
 struct ScheduleMonthYearPickerButton: View {
     let title: String
     let action: () -> Void

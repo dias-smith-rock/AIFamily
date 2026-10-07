@@ -358,15 +358,9 @@ struct TaskListView: View {
         }
     }
 
-    /// 底部：左侧回到本周（仅周视图）+ 居中月份入口 + 右侧创建 FAB。
+    /// 底部：左侧月份入口（及周视图「回到本周」）+ 右侧创建 FAB。
     private var bottomAccessoryBar: some View {
-        HStack(spacing: 0) {
-            bottomLeadingAccessory
-                .frame(width: 56, height: 56)
-
-            Spacer(minLength: 8)
-                .allowsHitTesting(false)
-
+        HStack(spacing: 12) {
             if showsBottomMonthPicker {
                 ScheduleMonthYearPickerButton(title: navigationMonthYearTitle) {
                     isShowingCalendarSheet = true
@@ -380,6 +374,8 @@ struct TaskListView: View {
                     .presentationDragIndicator(.visible)
                 }
             }
+
+            bottomLeadingAccessory
 
             Spacer(minLength: 8)
                 .allowsHitTesting(false)
@@ -406,9 +402,6 @@ struct TaskListView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.Common.today)
-        } else {
-            Color.clear
-                .allowsHitTesting(false)
         }
     }
 
@@ -552,7 +545,7 @@ struct TaskListView: View {
     private var navigationMonthYearTitle: String {
         navigationReferenceDate.formatted(
             .dateTime
-                .month(.wide)
+                .month(.abbreviated)
                 .year()
                 .locale(locale)
         )
