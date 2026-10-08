@@ -246,11 +246,6 @@ struct TaskModeDayView: View {
         }
     }
 
-    private func performControlActionUnlessDaySwiping(_ action: () -> Void) {
-        guard isDaySwipeGestureActive == false else { return }
-        action()
-    }
-
     private func resetInteractiveDayDrag() {
         withAnimation(daySwipeSpring) {
             interactiveDayDragOffset = 0
@@ -289,19 +284,6 @@ struct TaskModeDayView: View {
         daySlideInsertionEdge = newDay > oldDay ? .trailing : .leading
     }
 
-    private func pullToRefreshScrollContainer<Content: View>(
-        minHeight: CGFloat,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        ScrollView {
-            content()
-                .frame(maxWidth: .infinity, minHeight: minHeight)
-        }
-        .refreshable {
-            await refreshTasks()
-        }
-    }
-
     private func refreshTasks() async {
         if let onRefresh {
             await onRefresh()
@@ -310,8 +292,136 @@ struct TaskModeDayView: View {
         }
     }
 
-    /// 周历下方置顶：`is_all_day` 任务专用紧凑卡片（标题 + 为了谁），横向滑动。
-    /// 左侧「全天」与时间列同宽左对齐；卡片宽度与锚点行右侧任务卡一致（随 ScrollView 可视宽度）。
+    private var selectedDateTasks: [FamilyTask] {
+        let day = selectedDay
+        let cal = displayCalendar
+        return viewModel.scheduledTasks
+            .filter { task in
+                task.scheduleDisplayDay(displayCalendar: cal) == day
+            }
+            .sorted { lhs, rhs in
+                ScheduleTimelineMetrics.timelineSortsBefore(
+                    lhs,
+                    rhs,
+                    anchor: { $0.dueDate ?? $0.originalDueDate ?? $0.createdAt }
+                )
+            }
+    }
+
+    private func dayID(for date: Date) -> Date {
+        displayCalendar.startOfDay(for: date)
+    }
+
+    private var selectedDay: Date {
+        dayID(for: selectedDate)
+    }
+}
+
+// MARK: - Day schedule pane
+
+/// 日内容（全天条 + 时间轴）。与拖动 offset 解耦，避免跟手滑动时反复重建周条。
+private struct TaskModeDaySchedulePane: View {
+    let selectedDay: Date
+    @Binding var selectedDate: Date
+    let dayTasks: [FamilyTask]
+    let isLoading: Bool
+    let errorMessage: String?
+    @Binding var allDayCardSlotWidth: CGFloat
+    let resolvedAllDayCardWidth: CGFloat
+    let locale: Locale
+    let displayCalendar: Calendar
+    let taskFlowCompactGapHeight: CGFloat
+    let taskFlowLongIdleThreshold: TimeInterval
+    @ObservedObject var viewModel: ScheduleViewModel
+    let onTaskSelect: (FamilyTask) -> Void
+    let onQuickCreate: (String, Date?) -> Void
+    let onInviteFamily: (() -> Void)?
+    let onRefresh: (() async -> Void)?
+    let isDaySwipeGestureActive: Bool
+
+    private enum QuickCreateDueDateKind {
+        case selectedDay
+        case dayAfterSelected
+        case nextSaturdayFromSelected
+    }
+
+    var body: some View {
+        let pinnedAllDay = dayTasks.filter(\.isAllDay)
+        let timed = dayTasks.filter { $0.isAllDay == false }
+
+        VStack(alignment: .leading, spacing: 10) {
+            if pinnedAllDay.isEmpty == false {
+                allDayTasksPinnedStrip(tasks: pinnedAllDay)
+            }
+            timelineSection(timedTasks: timed, dayTasksIsEmpty: dayTasks.isEmpty)
+        }
+    }
+
+    @ViewBuilder
+    private func timelineSection(timedTasks: [FamilyTask], dayTasksIsEmpty: Bool) -> some View {
+        Group {
+            if isLoading {
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 120)
+                }
+            } else if let errorMessage {
+                pullToRefreshScrollContainer(minHeight: 360) {
+                    ContentUnavailableView {
+                        Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
+                    } description: {
+                        Text(errorMessage)
+                    } actions: {
+                        Button(AppLocalized.string(L10n.Common.reload, locale: locale)) {
+                            Task { await refreshTasks() }
+                        }
+                    }
+                }
+            } else {
+                ZStack {
+                    ScrollViewReader { proxy in
+                        ScrollView(.vertical, showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                if timedTasks.isEmpty == false {
+                                    ScheduleTaskAnchorFlow(
+                                        timedTasks: timedTasks,
+                                        selectedCalendarDay: selectedDay,
+                                        compactGapHeight: taskFlowCompactGapHeight,
+                                        longIdleThreshold: taskFlowLongIdleThreshold,
+                                        taskAnchor: taskDisplayDate,
+                                        taskEnd: { $0.timelineEndDate },
+                                        forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+                                        assigneeLabel: { viewModel.assigneeLabel(for: $0, locale: locale) },
+                                        displayTitle: { viewModel.displayTitle(for: $0) },
+                                        onTaskTap: onTaskSelect
+                                    )
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .top)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 24)
+                        }
+                        .refreshable { await refreshTasks() }
+                        .onAppear {
+                            scrollTaskAnchorFlowToInitial(proxy: proxy, timedTasks: timedTasks, animated: false)
+                        }
+                        .onChange(of: selectedDate) { _, _ in
+                            scrollTaskAnchorFlowToInitial(proxy: proxy, timedTasks: timedTasks)
+                        }
+                    }
+
+                    if dayTasksIsEmpty {
+                        emptyStateView()
+                            .padding(.horizontal, 16)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
     private func allDayTasksPinnedStrip(tasks: [FamilyTask]) -> some View {
         HStack(alignment: .top, spacing: ScheduleTimelineMetrics.rowSpacing) {
             Text(L10n.Common.allDay.localized)
@@ -334,9 +444,7 @@ struct TaskModeDayView: View {
                         .frame(width: resolvedAllDayCardWidth)
                         .fixedSize(horizontal: false, vertical: true)
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            onTaskSelect(task)
-                        }
+                        .onTapGesture { onTaskSelect(task) }
                     }
                 }
                 .padding(.vertical, 2)
@@ -355,8 +463,23 @@ struct TaskModeDayView: View {
         .padding(.bottom, 8)
     }
 
-    private func taskEndDate(_ task: FamilyTask) -> Date {
-        task.timelineEndDate
+    private func pullToRefreshScrollContainer<Content: View>(
+        minHeight: CGFloat,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: .infinity, minHeight: minHeight)
+        }
+        .refreshable { await refreshTasks() }
+    }
+
+    private func refreshTasks() async {
+        if let onRefresh {
+            await onRefresh()
+        } else {
+            await viewModel.loadTasks()
+        }
     }
 
     private func scrollTaskAnchorFlowToInitial(
@@ -365,8 +488,7 @@ struct TaskModeDayView: View {
         animated: Bool = true
     ) {
         guard timedTasks.isEmpty == false else { return }
-        let cal = displayCalendar
-        let viewingToday = cal.isDateInToday(selectedDay)
+        let viewingToday = displayCalendar.isDateInToday(selectedDay)
         let sorted = ScheduleTimelineMetrics.sortedForTimeline(timedTasks, anchor: taskDisplayDate)
         guard let first = sorted.first else { return }
         let firstID = "task-\(first.id.uuidString)"
@@ -380,17 +502,14 @@ struct TaskModeDayView: View {
         }
 
         if animated {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                action()
-            }
+            withAnimation(.easeInOut(duration: 0.25)) { action() }
         } else {
             action()
         }
     }
 
     private var showsSoloHouseholdInviteCTA: Bool {
-        let activeHumans = viewModel.householdMembers.filter { $0.isActiveMembership() }.count
-        return activeHumans <= 1
+        viewModel.householdMembers.filter { $0.isActiveMembership() }.count <= 1
     }
 
     @ViewBuilder
@@ -489,8 +608,7 @@ struct TaskModeDayView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Emoji 与标题样式隔离，避免环境里的 `.foregroundStyle` 把 Emoji 压成单色。
-    private func actionChip(emoji: String, title: L10n.Entry, dueDateKind: QuickCreateDueDateKind = .selectedDay) -> some View {
+    private func actionChip(emoji: String, title: L10n.Entry, dueDateKind: QuickCreateDueDateKind) -> some View {
         Button {
             performControlActionUnlessDaySwiping {
                 AnalyticsManager.logEmptyStateCTATapped(
@@ -517,29 +635,9 @@ struct TaskModeDayView: View {
         .buttonStyle(.plain)
     }
 
-    private var selectedDateTasks: [FamilyTask] {
-        let day = selectedDay
-        let cal = displayCalendar
-        return viewModel.scheduledTasks
-            .filter { task in
-                task.scheduleDisplayDay(displayCalendar: cal) == day
-            }
-            .sorted { lhs, rhs in
-                ScheduleTimelineMetrics.timelineSortsBefore(lhs, rhs, anchor: taskDisplayDate)
-            }
-    }
-
-    private func dayID(for date: Date) -> Date {
-        displayCalendar.startOfDay(for: date)
-    }
-
-    private enum QuickCreateDueDateKind {
-        /// 与顶栏「+」一致：当前选中日。
-        case selectedDay
-        /// 购物清单：选中日的次日 0 点。
-        case dayAfterSelected
-        /// 亲子活动：从选中日（含）起往后找第一个周六（自然周）。
-        case nextSaturdayFromSelected
+    private func performControlActionUnlessDaySwiping(_ action: () -> Void) {
+        guard isDaySwipeGestureActive == false else { return }
+        action()
     }
 
     private func defaultDueDate(for kind: QuickCreateDueDateKind) -> Date? {
@@ -554,35 +652,24 @@ struct TaskModeDayView: View {
     }
 
     private func calendarDayByAdding(_ days: Int, to anchor: Date) -> Date {
-        let cal = displayCalendar
-        let base = dayID(for: anchor)
-        guard let shifted = cal.date(byAdding: .day, value: days, to: base) else { return base }
-        return cal.startOfDay(for: shifted)
+        let base = displayCalendar.startOfDay(for: anchor)
+        guard let shifted = displayCalendar.date(byAdding: .day, value: days, to: base) else { return base }
+        return displayCalendar.startOfDay(for: shifted)
     }
 
-    /// `weekday` 与 `Calendar.Component.weekday` 一致（如美国历：1=周日 … 7=周六）。
     private func nextSaturdayOnOrAfter(_ anchor: Date) -> Date {
-        let cal = displayCalendar
-        let base = dayID(for: anchor)
+        let base = displayCalendar.startOfDay(for: anchor)
         for offset in 0..<14 {
-            guard let d = cal.date(byAdding: .day, value: offset, to: base) else { continue }
-            if cal.component(.weekday, from: d) == 7 {
-                return cal.startOfDay(for: d)
+            guard let d = displayCalendar.date(byAdding: .day, value: offset, to: base) else { continue }
+            if displayCalendar.component(.weekday, from: d) == 7 {
+                return displayCalendar.startOfDay(for: d)
             }
         }
         return base
     }
 
-    private var selectedDay: Date {
-        dayID(for: selectedDate)
-    }
-
     private func taskDisplayDate(_ task: FamilyTask) -> Date {
         task.dueDate ?? task.originalDueDate ?? task.createdAt
-    }
-
-    private func assigneeLabel(for task: FamilyTask) -> String {
-        viewModel.assigneeLabel(for: task, locale: locale)
     }
 }
 
@@ -611,7 +698,7 @@ private struct TaskModeDayWeekStripPager: View, Equatable {
 
     var body: some View {
         let taskCounts = taskCountsByDay()
-        return ScheduleWeekDayStripChrome {
+        ScheduleWeekDayStripChrome {
             TabView(selection: $pagerSlot) {
                 weekStrip(for: weekOffset - 1, taskCounts: taskCounts)
                     .tag(0)
@@ -622,7 +709,6 @@ private struct TaskModeDayWeekStripPager: View, Equatable {
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
         }
-        .equatable()
     }
 
     private func weekStrip(for offset: Int, taskCounts: [Date: Int]) -> some View {
@@ -662,10 +748,14 @@ private struct TaskModeDayWeekStripPager: View, Equatable {
             guard let first = days.first, let last = days.last else { continue }
             let start = displayCalendar.startOfDay(for: first)
             let end = displayCalendar.startOfDay(for: last)
-            if minDay == nil || start < minDay! {
+            if let currentMin = minDay {
+                if start < currentMin { minDay = start }
+            } else {
                 minDay = start
             }
-            if maxDay == nil || end > maxDay! {
+            if let currentMax = maxDay {
+                if end > currentMax { maxDay = end }
+            } else {
                 maxDay = end
             }
         }

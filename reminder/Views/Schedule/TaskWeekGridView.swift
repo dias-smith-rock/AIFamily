@@ -9,6 +9,7 @@ private struct WeekPageBundle {
 /// Week 模式：7 日 × 24 小时时间网格（由 `TaskListView` 嵌入）。
 struct TaskWeekGridView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var appSettings: AppSettingsManager
 
     @ObservedObject var viewModel: ScheduleViewModel
@@ -458,7 +459,7 @@ struct TaskWeekGridView: View {
                 } label: {
                     Text(viewModel.displayTitle(for: task))
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.taskCardTitle(for: colorScheme))
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -957,13 +958,15 @@ private struct WeekGridBackground: View {
 // MARK: - Event card
 
 private struct WeekTaskEventCard: View {
+    @Environment(\.colorScheme) private var colorScheme
+
     let task: FamilyTask
     let title: String
 
     var body: some View {
         Text(title)
             .font(.caption2.weight(.semibold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color.taskCardTitle(for: colorScheme))
             .lineLimit(3)
             .multilineTextAlignment(.leading)
             .padding(.horizontal, 5)
