@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aifamilygroup.reminder.domain.model.AppRouteState
+import com.aifamilygroup.reminder.ui.auth.HouseholdSelectionScreen
 import com.aifamilygroup.reminder.ui.auth.LoginScreen
 import com.aifamilygroup.reminder.ui.auth.OrgRoutingScreen
 import com.aifamilygroup.reminder.ui.auth.PendingScreen
@@ -29,6 +30,7 @@ fun RootNavHost(
         }
         AppRouteState.Unauthenticated -> LoginScreen(viewModel)
         AppRouteState.OrgRouting -> OrgRoutingScreen(viewModel)
+        AppRouteState.HouseholdSelection -> HouseholdSelectionScreen(viewModel)
         AppRouteState.PendingApproval -> PendingScreen(viewModel)
         AppRouteState.Active -> MainTabScreen(onSignOut = viewModel::signOut)
     }

@@ -38,6 +38,8 @@ android {
             "SUPABASE_ANON_KEY",
             "\"${prop("SUPABASE_ANON_KEY", "sb_publishable_j7V-u1tMxcessnU4qQZe6g_x29a4l_Y")}\""
         )
+        // OAuth Web client ID from Google Cloud (same as Supabase Google provider).
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"${prop("GOOGLE_WEB_CLIENT_ID", "")}\"")
     }
 
     buildTypes {
@@ -49,7 +51,7 @@ android {
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
+            // Same applicationId as release for Google OAuth / Play Services.
             versionNameSuffix = "-debug"
         }
     }

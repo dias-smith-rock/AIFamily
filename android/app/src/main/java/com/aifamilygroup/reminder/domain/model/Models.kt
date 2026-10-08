@@ -116,7 +116,10 @@ data class MemberListRow(
 enum class AppRouteState {
     Bootstrapping,
     Unauthenticated,
+    /** No active household — create / join onboarding (iOS `.orgRouting`). */
     OrgRouting,
+    /** Multiple active households — pick one (iOS `.householdSelection`). */
+    HouseholdSelection,
     PendingApproval,
     Active,
 }

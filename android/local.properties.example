@@ -4,3 +4,11 @@ sdk.dir=/Users/YOU/Library/Android/sdk
 ## Supabase (same project as iOS). Prefer BuildConfig via gradle.properties or CI secrets.
 SUPABASE_URL=https://dirgcwziayipwvwztjbb.supabase.co
 SUPABASE_ANON_KEY=your_anon_key_here
+
+## Google Sign-In (Web client ID from Google Cloud / Supabase Auth Google provider).
+## Also required in Google Cloud Console → APIs & Services → Credentials:
+##   1) OAuth client type=Web → paste that client ID here (and in Supabase Google provider).
+##   2) OAuth client type=Android:
+##        package name: com.aifamilygroup.reminder  (debug and release share this id)
+##        SHA-1 (debug keystore): keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
+GOOGLE_WEB_CLIENT_ID=your_google_oauth_web_client_id.apps.googleusercontent.com

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Login (aligned with iOS LoginView) -->
+    <string name="common_from_chaos_to_clarity_together_perfectly_synced">Shared family calendar &amp; to-dos.\nPickups, chores, and who\'s on it.</string>
+    <string name="common_continue_with_google">Continue with Google</string>
+    <string name="auth_guest_experience_no_signup">Guest (no signup)</string>
+    <string name="auth_by_signing_in_you_agree_to_this_app_s">By signing in, you agree to this app\'s </string>
+    <string name="common_privacy_policy">Privacy Policy</string>
+    <string name="common_terms_of_service">Terms of Service</string>
+    <string name="common_and">and</string>
+    <string name="auth_google_not_configured">Google Sign-In is not configured. Add GOOGLE_WEB_CLIENT_ID to local.properties.</string>
+    <string name="auth_google_sign_in_cancelled">Google sign-in was cancelled.</string>
+    <string name="auth_google_sign_in_failed">Google sign-in failed.</string>
+    <string name="auth_google_developer_error">Google Sign-In misconfigured (status 10). In Google Cloud Console create an Android OAuth client for package %1$s and add this machine\'s debug SHA-1.</string>
+    <string name="legal_privacy_url">https://www.wefamily.ai/en/privacy</string>
+    <string name="legal_terms_url">https://www.wefamily.ai/en/terms</string>
+
+    <!-- Org routing / household selection (iOS parity) -->
+    <string name="common_welcome_to_wesync">Welcome to Family Link</string>
+    <string name="family_my_groups">My groups</string>
+    <string name="family_enter_group_name">Group name</string>
+    <string name="family_invite_code_label">Invite code</string>
+    <string name="family_unnamed_group">Unnamed group</string>
+    <string name="auth_log_out">Log out</string>
+    <string name="common_quit">Quit</string>
+    <string name="common_are_you_sure_you_want_to_log_out_of_your_current">Are you sure you want to log out of your current account?</string>
+</resources>

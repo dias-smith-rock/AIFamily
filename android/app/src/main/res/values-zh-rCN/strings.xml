@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_from_chaos_to_clarity_together_perfectly_synced">家庭共享日历与待办。\n接送、家务，谁负责一目了然。</string>
+    <string name="common_continue_with_google">使用 Google 继续</string>
+    <string name="auth_guest_experience_no_signup">游客体验（无需注册）</string>
+    <string name="auth_by_signing_in_you_agree_to_this_app_s">登录即表示你同意本应用的</string>
+    <string name="common_privacy_policy">隐私政策</string>
+    <string name="common_terms_of_service">用户协议</string>
+    <string name="common_and">和</string>
+    <string name="auth_google_not_configured">尚未配置 Google 登录。请在 local.properties 中设置 GOOGLE_WEB_CLIENT_ID。</string>
+    <string name="auth_google_sign_in_cancelled">已取消 Google 登录。</string>
+    <string name="auth_google_sign_in_failed">Google 登录失败。</string>
+    <string name="auth_google_developer_error">Google 登录配置错误（status 10）。请在 Google Cloud 为包名 %1$s 创建 Android OAuth 客户端，并填入本机 debug SHA-1。</string>
+
+    <string name="common_welcome_to_wesync">欢迎使用 Family Link</string>
+    <string name="family_my_groups">我的群组</string>
+    <string name="family_enter_group_name">群组名称</string>
+    <string name="family_invite_code_label">邀请码</string>
+    <string name="family_unnamed_group">未命名群组</string>
+    <string name="auth_log_out">退出登录</string>
+    <string name="common_quit">退出</string>
+    <string name="common_are_you_sure_you_want_to_log_out_of_your_current">确定要退出当前账号吗？</string>
+</resources>

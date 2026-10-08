@@ -9,7 +9,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AppSession @Inject constructor() {
+class AppSession @Inject constructor(
+    private val householdPrefs: HouseholdPreferenceStore,
+) {
     private val _routeState = MutableStateFlow(AppRouteState.Bootstrapping)
     val routeState: StateFlow<AppRouteState> = _routeState.asStateFlow()
 
@@ -28,12 +30,16 @@ class AppSession @Inject constructor() {
     private val _userId = MutableStateFlow<String?>(null)
     val userId: StateFlow<String?> = _userId.asStateFlow()
 
+    /** After create/join, prefer entering this household on next [applyHouseholds]. */
+    var pendingPreferredHouseholdId: String? = null
+    var pendingPreferredHouseholdName: String? = null
+
     fun setUnauthenticated() {
         _userId.value = null
         _households.value = emptyList()
-        _selectedHouseholdId.value = null
-        _selectedMembershipId.value = null
-        _selectedProfileId.value = null
+        clearSelection()
+        pendingPreferredHouseholdId = null
+        pendingPreferredHouseholdName = null
         _routeState.value = AppRouteState.Unauthenticated
     }
 
@@ -41,31 +47,88 @@ class AppSession @Inject constructor() {
         _userId.value = userId
     }
 
+    /**
+     * iOS AppRouter.refreshStateFromBackend parity:
+     * - no active → OrgRouting (or PendingApproval if only pending/invited)
+     * - one active → enter directly
+     * - multiple + last/preferred/current → enter that one
+     * - multiple otherwise → HouseholdSelection
+     */
     fun applyHouseholds(list: List<JoinedHousehold>) {
         _households.value = list
-        val hasActive = list.any { it.status.equals("active", ignoreCase = true) }
-        val hasPending = list.any { it.status.equals("pending", ignoreCase = true) }
-        when {
-            list.isEmpty() -> {
-                clearSelection()
-                _routeState.value = AppRouteState.OrgRouting
+        val active = list.filter { it.isActiveMembership }
+        val hasPending = list.any { it.isPendingMembership }
+
+        if (active.isEmpty()) {
+            clearSelection()
+            _routeState.value = if (hasPending) {
+                AppRouteState.PendingApproval
+            } else {
+                AppRouteState.OrgRouting
             }
-            !hasActive && hasPending -> {
-                select(list.first())
-                _routeState.value = AppRouteState.PendingApproval
-            }
-            else -> {
-                val active = list.firstOrNull { it.status.equals("active", ignoreCase = true) } ?: list.first()
-                select(active)
-                _routeState.value = AppRouteState.Active
-            }
+            return
         }
+
+        val preferredId = pendingPreferredHouseholdId
+        val preferredName = pendingPreferredHouseholdName
+        pendingPreferredHouseholdId = null
+        pendingPreferredHouseholdName = null
+
+        val preferred = when {
+            preferredId != null -> active.firstOrNull { it.householdId == preferredId }
+            !preferredName.isNullOrBlank() ->
+                active.firstOrNull { it.householdName.equals(preferredName, ignoreCase = true) }
+            else -> null
+        }
+        if (preferred != null) {
+            enterHousehold(preferred)
+            return
+        }
+
+        if (active.size == 1) {
+            enterHousehold(active.first())
+            return
+        }
+
+        val userId = _userId.value
+        val lastId = userId?.let { householdPrefs.lastHouseholdId(it) }
+        val last = lastId?.let { id -> active.firstOrNull { it.householdId == id } }
+        if (last != null) {
+            enterHousehold(last)
+            return
+        }
+
+        val currentId = _selectedHouseholdId.value
+        val current = currentId?.let { id -> active.firstOrNull { it.householdId == id } }
+        if (current != null) {
+            enterHousehold(current)
+            return
+        }
+
+        clearSelection()
+        _routeState.value = AppRouteState.HouseholdSelection
+    }
+
+    fun enterHousehold(household: JoinedHousehold) {
+        select(household)
+        _userId.value?.let { householdPrefs.saveLastHouseholdId(it, household.householdId) }
+        _routeState.value = AppRouteState.Active
     }
 
     fun select(household: JoinedHousehold) {
         _selectedHouseholdId.value = household.householdId
         _selectedMembershipId.value = household.membershipId
         _selectedProfileId.value = household.profileId
+    }
+
+    fun goToOrgRouting() {
+        clearSelection()
+        _routeState.value = AppRouteState.OrgRouting
+    }
+
+    fun goToHouseholdSelection() {
+        clearSelection()
+        _routeState.value = AppRouteState.HouseholdSelection
     }
 
     private fun clearSelection() {
@@ -78,3 +141,15 @@ class AppSession @Inject constructor() {
         _routeState.value = AppRouteState.Bootstrapping
     }
 }
+
+private val JoinedHousehold.isActiveMembership: Boolean
+    get() {
+        val s = status?.trim()?.lowercase().orEmpty()
+        return s.isEmpty() || s == "active"
+    }
+
+private val JoinedHousehold.isPendingMembership: Boolean
+    get() {
+        val s = status?.trim()?.lowercase().orEmpty()
+        return s == "pending" || s == "invited"
+    }
