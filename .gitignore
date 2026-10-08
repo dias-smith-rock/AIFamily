@@ -72,4 +72,17 @@ web/.next/
 web/out/
 web/.env.local
 
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/**/captures/
+android/**/.cxx/
+android/.idea/
+android/*.iml
+android/app/google-services.json
+*.keystore
+*.jks
+
 

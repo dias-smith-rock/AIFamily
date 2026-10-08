@@ -1,0 +1,6 @@
+## Copy to local.properties (gitignored). Paths are machine-specific.
+sdk.dir=/Users/YOU/Library/Android/sdk
+
+## Supabase (same project as iOS). Prefer BuildConfig via gradle.properties or CI secrets.
+SUPABASE_URL=https://dirgcwziayipwvwztjbb.supabase.co
+SUPABASE_ANON_KEY=your_anon_key_here
