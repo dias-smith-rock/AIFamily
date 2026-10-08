@@ -78,6 +78,7 @@ struct TaskRowView: View {
     let showTimeIndicator: Bool
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
+    var hasAttachments: Bool = false
     let onTap: () -> Void
 
     private var timeText: String {
@@ -126,7 +127,8 @@ struct TaskRowView: View {
             task: task,
             displayTitle: displayTitle,
             forWhomAvatars: forWhomAvatars,
-            assigneeLabel: assigneeLabel
+            assigneeLabel: assigneeLabel,
+            hasAttachments: hasAttachments
         )
         .frame(maxWidth: .infinity, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)

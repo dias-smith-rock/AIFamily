@@ -394,6 +394,7 @@ private struct TaskModeDaySchedulePane: View {
                                         forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
                                         assigneeLabel: { viewModel.assigneeLabel(for: $0, locale: locale) },
                                         displayTitle: { viewModel.displayTitle(for: $0) },
+                                        taskHasAttachments: { viewModel.taskHasAttachments($0) },
                                         onTaskTap: onTaskSelect
                                     )
                                 }
@@ -439,7 +440,8 @@ private struct TaskModeDaySchedulePane: View {
                         AllDayTaskRowView(
                             task: task,
                             displayTitle: viewModel.displayTitle(for: task),
-                            forWhomAvatars: viewModel.forWhomAvatarSources(for: task)
+                            forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
+                            hasAttachments: viewModel.taskHasAttachments(task)
                         )
                         .frame(width: resolvedAllDayCardWidth)
                         .fixedSize(horizontal: false, vertical: true)

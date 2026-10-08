@@ -8,15 +8,18 @@ struct AllDayTaskRowView: View {
     let task: FamilyTask
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
+    var hasAttachments: Bool = false
 
     init(
         task: FamilyTask,
         displayTitle: String? = nil,
-        forWhomAvatars: [TaskCardAvatarSource]
+        forWhomAvatars: [TaskCardAvatarSource],
+        hasAttachments: Bool? = nil
     ) {
         self.task = task
         self.displayTitle = displayTitle ?? task.title
         self.forWhomAvatars = forWhomAvatars
+        self.hasAttachments = hasAttachments ?? task.hasAttachmentURLs
     }
 
     var body: some View {
@@ -44,8 +47,19 @@ struct AllDayTaskRowView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
+        .padding(.bottom, hasAttachments ? 12 : 0)
         .frame(maxWidth: .infinity, alignment: .leading)
         .taskCardSurface(for: task, cornerRadius: 10)
+        .overlay(alignment: .bottomTrailing) {
+            if hasAttachments {
+                Image(systemName: "paperclip")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
+                    .padding(.trailing, 8)
+                    .padding(.bottom, 6)
+                    .accessibilityLabel(L10n.Common.attachments.localized)
+            }
+        }
         .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
     }
 

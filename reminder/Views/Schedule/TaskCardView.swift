@@ -108,17 +108,21 @@ struct TaskCardView: View {
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
     let assigneeLabel: String
+    /// 含 `task_attachments` 或 `attachment_urls`。
+    var hasAttachments: Bool = false
 
     init(
         task: FamilyTask,
         displayTitle: String? = nil,
         forWhomAvatars: [TaskCardAvatarSource],
-        assigneeLabel: String
+        assigneeLabel: String,
+        hasAttachments: Bool? = nil
     ) {
         self.task = task
         self.displayTitle = displayTitle ?? task.title
         self.forWhomAvatars = forWhomAvatars
         self.assigneeLabel = assigneeLabel
+        self.hasAttachments = hasAttachments ?? task.hasAttachmentURLs
     }
 
     private let cardShape = RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -145,9 +149,21 @@ struct TaskCardView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
+        // 为右下角附件图标留出空间，避免与地点行重叠
+        .padding(.bottom, hasAttachments ? 14 : 0)
         .taskCardSurface(for: task, cornerRadius: 12)
         .overlay {
             cardShape.strokeBorder(Color.taskCardStroke(for: colorScheme), lineWidth: 1)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if hasAttachments {
+                Image(systemName: "paperclip")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
+                    .padding(.trailing, 10)
+                    .padding(.bottom, 8)
+                    .accessibilityLabel(L10n.Common.attachments.localized)
+            }
         }
         .shadow(
             color: Color.black.opacity(colorScheme == .dark ? 0.12 : 0.06),
@@ -290,7 +306,8 @@ struct TaskCardOverlappingAvatar: View {
                 imageURL: nil
             )
         ],
-        assigneeLabel: "张老师"
+        assigneeLabel: "张老师",
+        hasAttachments: true
     )
     .padding()
     .background(Color(.systemGroupedBackground))

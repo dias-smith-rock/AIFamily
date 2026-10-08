@@ -26,6 +26,8 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
+    /// 在 `task_attachments` 中有附件的任务 id（用于卡片角标）。
+    @Published private(set) var taskIDsWithAttachments: Set<UUID> = []
     /// 列表滚动时当前视野内的月份（用于顶栏动态标题）。
     @Published var currentVisibleDate: Date = Calendar.current.startOfDay(for: Date())
 
@@ -186,6 +188,7 @@ final class ScheduleViewModel: ObservableObject {
                 LocalCacheManager.shared.save(subset, forKey: Self.tasksCacheKey(for: householdId))
             }
             tasks = merged
+            await refreshAttachmentPresence(for: merged)
             if yearCalendarSnapshot != nil {
                 rebuildYearViewSnapshot(locale: AppSettingsManager.shared.appLocale)
             }
@@ -204,6 +207,28 @@ final class ScheduleViewModel: ObservableObject {
                     errorMessage = error.localizedDescription
                 }
             }
+        }
+    }
+
+    func taskHasAttachments(_ task: FamilyTask) -> Bool {
+        task.hasAttachmentURLs || taskIDsWithAttachments.contains(task.id)
+    }
+
+    private func refreshAttachmentPresence(for tasks: [FamilyTask]) async {
+        let ids = tasks.map(\.id)
+        guard ids.isEmpty == false else {
+            taskIDsWithAttachments = []
+            return
+        }
+        do {
+            taskIDsWithAttachments = try await TaskAttachmentSupabaseSupport.fetchTaskIDsHavingAttachments(
+                taskIDs: ids
+            )
+        } catch {
+            #if DEBUG
+            print("[ScheduleViewModel] attachment presence fetch failed: \(error.localizedDescription)")
+            #endif
+            // 保留已有集合，并叠加上 attachment_urls 回退（由 taskHasAttachments 处理）
         }
     }
 

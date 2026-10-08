@@ -17,6 +17,7 @@ struct ScheduleTaskAnchorFlow: View {
     let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
     let assigneeLabel: (FamilyTask) -> String
     let displayTitle: (FamilyTask) -> String
+    var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
 
     let onTaskTap: (FamilyTask) -> Void
     @State private var taskRowFrames: [UUID: CGRect] = [:]
@@ -64,6 +65,7 @@ struct ScheduleTaskAnchorFlow: View {
                             showTimeIndicator: showTimeIndicator,
                             forWhomAvatars: forWhomAvatars(task),
                             assigneeLabel: assigneeLabel(task),
+                            hasAttachments: taskHasAttachments(task),
                             onTap: { onTaskTap(task) }
                         )
                         .background {

@@ -143,6 +143,45 @@ enum TaskAttachmentSupabaseSupport {
         #endif
     }
 
+    /// 批量查询哪些任务在 `task_attachments` 中有记录（列表卡片角标用）。
+    @MainActor
+    static func fetchTaskIDsHavingAttachments(taskIDs: [UUID]) async throws -> Set<UUID> {
+        let uniqueIDs = Array(Set(taskIDs))
+        guard uniqueIDs.isEmpty == false else { return [] }
+
+        #if canImport(Supabase)
+        struct TaskIDRow: Decodable {
+            let taskId: UUID
+            enum CodingKeys: String, CodingKey {
+                case taskId = "task_id"
+            }
+        }
+
+        var result = Set<UUID>()
+        // PostgREST `in` 过长时分批，避免 URL 限制。
+        let chunkSize = 80
+        var start = 0
+        while start < uniqueIDs.count {
+            let end = min(start + chunkSize, uniqueIDs.count)
+            let chunk = Array(uniqueIDs[start..<end]).map { $0.uuidString.lowercased() }
+            let rows: [TaskIDRow] = try await SupabaseManager.shared.client
+                .from("task_attachments")
+                .select("task_id")
+                .in("task_id", values: chunk)
+                .execute()
+                .value
+            for row in rows {
+                result.insert(row.taskId)
+            }
+            start = end
+        }
+        return result
+        #else
+        _ = uniqueIDs
+        throw TaskAttachmentSupabaseError.sdkUnavailable
+        #endif
+    }
+
     @MainActor
     static func deleteRecords(ids: [UUID]) async throws {
         guard ids.isEmpty == false else { return }

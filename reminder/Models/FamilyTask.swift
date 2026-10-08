@@ -355,6 +355,14 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 }
 
 extension FamilyTask {
+    /// `tasks.attachment_urls` 非空，或列表层已合并的 `task_attachments` 存在性。
+    var hasAttachmentURLs: Bool {
+        guard let attachmentUrls else { return false }
+        return attachmentUrls.contains {
+            $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        }
+    }
+
     /// JSONB 字段不完整时不拖垮整行任务解码（合并定位字段后常见残缺 `geofence`）。
     private static func decodeFlexibleDouble(
         from container: KeyedDecodingContainer<CodingKeys>,
