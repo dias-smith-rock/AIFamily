@@ -337,7 +337,7 @@ struct MapAvatarNameCaption: View {
     static let height: CGFloat = 14
 
     var body: some View {
-        Text(displayName)
+        Text(verbatim: displayName)
             .font(.system(size: 9, weight: .semibold))
             .foregroundStyle(.primary)
             .lineLimit(1)

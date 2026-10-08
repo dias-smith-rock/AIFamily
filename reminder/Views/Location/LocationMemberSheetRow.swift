@@ -33,45 +33,58 @@ struct LocationMemberSheetRow: View {
             )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(titleLine)
+                // 动态昵称必须 verbatim，避免被当成 Localizable Key；名称始终用高对比色。
+                Text(verbatim: titleLine)
                     .font(.headline)
-                    .foregroundStyle(member.isGhostMode || member.isLikelyOffline ? .secondary : .primary)
+                    .foregroundStyle(titleForeground)
                     .lineLimit(1)
                     .truncationMode(.tail)
                 if isInLiveHuddle == false, member.isGhostMode == false {
-                    Text(subtitleLine)
+                    Text(verbatim: subtitleLine)
                         .font(.caption)
-                        .foregroundStyle(member.isLikelyOffline ? Color.orange : .secondary)
+                        .foregroundStyle(subtitleForeground)
                         .lineLimit(1)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: avatarSize, alignment: .center)
 
             if isInLiveHuddle {
                 LiveTrackingBadge()
                     .frame(minWidth: 44, alignment: .trailing)
-                    .frame(height: avatarSize)
             } else if member.isGhostMode == false, member.currentLocation != nil {
                 HStack(spacing: 4) {
                     Image(systemName: member.isCharging ? "bolt.fill" : batterySymbol)
                         .font(.caption)
-                    Text("\(member.clampedBatteryLevel)%")
+                    Text(verbatim: "\(member.clampedBatteryLevel)%")
                         .font(.caption.weight(.medium))
                 }
                 .foregroundStyle(member.isLikelyOffline ? Color.orange.opacity(0.85) : .secondary)
                 .frame(minWidth: 44, alignment: .trailing)
-                .frame(height: avatarSize)
             }
         }
         .frame(maxWidth: .infinity, minHeight: avatarSize, alignment: .leading)
-        .opacity(member.isGhostMode ? 0.55 : (member.isLikelyOffline ? 0.72 : 1))
+        .opacity(member.isGhostMode ? 0.72 : 1)
         .contentShape(Rectangle())
         .accessibilityLabel(accessibilitySummary)
     }
 
     private var resolvedDisplayName: String {
         MemberDisplayName.nonEmpty(member.displayName)
+    }
+
+    /// 名称始终保持可读；离线态只降副标题对比，不把整行名字压成近乎透明。
+    private var titleForeground: Color {
+        if member.isGhostMode {
+            return Color.secondary
+        }
+        return Color.primary
+    }
+
+    private var subtitleForeground: Color {
+        if member.hasNoPointsInSelectedRange || member.isLikelyOffline {
+            return Color.orange
+        }
+        return Color.secondary
     }
 
     private var titleLine: String {

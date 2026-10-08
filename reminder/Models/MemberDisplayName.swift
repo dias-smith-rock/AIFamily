@@ -3,7 +3,9 @@ import Foundation
 /// 成员展示名解析：千组织千面 — 有 membership 用 `nickname`，无 membership 用 `family_profiles.name`。
 enum MemberDisplayName {
     static var unknownFallback: String {
-        AppLocalized.localizedSync(L10n.Family.unknownMember)
+        let localized = AppLocalized.localizedSync(L10n.Family.unknownMember)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return localized.isEmpty ? "Unknown member" : localized
     }
 
     static func profile(
@@ -46,11 +48,14 @@ enum MemberDisplayName {
         return nonEmpty(profile.displayName)
     }
 
-    /// 去掉空白与零宽字符后若仍为空，回退「未知成员」。
+    /// 去掉空白与零宽/不可见字符后若仍为空，回退「未知成员」。
     static func nonEmpty(_ raw: String?) -> String {
         let trimmed = (raw ?? "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\u{00A0}", with: "")
             .replacingOccurrences(of: "\u{200B}", with: "")
+            .replacingOccurrences(of: "\u{200C}", with: "")
+            .replacingOccurrences(of: "\u{200D}", with: "")
             .replacingOccurrences(of: "\u{FEFF}", with: "")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? unknownFallback : trimmed

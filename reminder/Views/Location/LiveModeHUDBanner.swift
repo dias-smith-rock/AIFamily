@@ -57,7 +57,7 @@ struct LiveHuddleHUDBanner: View {
                                 size: 34,
                                 isGrayscale: false
                             )
-                            Text(member.displayName)
+                            Text(verbatim: member.displayName)
                                 .font(.caption2)
                                 .lineLimit(1)
                                 .frame(width: 48)
