@@ -14,6 +14,8 @@ final class TodoListViewModel: ObservableObject {
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
+    /// 在 `task_attachments` 中有附件的任务 id（用于待办卡片角标）。
+    @Published private(set) var taskIDsWithAttachments: Set<UUID> = []
 
     private let taskService: TaskDataService
     private let membershipService: HouseholdMembershipDataService
@@ -49,6 +51,7 @@ final class TodoListViewModel: ObservableObject {
         if householdId == nil {
             flexibleTasks = []
             completedTasks = []
+            taskIDsWithAttachments = []
             householdMembers = []
             familyProfiles = []
             rosterLoadedForHouseholdId = nil
@@ -88,11 +91,18 @@ final class TodoListViewModel: ObservableObject {
         guard householdIds.isEmpty == false else {
             flexibleTasks = []
             completedTasks = []
+            taskIDsWithAttachments = []
             errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
         }
 
         if loadedViewToken == viewToken {
+            // 任务已在内存时仍补拉附件角标（避免首次离线/解码失败后一直不显示）
+            if taskIDsWithAttachments.isEmpty,
+               (flexibleTasks.isEmpty == false || completedTasks.isEmpty == false),
+               await NetworkMonitor.shared.isConnected {
+                await refreshAttachmentPresence(for: flexibleTasks + completedTasks)
+            }
             return
         }
 
@@ -104,6 +114,7 @@ final class TodoListViewModel: ObservableObject {
         guard householdIds.isEmpty == false else {
             flexibleTasks = []
             completedTasks = []
+            taskIDsWithAttachments = []
             loadedViewToken = nil
             if !silent {
                 errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
@@ -178,6 +189,7 @@ final class TodoListViewModel: ObservableObject {
                 }
             }
             applyFlexibleTasks(from: merged)
+            await refreshAttachmentPresence(for: flexibleTasks + completedTasks)
             loadedViewToken = token
             if !silent {
                 errorMessage = nil
@@ -186,6 +198,29 @@ final class TodoListViewModel: ObservableObject {
             if !silent, restoredFromDisk == false {
                 errorMessage = error.localizedDescription
             }
+        }
+    }
+
+    func taskHasAttachments(_ task: FamilyTask) -> Bool {
+        task.hasAttachmentURLs || taskIDsWithAttachments.contains(task.id)
+    }
+
+    private func refreshAttachmentPresence(for tasks: [FamilyTask]) async {
+        let ids = tasks.map(\.id)
+        guard ids.isEmpty == false else {
+            taskIDsWithAttachments = []
+            return
+        }
+        do {
+            let found = try await TaskAttachmentSupabaseSupport.fetchTaskIDsHavingAttachments(taskIDs: ids)
+            taskIDsWithAttachments = found
+            #if DEBUG
+            print("[TodoListViewModel] attachment presence count=\(found.count)/\(ids.count)")
+            #endif
+        } catch {
+            #if DEBUG
+            print("[TodoListViewModel] attachment presence fetch failed: \(error.localizedDescription)")
+            #endif
         }
     }
 

@@ -150,11 +150,9 @@ enum TaskAttachmentSupabaseSupport {
         guard uniqueIDs.isEmpty == false else { return [] }
 
         #if canImport(Supabase)
+        /// 与 `SupabaseCodec.makeDecoder()` 的 `convertFromSnakeCase` 一致：勿写 `= "task_id"`。
         struct TaskIDRow: Decodable {
             let taskId: UUID
-            enum CodingKeys: String, CodingKey {
-                case taskId = "task_id"
-            }
         }
 
         var result = Set<UUID>()
@@ -164,12 +162,12 @@ enum TaskAttachmentSupabaseSupport {
         while start < uniqueIDs.count {
             let end = min(start + chunkSize, uniqueIDs.count)
             let chunk = Array(uniqueIDs[start..<end]).map { $0.uuidString.lowercased() }
-            let rows: [TaskIDRow] = try await SupabaseManager.shared.client
+            let rawResponse = try await SupabaseManager.shared.client
                 .from("task_attachments")
                 .select("task_id")
                 .in("task_id", values: chunk)
                 .execute()
-                .value
+            let rows = try SupabaseCodec.makeDecoder().decode([TaskIDRow].self, from: rawResponse.data)
             for row in rows {
                 result.insert(row.taskId)
             }

@@ -221,9 +221,11 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
         do {
-            taskIDsWithAttachments = try await TaskAttachmentSupabaseSupport.fetchTaskIDsHavingAttachments(
-                taskIDs: ids
-            )
+            let found = try await TaskAttachmentSupabaseSupport.fetchTaskIDsHavingAttachments(taskIDs: ids)
+            taskIDsWithAttachments = found
+            #if DEBUG
+            print("[ScheduleViewModel] attachment presence count=\(found.count)/\(ids.count)")
+            #endif
         } catch {
             #if DEBUG
             print("[ScheduleViewModel] attachment presence fetch failed: \(error.localizedDescription)")

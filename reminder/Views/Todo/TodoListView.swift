@@ -173,6 +173,7 @@ struct TodoListView: View {
             tasks: viewModel.completedTasks,
             displayTitle: { viewModel.displayTitle(for: $0) },
             forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+            taskHasAttachments: { viewModel.taskHasAttachments($0) },
             completedLabel: { completedLabel(for: $0) },
             onSelectTask: { task in
                 showCompletedSheet = false
@@ -190,6 +191,7 @@ struct TodoListView: View {
             tasks: viewModel.overdueTasks,
             displayTitle: { viewModel.displayTitle(for: $0) },
             forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+            taskHasAttachments: { viewModel.taskHasAttachments($0) },
             deadlineLabel: { deadlineLabel(for: $0) },
             onSelectTask: { task in
                 showOverdueSheet = false
@@ -315,6 +317,7 @@ struct TodoListView: View {
                                     forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
                                     deadlineLabel: deadlineLabel(for: task),
                                     style: .active,
+                                    hasAttachments: viewModel.taskHasAttachments(task),
                                     isCompletionChecked: completionCheckedTaskIDs.contains(task.id),
                                     onToggleComplete: {
                                         beginCompleteFlexibleTask(task)
@@ -612,6 +615,7 @@ private struct CompletedTasksListView: View {
     let tasks: [FamilyTask]
     let displayTitle: (FamilyTask) -> String
     let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
+    var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
     let completedLabel: (FamilyTask) -> String
     let onSelectTask: (FamilyTask) -> Void
 
@@ -635,7 +639,8 @@ private struct CompletedTasksListView: View {
                                     displayTitle: displayTitle(task),
                                     forWhomAvatars: forWhomAvatars(task),
                                     deadlineLabel: completedLabel(task),
-                                    style: .completed
+                                    style: .completed,
+                                    hasAttachments: taskHasAttachments(task)
                                 )
                             }
                             .buttonStyle(.plain)
@@ -670,6 +675,7 @@ private struct OverdueTasksListView: View {
     let tasks: [FamilyTask]
     let displayTitle: (FamilyTask) -> String
     let forWhomAvatars: (FamilyTask) -> [TaskCardAvatarSource]
+    var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
     let deadlineLabel: (FamilyTask) -> String?
     let onSelectTask: (FamilyTask) -> Void
 
@@ -685,7 +691,8 @@ private struct OverdueTasksListView: View {
                             displayTitle: displayTitle(task),
                             forWhomAvatars: forWhomAvatars(task),
                             deadlineLabel: deadlineLabel(task),
-                            style: .overdue
+                            style: .overdue,
+                            hasAttachments: taskHasAttachments(task)
                         )
                     }
                     .buttonStyle(.plain)
@@ -726,6 +733,7 @@ private struct TodoFlexibleRow: View {
     let forWhomAvatars: [TaskCardAvatarSource]
     let deadlineLabel: String?
     let style: Style
+    var hasAttachments: Bool = false
     var isCompletionChecked: Bool = false
     var onToggleComplete: (() -> Void)? = nil
     var onOpen: (() -> Void)? = nil
@@ -764,6 +772,7 @@ private struct TodoFlexibleRow: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
+        .padding(.bottom, hasAttachments ? 12 : 0)
         .background(rowBackground)
         .overlay(alignment: .leading) {
             Rectangle()
@@ -775,6 +784,16 @@ private struct TodoFlexibleRow: View {
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(cardBorderColor, lineWidth: 1)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if hasAttachments {
+                Image(systemName: "paperclip")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
+                    .padding(.trailing, 10)
+                    .padding(.bottom, 6)
+                    .accessibilityLabel(L10n.Common.attachments.localized)
+            }
         }
     }
 
