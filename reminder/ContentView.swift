@@ -115,6 +115,8 @@ struct ContentView: View {
                 BackgroundLocationCoordinator.shared.stop()
                 ForegroundLocationPersistScheduler.shared.stop(reason: "signedOut")
                 ForegroundLocationPersistEligibility.shared.canPersist = false
+                LocationTrailCaptureCoordinator.shared.stop(reason: "signedOut")
+                OnDeviceTrailBuffer.shared.reset()
                 return
             }
             await runPostAuthForegroundServices()
@@ -185,6 +187,7 @@ struct ContentView: View {
             } else if newPhase == .background {
                 Task {
                     await flushLocationBeforeEnteringBackground()
+                    await LocationTrailCaptureCoordinator.shared.flushPending(reason: "appEnteringBackground")
                 }
                 ForegroundLocationPersistScheduler.shared.stop(reason: "sceneBackground")
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
@@ -882,11 +885,18 @@ struct ContentView: View {
     private func syncBackgroundLocationService() async {
         guard isUserLoggedIn else {
             BackgroundLocationCoordinator.shared.stop()
+            LocationTrailCaptureCoordinator.shared.stop(reason: "signedOut")
             return
         }
-        guard appRouter.appState == .activeMember else { return }
+        guard appRouter.appState == .activeMember else {
+            LocationTrailCaptureCoordinator.shared.stop(reason: "appStateNotActiveMember")
+            return
+        }
         let unlocked = requireFaceID == false || biometricManager.isUnlocked
-        guard unlocked else { return }
+        guard unlocked else {
+            LocationTrailCaptureCoordinator.shared.stop(reason: "lockedByFaceID")
+            return
+        }
 
         BackgroundLocationCoordinator.shared.configure(
             locationStateService: appBootstrap.services.locationStateService
@@ -896,6 +906,15 @@ struct ContentView: View {
             profileId: appRouter.selectedProfileId
         )
         await BackgroundLocationCoordinator.shared.applyStoredPreference()
+
+        LocationTrailCaptureCoordinator.shared.configure(
+            trailService: appBootstrap.services.locationTrailService
+        )
+        LocationTrailCaptureCoordinator.shared.updateContext(
+            householdId: appRouter.selectedHouseholdId,
+            profileId: appRouter.selectedProfileId
+        )
+        LocationTrailCaptureCoordinator.shared.startIfNeeded()
     }
 
     @MainActor

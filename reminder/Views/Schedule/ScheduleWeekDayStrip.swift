@@ -16,9 +16,28 @@ struct ScheduleWeekDayStripChrome<Content: View>: View {
 struct ScheduleWeekDayStripCell: View {
     let date: Date
     let isSelected: Bool
+    let isToday: Bool
+    let dayNumber: Int
     let taskCount: Int
     let locale: Locale
     let action: () -> Void
+
+    init(
+        date: Date,
+        isSelected: Bool,
+        taskCount: Int,
+        locale: Locale,
+        calendar: Calendar = AppDisplayTimeZone.calendar(),
+        action: @escaping () -> Void
+    ) {
+        self.date = date
+        self.isSelected = isSelected
+        self.isToday = calendar.isDateInToday(date)
+        self.dayNumber = calendar.component(.day, from: date)
+        self.taskCount = taskCount
+        self.locale = locale
+        self.action = action
+    }
 
     var body: some View {
         Button(action: action) {
@@ -28,7 +47,7 @@ struct ScheduleWeekDayStripCell: View {
                     .fontWeight(.medium)
                     .foregroundStyle(isSelected ? AppTheme.ColorToken.accent : .secondary)
 
-                Text(String(AppDisplayTimeZone.calendar().component(.day, from: date)))
+                Text(String(dayNumber))
                     .font(.callout)
                     .fontWeight(.semibold)
                     .foregroundStyle(isSelected ? .white : .primary)
@@ -39,7 +58,7 @@ struct ScheduleWeekDayStripCell: View {
                         if isSelected {
                             Circle()
                                 .fill(AppTheme.ColorToken.accent)
-                        } else if AppDisplayTimeZone.calendar().isDateInToday(date) {
+                        } else if isToday {
                             Circle()
                                 .stroke(AppTheme.ColorToken.accent, lineWidth: 2)
                         }

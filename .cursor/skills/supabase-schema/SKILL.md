@@ -38,6 +38,15 @@ description: >-
 | 14 | `20260627180000_ledger_payer_ids.sql` | `ledger_transactions.payer_ids uuid[]` + 从 `payer_id` 回填 |
 | 15 | `20260627190000_ledger_visible_member_ids.sql` | `visible_member_ids` + SELECT RLS 可见度 |
 | 16 | `20260728120000_tasks_timezone.sql` | `tasks.timezone`（IANA；全天/重复日历日语义） |
+| 17 | `20261006120000_tracked_device_pairing.sql` | `household_memberships.is_tracked_device` + 儿童设备配对 nonce / RPC / RLS |
+| 18 | `20261006133000_tracked_device_pin.sql` | `household_memberships.tracked_device_pin`（列权限收回）+ 管理员 get/set、追踪端 sync/report、claim 保留 PIN |
+| 19 | `20261006151000_tracked_device_claim_keep_pin.sql` | 核销配对码不再提交/覆盖 PIN；空 PIN 不报 invalid pin |
+| 20 | `20261006160000_tracked_device_claim_nickname.sql` | claim 写入 `nickname`（NOT NULL）并优先更新已有影子 membership |
+| 21 | `20261006170000_tracked_device_membership_nickname_default.sql` | `nickname` 列默认 `Member`；再次替换 claim RPC（线上仍跑旧 INSERT 导致 23502） |
+| 22 | `20261006180000_tracked_device_pairing_realtime.sql` | `tracked_device_pairing_nonces` 加入 Realtime，管理员端感知核销 |
+| 23 | `20261006190000_tracked_device_model_bound_at.sql` | membership `tracked_device_model` / `tracked_device_bound_at`；claim 写入；追踪端 report 型号 |
+| 24 | `20261006200000_location_states_uncapped.sql` | `location_states.locations` 取消 20 条上限 |
+| 25 | `20261008120000_location_trail_segments.sql` | `location_trail_segments` 稀疏轨迹段 + `push_location_trail_segment`（48h / 每实体 20 段） |
 
 **公账目标 schema**（`expense_categories` 完整列、`category_tags`、`ledger_transactions`、`transaction_tag_mappings`、`seed_household_presets`）见 `20260627135000_ledger_four_tables_schema.sql` 起。
 
@@ -93,7 +102,7 @@ description: >-
 | `id` | `LocationStateRecord.databaseId` | 可选；无 `id` 列时用 `profileId` 作 `Identifiable.id` |
 | `household_id` | `householdId` | **必填**；与 `entity_id` 联合唯一，禁止跨群组混读 |
 | `entity_id` | `profileId` | **`family_profiles.id`**，不是 user id / membership id |
-| `locations` | `locations: [LocationPayload]` | JSONB 数组，**newest-first**；最多 **20** 条（触发器 `location_states_cap_locations_trg`）；元素键 `lat`/`lng`/`address_name`/`recorded_at`/`battery_level`/`is_charging` |
+| `locations` | `locations: [LocationPayload]` | JSONB 数组，**newest-first**，**不封顶**（触发器 `location_states_cap_locations_trg` 仅校验数组类型）；元素键 `lat`/`lng`/`address_name`/`recorded_at`/`battery_level`/`is_charging` |
 | `is_ghost_mode` | `isGhostMode` | 默认 `false`；仅「保持隐藏」写 `true` |
 | `updated_at` | `updatedAt` | |
 
@@ -106,7 +115,27 @@ description: >-
 - **展示态**：`UserLocationState.locations`（`locations[0]` = 当前）；轨迹 `breadcrumbCoordinates` = 数组 reversed。
 - **Live Huddle Realtime**：频道 `circle:{household_id}:live_huddle`（小写 UUID）；见 `LiveLocationManager`、`supabase/migrations/20260627120002_live_huddle_realtime_rls.sql`。
 
-迁移：location 相关变更已并入 `20260627020719_remote_schema.sql` 基线（`locations` JSONB 数组 + cap 触发器 + `push_entity_location`）；增量见 `20260627120001_location_states_ghost_default.sql`。
+迁移：location 相关变更已并入 `20260627020719_remote_schema.sql` 基线（`locations` JSONB 数组 + `push_entity_location`）；`20261006200000_location_states_uncapped.sql` 取消 20 条上限；增量见 `20260627120001_location_states_ghost_default.sql`。
+
+### `location_trail_segments`（稀疏行程轨迹）
+
+| 数据库列 | Swift (`LocationTrailSegment`) | 说明 |
+|----------|-------------------------------|------|
+| `id` | `id` | UUID |
+| `household_id` | `householdId` | 群组 |
+| `entity_id` | `entityId` | **`family_profiles.id`**（与 `location_states.entity_id` 一致） |
+| `started_at` / `ended_at` | `startedAt` / `endedAt` | 段起止 |
+| `waypoints` | `waypoints: [TrailWaypoint]` | JSONB 数组，**最旧→最新**；键 `lat`/`lng`/`recorded_at`（无电量等大字段） |
+| `point_count` | `pointCount` | 锚点数量 |
+| `created_at` | `createdAt` | 可选 |
+
+| RPC | 参数 | 说明 |
+|-----|------|------|
+| `push_location_trail_segment` | `p_household_id`, `p_entity_id`, `p_started_at`, `p_ended_at`, `p_waypoints` | 校验 membership.profile_id = entity；插入后删 **48h** 外段 + 每实体最多 **20** 段 |
+
+- **本机**：`OnDeviceTrailBuffer` 密采 → `TrailSimplifier`（Douglas-Peucker）→ `LocationTrailCaptureCoordinator` 上报。
+- **展示**：`RoadSnapRouteBuilder`（MKDirections）贴路；Ghost 时不缓冲不上报。
+- **与 `location_states` 关系**：并存；后者仍只做实时位置/粗历史。
 
 ### 写入路径
 
@@ -255,6 +284,10 @@ ALTER TABLE transaction_tag_mappings ENABLE ROW LEVEL SECURITY;
 | `feedbacks` | `Feedback` |
 | `task_attachments` | `TaskAttachment` |
 | `location_states` | `LocationStateRecord`；`household_id` + `entity_id` 群组隔离；JSONB `locations` → `LocationPayload` |
+| `location_trail_segments` | `LocationTrailSegment`；稀疏 `waypoints` → `TrailWaypoint`；RPC `push_location_trail_segment` |
+| `household_memberships.is_tracked_device` | `HouseholdMembership.isTrackedDevice` / `JoinedHousehold.isTrackedDevice`；儿童定位设备标记（角色仍为 `member`） |
+| `household_memberships.tracked_device_pin` | 4–6 位门锁 PIN；**禁止** PostgREST 直读/直写；RPC `get_tracked_device_pin` / `set_tracked_device_pin`（`can_manage_household`）、`sync_own_tracked_device_pin` / `report_own_tracked_device_pin`（追踪端） |
+| `tracked_device_pairing_nonces` | 一次性配对码；RPC `create_tracked_device_pairing_nonce` / `claim_tracked_device_pairing_nonce(p_nonce, p_user_id)`（不覆盖管理员 PIN） |
 | `subscription_orders` | `SubscriptionOrder`；历史 Apple IAP 订单（可选）；新购走路径见 RevenueCat |
 | `user_entitlements` | `UserEntitlement`；`is_pro`、`pro_expires_at`；**写入**仅 `service_role`（`sync_user_entitlement_from_revenuecat`）；**读取** authenticated `user_id = auth.uid()` |
 | `households.is_premium` | 购买激活时由 RPC 写入的缓存位；**客户端 VIP 判断不依赖此列**，改用 RPC `household_creator_has_active_pro` |

@@ -94,6 +94,7 @@ final class ViewModelFactory: ObservableObject {
     func makeLocationMainViewModel() -> LocationMainViewModel {
         LocationMainViewModel(
             locationStateService: services.locationStateService,
+            locationTrailService: services.locationTrailService,
             membershipService: services.membershipService,
             previewMembers: nil
         )

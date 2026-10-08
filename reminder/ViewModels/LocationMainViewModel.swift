@@ -15,8 +15,13 @@ final class LocationMainViewModel: ObservableObject {
     @Published private(set) var currentUserLiveLocation: LocationPayload?
     /// 名册 membership.id → family_profiles.id（Live 读库种子用）。
     @Published private(set) var profileIdByMembershipId: [UUID: UUID] = [:]
+    /// `family_profiles.id` → 稀疏轨迹段（近 48h）。
+    @Published private(set) var trailSegmentsByProfileId: [UUID: [LocationTrailSegment]] = [:]
+    /// `family_profiles.id` → 贴路折线（每段一条）。
+    @Published private(set) var roadSnappedRoutesByProfileId: [UUID: [[CLLocationCoordinate2D]]] = [:]
 
     private let locationStateService: LocationStateDataService
+    private let locationTrailService: LocationTrailDataService
     private let membershipService: HouseholdMembershipDataService
 
     private var householdId: UUID?
@@ -26,13 +31,16 @@ final class LocationMainViewModel: ObservableObject {
     /// 实时模式期间暂停隐身展示与上报拦截（不改变用户已保存的隐身偏好）。
     private(set) var isLiveModeActive = false
     private var batteryCancellable: AnyCancellable?
+    private var roadSnapTask: Task<Void, Never>?
 
     init(
         locationStateService: LocationStateDataService,
+        locationTrailService: LocationTrailDataService = MockLocationTrailDataService(),
         membershipService: HouseholdMembershipDataService,
         previewMembers: [UserLocationState]? = nil
     ) {
         self.locationStateService = locationStateService
+        self.locationTrailService = locationTrailService
         self.membershipService = membershipService
         if let previewMembers {
             members = previewMembers
@@ -216,6 +224,8 @@ final class LocationMainViewModel: ObservableObject {
             }
             members = offlineMembers
             profileIdByMembershipId = profileMap
+            trailSegmentsByProfileId = [:]
+            roadSnappedRoutesByProfileId = [:]
             reconcileSelectionAfterReload()
             return
         }
@@ -260,10 +270,65 @@ final class LocationMainViewModel: ObservableObject {
             members = mergedMembers
             syncCurrentUserBatteryFromDevice()
             reconcileSelectionAfterReload()
+            await reloadTrailSegments(for: householdIds)
+            scheduleRoadSnapRebuild()
         } catch {
             members = []
             errorMessage = error.localizedDescription
         }
+    }
+
+    private func reloadTrailSegments(for householdIds: [UUID]) async {
+        var merged: [UUID: [LocationTrailSegment]] = [:]
+        for householdId in householdIds {
+            do {
+                let segments = try await locationTrailService.fetchTrailSegments(in: householdId, since: nil)
+                for segment in segments {
+                    merged[segment.entityId, default: []].append(segment)
+                }
+            } catch {
+                #if DEBUG
+                print("[LocationMainViewModel] trail fetch failed: \(error.localizedDescription)")
+                #endif
+            }
+        }
+        for key in merged.keys {
+            merged[key]?.sort { $0.endedAt > $1.endedAt }
+        }
+        trailSegmentsByProfileId = merged
+    }
+
+    private func scheduleRoadSnapRebuild() {
+        roadSnapTask?.cancel()
+        roadSnapTask = Task { [weak self] in
+            await self?.rebuildRoadSnappedRoutes()
+        }
+    }
+
+    private func rebuildRoadSnappedRoutes() async {
+        var next: [UUID: [[CLLocationCoordinate2D]]] = [:]
+        let selectedProfileIDs: Set<UUID> = Set(
+            selectedMemberIDs.compactMap { profileIdByMembershipId[$0] }
+        )
+
+        for (profileId, segments) in trailSegmentsByProfileId {
+            guard selectedProfileIDs.contains(profileId) else { continue }
+            // 每成员最多贴路最近 3 段，控制 Directions 调用量
+            var routes: [[CLLocationCoordinate2D]] = []
+            for segment in segments.prefix(3) {
+                if Task.isCancelled { return }
+                let coords = await RoadSnapRouteBuilder.shared.roadCoordinates(for: segment.waypoints)
+                if coords.count >= 2 {
+                    routes.append(coords)
+                }
+            }
+            if routes.isEmpty == false {
+                next[profileId] = routes
+            }
+        }
+
+        guard Task.isCancelled == false else { return }
+        roadSnappedRoutesByProfileId = next
     }
 
     func isSelected(memberID: UUID) -> Bool {
@@ -273,6 +338,24 @@ final class LocationMainViewModel: ObservableObject {
     func setSelected(_ selected: Bool, for memberID: UUID) {
         guard let member = members.first(where: { $0.id == memberID }), member.isSelectableOnMap else { return }
         if selected { selectedMemberIDs.insert(memberID) } else { selectedMemberIDs.remove(memberID) }
+        scheduleRoadSnapRebuild()
+    }
+
+    /// 选中成员对应的贴路折线；无轨迹段时返回空。
+    func roadSnappedRoutes(forMembershipId membershipId: UUID) -> [[CLLocationCoordinate2D]] {
+        guard let profileId = profileIdByMembershipId[membershipId] else { return [] }
+        return roadSnappedRoutesByProfileId[profileId] ?? []
+    }
+
+    /// 选中成员最近一段轨迹的起终点（用于地图标注）。
+    func latestTrailEndpoints(forMembershipId membershipId: UUID) -> (start: CLLocationCoordinate2D, end: CLLocationCoordinate2D)? {
+        guard let profileId = profileIdByMembershipId[membershipId],
+              let segment = trailSegmentsByProfileId[profileId]?.first,
+              let start = segment.waypoints.first?.coordinate,
+              let end = segment.waypoints.last?.coordinate else {
+            return nil
+        }
+        return (start, end)
     }
 
     func toggleMemberList() { isMemberListExpanded.toggle() }

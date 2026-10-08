@@ -424,13 +424,43 @@ struct LocationMainView: View {
     ) -> some MapContent {
         let displayCount = effectiveMapHistoryDisplayCount
         let visibleLocations = member.mapVisibleLocations(displayCount: displayCount)
-        let coordinates = member.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
+        let roadRoutes = viewModel.roadSnappedRoutes(forMembershipId: member.id)
+        let breadcrumbCoordinates = member.mapVisibleBreadcrumbCoordinates(displayCount: displayCount)
         let accent = LocationMemberMapColors.accent(for: member.id)
-        let segmentCount = max(0, coordinates.count - 1)
+        let usesRoadSnap = roadRoutes.isEmpty == false
 
         Group {
-            if coordinates.count >= 2 {
-                ForEach(Array(polylineSegments(for: coordinates).enumerated()), id: \.offset) { index, segment in
+            if usesRoadSnap {
+                ForEach(Array(roadRoutes.enumerated()), id: \.offset) { routeIndex, route in
+                    MapPolyline(coordinates: route)
+                        .stroke(
+                            LocationMemberMapColors.trajectorySegment(
+                                for: member.id,
+                                segmentIndex: routeIndex,
+                                totalSegments: max(1, roadRoutes.count)
+                            ),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
+                        )
+                }
+
+                if let endpoints = viewModel.latestTrailEndpoints(forMembershipId: member.id) {
+                    Annotation("", coordinate: endpoints.start, anchor: .bottom) {
+                        MapHistoryTrajectoryMarker(
+                            dotDiameter: 12,
+                            dotColor: accent,
+                            isPathStart: true
+                        )
+                    }
+                    Annotation("", coordinate: endpoints.end, anchor: .bottom) {
+                        Image(systemName: "mappin.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundStyle(.red)
+                            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                    }
+                }
+            } else if breadcrumbCoordinates.count >= 2 {
+                let segmentCount = max(0, breadcrumbCoordinates.count - 1)
+                ForEach(Array(polylineSegments(for: breadcrumbCoordinates).enumerated()), id: \.offset) { index, segment in
                     MapPolyline(coordinates: segment)
                         .stroke(
                             LocationMemberMapColors.trajectorySegment(
@@ -441,29 +471,53 @@ struct LocationMainView: View {
                             style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
                         )
                 }
-            }
 
-            let history = Array(visibleLocations.dropFirst())
-            ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
-                let rank = history.count - 1 - index
-                let isPathStart = index == history.count - 1
-                let dotDiameter = history.count > 1
-                    ? 9.0 + (Double(rank) / Double(history.count - 1)) * 3.0
-                    : 10.0
-                Annotation(
-                    "",
-                    coordinate: historyPoint.coordinate,
-                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: isPathStart)
-                ) {
-                    MapHistoryTrajectoryMarker(
-                        dotDiameter: dotDiameter,
-                        dotColor: LocationMemberMapColors.historyDot(
-                            for: member.id,
-                            rank: rank,
-                            totalHistoryCount: history.count
-                        ),
-                        isPathStart: isPathStart
-                    )
+                let history = Array(visibleLocations.dropFirst())
+                ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
+                    let rank = history.count - 1 - index
+                    let isPathStart = index == history.count - 1
+                    let dotDiameter = history.count > 1
+                        ? 9.0 + (Double(rank) / Double(history.count - 1)) * 3.0
+                        : 10.0
+                    Annotation(
+                        "",
+                        coordinate: historyPoint.coordinate,
+                        anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: isPathStart)
+                    ) {
+                        MapHistoryTrajectoryMarker(
+                            dotDiameter: dotDiameter,
+                            dotColor: LocationMemberMapColors.historyDot(
+                                for: member.id,
+                                rank: rank,
+                                totalHistoryCount: history.count
+                            ),
+                            isPathStart: isPathStart
+                        )
+                    }
+                }
+            } else {
+                let history = Array(visibleLocations.dropFirst())
+                ForEach(Array(history.enumerated()), id: \.offset) { index, historyPoint in
+                    let rank = history.count - 1 - index
+                    let isPathStart = index == history.count - 1
+                    let dotDiameter = history.count > 1
+                        ? 9.0 + (Double(rank) / Double(history.count - 1)) * 3.0
+                        : 10.0
+                    Annotation(
+                        "",
+                        coordinate: historyPoint.coordinate,
+                        anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: isPathStart)
+                    ) {
+                        MapHistoryTrajectoryMarker(
+                            dotDiameter: dotDiameter,
+                            dotColor: LocationMemberMapColors.historyDot(
+                                for: member.id,
+                                rank: rank,
+                                totalHistoryCount: history.count
+                            ),
+                            isPathStart: isPathStart
+                        )
+                    }
                 }
             }
 
@@ -1120,6 +1174,7 @@ private struct LocationCustomHistoryRangeSheet: View {
     LocationMainView(
         viewModel: LocationMainViewModel(
             locationStateService: MockLocationStateDataService(seedPreview: true),
+            locationTrailService: MockLocationTrailDataService(),
             membershipService: MockHouseholdMembershipDataService(),
             previewMembers: UserLocationState.previewHousehold
         )
