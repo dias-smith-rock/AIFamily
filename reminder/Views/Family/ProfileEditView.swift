@@ -14,6 +14,8 @@ struct ProfileEditView: View {
     let mode: Mode
     let householdId: UUID?
     let canEdit: Bool
+    /// 游客六位 ID 等不可改展示名：仅展示，不可编辑。
+    let locksDisplayName: Bool
     let memberRemoval: MemberRemovalAction?
     let adminRoleToggle: AdminRoleToggleAction?
     let trackedDeviceAdmin: TrackedDeviceAdminConfig?
@@ -53,6 +55,7 @@ struct ProfileEditView: View {
         mode: Mode,
         householdId: UUID?,
         canEdit: Bool,
+        locksDisplayName: Bool = false,
         memberRemoval: MemberRemovalAction? = nil,
         adminRoleToggle: AdminRoleToggleAction? = nil,
         trackedDeviceAdmin: TrackedDeviceAdminConfig? = nil,
@@ -63,6 +66,7 @@ struct ProfileEditView: View {
         self.mode = mode
         self.householdId = householdId
         self.canEdit = canEdit
+        self.locksDisplayName = locksDisplayName
         self.memberRemoval = memberRemoval
         self.adminRoleToggle = adminRoleToggle
         self.trackedDeviceAdmin = trackedDeviceAdmin
@@ -120,7 +124,19 @@ struct ProfileEditView: View {
                 }
 
                 Section(L10n.Common.basicInfo) {
-                    TextField(AppLocalized.string(L10n.Common.nicknameSuchAsMum, locale: locale), text: $name)
+                    if locksDisplayName {
+                        HStack {
+                            Text(L10n.Common.nicknameSuchAsMum.localized)
+                            Spacer()
+                            Text(verbatim: name)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(L10n.Family.guestNumericIdReadOnlyHint.localized)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        TextField(AppLocalized.string(L10n.Common.nicknameSuchAsMum, locale: locale), text: $name)
+                    }
                     Picker(L10n.Common.gender.localized, selection: $gender) {
                         ForEach(ProfileDraftGender.allCases) { item in
                             Text(item.localizedName).tag(item)
@@ -460,8 +476,16 @@ struct ProfileEditView: View {
             return
         }
 
+        let resolvedName: String = {
+            if locksDisplayName, case .edit(let profile) = mode,
+               let locked = profile.immutableGuestNumericDisplayName {
+                return locked
+            }
+            return name.trimmingCharacters(in: .whitespacesAndNewlines)
+        }()
+
         let draft = LocalProfileDraft(
-            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            name: resolvedName,
             avatarURL: avatarURL?.absoluteString,
             gender: gender.dbValue,
             birthDate: shouldSetBirthDate ? birthDate : nil,

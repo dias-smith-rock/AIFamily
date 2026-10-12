@@ -98,6 +98,9 @@ final class OrgRoutingViewModel: ObservableObject {
 
         do {
             try await householdRoutingService.joinHousehold(inviteCode: inviteCode)
+            #if canImport(Supabase)
+            await GuestMemberDisplayNameAssigner.assignAfterJoinIfNeeded()
+            #endif
             return true
         } catch let routingError as HouseholdRoutingError {
             errorMessage = mapHouseholdRoutingError(routingError)

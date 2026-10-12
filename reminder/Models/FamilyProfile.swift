@@ -355,15 +355,15 @@ extension FamilyProfile {
     }
 
     /// 千组织千面：优先 `household_memberships[0].nickname` → 回退 `family_profiles.name` → 兜底。
-    /// 正式登录用户若仍落在「新成员」占位名上，改为「我」，避免与虚拟成员占位混淆。
+    /// 「新成员」占位对多人不可区分：展示为档案 id 稳定的六位数字（加入时也会写入随机六位持久化名）。
     var displayName: String {
         if let list = householdMemberships,
            let firstMembership = list.first {
             let nickname = firstMembership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if nickname.isEmpty == false {
                 let resolved = StoredDisplayNameResolver.selfName(nickname)
-                if userId != nil, Self.isNewMemberPlaceholder(resolved) {
-                    return AppLocalized.localizedSync(L10n.Common.me)
+                if Self.isNewMemberPlaceholder(resolved) {
+                    return GuestMemberDisplayName.resolvedDisplayName(stored: resolved, profileId: id)
                 }
                 return resolved
             }
@@ -371,8 +371,8 @@ extension FamilyProfile {
         let profileName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if profileName.isEmpty == false, profileName != L10n.Family.unnamedMember.string() {
             let resolved = StoredDisplayNameResolver.selfName(profileName)
-            if userId != nil, Self.isNewMemberPlaceholder(resolved) {
-                return AppLocalized.localizedSync(L10n.Common.me)
+            if Self.isNewMemberPlaceholder(resolved) {
+                return GuestMemberDisplayName.resolvedDisplayName(stored: resolved, profileId: id)
             }
             return resolved
         }
@@ -380,6 +380,22 @@ extension FamilyProfile {
             return AppLocalized.localizedSync(L10n.Common.me)
         }
         return MemberDisplayName.unknownFallback
+    }
+
+    /// 已写入库内的游客六位 ID（`nickname` 或 `name`）；分配后不可再改。
+    var immutableGuestNumericDisplayName: String? {
+        guard userId != nil, isVirtualUser == false else { return nil }
+        if let nickname = membershipNickname, GuestMemberDisplayName.isSixDigitIdentifier(nickname) {
+            return nickname
+        }
+        if let profileName, GuestMemberDisplayName.isSixDigitIdentifier(profileName) {
+            return profileName
+        }
+        return nil
+    }
+
+    var hasImmutableGuestNumericDisplayName: Bool {
+        immutableGuestNumericDisplayName != nil
     }
 
     /// 库中默认占位名（含已本地化后的「新成员」）。

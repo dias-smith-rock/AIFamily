@@ -269,6 +269,7 @@ final class FamilyViewModel: ObservableObject {
         static let renameFailed = AppLocalized.localizedSync(L10n.Family.failedToRenameTheGroupPleaseTryAgainLate)
         static let cannotToggleAdminRole = AppLocalized.localizedSync(L10n.Family.youDonTHavePermissionToChangeThisMember)
         static let adminLimitReached = AppLocalized.localizedSync(L10n.Family.thisGroupAlreadyHasTheMaximumOf3Admins)
+        static let guestNumericDisplayNameLocked = AppLocalized.localizedSync(L10n.Family.guestNumericIdCannotBeChanged)
     }
 
     private static let maxAdminCount = 3
@@ -703,33 +704,46 @@ final class FamilyViewModel: ObservableObject {
             return ProfileManagementCopy.noHouseholdSelected
         }
 
+        if let lockedName = profile.immutableGuestNumericDisplayName,
+           trimmedDisplayName != lockedName {
+            return ProfileManagementCopy.guestNumericDisplayNameLocked
+        }
+
+        let resolvedDisplayName = profile.immutableGuestNumericDisplayName ?? trimmedDisplayName
+
         var profileDraft = draft.normalizedForProfileUpdate()
-        profileDraft.name = trimmedDisplayName
+        profileDraft.name = resolvedDisplayName
 
         do {
-            do {
-                try await membershipService.updateNickname(
-                    householdId: householdId,
-                    profileId: targetProfileId,
-                    nickname: trimmedDisplayName
-                )
-            } catch {
+            if profile.hasImmutableGuestNumericDisplayName == false {
+                do {
+                    try await membershipService.updateNickname(
+                        householdId: householdId,
+                        profileId: targetProfileId,
+                        nickname: resolvedDisplayName
+                    )
+                } catch {
                 #if DEBUG
                 print("⚠️ [FamilyDebug] 更新 membership 昵称时出错（虚拟成员可忽略）: \(error.localizedDescription)")
                 #endif
+                }
             }
 
             try await profileService.updateProfile(profileId: targetProfileId, draft: profileDraft)
 
             var updatedProfile = profile
-            updatedProfile.name = trimmedDisplayName
+            updatedProfile.name = resolvedDisplayName
             if let memberIndex = members.firstIndex(where: {
                 $0.householdId == householdId && $0.profileId == targetProfileId
             }) {
-                members[memberIndex].nickname = trimmedDisplayName
+                if profile.hasImmutableGuestNumericDisplayName == false {
+                    members[memberIndex].nickname = resolvedDisplayName
+                }
                 var memberships = updatedProfile.memberships ?? []
                 if let embeddedIndex = memberships.firstIndex(where: { $0.id == members[memberIndex].id }) {
-                    memberships[embeddedIndex].nickname = trimmedDisplayName
+                    if profile.hasImmutableGuestNumericDisplayName == false {
+                        memberships[embeddedIndex].nickname = resolvedDisplayName
+                    }
                     updatedProfile.memberships = memberships
                 } else {
                     updatedProfile.memberships = [members[memberIndex]]

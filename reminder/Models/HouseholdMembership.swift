@@ -253,7 +253,14 @@ extension HouseholdMembership {
     func displayName(linkedProfile: FamilyProfile?) -> String {
         let trimmedNickname = nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if trimmedNickname.isEmpty == false {
-            return MemberDisplayName.nonEmpty(StoredDisplayNameResolver.selfName(trimmedNickname))
+            let resolved = StoredDisplayNameResolver.selfName(trimmedNickname)
+            if FamilyProfile.isNewMemberPlaceholder(resolved),
+               let linkedProfile {
+                return MemberDisplayName.nonEmpty(
+                    GuestMemberDisplayName.resolvedDisplayName(stored: resolved, profileId: linkedProfile.id)
+                )
+            }
+            return MemberDisplayName.nonEmpty(resolved)
         }
         if let linkedProfile {
             return MemberDisplayName.nonEmpty(linkedProfile.displayName)

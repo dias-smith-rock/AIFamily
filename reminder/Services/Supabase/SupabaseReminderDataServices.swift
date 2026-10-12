@@ -766,7 +766,28 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
 
     func updateProfile(profileId: UUID, draft: LocalProfileDraft) async throws {
         #if canImport(Supabase)
-        let updatePayload = FamilyProfileUpdatePayload.build(from: draft)
+        struct NameRow: Decodable {
+            let name: String?
+        }
+        let existingRows: [NameRow] = try await provider.client
+            .from(SupabaseTable.familyProfiles)
+            .select("name")
+            .eq("id", value: profileId.uuidString.lowercased())
+            .limit(1)
+            .execute()
+            .value
+        let existingName = existingRows.first?.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if GuestMemberDisplayName.isSixDigitIdentifier(existingName) {
+            let incoming = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard incoming == existingName else {
+                throw SupabaseServiceError.invalidResponse
+            }
+        }
+
+        var updatePayload = FamilyProfileUpdatePayload.build(from: draft)
+        if GuestMemberDisplayName.isSixDigitIdentifier(existingName) {
+            updatePayload["name"] = .string(existingName)
+        }
 
         _ = try await provider.client
             .from(SupabaseTable.familyProfiles)
@@ -891,9 +912,28 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
 
     func updateMembership(_ membership: HouseholdMembership) async throws -> HouseholdMembership {
         #if canImport(Supabase)
+        struct NicknameRow: Decodable {
+            let nickname: String?
+        }
+        let existingRows: [NicknameRow] = try await provider.client
+            .from(SupabaseTable.memberships)
+            .select("nickname")
+            .eq("id", value: membership.id.uuidString.lowercased())
+            .limit(1)
+            .execute()
+            .value
+        let existingNickname = existingRows.first?.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        var membershipToWrite = membership
+        if GuestMemberDisplayName.isSixDigitIdentifier(existingNickname) {
+            let incoming = membership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if incoming.isEmpty == false, incoming != existingNickname {
+                throw SupabaseServiceError.invalidResponse
+            }
+            membershipToWrite.nickname = existingNickname
+        }
         let response: HouseholdMembership = try await provider.client
             .from(SupabaseTable.memberships)
-            .update(membership)
+            .update(membershipToWrite)
             .eq("id", value: membership.id.uuidString)
             .select()
             .single()
@@ -910,6 +950,21 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
         #if canImport(Supabase)
         let trimmed = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else {
+            throw SupabaseServiceError.invalidResponse
+        }
+        struct NicknameRow: Decodable {
+            let nickname: String?
+        }
+        let rows: [NicknameRow] = try await provider.client
+            .from(SupabaseTable.memberships)
+            .select("nickname")
+            .eq("household_id", value: householdId.uuidString.lowercased())
+            .eq("profile_id", value: profileId.uuidString.lowercased())
+            .limit(1)
+            .execute()
+            .value
+        let existing = rows.first?.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if GuestMemberDisplayName.isSixDigitIdentifier(existing), trimmed != existing {
             throw SupabaseServiceError.invalidResponse
         }
         struct NicknamePatch: Encodable {

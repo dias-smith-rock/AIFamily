@@ -87,6 +87,8 @@ extension L10n {
     static let makeThisMemberAnAdmin = Entry(key: "family_make_this_member_an_admin", table: .family)
     static let member = Entry(key: "family_member", table: .family)
     static let newMember = Entry(key: "family_new_member", table: .family)
+    static let guestNumericIdCannotBeChanged = Entry(key: "family_guest_numeric_id_cannot_be_changed", table: .family)
+    static let guestNumericIdReadOnlyHint = Entry(key: "family_guest_numeric_id_read_only_hint", table: .family)
     static let memberDetails = Entry(key: "family_member_details", table: .family)
     static let memberInfo = Entry(key: "family_member_info", table: .family)
     static let memberOperations = Entry(key: "family_member_operations", table: .family)

@@ -117,6 +117,7 @@ struct MineView: View {
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: familyViewModel.canEditProfile(profile),
+                locksDisplayName: profile.hasImmutableGuestNumericDisplayName,
                 uploadAvatar: { data, profileId in
                     #if DEBUG
                     print("🔎 [MineDebug] uploadAvatar bytes=\(data.count)")

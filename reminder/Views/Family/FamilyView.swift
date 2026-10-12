@@ -157,6 +157,7 @@ struct FamilyView: View {
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: viewModel.canEditProfile(profile),
+                locksDisplayName: profile.hasImmutableGuestNumericDisplayName,
                 memberRemoval: memberRemovalAction(for: profile),
                 adminRoleToggle: adminRoleToggleAction(for: profile),
                 trackedDeviceAdmin: viewModel.trackedDeviceAdminConfig(

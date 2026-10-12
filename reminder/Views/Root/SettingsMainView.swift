@@ -239,6 +239,7 @@ struct SettingsMainView: View {
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: familyViewModel.canEditProfile(profile),
+                locksDisplayName: profile.hasImmutableGuestNumericDisplayName,
                 memberRemoval: memberRemovalAction(for: profile),
                 adminRoleToggle: adminRoleToggleAction(for: profile),
                 trackedDeviceAdmin: familyViewModel.trackedDeviceAdminConfig(
@@ -304,6 +305,7 @@ struct SettingsMainView: View {
                 mode: .edit(profile),
                 householdId: appRouter.selectedHouseholdId,
                 canEdit: familyViewModel.canEditProfile(profile),
+                locksDisplayName: profile.hasImmutableGuestNumericDisplayName,
                 uploadAvatar: { data, profileId in
                     await familyViewModel.uploadAvatar(data: data, profileId: profileId)
                 },
