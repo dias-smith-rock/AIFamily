@@ -63,10 +63,10 @@ actor MockLocationStateDataService: LocationStateDataService {
                     to: row.locations,
                     mode: writeMode
                 )
+                row.updatedAt = Date()
+                records[index] = row
+                return .persisted(mode: writeMode)
             }
-            row.updatedAt = Date()
-            records[index] = row
-            return .persisted
         }
         records.append(
             LocationStateRecord(
@@ -86,7 +86,7 @@ actor MockLocationStateDataService: LocationStateDataService {
                 updatedAt: Date()
             )
         )
-        return .persisted
+        return .persisted(mode: .prependNewPoint)
     }
 
     func updateGhostMode(

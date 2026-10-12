@@ -1,9 +1,14 @@
 import Foundation
 
 enum LocationHistoryLimits {
+    /// 客户端 fallback 写入时 `locations` 条数上限（与 Supabase RPC 策略对齐）。
+    static let maxStoredLocationPoints = 180
+    /// 丢弃早于该天数的点（与 Location Tab「最近 30 天」一致）。
+    static let maxLocationAgeDays = 30
+
     /// newest-first：新点 prepend，不截断历史。
     static func prepending(_ new: LocationPayload, to existing: [LocationPayload]) -> [LocationPayload] {
-        [new] + existing
+        trimLocations([new] + existing)
     }
 
     /// newest-first：仅替换 `locations[0]`，历史轨迹不变（ABCD → EBCD）。
@@ -23,8 +28,21 @@ enum LocationHistoryLimits {
         case .prependNewPoint:
             return prepending(new, to: existing)
         case .replaceLatestPoint:
-            return replacingLatest(new, in: existing)
+            return trimLocations(replacingLatest(new, in: existing))
         }
+    }
+
+    static func trimLocations(_ locations: [LocationPayload], now: Date = Date()) -> [LocationPayload] {
+        let calendar = Calendar.current
+        let ageCutoff = calendar.date(byAdding: .day, value: -maxLocationAgeDays, to: now) ?? now
+        var next = locations.filter { payload in
+            guard let stamp = payload.recordedAt else { return true }
+            return stamp >= ageCutoff
+        }
+        if next.count > maxStoredLocationPoints {
+            next = Array(next.prefix(maxStoredLocationPoints))
+        }
+        return next
     }
 }
 

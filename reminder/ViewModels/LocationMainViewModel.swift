@@ -32,6 +32,8 @@ final class LocationMainViewModel: ObservableObject {
     private(set) var isLiveModeActive = false
     private var batteryCancellable: AnyCancellable?
     private var roadSnapTask: Task<Void, Never>?
+    /// 贴路段数配额（由 Location Tab 注入 VIP 状态）。
+    private(set) var roadSnapHasPremiumAccess = false
 
     init(
         locationStateService: LocationStateDataService,
@@ -44,9 +46,7 @@ final class LocationMainViewModel: ObservableObject {
         self.membershipService = membershipService
         if let previewMembers {
             members = previewMembers
-            if let selfID = previewMembers.first(where: \.isCurrentUser)?.id {
-                selectedMemberIDs = [selfID]
-            }
+            configurePreviewRoadSnapDemo(members: previewMembers)
         }
 
         let monitor = DeviceBatteryMonitor.shared
@@ -79,6 +79,21 @@ final class LocationMainViewModel: ObservableObject {
     func selectPresetHistoryRange(_ kind: LocationHistoryDateRange.Kind) {
         guard kind != .custom else { return }
         historyDateRange.kind = kind
+    }
+
+    func setRoadSnapPremiumAccess(_ hasPremium: Bool) {
+        guard roadSnapHasPremiumAccess != hasPremium else { return }
+        roadSnapHasPremiumAccess = hasPremium
+        scheduleRoadSnapRebuild()
+    }
+
+    /// 日期筛选变更后重拉轨迹并重建贴路（在线时）。
+    func reloadTrailsAndRoadSnapForHistoryChange() async {
+        let householdIds = effectiveViewHouseholdIds
+        guard householdIds.isEmpty == false else { return }
+        guard await NetworkMonitor.shared.isConnected else { return }
+        await reloadTrailSegments(for: householdIds)
+        scheduleRoadSnapRebuild()
     }
 
     /// 日期范围内的点数超过当前展示上限（非 VIP 用于引导购买）。
@@ -174,12 +189,17 @@ final class LocationMainViewModel: ObservableObject {
         guard await NetworkMonitor.shared.isConnected else { return }
 
         do {
-            _ = try await locationStateService.reportCurrentLocationIfNeeded(
+            let outcome = try await locationStateService.reportCurrentLocationIfNeeded(
                 householdId: householdId,
                 profileId: currentProfileId,
                 coordinate: payload,
                 minDistanceMeters: LocationPersistPreferences.minUpdateDistanceMeters,
                 minIntervalSeconds: LocationPersistPreferences.minUpdateIntervalSeconds
+            )
+            await LocationTrailSegmentRecorder.shared.handlePersistOutcome(
+                outcome,
+                coordinate: coordinate,
+                recordedAt: payload.recordedAt ?? Date()
             )
         } catch {
             #if DEBUG
@@ -281,10 +301,14 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     private func reloadTrailSegments(for householdIds: [UUID]) async {
+        let calendar = AppDisplayTimeZone.calendar()
+        let interval = historyDateRange.interval(calendar: calendar)
+        let since = LocationTrailSegmentFilter.trailFetchCutoff(for: historyDateRange, calendar: calendar)
+
         var merged: [UUID: [LocationTrailSegment]] = [:]
         for householdId in householdIds {
             do {
-                let segments = try await locationTrailService.fetchTrailSegments(in: householdId, since: nil)
+                let segments = try await locationTrailService.fetchTrailSegments(in: householdId, since: since)
                 for segment in segments {
                     merged[segment.entityId, default: []].append(segment)
                 }
@@ -295,9 +319,17 @@ final class LocationMainViewModel: ObservableObject {
             }
         }
         for key in merged.keys {
-            merged[key]?.sort { $0.endedAt > $1.endedAt }
+            let filtered = LocationTrailSegmentFilter.segments(merged[key] ?? [], intersecting: interval)
+            merged[key] = filtered.sorted { $0.endedAt > $1.endedAt }
         }
         trailSegmentsByProfileId = merged
+        #if DEBUG
+        applyRoadSnapDemoSegmentsIfEnabled()
+        #endif
+    }
+
+    private func filteredTrailSegments(forProfileId profileId: UUID) -> [LocationTrailSegment] {
+        trailSegmentsByProfileId[profileId] ?? []
     }
 
     private func scheduleRoadSnapRebuild() {
@@ -308,18 +340,26 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     private func rebuildRoadSnappedRoutes() async {
-        var next: [UUID: [[CLLocationCoordinate2D]]] = [:]
         let selectedProfileIDs: Set<UUID> = Set(
             selectedMemberIDs.compactMap { profileIdByMembershipId[$0] }
         )
+        let segmentCap = LocationRoadSnapPreferences.maxSegmentsPerMember(
+            hasPremium: roadSnapHasPremiumAccess
+        )
+        var budget = RoadSnapRouteBuilder.DirectionsBudget(
+            remaining: LocationRoadSnapPreferences.maxDirectionsRequestsPerRebuild
+        )
 
-        for (profileId, segments) in trailSegmentsByProfileId {
-            guard selectedProfileIDs.contains(profileId) else { continue }
-            // 每成员最多贴路最近 3 段，控制 Directions 调用量
+        var next: [UUID: [[CLLocationCoordinate2D]]] = [:]
+        for profileId in selectedProfileIDs {
+            let segments = filteredTrailSegments(forProfileId: profileId).prefix(segmentCap)
             var routes: [[CLLocationCoordinate2D]] = []
-            for segment in segments.prefix(3) {
+            for segment in segments {
                 if Task.isCancelled { return }
-                let coords = await RoadSnapRouteBuilder.shared.roadCoordinates(for: segment.waypoints)
+                let coords = await RoadSnapRouteBuilder.shared.roadCoordinates(
+                    for: segment,
+                    budget: &budget
+                )
                 if coords.count >= 2 {
                     routes.append(coords)
                 }
@@ -355,12 +395,26 @@ final class LocationMainViewModel: ObservableObject {
         return roadSnappedRoutesByProfileId[profileId] ?? []
     }
 
-    /// 选中成员最近一段轨迹的起终点（用于地图标注）。
-    func latestTrailEndpoints(forMembershipId membershipId: UUID) -> (start: CLLocationCoordinate2D, end: CLLocationCoordinate2D)? {
-        guard let profileId = profileIdByMembershipId[membershipId],
-              let segment = trailSegmentsByProfileId[profileId]?.first,
-              let start = segment.waypoints.first?.coordinate,
-              let end = segment.waypoints.last?.coordinate else {
+    /// 贴路展示用起终点：与 `MapPolyline` 一致（最新段终点 = 终点，最早段折线起点 = 起点）。
+    func roadSnapDisplayEndpoints(forMembershipId membershipId: UUID) -> (
+        start: CLLocationCoordinate2D,
+        end: CLLocationCoordinate2D
+    )? {
+        let routes = roadSnappedRoutes(forMembershipId: membershipId)
+        if let newestRoute = routes.first,
+           let oldestRoute = routes.last,
+           let end = newestRoute.last,
+           let start = oldestRoute.first,
+           newestRoute.count >= 2,
+           oldestRoute.count >= 2 {
+            return (start, end)
+        }
+
+        guard let profileId = profileIdByMembershipId[membershipId] else { return nil }
+        let segments = filteredTrailSegments(forProfileId: profileId)
+        guard let newest = segments.first, let oldest = segments.last else { return nil }
+        guard let end = newest.waypoints.last?.coordinate,
+              let start = oldest.waypoints.first?.coordinate else {
             return nil
         }
         return (start, end)
@@ -446,6 +500,59 @@ final class LocationMainViewModel: ObservableObject {
         }
         return updated
     }
+
+    /// SwiftUI Preview：绑定 household、profile 映射并拉取 Mock 轨迹。
+    func configurePreviewRoadSnapDemo(members: [UserLocationState]) {
+        let householdId = UserLocationState.previewHouseholdId
+        setSingleHouseholdScope(householdId)
+        var profileMap: [UUID: UUID] = [:]
+        for member in members {
+            profileMap[member.id] = member.id
+        }
+        profileIdByMembershipId = profileMap
+        if let current = members.first(where: \.isCurrentUser) {
+            currentMembershipId = current.id
+            currentProfileId = current.id
+            selectedMemberIDs = [current.id]
+        }
+        roadSnapHasPremiumAccess = true
+        Task {
+            await reloadTrailSegments(for: [householdId])
+            scheduleRoadSnapRebuild()
+        }
+    }
+
+    #if DEBUG
+    private func applyRoadSnapDemoSegmentsIfEnabled() {
+        guard LocationRoadSnapDemoData.injectWhenTrailEmpty else { return }
+        guard let householdId = householdId ?? effectiveViewHouseholdIds.first else { return }
+
+        let profileId: UUID? = {
+            if let currentProfileId { return currentProfileId }
+            if let currentMembershipId { return profileIdByMembershipId[currentMembershipId] }
+            return members.first(where: \.isCurrentUser).flatMap { profileIdByMembershipId[$0.id] ?? $0.id }
+        }()
+        guard let profileId else { return }
+
+        let existing = trailSegmentsByProfileId[profileId] ?? []
+        guard existing.isEmpty else { return }
+
+        let anchor = members.first(where: { profileIdByMembershipId[$0.id] == profileId || $0.id == profileId })?
+            .currentLocation?.coordinate
+            ?? currentUserLiveLocation?.coordinate
+            ?? CLLocationCoordinate2D(latitude: 22.2819, longitude: 114.158)
+
+        let demo = LocationRoadSnapDemoData.makeSegments(
+            householdId: householdId,
+            profileId: profileId,
+            anchor: anchor
+        )
+        guard demo.isEmpty == false else { return }
+        trailSegmentsByProfileId[profileId] = demo
+        print("[LocationRoadSnap] injected demo segments count=\(demo.count) profile=\(profileId.uuidString.prefix(8))")
+        scheduleRoadSnapRebuild()
+    }
+    #endif
 
     private func reconcileSelectionAfterReload() {
         let selectableIDs = Set(members.filter(\.isSelectableOnMap).map(\.id))

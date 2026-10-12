@@ -49,6 +49,14 @@ struct LocationMainView: View {
     }
 
     var body: some View {
+        withLiveAndMapObservers(
+            withRefreshLifecycle(
+                withHistoryPresentation(mainMapStack)
+            )
+        )
+    }
+
+    private var mainMapStack: some View {
         ZStack {
             mapLayer
 
@@ -56,179 +64,231 @@ struct LocationMainView: View {
                 mapDismissOverlay
             }
 
-            VStack(spacing: 0) {
-                HStack(alignment: .center, spacing: 0) {
-                    liveModeToggleControl
-                    Spacer(minLength: 0)
-                    HStack(spacing: 10) {
-                        if liveManager.isLiveModeActive == false {
-                            mapRefreshControl
-                        }
-                        mapRecenterControl
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-
-                liveModeTopOverlay
-                    .padding(.horizontal, 12)
-                    .padding(.top, liveManager.showInactivityEndedNotice ? 8 : 0)
-
-                Spacer()
-
-                if liveManager.isLiveModeActive {
-                    HStack(alignment: .bottom) {
-                        Spacer(minLength: 0)
-                        liveSharingOverlay
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                } else {
-                    HStack(alignment: .bottom) {
-                        historyRangeControl
-                        Spacer(minLength: 0)
-                        memberListOverlay
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                }
-            }
+            mapChromeOverlay
         }
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
         .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)
         .animation(.easeInOut(duration: 0.3), value: liveManager.activeParticipants.count)
-        .confirmationDialog(
-            L10n.Location.historyChooseDate,
-            isPresented: $isHistoryRangeDialogPresented,
-            titleVisibility: .visible
-        ) {
-            Button(L10n.Common.today) {
-                viewModel.selectPresetHistoryRange(.today)
+    }
+
+    private var mapChromeOverlay: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center, spacing: 0) {
+                liveModeToggleControl
+                Spacer(minLength: 0)
+                HStack(spacing: 10) {
+                    if liveManager.isLiveModeActive == false {
+                        mapRefreshControl
+                    }
+                    mapRecenterControl
+                }
             }
-            Button(L10n.Location.historyYesterday) {
-                viewModel.selectPresetHistoryRange(.yesterday)
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+
+            liveModeTopOverlay
+                .padding(.horizontal, 12)
+                .padding(.top, liveManager.showInactivityEndedNotice ? 8 : 0)
+
+            Spacer()
+
+            if liveManager.isLiveModeActive {
+                HStack(alignment: .bottom) {
+                    Spacer(minLength: 0)
+                    liveSharingOverlay
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            } else {
+                HStack(alignment: .bottom) {
+                    historyRangeControl
+                    Spacer(minLength: 0)
+                    memberListOverlay
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .transition(.opacity.combined(with: .scale(scale: 0.92)))
             }
-            Button(L10n.Location.historyLast3Days) {
-                viewModel.selectPresetHistoryRange(.last3Days)
-            }
-            Button(L10n.Location.historyLast7Days) {
-                viewModel.selectPresetHistoryRange(.last7Days)
-            }
-            Button(L10n.Location.historyLast30Days) {
-                viewModel.selectPresetHistoryRange(.last30Days)
-            }
-            Button(L10n.Location.historyCustom) {
-                presentCustomHistoryRange()
-            }
-            Button(L10n.Common.cancel, role: .cancel) {}
         }
-        .forcesNonPopoverDialogPresentation()
-        .sheet(isPresented: $isCustomHistoryRangePresented) {
-            LocationCustomHistoryRangeSheet(
-                startDay: $customHistoryStart,
-                endDay: $customHistoryEnd,
-                onApply: applyCustomHistoryRange
-            )
-            .environment(\.locale, appSettings.appLocale)
-        }
-        .onChange(of: viewModel.historyDateRange) { _, _ in
-            didOfferMapHistoryPremium = false
-            fitCameraToLiveAndDisplayedMembers()
-            presentPremiumIfHistoryExceedsLimit()
-        }
-        .alert(L10n.Location.exitLiveLocationMode, isPresented: $isExitLiveModeAlertPresented) {
-            Button(L10n.Common.exitLiveMode, role: .destructive) {
-                Task { await liveManager.leaveLiveSession() }
+    }
+
+    private var mapDisplayedMemberIDsToken: [UUID] {
+        viewModel.mapDisplayedMembers.map { $0.id }
+    }
+
+    @ViewBuilder
+    private func withHistoryPresentation<C: View>(_ content: C) -> some View {
+        content
+            .confirmationDialog(
+                L10n.Location.historyChooseDate,
+                isPresented: $isHistoryRangeDialogPresented,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.Common.today) {
+                    viewModel.selectPresetHistoryRange(.today)
+                }
+                Button(L10n.Location.historyYesterday) {
+                    viewModel.selectPresetHistoryRange(.yesterday)
+                }
+                Button(L10n.Location.historyLast3Days) {
+                    viewModel.selectPresetHistoryRange(.last3Days)
+                }
+                Button(L10n.Location.historyLast7Days) {
+                    viewModel.selectPresetHistoryRange(.last7Days)
+                }
+                Button(L10n.Location.historyLast30Days) {
+                    viewModel.selectPresetHistoryRange(.last30Days)
+                }
+                Button(L10n.Location.historyCustom) {
+                    presentCustomHistoryRange()
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
             }
-            Button(L10n.Common.cancel, role: .cancel) {}
-        } message: {
-            Text(L10n.Family.afterYouLeaveTheGroupWillNoLongerReceive.localized)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .locationStatesDidChange)) { _ in
-            guard isTabActive else { return }
-            Task {
-                await viewModel.refresh()
-                liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
+            .forcesNonPopoverDialogPresentation()
+            .sheet(isPresented: $isCustomHistoryRangePresented) {
+                LocationCustomHistoryRangeSheet(
+                    startDay: $customHistoryStart,
+                    endDay: $customHistoryEnd,
+                    onApply: applyCustomHistoryRange
+                )
+                .environment(\.locale, appSettings.appLocale)
+            }
+            .onChange(of: viewModel.historyDateRange) { _, _ in
+                handleHistoryDateRangeChanged()
+            }
+            .onChange(of: appRouter.hasPremiumAccess) { _, hasPremium in
+                viewModel.setRoadSnapPremiumAccess(hasPremium)
+            }
+            .onAppear {
+                viewModel.setRoadSnapPremiumAccess(appRouter.hasPremiumAccess)
+            }
+            .alert(L10n.Location.exitLiveLocationMode, isPresented: $isExitLiveModeAlertPresented) {
+                Button(L10n.Common.exitLiveMode, role: .destructive) {
+                    Task { await liveManager.leaveLiveSession() }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Family.afterYouLeaveTheGroupWillNoLongerReceive.localized)
+            }
+    }
+
+    @ViewBuilder
+    private func withRefreshLifecycle<C: View>(_ content: C) -> some View {
+        content
+            .onReceive(NotificationCenter.default.publisher(for: .locationStatesDidChange)) { _ in
+                guard isTabActive else { return }
+                Task { await handleLocationStatesDidChange() }
+            }
+            .task(id: locationRefreshToken) {
+                guard isTabActive else { return }
+                await runLocationTabRefreshTask()
+            }
+            .onChange(of: isTabActive) { _, active in
+                handleTabActiveChanged(active)
+            }
+    }
+
+    @ViewBuilder
+    private func withLiveAndMapObservers<C: View>(_ content: C) -> some View {
+        content
+            .onChange(of: mapDisplayedMemberIDsToken) { _, _ in
                 fitCameraToLiveAndDisplayedMembers()
-                presentPremiumIfHistoryExceedsLimit()
             }
+            .onChange(of: viewModel.currentUserLiveLocation) { _, _ in
+                fitCameraToLiveAndDisplayedMembers()
+            }
+            .onChange(of: liveManager.livePeerLocations.count) { _, _ in
+                scheduleFitCameraToLiveAndDisplayedMembers()
+            }
+            .onChange(of: liveManager.activeParticipants.count) { _, _ in
+                scheduleFitCameraToLiveAndDisplayedMembers()
+            }
+            .onChange(of: viewModel.profileIdByMembershipId) { _, map in
+                liveManager.updateProfileIdByMembershipId(map)
+            }
+            .onChange(of: DeviceBatteryMonitor.shared.batteryLevel) { _, _ in
+                viewModel.syncCurrentUserBatteryFromDevice()
+            }
+            .onChange(of: DeviceBatteryMonitor.shared.isCharging) { _, _ in
+                viewModel.syncCurrentUserBatteryFromDevice()
+            }
+            .onChange(of: liveManager.isLiveModeActive) { _, isActive in
+                handleLiveModeActiveChanged(isActive)
+            }
+            .simultaneousGesture(
+                TapGesture().onEnded {
+                    liveManager.recordUserInteraction()
+                }
+            )
+    }
+
+    private func handleHistoryDateRangeChanged() {
+        didOfferMapHistoryPremium = false
+        fitCameraToLiveAndDisplayedMembers()
+        presentPremiumIfHistoryExceedsLimit()
+        Task { await viewModel.reloadTrailsAndRoadSnapForHistoryChange() }
+    }
+
+    @MainActor
+    private func handleLocationStatesDidChange() async {
+        await viewModel.refresh()
+        liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
+        fitCameraToLiveAndDisplayedMembers()
+        presentPremiumIfHistoryExceedsLimit()
+    }
+
+    @MainActor
+    private func runLocationTabRefreshTask() async {
+        _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
+        bindLiveContext()
+        await viewModel.refresh()
+        liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
+        viewModel.applyCachedDeviceLocationForMap()
+        fitCameraToLiveAndDisplayedMembers()
+        presentPremiumIfHistoryExceedsLimit()
+        await captureLocationAndRefitMapIfOnline()
+    }
+
+    @MainActor
+    private func captureLocationAndRefitMapIfOnline() async {
+        if await NetworkMonitor.shared.isConnected {
+            await liveManager.observeHuddleLobby()
         }
-        .task(id: locationRefreshToken) {
-            guard isTabActive else { return }
-            _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
+        await viewModel.captureCurrentUserLocationForMap()
+        fitCameraToLiveAndDisplayedMembers()
+    }
+
+    private func handleTabActiveChanged(_ active: Bool) {
+        if active == false {
+            viewModel.collapseMemberList()
+            isLiveSharingPanelExpanded = false
+        } else {
             bindLiveContext()
-            await viewModel.refresh()
-            liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
             viewModel.applyCachedDeviceLocationForMap()
             fitCameraToLiveAndDisplayedMembers()
             presentPremiumIfHistoryExceedsLimit()
-            Task {
-                if await NetworkMonitor.shared.isConnected {
-                    await liveManager.observeHuddleLobby()
-                }
-                await viewModel.captureCurrentUserLocationForMap()
-                fitCameraToLiveAndDisplayedMembers()
-            }
+            Task { await runTabBecameActiveLocationBootstrap() }
         }
-        .onChange(of: isTabActive) { _, active in
-            if active == false {
-                viewModel.collapseMemberList()
-                isLiveSharingPanelExpanded = false
-            } else {
-                bindLiveContext()
-                viewModel.applyCachedDeviceLocationForMap()
-                fitCameraToLiveAndDisplayedMembers()
-                presentPremiumIfHistoryExceedsLimit()
-                Task {
-                    _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
-                    if await NetworkMonitor.shared.isConnected {
-                        await liveManager.observeHuddleLobby()
-                    }
-                    await viewModel.captureCurrentUserLocationForMap()
-                    fitCameraToLiveAndDisplayedMembers()
-                }
-            }
-        }
-        .onChange(of: viewModel.mapDisplayedMembers.map(\.id)) { _, _ in
-            fitCameraToLiveAndDisplayedMembers()
-        }
-        .onChange(of: viewModel.currentUserLiveLocation) { _, _ in
-            fitCameraToLiveAndDisplayedMembers()
-        }
-        .onChange(of: liveManager.livePeerLocations.count) { _, _ in
+    }
+
+    @MainActor
+    private func runTabBecameActiveLocationBootstrap() async {
+        _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
+        await captureLocationAndRefitMapIfOnline()
+    }
+
+    private func handleLiveModeActiveChanged(_ isActive: Bool) {
+        viewModel.setLiveModeActive(isActive)
+        BackgroundLocationCoordinator.shared.setPausedForLiveMode(isActive)
+        if isActive {
+            viewModel.collapseMemberList()
+            isLiveSharingPanelExpanded = false
+            viewModel.applyCachedDeviceLocationForMap()
             scheduleFitCameraToLiveAndDisplayedMembers()
+            Task { await viewModel.captureCurrentUserLocationForMap(timeoutSeconds: 2) }
         }
-        .onChange(of: liveManager.activeParticipants.count) { _, _ in
-            scheduleFitCameraToLiveAndDisplayedMembers()
-        }
-        .onChange(of: viewModel.profileIdByMembershipId) { _, map in
-            liveManager.updateProfileIdByMembershipId(map)
-        }
-        .onChange(of: DeviceBatteryMonitor.shared.batteryLevel) { _, _ in
-            viewModel.syncCurrentUserBatteryFromDevice()
-        }
-        .onChange(of: DeviceBatteryMonitor.shared.isCharging) { _, _ in
-            viewModel.syncCurrentUserBatteryFromDevice()
-        }
-        .onChange(of: liveManager.isLiveModeActive) { _, isActive in
-            viewModel.setLiveModeActive(isActive)
-            BackgroundLocationCoordinator.shared.setPausedForLiveMode(isActive)
-            if isActive {
-                viewModel.collapseMemberList()
-                isLiveSharingPanelExpanded = false
-                viewModel.applyCachedDeviceLocationForMap()
-                scheduleFitCameraToLiveAndDisplayedMembers()
-                Task { await viewModel.captureCurrentUserLocationForMap(timeoutSeconds: 2) }
-            }
-            scheduleFitCameraToLiveAndDisplayedMembers()
-        }
-        .simultaneousGesture(
-            TapGesture().onEnded {
-                liveManager.recordUserInteraction()
-            }
-        )
+        scheduleFitCameraToLiveAndDisplayedMembers()
     }
 
     @ViewBuilder
@@ -443,21 +503,24 @@ struct LocationMainView: View {
                         )
                 }
 
-                if let endpoints = viewModel.latestTrailEndpoints(forMembershipId: member.id) {
-                    Annotation("", coordinate: endpoints.start, anchor: .bottom) {
+                if let endpoints = viewModel.roadSnapDisplayEndpoints(forMembershipId: member.id) {
+                    Annotation(
+                        "",
+                        coordinate: endpoints.start,
+                        anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: true)
+                    ) {
                         MapHistoryTrajectoryMarker(
                             dotDiameter: 12,
                             dotColor: accent,
                             isPathStart: true
                         )
                     }
-                    Annotation("", coordinate: endpoints.end, anchor: .bottom) {
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundStyle(.red)
-                            .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-                    }
                 }
+
+                roadSnapSegmentEndPinAnnotations(
+                    roadRoutes: roadRoutes,
+                    currentCoordinate: visibleLocations.first?.coordinate
+                )
             } else if breadcrumbCoordinates.count >= 2 {
                 let segmentCount = max(0, breadcrumbCoordinates.count - 1)
                 ForEach(Array(polylineSegments(for: breadcrumbCoordinates).enumerated()), id: \.offset) { index, segment in
@@ -1105,6 +1168,42 @@ struct LocationMainView: View {
         cameraPosition = .rect(rect)
     }
 
+    /// 多段贴路：每段终点显示图钉；与当前位置重合的终点不显示（由头像标注）。
+    @MapContentBuilder
+    private func roadSnapSegmentEndPinAnnotations(
+        roadRoutes: [[CLLocationCoordinate2D]],
+        currentCoordinate: CLLocationCoordinate2D?
+    ) -> some MapContent {
+        ForEach(Array(roadRoutes.enumerated()), id: \.offset) { _, route in
+            if let end = route.last,
+               shouldShowRoadSnapSegmentEndPin(segmentEnd: end, currentCoordinate: currentCoordinate) {
+                Annotation(
+                    "",
+                    coordinate: end,
+                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: false)
+                ) {
+                    Image(systemName: "mappin.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.red)
+                        .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+                }
+            }
+        }
+    }
+
+    private func shouldShowRoadSnapSegmentEndPin(
+        segmentEnd: CLLocationCoordinate2D,
+        currentCoordinate: CLLocationCoordinate2D?
+    ) -> Bool {
+        guard let currentCoordinate else { return true }
+        let endLocation = CLLocation(latitude: segmentEnd.latitude, longitude: segmentEnd.longitude)
+        let currentLocation = CLLocation(
+            latitude: currentCoordinate.latitude,
+            longitude: currentCoordinate.longitude
+        )
+        return endLocation.distance(from: currentLocation) > 45
+    }
+
 }
 
 private struct LocationCustomHistoryRangeSheet: View {
@@ -1170,8 +1269,9 @@ private struct LocationCustomHistoryRangeSheet: View {
     }
 }
 
-#Preview {
+#Preview("当前用户贴路") {
     LocationMainView(
+        isTabActive: true,
         viewModel: LocationMainViewModel(
             locationStateService: MockLocationStateDataService(seedPreview: true),
             locationTrailService: MockLocationTrailDataService(),

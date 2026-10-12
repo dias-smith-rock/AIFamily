@@ -117,6 +117,7 @@ struct ContentView: View {
                 ForegroundLocationPersistEligibility.shared.canPersist = false
                 LocationTrailCaptureCoordinator.shared.stop(reason: "signedOut")
                 OnDeviceTrailBuffer.shared.reset()
+                LocationTrailSegmentRecorder.shared.resetOpenSegment()
                 return
             }
             await runPostAuthForegroundServices()
@@ -188,6 +189,7 @@ struct ContentView: View {
                 Task {
                     await flushLocationBeforeEnteringBackground()
                     await LocationTrailCaptureCoordinator.shared.flushPending(reason: "appEnteringBackground")
+                    await LocationTrailSegmentRecorder.shared.flush(reason: "appEnteringBackground")
                 }
                 ForegroundLocationPersistScheduler.shared.stop(reason: "sceneBackground")
                 shouldHideAppSwitcherSnapshot = isUserLoggedIn && biometricManager.isUnlocked
@@ -915,6 +917,14 @@ struct ContentView: View {
             profileId: appRouter.selectedProfileId
         )
         LocationTrailCaptureCoordinator.shared.startIfNeeded()
+
+        LocationTrailSegmentRecorder.shared.configure(
+            trailService: appBootstrap.services.locationTrailService
+        )
+        LocationTrailSegmentRecorder.shared.updateContext(
+            householdId: appRouter.selectedHouseholdId,
+            profileId: appRouter.selectedProfileId
+        )
     }
 
     @MainActor

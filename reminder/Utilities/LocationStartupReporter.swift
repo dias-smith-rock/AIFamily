@@ -102,6 +102,11 @@ enum LocationStartupReporter {
                 minDistanceMeters: bypassThrottle ? 0 : LocationPersistPreferences.minUpdateDistanceMeters,
                 minIntervalSeconds: bypassThrottle ? 0 : LocationPersistPreferences.minUpdateIntervalSeconds
             )
+            await LocationTrailSegmentRecorder.shared.handlePersistOutcome(
+                outcome,
+                coordinate: coordinate,
+                recordedAt: payload.recordedAt ?? Date()
+            )
             let entry = LocationPersistLogEntry(
                 trigger: trigger,
                 profileId: profileId,

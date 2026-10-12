@@ -133,7 +133,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                 + "household=\(householdId.uuidString.prefix(8)) "
                 + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
             )
-            return .persisted
+            return .persisted(mode: writeMode)
         } catch {
             logLocationPersistDatabaseError(error)
             guard LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) else {
@@ -182,7 +182,7 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
                     + "profile=\(profileId.uuidString.prefix(8)) "
                     + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
             )
-            return .persisted
+            return .persisted(mode: fallbackWriteMode)
         }
         #else
         throw SupabaseServiceError.sdkUnavailable
