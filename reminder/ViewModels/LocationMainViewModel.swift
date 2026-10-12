@@ -44,7 +44,9 @@ final class LocationMainViewModel: ObservableObject {
         self.membershipService = membershipService
         if let previewMembers {
             members = previewMembers
-            selectedMemberIDs = Set(previewMembers.filter(\.isSelectableOnMap).map(\.id))
+            if let selfID = previewMembers.first(where: \.isCurrentUser)?.id {
+                selectedMemberIDs = [selfID]
+            }
         }
 
         let monitor = DeviceBatteryMonitor.shared
@@ -338,7 +340,13 @@ final class LocationMainViewModel: ObservableObject {
     func setSelected(_ selected: Bool, for memberID: UUID) {
         guard let member = members.first(where: { $0.id == memberID }), member.isSelectableOnMap else { return }
         if selected { selectedMemberIDs.insert(memberID) } else { selectedMemberIDs.remove(memberID) }
+        persistMemberSelectionIfNeeded()
         scheduleRoadSnapRebuild()
+    }
+
+    private func persistMemberSelectionIfNeeded() {
+        guard let householdId else { return }
+        LocationMapMemberSelectionPreferences.save(selectedMemberIDs, householdId: householdId)
     }
 
     /// 选中成员对应的贴路折线；无轨迹段时返回空。
@@ -441,14 +449,27 @@ final class LocationMainViewModel: ObservableObject {
 
     private func reconcileSelectionAfterReload() {
         let selectableIDs = Set(members.filter(\.isSelectableOnMap).map(\.id))
-        let visibleIDs = Set(members.filter(\.isVisibleOnMap).map(\.id))
-        let virtualIDs = Set(members.filter(\.isVirtualMember).map(\.id))
-        let defaultVisibleIDs = visibleIDs.subtracting(virtualIDs)
-        let defaultSelectableIDs = selectableIDs.subtracting(virtualIDs)
-
         selectedMemberIDs = selectedMemberIDs.intersection(selectableIDs)
+
+        if selectedMemberIDs.isEmpty, let householdId {
+            if let saved = LocationMapMemberSelectionPreferences.load(householdId: householdId) {
+                selectedMemberIDs = saved.intersection(selectableIDs)
+            }
+        }
+
         if selectedMemberIDs.isEmpty {
-            selectedMemberIDs = defaultVisibleIDs.isEmpty == false ? defaultVisibleIDs : defaultSelectableIDs
+            if let currentMembershipId, selectableIDs.contains(currentMembershipId) {
+                selectedMemberIDs = [currentMembershipId]
+                if let householdId {
+                    LocationMapMemberSelectionPreferences.save(selectedMemberIDs, householdId: householdId)
+                }
+            } else {
+                let visibleIDs = Set(members.filter(\.isVisibleOnMap).map(\.id))
+                let virtualIDs = Set(members.filter(\.isVirtualMember).map(\.id))
+                let defaultVisibleIDs = visibleIDs.subtracting(virtualIDs)
+                let defaultSelectableIDs = selectableIDs.subtracting(virtualIDs)
+                selectedMemberIDs = defaultVisibleIDs.isEmpty == false ? defaultVisibleIDs : defaultSelectableIDs
+            }
         }
     }
 }
