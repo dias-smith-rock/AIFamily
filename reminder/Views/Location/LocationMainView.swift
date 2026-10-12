@@ -503,7 +503,8 @@ struct LocationMainView: View {
                         )
                 }
 
-                if let endpoints = viewModel.roadSnapDisplayEndpoints(forMembershipId: member.id) {
+                if roadRoutes.count <= 1,
+                   let endpoints = viewModel.roadSnapDisplayEndpoints(forMembershipId: member.id) {
                     Annotation(
                         "",
                         coordinate: endpoints.start,
@@ -515,6 +516,10 @@ struct LocationMainView: View {
                             isPathStart: true
                         )
                     }
+                }
+
+                if roadRoutes.count > 1 {
+                    roadSnapSegmentStartPinAnnotations(roadRoutes: roadRoutes)
                 }
 
                 roadSnapSegmentEndPinAnnotations(
@@ -1168,6 +1173,18 @@ struct LocationMainView: View {
         cameraPosition = .rect(rect)
     }
 
+    /// 多段贴路：每段起点显示图钉。
+    @MapContentBuilder
+    private func roadSnapSegmentStartPinAnnotations(
+        roadRoutes: [[CLLocationCoordinate2D]]
+    ) -> some MapContent {
+        ForEach(Array(roadRoutes.enumerated()), id: \.offset) { _, route in
+            if let start = route.first, route.count >= 2 {
+                roadSnapMapPinAnnotation(at: start)
+            }
+        }
+    }
+
     /// 多段贴路：每段终点显示图钉；与当前位置重合的终点不显示（由头像标注）。
     @MapContentBuilder
     private func roadSnapSegmentEndPinAnnotations(
@@ -1176,18 +1193,23 @@ struct LocationMainView: View {
     ) -> some MapContent {
         ForEach(Array(roadRoutes.enumerated()), id: \.offset) { _, route in
             if let end = route.last,
+               route.count >= 2,
                shouldShowRoadSnapSegmentEndPin(segmentEnd: end, currentCoordinate: currentCoordinate) {
-                Annotation(
-                    "",
-                    coordinate: end,
-                    anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: false)
-                ) {
-                    Image(systemName: "mappin.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.red)
-                        .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-                }
+                roadSnapMapPinAnnotation(at: end)
             }
+        }
+    }
+
+    private func roadSnapMapPinAnnotation(at coordinate: CLLocationCoordinate2D) -> some MapContent {
+        Annotation(
+            "",
+            coordinate: coordinate,
+            anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: false)
+        ) {
+            Image(systemName: "mappin.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(.red)
+                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
         }
     }
 

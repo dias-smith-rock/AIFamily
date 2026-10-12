@@ -329,7 +329,8 @@ final class LocationMainViewModel: ObservableObject {
     }
 
     private func filteredTrailSegments(forProfileId profileId: UUID) -> [LocationTrailSegment] {
-        trailSegmentsByProfileId[profileId] ?? []
+        let raw = trailSegmentsByProfileId[profileId] ?? []
+        return LocationTrailSegmentMerger.mergeConnectable(raw)
     }
 
     private func scheduleRoadSnapRebuild() {
