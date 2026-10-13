@@ -263,13 +263,28 @@ struct MapAvatarLastUpdatedBadge: View {
     }
 }
 
-/// 历史轨迹点：中间点为圆点；路径起点（最旧点）为红色定位针。
+/// 地图上的水滴定位针，针尖对准坐标。起点为灰色，终点为红色。
+struct LocationMapPinIcon: View {
+    var isStart: Bool = false
+    var height: CGFloat = 34
+
+    var body: some View {
+        Image(isStart ? "LocationPinStart" : "LocationPin")
+            .resizable()
+            .interpolation(.high)
+            .aspectRatio(40.0 / 54.0, contentMode: .fit)
+            .frame(height: height)
+            .accessibilityHidden(true)
+    }
+}
+
+/// 历史轨迹点：中间点为圆点；路径起点（最旧点）为灰色定位针。
 struct MapHistoryTrajectoryMarker: View {
     let dotDiameter: CGFloat
     let dotColor: Color
     var isPathStart: Bool = false
 
-    static let pathStartPinHeight: CGFloat = 28
+    static let pathStartPinHeight: CGFloat = 34
 
     /// 起点针尖落在坐标上；圆点居中。
     static func mapCoordinateAnchor(isPathStart: Bool) -> UnitPoint {
@@ -278,18 +293,7 @@ struct MapHistoryTrajectoryMarker: View {
 
     var body: some View {
         if isPathStart {
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.88))
-                    .frame(width: 16, height: 16)
-                    .offset(y: -5)
-                Image(systemName: "mappin")
-                    .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(Color.red)
-                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
-            }
-            .frame(width: 28, height: Self.pathStartPinHeight, alignment: .bottom)
-            .accessibilityHidden(true)
+            LocationMapPinIcon(isStart: true, height: Self.pathStartPinHeight)
         } else {
             Circle()
                 .fill(dotColor)

@@ -1200,7 +1200,7 @@ struct LocationMainView: View {
     ) -> some MapContent {
         ForEach(Array(roadRoutes.enumerated()), id: \.offset) { _, route in
             if let start = route.first, route.count >= 2 {
-                roadSnapMapPinAnnotation(at: start)
+                roadSnapMapPinAnnotation(at: start, isStart: true)
             }
         }
     }
@@ -1215,21 +1215,18 @@ struct LocationMainView: View {
             if let end = route.last,
                route.count >= 2,
                shouldShowRoadSnapSegmentEndPin(segmentEnd: end, currentCoordinate: currentCoordinate) {
-                roadSnapMapPinAnnotation(at: end)
+                roadSnapMapPinAnnotation(at: end, isStart: false)
             }
         }
     }
 
-    private func roadSnapMapPinAnnotation(at coordinate: CLLocationCoordinate2D) -> some MapContent {
+    private func roadSnapMapPinAnnotation(at coordinate: CLLocationCoordinate2D, isStart: Bool) -> some MapContent {
         Annotation(
             "",
             coordinate: coordinate,
-            anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: false)
+            anchor: MapHistoryTrajectoryMarker.mapCoordinateAnchor(isPathStart: true)
         ) {
-            Image(systemName: "mappin.circle.fill")
-                .font(.system(size: 28))
-                .foregroundStyle(.red)
-                .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
+            LocationMapPinIcon(isStart: isStart)
         }
     }
 
