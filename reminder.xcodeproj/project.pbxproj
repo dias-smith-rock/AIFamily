@@ -16,6 +16,7 @@
 		DDD16A0C2FC91B21009FE64F /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */; };
 		DDD16A0E2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */; };
 		DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */; };
+		DDD16A142FC91B21009FE64F /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A152FC91B21009FE64F /* FirebaseRemoteConfig */; };
 		DDE1RC012FC91B21009FE64F /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = DDE1RC022FC91B21009FE64F /* RevenueCat */; };
 /* End PBXBuildFile section */
 
@@ -59,6 +60,7 @@
 				DDD16A0A2FC91B21009FE64F /* FirebaseAnalytics in Frameworks */,
 				DDD16A062FC91B21009FE64F /* FirebaseAI in Frameworks */,
 				DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */,
+				DDD16A142FC91B21009FE64F /* FirebaseRemoteConfig in Frameworks */,
 				DDE1RC012FC91B21009FE64F /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -120,6 +122,7 @@
 				DDD16A0B2FC91B21009FE64F /* FirebaseAnalyticsCore */,
 				DDD16A0D2FC91B21009FE64F /* FirebaseAnalyticsIdentitySupport */,
 				DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */,
+				DDD16A152FC91B21009FE64F /* FirebaseRemoteConfig */,
 				DDE1RC022FC91B21009FE64F /* RevenueCat */,
 			);
 			productName = "Family Link";
@@ -511,6 +514,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DDD16A042FC91B21009FE64F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		DDD16A152FC91B21009FE64F /* FirebaseRemoteConfig */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DDD16A042FC91B21009FE64F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseRemoteConfig;
 		};
 		DDE1RC022FC91B21009FE64F /* RevenueCat */ = {
 			isa = XCSwiftPackageProductDependency;

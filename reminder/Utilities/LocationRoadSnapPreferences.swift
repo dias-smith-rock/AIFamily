@@ -10,6 +10,9 @@ enum LocationRoadSnapPreferences {
     static let maxConcurrentDirections = 2
 
     static func maxSegmentsPerMember(hasPremium: Bool) -> Int {
-        hasPremium ? maxSegmentsPerMemberPremium : maxSegmentsPerMemberFree
+        if VIPFeatureGate.isEnabled == false || hasPremium {
+            return maxSegmentsPerMemberPremium
+        }
+        return maxSegmentsPerMemberFree
     }
 }

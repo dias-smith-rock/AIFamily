@@ -20,7 +20,9 @@ struct LocationPersistSettingsView: View {
                 Toggle(isOn: locationGhostModeBinding) {
                     HStack(spacing: 6) {
                         Text(L10n.Settings.locationGhostToggle.localized)
-                        proBadge
+                        if appRouter.vipFeatureGatingEnabled {
+                            proBadge
+                        }
                     }
                 }
                 .disabled(appRouter.selectedHouseholdId == nil || appRouter.selectedProfileId == nil)
@@ -67,8 +69,9 @@ struct LocationPersistSettingsView: View {
                     optionRow(
                         title: historyDisplayCountLabel(for: count),
                         isSelected: normalizedMapHistoryDisplayCount == count,
-                        showsProBadge: LocationMapDisplayPreferences.isUnlimited(count)
-                            || count > PremiumLimits.freeMaxMapHistoryDisplayCount
+                        showsProBadge: appRouter.vipFeatureGatingEnabled
+                            && (LocationMapDisplayPreferences.isUnlimited(count)
+                                || count > PremiumLimits.freeMaxMapHistoryDisplayCount)
                     ) {
                         guard PremiumLimits.canSetMapHistoryDisplayCount(
                             count,

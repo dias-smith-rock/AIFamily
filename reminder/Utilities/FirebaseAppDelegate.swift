@@ -24,6 +24,9 @@ final class FirebaseAppDelegate: NSObject, UIApplicationDelegate {
         guard FirebaseApp.app() == nil else { return }
         FirebaseApp.configure()
         CrashReporting.configureAfterFirebaseStartup()
+        Task { @MainActor in
+            VIPFeatureRemoteConfig.shared.start()
+        }
         #if DEBUG
         print("[Firebase] FirebaseApp.configure() completed")
         #endif

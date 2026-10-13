@@ -697,7 +697,7 @@ struct PersonalVIPSubscriptionSection: View {
     @ObservedObject private var revenueCat = RevenueCatSubscriptionService.shared
 
     var body: some View {
-        if isUserLoggedIn {
+        if isUserLoggedIn, appRouter.vipFeatureGatingEnabled {
             Section {
                 NavigationLink {
                     VIPSubscriptionView()

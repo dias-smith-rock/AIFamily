@@ -9,6 +9,19 @@ import Supabase
 final class AppRouter: ObservableObject {
     static let offlineHouseholdSnapshotKey = "aifamily.offline.household.snapshot"
 
+    private var vipFeatureGateCancellable: AnyCancellable?
+
+    /// Remote Config `enable_vip`。关闭后不显示 VIP 角标，也不拦截功能。
+    var vipFeatureGatingEnabled: Bool { VIPFeatureGate.isEnabled }
+
+    init() {
+        vipFeatureGateCancellable = VIPFeatureRemoteConfig.shared.$enableVIP
+            .sink { [weak self] enabled in
+                VIPFeatureGate.isEnabled = enabled
+                self?.objectWillChange.send()
+            }
+    }
+
     enum AppState: Equatable {
         case unauthenticated
         case orgRouting
@@ -201,6 +214,7 @@ final class AppRouter: ObservableObject {
     }
 
     func presentPremiumUpgrade() {
+        guard vipFeatureGatingEnabled else { return }
         isPresentingVIPUpgrade = true
     }
 
