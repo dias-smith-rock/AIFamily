@@ -27,13 +27,7 @@ struct TaskModeListView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading {
-                pullToRefreshScrollContainer(minHeight: 360) {
-                    ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
-                        .frame(maxWidth: .infinity)
-                        .padding(.top, 120)
-                }
-            } else if let message = viewModel.errorMessage {
+            if let message = viewModel.errorMessage, viewModel.hasCompletedInitialScheduleLoad {
                 pullToRefreshScrollContainer(minHeight: 360) {
                     ContentUnavailableView {
                         Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")

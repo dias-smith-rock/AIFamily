@@ -25,6 +25,9 @@ create index if not exists location_trail_segments_ended_at_idx
 
 alter table public.location_trail_segments enable row level security;
 
+-- RLS 只过滤行，不授予表权限。缺 GRANT 时 PostgREST 会报 permission denied for table。
+grant select, insert, delete on table public.location_trail_segments to authenticated;
+
 -- 同家庭 active 成员可读
 drop policy if exists location_trail_segments_select_members on public.location_trail_segments;
 create policy location_trail_segments_select_members

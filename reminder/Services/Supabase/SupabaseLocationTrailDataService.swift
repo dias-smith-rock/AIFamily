@@ -23,14 +23,24 @@ struct SupabaseLocationTrailDataService: LocationTrailDataService {
     ) async throws -> [LocationTrailSegment] {
         #if canImport(Supabase)
         let cutoff = since ?? Date().addingTimeInterval(-Self.defaultRetention)
-        let rawResponse = try await provider.client
-            .from(Self.tableName)
-            .select(Self.selectColumns)
-            .eq("household_id", value: householdId.uuidString.lowercased())
-            .gte("ended_at", value: cutoff)
-            .order("ended_at", ascending: false)
-            .execute()
-        return try decodeSegments(from: rawResponse.data)
+        do {
+            let rawResponse = try await provider.client
+                .from(Self.tableName)
+                .select(Self.selectColumns)
+                .eq("household_id", value: householdId.uuidString.lowercased())
+                .gte("ended_at", value: cutoff)
+                .order("ended_at", ascending: false)
+                .execute()
+            return try decodeSegments(from: rawResponse.data)
+        } catch {
+            guard Self.isTablePermissionDenied(error) else { throw error }
+            return try await fetchTrailSegmentsViaRPC(
+                householdId: householdId,
+                entityId: nil,
+                since: cutoff,
+                tableError: error
+            )
+        }
         #else
         _ = householdId
         _ = since
@@ -45,15 +55,25 @@ struct SupabaseLocationTrailDataService: LocationTrailDataService {
     ) async throws -> [LocationTrailSegment] {
         #if canImport(Supabase)
         let cutoff = since ?? Date().addingTimeInterval(-Self.defaultRetention)
-        let rawResponse = try await provider.client
-            .from(Self.tableName)
-            .select(Self.selectColumns)
-            .eq("household_id", value: householdId.uuidString.lowercased())
-            .eq("entity_id", value: entityId.uuidString.lowercased())
-            .gte("ended_at", value: cutoff)
-            .order("ended_at", ascending: false)
-            .execute()
-        return try decodeSegments(from: rawResponse.data)
+        do {
+            let rawResponse = try await provider.client
+                .from(Self.tableName)
+                .select(Self.selectColumns)
+                .eq("household_id", value: householdId.uuidString.lowercased())
+                .eq("entity_id", value: entityId.uuidString.lowercased())
+                .gte("ended_at", value: cutoff)
+                .order("ended_at", ascending: false)
+                .execute()
+            return try decodeSegments(from: rawResponse.data)
+        } catch {
+            guard Self.isTablePermissionDenied(error) else { throw error }
+            return try await fetchTrailSegmentsViaRPC(
+                householdId: householdId,
+                entityId: entityId,
+                since: cutoff,
+                tableError: error
+            )
+        }
         #else
         _ = householdId
         _ = entityId
@@ -147,35 +167,49 @@ struct SupabaseLocationTrailDataService: LocationTrailDataService {
         return inserted
     }
 
-    private func decodeSegments(from data: Data) throws -> [LocationTrailSegment] {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .custom { decoder in
-            let container = try decoder.singleValueContainer()
-            if let date = try? container.decode(Date.self) { return date }
-            let raw = try container.decode(String.self)
-            if let date = Self.iso8601Fractional.date(from: raw) { return date }
-            if let date = Self.iso8601.date(from: raw) { return date }
-            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid date \(raw)")
+    private func fetchTrailSegmentsViaRPC(
+        householdId: UUID,
+        entityId: UUID?,
+        since: Date,
+        tableError: Error
+    ) async throws -> [LocationTrailSegment] {
+        let params = ListLocationTrailSegmentsParams(
+            pHouseholdId: householdId,
+            pSince: since,
+            pEntityId: entityId
+        )
+        do {
+            let response = try await provider.client
+                .rpc("list_location_trail_segments", params: params)
+                .execute()
+            return try decodeSegments(from: response.data)
+        } catch {
+            if isMissingListRPC(error) {
+                throw tableError
+            }
+            throw error
         }
-        return try decoder.decode([LocationTrailSegment].self, from: data)
+    }
+
+    private static func isTablePermissionDenied(_ error: Error) -> Bool {
+        let haystack = (String(describing: error) + " " + error.localizedDescription).lowercased()
+        return haystack.contains("permission denied")
+    }
+
+    private func isMissingListRPC(_ error: Error) -> Bool {
+        let haystack = (String(describing: error) + " " + error.localizedDescription).lowercased()
+        return haystack.contains("list_location_trail_segments") && haystack.contains("schema cache")
+    }
+
+    private func decodeSegments(from data: Data) throws -> [LocationTrailSegment] {
+        // 不要在 dateDecodingStrategy 里再 decode(Date.self)，那会重新进入同一策略并栈溢出。
+        try SupabaseCodec.makeLiteralColumnDecoder().decode([LocationTrailSegment].self, from: data)
     }
 
     private func isMissingRPC(_ error: Error) -> Bool {
         let haystack = (String(describing: error) + " " + error.localizedDescription).lowercased()
         return haystack.contains("push_location_trail_segment") && haystack.contains("schema cache")
     }
-
-    private static let iso8601Fractional: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    private static let iso8601: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
     #endif
 }
 

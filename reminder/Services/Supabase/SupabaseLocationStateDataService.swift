@@ -136,6 +136,21 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
             return .persisted(mode: writeMode)
         } catch {
             logLocationPersistDatabaseError(error)
+            if Self.isDuplicateLocationStateKey(error) {
+                try await upsertLocationState(
+                    householdId: householdId,
+                    profileId: profileId,
+                    coordinate: stampedCoordinate,
+                    existing: existing,
+                    writeMode: writeMode
+                )
+                print(
+                    "[LocationPersist] location_states duplicate key resolved by upsert "
+                        + "profile=\(profileId.uuidString.prefix(8)) "
+                        + String(format: "lat=%.6f lng=%.6f", coordinate.latitude, coordinate.longitude)
+                )
+                return .persisted(mode: writeMode)
+            }
             guard LocationStateRPCSupport.isMissingPushEntityLocationRPC(error) else {
                 throw error
             }
@@ -323,6 +338,47 @@ struct SupabaseLocationStateDataService: LocationStateDataService {
         case .persisted, .skippedGhost:
             break
         }
+    }
+
+    /// `push_entity_location` 在行已存在时仍 INSERT，会撞上 `(household_id, entity_id)` 主键。
+    private func upsertLocationState(
+        householdId: UUID,
+        profileId: UUID,
+        coordinate: LocationPayload,
+        existing: LocationStateRecord?,
+        writeMode: LocationPersistWriteMode
+    ) async throws {
+        #if canImport(Supabase)
+        let payload = LocationStateUpsertPayload(
+            householdId: householdId,
+            profileId: profileId,
+            locations: LocationHistoryLimits.applyingWrite(
+                coordinate,
+                to: existing?.locations ?? [],
+                mode: writeMode
+            ),
+            isGhostMode: existing?.isGhostMode ?? false,
+            updatedAt: Date()
+        )
+        _ = try await provider.client
+            .from(Self.tableName)
+            .upsert(payload, onConflict: "household_id,entity_id")
+            .execute()
+        #else
+        _ = householdId
+        _ = profileId
+        _ = coordinate
+        _ = existing
+        _ = writeMode
+        throw SupabaseServiceError.sdkUnavailable
+        #endif
+    }
+
+    private static func isDuplicateLocationStateKey(_ error: Error) -> Bool {
+        let haystack = (String(describing: error) + " " + error.localizedDescription).lowercased()
+        return haystack.contains("duplicate key")
+            || haystack.contains("location_states_pkey")
+            || haystack.contains("23505")
     }
 
     /// 读库失败（常见：未执行 GRANT/RLS 迁移）时返回 `nil`，写入改走 `push_entity_location`。

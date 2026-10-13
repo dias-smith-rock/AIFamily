@@ -8,8 +8,9 @@ enum LocationRoadSnapDemoData {
         UUID(uuidString: "A1000001-0000-4000-8000-000000000001")!
 
     /// 在 Location Tab 刷新后，若当前用户无 trail 段则注入演示折线锚点。
+    /// 默认关闭，避免真实家庭在轨迹为空或拉取失败时画出假路线。
     static var injectWhenTrailEmpty: Bool {
-        UserDefaults.standard.object(forKey: injectWhenTrailEmptyKey) as? Bool ?? true
+        UserDefaults.standard.object(forKey: injectWhenTrailEmptyKey) as? Bool ?? false
     }
 
     static let injectWhenTrailEmptyKey = "locationRoadSnapDemoInjectWhenEmpty"

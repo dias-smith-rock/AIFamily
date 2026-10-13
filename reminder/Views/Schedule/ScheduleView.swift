@@ -77,11 +77,7 @@ struct TaskModeDayView: View {
             )
             .equatable()
 
-            if viewModel.tasks.isEmpty, viewModel.isLoading {
-                ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            } else if viewModel.tasks.isEmpty, let errorMessage = viewModel.errorMessage {
+            if viewModel.tasks.isEmpty, let errorMessage = viewModel.errorMessage {
                 ContentUnavailableView {
                     Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
                 } description: {
@@ -856,5 +852,21 @@ private struct FlowLayout: Layout {
             rowHeight = max(rowHeight, size.height)
             x += size.width + spacing
         }
+    }
+}
+
+/// 日程 Tab 首次拉取任务完成前的全屏占位，避免周条/空态引导与真实数据来回闪烁。
+struct ScheduleInitialLoadingView: View {
+    let locale: Locale
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
+                .progressViewStyle(.circular)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppTheme.ColorToken.background.ignoresSafeArea())
     }
 }

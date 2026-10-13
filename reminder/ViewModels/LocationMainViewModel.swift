@@ -8,7 +8,16 @@ final class LocationMainViewModel: ObservableObject {
     @Published private(set) var members: [UserLocationState] = []
     @Published var selectedMemberIDs: Set<UUID> = []
     @Published var isMemberListExpanded = false
-    @Published var historyDateRange = LocationHistoryDateRange.today()
+    @Published var historyDateRange = LocationHistoryDateRange.today() {
+        didSet {
+            #if DEBUG
+            print(
+                "[HistoryRangeTrace] value \(oldValue.kind.rawValue) -> \(historyDateRange.kind.rawValue) "
+                    + "vm=\(ObjectIdentifier(self))"
+            )
+            #endif
+        }
+    }
     @Published private(set) var isLoading = false
     @Published var errorMessage: String?
     /// 本机刚读取的坐标，用于地图展示当前用户（隐身时亦显示，不一定写入服务端）。
@@ -48,6 +57,9 @@ final class LocationMainViewModel: ObservableObject {
             members = previewMembers
             configurePreviewRoadSnapDemo(members: previewMembers)
         }
+        #if DEBUG
+        print("[HistoryRangeTrace] vm init id=\(ObjectIdentifier(self)) kind=\(historyDateRange.kind.rawValue)")
+        #endif
 
         let monitor = DeviceBatteryMonitor.shared
         monitor.refresh()
@@ -78,7 +90,64 @@ final class LocationMainViewModel: ObservableObject {
 
     func selectPresetHistoryRange(_ kind: LocationHistoryDateRange.Kind) {
         guard kind != .custom else { return }
+        #if DEBUG
+        print(
+            "[HistoryRangeTrace] select preset=\(kind.rawValue) "
+                + "household=\(householdId?.uuidString.prefix(8) ?? "nil") "
+                + "vm=\(ObjectIdentifier(self))"
+        )
+        #endif
         historyDateRange.kind = kind
+        persistHistoryDateRangeIfNeeded()
+    }
+
+    func applyCustomHistoryRange(startDay: Date, endDay: Date) {
+        let calendar = AppDisplayTimeZone.calendar()
+        let start = calendar.startOfDay(for: min(startDay, endDay))
+        let end = calendar.startOfDay(for: max(startDay, endDay))
+        historyDateRange = LocationHistoryDateRange(
+            kind: .custom,
+            customStartDay: start,
+            customEndDay: end
+        )
+        persistHistoryDateRangeIfNeeded()
+    }
+
+    /// 进入群组时恢复上次的日期范围；无记录则保持今天。
+    func restoreHistoryDateRangeIfNeeded() {
+        guard let householdId else {
+            #if DEBUG
+            print("[HistoryRangeTrace] restore skipped reason=no_household vm=\(ObjectIdentifier(self))")
+            #endif
+            return
+        }
+        guard let saved = LocationHistoryDateRangePreferences.load(householdId: householdId) else {
+            #if DEBUG
+            print(
+                "[HistoryRangeTrace] restore skipped reason=no_saved_value "
+                    + "household=\(householdId.uuidString.prefix(8)) "
+                    + "current=\(historyDateRange.kind.rawValue) vm=\(ObjectIdentifier(self))"
+            )
+            #endif
+            return
+        }
+        guard saved != historyDateRange else {
+            #if DEBUG
+            print(
+                "[HistoryRangeTrace] restore skipped reason=already_matches "
+                    + "kind=\(historyDateRange.kind.rawValue) "
+                    + "household=\(householdId.uuidString.prefix(8)) vm=\(ObjectIdentifier(self))"
+            )
+            #endif
+            return
+        }
+        #if DEBUG
+        print(
+            "[HistoryRangeTrace] restore apply \(historyDateRange.kind.rawValue) -> \(saved.kind.rawValue) "
+                + "household=\(householdId.uuidString.prefix(8)) vm=\(ObjectIdentifier(self))"
+        )
+        #endif
+        historyDateRange = saved
     }
 
     func setRoadSnapPremiumAccess(_ hasPremium: Bool) {
@@ -136,11 +205,23 @@ final class LocationMainViewModel: ObservableObject {
 
     /// Location 强制单组织：地图与成员列表只展示活动组织。
     func setSingleHouseholdScope(_ householdId: UUID?) {
+        #if DEBUG
+        let previous = self.householdId?.uuidString.prefix(8) ?? "nil"
+        let next = householdId?.uuidString.prefix(8) ?? "nil"
+        print(
+            "[HistoryRangeTrace] setScope \(previous) -> \(next) "
+                + "kind=\(historyDateRange.kind.rawValue) vm=\(ObjectIdentifier(self))"
+        )
+        #endif
         self.householdId = householdId
         if let householdId {
             setViewHouseholdIds([householdId])
         } else {
             setViewHouseholdIds([])
+        }
+        // bind() 会先写入同一个 householdId，不能只在 id 变化时恢复。
+        if householdId != nil {
+            restoreHistoryDateRangeIfNeeded()
         }
     }
 
@@ -306,15 +387,28 @@ final class LocationMainViewModel: ObservableObject {
         let since = LocationTrailSegmentFilter.trailFetchCutoff(for: historyDateRange, calendar: calendar)
 
         var merged: [UUID: [LocationTrailSegment]] = [:]
+        var trailFetchFailed = false
         for householdId in householdIds {
             do {
                 let segments = try await locationTrailService.fetchTrailSegments(in: householdId, since: since)
                 for segment in segments {
                     merged[segment.entityId, default: []].append(segment)
                 }
+                #if DEBUG
+                let profileCount = Set(segments.map(\.entityId)).count
+                print(
+                    "[RoadSnapTrace] trail fetch ok household=\(householdId.uuidString.prefix(8)) "
+                        + "since=\(Self.roadSnapTraceStamp(since)) segments=\(segments.count) profiles=\(profileCount)"
+                )
+                #endif
             } catch {
+                trailFetchFailed = true
                 #if DEBUG
                 print("[LocationMainViewModel] trail fetch failed: \(error.localizedDescription)")
+                print(
+                    "[RoadSnapTrace] trail fetch failed household=\(householdId.uuidString.prefix(8)) "
+                        + "since=\(Self.roadSnapTraceStamp(since)) error=\(error.localizedDescription)"
+                )
                 #endif
             }
         }
@@ -324,7 +418,19 @@ final class LocationMainViewModel: ObservableObject {
         }
         trailSegmentsByProfileId = merged
         #if DEBUG
-        applyRoadSnapDemoSegmentsIfEnabled()
+        if trailFetchFailed {
+            print("[LocationRoadSnap] skip demo segments because trail fetch failed")
+            print("[RoadSnapTrace] demo inject skipped reason=trail_fetch_failed")
+        } else {
+            applyRoadSnapDemoSegmentsIfEnabled()
+        }
+        let stored = trailSegmentsByProfileId.map { "\($0.key.uuidString.prefix(8)):\($0.value.count)" }
+            .sorted()
+            .joined(separator: ",")
+        print(
+            "[RoadSnapTrace] trail stored range=\(historyDateRange.kind) "
+                + "profiles=[\(stored.isEmpty ? "none" : stored)]"
+        )
         #endif
     }
 
@@ -340,6 +446,11 @@ final class LocationMainViewModel: ObservableObject {
         }
     }
 
+    /// 地图展示点数变化后，用同样的历史点重做贴路。
+    func scheduleRoadSnapRebuildFromDisplayCountChange() {
+        scheduleRoadSnapRebuild()
+    }
+
     private func rebuildRoadSnappedRoutes() async {
         let selectedProfileIDs: Set<UUID> = Set(
             selectedMemberIDs.compactMap { profileIdByMembershipId[$0] }
@@ -347,20 +458,28 @@ final class LocationMainViewModel: ObservableObject {
         let segmentCap = LocationRoadSnapPreferences.maxSegmentsPerMember(
             hasPremium: roadSnapHasPremiumAccess
         )
-        var budget = RoadSnapRouteBuilder.DirectionsBudget(
-            remaining: LocationRoadSnapPreferences.maxDirectionsRequestsPerRebuild
-        )
 
         var next: [UUID: [[CLLocationCoordinate2D]]] = [:]
         for profileId in selectedProfileIDs {
-            let segments = filteredTrailSegments(forProfileId: profileId).prefix(segmentCap)
+            let trailSegments = filteredTrailSegments(forProfileId: profileId)
+            let segmentsToSnap = snapCandidates(
+                profileId: profileId,
+                trailSegments: trailSegments,
+                segmentCap: segmentCap
+            )
             var routes: [[CLLocationCoordinate2D]] = []
-            for segment in segments {
+            for segment in segmentsToSnap {
                 if Task.isCancelled { return }
-                let coords = await RoadSnapRouteBuilder.shared.roadCoordinates(
-                    for: segment,
-                    budget: &budget
+                let anchors = segment.waypoints.count
+                let coords = await RoadSnapRouteBuilder.shared.roadCoordinates(for: segment)
+                #if DEBUG
+                let geometry = coords.count > anchors ? "road_vertices" : "anchors_only"
+                print(
+                    "[RoadSnapTrace] drawn profile=\(profileId.uuidString.prefix(8)) "
+                        + "segment=\(segment.id.uuidString.prefix(8)) anchors=\(anchors) "
+                        + "points=\(coords.count) geometry=\(geometry)"
                 )
+                #endif
                 if coords.count >= 2 {
                     routes.append(coords)
                 }
@@ -368,10 +487,137 @@ final class LocationMainViewModel: ObservableObject {
             if routes.isEmpty == false {
                 next[profileId] = routes
             }
+            #if DEBUG
+            let draw = routes.isEmpty ? "breadcrumb_straight" : "road_snap_layer"
+            let pointList = routes.map { String($0.count) }.joined(separator: ",")
+            print(
+                "[RoadSnapTrace] publish profile=\(profileId.uuidString.prefix(8)) "
+                    + "draw=\(draw) routes=\(routes.count) points=[\(pointList)]"
+            )
+            #endif
         }
 
         guard Task.isCancelled == false else { return }
         roadSnappedRoutesByProfileId = next
+    }
+
+    /// 贴路候选：近 48h 轨迹段 + 日期范围内未被轨迹段覆盖的历史位置点（几天前只有 `location_states` 稀疏点）。
+    private func snapCandidates(
+        profileId: UUID,
+        trailSegments: [LocationTrailSegment],
+        segmentCap: Int
+    ) -> [LocationTrailSegment] {
+        let breadcrumbs = historyBreadcrumbSegments(
+            profileId: profileId,
+            coveredBy: trailSegments
+        )
+        let trailSlots = max(0, segmentCap - min(breadcrumbs.count, segmentCap))
+        let trails = Array(trailSegments.prefix(trailSlots))
+        #if DEBUG
+        let breadcrumbPoints = breadcrumbs.map { String($0.waypoints.count) }.joined(separator: ",")
+        let trailPoints = trails.map { String($0.waypoints.count) }.joined(separator: ",")
+        print(
+            "[RoadSnapTrace] candidates profile=\(profileId.uuidString.prefix(8)) "
+                + "cap=\(segmentCap) breadcrumb=\(breadcrumbs.count)[\(breadcrumbPoints)] "
+                + "trail=\(trails.count)[\(trailPoints)] trailAvailable=\(trailSegments.count)"
+        )
+        #endif
+        // 稀疏历史点优先占用每成员段数名额，避免近 48h 密轨迹占满名额后，几天前的折线没有贴路机会。
+        return breadcrumbs + trails
+    }
+
+    /// 把日期筛选内、且不落在任何轨迹段时间窗里的位置点，按时间切成可贴路的段。
+    private func historyBreadcrumbSegments(
+        profileId: UUID,
+        coveredBy trailSegments: [LocationTrailSegment]
+    ) -> [LocationTrailSegment] {
+        guard let membershipId = profileIdByMembershipId.first(where: { $0.value == profileId })?.key,
+              let member = members.first(where: { $0.id == membershipId }) else {
+            return []
+        }
+
+        let display = displayStateForMap(member)
+        let displayCount = PremiumLimits.clampedMapHistoryDisplayCount(
+            LocationMapDisplayPreferences.historyDisplayCount,
+            hasPremium: roadSnapHasPremiumAccess
+        )
+        let visible = display.mapVisibleLocations(displayCount: displayCount)
+        let chronological = Array(visible.reversed())
+        guard chronological.count >= 2 else { return [] }
+
+        var runs: [[LocationPayload]] = []
+        var current: [LocationPayload] = []
+        for payload in chronological {
+            if isCoveredByTrail(payload, trailSegments: trailSegments) {
+                if current.count >= 2 {
+                    runs.append(current)
+                }
+                current = []
+            } else {
+                current.append(payload)
+            }
+        }
+        if current.count >= 2 {
+            runs.append(current)
+        }
+
+        return runs.compactMap { run in
+            let waypoints = run.map {
+                TrailWaypoint(latitude: $0.latitude, longitude: $0.longitude, recordedAt: $0.recordedAt)
+            }
+            guard waypoints.count >= 2 else { return nil }
+            let startedAt = run.first?.recordedAt ?? Date.distantPast
+            let endedAt = run.last?.recordedAt ?? startedAt
+            return LocationTrailSegment(
+                id: Self.stableBreadcrumbSegmentId(profileId: profileId, waypoints: waypoints),
+                householdId: member.householdId,
+                entityId: profileId,
+                startedAt: startedAt,
+                endedAt: max(endedAt, startedAt),
+                waypoints: waypoints
+            )
+        }
+    }
+
+    private func isCoveredByTrail(_ payload: LocationPayload, trailSegments: [LocationTrailSegment]) -> Bool {
+        guard let stamp = payload.recordedAt else { return false }
+        return trailSegments.contains { segment in
+            stamp >= segment.startedAt && stamp <= segment.endedAt
+        }
+    }
+
+    private static func roadSnapTraceStamp(_ date: Date) -> String {
+        ISO8601DateFormatter().string(from: date)
+    }
+
+    /// 进程内稳定，便于 Directions 磁盘缓存命中。
+    private static func stableBreadcrumbSegmentId(profileId: UUID, waypoints: [TrailWaypoint]) -> UUID {
+        var hash: UInt64 = 14_695_981_039_346_656_037
+        func mix(_ byte: UInt8) {
+            hash ^= UInt64(byte)
+            hash &*= 1_099_511_628_211
+        }
+        for byte in profileId.uuidString.utf8 {
+            mix(byte)
+        }
+        for point in waypoints {
+            let token = String(format: "%.4f,%.4f", point.latitude, point.longitude)
+            for byte in token.utf8 {
+                mix(byte)
+            }
+        }
+        var bytes = withUnsafeBytes(of: hash.littleEndian) { Array($0) }
+        while bytes.count < 16 {
+            bytes.append(0)
+        }
+        bytes[6] = (bytes[6] & 0x0F) | 0x50
+        bytes[8] = (bytes[8] & 0x3F) | 0x80
+        return UUID(uuid: (
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5], bytes[6], bytes[7],
+            bytes[8], bytes[9], bytes[10], bytes[11],
+            bytes[12], bytes[13], bytes[14], bytes[15]
+        ))
     }
 
     func isSelected(memberID: UUID) -> Bool {
@@ -388,6 +634,25 @@ final class LocationMainViewModel: ObservableObject {
     private func persistMemberSelectionIfNeeded() {
         guard let householdId else { return }
         LocationMapMemberSelectionPreferences.save(selectedMemberIDs, householdId: householdId)
+    }
+
+    private func persistHistoryDateRangeIfNeeded() {
+        guard let householdId else {
+            #if DEBUG
+            print(
+                "[HistoryRangeTrace] save skipped reason=no_household "
+                    + "kind=\(historyDateRange.kind.rawValue) vm=\(ObjectIdentifier(self))"
+            )
+            #endif
+            return
+        }
+        LocationHistoryDateRangePreferences.save(historyDateRange, householdId: householdId)
+        #if DEBUG
+        print(
+            "[HistoryRangeTrace] save household=\(householdId.uuidString.prefix(8)) "
+                + "kind=\(historyDateRange.kind.rawValue) vm=\(ObjectIdentifier(self))"
+        )
+        #endif
     }
 
     /// 选中成员对应的贴路折线；无轨迹段时返回空。
@@ -551,6 +816,7 @@ final class LocationMainViewModel: ObservableObject {
         guard demo.isEmpty == false else { return }
         trailSegmentsByProfileId[profileId] = demo
         print("[LocationRoadSnap] injected demo segments count=\(demo.count) profile=\(profileId.uuidString.prefix(8))")
+        print("[RoadSnapTrace] demo inject count=\(demo.count) profile=\(profileId.uuidString.prefix(8))")
         scheduleRoadSnapRebuild()
     }
     #endif

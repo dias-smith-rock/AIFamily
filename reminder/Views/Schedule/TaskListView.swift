@@ -281,7 +281,7 @@ struct TaskListView: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
-                    await viewModel.loadTasks()
+                    await viewModel.loadTasks(silent: true)
                 }
             }
             .onChange(of: viewModel.prefilledTaskForAI?.id) { _, _ in
@@ -298,6 +298,15 @@ struct TaskListView: View {
     }
 
     private var mainContent: some View {
+        ZStack {
+            scheduleModeContent
+            if viewModel.shouldBlockSchedulePresentation {
+                ScheduleInitialLoadingView(locale: locale)
+            }
+        }
+    }
+
+    private var scheduleModeContent: some View {
         VStack(spacing: 0) {
             Group {
                 switch currentViewMode {

@@ -150,7 +150,7 @@ struct LocationMainView: View {
                 LocationCustomHistoryRangeSheet(
                     startDay: $customHistoryStart,
                     endDay: $customHistoryEnd,
-                    onApply: applyCustomHistoryRange
+                    onApply: commitCustomHistoryRange
                 )
                 .environment(\.locale, appSettings.appLocale)
             }
@@ -159,6 +159,9 @@ struct LocationMainView: View {
             }
             .onChange(of: appRouter.hasPremiumAccess) { _, hasPremium in
                 viewModel.setRoadSnapPremiumAccess(hasPremium)
+            }
+            .onChange(of: mapHistoryDisplayCount) { _, _ in
+                viewModel.scheduleRoadSnapRebuildFromDisplayCountChange()
             }
             .onAppear {
                 viewModel.setRoadSnapPremiumAccess(appRouter.hasPremiumAccess)
@@ -240,8 +243,21 @@ struct LocationMainView: View {
 
     @MainActor
     private func runLocationTabRefreshTask() async {
+        #if DEBUG
+        print(
+            "[HistoryRangeTrace] tab enter kind=\(viewModel.historyDateRange.kind.rawValue) "
+                + "household=\(appRouter.selectedHouseholdId?.uuidString.prefix(8) ?? "nil") "
+                + "active=\(isTabActive) vm=\(ObjectIdentifier(viewModel))"
+        )
+        #endif
         _ = await LocationAuthorizationRequester.shared.requestWhenInUseIfNeeded()
         bindLiveContext()
+        #if DEBUG
+        print(
+            "[HistoryRangeTrace] tab after bind kind=\(viewModel.historyDateRange.kind.rawValue) "
+                + "vm=\(ObjectIdentifier(viewModel))"
+        )
+        #endif
         await viewModel.refresh()
         liveManager.updateProfileIdByMembershipId(viewModel.profileIdByMembershipId)
         viewModel.applyCachedDeviceLocationForMap()
@@ -861,6 +877,10 @@ struct LocationMainView: View {
             customHistoryStart = calendar.date(byAdding: .day, value: -6, to: today) ?? today
         }
         isCustomHistoryRangePresented = true
+    }
+
+    private func commitCustomHistoryRange() {
+        viewModel.applyCustomHistoryRange(startDay: customHistoryStart, endDay: customHistoryEnd)
     }
 
     private func presentPremiumIfHistoryExceedsLimit() {

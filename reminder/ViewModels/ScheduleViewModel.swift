@@ -26,6 +26,9 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
+    /// 当前查看上下文下是否已完成至少一次任务拉取（用于避免启动时空态 ↔ 有数据闪烁）。
+    @Published private(set) var hasCompletedInitialScheduleLoad = false
+    private var lastTaskLoadContextToken: String?
     /// 在 `task_attachments` 中有附件的任务 id（用于卡片角标）。
     @Published private(set) var taskIDsWithAttachments: Set<UUID> = []
     /// 列表滚动时当前视野内的月份（用于顶栏动态标题）。
@@ -92,18 +95,43 @@ final class ScheduleViewModel: ObservableObject {
     }
 
     func setHouseholdContext(_ householdId: UUID?) {
+        let previous = currentHouseholdId
         currentHouseholdId = householdId
         if householdId == nil {
+            tasks = []
             householdMembers = []
             familyProfiles = []
             rosterLoadedForHouseholdId = nil
+            invalidateScheduleLoadPresentation()
         } else if rosterLoadedForHouseholdId != householdId {
             rosterLoadedForHouseholdId = nil
+        }
+        if previous != householdId, householdId != nil {
+            invalidateScheduleLoadPresentation()
         }
     }
 
     func setViewHouseholdIds(_ ids: [UUID]) {
+        let previousToken = taskLoadContextToken(for: viewHouseholdIds)
         viewHouseholdIds = ids
+        let nextToken = taskLoadContextToken(for: ids)
+        if previousToken != nextToken {
+            invalidateScheduleLoadPresentation()
+        }
+    }
+
+    /// 首次加载完成前：日程 Tab 展示全屏 loading，不渲染周条/空态引导。
+    var shouldBlockSchedulePresentation: Bool {
+        hasCompletedInitialScheduleLoad == false
+    }
+
+    private func taskLoadContextToken(for householdIds: [UUID]) -> String {
+        householdIds.map { $0.uuidString.lowercased() }.sorted().joined(separator: "|")
+    }
+
+    private func invalidateScheduleLoadPresentation() {
+        hasCompletedInitialScheduleLoad = false
+        lastTaskLoadContextToken = nil
     }
 
     private var effectiveViewHouseholdIds: [UUID] {
@@ -120,13 +148,20 @@ final class ScheduleViewModel: ObservableObject {
         let householdIds = effectiveViewHouseholdIds
         guard householdIds.isEmpty == false else {
             tasks = []
+            hasCompletedInitialScheduleLoad = true
             if !silent {
                 errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             }
             return
         }
 
-        tasks = []
+        let contextToken = taskLoadContextToken(for: householdIds)
+        if lastTaskLoadContextToken != contextToken {
+            lastTaskLoadContextToken = contextToken
+            hasCompletedInitialScheduleLoad = false
+            tasks = []
+        }
+
         var restoredFromDisk = false
         for householdId in householdIds {
             if await restoreTasksFromDiskIfNeeded(
@@ -143,14 +178,15 @@ final class ScheduleViewModel: ObservableObject {
             await loadHouseholdRosterFromCache(in: primaryId)
         }
 
-        let showLoading = !silent && !restoredFromDisk
-        if showLoading {
+        let showBlockingLoad = !silent && hasCompletedInitialScheduleLoad == false
+        if showBlockingLoad {
             isLoading = true
             errorMessage = nil
         }
         defer {
-            if showLoading {
+            if showBlockingLoad {
                 isLoading = false
+                hasCompletedInitialScheduleLoad = true
             }
         }
 
@@ -305,6 +341,7 @@ final class ScheduleViewModel: ObservableObject {
         householdMembers = []
         familyProfiles = []
         rosterLoadedForHouseholdId = nil
+        invalidateScheduleLoadPresentation()
         if currentHouseholdId == householdId {
             currentHouseholdId = nil
         }

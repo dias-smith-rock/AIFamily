@@ -54,10 +54,7 @@ struct TaskWeekGridView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading, viewModel.tasks.isEmpty {
-                ProgressView(AppLocalized.string(L10n.Schedule.loadingTasks, locale: locale))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let errorMessage = viewModel.errorMessage, viewModel.tasks.isEmpty {
+            if let errorMessage = viewModel.errorMessage, viewModel.tasks.isEmpty {
                 ContentUnavailableView {
                     Label(AppLocalized.string(L10n.Common.loading, locale: locale), systemImage: "exclamationmark.triangle")
                 } description: {
