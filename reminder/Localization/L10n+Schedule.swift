@@ -31,7 +31,6 @@ extension L10n {
     static let editEvent = Entry(key: "schedule_edit_event", table: .schedule)
     static let editTask = Entry(key: "schedule_edit_task", table: .schedule)
     static let emptyFamilyReadySubtitle = Entry(key: "schedule_empty_family_ready_subtitle", table: .schedule)
-    static let emptyFamilyReadyTitle = Entry(key: "schedule_empty_family_ready_title", table: .schedule)
     static let emptyInvitePartner = Entry(key: "schedule_empty_invite_partner", table: .schedule)
     static let emptyNewTask = Entry(key: "schedule_empty_new_task", table: .schedule)
     static let emptyQuickAddSection = Entry(key: "schedule_empty_quick_add_section", table: .schedule)

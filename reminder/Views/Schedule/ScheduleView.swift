@@ -39,23 +39,17 @@ struct TaskModeDayView: View {
     private let daySwipeSuppressTapClearDelayNanoseconds: UInt64 = 80_000_000
 
     let onTaskSelect: (FamilyTask) -> Void
-    let onQuickCreate: (String, Date?) -> Void
-    let onInviteFamily: (() -> Void)?
     let onRefresh: (() async -> Void)?
 
     init(
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
-        onQuickCreate: @escaping (String, Date?) -> Void,
-        onInviteFamily: (() -> Void)? = nil,
         onRefresh: (() async -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
-        self.onQuickCreate = onQuickCreate
-        self.onInviteFamily = onInviteFamily
         self.onRefresh = onRefresh
     }
 
@@ -131,10 +125,7 @@ struct TaskModeDayView: View {
                 taskFlowLongIdleThreshold: taskFlowLongIdleThreshold,
                 viewModel: viewModel,
                 onTaskSelect: onTaskSelect,
-                onQuickCreate: onQuickCreate,
-                onInviteFamily: onInviteFamily,
-                onRefresh: onRefresh,
-                isDaySwipeGestureActive: isDaySwipeGestureActive
+                onRefresh: onRefresh
             )
             .id(selectedDay)
             .transition(dayContentTransition)
@@ -330,16 +321,7 @@ private struct TaskModeDaySchedulePane: View {
     let taskFlowLongIdleThreshold: TimeInterval
     @ObservedObject var viewModel: ScheduleViewModel
     let onTaskSelect: (FamilyTask) -> Void
-    let onQuickCreate: (String, Date?) -> Void
-    let onInviteFamily: (() -> Void)?
     let onRefresh: (() async -> Void)?
-    let isDaySwipeGestureActive: Bool
-
-    private enum QuickCreateDueDateKind {
-        case selectedDay
-        case dayAfterSelected
-        case nextSaturdayFromSelected
-    }
 
     var body: some View {
         let pinnedAllDay = dayTasks.filter(\.isAllDay)
@@ -506,164 +488,27 @@ private struct TaskModeDaySchedulePane: View {
         }
     }
 
-    private var showsSoloHouseholdInviteCTA: Bool {
-        viewModel.householdMembers.filter { $0.isActiveMembership() }.count <= 1
-    }
-
     @ViewBuilder
     private func emptyStateView() -> some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(Color.orange.opacity(0.13))
-                        .frame(width: 88, height: 88)
-                    Image(systemName: "calendar.badge.plus")
-                        .font(.system(size: 36, weight: .medium))
-                        .foregroundStyle(.orange)
-                        .symbolRenderingMode(.hierarchical)
-                }
-                .padding(.top, 8)
-
-                VStack(spacing: 8) {
-                    Text(L10n.Schedule.emptyFamilyReadyTitle.localized)
-                        .font(.title3.bold())
-                        .foregroundStyle(.primary)
-                        .multilineTextAlignment(.center)
-                    Text(L10n.Schedule.emptyFamilyReadySubtitle.localized)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                if let onInviteFamily {
-                    Button {
-                        performControlActionUnlessDaySwiping {
-                            AnalyticsManager.logEmptyStateCTATapped(
-                                surface: AnalyticsManager.EmptyStateSurface.schedule,
-                                cta: AnalyticsManager.EmptyStateCTA.invite
-                            )
-                            onInviteFamily()
-                        }
-                    } label: {
-                        Label {
-                            Text(L10n.Schedule.emptyInvitePartner.localized)
-                                .font(.body.weight(.semibold))
-                        } icon: {
-                            Image(systemName: "person.badge.plus")
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .foregroundStyle(.white)
-                        .background(Color.accentColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.top, showsSoloHouseholdInviteCTA ? 4 : 0)
-                }
-
-                Button {
-                    performControlActionUnlessDaySwiping {
-                        AnalyticsManager.logEmptyStateCTATapped(
-                            surface: AnalyticsManager.EmptyStateSurface.schedule,
-                            cta: AnalyticsManager.EmptyStateCTA.create
-                        )
-                        onQuickCreate("", defaultDueDate(for: .selectedDay))
-                    }
-                } label: {
-                    Label {
-                        Text(L10n.Schedule.emptyNewTask.localized)
-                            .font(.body.weight(.semibold))
-                    } icon: {
-                        Image(systemName: "plus.circle.fill")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .foregroundStyle(.primary)
-                    .background(AppTheme.ColorToken.surfaceMuted)
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
-                .buttonStyle(.plain)
-
-                VStack(spacing: 12) {
-                    Text(L10n.Schedule.emptyQuickAddSection.localized)
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.secondary)
-
-                    FlowLayout(spacing: 10) {
-                        actionChip(emoji: "✨", title: L10n.Common.dinnerTogether, dueDateKind: .selectedDay)
-                        actionChip(emoji: "🛒", title: L10n.Common.groceryList, dueDateKind: .dayAfterSelected)
-                        actionChip(emoji: "🧸", title: L10n.Common.kidsActivity, dueDateKind: .nextSaturdayFromSelected)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .padding(.top, 4)
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.13))
+                    .frame(width: 88, height: 88)
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 36, weight: .medium))
+                    .foregroundStyle(.orange)
+                    .symbolRenderingMode(.hierarchical)
             }
-            .padding(.horizontal, 4)
-            .padding(.bottom, 24)
+            .padding(.top, 8)
+
+            Text(L10n.Schedule.emptyFamilyReadySubtitle.localized)
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func actionChip(emoji: String, title: L10n.Entry, dueDateKind: QuickCreateDueDateKind) -> some View {
-        Button {
-            performControlActionUnlessDaySwiping {
-                AnalyticsManager.logEmptyStateCTATapped(
-                    surface: AnalyticsManager.EmptyStateSurface.schedule,
-                    cta: AnalyticsManager.EmptyStateCTA.create
-                )
-                onQuickCreate(AppLocalized.string(title, locale: locale), defaultDueDate(for: dueDateKind))
-            }
-        } label: {
-            HStack(spacing: 8) {
-                Text(emoji)
-                    .font(.system(size: 18))
-                    .fixedSize()
-                Text(title.localized)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(AppTheme.ColorToken.surfaceMuted)
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func performControlActionUnlessDaySwiping(_ action: () -> Void) {
-        guard isDaySwipeGestureActive == false else { return }
-        action()
-    }
-
-    private func defaultDueDate(for kind: QuickCreateDueDateKind) -> Date? {
-        switch kind {
-        case .selectedDay:
-            return nil
-        case .dayAfterSelected:
-            return calendarDayByAdding(1, to: selectedDate)
-        case .nextSaturdayFromSelected:
-            return nextSaturdayOnOrAfter(selectedDate)
-        }
-    }
-
-    private func calendarDayByAdding(_ days: Int, to anchor: Date) -> Date {
-        let base = displayCalendar.startOfDay(for: anchor)
-        guard let shifted = displayCalendar.date(byAdding: .day, value: days, to: base) else { return base }
-        return displayCalendar.startOfDay(for: shifted)
-    }
-
-    private func nextSaturdayOnOrAfter(_ anchor: Date) -> Date {
-        let base = displayCalendar.startOfDay(for: anchor)
-        for offset in 0..<14 {
-            guard let d = displayCalendar.date(byAdding: .day, value: offset, to: base) else { continue }
-            if displayCalendar.component(.weekday, from: d) == 7 {
-                return displayCalendar.startOfDay(for: d)
-            }
-        }
-        return base
     }
 
     private func taskDisplayDate(_ task: FamilyTask) -> Date {
@@ -802,57 +647,8 @@ private enum TaskEmergencyDialURLs {
     TaskModeDayView(
         selectedDate: .constant(Date()),
         viewModel: AppViewModels.makeScheduleViewModel(),
-        onTaskSelect: { _ in },
-        onQuickCreate: { _, _ in },
-        onInviteFamily: {}
+        onTaskSelect: { _ in }
     )
-}
-
-/// 简易横向换行布局，用于空态快捷 chip。
-private struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var height: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > 0, x + size.width > maxWidth {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-            height = max(height, y + rowHeight)
-        }
-        return CGSize(width: maxWidth.isFinite ? maxWidth : x, height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        var x = bounds.minX
-        var y = bounds.minY
-        var rowHeight: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x > bounds.minX, x + size.width > bounds.maxX {
-                x = bounds.minX
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            subview.place(
-                at: CGPoint(x: x, y: y),
-                proposal: ProposedViewSize(width: size.width, height: size.height)
-            )
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-        }
-    }
 }
 
 /// 日程 Tab 首次拉取任务完成前的全屏占位，避免周条/空态引导与真实数据来回闪烁。

@@ -323,12 +323,6 @@ struct TaskListView: View {
                         selectedDate: $selectedDate,
                         viewModel: viewModel,
                         onTaskSelect: { taskForDetailSheet = $0 },
-                        onQuickCreate: { prefill, dueOverride in
-                            openCreateTask(prefill: prefill, defaultDueDateOverride: dueOverride)
-                        },
-                        onInviteFamily: {
-                            isShowingInviteSheet = true
-                        },
                         onRefresh: refreshTasks
                     )
                 case .week:

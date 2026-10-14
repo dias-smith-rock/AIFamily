@@ -5317,55 +5317,55 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invite your partner, then add pickups and chores for this week."
+            "value": "Nothing planned today. Take a break."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "先邀请伴侣，再把本周接送和家务加进来。"
+            "value": "今天没有安排，可以休息一下。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "先邀請伴侶，再把本週接送和家務加進來。"
+            "value": "今天沒有安排，可以休息一下。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invita a tu pareja y añade recogidas y tareas de esta semana."
+            "value": "Hoy no hay planes. Tómate un descanso."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Invitez votre partenaire, puis ajoutez trajets et corvées de la semaine."
+            "value": "Rien de prévu aujourd’hui. Reposez-vous un peu."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Convide o seu parceiro e adicione buscas e tarefas desta semana."
+            "value": "Nada planejado para hoje. Pode descansar um pouco."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "साथी को आमंत्रित करें, फिर इस सप्ताह के पिकअप और काम जोड़ें।"
+            "value": "आज कोई कार्यक्रम नहीं है। थोड़ा आराम करें।"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "துணையை அழைத்து, இந்த வாரம் பிக்கப்/வேலைகளைச் சேர்க்கவும்."
+            "value": "இன்று எதுவும் திட்டமிடப்படவில்லை. கொஞ்சம் ஓய்வெடுங்கள்."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ادعُ شريكك ثم أضف توصيلات ومهام هذا الأسبوع."
+            "value": "لا يوجد شيء مخطط لليوم. خذ قسطًا من الراحة."
           }
         }
       }
