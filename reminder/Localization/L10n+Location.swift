@@ -104,5 +104,8 @@ extension L10n {
     static let historyEndDate = Entry(key: "location_history_end_date", table: .location)
     static let historyNoPointsInRange = Entry(key: "location_history_no_points_in_range", table: .location)
     static let shownOnTheMapWhenSelected = Entry(key: "location_shown_on_the_map_when_selected", table: .location)
+    static let schoolBusPreview = Entry(key: "location_school_bus_preview", table: .location)
+    static let schoolBusEnd = Entry(key: "location_school_bus_end", table: .location)
+    static let schoolBusArrived = Entry(key: "location_school_bus_arrived", table: .location)
     }
 }

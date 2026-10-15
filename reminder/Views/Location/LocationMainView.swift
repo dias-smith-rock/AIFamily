@@ -14,6 +14,7 @@ struct LocationMainView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel: LocationMainViewModel
     @StateObject private var liveManager: LiveLocationManager
+    @StateObject private var schoolBusTrip = SchoolBusTripSession()
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isExitLiveModeAlertPresented = false
     @State private var isRefreshingMapLocations = false
@@ -102,7 +103,16 @@ struct LocationMainView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.92)))
             } else {
                 HStack(alignment: .bottom) {
-                    historyRangeControl
+                    VStack(alignment: .leading, spacing: 8) {
+                        if schoolBusTrip.isActive {
+                            schoolBusStatusControl
+                        } else {
+                            historyRangeControl
+                            if showsSchoolBusPreviewEntry, schoolBusCandidate != nil {
+                                schoolBusStartControl
+                            }
+                        }
+                    }
                     Spacer(minLength: 0)
                     memberListOverlay
                 }
@@ -386,6 +396,9 @@ struct LocationMainView: View {
                         overlapSlot: overlappingCurrentAvatarSlots[member.id]
                     )
                 }
+                if schoolBusTrip.isActive {
+                    schoolBusPreviewContent
+                }
             }
 
             if liveManager.isLiveModeActive {
@@ -431,6 +444,149 @@ struct LocationMainView: View {
             MapCompass()
         }
         .ignoresSafeArea(edges: .top)
+        .onChange(of: liveManager.isLiveModeActive) { _, isLive in
+            if isLive {
+                schoolBusTrip.stop()
+            }
+        }
+        .onChange(of: schoolBusTrip.routeReadyToken) { _, token in
+            guard token > 0, let region = schoolBusTrip.previewRegion() else { return }
+            withAnimation(.easeInOut(duration: 0.35)) {
+                cameraPosition = .region(region)
+            }
+        }
+    }
+
+    /// 校车预览入口先藏起来，逻辑保留。
+    private let showsSchoolBusPreviewEntry = false
+
+    private var schoolBusCandidate: UserLocationState? {
+        let shown = viewModel.mapDisplayedMembers.filter(\.isVisibleOnMap)
+        if let other = shown.first(where: { $0.isCurrentUser == false }) {
+            return other
+        }
+        return shown.first
+    }
+
+    private var schoolBusStartControl: some View {
+        Button {
+            startSchoolBusPreview()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "bus.fill")
+                    .font(.subheadline.weight(.semibold))
+                Text(L10n.Location.schoolBusPreview.string(locale: locale))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(Color.orange)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background {
+                Capsule()
+                    .fill(Color(.systemBackground).opacity(0.96))
+                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 3)
+                    .overlay {
+                        Capsule()
+                            .strokeBorder(Color(.separator).opacity(0.85), lineWidth: 1)
+                    }
+            }
+        }
+        .accessibilityLabel(L10n.Location.schoolBusPreview)
+    }
+
+    private var schoolBusStatusControl: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "bus.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(schoolBusTrip.displayName)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                Text(
+                    schoolBusTrip.hasArrived
+                        ? L10n.Location.schoolBusArrived.string(locale: locale)
+                        : schoolBusTrip.speedLabel
+                )
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(schoolBusTrip.hasArrived ? Color.secondary : Color.orange)
+                .monospacedDigit()
+            }
+            Button {
+                schoolBusTrip.stop()
+            } label: {
+                Text(L10n.Location.schoolBusEnd.string(locale: locale))
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background {
+            Capsule()
+                .fill(Color(.systemBackground).opacity(0.96))
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 3)
+        }
+    }
+
+    private func startSchoolBusPreview() {
+        guard let member = schoolBusCandidate,
+              let coordinate = member.currentLocation?.coordinate else { return }
+        viewModel.collapseMemberList()
+        schoolBusTrip.start(member: member, from: coordinate)
+    }
+
+    @MapContentBuilder
+    private var schoolBusPreviewContent: some MapContent {
+        let accent = LocationMemberMapColors.accent(for: schoolBusTrip.memberId ?? UUID())
+        if schoolBusTrip.trail.count >= 2 {
+            MapPolyline(coordinates: schoolBusTrip.trail)
+                .stroke(
+                    accent,
+                    style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round)
+                )
+        }
+        if let start = schoolBusTrip.trail.first {
+            Annotation(
+                "",
+                coordinate: start,
+                anchor: UnitPoint(x: 0.5, y: 1)
+            ) {
+                LocationMapPinIcon(isStart: true, height: 34)
+            }
+        }
+        if let head = schoolBusTrip.head {
+            Annotation(
+                "",
+                coordinate: head,
+                anchor: UserMapAvatarView.mapCoordinateAnchor
+            ) {
+                UserMapAvatarView(
+                    displayName: schoolBusTrip.displayName,
+                    batteryLevel: 80,
+                    isCharging: false,
+                    lastUpdatedAt: Date(),
+                    mapAccentColor: accent,
+                    avatarURL: schoolBusTrip.avatarURL
+                )
+                .animation(.linear(duration: 0.95), value: head.latitude)
+                .animation(.linear(duration: 0.95), value: head.longitude)
+            }
+            Annotation("", coordinate: head, anchor: .center) {
+                Text(schoolBusTrip.speedLabel)
+                    .font(.caption.weight(.bold))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.orange, in: Capsule())
+                    .offset(x: 62, y: -10)
+                    .animation(.linear(duration: 0.95), value: head.latitude)
+                    .animation(.linear(duration: 0.95), value: head.longitude)
+            }
+        }
     }
 
     private struct LiveMapAnnotationItem: Identifiable {
