@@ -31,6 +31,8 @@ final class AppRouter: ObservableObject {
     }
 
     @Published var appState: AppState = .unauthenticated
+    /// 日程小组件点按：打开某一天，或打开当天的创建任务。
+    @Published var pendingScheduleWidgetRoute: ScheduleWidgetLink.Route?
     /// `refreshStateFromBackend()` 是否已跑完一轮（含离线短路）；用于区分启动加载与鉴权失效。
     @Published private(set) var isAnonymousUser = false
     @Published private(set) var hasCompletedAuthBootstrap = false

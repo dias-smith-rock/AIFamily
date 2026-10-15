@@ -72,6 +72,14 @@ struct AppTabRootView: View {
                 }
             }
         }
+        .onChange(of: appRouter.pendingScheduleWidgetRoute) { _, route in
+            guard route != nil else { return }
+            if appRouter.isTrackedDeviceShellActive {
+                appRouter.pendingScheduleWidgetRoute = nil
+                return
+            }
+            selectedTab = .schedule
+        }
         .onAppear {
             if appRouter.isTrackedDeviceMembership {
                 appRouter.syncTrackedDeviceUnlockStateFromSession()

@@ -112,6 +112,15 @@ struct TaskListView: View {
                 .environmentObject(appRouter)
                 .presentationDetents([.medium])
             }
+            .onAppear {
+                applyScheduleWidgetRoute()
+            }
+            .onChange(of: appRouter.pendingScheduleWidgetRoute) { _, _ in
+                applyScheduleWidgetRoute()
+            }
+            .onChange(of: appRouter.appState) { _, _ in
+                applyScheduleWidgetRoute()
+            }
             .onChange(of: isShowingWriteTargetPicker) { _, isPresented in
                 if isPresented == false, createTaskSheetRequest == nil {
                     // 用户取消选择组织时丢弃 pending，避免误开创建页。
@@ -554,17 +563,37 @@ struct TaskListView: View {
         )
     }
 
+    private func applyScheduleWidgetRoute() {
+        guard let route = appRouter.pendingScheduleWidgetRoute else { return }
+        guard appRouter.appState == .activeMember else { return }
+        appRouter.pendingScheduleWidgetRoute = nil
+        switch route {
+        case .openDay(let year, let month, let day):
+            selectedDate = date(year: year, month: month, day: day)
+            currentViewMode = .day
+        case .createTask(let year, let month, let day):
+            let due = date(year: year, month: month, day: day)
+            selectedDate = due
+            currentViewMode = .day
+            openCreateTask(prefill: "", defaultDueDateOverride: due)
+        }
+    }
+
+    private func date(year: Int, month: Int, day: Int) -> Date {
+        var components = DateComponents()
+        components.year = year
+        components.month = month
+        components.day = day
+        components.timeZone = appSettings.effectiveTimeZone
+        return appSettings.effectiveCalendar.date(from: components) ?? dayID(for: Date())
+    }
+
     private func openCreateTask(prefill: String, defaultDueDateOverride: Date? = nil) {
         let request = CreateTaskSheetRequest(
             prefillTitle: prefill,
             defaultDueDate: defaultDueDateOverride
         )
-        if appRouter.needsWriteTargetSelection {
-            pendingCreateAfterWritePick = request
-            isShowingWriteTargetPicker = true
-        } else {
-            createTaskSheetRequest = request
-        }
+        createTaskSheetRequest = request
     }
 
     private func dayID(for date: Date) -> Date {

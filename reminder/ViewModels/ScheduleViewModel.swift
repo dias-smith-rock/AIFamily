@@ -103,6 +103,7 @@ final class ScheduleViewModel: ObservableObject {
             familyProfiles = []
             rosterLoadedForHouseholdId = nil
             invalidateScheduleLoadPresentation()
+            publishScheduleWidgetSnapshot()
         } else if rosterLoadedForHouseholdId != householdId {
             rosterLoadedForHouseholdId = nil
         }
@@ -145,6 +146,7 @@ final class ScheduleViewModel: ObservableObject {
     }
 
     func loadTasks(silent: Bool = false) async {
+        defer { publishScheduleWidgetSnapshot() }
         let householdIds = effectiveViewHouseholdIds
         guard householdIds.isEmpty == false else {
             tasks = []
@@ -485,6 +487,11 @@ final class ScheduleViewModel: ObservableObject {
         tasks.sort { lhs, rhs in
             (lhs.dueDate ?? lhs.createdAt) < (rhs.dueDate ?? rhs.createdAt)
         }
+        publishScheduleWidgetSnapshot()
+    }
+
+    private func publishScheduleWidgetSnapshot() {
+        ScheduleWidgetPublisher.publish(tasks: tasks, householdId: currentHouseholdId)
     }
 
     private static func isLikelyNetworkFailure(_ error: Error) -> Bool {
@@ -731,6 +738,7 @@ final class ScheduleViewModel: ObservableObject {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
             tasks.removeAll { $0.id == taskId }
         }
+        publishScheduleWidgetSnapshot()
         if let householdId {
             HouseholdLocalCache.removeTaskFromCache(taskId: taskId, householdId: householdId)
         }

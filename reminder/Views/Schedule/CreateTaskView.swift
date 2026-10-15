@@ -730,8 +730,10 @@ struct CreateTaskView: View {
 
     private var primarySettingsGroup: some View {
         VStack(spacing: 0) {
-            orgFlatRow
-            flatDivider
+            if editingTask != nil {
+                orgFlatRow
+                flatDivider
+            }
             attachmentsSection
 
             if showsMemoToggle {
@@ -1688,6 +1690,28 @@ struct CreateTaskView: View {
                     .font(.subheadline.weight(.semibold))
             }
             .disabled(isSaving)
+        }
+        if editingTask == nil {
+            ToolbarItem(placement: .principal) {
+                Button {
+                    if appRouter.selectableHouseholds.count > 1 {
+                        isShowingWriteTargetPicker = true
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(formHouseholdNavigationTitle)
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(1)
+                        if appRouter.selectableHouseholds.count > 1 {
+                            Image(systemName: "chevron.down")
+                                .font(.caption2.weight(.semibold))
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                }
+                .disabled(isSaving || appRouter.selectableHouseholds.count <= 1)
+                .accessibilityLabel(formHouseholdNavigationTitle)
+            }
         }
         ToolbarItem(placement: .confirmationAction) {
             Button {

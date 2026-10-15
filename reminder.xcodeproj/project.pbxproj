@@ -18,11 +18,13 @@
 		DDD16A102FC91B21009FE64F /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A0F2FC91B21009FE64F /* FirebaseCrashlytics */; };
 		DDD16A142FC91B21009FE64F /* FirebaseRemoteConfig in Frameworks */ = {isa = PBXBuildFile; productRef = DDD16A152FC91B21009FE64F /* FirebaseRemoteConfig */; };
 		DDE1RC012FC91B21009FE64F /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = DDE1RC022FC91B21009FE64F /* RevenueCat */; };
+		AA10000B2FC91B21009FE64F /* ScheduleWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AA1000012FC91B21009FE64F /* ScheduleWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		DD17A5EF2F9F4E500059AE67 /* Family Link.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Family Link.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		AA1000012FC91B21009FE64F /* ScheduleWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -33,6 +35,14 @@
 			);
 			target = DD17A5EE2F9F4E500059AE67 /* reminder */;
 		};
+		AA10000E2FC91B21009FE64F /* Exceptions for "ScheduleWidget" folder in "ScheduleWidget" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				ScheduleWidget.entitlements,
+			);
+			target = AA1000022FC91B21009FE64F /* ScheduleWidget */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -42,6 +52,19 @@
 				DDC2B0352FA1098000D9A032 /* Exceptions for "reminder" folder in "reminder" target */,
 			);
 			path = reminder;
+			sourceTree = "<group>";
+		};
+		AA1000062FC91B21009FE64F /* ScheduleWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AA10000E2FC91B21009FE64F /* Exceptions for "ScheduleWidget" folder in "ScheduleWidget" target */,
+			);
+			path = ScheduleWidget;
+			sourceTree = "<group>";
+		};
+		AA10000F2FC91B21009FE64F /* ScheduleWidgetShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ScheduleWidgetShared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -65,6 +88,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA1000042FC91B21009FE64F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -72,6 +102,8 @@
 			isa = PBXGroup;
 			children = (
 				DD17A5F12F9F4E500059AE67 /* reminder */,
+				AA1000062FC91B21009FE64F /* ScheduleWidget */,
+				AA10000F2FC91B21009FE64F /* ScheduleWidgetShared */,
 				DD3C1F7A2FD9037500B8AC17 /* Frameworks */,
 				DD17A5F02F9F4E500059AE67 /* Products */,
 			);
@@ -81,6 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				DD17A5EF2F9F4E500059AE67 /* Family Link.app */,
+				AA1000012FC91B21009FE64F /* ScheduleWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -103,14 +136,17 @@
 				DD17A5EB2F9F4E500059AE67 /* Sources */,
 				DD17A5EC2F9F4E500059AE67 /* Frameworks */,
 				DD17A5ED2F9F4E500059AE67 /* Resources */,
+				AA10000A2FC91B21009FE64F /* Embed Foundation Extensions */,
 				DDD16A122FC91B21009FE64F /* Upload Crashlytics dSYMs */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				AA10000C2FC91B21009FE64F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DD17A5F12F9F4E500059AE67 /* reminder */,
+				AA10000F2FC91B21009FE64F /* ScheduleWidgetShared */,
 			);
 			name = reminder;
 			packageProductDependencies = (
@@ -129,6 +165,27 @@
 			productReference = DD17A5EF2F9F4E500059AE67 /* Family Link.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AA1000022FC91B21009FE64F /* ScheduleWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA1000092FC91B21009FE64F /* Build configuration list for PBXNativeTarget "ScheduleWidget" */;
+			buildPhases = (
+				AA1000032FC91B21009FE64F /* Sources */,
+				AA1000042FC91B21009FE64F /* Frameworks */,
+				AA1000052FC91B21009FE64F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA1000062FC91B21009FE64F /* ScheduleWidget */,
+				AA10000F2FC91B21009FE64F /* ScheduleWidgetShared */,
+			);
+			name = ScheduleWidget;
+			productName = ScheduleWidget;
+			productReference = AA1000012FC91B21009FE64F /* ScheduleWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -140,6 +197,9 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					DD17A5EE2F9F4E500059AE67 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					AA1000022FC91B21009FE64F = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
@@ -173,6 +233,7 @@
 			projectRoot = "";
 			targets = (
 				DD17A5EE2F9F4E500059AE67 /* reminder */,
+				AA1000022FC91B21009FE64F /* ScheduleWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -185,7 +246,28 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA1000052FC91B21009FE64F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AA10000A2FC91B21009FE64F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AA10000B2FC91B21009FE64F /* ScheduleWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		DDD16A122FC91B21009FE64F /* Upload Crashlytics dSYMs */ = {
@@ -218,7 +300,32 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA1000032FC91B21009FE64F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		AA10000D2FC91B21009FE64F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DD17A5E72F9F4E500059AE67 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AA1000022FC91B21009FE64F;
+			remoteInfo = ScheduleWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		AA10000C2FC91B21009FE64F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AA1000022FC91B21009FE64F /* ScheduleWidget */;
+			targetProxy = AA10000D2FC91B21009FE64F /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		DD17A5FA2F9F4E500059AE67 /* Debug */ = {
@@ -416,6 +523,60 @@
 			};
 			name = Release;
 		};
+		AA1000072FC91B21009FE64F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidget/ScheduleWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 34878H47P6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.5.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder.schedulewidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA1000082FC91B21009FE64F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ScheduleWidget/ScheduleWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 34878H47P6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ScheduleWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.5.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder.schedulewidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -433,6 +594,15 @@
 			buildConfigurations = (
 				DD17A5FD2F9F4E500059AE67 /* Debug */,
 				DD17A5FE2F9F4E500059AE67 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AA1000092FC91B21009FE64F /* Build configuration list for PBXNativeTarget "ScheduleWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA1000072FC91B21009FE64F /* Debug */,
+				AA1000082FC91B21009FE64F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

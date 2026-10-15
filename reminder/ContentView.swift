@@ -28,6 +28,15 @@ struct ContentView: View {
         .animation(.easeInOut, value: biometricManager.isUnlocked)
         .animation(.easeInOut, value: appRouter.appState)
         .animation(.easeInOut, value: appRouter.selectedHouseholdId)
+        .onOpenURL { url in
+            guard let route = ScheduleWidgetLink.parse(url) else { return }
+            appRouter.pendingScheduleWidgetRoute = route
+        }
+        .onChange(of: appRouter.appState) { _, state in
+            if state == .unauthenticated {
+                ScheduleWidgetSnapshotStore.clear()
+            }
+        }
         .alert(L10n.Common.permissionChangeNotification, isPresented: newCreatorAlertBinding) {
             Button(L10n.Common.viewNow) {
                 appRouter.enterNewlyAssignedCreatorHousehold()
