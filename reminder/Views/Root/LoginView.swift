@@ -38,18 +38,23 @@ struct LoginView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 80)
-            brandSection
-            Spacer(minLength: 120)
-            actionSection
-            Spacer(minLength: 40)
-            if showsMoreLoginEntry {
-                moreEntry
+        GeometryReader { proxy in
+            let compactHeight = proxy.size.height < 700
+            VStack(spacing: 0) {
+                Spacer(minLength: compactHeight ? 36 : 80)
+                brandSection
+                Spacer(minLength: compactHeight ? 48 : 120)
+                actionSection
+                    .duoReadableContentWidth(420)
+                Spacer(minLength: compactHeight ? 24 : 40)
+                if showsMoreLoginEntry {
+                    moreEntry
+                }
+                Spacer(minLength: 16)
             }
-            Spacer(minLength: 16)
+            .padding(.horizontal, 24)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -59,6 +64,7 @@ struct LoginView: View {
             )
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
+            .duoReadableContentWidth(420)
         }
         .sheet(isPresented: $showTermsSheet) {
             if let url = SupportLegalLinks.termsOfService {

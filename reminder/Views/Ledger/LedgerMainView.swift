@@ -30,6 +30,7 @@ struct LedgerMainView: View {
                 }
             }
             .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .duoReadableContentWidth()
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

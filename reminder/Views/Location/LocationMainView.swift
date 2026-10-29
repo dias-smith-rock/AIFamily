@@ -73,53 +73,62 @@ struct LocationMainView: View {
     }
 
     private var mapChromeOverlay: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 0) {
-                liveModeToggleControl
-                Spacer(minLength: 0)
-                HStack(spacing: 10) {
-                    if liveManager.isLiveModeActive == false {
-                        mapRefreshControl
-                    }
-                    mapRecenterControl
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+        GeometryReader { geo in
+            let metrics = geo.duoLayoutMetrics(horizontalSizeClass: nil)
+            let chromePad = metrics.divisionAvoidanceInsets
+            // 摄像头等 occlusion：把顶栏控件推离遮挡区。
+            let occlusionTop = max(0, (metrics.occlusionFrame?.maxY ?? 0) - 8)
 
-            liveModeTopOverlay
-                .padding(.horizontal, 12)
-                .padding(.top, liveManager.showInactivityEndedNotice ? 8 : 0)
-
-            Spacer()
-
-            if liveManager.isLiveModeActive {
-                HStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                HStack(alignment: .center, spacing: 0) {
+                    liveModeToggleControl
                     Spacer(minLength: 0)
-                    liveSharingOverlay
+                    HStack(spacing: 10) {
+                        if liveManager.isLiveModeActive == false {
+                            mapRefreshControl
+                        }
+                        mapRecenterControl
+                    }
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-                .transition(.opacity.combined(with: .scale(scale: 0.92)))
-            } else {
-                HStack(alignment: .bottom) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if schoolBusTrip.isActive {
-                            schoolBusStatusControl
-                        } else {
-                            historyRangeControl
-                            if showsSchoolBusPreviewEntry, schoolBusCandidate != nil {
-                                schoolBusStartControl
+                .padding(.top, 12 + occlusionTop)
+
+                liveModeTopOverlay
+                    .padding(.horizontal, 12)
+                    .padding(.top, liveManager.showInactivityEndedNotice ? 8 : 0)
+
+                Spacer()
+
+                if liveManager.isLiveModeActive {
+                    HStack(alignment: .bottom) {
+                        Spacer(minLength: 0)
+                        liveSharingOverlay
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                } else {
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            if schoolBusTrip.isActive {
+                                schoolBusStatusControl
+                            } else {
+                                historyRangeControl
+                                if showsSchoolBusPreviewEntry, schoolBusCandidate != nil {
+                                    schoolBusStartControl
+                                }
                             }
                         }
+                        Spacer(minLength: 0)
+                        memberListOverlay
                     }
-                    Spacer(minLength: 0)
-                    memberListOverlay
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
                 }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-                .transition(.opacity.combined(with: .scale(scale: 0.92)))
             }
+            .duoCanvasChromePadding(extra: chromePad)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
     }
 

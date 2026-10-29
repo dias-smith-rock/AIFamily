@@ -14,6 +14,7 @@ private struct CreateTaskSheetRequest: Identifiable {
 /// 任务 / 日程主页：顶栏日历风格导航 + 多视图模式路由。
 struct TaskListView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
@@ -37,8 +38,39 @@ struct TaskListView: View {
     @State private var showsWeekBackToCurrentWeekButton = false
     @State private var weekBackToCurrentWeekTrigger = 0
     @State private var isShowingInviteSheet = false
+    @State private var containerSize: CGSize = .zero
+
+    private var usesSplitDetail: Bool {
+        DuoLayoutSupport.prefersSplitNavigation(
+            size: containerSize,
+            horizontalSizeClass: horizontalSizeClass
+        )
+    }
 
     var body: some View {
+        GeometryReader { proxy in
+            Group {
+                if usesSplitDetail {
+                    NavigationSplitView {
+                        schedulePrimaryNavigation(presentsDetailAsSheet: false)
+                    } detail: {
+                        scheduleDetailColumn
+                    }
+                } else {
+                    schedulePrimaryNavigation(presentsDetailAsSheet: true)
+                }
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+            .onAppear { containerSize = proxy.size }
+            .onChange(of: proxy.size) { _, newSize in
+                containerSize = newSize
+            }
+        }
+        .appLocaleEnvironment(using: appSettings)
+    }
+
+    @ViewBuilder
+    private func schedulePrimaryNavigation(presentsDetailAsSheet: Bool) -> some View {
         NavigationStack {
             ZStack {
                 mainContent
@@ -53,21 +85,17 @@ struct TaskListView: View {
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { scheduleToolbar }
-            .sheet(item: $taskForDetailSheet) { task in
-                NavigationStack {
-                    TaskDetailView(
-                        initialTask: task,
-                        currentUserRole: currentMembershipRole,
-                        assigneeDisplayName: assigneeLabel(for: task),
-                        scheduleViewModel: viewModel
-                    )
-                    .environmentObject(appRouter)
-                }
-                .environment(\.locale, appSettings.appLocale)
-                .environment(\.layoutDirection, appSettings.layoutDirection)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            }
+            .modifier(
+                ScheduleDetailSheetModifier(
+                    isEnabled: presentsDetailAsSheet,
+                    task: $taskForDetailSheet,
+                    currentMembershipRole: currentMembershipRole,
+                    assigneeLabel: assigneeLabel(for:),
+                    viewModel: viewModel,
+                    appRouter: appRouter,
+                    appSettings: appSettings
+                )
+            )
             .sheet(item: $createTaskSheetRequest) { request in
                 EditTaskView(
                     formMode: .scheduled,
@@ -86,6 +114,7 @@ struct TaskListView: View {
                 )
                 .environmentObject(appRouter)
                 .presentationDetents([.large])
+                .duoReadableContentWidth()
             }
             .sheet(isPresented: $isShowingInviteSheet) {
                 InviteMemberView(
@@ -303,7 +332,32 @@ struct TaskListView: View {
                 openPendingScheduledTaskIfNeeded()
             }
         }
-        .appLocaleEnvironment(using: appSettings)
+    }
+
+    @ViewBuilder
+    private var scheduleDetailColumn: some View {
+        if let task = taskForDetailSheet {
+            NavigationStack {
+                TaskDetailView(
+                    initialTask: task,
+                    currentUserRole: currentMembershipRole,
+                    assigneeDisplayName: assigneeLabel(for: task),
+                    scheduleViewModel: viewModel
+                )
+                .environmentObject(appRouter)
+                .id(task.id)
+            }
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
+        } else {
+            ContentUnavailableView {
+                Label(L10n.Schedule.schedule.localized, systemImage: "calendar")
+            } description: {
+                Text(L10n.Common.select.localized)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        }
     }
 
     private var mainContent: some View {
@@ -682,6 +736,48 @@ struct TaskListView: View {
         #else
         currentMembershipRole = .member
         #endif
+    }
+}
+
+// MARK: - Detail presentation (sheet vs split column)
+
+private struct ScheduleDetailSheetModifier: ViewModifier {
+    let isEnabled: Bool
+    @Binding var task: FamilyTask?
+    let currentMembershipRole: MembershipRole
+    let assigneeLabel: (FamilyTask) -> String
+    @ObservedObject var viewModel: ScheduleViewModel
+    @ObservedObject var appRouter: AppRouter
+    @ObservedObject var appSettings: AppSettingsManager
+
+    func body(content: Content) -> some View {
+        content.sheet(item: sheetBinding) { presented in
+            NavigationStack {
+                TaskDetailView(
+                    initialTask: presented,
+                    currentUserRole: currentMembershipRole,
+                    assigneeDisplayName: assigneeLabel(presented),
+                    scheduleViewModel: viewModel
+                )
+                .environmentObject(appRouter)
+            }
+            .environment(\.locale, appSettings.appLocale)
+            .environment(\.layoutDirection, appSettings.layoutDirection)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .duoReadableContentWidth()
+        }
+    }
+
+    private var sheetBinding: Binding<FamilyTask?> {
+        Binding(
+            get: { isEnabled ? task : nil },
+            set: { newValue in
+                if isEnabled {
+                    task = newValue
+                }
+            }
+        )
     }
 }
 

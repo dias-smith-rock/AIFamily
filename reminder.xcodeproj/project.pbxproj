@@ -338,7 +338,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ScheduleWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -365,7 +365,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ScheduleWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -517,12 +517,19 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = reminder/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Family Link needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Family Link needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Family Link needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Family Link uses Face ID to protect your private group schedules and tasks.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to show your approximate location and members on the map, and record locations when completing tasks.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Used to save task attachment images to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -553,12 +560,19 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = reminder/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Family Link";
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Family Link needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Family Link needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Family Link needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Family Link uses Face ID to protect your private group schedules and tasks.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to show your approximate location and members on the map, and record locations when completing tasks.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Used to save task attachment images to your photo library.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -630,7 +644,7 @@
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 12.14.0;
+				minimumVersion = 12.19.3;
 			};
 		};
 		DDE1RC032FC91B21009FE64F /* XCRemoteSwiftPackageReference "purchases-ios" */ = {

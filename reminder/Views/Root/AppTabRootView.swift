@@ -4,6 +4,7 @@ struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: Tab = .todos
     @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
     @State private var showAnonymousBindPrompt = false
@@ -11,6 +12,8 @@ struct AppTabRootView: View {
     /// 冷启动只解析一次默认 Tab，避免覆盖用户手动切换或深链路由。
     @State private var didApplyPreferredLandingTab = false
     @State private var isResolvingPreferredLandingTab = false
+    /// 跟当前窗口尺寸走，供侧栏 Tab / 宽屏 chrome 判断（勿用 UIScreen）。
+    @State private var rootViewportSize: CGSize = .zero
 
     enum Tab: Hashable {
         case schedule
@@ -165,7 +168,15 @@ struct AppTabRootView: View {
         .id(appSettings.selectedLanguage.id)
     }
 
+    private var prefersExpandedChrome: Bool {
+        DuoLayoutSupport.prefersExpandedLayout(
+            size: rootViewportSize,
+            horizontalSizeClass: horizontalSizeClass
+        )
+    }
+
     private var fullTabView: some View {
+        // iOS 27.1 + Duo：系统可将 Tab 呈竖直侧栏；内容依赖 safeAreaInsets，勿按底栏高度硬编码。
         TabView(selection: $selectedTab) {
             ScheduleMainView()
                 .tabItem {
@@ -196,6 +207,12 @@ struct AppTabRootView: View {
                     Label(Tab.settings.titleKey, systemImage: Tab.settings.systemImage)
                 }
                 .tag(Tab.settings)
+        }
+        .environment(\.duoPrefersExpandedChrome, prefersExpandedChrome)
+        .onGeometryChange(for: CGSize.self) { proxy in
+            proxy.size
+        } action: { _, newSize in
+            rootViewportSize = newSize
         }
     }
 

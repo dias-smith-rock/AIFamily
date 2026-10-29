@@ -10,6 +10,7 @@ private struct WeekPageBundle {
 struct TaskWeekGridView: View {
     @Environment(\.locale) private var locale
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var appSettings: AppSettingsManager
 
     @ObservedObject var viewModel: ScheduleViewModel
@@ -36,6 +37,7 @@ struct TaskWeekGridView: View {
     @State private var isAdjacentWeekPagesReady = false
     @State private var firstPaintExpansionTask: Task<Void, Never>?
     @State private var pendingTimelineScrollMode: WeekTimelineScrollMode?
+    @State private var divisionAvoidanceInsets = EdgeInsets()
 
     private let horizontalPadding: CGFloat = 16
 
@@ -72,6 +74,20 @@ struct TaskWeekGridView: View {
             }
         }
         .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        // 侧栏 Tab / Duo 折痕：列宽跟 GeometryReader 走，额外避让 chrome 与 division。
+        .duoCanvasChromePadding(extra: divisionAvoidanceInsets)
+        .background {
+            GeometryReader { geo in
+                let metrics = geo.duoLayoutMetrics(horizontalSizeClass: horizontalSizeClass)
+                Color.clear
+                    .onAppear { divisionAvoidanceInsets = metrics.divisionAvoidanceInsets }
+                    .onChange(of: geo.size) { _, _ in
+                        divisionAvoidanceInsets = geo.duoLayoutMetrics(
+                            horizontalSizeClass: horizontalSizeClass
+                        ).divisionAvoidanceInsets
+                    }
+            }
+        }
         .onAppear {
             WeekViewPerformanceTracer.mark(
                 "taskWeekGridView.onAppear",

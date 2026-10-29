@@ -259,6 +259,7 @@ struct TodoListView: View {
         .environment(\.layoutDirection, appSettings.layoutDirection)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .duoReadableContentWidth()
     }
 
     private var createFlexibleSheet: some View {
@@ -277,6 +278,7 @@ struct TodoListView: View {
         .id(createTaskFormInstanceID)
         .environmentObject(appRouter)
         .presentationDetents([.large])
+        .duoReadableContentWidth()
     }
 
     private func editFlexibleSheet(task: FamilyTask) -> some View {
@@ -298,6 +300,7 @@ struct TodoListView: View {
         .environment(\.layoutDirection, appSettings.layoutDirection)
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+        .duoReadableContentWidth()
     }
 
     // MARK: - Notification deep link

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsMainView: View {
     @Environment(\.locale) private var locale
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
@@ -25,11 +26,19 @@ struct SettingsMainView: View {
     @State private var showPrivacySheet = false
     @State private var showClearGuestDataAlert = false
     @State private var isClearingGuestData = false
+    @State private var containerSize: CGSize = .zero
     #if DEBUG
     @State private var isSeedingMockData = false
     @State private var mockSeedResultMessage: String?
     @State private var mockSeedErrorMessage: String?
     #endif
+
+    private var usesSplitDetail: Bool {
+        DuoLayoutSupport.prefersSplitNavigation(
+            size: containerSize,
+            horizontalSizeClass: horizontalSizeClass
+        )
+    }
 
     var body: some View {
         settingsNavigationWithLifecycle
@@ -103,43 +112,25 @@ struct SettingsMainView: View {
     }
 
     private var settingsNavigationWithLifecycle: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                GlobalHeaderView(
-                    leading: {
-                        Text(L10n.Common.settingsTab.localized)
-                            .font(.title2.weight(.bold))
-                            .foregroundStyle(.primary)
-                    },
-                    trailing: {
-                        if familyViewModel.canLeaveCurrentHousehold && isMemberRole {
-                            Button {
-                                familyViewModel.requestToLeave()
-                            } label: {
-                                if familyViewModel.isLeaving {
-                                    ProgressView()
-                                        .tint(.blue)
-                                        .scaleEffect(0.85)
-                                        .frame(width: 24, height: 24)
-                                } else {
-                                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                                        .font(.body.weight(.semibold))
-                                }
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(familyViewModel.isLeaving)
-                            .accessibilityLabel(AppLocalized.string(L10n.Family.leaveGroup, locale: locale))
-                        } else {
-                            EmptyView()
-                        }
+        Group {
+            if usesSplitDetail {
+                NavigationSplitView {
+                    NavigationStack {
+                        settingsPrimaryColumn
                     }
-                )
-
-                settingsListBody
-                    .background(Color(.systemGroupedBackground))
+                } detail: {
+                    settingsSplitDetailPlaceholder
+                }
+            } else {
+                NavigationStack {
+                    settingsPrimaryColumn
+                }
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationBarHidden(true)
+        }
+        .onGeometryChange(for: CGSize.self) { proxy in
+            proxy.size
+        } action: { _, newSize in
+            containerSize = newSize
         }
         .environment(\.locale, appSettings.appLocale)
         .task {
@@ -385,6 +376,56 @@ struct SettingsMainView: View {
                 }
             }
         )
+    }
+
+    private var settingsPrimaryColumn: some View {
+        VStack(spacing: 0) {
+            GlobalHeaderView(
+                leading: {
+                    Text(L10n.Common.settingsTab.localized)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                },
+                trailing: {
+                    if familyViewModel.canLeaveCurrentHousehold && isMemberRole {
+                        Button {
+                            familyViewModel.requestToLeave()
+                        } label: {
+                            if familyViewModel.isLeaving {
+                                ProgressView()
+                                    .tint(.blue)
+                                    .scaleEffect(0.85)
+                                    .frame(width: 24, height: 24)
+                            } else {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                    .font(.body.weight(.semibold))
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(familyViewModel.isLeaving)
+                        .accessibilityLabel(AppLocalized.string(L10n.Family.leaveGroup, locale: locale))
+                    } else {
+                        EmptyView()
+                    }
+                }
+            )
+
+            settingsListBody
+                .background(Color(.systemGroupedBackground))
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationBarHidden(true)
+        .modifier(SettingsReadableWidthIfNeeded(enabled: usesSplitDetail == false))
+    }
+
+    private var settingsSplitDetailPlaceholder: some View {
+        ContentUnavailableView {
+            Label(L10n.Common.settingsTab.localized, systemImage: "gearshape.2")
+        } description: {
+            Text(L10n.Common.select.localized)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground).ignoresSafeArea())
     }
 
     private var settingsListBody: some View {
@@ -675,6 +716,18 @@ struct SettingsMainView: View {
         }
         familyViewModel.clearRequiresLogin()
         await appRouter.refreshStateFromBackend()
+    }
+}
+
+private struct SettingsReadableWidthIfNeeded: ViewModifier {
+    let enabled: Bool
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.duoReadableContentWidth()
+        } else {
+            content
+        }
     }
 }
 

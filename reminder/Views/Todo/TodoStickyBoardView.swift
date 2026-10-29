@@ -35,9 +35,13 @@ struct TodoStickyBoardView: View {
     @State private var boardOffset: CGSize = .zero
     @State private var boardPanAnchor: CGSize?
     @State private var viewportSize: CGSize = .zero
+    /// Duo 折痕（视口坐标）；无 SDK / 无折痕时为 `nil`。
+    @State private var divisionFrame: CGRect?
     @State private var trashFrameGlobal: CGRect = .zero
     @State private var shelfFrameGlobal: CGRect = .zero
     @State private var activeDropTarget: StickyDropTarget?
+    /// 浮起便签的视口缩放。悬停垃圾桶/书架时收到与落点相同的大小，离开后回到拖起尺寸。
+    @State private var liftScale: CGFloat = 1
     /// 拖到角落后浮在 bin 之上的便签会话（确认删除 / 完成消失 / 取消回位）。
     @State private var liftSession: NoteLiftSession?
     @State private var showStickyDeleteConfirm = false
@@ -108,6 +112,9 @@ struct TodoStickyBoardView: View {
         GeometryReader { geo in
             let viewport = geo.size
 
+            let metrics = geo.duoLayoutMetrics(horizontalSizeClass: nil)
+            let divisionInsets = metrics.divisionAvoidanceInsets
+
             ZStack {
                 // 与白板同色，避免边缘露灰底
                 AppTheme.ColorToken.surface.ignoresSafeArea(edges: .bottom)
@@ -131,6 +138,8 @@ struct TodoStickyBoardView: View {
 
                 cornerBinsOverlay
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    // 侧栏 Tab / 刘海安全区：避免 bin 压到系统 chrome。
+                    .duoCanvasChromePadding(extra: divisionInsets)
                     .zIndex(10_000)
 
                 if canFlipBoard {
@@ -166,18 +175,35 @@ struct TodoStickyBoardView: View {
             }
             .onAppear {
                 viewportSize = viewport
+                divisionFrame = metrics.divisionFrame
                 loadPositions()
                 syncBoardSideAvailability()
                 ensurePositions(for: displayedTasks, viewport: viewport)
                 expandBoardIfNeeded(viewport: viewport)
                 performInitialFitIfNeeded(in: viewport)
             }
-            .onChange(of: viewport) { _, newViewport in
+            .onChange(of: viewport) { oldViewport, newViewport in
+                let previous = viewportSize.width > 1 ? viewportSize : oldViewport
                 viewportSize = newViewport
+                divisionFrame = geo.duoDivisionFrame
                 expandBoardIfNeeded(viewport: newViewport)
-                boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: newViewport)
                 // 首帧 Geometry 可能为 0，等视口有效后再做唯一一次自动适配。
                 performInitialFitIfNeeded(in: newViewport)
+                // Duo 开合 / 窗口缩放：保留用户缩放，仅重新夹紧并尽量让内容回到视野。
+                if didPerformInitialFit, previous.width > 1, previous.height > 1,
+                   newViewport.width > 1, newViewport.height > 1 {
+                    let oldAspect = previous.width / previous.height
+                    let newAspect = newViewport.width / newViewport.height
+                    if abs(oldAspect - newAspect) > 0.12
+                        || abs(previous.width - newViewport.width) > 80
+                        || abs(previous.height - newViewport.height) > 80 {
+                        boardOffset = contentCenteringOffset(scale: scale, viewport: newViewport)
+                    } else {
+                        boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: newViewport)
+                    }
+                } else {
+                    boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: newViewport)
+                }
             }
             .onChange(of: nearTasks.map(\.id)) { _, _ in
                 syncBoardSideAvailability()
@@ -355,8 +381,6 @@ struct TodoStickyBoardView: View {
     private func liftedStickyNote(for session: NoteLiftSession) -> some View {
         let task = session.task
         let look = StickyNoteLook.stable(for: task.id, theme: task.cardThemeAccentColor)
-        let hover = activeDropTarget != nil && session.phase == .dragging
-        let base: CGFloat = hover ? 0.92 : 1.08
         return TodoStickyNoteCard(
             look: look,
             title: displayTitle(task),
@@ -369,8 +393,37 @@ struct TodoStickyBoardView: View {
             onOpen: {}
         )
         .frame(width: noteSize.width, height: noteSize.height)
-        .scaleEffect(base * scale * session.shrink)
-        .shadow(color: .black.opacity(0.28 * session.opacity), radius: 14 * session.shrink, y: 6 * session.shrink)
+        .scaleEffect(liftScale * session.shrink)
+        .shadow(
+            color: .black.opacity(0.28 * session.opacity),
+            radius: 14 * session.shrink * liftShadowFactor,
+            y: 6 * session.shrink * liftShadowFactor
+        )
+        .animation(.spring(response: 0.32, dampingFraction: 0.72), value: liftScale)
+    }
+
+    /// 拖起时略放大，并跟上白板缩放，使浮起便签与板上视觉大小一致。
+    private var draggingLiftScale: CGFloat {
+        1.08 * max(scale, 0.01)
+    }
+
+    /// 缩进落点后阴影按同样比例收小，避免小卡片拖着一大圈影子。
+    private var liftShadowFactor: CGFloat {
+        min(liftScale / draggingLiftScale, 1)
+    }
+
+    /// 把便签外框收进垃圾桶或书架的实测尺寸（保持比例，只缩小不放大）。
+    private func dropTargetFitScale(for target: StickyDropTarget) -> CGFloat {
+        let frame: CGRect
+        switch target {
+        case .trash:
+            frame = trashFrameGlobal
+        case .shelf:
+            frame = shelfFrameGlobal
+        }
+        guard frame.width > 1, frame.height > 1 else { return draggingLiftScale }
+        let fit = min(frame.width / noteSize.width, frame.height / noteSize.height)
+        return min(max(fit, 0.18), draggingLiftScale)
     }
 
     private func dropHoverScale(for id: UUID) -> CGFloat {
@@ -403,6 +456,7 @@ struct TodoStickyBoardView: View {
                     let home = positions[task.id] ?? resolvedPosition(for: task, viewport: viewportSize)
                     draggingID = task.id
                     dragStartBoardPosition = home
+                    liftScale = draggingLiftScale
                     liftSession = NoteLiftSession(
                         task: task,
                         boardPoint: home,
@@ -434,12 +488,12 @@ struct TodoStickyBoardView: View {
             .onEnded { _ in
                 let target = activeDropTarget
                 let draggedID = draggingID
-                activeDropTarget = nil
 
                 guard let draggedID, draggedID == task.id else { return }
                 guard liftSession?.task.id == task.id else {
                     draggingID = nil
                     dragStartBoardPosition = nil
+                    activeDropTarget = nil
                     return
                 }
 
@@ -460,6 +514,7 @@ struct TodoStickyBoardView: View {
                     draggingID = nil
                     dragStartBoardPosition = nil
                     liftSession = nil
+                    activeDropTarget = nil
                     savePositions()
                     expandBoardIfNeeded(viewport: viewportSize)
                     boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
@@ -480,6 +535,7 @@ struct TodoStickyBoardView: View {
 
     private func beginFadeOutThenComplete(_ task: FamilyTask) {
         guard var session = liftSession, session.task.id == task.id else {
+            activeDropTarget = nil
             onDropComplete(task)
             return
         }
@@ -489,6 +545,7 @@ struct TodoStickyBoardView: View {
             positions.removeValue(forKey: task.id)
             savePositions()
             liftSession = nil
+            activeDropTarget = nil
             onDropComplete(task)
         }
     }
@@ -496,6 +553,7 @@ struct TodoStickyBoardView: View {
     private func confirmStickyDelete() {
         guard var session = liftSession, session.phase == .awaitingDeleteConfirm else {
             liftSession = nil
+            activeDropTarget = nil
             return
         }
         let task = session.task
@@ -505,6 +563,7 @@ struct TodoStickyBoardView: View {
             positions.removeValue(forKey: task.id)
             savePositions()
             liftSession = nil
+            activeDropTarget = nil
             onDropDelete(task)
         }
     }
@@ -521,6 +580,7 @@ struct TodoStickyBoardView: View {
     private func cancelStickyDelete() {
         guard var session = liftSession, session.phase == .awaitingDeleteConfirm else {
             liftSession = nil
+            activeDropTarget = nil
             return
         }
         let home = session.homeBoardPoint
@@ -529,6 +589,8 @@ struct TodoStickyBoardView: View {
         session.boardPoint = home
         withAnimation(.easeInOut(duration: dropReturnDuration)) {
             liftSession = session
+            liftScale = draggingLiftScale
+            activeDropTarget = nil
         }
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(dropReturnDuration * 1_000_000_000))
@@ -561,13 +623,16 @@ struct TodoStickyBoardView: View {
         } else {
             next = nil
         }
-        if next != activeDropTarget {
+        guard next != activeDropTarget else { return }
+        let nextScale = next.map { dropTargetFitScale(for: $0) } ?? draggingLiftScale
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
             activeDropTarget = next
-            if next != nil {
-                #if canImport(UIKit)
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                #endif
-            }
+            liftScale = nextScale
+        }
+        if next != nil {
+            #if canImport(UIKit)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            #endif
         }
     }
 
@@ -746,11 +811,17 @@ struct TodoStickyBoardView: View {
         guard vp.width > 1, vp.height > 1 else {
             return CGPoint(x: boardSize.width / 2, y: boardSize.height / 2)
         }
+        // Duo 半开：优先落到折痕更大的半区中心，避免便签压在 division 上。
+        let focusViewport = DuoLayoutSupport.largerHalfRect(
+            in: CGRect(origin: .zero, size: vp),
+            avoiding: divisionFrame
+        )
+        let focus = CGPoint(x: focusViewport.midX, y: focusViewport.midY)
         let safeScale = max(scale, 0.01)
         return clampPoint(
             CGPoint(
-                x: boardSize.width / 2 - boardOffset.width / safeScale,
-                y: boardSize.height / 2 - boardOffset.height / safeScale
+                x: (focus.x - vp.width / 2) / safeScale + boardSize.width / 2 - boardOffset.width / safeScale,
+                y: (focus.y - vp.height / 2) / safeScale + boardSize.height / 2 - boardOffset.height / safeScale
             )
         )
     }
