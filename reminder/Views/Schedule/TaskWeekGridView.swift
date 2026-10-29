@@ -26,6 +26,9 @@ struct TaskWeekGridView: View {
     @State private var weekOffset: Int = 0
     /// 三页窗口：0 上一周 / 1 当前周 / 2 下一周。
     @State private var pagerSlot: Int = ScheduleWeekCalendar.pagerCenterSlot
+    /// 程序化回中中：忽略 TabView selection 回写触发的 `onChange`，避免双驱动打架。
+    @State private var isRecenteringPager = false
+    @State private var pagerRecenterTask: Task<Void, Never>?
     @State private var gridColumnWidth: CGFloat = 0
     /// A：首帧后再挂载当前周 1440pt 时间网格。
     @State private var isCurrentWeekTimelineReady = false
@@ -86,6 +89,9 @@ struct TaskWeekGridView: View {
         .onDisappear {
             firstPaintExpansionTask?.cancel()
             firstPaintExpansionTask = nil
+            pagerRecenterTask?.cancel()
+            pagerRecenterTask = nil
+            isRecenteringPager = false
             showsBackToCurrentWeekButton = false
         }
         .onChange(of: weekOffset) { oldOffset, newOffset in
@@ -119,7 +125,8 @@ struct TaskWeekGridView: View {
 
     // MARK: - Week pager
 
-    /// 三页窗口侧滑：首帧仅当前周（周头 + 全天条 + 网格占位），次帧再展开邻周与完整网格。
+    /// 单 `TabView` 三页窗口：周头与网格同页侧滑，避免双 TabView 抢 selection。
+    /// 首帧仅当前周（周头 + 全天条 + 网格占位），次帧再展开邻周与完整网格。
     private var weekPager: some View {
         let currentBundle = weekPageBundle(offset: weekOffset)
         let previousBundle = isAdjacentWeekPagesReady
@@ -129,83 +136,28 @@ struct TaskWeekGridView: View {
             ? weekPageBundle(offset: weekOffset + 1)
             : nil
 
-        return VStack(alignment: .leading, spacing: 10) {
-            ScheduleWeekDayStripChrome {
-                weekHeaderSection(
-                    previous: previousBundle,
-                    current: currentBundle,
-                    next: nextBundle
-                )
+        return TabView(selection: $pagerSlot) {
+            if let previousBundle {
+                weekPage(bundle: previousBundle, slot: 0)
+            } else {
+                weekPagerPlaceholderPage(slot: 0)
             }
 
-            weekBodySection(
-                previous: previousBundle,
-                current: currentBundle,
-                next: nextBundle
-            )
+            weekPage(bundle: currentBundle, slot: ScheduleWeekCalendar.pagerCenterSlot)
+
+            if let nextBundle {
+                weekPage(bundle: nextBundle, slot: 2)
+            } else {
+                weekPagerPlaceholderPage(slot: 2)
+            }
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .allowsHitTesting(isAdjacentWeekPagesReady && isRecenteringPager == false)
         .onAppear {
             WeekViewPerformanceTracer.mark("weekPager.onAppear")
             scheduleFirstPaintExpansion()
         }
-    }
-
-    private func weekHeaderSection(
-        previous: WeekPageBundle?,
-        current: WeekPageBundle,
-        next: WeekPageBundle?
-    ) -> some View {
-        TabView(selection: $pagerSlot) {
-            if let previous {
-                weekHeaderPage(bundle: previous, slot: 0)
-            } else {
-                weekPagerPlaceholderPage(slot: 0)
-            }
-
-            weekHeaderPage(bundle: current, slot: ScheduleWeekCalendar.pagerCenterSlot)
-
-            if let next {
-                weekHeaderPage(bundle: next, slot: 2)
-            } else {
-                weekPagerPlaceholderPage(slot: 2)
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .allowsHitTesting(isAdjacentWeekPagesReady)
-    }
-
-    private func weekHeaderPage(bundle: WeekPageBundle, slot: Int) -> some View {
-        weekHeaderRow(days: bundle.days, weekTasks: bundle.tasks)
-            .tag(slot)
-            .onAppear {
-                WeekViewPerformanceTracer.recordWeekHeaderPageAppear(offset: bundle.offset)
-            }
-    }
-
-    private func weekBodySection(
-        previous: WeekPageBundle?,
-        current: WeekPageBundle,
-        next: WeekPageBundle?
-    ) -> some View {
-        TabView(selection: $pagerSlot) {
-            if let previous {
-                weekBody(bundle: previous, slot: 0)
-            } else {
-                weekPagerPlaceholderPage(slot: 0)
-            }
-
-            weekBody(bundle: current, slot: ScheduleWeekCalendar.pagerCenterSlot)
-
-            if let next {
-                weekBody(bundle: next, slot: 2)
-            } else {
-                weekPagerPlaceholderPage(slot: 2)
-            }
-        }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .allowsHitTesting(isAdjacentWeekPagesReady)
     }
 
     private func weekPagerPlaceholderPage(slot: Int) -> some View {
@@ -214,7 +166,8 @@ struct TaskWeekGridView: View {
             .tag(slot)
     }
 
-    private func weekBody(bundle: WeekPageBundle, slot: Int) -> some View {
+    /// 单页完整内容：周头 + 全天条 + 时间网格（与侧滑同源）。
+    private func weekPage(bundle: WeekPageBundle, slot: Int) -> some View {
         let days = bundle.days
         let weekTasks = bundle.tasks
         let offset = bundle.offset
@@ -222,6 +175,13 @@ struct TaskWeekGridView: View {
         let shouldShowTimeline = isCenterPage == false || isCurrentWeekTimelineReady
 
         return VStack(alignment: .leading, spacing: 10) {
+            ScheduleWeekDayStripChrome {
+                weekHeaderRow(days: days, weekTasks: weekTasks)
+                    .onAppear {
+                        WeekViewPerformanceTracer.recordWeekHeaderPageAppear(offset: offset)
+                    }
+            }
+
             if hasAllDayTasks(in: weekTasks, days: days) {
                 allDayStrip(days: days, weekTasks: weekTasks)
                     .padding(.horizontal, horizontalPadding)
@@ -331,22 +291,24 @@ struct TaskWeekGridView: View {
     }
 
     private func handlePagerSlotChange(from oldSlot: Int, to newSlot: Int) {
+        guard isRecenteringPager == false else { return }
         guard oldSlot != newSlot else { return }
         ensureFirstPaintExpanded()
+
+        let weekDelta: Int
         switch newSlot {
         case 0:
-            WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "tabViewSwipe")
-            pendingTimelineScrollMode = .earliestTask
-            shiftDisplayedWeek(by: -1)
-            recenterPagerSlot()
+            weekDelta = -1
         case 2:
-            WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "tabViewSwipe")
-            pendingTimelineScrollMode = .earliestTask
-            shiftDisplayedWeek(by: 1)
-            recenterPagerSlot()
+            weekDelta = 1
         default:
-            break
+            return
         }
+
+        WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "tabViewSwipe")
+        pendingTimelineScrollMode = .earliestTask
+        // 同一无动画事务内：换周 + 回中，避免手势动画未结束时双驱动打架。
+        commitWeekSwipe(delta: weekDelta)
     }
 
     private func shiftDisplayedWeek(by weeks: Int) {
@@ -358,6 +320,18 @@ struct TaskWeekGridView: View {
         }
     }
 
+    /// 侧滑换周后的原子提交：`weekOffset`/`selectedDate` 与 `pagerSlot` 回中同事务。
+    private func commitWeekSwipe(delta: Int) {
+        isRecenteringPager = true
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            shiftDisplayedWeek(by: delta)
+            pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
+        }
+        scheduleClearPagerRecenterFlag()
+    }
+
     private func applyWeekOffset(_ target: Int, animated: Bool) {
         ensureFirstPaintExpanded()
         if target != weekOffset {
@@ -367,6 +341,7 @@ struct TaskWeekGridView: View {
             weekOffset = target
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
         }
+        isRecenteringPager = true
         if animated {
             withAnimation(.easeInOut(duration: 0.25)) {
                 updates()
@@ -378,14 +353,17 @@ struct TaskWeekGridView: View {
                 updates()
             }
         }
+        scheduleClearPagerRecenterFlag()
     }
 
-    private func recenterPagerSlot() {
-        guard pagerSlot != ScheduleWeekCalendar.pagerCenterSlot else { return }
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
+    private func scheduleClearPagerRecenterFlag() {
+        pagerRecenterTask?.cancel()
+        pagerRecenterTask = Task { @MainActor in
+            // 等 TabView 消化程序化 selection，再恢复手势，避免回写 onChange 重入。
+            await Task.yield()
+            await Task.yield()
+            guard Task.isCancelled == false else { return }
+            isRecenteringPager = false
         }
     }
 
@@ -493,11 +471,13 @@ struct TaskWeekGridView: View {
         let targetOffset = ScheduleWeekCalendar.weekOffset(for: today, epochStart: weekEpochStart)
         WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "jumpToCurrentWeek")
         pendingTimelineScrollMode = .currentTime
+        isRecenteringPager = true
         withAnimation(.easeInOut(duration: 0.25)) {
             weekOffset = targetOffset
             selectedDate = today
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
         }
+        scheduleClearPagerRecenterFlag()
     }
 
     // MARK: - Task filtering
