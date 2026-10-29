@@ -41,8 +41,11 @@ struct TodoStickyBoardView: View {
     /// 拖到角落后浮在 bin 之上的便签会话（确认删除 / 完成消失 / 取消回位）。
     @State private var liftSession: NoteLiftSession?
     @State private var showStickyDeleteConfirm = false
+    /// 松手回板后触发图钉钉入动画的便签 id。
+    @State private var pinInsertingID: UUID?
     /// 仅首次进入便签模式时自动适配缩放，之后由用户手势控制。
     @State private var didPerformInitialFit = false
+    private let pinInsertDuration: TimeInterval = 0.2
     /// 白板绕 Y 轴累计旋转角；每 +180° 翻一面。
     @State private var boardFlipDegrees: Double = 0
     @State private var isBoardFlipping = false
@@ -326,7 +329,8 @@ struct TodoStickyBoardView: View {
             detailLines: Array(detailLines(task).prefix(2)),
             avatars: forWhomAvatars(task),
             hasAttachments: hasAttachments(task),
-            isDragging: dragging,
+            isDragging: dragging || lifted,
+            isPinInserting: pinInsertingID == task.id,
             onActivate: { bringToFront(task.id) },
             onOpen: {
                 bringToFront(task.id)
@@ -360,6 +364,7 @@ struct TodoStickyBoardView: View {
             avatars: forWhomAvatars(task),
             hasAttachments: hasAttachments(task),
             isDragging: true,
+            isPinInserting: false,
             onActivate: {},
             onOpen: {}
         )
@@ -458,8 +463,19 @@ struct TodoStickyBoardView: View {
                     savePositions()
                     expandBoardIfNeeded(viewport: viewportSize)
                     boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
+                    playPinInsertAnimation(for: task.id)
                 }
             }
+    }
+
+    private func playPinInsertAnimation(for id: UUID) {
+        pinInsertingID = id
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(pinInsertDuration * 1_000_000_000))
+            if pinInsertingID == id {
+                pinInsertingID = nil
+            }
+        }
     }
 
     private func beginFadeOutThenComplete(_ task: FamilyTask) {
@@ -519,6 +535,7 @@ struct TodoStickyBoardView: View {
             positions[taskID] = home
             savePositions()
             liftSession = nil
+            playPinInsertAnimation(for: taskID)
         }
     }
 
@@ -1020,16 +1037,20 @@ private struct StickyNoteLook {
     let rotationDegrees: Double
     let jitter: CGPoint
 
-    /// 便签纸颜色贴近当前 group 主题色，不再使用彩虹随机色。
+    /// 纸面贴近 group 主题色；图钉颜色按任务 ID 稳定随机。
     static func stable(for id: UUID, theme: Color) -> StickyNoteLook {
         let seed = id.uuidString.utf8.reduce(0) { $0 &* 31 &+ Int($1) }
         let styles = StickyNoteCurlStyle.allCases
         // 浅透明主题色：保持色系一致，避免纸面过深影响文字。
         let strengths: [Double] = [0.18, 0.22, 0.26, 0.30, 0.20, 0.24]
         let strength = strengths[abs(seed) % strengths.count]
+        let pinPalette: [Color] = [
+            .red, .orange, .yellow, .green, .mint, .teal,
+            .cyan, .blue, .indigo, .purple, .pink, .brown
+        ]
         return StickyNoteLook(
             paper: theme.opacity(strength),
-            pin: theme,
+            pin: pinPalette[abs(seed / 7) % pinPalette.count],
             curlStyle: styles[abs(seed / 41) % styles.count],
             rotationDegrees: Double((abs(seed / 11) % 11) - 5) * 0.85,
             jitter: CGPoint(
@@ -1058,8 +1079,12 @@ private struct TodoStickyNoteCard: View {
     let avatars: [TaskCardAvatarSource]
     var hasAttachments: Bool = false
     let isDragging: Bool
+    var isPinInserting: Bool = false
     let onActivate: () -> Void
     let onOpen: () -> Void
+
+    /// `false` = 悬在纸面上方（钉入起点）；`true` = 已钉入。
+    @State private var pinPlanted = true
 
     private var curlSize: CGFloat { look.curlSize }
     private var curlCorner: StickyNoteCurlCorner {
@@ -1117,7 +1142,9 @@ private struct TodoStickyNoteCard: View {
             .clipShape(StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift))
 
             StickyBoardPushPin(color: look.pin)
-                .offset(y: -11)
+                .opacity(isDragging ? 0 : 1)
+                .offset(y: pinPlanted ? -8 : -18)
+                .scaleEffect(pinPlanted ? 1 : 1.28)
                 .allowsHitTesting(false)
         }
         .shadow(
@@ -1130,6 +1157,18 @@ private struct TodoStickyNoteCard: View {
         .onTapGesture {
             onActivate()
             onOpen()
+        }
+        .onChange(of: isDragging) { _, dragging in
+            if dragging {
+                pinPlanted = false
+            }
+        }
+        .onChange(of: isPinInserting) { _, inserting in
+            guard inserting else { return }
+            pinPlanted = false
+            withAnimation(.easeIn(duration: 0.2)) {
+                pinPlanted = true
+            }
         }
     }
 
@@ -1370,9 +1409,9 @@ private struct StickyBoardPushPin: View {
             // 针脚投在纸面上的阴影
             Ellipse()
                 .fill(Color.black.opacity(0.28))
-                .frame(width: 14, height: 5)
-                .blur(radius: 0.8)
-                .offset(x: 2, y: 11)
+                .frame(width: 9, height: 3.5)
+                .blur(radius: 0.6)
+                .offset(x: 1.2, y: 7.5)
 
             // 金属针
             Capsule()
@@ -1383,15 +1422,15 @@ private struct StickyBoardPushPin: View {
                         endPoint: .bottom
                     )
                 )
-                .frame(width: 2.2, height: 12)
-                .offset(y: 6)
+                .frame(width: 1.5, height: 8)
+                .offset(y: 4)
 
             // 针头圆盘
             ZStack {
                 Circle()
                     .fill(Color.black.opacity(0.2))
-                    .frame(width: 20, height: 20)
-                    .offset(y: 1)
+                    .frame(width: 13, height: 13)
+                    .offset(y: 0.6)
 
                 Circle()
                     .fill(
@@ -1402,25 +1441,25 @@ private struct StickyBoardPushPin: View {
                                 color.opacity(0.72)
                             ],
                             center: UnitPoint(x: 0.32, y: 0.28),
-                            startRadius: 1,
-                            endRadius: 12
+                            startRadius: 0.6,
+                            endRadius: 8
                         )
                     )
-                    .frame(width: 18, height: 18)
+                    .frame(width: 12, height: 12)
                     .overlay {
                         Circle()
-                            .stroke(Color.white.opacity(0.4), lineWidth: 0.8)
+                            .stroke(Color.white.opacity(0.4), lineWidth: 0.6)
                     }
 
                 // 针头高光
                 Capsule()
                     .fill(Color.white.opacity(0.55))
-                    .frame(width: 7, height: 3.5)
-                    .offset(x: -3, y: -3.5)
+                    .frame(width: 4.5, height: 2.2)
+                    .offset(x: -2, y: -2.2)
             }
-            .offset(y: -1)
+            .offset(y: -0.5)
         }
-        .frame(width: 28, height: 28)
+        .frame(width: 18, height: 18)
         .accessibilityHidden(true)
     }
 }
