@@ -10,6 +10,8 @@ import Supabase
 final class TodoListViewModel: ObservableObject {
     @Published private(set) var flexibleTasks: [FamilyTask] = []
     @Published private(set) var completedTasks: [FamilyTask] = []
+    /// 白板垃圾桶：软删除（`cancelled`）的灵活待办。
+    @Published private(set) var deletedTasks: [FamilyTask] = []
     @Published private(set) var householdMembers: [HouseholdMembership] = []
     @Published private(set) var familyProfiles: [FamilyProfile] = []
     @Published private(set) var isLoading = false
@@ -51,6 +53,7 @@ final class TodoListViewModel: ObservableObject {
         if householdId == nil {
             flexibleTasks = []
             completedTasks = []
+            deletedTasks = []
             taskIDsWithAttachments = []
             householdMembers = []
             familyProfiles = []
@@ -91,6 +94,7 @@ final class TodoListViewModel: ObservableObject {
         guard householdIds.isEmpty == false else {
             flexibleTasks = []
             completedTasks = []
+            deletedTasks = []
             taskIDsWithAttachments = []
             errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
             return
@@ -99,9 +103,9 @@ final class TodoListViewModel: ObservableObject {
         if loadedViewToken == viewToken {
             // 任务已在内存时仍补拉附件角标（避免首次离线/解码失败后一直不显示）
             if taskIDsWithAttachments.isEmpty,
-               (flexibleTasks.isEmpty == false || completedTasks.isEmpty == false),
+               (flexibleTasks.isEmpty == false || completedTasks.isEmpty == false || deletedTasks.isEmpty == false),
                await NetworkMonitor.shared.isConnected {
-                await refreshAttachmentPresence(for: flexibleTasks + completedTasks)
+                await refreshAttachmentPresence(for: flexibleTasks + completedTasks + deletedTasks)
             }
             return
         }
@@ -114,6 +118,7 @@ final class TodoListViewModel: ObservableObject {
         guard householdIds.isEmpty == false else {
             flexibleTasks = []
             completedTasks = []
+            deletedTasks = []
             taskIDsWithAttachments = []
             loadedViewToken = nil
             if !silent {
@@ -189,7 +194,7 @@ final class TodoListViewModel: ObservableObject {
                 }
             }
             applyFlexibleTasks(from: merged)
-            await refreshAttachmentPresence(for: flexibleTasks + completedTasks)
+            await refreshAttachmentPresence(for: flexibleTasks + completedTasks + deletedTasks)
             loadedViewToken = token
             if !silent {
                 errorMessage = nil
@@ -228,6 +233,11 @@ final class TodoListViewModel: ObservableObject {
         let flexible = allTasks.filter(\.isFlexibleTodoCandidate)
         completedTasks = flexible
             .filter { $0.status == .completed }
+            .sorted { lhs, rhs in
+                lhs.updatedAt > rhs.updatedAt
+            }
+        deletedTasks = flexible
+            .filter { $0.status == .cancelled }
             .sorted { lhs, rhs in
                 lhs.updatedAt > rhs.updatedAt
             }
@@ -292,9 +302,30 @@ final class TodoListViewModel: ObservableObject {
         }
     }
 
+    /// 白板左上垃圾桶：过期开放待办 + 已删除（软删）待办。
+    var trashBinTasks: [FamilyTask] {
+        overdueTasks + deletedTasks
+    }
+
+    var trashBinCount: Int {
+        trashBinTasks.count
+    }
+
     /// 主列表分区（不含已过期；过期任务从标题下横幅入口查看）。
     func mainSectionedTasks(calendar: Calendar = .current) -> [(TodoSection, [FamilyTask])] {
         sectionedTasks(calendar: calendar, includeOverdue: false)
+    }
+
+    /// 便签白板正面：今日 + 本周（近期）。
+    func stickyBoardNearTasks(calendar: Calendar = .current) -> [FamilyTask] {
+        mainSectionedTasks(calendar: calendar).flatMap { section, items in
+            (section == .today || section == .thisWeek) ? items : []
+        }
+    }
+
+    /// 便签白板背面：更晚 / 无截止日期（远期）。
+    func stickyBoardFarTasks(calendar: Calendar = .current) -> [FamilyTask] {
+        mainSectionedTasks(calendar: calendar).first(where: { $0.0 == .later })?.1 ?? []
     }
 
     func sectionedTasks(calendar: Calendar = .current, includeOverdue: Bool = true) -> [(TodoSection, [FamilyTask])] {
@@ -411,6 +442,65 @@ final class TodoListViewModel: ObservableObject {
         optimistic.status = .completed
         completedTasks.removeAll { $0.id == task.id }
         completedTasks.insert(optimistic, at: 0)
+    }
+
+    func applyOptimisticDeletion(for task: FamilyTask) {
+        flexibleTasks.removeAll { $0.id == task.id }
+        completedTasks.removeAll { $0.id == task.id }
+        var optimistic = task
+        optimistic.status = .cancelled
+        deletedTasks.removeAll { $0.id == optimistic.id }
+        deletedTasks.insert(optimistic, at: 0)
+        HouseholdLocalCache.upsertTaskInCache(optimistic)
+    }
+
+    /// 白板拖入垃圾桶：软删除为 `cancelled`，保留在垃圾桶列表中（非硬删行）。
+    func deleteFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID? = nil) async throws {
+        applyOptimisticDeletion(for: task)
+        await NotificationManager.shared.cancelAllPending(for: task.id)
+
+        if await NetworkMonitor.shared.isConnected == false {
+            TaskOfflineOutbox.shared.enqueue(
+                .patchStatus(
+                    taskId: task.id,
+                    status: .cancelled,
+                    completionLocation: nil,
+                    actingMembershipId: actingMembershipId
+                )
+            )
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            return
+        }
+
+        do {
+            let updated = try await taskService.patchTaskStatus(
+                taskId: task.id,
+                to: .cancelled,
+                completionLocation: nil,
+                actingMembershipId: actingMembershipId
+            )
+            flexibleTasks.removeAll { $0.id == updated.id }
+            completedTasks.removeAll { $0.id == updated.id }
+            deletedTasks.removeAll { $0.id == updated.id }
+            deletedTasks.insert(updated, at: 0)
+            HouseholdLocalCache.upsertTaskInCache(updated)
+            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+        } catch {
+            if Self.isLikelyNetworkFailure(error) {
+                TaskOfflineOutbox.shared.enqueue(
+                    .patchStatus(
+                        taskId: task.id,
+                        status: .cancelled,
+                        completionLocation: nil,
+                        actingMembershipId: actingMembershipId
+                    )
+                )
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+                return
+            }
+            await loadTasks(silent: true, force: true)
+            throw error
+        }
     }
 
     func completeFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID?) async throws {

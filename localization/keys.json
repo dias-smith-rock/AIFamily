@@ -7246,5 +7246,33 @@
     "table": "Common",
     "swift_property": "unlimited",
     "orphan": false
+  },
+  {
+    "legacy_key": "Show as list",
+    "new_key": "todo_show_as_list",
+    "table": "Todo",
+    "swift_property": "showAsList",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Show as sticky notes",
+    "new_key": "todo_show_as_sticky_notes",
+    "table": "Todo",
+    "swift_property": "showAsStickyNotes",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Show near-term tasks",
+    "new_key": "todo_show_near_term_tasks",
+    "table": "Todo",
+    "swift_property": "showNearTermTasks",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Show later tasks",
+    "new_key": "todo_show_later_tasks",
+    "table": "Todo",
+    "swift_property": "showLaterTasks",
+    "orphan": false
   }
 ]

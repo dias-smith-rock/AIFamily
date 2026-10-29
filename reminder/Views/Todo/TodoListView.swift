@@ -14,6 +14,7 @@ struct TodoListView: View {
     @StateObject private var scheduleViewModel = AppViewModels.makeScheduleViewModel()
 
     @State private var taskForDetailSheet: FamilyTask?
+    @State private var taskForEditSheet: FamilyTask?
     @State private var showOverdueSheet = false
     @State private var showCompletedSheet = false
     @State private var isShowingCreateFlexibleSheet = false
@@ -24,6 +25,11 @@ struct TodoListView: View {
     @State private var completionCheckedTaskIDs: Set<UUID> = []
     @State private var completionFlyingTaskIDs: Set<UUID> = []
     @State private var completionInFlightTaskIDs: Set<UUID> = []
+    @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.list.rawValue
+
+    private var displayMode: TodoDisplayMode {
+        TodoDisplayMode(rawValue: displayModeRaw) ?? .list
+    }
 
     var body: some View {
         NavigationStack {
@@ -71,6 +77,8 @@ struct TodoListView: View {
             } else {
                 completedOnlyScrollView
             }
+        } else if displayMode == .sticky {
+            todoStickyBoardScrollView
         } else {
             todoListScrollView
         }
@@ -88,6 +96,7 @@ struct TodoListView: View {
             .sheet(isPresented: $showCompletedSheet) { completedTasksSheet }
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
             .sheet(item: $taskForDetailSheet) { task in taskDetailSheet(task: task) }
+            .sheet(item: $taskForEditSheet) { task in editFlexibleSheet(task: task) }
             .sheet(isPresented: $isShowingCreateFlexibleSheet) { createFlexibleSheet }
             .sheet(isPresented: $isShowingWriteTargetPicker) {
                 WriteTargetHouseholdPicker { _ in
@@ -140,7 +149,25 @@ struct TodoListView: View {
         ToolbarItem(placement: .topBarLeading) {
             GroupSwitcherToolbarButton()
         }
-        ToolbarItem(placement: .topBarTrailing) {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            if viewModel.hasOpenFlexibleTasks {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        displayModeRaw = displayMode == .sticky
+                            ? TodoDisplayMode.list.rawValue
+                            : TodoDisplayMode.sticky.rawValue
+                    }
+                } label: {
+                    Image(systemName: displayMode == .sticky ? "list.bullet" : "square.on.square")
+                        .font(.system(size: 17, weight: .semibold))
+                }
+                .accessibilityLabel(
+                    displayMode == .sticky
+                        ? L10n.Todo.showAsList
+                        : L10n.Todo.showAsStickyNotes
+                )
+            }
+
             Button {
                 isShowingSearch = true
             } label: {
@@ -164,8 +191,12 @@ struct TodoListView: View {
         }
         .buttonStyle(.plain)
         .padding(.trailing, 20)
-        .padding(.bottom, showsTodoSummaryFooter ? 96 : 20)
+        .padding(.bottom, showsCreateTodoFABBottomPadding ? 96 : 20)
         .accessibilityLabel(L10n.Common.newToDo)
+    }
+
+    private var showsCreateTodoFABBottomPadding: Bool {
+        displayMode == .list && showsTodoSummaryFooter
     }
 
     private var completedTasksSheet: some View {
@@ -188,7 +219,7 @@ struct TodoListView: View {
 
     private var overdueTasksSheet: some View {
         OverdueTasksListView(
-            tasks: viewModel.overdueTasks,
+            tasks: viewModel.trashBinTasks,
             displayTitle: { viewModel.displayTitle(for: $0) },
             forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
             taskHasAttachments: { viewModel.taskHasAttachments($0) },
@@ -238,6 +269,27 @@ struct TodoListView: View {
         .presentationDetents([.large])
     }
 
+    private func editFlexibleSheet(task: FamilyTask) -> some View {
+        EditTaskView(
+            task: task,
+            familyProfiles: viewModel.familyProfiles,
+            onUpdateSuccess: { _ in
+                Task {
+                    await viewModel.loadTasks(silent: true, force: true)
+                    await scheduleViewModel.loadTasks(silent: true)
+                }
+            },
+            onAlarmSync: { updated in
+                scheduleViewModel.syncAlarms(for: updated)
+            }
+        )
+        .environmentObject(appRouter)
+        .environment(\.locale, appSettings.appLocale)
+        .environment(\.layoutDirection, appSettings.layoutDirection)
+        .presentationDetents([.large])
+        .presentationDragIndicator(.visible)
+    }
+
     // MARK: - Notification deep link
 
     @MainActor
@@ -255,10 +307,30 @@ struct TodoListView: View {
         appRouter.consumePendingTaskReminderTap()
     }
 
-    private func beginCompleteFlexibleTask(_ task: FamilyTask) {
+    private func beginCompleteFlexibleTask(_ task: FamilyTask, playsListExitAnimation: Bool = true) {
         guard completionInFlightTaskIDs.contains(task.id) == false else { return }
 
         completionInFlightTaskIDs.insert(task.id)
+
+        if playsListExitAnimation == false {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
+                viewModel.applyOptimisticCompletion(for: task)
+            }
+            Task { @MainActor in
+                do {
+                    try await viewModel.completeFlexibleTask(
+                        task,
+                        actingMembershipId: appRouter.selectedMembershipId
+                    )
+                    await scheduleViewModel.loadTasks(silent: true)
+                } catch {
+                    await viewModel.loadTasks(silent: true, force: true)
+                }
+                completionInFlightTaskIDs.remove(task.id)
+            }
+            return
+        }
+
         withAnimation(.spring(response: 0.28, dampingFraction: 0.78)) {
             completionCheckedTaskIDs.insert(task.id)
         }
@@ -346,6 +418,50 @@ struct TodoListView: View {
         }
         .refreshable {
             await refreshTodos()
+        }
+    }
+
+    private var todoStickyBoardScrollView: some View {
+        TodoStickyBoardView(
+            nearTasks: viewModel.stickyBoardNearTasks(),
+            farTasks: viewModel.stickyBoardFarTasks(),
+            overdueCount: viewModel.trashBinCount,
+            completedCount: viewModel.completedTasks.count,
+            displayTitle: { viewModel.displayTitle(for: $0) },
+            forWhomAvatars: { viewModel.forWhomAvatarSources(for: $0) },
+            detailLines: { stickyDetailLines(for: $0) },
+            hasAttachments: { viewModel.taskHasAttachments($0) },
+            isCompletionChecked: { completionCheckedTaskIDs.contains($0) },
+            isFlying: { completionFlyingTaskIDs.contains($0) },
+            isInteractionLocked: { completionInFlightTaskIDs.contains($0) },
+            onToggleComplete: { beginCompleteFlexibleTask($0) },
+            onOpen: { taskForEditSheet = $0 },
+            onOpenOverdueBin: { showOverdueSheet = true },
+            onOpenCompletedArchive: { showCompletedSheet = true },
+            onDropComplete: { beginCompleteFlexibleTask($0, playsListExitAnimation: false) },
+            onDropDelete: { task in
+                Task { await beginDeleteFlexibleTask(task) }
+            }
+        )
+        .refreshable {
+            await refreshTodos()
+        }
+    }
+
+    @MainActor
+    private func beginDeleteFlexibleTask(_ task: FamilyTask) async {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+            viewModel.applyOptimisticDeletion(for: task)
+        }
+        do {
+            // 软删除为 cancelled，进入垃圾桶列表（过期 + 已删除）。
+            try await viewModel.deleteFlexibleTask(
+                task,
+                actingMembershipId: appRouter.selectedMembershipId
+            )
+            await scheduleViewModel.loadTasks(silent: true)
+        } catch {
+            await viewModel.loadTasks(silent: true, force: true)
         }
     }
 
@@ -605,6 +721,46 @@ struct TodoListView: View {
             fmt
         )
     }
+
+    /// 便签次要信息：截止日 → 地点 → 备注，至多 2 条（与标题合计 ≤ 3）。
+    private func stickyDetailLines(for task: FamilyTask) -> [String] {
+        var lines: [String] = []
+        if let deadline = deadlineLabel(for: task) {
+            lines.append(deadline)
+        }
+        if let location = stickyLocationLine(for: task) {
+            lines.append(location)
+        }
+        if let note = stickyNoteLine(for: task) {
+            lines.append(note)
+        }
+        return Array(lines.prefix(2))
+    }
+
+    private func stickyLocationLine(for task: FamilyTask) -> String? {
+        let name = task.locationData?.name?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let name, name.isEmpty == false {
+            return name
+        }
+        let address = task.locationData?.address?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if let address, address.isEmpty == false {
+            return address
+        }
+        return nil
+    }
+
+    private func stickyNoteLine(for task: FamilyTask) -> String? {
+        let raw = task.description?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let raw, raw.isEmpty == false else { return nil }
+        if let firstLine = raw.split(whereSeparator: \.isNewline).first {
+            let line = String(firstLine).trimmingCharacters(in: .whitespacesAndNewlines)
+            return line.isEmpty ? nil : line
+        }
+        return raw
+    }
 }
 
 // MARK: - Completed sheet
@@ -715,6 +871,13 @@ private struct OverdueTasksListView: View {
             }
         }
     }
+}
+
+// MARK: - Display mode
+
+private enum TodoDisplayMode: String {
+    case list
+    case sticky
 }
 
 // MARK: - Row

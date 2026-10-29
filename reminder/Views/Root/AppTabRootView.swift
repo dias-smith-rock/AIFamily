@@ -4,10 +4,13 @@ struct AppTabRootView: View {
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
-    @State private var selectedTab: Tab = .schedule
+    @State private var selectedTab: Tab = .todos
     @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
     @State private var showAnonymousBindPrompt = false
     @State private var showAnonymousBindLinkSheet = false
+    /// 冷启动只解析一次默认 Tab，避免覆盖用户手动切换或深链路由。
+    @State private var didApplyPreferredLandingTab = false
+    @State private var isResolvingPreferredLandingTab = false
 
     enum Tab: Hashable {
         case schedule
@@ -79,6 +82,7 @@ struct AppTabRootView: View {
                 return
             }
             selectedTab = .schedule
+            didApplyPreferredLandingTab = true
         }
         .onAppear {
             if appRouter.isTrackedDeviceMembership {
@@ -94,14 +98,24 @@ struct AppTabRootView: View {
             GuestLoginPerformanceTracer.finishMainPageReached(appRouter: appRouter)
             AnalyticsManager.logOnboardingStep(AnalyticsManager.OnboardingStep.enteredMain)
             AnalyticsManager.updateGuestUserProperty(isGuest: appRouter.isAnonymousUser)
-            AnalyticsManager.logTabSelected(selectedTab.analyticsName)
             if let tap = appRouter.pendingTaskReminderTap {
                 selectedTab = tap.isFlexibleTodo ? .todos : .schedule
+                didApplyPreferredLandingTab = true
+            } else {
+                applyPreferredLandingTabIfNeeded()
             }
+            AnalyticsManager.logTabSelected(selectedTab.analyticsName)
             presentAnonymousBindPromptIfNeeded()
+        }
+        .onChange(of: appRouter.selectedHouseholdIds) { _, _ in
+            applyPreferredLandingTabIfNeeded()
         }
         .onChange(of: selectedTab) { _, newTab in
             AnalyticsManager.logTabSelected(newTab.analyticsName)
+            // 解析尚未落盘时用户已手动切 Tab：取消后续自动落地。
+            if isResolvingPreferredLandingTab {
+                didApplyPreferredLandingTab = true
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .anonymousBindPromptDidSchedule)) { _ in
             Task { @MainActor in
@@ -140,10 +154,12 @@ struct AppTabRootView: View {
         .onChange(of: appRouter.pendingTaskReminderTap) { _, newValue in
             guard let tap = newValue else { return }
             selectedTab = tap.isFlexibleTodo ? .todos : .schedule
+            didApplyPreferredLandingTab = true
         }
         .onChange(of: appRouter.pendingOpenGroupSettings) { _, shouldOpen in
             guard shouldOpen else { return }
             selectedTab = .settings
+            didApplyPreferredLandingTab = true
         }
         .reviewAlertModifier(manager: reviewRedirectManager)
         .id(appSettings.selectedLanguage.id)
@@ -190,6 +206,54 @@ struct AppTabRootView: View {
             return
         }
         showAnonymousBindPrompt = true
+    }
+
+    private func applyPreferredLandingTabIfNeeded() {
+        guard didApplyPreferredLandingTab == false else { return }
+        guard appRouter.isTrackedDeviceShellActive == false else { return }
+        if appRouter.pendingTaskReminderTap != nil
+            || appRouter.pendingScheduleWidgetRoute != nil
+            || appRouter.pendingOpenGroupSettings {
+            didApplyPreferredLandingTab = true
+            return
+        }
+
+        let householdIds = appRouter.selectedHouseholdIds
+        guard householdIds.isEmpty == false else { return }
+        guard isResolvingPreferredLandingTab == false else { return }
+
+        isResolvingPreferredLandingTab = true
+        Task { @MainActor in
+            defer { isResolvingPreferredLandingTab = false }
+            guard didApplyPreferredLandingTab == false else { return }
+            if appRouter.pendingTaskReminderTap != nil
+                || appRouter.pendingScheduleWidgetRoute != nil
+                || appRouter.pendingOpenGroupSettings {
+                didApplyPreferredLandingTab = true
+                return
+            }
+
+            var merged: [FamilyTask] = []
+            var seen = Set<UUID>()
+            for householdId in householdIds {
+                guard let cached = await HouseholdLocalCache.loadTasks(for: householdId) else { continue }
+                for task in cached where seen.insert(task.id).inserted {
+                    merged.append(task)
+                }
+            }
+
+            guard didApplyPreferredLandingTab == false else { return }
+            if appRouter.pendingTaskReminderTap != nil
+                || appRouter.pendingScheduleWidgetRoute != nil
+                || appRouter.pendingOpenGroupSettings {
+                didApplyPreferredLandingTab = true
+                return
+            }
+
+            let preferred = AppLandingTabPreference.resolve(tasks: merged)
+            selectedTab = preferred == .schedule ? .schedule : .todos
+            didApplyPreferredLandingTab = true
+        }
     }
 }
 
