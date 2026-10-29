@@ -1,301 +1,478 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "todo_overdue_count" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld مهام متأخرة"
+  "sourceLanguage": "en",
+  "strings": {
+    "todo_overdue_count": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld مهام متأخرة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld to-dos overdue"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld to-dos overdue"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld tareas vencidas"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tareas vencidas"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld tâche(s) en retard"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tâche(s) en retard"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld कार्य अतिदेय"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld कार्य अतिदेय"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld tarefas atrasadas"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld tarefas atrasadas"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld பணிகள் காலாவதி"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld பணிகள் காலாவதி"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 个待办已过期"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个待办已过期"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld 個待辦已過期"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個待辦已過期"
           }
         }
       }
     },
-    "todo_show_as_list" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "عرض كقائمة"
+    "todo_show_as_list": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض كقائمة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show as list"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show as list"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver como lista"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver como lista"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher en liste"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher en liste"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "सूची के रूप में दिखाएँ"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सूची के रूप में दिखाएँ"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver como lista"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver como lista"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "பட்டியலாக காட்டு"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பட்டியலாக காட்டு"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列表显示"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列表显示"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "列表顯示"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "列表顯示"
           }
         }
       }
     },
-    "todo_show_as_sticky_notes" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "عرض كملاحظات لاصقة"
+    "todo_show_as_sticky_notes": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض كملاحظات لاصقة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show as sticky notes"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show as sticky notes"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver como notas adhesivas"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver como notas adhesivas"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher en post-it"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher en post-it"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "स्टिकी नोट के रूप में दिखाएँ"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्टिकी नोट के रूप में दिखाएँ"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver como lembretes"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver como lembretes"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ஸ்டிக்கி நோட் போல் காட்டு"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஸ்டிக்கி நோட் போல் காட்டு"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "便签显示"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "便签显示"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "便條顯示"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "便條顯示"
           }
         }
       }
     },
-    "todo_show_later_tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "عرض المهام اللاحقة"
+    "todo_show_later_tasks": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض المهام اللاحقة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show later tasks"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show later tasks"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver tareas posteriores"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver tareas posteriores"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voir les tâches plus tard"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir les tâches plus tard"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "बाद की कार्रवाइयाँ दिखाएँ"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बाद की कार्रवाइयाँ दिखाएँ"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver tarefas posteriores"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver tarefas posteriores"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "பிந்தைய பணிகளைக் காட்டு"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பிந்தைய பணிகளைக் காட்டு"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看远期任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看远期任务"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看遠期任務"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看遠期任務"
           }
         }
       }
     },
-    "todo_show_near_term_tasks" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "عرض المهام القريبة"
+    "todo_show_near_term_tasks": {
+      "extractionState": "stale",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عرض المهام القريبة"
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show near-term tasks"
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show near-term tasks"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver tareas próximas"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver tareas próximas"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voir les tâches proches"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voir les tâches proches"
           }
         },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "निकट की कार्रवाइयाँ दिखाएँ"
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "निकट की कार्रवाइयाँ दिखाएँ"
           }
         },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver tarefas próximas"
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver tarefas próximas"
           }
         },
-        "ta" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "அண்மை பணிகளைக் காட்டு"
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அண்மை பணிகளைக் காட்டு"
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看近期任务"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看近期任务"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "查看近期任務"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查看近期任務"
+          }
+        }
+      }
+    },
+    "todo_clear": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مسح"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vaciar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vider"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साफ़ करें"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limpar"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அழி"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空"
+          }
+        }
+      }
+    },
+    "todo_clear_trash_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إفراغ سلة المهملات؟"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear trash?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Vaciar la papelera?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vider la corbeille ?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ट्रैश साफ़ करें?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esvaziar a lixeira?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "குப்பையை காலி செய்யவா?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空垃圾桶？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清空垃圾桶？"
+          }
+        }
+      }
+    },
+    "todo_clear_trash_confirm_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ستُحذف نهائيًا كل المهام المتأخرة والمحذوفة. لا يمكن التراجع عن هذا الإجراء."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All overdue and deleted to-dos will be permanently removed. This cannot be undone."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se eliminarán permanentemente todas las tareas vencidas y eliminadas. Esta acción no se puede deshacer."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toutes les tâches en retard et supprimées seront définitivement retirées. Cette action est irréversible."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सभी अतिदेय और हटाए गए टू-डू स्थायी रूप से हटा दिए जाएंगे। इसे पूर्ववत नहीं किया जा सकता।"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos os afazeres atrasados e excluídos serão removidos permanentemente. Esta ação não pode ser desfeita."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "காலாவதியான மற்றும் நீக்கப்பட்ட அனைத்து பணிகளும் நிரந்தரமாக நீக்கப்படும். இதை செயல்தவிர்க்க முடியாது."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将永久删除所有过期与已删除的待办，此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將永久刪除所有過期與已刪除的待辦，此操作無法撤銷。"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

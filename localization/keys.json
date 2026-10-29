@@ -7274,5 +7274,26 @@
     "table": "Todo",
     "swift_property": "showLaterTasks",
     "orphan": false
+  },
+  {
+    "legacy_key": "Clear",
+    "new_key": "todo_clear",
+    "table": "Todo",
+    "swift_property": "clear",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Clear trash?",
+    "new_key": "todo_clear_trash_confirm_title",
+    "table": "Todo",
+    "swift_property": "clearTrashConfirmTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "All overdue and deleted to-dos will be permanently removed. This cannot be undone.",
+    "new_key": "todo_clear_trash_confirm_message",
+    "table": "Todo",
+    "swift_property": "clearTrashConfirmMessage",
+    "orphan": false
   }
 ]

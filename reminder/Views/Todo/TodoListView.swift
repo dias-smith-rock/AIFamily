@@ -227,6 +227,16 @@ struct TodoListView: View {
             onSelectTask: { task in
                 showOverdueSheet = false
                 taskForDetailSheet = task
+            },
+            onClearTrash: {
+                Task { @MainActor in
+                    do {
+                        try await viewModel.clearTrashBin()
+                        showOverdueSheet = false
+                    } catch {
+                        await viewModel.loadTasks(silent: true, force: true)
+                    }
+                }
             }
         )
         .environment(\.locale, appSettings.appLocale)
@@ -834,6 +844,9 @@ private struct OverdueTasksListView: View {
     var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
     let deadlineLabel: (FamilyTask) -> String?
     let onSelectTask: (FamilyTask) -> Void
+    var onClearTrash: (() -> Void)? = nil
+
+    @State private var showClearConfirm = false
 
     var body: some View {
         NavigationStack {
@@ -863,11 +876,28 @@ private struct OverdueTasksListView: View {
             .navigationTitle(L10n.Common.overdue.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(L10n.Todo.clear) {
+                        showClearConfirm = true
+                    }
+                    .disabled(tasks.isEmpty || onClearTrash == nil)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.Common.close) {
                         dismiss()
                     }
                 }
+            }
+            .alert(
+                L10n.Todo.clearTrashConfirmTitle,
+                isPresented: $showClearConfirm
+            ) {
+                Button(L10n.Todo.clear, role: .destructive) {
+                    onClearTrash?()
+                }
+                Button(L10n.Common.cancel, role: .cancel) {}
+            } message: {
+                Text(L10n.Todo.clearTrashConfirmMessage.localized)
             }
         }
     }

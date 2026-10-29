@@ -469,7 +469,7 @@ struct SupabaseTaskDataService: TaskDataService {
         try await provider.client
             .from(SupabaseTable.tasks)
             .delete()
-            .eq("id", value: taskId.uuidString)
+            .eq("id", value: taskId.uuidString.lowercased())
             .execute()
         #else
         _ = taskId

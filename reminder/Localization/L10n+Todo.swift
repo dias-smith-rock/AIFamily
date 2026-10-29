@@ -6,6 +6,9 @@ extension L10n {
     enum Todo {
     static let allActiveToDosAreDoneViewYourHistoryBel = Entry(key: "todo_all_active_to_dos_are_done_view_your_history_bel", table: .todo)
     static let allOpenToDosAreOverdueTapTheBannerAbove = Entry(key: "todo_all_open_to_dos_are_overdue_tap_the_banner_above", table: .todo)
+    static let clear = Entry(key: "todo_clear", table: .todo)
+    static let clearTrashConfirmMessage = Entry(key: "todo_clear_trash_confirm_message", table: .todo)
+    static let clearTrashConfirmTitle = Entry(key: "todo_clear_trash_confirm_title", table: .todo)
     static let completed = Entry(key: "todo_completed", table: .todo)
     static let completedOn = Entry(key: "todo_completed_on", table: .todo)
     static let completedToDosWillAppearHere = Entry(key: "todo_completed_to_dos_will_appear_here", table: .todo)

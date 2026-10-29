@@ -28,6 +28,8 @@ final class TodoListViewModel: ObservableObject {
     /// 当前查看集合是否已有内存数据；切 Tab 回来时不重复拉网。
     private var loadedViewToken: String?
     private var reloadCancellable: AnyCancellable?
+    /// 已发起硬删、短暂屏蔽回写的任务（避免清空后即时 fetch / 缓存覆盖把条目弹回）。
+    private var pendingHardDeletedTaskIDs: Set<UUID> = []
 
     init(
         taskService: TaskDataService,
@@ -187,13 +189,15 @@ final class TodoListViewModel: ObservableObject {
                     }
                 }
                 for try await (householdId, batch) in group {
-                    LocalCacheManager.shared.save(batch, forKey: Self.tasksCacheKey(for: householdId))
-                    for task in batch where seen.insert(task.id).inserted {
+                    let filteredBatch = batch.filter { pendingHardDeletedTaskIDs.contains($0.id) == false }
+                    LocalCacheManager.shared.save(filteredBatch, forKey: Self.tasksCacheKey(for: householdId))
+                    for task in filteredBatch where seen.insert(task.id).inserted {
                         merged.append(task)
                     }
                 }
             }
             applyFlexibleTasks(from: merged)
+            reconcilePendingHardDeletes(with: merged)
             await refreshAttachmentPresence(for: flexibleTasks + completedTasks + deletedTasks)
             loadedViewToken = token
             if !silent {
@@ -230,7 +234,9 @@ final class TodoListViewModel: ObservableObject {
     }
 
     private func applyFlexibleTasks(from allTasks: [FamilyTask]) {
-        let flexible = allTasks.filter(\.isFlexibleTodoCandidate)
+        let flexible = allTasks
+            .filter(\.isFlexibleTodoCandidate)
+            .filter { pendingHardDeletedTaskIDs.contains($0.id) == false }
         completedTasks = flexible
             .filter { $0.status == .completed }
             .sorted { lhs, rhs in
@@ -246,6 +252,12 @@ final class TodoListViewModel: ObservableObject {
             .sorted { lhs, rhs in
                 deadlineSortKey(for: lhs) < deadlineSortKey(for: rhs)
             }
+    }
+
+    private func reconcilePendingHardDeletes(with fetched: [FamilyTask]) {
+        guard pendingHardDeletedTaskIDs.isEmpty == false else { return }
+        let present = Set(fetched.map(\.id))
+        pendingHardDeletedTaskIDs = pendingHardDeletedTaskIDs.filter { present.contains($0) }
     }
 
     var hasOpenFlexibleTasks: Bool {
@@ -500,6 +512,52 @@ final class TodoListViewModel: ObservableObject {
             }
             await loadTasks(silent: true, force: true)
             throw error
+        }
+    }
+
+    /// 一键清空垃圾桶：永久删除其中所有过期与已软删待办。
+    func clearTrashBin() async throws {
+        let targets = trashBinTasks
+        guard targets.isEmpty == false else { return }
+
+        let ids = Set(targets.map(\.id))
+        pendingHardDeletedTaskIDs.formUnion(ids)
+        flexibleTasks.removeAll { ids.contains($0.id) }
+        deletedTasks.removeAll { ids.contains($0.id) }
+        completedTasks.removeAll { ids.contains($0.id) }
+
+        for task in targets {
+            HouseholdLocalCache.removeTaskFromCache(taskId: task.id, householdId: task.householdId)
+            await NotificationManager.shared.cancelAllPending(for: task.id)
+        }
+
+        if await NetworkMonitor.shared.isConnected == false {
+            for task in targets {
+                TaskOfflineOutbox.shared.enqueue(.delete(taskId: task.id))
+            }
+            // 不广播全量刷新，避免其它 VM 立刻拉旧快照覆盖本地缓存。
+            return
+        }
+
+        var encounteredHardFailure: Error?
+        for task in targets {
+            do {
+                try await taskService.deleteTask(taskId: task.id)
+                HouseholdLocalCache.removeTaskFromCache(taskId: task.id, householdId: task.householdId)
+            } catch {
+                if Self.isLikelyNetworkFailure(error) {
+                    TaskOfflineOutbox.shared.enqueue(.delete(taskId: task.id))
+                } else {
+                    encounteredHardFailure = error
+                }
+            }
+        }
+
+        // 静默对齐一次；pendingHardDeletedTaskIDs 会挡住删后仍短暂返回的行。
+        await loadTasks(silent: true, force: true)
+
+        if let encounteredHardFailure {
+            throw encounteredHardFailure
         }
     }
 
