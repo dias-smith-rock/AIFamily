@@ -20,7 +20,7 @@ struct TodoListView: View {
     @State private var completionCheckedTaskIDs: Set<UUID> = []
     @State private var completionFlyingTaskIDs: Set<UUID> = []
     @State private var completionInFlightTaskIDs: Set<UUID> = []
-    @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.list.rawValue
+    @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
 
     private var displayMode: TodoDisplayMode {
         TodoDisplayMode(rawValue: displayModeRaw) ?? .list
