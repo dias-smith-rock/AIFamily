@@ -45,6 +45,26 @@ private enum CreateTaskTimeFormLayout {
     static let labelColumnWidth: CGFloat = 116
 }
 
+/// chip / 可选字段编辑 Sheet 打开时的可回滚快照（未点保存关闭时恢复）。
+private struct OptionalFieldEditBaseline {
+    let selectedRecurrence: TaskRecurrenceRule
+    let recurrenceInterval: Int
+    let recurrenceEndDate: Date
+    let showEndDate: Bool
+    let locationName: String
+    let note: String
+    let selectedAssigneeIds: Set<UUID>
+    let selectedTargetProfileIds: Set<UUID>
+    let formPriority: TaskPriority
+    let costInput: String
+    let emergencyPhone: String
+    let selectedItems: [PhotosPickerItem]
+    let selectedImages: [UIImage]
+    let selectedAttachmentJPEGData: [Data]
+    let existingAttachments: [TaskAttachment]
+    let attachmentsToDelete: [TaskAttachment]
+}
+
 /// 「时间设置 + 重复设置」与标题输入解耦：仅在令牌字段变化时重绘，减轻 TextEditor 输入时的卡顿。
 private struct CreateTaskTimeRecurrenceBlock: View, Equatable {
     @Environment(\.locale) private var locale
@@ -311,6 +331,9 @@ struct CreateTaskView: View {
     @State private var insertedSections: Set<CreateTaskOptionalSection> = []
     /// 底部 chip / 摘要行打开的字段编辑 Sheet。
     @State private var chipEditorSection: CreateTaskOptionalSection?
+    /// 打开可选字段 Sheet 时的基线；未点保存关闭时回滚。
+    @State private var optionalFieldEditBaseline: OptionalFieldEditBaseline?
+    @State private var didConfirmOptionalFieldSheet = false
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingAssigneePicker = false
     @State private var isShowingColorPicker = false
@@ -613,7 +636,12 @@ struct CreateTaskView: View {
     }
 
     private var formAccentTint: Color {
-        isFlexibleMode ? Color.orange : AppTheme.ColorToken.accent
+        AppTheme.ColorToken.accent
+    }
+
+    /// 创建/编辑弹窗导航与 chip 子弹窗 chrome（X / 保存）统一主题色。
+    private var formChromeTint: Color {
+        isEmbeddedInParent ? formIconAccent : formAccentTint
     }
 
     @ViewBuilder
@@ -641,8 +669,7 @@ struct CreateTaskView: View {
 
                 ForEach(availableChipSections) { section in
                     Button {
-                        dismissKeyboard()
-                        chipEditorSection = section
+                        presentOptionalFieldEditor(section)
                     } label: {
                         HStack(spacing: 5) {
                             Image(systemName: section.systemImage)
@@ -1232,8 +1259,7 @@ struct CreateTaskView: View {
 
     private func optionalSectionSummaryRow(_ section: CreateTaskOptionalSection) -> some View {
         Button {
-            dismissKeyboard()
-            chipEditorSection = section
+            presentOptionalFieldEditor(section)
         } label: {
             CreateTaskFlatRow(
                 systemImage: section.systemImage,
@@ -1408,29 +1434,43 @@ struct CreateTaskView: View {
     }
 
     private func optionalFieldEditorSheet(for section: CreateTaskOptionalSection) -> some View {
-        NavigationStack {
-            ScrollView {
-                optionalFieldSheetContent(section)
+        let chromeTint = formChromeTint
+        return NavigationStack {
+            VStack(spacing: 0) {
+                ScrollView {
+                    optionalFieldSheetContent(section)
+                }
+
+                Button {
+                    didConfirmOptionalFieldSheet = true
+                    confirmOptionalFieldSheet(section)
+                } label: {
+                    Text(L10n.Common.save.localized)
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(chromeTint)
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 16)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(section.title(locale: locale))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
+                // 右上角 X：不保存关闭（回滚由 sheet onDismiss 处理）。
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         chipEditorSection = nil
                     } label: {
                         Image(systemName: "xmark")
                             .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(chromeTint)
                     }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        confirmOptionalFieldSheet(section)
-                    } label: {
-                        Image(systemName: "checkmark")
-                            .font(.subheadline.weight(.semibold))
-                    }
+                    .tint(chromeTint)
+                    .accessibilityLabel(L10n.Common.close)
                 }
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
@@ -1441,9 +1481,65 @@ struct CreateTaskView: View {
             }
         }
         .environment(\.locale, locale)
-        .tint(formAccentTint)
+        .tint(chromeTint)
         .presentationDetents(optionalFieldSheetDetents(for: section))
         .presentationDragIndicator(.visible)
+    }
+
+    private func presentOptionalFieldEditor(_ section: CreateTaskOptionalSection) {
+        dismissKeyboard()
+        didConfirmOptionalFieldSheet = false
+        optionalFieldEditBaseline = captureOptionalFieldEditBaseline()
+        chipEditorSection = section
+    }
+
+    private func captureOptionalFieldEditBaseline() -> OptionalFieldEditBaseline {
+        OptionalFieldEditBaseline(
+            selectedRecurrence: selectedRecurrence,
+            recurrenceInterval: recurrenceInterval,
+            recurrenceEndDate: recurrenceEndDate,
+            showEndDate: showEndDate,
+            locationName: locationName,
+            note: note,
+            selectedAssigneeIds: selectedAssigneeIds,
+            selectedTargetProfileIds: selectedTargetProfileIds,
+            formPriority: formPriority,
+            costInput: costInput,
+            emergencyPhone: emergencyPhone,
+            selectedItems: selectedItems,
+            selectedImages: selectedImages,
+            selectedAttachmentJPEGData: selectedAttachmentJPEGData,
+            existingAttachments: existingAttachments,
+            attachmentsToDelete: attachmentsToDelete
+        )
+    }
+
+    private func restoreOptionalFieldEditBaselineIfNeeded() {
+        guard didConfirmOptionalFieldSheet == false,
+              let baseline = optionalFieldEditBaseline
+        else {
+            optionalFieldEditBaseline = nil
+            didConfirmOptionalFieldSheet = false
+            return
+        }
+        selectedRecurrence = baseline.selectedRecurrence
+        recurrenceInterval = baseline.recurrenceInterval
+        recurrenceEndDate = baseline.recurrenceEndDate
+        showEndDate = baseline.showEndDate
+        locationName = baseline.locationName
+        note = baseline.note
+        selectedAssigneeIds = baseline.selectedAssigneeIds
+        selectedTargetProfileIds = baseline.selectedTargetProfileIds
+        formPriority = baseline.formPriority
+        costInput = baseline.costInput
+        emergencyPhone = baseline.emergencyPhone
+        selectedItems = baseline.selectedItems
+        selectedImages = baseline.selectedImages
+        selectedAttachmentJPEGData = baseline.selectedAttachmentJPEGData
+        existingAttachments = baseline.existingAttachments
+        attachmentsToDelete = baseline.attachmentsToDelete
+        optionalFieldEditBaseline = nil
+        didConfirmOptionalFieldSheet = false
     }
 
     private func optionalFieldSheetDetents(for section: CreateTaskOptionalSection) -> Set<PresentationDetent> {
@@ -1461,6 +1557,7 @@ struct CreateTaskView: View {
                 insertedSections = insertedSections.union([section])
             }
         }
+        optionalFieldEditBaseline = nil
         chipEditorSection = nil
         dismissKeyboard()
     }
@@ -1543,7 +1640,7 @@ struct CreateTaskView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .tint(isEmbeddedInParent ? formIconAccent : formAccentTint)
+        .tint(formChromeTint)
         .sheet(isPresented: $isShowingWriteTargetPicker) {
             WriteTargetHouseholdPicker { _ in }
                 .environmentObject(appRouter)
@@ -1552,7 +1649,9 @@ struct CreateTaskView: View {
         .sheet(isPresented: $isShowingColorPicker) {
             colorPickerSheet
         }
-        .sheet(item: $chipEditorSection) { section in
+        .sheet(item: $chipEditorSection, onDismiss: {
+            restoreOptionalFieldEditBaselineIfNeeded()
+        }) { section in
             optionalFieldEditorSheet(for: section)
                 .environmentObject(appRouter)
         }
@@ -1688,7 +1787,9 @@ struct CreateTaskView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(formChromeTint)
             }
+            .tint(formChromeTint)
             .disabled(isSaving)
         }
         if editingTask == nil {
@@ -1719,7 +1820,9 @@ struct CreateTaskView: View {
             } label: {
                 Image(systemName: "checkmark")
                     .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(formChromeTint)
             }
+            .tint(formChromeTint)
             .disabled(isSaving || normalizedTitle.isEmpty)
         }
         ToolbarItemGroup(placement: .keyboard) {

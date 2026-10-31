@@ -149,6 +149,16 @@ struct TodoStickyBoardView: View {
                         .zIndex(10_001)
                 }
 
+                if showsFitAllNotesButton {
+                    fitAllNotesButton
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .padding(.leading, 20)
+                        .padding(.bottom, 20)
+                        .duoCanvasChromePadding(extra: divisionInsets)
+                        .zIndex(10_001)
+                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                }
+
                 // 拖到垃圾桶/书架时浮在 bin 上方，避免被角标挡住。
                 if let session = liftSession {
                     liftedStickyNote(for: session)
@@ -244,6 +254,63 @@ struct TodoStickyBoardView: View {
         .accessibilityLabel(
             showingFarSide ? L10n.Todo.showNearTermTasks : L10n.Todo.showLaterTasks
         )
+    }
+
+    /// 有便签落在视口外时，左下角提供一键缩放适配。
+    private var showsFitAllNotesButton: Bool {
+        guard displayedTasks.isEmpty == false else { return false }
+        guard viewportSize.width > 1, viewportSize.height > 1 else { return false }
+        guard isBoardFlipping == false else { return false }
+        return areAllDisplayedNotesVisible(in: viewportSize) == false
+    }
+
+    private var fitAllNotesButton: some View {
+        Button {
+            fitAllNotes(in: viewportSize, animated: true)
+            savePersistedScale(scale)
+        } label: {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(AppTheme.ColorToken.accent, in: Circle())
+                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Todo.fitAllNotes)
+    }
+
+    /// 当前面全部便签（含缩放后的尺寸）是否完全落在可用视口内。
+    private func areAllDisplayedNotesVisible(in viewport: CGSize) -> Bool {
+        // 预留顶栏 bins / 底部 FAB 与翻面按钮的安全边距。
+        let visibleBounds = CGRect(
+            x: 10,
+            y: 82,
+            width: max(viewport.width - 20 - 72, 0),
+            height: max(viewport.height - 82 - 88, 0)
+        )
+        guard visibleBounds.width > 40, visibleBounds.height > 40 else { return true }
+
+        let safeScale = max(scale, 0.01)
+        let screenNoteSize = CGSize(
+            width: noteSize.width * safeScale,
+            height: noteSize.height * safeScale
+        )
+
+        for task in displayedTasks {
+            let boardPoint = resolvedPosition(for: task, viewport: viewport)
+            let center = viewportPoint(forBoardPoint: boardPoint)
+            let noteRect = CGRect(
+                x: center.x - screenNoteSize.width / 2,
+                y: center.y - screenNoteSize.height / 2,
+                width: screenNoteSize.width,
+                height: screenNoteSize.height
+            )
+            if visibleBounds.contains(noteRect) == false {
+                return false
+            }
+        }
+        return true
     }
 
     private func flipWhiteboard() {

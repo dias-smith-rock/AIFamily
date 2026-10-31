@@ -13,6 +13,7 @@ extension L10n {
     static let completedOn = Entry(key: "todo_completed_on", table: .todo)
     static let completedToDosWillAppearHere = Entry(key: "todo_completed_to_dos_will_appear_here", table: .todo)
     static let dueBy = Entry(key: "todo_due_by", table: .todo)
+    static let fitAllNotes = Entry(key: "todo_fit_all_notes", table: .todo)
     static let dueThisWeek = Entry(key: "todo_due_this_week", table: .todo)
     static let dueToday = Entry(key: "todo_due_today", table: .todo)
     static let later = Entry(key: "todo_later", table: .todo)

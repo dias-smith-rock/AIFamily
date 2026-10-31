@@ -7295,5 +7295,12 @@
     "table": "Todo",
     "swift_property": "clearTrashConfirmMessage",
     "orphan": false
+  },
+  {
+    "legacy_key": "Fit all to-dos",
+    "new_key": "todo_fit_all_notes",
+    "table": "Todo",
+    "swift_property": "fitAllNotes",
+    "orphan": false
   }
 ]
