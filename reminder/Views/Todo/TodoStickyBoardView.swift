@@ -47,6 +47,7 @@ struct TodoStickyBoardView: View {
     @State private var showStickyDeleteConfirm = false
     /// 松手回板后触发图钉钉入动画的便签 id。
     @State private var pinInsertingID: UUID?
+    @EnvironmentObject private var appSettings: AppSettingsManager
     /// 仅首次进入便签模式时自动适配缩放，之后由用户手势控制。
     @State private var didPerformInitialFit = false
     private let pinInsertDuration: TimeInterval = 0.2
@@ -116,8 +117,8 @@ struct TodoStickyBoardView: View {
             let divisionInsets = metrics.divisionAvoidanceInsets
 
             ZStack {
-                // 与白板同色，避免边缘露灰底
-                AppTheme.ColorToken.surface.ignoresSafeArea(edges: .bottom)
+                // 默认与白板同色；自定义页面背景时透出 Schedule/Todo 共用底图。
+                boardChromeFill.ignoresSafeArea(edges: .bottom)
 
                 // 先把布局尺寸压回视口，避免 2000×2000 白板把 ZStack 撑乱，导致角落控件被居中/裁切。
                 boardLayer(viewport: viewport)
@@ -354,10 +355,18 @@ struct TodoStickyBoardView: View {
         .coordinateSpace(name: boardSpace)
     }
 
+    private var usesSharedPageBackground: Bool {
+        appSettings.scheduleBackgroundMode != .systemDefault
+    }
+
+    private var boardChromeFill: Color {
+        usesSharedPageBackground ? .clear : AppTheme.ColorToken.surface
+    }
+
     private var whiteboardBackground: some View {
         ZStack {
-            AppTheme.ColorToken.surface
-            Color.primary.opacity(0.025)
+            boardChromeFill
+            Color.primary.opacity(usesSharedPageBackground ? 0.04 : 0.025)
 
             Canvas { context, size in
                 let step = BoardMetrics.gridStep
@@ -370,7 +379,8 @@ struct TodoStickyBoardView: View {
                     path.move(to: CGPoint(x: 0, y: y))
                     path.addLine(to: CGPoint(x: size.width, y: y))
                 }
-                context.stroke(path, with: .color(.primary.opacity(0.07)), lineWidth: 1)
+                let gridOpacity = usesSharedPageBackground ? 0.14 : 0.07
+                context.stroke(path, with: .color(.primary.opacity(gridOpacity)), lineWidth: 1)
             }
         }
     }
@@ -1654,5 +1664,6 @@ private struct StickyBoardPushPin: View {
         onDropComplete: { _ in },
         onDropDelete: { _ in }
     )
+    .environmentObject(AppSettingsManager.shared)
 }
 #endif

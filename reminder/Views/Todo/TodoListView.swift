@@ -15,6 +15,7 @@ struct TodoListView: View {
     @State private var isShowingCreateFlexibleSheet = false
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
+    @State private var isShowingBackgroundSettings = false
     @State private var createTaskFormInstanceID = UUID()
     @State private var completionCheckedTaskIDs: Set<UUID> = []
     @State private var completionFlyingTaskIDs: Set<UUID> = []
@@ -83,10 +84,14 @@ struct TodoListView: View {
             todoMainContent
             createTodoFAB
         }
-            .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .schedulePageBackground()
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { todoToolbar }
+            .sheet(isPresented: $isShowingBackgroundSettings) {
+                ScheduleBackgroundSettingsSheet()
+                    .environmentObject(appSettings)
+            }
             .sheet(isPresented: $showCompletedSheet) { completedTasksSheet }
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
             .sheet(item: $taskForEditSheet) { task in editFlexibleSheet(task: task) }
@@ -141,33 +146,70 @@ struct TodoListView: View {
         ToolbarItem(placement: .topBarLeading) {
             GroupSwitcherToolbarButton()
         }
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            if viewModel.hasOpenFlexibleTasks {
+        ToolbarItem(placement: .topBarTrailing) {
+            HStack(spacing: 12) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        displayModeRaw = displayMode == .sticky
-                            ? TodoDisplayMode.list.rawValue
-                            : TodoDisplayMode.sticky.rawValue
-                    }
+                    isShowingSearch = true
                 } label: {
-                    Image(systemName: displayMode == .sticky ? "list.bullet" : "square.on.square")
+                    Image(systemName: "magnifyingglass")
                         .font(.system(size: 17, weight: .semibold))
                 }
-                .accessibilityLabel(
-                    displayMode == .sticky
-                        ? L10n.Todo.showAsList
-                        : L10n.Todo.showAsStickyNotes
-                )
+                .accessibilityLabel(L10n.Schedule.search)
+                todoOptionsMenu
             }
-
-            Button {
-                isShowingSearch = true
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 17, weight: .semibold))
-            }
-            .accessibilityLabel(L10n.Schedule.search)
         }
+    }
+
+    private var todoOptionsMenu: some View {
+        Menu {
+            Section {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        displayModeRaw = TodoDisplayMode.list.rawValue
+                    }
+                } label: {
+                    HStack {
+                        Text(L10n.Todo.showAsList)
+                        Spacer(minLength: 8)
+                        if displayMode == .list {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        displayModeRaw = TodoDisplayMode.sticky.rawValue
+                    }
+                } label: {
+                    HStack {
+                        Text(L10n.Todo.showAsStickyNotes)
+                        Spacer(minLength: 8)
+                        if displayMode == .sticky {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+            Section {
+                Button {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(80))
+                        isShowingBackgroundSettings = true
+                    }
+                } label: {
+                    Label {
+                        Text(L10n.Schedule.background)
+                    } icon: {
+                        Image(systemName: "photo.on.rectangle")
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.primary)
+        }
+        .buttonStyle(.plain)
     }
 
     private var createTodoFAB: some View {
