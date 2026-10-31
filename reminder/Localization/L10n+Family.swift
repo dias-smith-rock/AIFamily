@@ -65,6 +65,7 @@ extension L10n {
     static let groupNameDoesNotMatchPleaseEnterItAgain = Entry(key: "family_group_name_does_not_match_please_enter_it_again", table: .family)
     static let groupSettings = Entry(key: "family_group_settings", table: .family)
     static let groupSettings2 = Entry(key: "family_group_settings_2", table: .family)
+    static let groupThemeColor = Entry(key: "family_group_theme_color", table: .family)
     static let groups = Entry(key: "family_groups", table: .family)
     static let groupsCollaboration = Entry(key: "family_groups_collaboration", table: .family)
     static let iAmAParent = Entry(key: "family_i_am_a_parent", table: .family)

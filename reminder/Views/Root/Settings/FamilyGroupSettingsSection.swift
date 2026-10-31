@@ -25,9 +25,17 @@ struct FamilyGroupSettingsSection: View {
     @Binding var isSortingMembers: Bool
     @Binding var isShowingRenameHouseholdSheet: Bool
     var onOpenOrganizationSettings: () -> Void
+    @State private var themeColorRefreshToken = 0
 
     var body: some View {
         familyListContent
+            .id(themeColorRefreshToken)
+            .onReceive(NotificationCenter.default.publisher(for: .householdThemeColorDidChange)) { note in
+                guard let changed = note.object as? UUID,
+                      changed == appRouter.selectedHouseholdId
+                else { return }
+                themeColorRefreshToken &+= 1
+            }
     }
 
     // MARK: - List Content
@@ -219,7 +227,7 @@ struct FamilyGroupSettingsSection: View {
                         .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        HStack(alignment: .center, spacing: 8) {
                             Text(currentOrganizationDisplayName)
                                 .font(AppTheme.FontToken.bodyStrong)
                                 .foregroundStyle(.primary)
@@ -227,8 +235,11 @@ struct FamilyGroupSettingsSection: View {
 
                             if canManageHousehold {
                                 Image(systemName: "square.and.pencil")
-                                    .font(.caption2.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundStyle(.secondary)
+                                    .frame(minWidth: 28, minHeight: 28)
+                                    .contentShape(Rectangle())
+                                    .accessibilityHidden(true)
                             }
                         }
 
@@ -402,6 +413,7 @@ struct FamilyGroupSettingsSection: View {
 // MARK: - Organization Settings Sheet
 
 struct OrganizationSettingsSheet: View {
+    @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.dismiss) private var dismiss
 
@@ -409,6 +421,11 @@ struct OrganizationSettingsSheet: View {
     @State private var name: String
     @State private var groupDescription: String = ""
     @State private var showDisbandConfirmation = false
+    @State private var showThemeColorPicker = false
+    /// 草稿主题色（预设名或 `#RRGGBB`）；点主按钮 Save 才写入本机。
+    @State private var themeColorName: String = "blue"
+    @State private var initialThemeColorName: String = "blue"
+    @State private var customPickerColor: Color = .blue
     private let initialName: String
     private let initialDescription: String
     let isSubmitting: Bool
@@ -458,11 +475,19 @@ struct OrganizationSettingsSheet: View {
         initialDescription.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var hasThemeColorChanges: Bool {
+        themeColorName != initialThemeColorName
+    }
+
+    private var hasNameOrDescriptionChanges: Bool {
+        trimmedName != normalizedInitialName || trimmedDescription != normalizedInitialDescription
+    }
+
     private var canSave: Bool {
         isSubmitting == false
             && isDisbanding == false
             && trimmedName.isEmpty == false
-            && (trimmedName != normalizedInitialName || trimmedDescription != normalizedInitialDescription)
+            && (hasNameOrDescriptionChanges || hasThemeColorChanges)
     }
 
     var body: some View {
@@ -479,6 +504,7 @@ struct OrganizationSettingsSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
+                    themeColorRow
                     saveChangesButton
                 }
                 .padding(.horizontal, 20)
@@ -504,6 +530,7 @@ struct OrganizationSettingsSheet: View {
             .background(Color(.systemGroupedBackground))
             .onAppear {
                 groupDescription = initialDescription
+                syncThemeColorStateFromStore()
             }
             .navigationTitle(L10n.Family.groupSettings2.localized)
             .navigationBarTitleDisplayMode(.inline)
@@ -514,6 +541,9 @@ struct OrganizationSettingsSheet: View {
                     }
                     .disabled(isSubmitting || isDisbanding)
                 }
+            }
+            .sheet(isPresented: $showThemeColorPicker) {
+                groupThemeColorPickerSheet
             }
             .sheet(isPresented: $showDisbandConfirmation) {
                 DisbandHouseholdConfirmationSheet(
@@ -538,8 +568,7 @@ struct OrganizationSettingsSheet: View {
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
             .padding(.vertical, 15)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .organizationSettingsFieldChrome()
     }
 
     private var organizationDescriptionField: some View {
@@ -548,16 +577,191 @@ struct OrganizationSettingsSheet: View {
             .disabled(isSubmitting || isDisbanding)
             .padding(.horizontal, 16)
             .padding(.vertical, 15)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .organizationSettingsFieldChrome()
+    }
+
+    private var themeColorRow: some View {
+        Button {
+            showThemeColorPicker = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "paintpalette.fill")
+                    .font(.body)
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 24, alignment: .center)
+
+                Text(L10n.Family.groupThemeColor.localized)
+                    .font(.body)
+                    .foregroundStyle(.primary)
+
+                Spacer(minLength: 8)
+
+                Circle()
+                    .fill(HouseholdColorStore.color(named: themeColorName))
+                    .frame(width: 22, height: 22)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+                    }
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 15)
+            .organizationSettingsFieldChrome()
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isSubmitting || isDisbanding || appRouter.selectedHouseholdId == nil)
+        .accessibilityLabel(L10n.Family.groupThemeColor)
+    }
+
+    private var groupThemeColorPickerSheet: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 24) {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 5),
+                    spacing: 16
+                ) {
+                    ForEach(HouseholdColorStore.paletteNames, id: \.self) { name in
+                        let isSelected = themeColorName == name
+                        Button {
+                            applyThemeColorToken(name, dismissPicker: true)
+                        } label: {
+                            ZStack {
+                                Circle()
+                                    .fill(HouseholdColorStore.color(named: name))
+                                    .frame(width: 44, height: 44)
+                                if isSelected {
+                                    Image(systemName: "checkmark")
+                                        .font(.body.weight(.bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(Text(verbatim: name))
+                        .accessibilityAddTraits(isSelected ? .isSelected : [])
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L10n.Common.custom.localized)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 14) {
+                        Circle()
+                            .fill(customPickerColor)
+                            .frame(width: 44, height: 44)
+                            .overlay {
+                                Circle()
+                                    .strokeBorder(Color.primary.opacity(0.18), lineWidth: 1)
+                            }
+                            .overlay {
+                                if HouseholdColorStore.isCustomToken(themeColorName) {
+                                    Image(systemName: "checkmark")
+                                        .font(.body.weight(.bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+
+                        ColorPicker(
+                            AppLocalized.string(L10n.Common.custom, locale: appSettings.appLocale),
+                            selection: $customPickerColor,
+                            supportsOpacity: false
+                        )
+                        .labelsHidden()
+
+                        Spacer(minLength: 0)
+
+                        Button(L10n.Common.finish) {
+                            commitCustomThemeColorDraft(dismissPicker: true)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(appRouter.selectedHouseholdId == nil)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .organizationSettingsFieldChrome()
+                .padding(.horizontal, 20)
+
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color(.systemGroupedBackground))
+            .navigationTitle(L10n.Family.groupThemeColor.localized)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showThemeColorPicker = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .accessibilityLabel(L10n.Common.close)
+                }
+            }
+            .onAppear {
+                // 用当前草稿刷新取色器预览，勿回读 store（避免冲掉未保存选择）。
+                customPickerColor = HouseholdColorStore.color(named: themeColorName)
+            }
+        }
+        .environment(\.locale, appSettings.appLocale)
+        .environment(\.layoutDirection, appSettings.layoutDirection)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func syncThemeColorStateFromStore() {
+        guard let householdId = appRouter.selectedHouseholdId else { return }
+        let token = HouseholdColorStore.colorName(for: householdId)
+        themeColorName = token
+        initialThemeColorName = token
+        customPickerColor = HouseholdColorStore.color(named: token)
+    }
+
+    /// 仅更新草稿，等主界面 Save Changes 再持久化。
+    private func applyThemeColorToken(_ token: String, dismissPicker: Bool) {
+        themeColorName = token
+        customPickerColor = HouseholdColorStore.color(named: token)
+        if dismissPicker {
+            showThemeColorPicker = false
+        }
+    }
+
+    private func commitCustomThemeColorDraft(dismissPicker: Bool) {
+        if let token = HouseholdColorStore.token(fromCustomColor: customPickerColor) {
+            themeColorName = token
+        }
+        if dismissPicker {
+            showThemeColorPicker = false
+        }
     }
 
     private var saveChangesButton: some View {
         Button {
             let nameSnapshot = trimmedName
             let descriptionSnapshot = trimmedDescription
+            let themeSnapshot = themeColorName
+            let shouldPersistTheme = themeSnapshot != initialThemeColorName
+            let shouldPersistProfile = hasNameOrDescriptionChanges
             Task { @MainActor in
-                await onSubmit(nameSnapshot, descriptionSnapshot)
+                if shouldPersistTheme, let householdId = appRouter.selectedHouseholdId {
+                    HouseholdColorStore.setColor(named: themeSnapshot, for: householdId)
+                    initialThemeColorName = themeSnapshot
+                }
+                if shouldPersistProfile {
+                    await onSubmit(nameSnapshot, descriptionSnapshot)
+                } else if shouldPersistTheme {
+                    dismiss()
+                }
             }
         } label: {
             Group {
@@ -677,9 +881,20 @@ struct OrganizationSettingsSheet: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 15)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .organizationSettingsFieldChrome()
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+private extension View {
+    /// 群组设置表单字段：相对 grouped 底抬升一层并描边，深色模式下也清晰可辨。
+    func organizationSettingsFieldChrome() -> some View {
+        let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+        return self
+            .background(Color(.secondarySystemGroupedBackground), in: shape)
+            .overlay {
+                shape.strokeBorder(Color.primary.opacity(0.16), lineWidth: 1)
+            }
     }
 }
 

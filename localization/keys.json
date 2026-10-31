@@ -4511,6 +4511,13 @@
     "orphan": true
   },
   {
+    "legacy_key": "Group theme color",
+    "new_key": "family_group_theme_color",
+    "table": "Family",
+    "swift_property": "groupThemeColor",
+    "orphan": false
+  },
+  {
     "legacy_key": "联系方式",
     "new_key": "common_contact_information",
     "table": "Common",
