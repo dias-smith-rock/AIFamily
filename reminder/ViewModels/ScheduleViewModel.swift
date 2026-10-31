@@ -158,21 +158,32 @@ final class ScheduleViewModel: ObservableObject {
         }
 
         let contextToken = taskLoadContextToken(for: householdIds)
-        if lastTaskLoadContextToken != contextToken {
+        let contextChanged = lastTaskLoadContextToken != contextToken
+        if contextChanged {
             lastTaskLoadContextToken = contextToken
             hasCompletedInitialScheduleLoad = false
+            // 先清再灌缓存，避免短暂混入上一组组织的任务。
             tasks = []
         }
 
         var restoredFromDisk = false
-        for householdId in householdIds {
-            if await restoreTasksFromDiskIfNeeded(
-                householdId: householdId,
-                allowWhenSilent: silent == false,
-                merge: true
-            ) {
-                restoredFromDisk = true
+        // 有网也先展示磁盘缓存；silent 刷新在列表为空时同样回填，避免空闪。
+        let shouldHydrateDisk = contextChanged || tasks.isEmpty || silent == false
+        if shouldHydrateDisk {
+            for householdId in householdIds {
+                if await restoreTasksFromDiskIfNeeded(
+                    householdId: householdId,
+                    allowWhenSilent: true,
+                    merge: true
+                ) {
+                    restoredFromDisk = true
+                }
             }
+        }
+
+        // 已有本地数据：立刻放开日程 UI，后台继续拉网，不再转全屏菊花。
+        if tasks.isEmpty == false {
+            hasCompletedInitialScheduleLoad = true
         }
 
         let primaryId = currentHouseholdId ?? householdIds[0]
@@ -180,7 +191,7 @@ final class ScheduleViewModel: ObservableObject {
             await loadHouseholdRosterFromCache(in: primaryId)
         }
 
-        let showBlockingLoad = !silent && hasCompletedInitialScheduleLoad == false
+        let showBlockingLoad = !silent && tasks.isEmpty
         if showBlockingLoad {
             isLoading = true
             errorMessage = nil
@@ -188,12 +199,12 @@ final class ScheduleViewModel: ObservableObject {
         defer {
             if showBlockingLoad {
                 isLoading = false
-                hasCompletedInitialScheduleLoad = true
             }
+            hasCompletedInitialScheduleLoad = true
         }
 
         guard await NetworkMonitor.shared.isConnected else {
-            if restoredFromDisk {
+            if restoredFromDisk || tasks.isEmpty == false {
                 errorMessage = nil
             }
             #if DEBUG
@@ -225,23 +236,26 @@ final class ScheduleViewModel: ObservableObject {
                 let subset = merged.filter { $0.householdId == householdId }
                 LocalCacheManager.shared.save(subset, forKey: Self.tasksCacheKey(for: householdId))
             }
-            tasks = merged
-            await refreshAttachmentPresence(for: merged)
-            if yearCalendarSnapshot != nil {
-                rebuildYearViewSnapshot(locale: AppSettingsManager.shared.appLocale)
+            let tasksChanged = CacheFirstContent.areTasksEquivalent(tasks, merged) == false
+            if tasksChanged {
+                tasks = merged
+                if yearCalendarSnapshot != nil {
+                    rebuildYearViewSnapshot(locale: AppSettingsManager.shared.appLocale)
+                }
             }
+            await refreshAttachmentPresence(for: merged)
             if !silent {
                 errorMessage = nil
             }
             #if DEBUG
-            print("[ScheduleViewModel] loadTasks ok households=\(householdIds.count) count=\(merged.count)")
+            print("[ScheduleViewModel] loadTasks ok households=\(householdIds.count) count=\(merged.count) changed=\(tasksChanged)")
             #endif
         } catch {
             #if DEBUG
             print("[ScheduleViewModel] loadTasks failed error=\(error.localizedDescription)")
             #endif
             if !silent {
-                if restoredFromDisk == false {
+                if restoredFromDisk == false, tasks.isEmpty {
                     errorMessage = error.localizedDescription
                 }
             }

@@ -482,8 +482,6 @@ final class FamilyViewModel: ObservableObject {
         #if DEBUG
         Self.debugLogFetchedProfiles(p, label: "mergingMembershipRows 之后（即将写入 profiles）")
         #endif
-        profiles = p
-        sortProfilesForDisplay()
         let embedded = FamilyProfile.uniqueMembershipsFlattened(from: p)
         var seen = Set<UUID>()
         var combined: [HouseholdMembership] = []
@@ -498,9 +496,15 @@ final class FamilyViewModel: ObservableObject {
             }
             return lhs.createdAt < rhs.createdAt
         }
-        members = combined
-        attachMembershipsFromFlatMembers()
-        applyLocalOrdering()
+
+        let rosterChanged = profiles != p || members != combined
+        if rosterChanged {
+            profiles = p
+            sortProfilesForDisplay()
+            members = combined
+            attachMembershipsFromFlatMembers()
+            applyLocalOrdering()
+        }
         if persistToDiskCache {
             let snapshot = HouseholdLocalCache.MembersSnapshot(profiles: profiles, members: members)
             LocalCacheManager.shared.save(snapshot, forKey: cacheKey)

@@ -1,9 +1,5 @@
 import SwiftUI
 
-#if canImport(Supabase)
-import Supabase
-#endif
-
 struct ScheduleSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
@@ -12,8 +8,7 @@ struct ScheduleSearchView: View {
     @StateObject private var viewModel: ScheduleSearchViewModel
     @StateObject private var scheduleViewModel = AppViewModels.makeScheduleViewModel()
 
-    @State private var taskForDetail: FamilyTask?
-    @State private var currentMembershipRole: MembershipRole = .member
+    @State private var taskForEdit: FamilyTask?
 
     var onOpenTask: (FamilyTask) -> Void
     var onOpenLedger: (LedgerTransaction) -> Void
@@ -93,20 +88,28 @@ struct ScheduleSearchView: View {
             .onAppear {
                 triggerSearch()
             }
-            .sheet(item: $taskForDetail) { task in
-                NavigationStack {
-                    TaskDetailView(
-                        initialTask: task,
-                        currentUserRole: currentMembershipRole,
-                        assigneeDisplayName: scheduleViewModel.assigneeLabel(for: task, locale: locale),
-                        scheduleViewModel: scheduleViewModel
-                    )
-                    .environmentObject(appRouter)
-                }
+            .sheet(item: $taskForEdit) { task in
+                EditTaskView(
+                    task: task,
+                    familyProfiles: scheduleViewModel.familyProfiles,
+                    onUpdateSuccess: { _ in
+                        Task { await scheduleViewModel.loadTasks(silent: true) }
+                    },
+                    onAlarmSync: { updated in
+                        scheduleViewModel.syncAlarms(for: updated)
+                    }
+                )
+                .environmentObject(appRouter)
                 .environment(\.locale, appSettings.appLocale)
                 .environment(\.layoutDirection, appSettings.layoutDirection)
                 .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                .duoReadableContentWidth()
+            }
+            .task(id: appRouter.selectedHouseholdId) {
+                scheduleViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
+                scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+                guard appRouter.hasCompletedAuthBootstrap else { return }
+                await scheduleViewModel.loadTasks(silent: true)
             }
         }
     }
@@ -156,8 +159,8 @@ struct ScheduleSearchView: View {
         scheduleViewModel.setHouseholdContext(item.householdId)
         scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
         Task { @MainActor in
-            await refreshMembershipRole(for: item.householdId)
-            taskForDetail = task
+            await scheduleViewModel.loadTasks(silent: true)
+            taskForEdit = task
             onOpenTask(task)
         }
     }
@@ -170,35 +173,5 @@ struct ScheduleSearchView: View {
             householdIds: appRouter.selectedHouseholdIds,
             householdNames: names
         )
-    }
-
-    private func refreshMembershipRole(for householdId: UUID) async {
-        guard let membershipId = appRouter.selectableHouseholds
-            .first(where: { $0.id == householdId })?
-            .membershipId
-            ?? appRouter.selectedMembershipId
-        else {
-            currentMembershipRole = .member
-            return
-        }
-        #if canImport(Supabase)
-        struct MembershipRoleRow: Decodable {
-            let role: MembershipRole
-        }
-        do {
-            let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client
-                .from("household_memberships")
-                .select("role")
-                .eq("id", value: membershipId.uuidString)
-                .limit(1)
-                .execute()
-                .value
-            currentMembershipRole = rows.first?.role ?? .member
-        } catch {
-            currentMembershipRole = .member
-        }
-        #else
-        currentMembershipRole = .member
-        #endif
     }
 }

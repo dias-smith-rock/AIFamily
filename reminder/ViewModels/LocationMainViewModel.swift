@@ -298,44 +298,36 @@ final class LocationMainViewModel: ObservableObject {
             return
         }
 
-        if await NetworkMonitor.shared.isConnected == false {
-            var offlineMembers: [UserLocationState] = []
-            var profileMap: [UUID: UUID] = [:]
-            var seen = Set<UUID>()
-            for householdId in householdIds {
-                if let cachedMembers = await HouseholdLocalCache.loadMembers(for: householdId) {
-                    let filtered = cachedMembers.filteredToActiveMembers(in: householdId)
-                    let locationRecords = await HouseholdLocalCache.loadLocationStates(for: householdId) ?? []
-                    let built = LocationMemberAssembler.buildMembers(
-                        roster: HouseholdMemberRoster(
-                            profiles: filtered.profiles,
-                            memberships: filtered.members
-                        ),
-                        locationRecords: locationRecords,
-                        householdId: householdId,
-                        currentMembershipId: currentMembershipId
-                    )
-                    for member in built where seen.insert(member.id).inserted {
-                        offlineMembers.append(member)
-                    }
-                    for membership in filtered.members {
-                        if let profileId = membership.profileId {
-                            profileMap[membership.id] = profileId
-                        }
-                    }
-                }
+        // 有网也先展示本地缓存，避免地图空白等网。
+        if members.isEmpty {
+            let cached = await loadCachedMembers(for: householdIds)
+            if cached.members.isEmpty == false {
+                members = cached.members
+                profileIdByMembershipId = cached.profileMap
+                reconcileSelectionAfterReload()
             }
-            members = offlineMembers
-            profileIdByMembershipId = profileMap
+        }
+
+        if await NetworkMonitor.shared.isConnected == false {
+            let cached = await loadCachedMembers(for: householdIds)
+            members = cached.members
+            profileIdByMembershipId = cached.profileMap
             trailSegmentsByProfileId = [:]
             roadSnappedRoutesByProfileId = [:]
             reconcileSelectionAfterReload()
             return
         }
 
-        isLoading = true
-        errorMessage = nil
-        defer { isLoading = false }
+        let showBlockingLoad = members.isEmpty
+        if showBlockingLoad {
+            isLoading = true
+            errorMessage = nil
+        }
+        defer {
+            if showBlockingLoad {
+                isLoading = false
+            }
+        }
 
         do {
             var mergedMembers: [UserLocationState] = []
@@ -370,15 +362,51 @@ final class LocationMainViewModel: ObservableObject {
                 }
             }
             profileIdByMembershipId = profileMap
-            members = mergedMembers
+            if members != mergedMembers {
+                members = mergedMembers
+                reconcileSelectionAfterReload()
+            }
             syncCurrentUserBatteryFromDevice()
-            reconcileSelectionAfterReload()
             await reloadTrailSegments(for: householdIds)
             scheduleRoadSnapRebuild()
         } catch {
-            members = []
-            errorMessage = error.localizedDescription
+            if members.isEmpty {
+                members = []
+                errorMessage = error.localizedDescription
+            }
         }
+    }
+
+    private func loadCachedMembers(
+        for householdIds: [UUID]
+    ) async -> (members: [UserLocationState], profileMap: [UUID: UUID]) {
+        var offlineMembers: [UserLocationState] = []
+        var profileMap: [UUID: UUID] = [:]
+        var seen = Set<UUID>()
+        for householdId in householdIds {
+            if let cachedMembers = await HouseholdLocalCache.loadMembers(for: householdId) {
+                let filtered = cachedMembers.filteredToActiveMembers(in: householdId)
+                let locationRecords = await HouseholdLocalCache.loadLocationStates(for: householdId) ?? []
+                let built = LocationMemberAssembler.buildMembers(
+                    roster: HouseholdMemberRoster(
+                        profiles: filtered.profiles,
+                        memberships: filtered.members
+                    ),
+                    locationRecords: locationRecords,
+                    householdId: householdId,
+                    currentMembershipId: currentMembershipId
+                )
+                for member in built where seen.insert(member.id).inserted {
+                    offlineMembers.append(member)
+                }
+                for membership in filtered.members {
+                    if let profileId = membership.profileId {
+                        profileMap[membership.id] = profileId
+                    }
+                }
+            }
+        }
+        return (offlineMembers, profileMap)
     }
 
     private func reloadTrailSegments(for householdIds: [UUID]) async {

@@ -196,11 +196,12 @@ struct AppTabRootView: View {
                 }
                 .tag(Tab.location)
 
-            ExpenseMainView()
-                .tabItem {
-                    Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
-                }
-                .tag(Tab.expenses)
+            // 暂时隐藏账盘 Tab；恢复时取消注释即可。
+            // ExpenseMainView()
+            //     .tabItem {
+            //         Label(Tab.expenses.titleKey, systemImage: Tab.expenses.systemImage)
+            //     }
+            //     .tag(Tab.expenses)
 
             SettingsMainView()
                 .tabItem {
@@ -209,6 +210,12 @@ struct AppTabRootView: View {
                 .tag(Tab.settings)
         }
         .environment(\.duoPrefersExpandedChrome, prefersExpandedChrome)
+        .onAppear {
+            // 账盘 Tab 隐藏期间兜底，避免 selection 落在不可见 tag。
+            if selectedTab == .expenses {
+                selectedTab = .todos
+            }
+        }
         .onGeometryChange(for: CGSize.self) { proxy in
             proxy.size
         } action: { _, newSize in

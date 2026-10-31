@@ -102,13 +102,14 @@ final class TodoListViewModel: ObservableObject {
             return
         }
 
-        if loadedViewToken == viewToken {
-            // 任务已在内存时仍补拉附件角标（避免首次离线/解码失败后一直不显示）
-            if taskIDsWithAttachments.isEmpty,
-               (flexibleTasks.isEmpty == false || completedTasks.isEmpty == false || deletedTasks.isEmpty == false),
-               await NetworkMonitor.shared.isConnected {
-                await refreshAttachmentPresence(for: flexibleTasks + completedTasks + deletedTasks)
-            }
+        let hasLocalTodos =
+            flexibleTasks.isEmpty == false
+            || completedTasks.isEmpty == false
+            || deletedTasks.isEmpty == false
+
+        if loadedViewToken == viewToken, hasLocalTodos {
+            // 已有展示数据：静默拉网；有差距再刷新（附件角标一并更新）。
+            await loadTasks(silent: true, force: true)
             return
         }
 
@@ -131,7 +132,13 @@ final class TodoListViewModel: ObservableObject {
 
         let token = viewToken
         var restoredFromDisk = false
-        if force == false, silent == false {
+        let hasMemoryTodos =
+            flexibleTasks.isEmpty == false
+            || completedTasks.isEmpty == false
+            || deletedTasks.isEmpty == false
+
+        // 有网也先灌磁盘缓存，避免转菊花空等；force 静默刷新在内存为空时同样回填。
+        if hasMemoryTodos == false || (force == false && silent == false) {
             var mergedCache: [FamilyTask] = []
             var seen = Set<UUID>()
             for householdId in householdIds {
@@ -142,7 +149,7 @@ final class TodoListViewModel: ObservableObject {
                 }
             }
             if mergedCache.isEmpty == false {
-                applyFlexibleTasks(from: mergedCache)
+                applyFlexibleTasks(from: mergedCache, onlyIfChanged: true)
                 errorMessage = nil
                 restoredFromDisk = true
                 loadedViewToken = token
@@ -154,7 +161,11 @@ final class TodoListViewModel: ObservableObject {
             await loadHouseholdRosterFromCache(in: primaryId)
         }
 
-        let showLoading = !silent && !restoredFromDisk && flexibleTasks.isEmpty
+        let hasDisplayableTodos =
+            flexibleTasks.isEmpty == false
+            || completedTasks.isEmpty == false
+            || deletedTasks.isEmpty == false
+        let showLoading = !silent && hasDisplayableTodos == false
         if showLoading {
             isLoading = true
             errorMessage = nil
@@ -166,7 +177,7 @@ final class TodoListViewModel: ObservableObject {
         }
 
         guard await NetworkMonitor.shared.isConnected else {
-            if restoredFromDisk {
+            if restoredFromDisk || hasDisplayableTodos {
                 errorMessage = nil
             }
             #if DEBUG
@@ -196,7 +207,7 @@ final class TodoListViewModel: ObservableObject {
                     }
                 }
             }
-            applyFlexibleTasks(from: merged)
+            applyFlexibleTasks(from: merged, onlyIfChanged: true)
             reconcilePendingHardDeletes(with: merged)
             await refreshAttachmentPresence(for: flexibleTasks + completedTasks + deletedTasks)
             loadedViewToken = token
@@ -204,7 +215,7 @@ final class TodoListViewModel: ObservableObject {
                 errorMessage = nil
             }
         } catch {
-            if !silent, restoredFromDisk == false {
+            if !silent, restoredFromDisk == false, hasDisplayableTodos == false {
                 errorMessage = error.localizedDescription
             }
         }
@@ -233,25 +244,34 @@ final class TodoListViewModel: ObservableObject {
         }
     }
 
-    private func applyFlexibleTasks(from allTasks: [FamilyTask]) {
+    private func applyFlexibleTasks(from allTasks: [FamilyTask], onlyIfChanged: Bool = false) {
         let flexible = allTasks
             .filter(\.isFlexibleTodoCandidate)
             .filter { pendingHardDeletedTaskIDs.contains($0.id) == false }
-        completedTasks = flexible
+        let nextCompleted = flexible
             .filter { $0.status == .completed }
             .sorted { lhs, rhs in
                 lhs.updatedAt > rhs.updatedAt
             }
-        deletedTasks = flexible
+        let nextDeleted = flexible
             .filter { $0.status == .cancelled }
             .sorted { lhs, rhs in
                 lhs.updatedAt > rhs.updatedAt
             }
-        flexibleTasks = flexible
+        let nextOpen = flexible
             .filter { isOpenTodo($0) }
             .sorted { lhs, rhs in
                 deadlineSortKey(for: lhs) < deadlineSortKey(for: rhs)
             }
+        if onlyIfChanged,
+           CacheFirstContent.areTasksEquivalent(flexibleTasks, nextOpen),
+           CacheFirstContent.areTasksEquivalent(completedTasks, nextCompleted),
+           CacheFirstContent.areTasksEquivalent(deletedTasks, nextDeleted) {
+            return
+        }
+        completedTasks = nextCompleted
+        deletedTasks = nextDeleted
+        flexibleTasks = nextOpen
     }
 
     private func reconcilePendingHardDeletes(with fetched: [FamilyTask]) {

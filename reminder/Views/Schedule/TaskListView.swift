@@ -31,7 +31,6 @@ struct TaskListView: View {
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
     @State private var taskForDetailSheet: FamilyTask?
-    @State private var currentMembershipRole: MembershipRole = .member
     @State private var listScrollToken = 0
     @State private var aiPrefillFormInstanceID = UUID()
     /// 周视图「回到本周」：由 `TaskWeekGridView` 同步可见性；递增 trigger 触发跳转。
@@ -86,11 +85,9 @@ struct TaskListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { scheduleToolbar }
             .modifier(
-                ScheduleDetailSheetModifier(
+                ScheduleEditSheetModifier(
                     isEnabled: presentsDetailAsSheet,
                     task: $taskForDetailSheet,
-                    currentMembershipRole: currentMembershipRole,
-                    assigneeLabel: assigneeLabel(for:),
                     viewModel: viewModel,
                     appRouter: appRouter,
                     appSettings: appSettings
@@ -257,7 +254,6 @@ struct TaskListView: View {
                 guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasks()
                 openPendingScheduledTaskIfNeeded()
-                await refreshCurrentMembershipRole()
                 await viewModel.setupRealtimeListener()
             }
             .onDisappear {
@@ -269,7 +265,6 @@ struct TaskListView: View {
                 viewModel.setHouseholdContext(newValue)
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
-                    await refreshCurrentMembershipRole()
                     await viewModel.setupRealtimeListener()
                 }
             }
@@ -279,11 +274,6 @@ struct TaskListView: View {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
                     await viewModel.loadTasks()
                     openPendingScheduledTaskIfNeeded()
-                }
-            }
-            .onChange(of: appRouter.selectedMembershipId) { _, _ in
-                Task {
-                    await refreshCurrentMembershipRole()
                 }
             }
             .onChange(of: currentViewMode) { oldMode, mode in
@@ -337,18 +327,20 @@ struct TaskListView: View {
     @ViewBuilder
     private var scheduleDetailColumn: some View {
         if let task = taskForDetailSheet {
-            NavigationStack {
-                TaskDetailView(
-                    initialTask: task,
-                    currentUserRole: currentMembershipRole,
-                    assigneeDisplayName: assigneeLabel(for: task),
-                    scheduleViewModel: viewModel
-                )
-                .environmentObject(appRouter)
-                .id(task.id)
-            }
+            EditTaskView(
+                task: task,
+                familyProfiles: viewModel.familyProfiles,
+                onUpdateSuccess: { _ in
+                    Task { await viewModel.loadTasks(silent: true) }
+                },
+                onAlarmSync: { updated in
+                    viewModel.syncAlarms(for: updated)
+                }
+            )
+            .environmentObject(appRouter)
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
+            .id(task.id)
         } else {
             ContentUnavailableView {
                 Label(L10n.Schedule.schedule.localized, systemImage: "calendar")
@@ -693,78 +685,37 @@ struct TaskListView: View {
         }
     }
 
-    private func assigneeLabel(for task: FamilyTask) -> String {
-        viewModel.assigneeLabel(for: task, locale: locale)
-    }
-
-    #if canImport(Supabase)
-    private struct MembershipRoleRow: Decodable {
-        let role: MembershipRole
-    }
-    #endif
-
     @MainActor
     private func refreshTasks() async {
-        await refreshCurrentMembershipRole()
         await viewModel.loadTasks()
-    }
-
-    private func refreshCurrentMembershipRole() async {
-        guard let membershipId = appRouter.selectedMembershipId else {
-            currentMembershipRole = .member
-            return
-        }
-        if await NetworkMonitor.shared.isConnected == false,
-           let householdId = appRouter.selectedHouseholdId,
-           let cachedRole = await HouseholdLocalCache.membershipRole(for: membershipId, in: householdId) {
-            currentMembershipRole = cachedRole
-            return
-        }
-        #if canImport(Supabase)
-        do {
-            let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client
-                .from("household_memberships")
-                .select("role")
-                .eq("id", value: membershipId.uuidString)
-                .limit(1)
-                .execute()
-                .value
-            currentMembershipRole = rows.first?.role ?? .member
-        } catch {
-            currentMembershipRole = .member
-        }
-        #else
-        currentMembershipRole = .member
-        #endif
     }
 }
 
-// MARK: - Detail presentation (sheet vs split column)
+// MARK: - Edit presentation (sheet vs split column；点击任务直接进入编辑，跳过详情)
 
-private struct ScheduleDetailSheetModifier: ViewModifier {
+private struct ScheduleEditSheetModifier: ViewModifier {
     let isEnabled: Bool
     @Binding var task: FamilyTask?
-    let currentMembershipRole: MembershipRole
-    let assigneeLabel: (FamilyTask) -> String
     @ObservedObject var viewModel: ScheduleViewModel
     @ObservedObject var appRouter: AppRouter
     @ObservedObject var appSettings: AppSettingsManager
 
     func body(content: Content) -> some View {
         content.sheet(item: sheetBinding) { presented in
-            NavigationStack {
-                TaskDetailView(
-                    initialTask: presented,
-                    currentUserRole: currentMembershipRole,
-                    assigneeDisplayName: assigneeLabel(presented),
-                    scheduleViewModel: viewModel
-                )
-                .environmentObject(appRouter)
-            }
+            EditTaskView(
+                task: presented,
+                familyProfiles: viewModel.familyProfiles,
+                onUpdateSuccess: { _ in
+                    Task { await viewModel.loadTasks(silent: true) }
+                },
+                onAlarmSync: { updated in
+                    viewModel.syncAlarms(for: updated)
+                }
+            )
+            .environmentObject(appRouter)
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
             .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
             .duoReadableContentWidth()
         }
     }

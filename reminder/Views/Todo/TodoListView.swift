@@ -1,9 +1,5 @@
 import SwiftUI
 
-#if canImport(Supabase)
-import Supabase
-#endif
-
 /// 灵活待办 Tab：`task_type == flexible`，按截止日分组，点击编辑分配时间。
 struct TodoListView: View {
     @Environment(\.locale) private var locale
@@ -13,7 +9,6 @@ struct TodoListView: View {
     @StateObject private var viewModel = AppViewModels.makeTodoListViewModel()
     @StateObject private var scheduleViewModel = AppViewModels.makeScheduleViewModel()
 
-    @State private var taskForDetailSheet: FamilyTask?
     @State private var taskForEditSheet: FamilyTask?
     @State private var showOverdueSheet = false
     @State private var showCompletedSheet = false
@@ -21,7 +16,6 @@ struct TodoListView: View {
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
     @State private var createTaskFormInstanceID = UUID()
-    @State private var currentMembershipRole: MembershipRole = .member
     @State private var completionCheckedTaskIDs: Set<UUID> = []
     @State private var completionFlyingTaskIDs: Set<UUID> = []
     @State private var completionInFlightTaskIDs: Set<UUID> = []
@@ -95,7 +89,6 @@ struct TodoListView: View {
             .toolbar { todoToolbar }
             .sheet(isPresented: $showCompletedSheet) { completedTasksSheet }
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
-            .sheet(item: $taskForDetailSheet) { task in taskDetailSheet(task: task) }
             .sheet(item: $taskForEditSheet) { task in editFlexibleSheet(task: task) }
             .sheet(isPresented: $isShowingCreateFlexibleSheet) { createFlexibleSheet }
             .sheet(isPresented: $isShowingWriteTargetPicker) {
@@ -128,7 +121,6 @@ struct TodoListView: View {
                 guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasksIfNeeded()
                 openPendingFlexibleTaskIfNeeded()
-                await refreshCurrentMembershipRole()
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
@@ -208,7 +200,7 @@ struct TodoListView: View {
             completedLabel: { completedLabel(for: $0) },
             onSelectTask: { task in
                 showCompletedSheet = false
-                taskForDetailSheet = task
+                taskForEditSheet = task
             }
         )
         .environment(\.locale, appSettings.appLocale)
@@ -226,7 +218,7 @@ struct TodoListView: View {
             deadlineLabel: { deadlineLabel(for: $0) },
             onSelectTask: { task in
                 showOverdueSheet = false
-                taskForDetailSheet = task
+                taskForEditSheet = task
             },
             onClearTrash: {
                 Task { @MainActor in
@@ -243,23 +235,6 @@ struct TodoListView: View {
         .environment(\.layoutDirection, appSettings.layoutDirection)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
-    }
-
-    private func taskDetailSheet(task: FamilyTask) -> some View {
-        NavigationStack {
-            TaskDetailView(
-                initialTask: task,
-                currentUserRole: currentMembershipRole,
-                assigneeDisplayName: assigneeLabel(for: task),
-                scheduleViewModel: scheduleViewModel
-            )
-            .environmentObject(appRouter)
-        }
-        .environment(\.locale, appSettings.appLocale)
-        .environment(\.layoutDirection, appSettings.layoutDirection)
-        .presentationDetents([.large])
-        .presentationDragIndicator(.visible)
-        .duoReadableContentWidth()
     }
 
     private var createFlexibleSheet: some View {
@@ -316,7 +291,7 @@ struct TodoListView: View {
             return
         }
 
-        taskForDetailSheet = task
+        taskForEditSheet = task
         appRouter.consumePendingTaskReminderTap()
     }
 
@@ -408,7 +383,7 @@ struct TodoListView: View {
                                         beginCompleteFlexibleTask(task)
                                     },
                                     onOpen: {
-                                        taskForDetailSheet = task
+                                        taskForEditSheet = task
                                     }
                                 )
                                 .scaleEffect(isFlying ? 0.22 : 1, anchor: .center)
@@ -661,45 +636,6 @@ struct TodoListView: View {
         viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
         scheduleViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
         scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
-    }
-
-    #if canImport(Supabase)
-    private struct MembershipRoleRow: Decodable {
-        let role: MembershipRole
-    }
-    #endif
-
-    private func refreshCurrentMembershipRole() async {
-        guard let membershipId = appRouter.selectedMembershipId else {
-            currentMembershipRole = .member
-            return
-        }
-        if await NetworkMonitor.shared.isConnected == false,
-           let householdId = appRouter.selectedHouseholdId,
-           let cachedRole = await HouseholdLocalCache.membershipRole(for: membershipId, in: householdId) {
-            currentMembershipRole = cachedRole
-            return
-        }
-        #if canImport(Supabase)
-        do {
-            let rows: [MembershipRoleRow] = try await SupabaseManager.shared.client
-                .from("household_memberships")
-                .select("role")
-                .eq("id", value: membershipId.uuidString)
-                .limit(1)
-                .execute()
-                .value
-            currentMembershipRole = rows.first?.role ?? .member
-        } catch {
-            currentMembershipRole = .member
-        }
-        #else
-        currentMembershipRole = .member
-        #endif
-    }
-
-    private func assigneeLabel(for task: FamilyTask) -> String {
-        scheduleViewModel.assigneeLabel(for: task, locale: locale)
     }
 
     private func completedLabel(for task: FamilyTask) -> String {
