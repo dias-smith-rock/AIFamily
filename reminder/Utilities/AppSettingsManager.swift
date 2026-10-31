@@ -48,6 +48,15 @@ final class AppSettingsManager: ObservableObject {
     @AppStorage(AppDisplayTimeZone.storageKey)
     private var displayTimeZoneStorage = ""
 
+    @AppStorage("schedule_background_mode")
+    private var scheduleBackgroundModeStorage = ScheduleBackgroundMode.systemDefault.rawValue
+
+    @AppStorage("schedule_background_color_hex")
+    private var scheduleBackgroundColorHexStorage = ""
+
+    /// 图片文件变更时递增，驱动 `SchedulePageBackgroundFill` 刷新。
+    @Published private(set) var scheduleBackgroundRevision = 0
+
     var appearance: AppAppearance {
         get { AppAppearance(rawValue: appearanceStorage) ?? .system }
         set {
@@ -142,6 +151,88 @@ final class AppSettingsManager: ObservableObject {
 
     var dynamicTypeSize: DynamicTypeSize {
         appTextSize.dynamicTypeSize
+    }
+
+    // MARK: - Schedule page background（个人偏好）
+
+    var scheduleBackgroundMode: ScheduleBackgroundMode {
+        get { ScheduleBackgroundMode(rawValue: scheduleBackgroundModeStorage) ?? .systemDefault }
+        set {
+            objectWillChange.send()
+            scheduleBackgroundModeStorage = newValue.rawValue
+            scheduleBackgroundRevision &+= 1
+        }
+    }
+
+    /// 纯色模式下的 `#RRGGBB`；非法或空时回退系统背景。
+    var scheduleBackgroundColorHex: String? {
+        get {
+            let trimmed = scheduleBackgroundColorHexStorage.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+        set {
+            objectWillChange.send()
+            if let newValue, let hex = HouseholdColorStore.normalizedHex(newValue) {
+                scheduleBackgroundColorHexStorage = hex
+            } else {
+                scheduleBackgroundColorHexStorage = ""
+            }
+            scheduleBackgroundRevision &+= 1
+        }
+    }
+
+    func applyScheduleBackgroundColor(hex: String) {
+        guard let normalized = HouseholdColorStore.normalizedHex(hex) else { return }
+        objectWillChange.send()
+        scheduleBackgroundColorHexStorage = normalized
+        scheduleBackgroundModeStorage = ScheduleBackgroundMode.solidColor.rawValue
+        scheduleBackgroundRevision &+= 1
+    }
+
+    func applyScheduleBackgroundCustomColor(_ color: Color) {
+        guard let hex = HouseholdColorStore.token(fromCustomColor: color) else { return }
+        applyScheduleBackgroundColor(hex: hex)
+    }
+
+    #if canImport(UIKit)
+    @discardableResult
+    func applyScheduleBackgroundImage(_ image: UIImage) -> Bool {
+        guard ScheduleBackgroundStore.saveUIImage(image) else { return false }
+        objectWillChange.send()
+        scheduleBackgroundModeStorage = ScheduleBackgroundMode.image.rawValue
+        scheduleBackgroundRevision &+= 1
+        return true
+    }
+
+    @discardableResult
+    func applyScheduleBackgroundImageData(_ data: Data) -> Bool {
+        guard ScheduleBackgroundStore.saveImageData(data) else { return false }
+        objectWillChange.send()
+        scheduleBackgroundModeStorage = ScheduleBackgroundMode.image.rawValue
+        scheduleBackgroundRevision &+= 1
+        return true
+    }
+    #endif
+
+    func clearScheduleBackgroundImage() {
+        ScheduleBackgroundStore.clearImage()
+        objectWillChange.send()
+        if scheduleBackgroundMode == .image {
+            if scheduleBackgroundColorHex != nil {
+                scheduleBackgroundModeStorage = ScheduleBackgroundMode.solidColor.rawValue
+            } else {
+                scheduleBackgroundModeStorage = ScheduleBackgroundMode.systemDefault.rawValue
+            }
+        }
+        scheduleBackgroundRevision &+= 1
+    }
+
+    func resetScheduleBackground() {
+        ScheduleBackgroundStore.clearImage()
+        objectWillChange.send()
+        scheduleBackgroundModeStorage = ScheduleBackgroundMode.systemDefault.rawValue
+        scheduleBackgroundColorHexStorage = ""
+        scheduleBackgroundRevision &+= 1
     }
 
     private init() {}

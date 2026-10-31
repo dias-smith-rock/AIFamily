@@ -37,6 +37,7 @@ struct TaskListView: View {
     @State private var showsWeekBackToCurrentWeekButton = false
     @State private var weekBackToCurrentWeekTrigger = 0
     @State private var isShowingInviteSheet = false
+    @State private var isShowingScheduleBackgroundSettings = false
     @State private var containerSize: CGSize = .zero
 
     private var usesSplitDetail: Bool {
@@ -80,10 +81,14 @@ struct TaskListView: View {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 bottomAccessoryBar
             }
-            .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .schedulePageBackground()
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { scheduleToolbar }
+            .sheet(isPresented: $isShowingScheduleBackgroundSettings) {
+                ScheduleBackgroundSettingsSheet()
+                    .environmentObject(appSettings)
+            }
             .modifier(
                 ScheduleEditSheetModifier(
                     isEnabled: presentsDetailAsSheet,
@@ -348,7 +353,7 @@ struct TaskListView: View {
                 Text(L10n.Common.select.localized)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(AppTheme.ColorToken.background.ignoresSafeArea())
+            .schedulePageBackground()
         }
     }
 
@@ -542,7 +547,7 @@ struct TaskListView: View {
                         .font(.system(size: 17, weight: .semibold))
                 }
                 .accessibilityLabel(L10n.Schedule.search)
-                calendarViewModeMenu
+                scheduleOptionsMenu
             }
         }
     }
@@ -562,18 +567,35 @@ struct TaskListView: View {
         .accessibilityLabel(L10n.Schedule.createNewTask)
     }
 
-    private var calendarViewModeMenu: some View {
+    private var scheduleOptionsMenu: some View {
         Menu {
-            ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
-                Button {
-                    currentViewMode = mode
-                } label: {
-                    HStack {
-                        Text(mode.menuTitleKey)
-                        Spacer(minLength: 8)
-                        if mode == currentViewMode {
-                            Image(systemName: "checkmark")
+            Section {
+                ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
+                    Button {
+                        currentViewMode = mode
+                    } label: {
+                        HStack {
+                            Text(mode.menuTitleKey)
+                            Spacer(minLength: 8)
+                            if mode == currentViewMode {
+                                Image(systemName: "checkmark")
+                            }
                         }
+                    }
+                }
+            }
+            Section {
+                Button {
+                    Task { @MainActor in
+                        // Menu 收起后再呈 Sheet，避免同帧冲突导致不弹出。
+                        try? await Task.sleep(for: .milliseconds(80))
+                        isShowingScheduleBackgroundSettings = true
+                    }
+                } label: {
+                    Label {
+                        Text(L10n.Schedule.background)
+                    } icon: {
+                        Image(systemName: "photo.on.rectangle")
                     }
                 }
             }

@@ -7309,5 +7309,68 @@
     "table": "Todo",
     "swift_property": "fitAllNotes",
     "orphan": false
+  },
+  {
+    "legacy_key": "Background",
+    "new_key": "schedule_background",
+    "table": "Schedule",
+    "swift_property": "background",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Preview",
+    "new_key": "schedule_background_preview",
+    "table": "Schedule",
+    "swift_property": "backgroundPreview",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Default",
+    "new_key": "schedule_background_mode_default",
+    "table": "Schedule",
+    "swift_property": "backgroundModeDefault",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Solid Color",
+    "new_key": "schedule_background_mode_solid_color",
+    "table": "Schedule",
+    "swift_property": "backgroundModeSolidColor",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Photo Background",
+    "new_key": "schedule_background_mode_image",
+    "table": "Schedule",
+    "swift_property": "backgroundModeImage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Remove Photo",
+    "new_key": "schedule_background_remove_photo",
+    "table": "Schedule",
+    "swift_property": "backgroundRemovePhoto",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Remove Photo?",
+    "new_key": "schedule_background_remove_photo_confirm_title",
+    "table": "Schedule",
+    "swift_property": "backgroundRemovePhotoConfirmTitle",
+    "orphan": false
+  },
+  {
+    "legacy_key": "The schedule page will no longer use this photo as its background.",
+    "new_key": "schedule_background_remove_photo_confirm_message",
+    "table": "Schedule",
+    "swift_property": "backgroundRemovePhotoConfirmMessage",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Reset to Default",
+    "new_key": "schedule_background_reset_default",
+    "table": "Schedule",
+    "swift_property": "backgroundResetDefault",
+    "orphan": false
   }
 ]

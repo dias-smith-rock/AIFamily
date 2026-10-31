@@ -47,7 +47,7 @@ struct TaskYearView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        .schedulePageBackground()
         .sensoryFeedback(.selection, trigger: hapticToken)
         .onAppear {
             viewModel.refreshYearViewSnapshot(locale: locale)

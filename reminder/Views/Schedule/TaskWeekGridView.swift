@@ -73,7 +73,7 @@ struct TaskWeekGridView: View {
                 weekPager
             }
         }
-        .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        .schedulePageBackground()
         // 侧栏 Tab / Duo 折痕：列宽跟 GeometryReader 走，额外避让 chrome 与 division。
         .duoCanvasChromePadding(extra: divisionAvoidanceInsets)
         .background {

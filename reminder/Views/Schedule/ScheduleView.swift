@@ -88,7 +88,7 @@ struct TaskModeDayView: View {
                 dayContentHost
             }
         }
-        .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        .schedulePageBackground()
         .onAppear {
             weekOffset = weekOffsetForDate(selectedDate)
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
@@ -663,6 +663,6 @@ struct ScheduleInitialLoadingView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppTheme.ColorToken.background.ignoresSafeArea())
+        .schedulePageBackground()
     }
 }

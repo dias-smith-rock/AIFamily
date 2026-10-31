@@ -96,5 +96,14 @@ extension L10n {
     static let viewOverdueTasks = Entry(key: "schedule_view_overdue_tasks", table: .schedule)
     static let writingTask = Entry(key: "schedule_writing_task", table: .schedule)
     static let youHaveAPendingTask = Entry(key: "schedule_you_have_a_pending_task", table: .schedule)
+    static let backgroundResetDefault = Entry(key: "schedule_background_reset_default", table: .schedule)
+    static let backgroundRemovePhotoConfirmMessage = Entry(key: "schedule_background_remove_photo_confirm_message", table: .schedule)
+    static let backgroundRemovePhotoConfirmTitle = Entry(key: "schedule_background_remove_photo_confirm_title", table: .schedule)
+    static let backgroundRemovePhoto = Entry(key: "schedule_background_remove_photo", table: .schedule)
+    static let backgroundModeImage = Entry(key: "schedule_background_mode_image", table: .schedule)
+    static let backgroundModeSolidColor = Entry(key: "schedule_background_mode_solid_color", table: .schedule)
+    static let backgroundModeDefault = Entry(key: "schedule_background_mode_default", table: .schedule)
+    static let backgroundPreview = Entry(key: "schedule_background_preview", table: .schedule)
+    static let background = Entry(key: "schedule_background", table: .schedule)
     }
 }
