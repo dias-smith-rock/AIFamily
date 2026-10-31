@@ -13,6 +13,29 @@ enum ScheduleBackgroundMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// 背景图片适配方式。
+enum ScheduleBackgroundImageFit: String, CaseIterable, Identifiable {
+    /// 等比裁切铺满（默认）。
+    case fill = "fill"
+    /// 等比完整显示（可能留边）。
+    case fit = "fit"
+    /// 拉伸铺满，可能变形。
+    case stretch = "stretch"
+    /// 原尺寸平铺重复。
+    case tile = "tile"
+
+    var id: String { rawValue }
+
+    var titleKey: L10n.Entry {
+        switch self {
+        case .fill: L10n.Schedule.backgroundImageFitFill
+        case .fit: L10n.Schedule.backgroundImageFitFit
+        case .stretch: L10n.Schedule.backgroundImageFitStretch
+        case .tile: L10n.Schedule.backgroundImageFitTile
+        }
+    }
+}
+
 /// 适合做整页背景的预设纯色（偏中性，含深/浅）。
 enum ScheduleBackgroundColorPreset: String, CaseIterable, Identifiable {
     case black = "#000000"
@@ -127,10 +150,8 @@ struct SchedulePageBackgroundFill: View {
         #if canImport(UIKit)
         if let uiImage = ScheduleBackgroundStore.loadUIImage() {
             ZStack {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .clipped()
+                AppTheme.ColorToken.background
+                fittedBackgroundImage(uiImage)
                 // 压暗蒙层，保证顶栏/周条/时间轴等浅色文字可读。
                 Color.black.opacity(0.48)
             }
@@ -141,6 +162,33 @@ struct SchedulePageBackgroundFill: View {
         AppTheme.ColorToken.background
         #endif
     }
+
+    #if canImport(UIKit)
+    @ViewBuilder
+    private func fittedBackgroundImage(_ uiImage: UIImage) -> some View {
+        switch appSettings.scheduleBackgroundImageFit {
+        case .fill:
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+        case .fit:
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case .stretch:
+            Image(uiImage: uiImage)
+                .resizable()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case .tile:
+            Image(uiImage: uiImage)
+                .resizable(resizingMode: .tile)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+    #endif
 }
 
 extension View {

@@ -105,5 +105,10 @@ extension L10n {
     static let backgroundModeDefault = Entry(key: "schedule_background_mode_default", table: .schedule)
     static let backgroundPreview = Entry(key: "schedule_background_preview", table: .schedule)
     static let background = Entry(key: "schedule_background", table: .schedule)
+    static let backgroundImageFit = Entry(key: "schedule_background_image_fit", table: .schedule)
+    static let backgroundImageFitFill = Entry(key: "schedule_background_image_fit_fill", table: .schedule)
+    static let backgroundImageFitFit = Entry(key: "schedule_background_image_fit_fit", table: .schedule)
+    static let backgroundImageFitStretch = Entry(key: "schedule_background_image_fit_stretch", table: .schedule)
+    static let backgroundImageFitTile = Entry(key: "schedule_background_image_fit_tile", table: .schedule)
     }
 }

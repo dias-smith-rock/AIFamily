@@ -202,6 +202,10 @@ struct ScheduleBackgroundSettingsSheet: View {
                 if appSettings.scheduleBackgroundMode == .image, ScheduleBackgroundStore.hasSavedImage {
                     Divider().padding(.leading, 54)
 
+                    imageFitPickerRow
+
+                    Divider().padding(.leading, 54)
+
                     Button {
                         showRemovePhotoConfirm = true
                     } label: {
@@ -223,6 +227,37 @@ struct ScheduleBackgroundSettingsSheet: View {
             }
             .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
+    }
+
+    private var imageFitPickerRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "rectangle.3.group")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(AppTheme.ColorToken.accent)
+                .frame(width: 28)
+            Text(L10n.Schedule.backgroundImageFit.localized)
+                .foregroundStyle(.primary)
+            Spacer(minLength: 8)
+            Picker(
+                AppLocalized.string(L10n.Schedule.backgroundImageFit, locale: locale),
+                selection: imageFitBinding
+            ) {
+                ForEach(ScheduleBackgroundImageFit.allCases) { fit in
+                    Text(fit.titleKey).tag(fit)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+    }
+
+    private var imageFitBinding: Binding<ScheduleBackgroundImageFit> {
+        Binding(
+            get: { appSettings.scheduleBackgroundImageFit },
+            set: { appSettings.scheduleBackgroundImageFit = $0 }
+        )
     }
 
     private var resetSection: some View {

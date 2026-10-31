@@ -7372,5 +7372,40 @@
     "table": "Schedule",
     "swift_property": "backgroundResetDefault",
     "orphan": false
+  },
+  {
+    "legacy_key": "Display Mode",
+    "new_key": "schedule_background_image_fit",
+    "table": "Schedule",
+    "swift_property": "backgroundImageFit",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Fill",
+    "new_key": "schedule_background_image_fit_fill",
+    "table": "Schedule",
+    "swift_property": "backgroundImageFitFill",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Fit",
+    "new_key": "schedule_background_image_fit_fit",
+    "table": "Schedule",
+    "swift_property": "backgroundImageFitFit",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Stretch",
+    "new_key": "schedule_background_image_fit_stretch",
+    "table": "Schedule",
+    "swift_property": "backgroundImageFitStretch",
+    "orphan": false
+  },
+  {
+    "legacy_key": "Tile",
+    "new_key": "schedule_background_image_fit_tile",
+    "table": "Schedule",
+    "swift_property": "backgroundImageFitTile",
+    "orphan": false
   }
 ]

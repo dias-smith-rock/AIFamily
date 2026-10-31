@@ -54,6 +54,9 @@ final class AppSettingsManager: ObservableObject {
     @AppStorage("schedule_background_color_hex")
     private var scheduleBackgroundColorHexStorage = ""
 
+    @AppStorage("schedule_background_image_fit")
+    private var scheduleBackgroundImageFitStorage = ScheduleBackgroundImageFit.fill.rawValue
+
     /// 图片文件变更时递增，驱动 `SchedulePageBackgroundFill` 刷新。
     @Published private(set) var scheduleBackgroundRevision = 0
 
@@ -164,6 +167,15 @@ final class AppSettingsManager: ObservableObject {
         }
     }
 
+    var scheduleBackgroundImageFit: ScheduleBackgroundImageFit {
+        get { ScheduleBackgroundImageFit(rawValue: scheduleBackgroundImageFitStorage) ?? .fill }
+        set {
+            objectWillChange.send()
+            scheduleBackgroundImageFitStorage = newValue.rawValue
+            scheduleBackgroundRevision &+= 1
+        }
+    }
+
     /// 纯色模式下的 `#RRGGBB`；非法或空时回退系统背景。
     var scheduleBackgroundColorHex: String? {
         get {
@@ -232,6 +244,7 @@ final class AppSettingsManager: ObservableObject {
         objectWillChange.send()
         scheduleBackgroundModeStorage = ScheduleBackgroundMode.systemDefault.rawValue
         scheduleBackgroundColorHexStorage = ""
+        scheduleBackgroundImageFitStorage = ScheduleBackgroundImageFit.fill.rawValue
         scheduleBackgroundRevision &+= 1
     }
 
