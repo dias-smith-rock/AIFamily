@@ -568,6 +568,9 @@ private struct WeekTimelineScrollArea: View {
     let taskDisplayDate: (FamilyTask) -> Date
 
     @State private var activeScrollMode: WeekTimelineScrollMode = .currentTimeIfToday
+    @State private var cachedLayoutItems: [WeekTaskLayoutItem] = []
+    @State private var cachedLayoutColumnWidth: CGFloat = 0
+    @State private var cachedLayoutSignature: UInt64 = 0
 
     private var isActiveWeekPage: Bool { displayedWeekOffset == weekOffset }
     private var containsToday: Bool {
@@ -603,6 +606,10 @@ private struct WeekTimelineScrollArea: View {
         (fractionalHourNow - CGFloat(nowHour)) * WeekGridMetrics.hourRowHeight
     }
 
+    private var layoutInputFingerprint: UInt64 {
+        weekLayoutSignature(tasks: weekTasks, days: days)
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.vertical, showsIndicators: true) {
@@ -620,18 +627,6 @@ private struct WeekTimelineScrollArea: View {
                     GeometryReader { geometry in
                     let gridWidth = geometry.size.width
                     let columnWidth = gridWidth / 7
-                    let layoutItems = WeekViewPerformanceTracer.measureLayoutEngine(
-                        taskCount: weekTasks.count,
-                        columnWidth: columnWidth
-                    ) {
-                        WeekTaskLayoutEngine.layout(
-                            tasks: weekTasks,
-                            weekDays: days,
-                            columnWidth: columnWidth,
-                            taskStart: taskDisplayDate,
-                            taskEnd: { $0.timelineEndDate }
-                        )
-                    }
                     let _ = WeekViewPerformanceTracer.recordGeometryLayoutPass(
                         columnWidth: columnWidth,
                         weekTaskCount: weekTasks.count
@@ -650,7 +645,7 @@ private struct WeekTimelineScrollArea: View {
                             nowIndicator(y: nowY, gridWidth: gridWidth)
                         }
 
-                        ForEach(layoutItems) { item in
+                        ForEach(cachedLayoutItems) { item in
                             Button {
                                 onTaskSelect(item.task)
                             } label: {
@@ -666,15 +661,20 @@ private struct WeekTimelineScrollArea: View {
                     }
                     .frame(width: gridWidth, height: WeekGridMetrics.gridHeight, alignment: .topLeading)
                     .onAppear {
+                        rebuildCachedLayoutIfNeeded(columnWidth: columnWidth)
                         if abs(gridColumnWidth - columnWidth) > 0.5 {
                             gridColumnWidth = columnWidth
                         }
                     }
                     .onChange(of: geometry.size.width) { _, newWidth in
                         let updated = newWidth / 7
+                        rebuildCachedLayoutIfNeeded(columnWidth: updated)
                         if abs(gridColumnWidth - updated) > 0.5 {
                             gridColumnWidth = updated
                         }
+                    }
+                    .onChange(of: layoutInputFingerprint) { _, _ in
+                        rebuildCachedLayoutIfNeeded(columnWidth: columnWidth, force: true)
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -894,10 +894,45 @@ private struct WeekTimelineScrollArea: View {
     ) {
         Task { @MainActor in
             await Task.yield()
-            alignTimeline(using: proxy, mode: mode, source: "\(source).retry1", animated: false)
-            try? await Task.sleep(nanoseconds: 120_000_000)
-            alignTimeline(using: proxy, mode: mode, source: "\(source).retry2", animated: true)
+            alignTimeline(using: proxy, mode: mode, source: "\(source).align", animated: false)
         }
+    }
+
+    private func rebuildCachedLayoutIfNeeded(columnWidth: CGFloat, force: Bool = false) {
+        guard columnWidth > 1 else { return }
+        let signature = weekLayoutSignature(tasks: weekTasks, days: days)
+        let widthChanged = abs(cachedLayoutColumnWidth - columnWidth) > 0.5
+        guard force || widthChanged || signature != cachedLayoutSignature else { return }
+
+        cachedLayoutItems = WeekViewPerformanceTracer.measureLayoutEngine(
+            taskCount: weekTasks.count,
+            columnWidth: columnWidth
+        ) {
+            WeekTaskLayoutEngine.layout(
+                tasks: weekTasks,
+                weekDays: days,
+                columnWidth: columnWidth,
+                taskStart: taskDisplayDate,
+                taskEnd: { $0.timelineEndDate }
+            )
+        }
+        cachedLayoutColumnWidth = columnWidth
+        cachedLayoutSignature = signature
+    }
+
+    private func weekLayoutSignature(tasks: [FamilyTask], days: [Date]) -> UInt64 {
+        var hasher = Hasher()
+        for day in days {
+            hasher.combine(day.timeIntervalSince1970)
+        }
+        for task in tasks {
+            hasher.combine(task.id)
+            hasher.combine(task.dueDate?.timeIntervalSince1970)
+            hasher.combine(task.endDatetime?.timeIntervalSince1970)
+            hasher.combine(task.durationMinutes)
+            hasher.combine(task.title)
+        }
+        return UInt64(truncatingIfNeeded: hasher.finalize())
     }
 }
 
@@ -945,6 +980,8 @@ private struct WeekGridBackground: View {
                 context.stroke(path, with: .color(strokeColor), lineWidth: strokeWidth)
             }
         }
+        // 栅格化为位图，避免周页滑动 / ViewModel 刷新时反复矢量描边。
+        .drawingGroup(opaque: false, colorMode: .nonLinear)
     }
 }
 
@@ -974,7 +1011,6 @@ private struct WeekTaskEventCard: View {
                 RoundedRectangle(cornerRadius: 4, style: .continuous)
                     .stroke(task.cardThemeAccentColor.opacity(0.9), lineWidth: 0.5)
             }
-            .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
     }
 }
 

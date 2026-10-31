@@ -20,6 +20,9 @@ struct TodoStickyBoardView: View {
     let onOpenCompletedArchive: () -> Void
     let onDropComplete: (FamilyTask) -> Void
     let onDropDelete: (FamilyTask) -> Void
+    /// 由外层底栏展示「适配全部」；白板只负责可见性与执行。
+    @Binding var showsFitAllNotesButton: Bool
+    @Binding var fitAllNotesRequestID: Int
 
     @State private var positions: [UUID: CGPoint] = [:]
     @State private var draggingID: UUID?
@@ -47,7 +50,9 @@ struct TodoStickyBoardView: View {
     @State private var showStickyDeleteConfirm = false
     /// 松手回板后触发图钉钉入动画的便签 id。
     @State private var pinInsertingID: UUID?
-    @EnvironmentObject private var appSettings: AppSettingsManager
+    @State private var notesOverflowViewport = false
+    @State private var fitVisibilityRefreshTask: Task<Void, Never>?
+    @State private var persistPositionsTask: Task<Void, Never>?
     /// 仅首次进入便签模式时自动适配缩放，之后由用户手势控制。
     @State private var didPerformInitialFit = false
     private let pinInsertDuration: TimeInterval = 0.2
@@ -117,9 +122,6 @@ struct TodoStickyBoardView: View {
             let divisionInsets = metrics.divisionAvoidanceInsets
 
             ZStack {
-                // 默认与白板同色；自定义页面背景时透出 Schedule/Todo 共用底图。
-                boardChromeFill.ignoresSafeArea(edges: .bottom)
-
                 // 先把布局尺寸压回视口，避免 2000×2000 白板把 ZStack 撑乱，导致角落控件被居中/裁切。
                 boardLayer(viewport: viewport)
                     .scaleEffect(scale, anchor: .center)
@@ -148,16 +150,6 @@ struct TodoStickyBoardView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                         .padding(.bottom, 18)
                         .zIndex(10_001)
-                }
-
-                if showsFitAllNotesButton {
-                    fitAllNotesButton
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                        .padding(.leading, 20)
-                        .padding(.bottom, 20)
-                        .duoCanvasChromePadding(extra: divisionInsets)
-                        .zIndex(10_001)
-                        .transition(.opacity.combined(with: .scale(scale: 0.85)))
                 }
 
                 // 拖到垃圾桶/书架时浮在 bin 上方，避免被角标挡住。
@@ -192,6 +184,7 @@ struct TodoStickyBoardView: View {
                 ensurePositions(for: displayedTasks, viewport: viewport)
                 expandBoardIfNeeded(viewport: viewport)
                 performInitialFitIfNeeded(in: viewport)
+                refreshFitVisibility(in: viewport)
             }
             .onChange(of: viewport) { oldViewport, newViewport in
                 let previous = viewportSize.width > 1 ? viewportSize : oldViewport
@@ -216,19 +209,23 @@ struct TodoStickyBoardView: View {
                     boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: newViewport)
                 }
             }
-            .onChange(of: nearTasks.map(\.id)) { _, _ in
+            .onChange(of: stickyTaskIDFingerprint) { _, _ in
                 syncBoardSideAvailability()
                 ensurePositions(for: displayedTasks, viewport: viewport)
                 prunePositions(keeping: Set((nearTasks + farTasks).map(\.id)))
                 expandBoardIfNeeded(viewport: viewport)
+                scheduleFitVisibilityRefresh()
             }
-            .onChange(of: farTasks.map(\.id)) { _, _ in
-                syncBoardSideAvailability()
-                ensurePositions(for: displayedTasks, viewport: viewport)
-                prunePositions(keeping: Set((nearTasks + farTasks).map(\.id)))
-                expandBoardIfNeeded(viewport: viewport)
+            .onChange(of: fitAllNotesRequestID) { _, _ in
+                guard viewportSize.width > 1, viewportSize.height > 1 else { return }
+                fitAllNotes(in: viewportSize, animated: true)
+                savePersistedScale(scale)
             }
         }
+    }
+
+    private var stickyTaskIDFingerprint: [UUID] {
+        nearTasks.map(\.id) + farTasks.map(\.id)
     }
 
     private var flipBoardButton: some View {
@@ -255,30 +252,6 @@ struct TodoStickyBoardView: View {
         .accessibilityLabel(
             showingFarSide ? L10n.Todo.showNearTermTasks : L10n.Todo.showLaterTasks
         )
-    }
-
-    /// 有便签落在视口外时，左下角提供一键缩放适配。
-    private var showsFitAllNotesButton: Bool {
-        guard displayedTasks.isEmpty == false else { return false }
-        guard viewportSize.width > 1, viewportSize.height > 1 else { return false }
-        guard isBoardFlipping == false else { return false }
-        return areAllDisplayedNotesVisible(in: viewportSize) == false
-    }
-
-    private var fitAllNotesButton: some View {
-        Button {
-            fitAllNotes(in: viewportSize, animated: true)
-            savePersistedScale(scale)
-        } label: {
-            Image(systemName: "arrow.up.left.and.arrow.down.right")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(AppTheme.ColorToken.accent, in: Circle())
-                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(L10n.Todo.fitAllNotes)
     }
 
     /// 当前面全部便签（含缩放后的尺寸）是否完全落在可用视口内。
@@ -355,34 +328,10 @@ struct TodoStickyBoardView: View {
         .coordinateSpace(name: boardSpace)
     }
 
-    private var usesSharedPageBackground: Bool {
-        appSettings.scheduleBackgroundMode != .systemDefault
-    }
-
-    private var boardChromeFill: Color {
-        usesSharedPageBackground ? .clear : AppTheme.ColorToken.surface
-    }
-
+    /// 可平移白板上不重复画网格；全屏网格由 `TodoStickyFullscreenChrome` 负责。
     private var whiteboardBackground: some View {
-        ZStack {
-            boardChromeFill
-            Color.primary.opacity(usesSharedPageBackground ? 0.04 : 0.025)
-
-            Canvas { context, size in
-                let step = BoardMetrics.gridStep
-                var path = Path()
-                stride(from: 0.0, through: Double(size.width), by: Double(step)).forEach { x in
-                    path.move(to: CGPoint(x: x, y: 0))
-                    path.addLine(to: CGPoint(x: x, y: size.height))
-                }
-                stride(from: 0.0, through: Double(size.height), by: Double(step)).forEach { y in
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: size.width, y: y))
-                }
-                let gridOpacity = usesSharedPageBackground ? 0.14 : 0.07
-                context.stroke(path, with: .color(.primary.opacity(gridOpacity)), lineWidth: 1)
-            }
-        }
+        Color.clear
+            .contentShape(Rectangle())
     }
 
     // MARK: - Corner bins (viewport-fixed)
@@ -559,7 +508,7 @@ struct TodoStickyBoardView: View {
                         y: start.y + drag.translation.height / safeScale
                     )
                 )
-                positions[task.id] = next
+                // 拖动中只更新浮层坐标，避免每帧写 positions 触发整板 100 卡 diff。
                 if var session = liftSession, session.task.id == task.id {
                     session.boardPoint = next
                     liftSession = session
@@ -569,6 +518,7 @@ struct TodoStickyBoardView: View {
             .onEnded { _ in
                 let target = activeDropTarget
                 let draggedID = draggingID
+                let finalPoint = liftSession?.task.id == task.id ? liftSession?.boardPoint : nil
 
                 guard let draggedID, draggedID == task.id else { return }
                 guard liftSession?.task.id == task.id else {
@@ -580,10 +530,16 @@ struct TodoStickyBoardView: View {
 
                 switch target {
                 case .shelf:
+                    if let finalPoint {
+                        positions[task.id] = finalPoint
+                    }
                     draggingID = nil
                     dragStartBoardPosition = nil
                     beginFadeOutThenComplete(task)
                 case .trash:
+                    if let finalPoint {
+                        positions[task.id] = finalPoint
+                    }
                     draggingID = nil
                     dragStartBoardPosition = nil
                     if var session = liftSession, session.task.id == task.id {
@@ -592,11 +548,15 @@ struct TodoStickyBoardView: View {
                     }
                     showStickyDeleteConfirm = true
                 case nil:
+                    if let finalPoint {
+                        positions[task.id] = finalPoint
+                    }
                     draggingID = nil
                     dragStartBoardPosition = nil
                     liftSession = nil
                     activeDropTarget = nil
-                    savePositions()
+                    scheduleSavePositions()
+                    scheduleFitVisibilityRefresh()
                     expandBoardIfNeeded(viewport: viewportSize)
                     boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
                     playPinInsertAnimation(for: task.id)
@@ -752,6 +712,7 @@ struct TodoStickyBoardView: View {
             .onEnded { _ in
                 boardPanAnchor = nil
                 boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
+                scheduleFitVisibilityRefresh()
             }
     }
 
@@ -768,6 +729,7 @@ struct TodoStickyBoardView: View {
                 committedScale = scale
                 boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
                 savePersistedScale(scale)
+                scheduleFitVisibilityRefresh()
             }
     }
 
@@ -858,6 +820,7 @@ struct TodoStickyBoardView: View {
         } else {
             apply()
         }
+        scheduleFitVisibilityRefresh()
     }
 
     private func applyScale(
@@ -1049,6 +1012,39 @@ struct TodoStickyBoardView: View {
         }
     }
 
+    private func scheduleSavePositions() {
+        persistPositionsTask?.cancel()
+        persistPositionsTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(280))
+            guard Task.isCancelled == false else { return }
+            savePositions()
+        }
+    }
+
+    private func scheduleFitVisibilityRefresh() {
+        fitVisibilityRefreshTask?.cancel()
+        fitVisibilityRefreshTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(120))
+            guard Task.isCancelled == false else { return }
+            refreshFitVisibility(in: viewportSize)
+        }
+    }
+
+    private func refreshFitVisibility(in viewport: CGSize) {
+        let shouldShow: Bool
+        if displayedTasks.isEmpty {
+            shouldShow = false
+        } else if viewport.width <= 1 || viewport.height <= 1 || isBoardFlipping {
+            shouldShow = false
+        } else {
+            shouldShow = areAllDisplayedNotesVisible(in: viewport) == false
+        }
+        notesOverflowViewport = shouldShow
+        if showsFitAllNotesButton != shouldShow {
+            showsFitAllNotesButton = shouldShow
+        }
+    }
+
     private func loadPersistedScale() -> CGFloat? {
         guard let value = UserDefaults.standard.object(forKey: scaleStorageKey) as? Double,
               value.isFinite,
@@ -1066,6 +1062,43 @@ struct TodoStickyBoardView: View {
 private struct CodablePoint: Codable {
     var x: Double
     var y: Double
+}
+
+/// To-Dos 便签模式全屏底：铺满顶栏 / FAB / Tab 后方，不参与白板手势布局。
+struct TodoStickyFullscreenChrome: View {
+    @EnvironmentObject private var appSettings: AppSettingsManager
+
+    private var usesSharedPageBackground: Bool {
+        appSettings.scheduleBackgroundMode != .systemDefault
+    }
+
+    var body: some View {
+        ZStack {
+            if usesSharedPageBackground {
+                SchedulePageBackgroundFill()
+            } else {
+                AppTheme.ColorToken.surface
+            }
+            Color.primary.opacity(usesSharedPageBackground ? 0.04 : 0.025)
+            Canvas { context, size in
+                let step = BoardMetrics.gridStep
+                var path = Path()
+                stride(from: 0.0, through: Double(size.width), by: Double(step)).forEach { x in
+                    path.move(to: CGPoint(x: x, y: 0))
+                    path.addLine(to: CGPoint(x: x, y: size.height))
+                }
+                stride(from: 0.0, through: Double(size.height), by: Double(step)).forEach { y in
+                    path.move(to: CGPoint(x: 0, y: y))
+                    path.addLine(to: CGPoint(x: size.width, y: y))
+                }
+                let lineOpacity = usesSharedPageBackground ? 0.14 : 0.07
+                context.stroke(path, with: .color(.primary.opacity(lineOpacity)), lineWidth: 1)
+            }
+            .drawingGroup(opaque: false, colorMode: .nonLinear)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
 }
 
 /// 白板度量：正方形，按 10×10 网格可平铺约 100 张便签。
@@ -1280,9 +1313,12 @@ private struct TodoStickyNoteCard: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            paperCastShadow
-                .allowsHitTesting(false)
+            if isDragging {
+                paperCastShadow
+                    .allowsHitTesting(false)
+            }
 
+            // 仅纸面 drawingGroup；图钉需超出顶边，整卡栅格化会被裁切。
             ZStack(alignment: .topLeading) {
                 StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
                     // 内容区纯平色，光影只走边缘描边。
@@ -1314,6 +1350,7 @@ private struct TodoStickyNoteCard: View {
                 }
             }
             .clipShape(StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift))
+            .drawingGroup(opaque: false, colorMode: .nonLinear)
 
             StickyBoardPushPin(color: look.pin)
                 .opacity(isDragging ? 0 : 1)
@@ -1662,8 +1699,9 @@ private struct StickyBoardPushPin: View {
         onOpenOverdueBin: {},
         onOpenCompletedArchive: {},
         onDropComplete: { _ in },
-        onDropDelete: { _ in }
+        onDropDelete: { _ in },
+        showsFitAllNotesButton: .constant(false),
+        fitAllNotesRequestID: .constant(0)
     )
-    .environmentObject(AppSettingsManager.shared)
 }
 #endif

@@ -30,6 +30,8 @@ final class TodoListViewModel: ObservableObject {
     private var reloadCancellable: AnyCancellable?
     /// 已发起硬删、短暂屏蔽回写的任务（避免清空后即时 fetch / 缓存覆盖把条目弹回）。
     private var pendingHardDeletedTaskIDs: Set<UUID> = []
+    /// `forWhomAvatarSources` 复用，避免每张便签重建字典。
+    private var profileByIdCache: [UUID: FamilyProfile] = [:]
 
     init(
         taskService: TaskDataService,
@@ -59,6 +61,7 @@ final class TodoListViewModel: ObservableObject {
             taskIDsWithAttachments = []
             householdMembers = []
             familyProfiles = []
+            profileByIdCache = [:]
             rosterLoadedForHouseholdId = nil
             loadedViewToken = nil
         } else if householdChanged {
@@ -295,7 +298,7 @@ final class TodoListViewModel: ObservableObject {
     func forWhomAvatarSources(for task: FamilyTask) -> [TaskCardAvatarSource] {
         let ids = orderedTargetProfileIDs(for: task)
         guard ids.isEmpty == false else { return [] }
-        let profileById = Dictionary(uniqueKeysWithValues: familyProfiles.map { ($0.id, $0) })
+        let profileById = profileLookup()
         return ids.compactMap { id in
             guard let profile = profileById[id] else { return nil }
             return TaskCardAvatarSource(
@@ -304,6 +307,16 @@ final class TodoListViewModel: ObservableObject {
                 imageURL: profile.avatarUrl.flatMap { URL(string: $0) }
             )
         }
+    }
+
+    private func profileLookup() -> [UUID: FamilyProfile] {
+        if profileByIdCache.count == familyProfiles.count,
+           familyProfiles.allSatisfy({ profileByIdCache[$0.id] != nil }) {
+            return profileByIdCache
+        }
+        let map = Dictionary(uniqueKeysWithValues: familyProfiles.map { ($0.id, $0) })
+        profileByIdCache = map
+        return map
     }
 
     // MARK: - Sections
@@ -350,14 +363,29 @@ final class TodoListViewModel: ObservableObject {
 
     /// 便签白板正面：今日 + 本周（近期）。
     func stickyBoardNearTasks(calendar: Calendar = .current) -> [FamilyTask] {
-        mainSectionedTasks(calendar: calendar).flatMap { section, items in
-            (section == .today || section == .thisWeek) ? items : []
-        }
+        stickyBoardPartitions(calendar: calendar).near
     }
 
     /// 便签白板背面：更晚 / 无截止日期（远期）。
     func stickyBoardFarTasks(calendar: Calendar = .current) -> [FamilyTask] {
-        mainSectionedTasks(calendar: calendar).first(where: { $0.0 == .later })?.1 ?? []
+        stickyBoardPartitions(calendar: calendar).far
+    }
+
+    /// 一次分区同时得到 near / far，避免 TodoListView.body 双跑 `sectionedTasks`。
+    func stickyBoardPartitions(calendar: Calendar = .current) -> (near: [FamilyTask], far: [FamilyTask]) {
+        var near: [FamilyTask] = []
+        var far: [FamilyTask] = []
+        for (section, items) in mainSectionedTasks(calendar: calendar) {
+            switch section {
+            case .today, .thisWeek:
+                near.append(contentsOf: items)
+            case .later:
+                far.append(contentsOf: items)
+            case .overdue:
+                break
+            }
+        }
+        return (near, far)
     }
 
     func sectionedTasks(calendar: Calendar = .current, includeOverdue: Bool = true) -> [(TodoSection, [FamilyTask])] {
@@ -417,6 +445,7 @@ final class TodoListViewModel: ObservableObject {
             to: &householdMembers,
             familyProfiles: &familyProfiles
         )
+        profileByIdCache = Dictionary(uniqueKeysWithValues: familyProfiles.map { ($0.id, $0) })
         rosterLoadedForHouseholdId = householdId
     }
 
@@ -425,6 +454,7 @@ final class TodoListViewModel: ObservableObject {
             let roster = try await membershipService.fetchMemberRoster(in: householdId, activeOnly: true)
                 .filteredToActiveMembers(in: householdId)
             familyProfiles = roster.profiles
+            profileByIdCache = Dictionary(uniqueKeysWithValues: roster.profiles.map { ($0.id, $0) })
             let embedded = FamilyProfile.uniqueMembershipsFlattened(from: roster.profiles)
             let embeddedIds = Set(embedded.map(\.id))
             let orphans = roster.memberships.filter { embeddedIds.contains($0.id) == false }
@@ -437,6 +467,7 @@ final class TodoListViewModel: ObservableObject {
             if rosterLoadedForHouseholdId != householdId {
                 householdMembers = []
                 familyProfiles = []
+                profileByIdCache = [:]
             }
         }
     }

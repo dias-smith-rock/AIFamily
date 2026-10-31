@@ -20,6 +20,8 @@ struct TodoListView: View {
     @State private var completionCheckedTaskIDs: Set<UUID> = []
     @State private var completionFlyingTaskIDs: Set<UUID> = []
     @State private var completionInFlightTaskIDs: Set<UUID> = []
+    @State private var stickyShowsFitAllNotes = false
+    @State private var stickyFitAllNotesRequestID = 0
     @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
 
     private var displayMode: TodoDisplayMode {
@@ -80,14 +82,29 @@ struct TodoListView: View {
     }
 
     private var todoStackContent: some View {
-        ZStack(alignment: .bottomTrailing) {
-            todoMainContent
-            createTodoFAB
-        }
-            .schedulePageBackground()
+        todoMainContent
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { todoToolbar }
+            // 便签模式：隐藏导航栏底，全屏网格透到顶栏后方；垃圾桶仍在内容安全区内。
+            .toolbarBackground(displayMode == .sticky ? .hidden : .automatic, for: .navigationBar)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                todoBottomAccessoryBar
+            }
+            .background {
+                if displayMode == .sticky {
+                    TodoStickyFullscreenChrome()
+                        .environmentObject(appSettings)
+                } else {
+                    SchedulePageBackgroundFill()
+                        .ignoresSafeArea()
+                }
+            }
+            .onChange(of: displayModeRaw) { _, _ in
+                if displayMode != .sticky {
+                    stickyShowsFitAllNotes = false
+                }
+            }
             .sheet(isPresented: $isShowingBackgroundSettings) {
                 ScheduleBackgroundSettingsSheet()
                     .environmentObject(appSettings)
@@ -212,6 +229,39 @@ struct TodoListView: View {
         .buttonStyle(.plain)
     }
 
+    /// 与 Schedule `bottomAccessoryBar` 对齐：safeAreaInset + 相同上下边距。
+    private var todoBottomAccessoryBar: some View {
+        HStack(spacing: 12) {
+            if displayMode == .sticky, stickyShowsFitAllNotes {
+                todoFitAllNotesFAB
+            }
+
+            Spacer(minLength: 8)
+                .allowsHitTesting(false)
+
+            createTodoFAB
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+    }
+
+    private var todoFitAllNotesFAB: some View {
+        Button {
+            stickyFitAllNotesRequestID &+= 1
+        } label: {
+            Image(systemName: "arrow.up.left.and.arrow.down.right")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(AppTheme.ColorToken.accent, in: Circle())
+                .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(L10n.Todo.fitAllNotes)
+        .transition(.opacity.combined(with: .scale(scale: 0.85)))
+    }
+
     private var createTodoFAB: some View {
         Button {
             presentCreateFlexible()
@@ -224,13 +274,7 @@ struct TodoListView: View {
                 .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
-        .padding(.trailing, 20)
-        .padding(.bottom, showsCreateTodoFABBottomPadding ? 96 : 20)
         .accessibilityLabel(L10n.Common.newToDo)
-    }
-
-    private var showsCreateTodoFABBottomPadding: Bool {
-        displayMode == .list && showsTodoSummaryFooter
     }
 
     private var completedTasksSheet: some View {
@@ -452,9 +496,10 @@ struct TodoListView: View {
     }
 
     private var todoStickyBoardScrollView: some View {
-        TodoStickyBoardView(
-            nearTasks: viewModel.stickyBoardNearTasks(),
-            farTasks: viewModel.stickyBoardFarTasks(),
+        let partitions = viewModel.stickyBoardPartitions()
+        return TodoStickyBoardView(
+            nearTasks: partitions.near,
+            farTasks: partitions.far,
             overdueCount: viewModel.trashBinCount,
             completedCount: viewModel.completedTasks.count,
             displayTitle: { viewModel.displayTitle(for: $0) },
@@ -471,7 +516,9 @@ struct TodoListView: View {
             onDropComplete: { beginCompleteFlexibleTask($0, playsListExitAnimation: false) },
             onDropDelete: { task in
                 Task { await beginDeleteFlexibleTask(task) }
-            }
+            },
+            showsFitAllNotesButton: $stickyShowsFitAllNotes,
+            fitAllNotesRequestID: $stickyFitAllNotesRequestID
         )
         .refreshable {
             await refreshTodos()

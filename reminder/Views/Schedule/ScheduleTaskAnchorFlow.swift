@@ -31,57 +31,9 @@ struct ScheduleTaskAnchorFlow: View {
     }
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 30)) { timeline in
-            let now = timeline.date
-            ZStack(alignment: .topLeading) {
-                VStack(spacing: 0) {
-                    ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
-                        let startTime = taskAnchor(task)
-                        let showTimeIndicator = index == 0
-                            || ScheduleTimelineMetrics.anchorsShareTimelineLabel(
-                                startTime,
-                                taskAnchor(sortedTasks[index - 1])
-                            ) == false
-
-                        if index > 0 {
-                            let previous = sortedTasks[index - 1]
-                            let previousAnchor = taskAnchor(previous)
-
-                            if ScheduleTimelineMetrics.anchorsShareTimelineLabel(previousAnchor, startTime) == false {
-                                ScheduleAnchorGapSegment(
-                                    stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
-                                    previousAnchor: previousAnchor,
-                                    nextAnchor: startTime,
-                                    compactHeight: compactGapHeight,
-                                    longIdleThreshold: longIdleThreshold
-                                )
-                            }
-                        }
-
-                        TaskRowView(
-                            task: task,
-                            displayTitle: displayTitle(task),
-                            anchor: startTime,
-                            showTimeIndicator: showTimeIndicator,
-                            forWhomAvatars: forWhomAvatars(task),
-                            assigneeLabel: assigneeLabel(task),
-                            hasAttachments: taskHasAttachments(task),
-                            onTap: { onTaskTap(task) }
-                        )
-                        .background {
-                            // 仅「今天」需要此刻指示器几何；其它日收集 Preference 会在换日动画中连帧写 State，易卡顿。
-                            if viewingToday {
-                                GeometryReader { proxy in
-                                    Color.clear.preference(
-                                        key: ScheduleTaskRowFramePreferenceKey.self,
-                                        value: [task.id: proxy.frame(in: .named(ScheduleTaskAnchorFlowCoordinateSpace.id))]
-                                    )
-                                }
-                            }
-                        }
-                        .id("task-\(task.id.uuidString)")
-                    }
-                }
+        // TimelineView 只刷新「此刻」红线，避免每 30s 重绘整棵任务树。
+        ZStack(alignment: .topLeading) {
+            taskRowsColumn
                 .onPreferenceChange(ScheduleTaskRowFramePreferenceKey.self) { newFrames in
                     guard viewingToday else {
                         if taskRowFrames.isEmpty == false {
@@ -93,22 +45,75 @@ struct ScheduleTaskAnchorFlow: View {
                     taskRowFrames = newFrames
                 }
 
-                if viewingToday,
-                   let nowY = nowIndicatorOffsetY(for: now),
-                   let contentHeight = timelineContentHeight {
-                    TaskRowNowIndicatorOverlay(
-                        now: now,
-                        anchorY: nowY,
-                        containerHeight: contentHeight
-                    )
-                    .id(ScheduleAnchorFlowScrollIDs.nowMarker)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .allowsHitTesting(false)
-                    .zIndex(1)
+            if viewingToday {
+                TimelineView(.periodic(from: .now, by: 30)) { timeline in
+                    if let nowY = nowIndicatorOffsetY(for: timeline.date),
+                       let contentHeight = timelineContentHeight {
+                        TaskRowNowIndicatorOverlay(
+                            now: timeline.date,
+                            anchorY: nowY,
+                            containerHeight: contentHeight
+                        )
+                        .id(ScheduleAnchorFlowScrollIDs.nowMarker)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                        .allowsHitTesting(false)
+                    }
                 }
+                .zIndex(1)
             }
-            .coordinateSpace(name: ScheduleTaskAnchorFlowCoordinateSpace.id)
-            .padding(.vertical, 30)
+        }
+        .coordinateSpace(name: ScheduleTaskAnchorFlowCoordinateSpace.id)
+        .padding(.vertical, 30)
+    }
+
+    private var taskRowsColumn: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(sortedTasks.enumerated()), id: \.element.id) { index, task in
+                let startTime = taskAnchor(task)
+                let showTimeIndicator = index == 0
+                    || ScheduleTimelineMetrics.anchorsShareTimelineLabel(
+                        startTime,
+                        taskAnchor(sortedTasks[index - 1])
+                    ) == false
+
+                if index > 0 {
+                    let previous = sortedTasks[index - 1]
+                    let previousAnchor = taskAnchor(previous)
+
+                    if ScheduleTimelineMetrics.anchorsShareTimelineLabel(previousAnchor, startTime) == false {
+                        ScheduleAnchorGapSegment(
+                            stableID: "gap-\(previous.id.uuidString)-\(task.id.uuidString)",
+                            previousAnchor: previousAnchor,
+                            nextAnchor: startTime,
+                            compactHeight: compactGapHeight,
+                            longIdleThreshold: longIdleThreshold
+                        )
+                    }
+                }
+
+                TaskRowView(
+                    task: task,
+                    displayTitle: displayTitle(task),
+                    anchor: startTime,
+                    showTimeIndicator: showTimeIndicator,
+                    forWhomAvatars: forWhomAvatars(task),
+                    assigneeLabel: assigneeLabel(task),
+                    hasAttachments: taskHasAttachments(task),
+                    onTap: { onTaskTap(task) }
+                )
+                .background {
+                    // 仅「今天」需要此刻指示器几何；其它日收集 Preference 会在换日动画中连帧写 State，易卡顿。
+                    if viewingToday {
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: ScheduleTaskRowFramePreferenceKey.self,
+                                value: [task.id: proxy.frame(in: .named(ScheduleTaskAnchorFlowCoordinateSpace.id))]
+                            )
+                        }
+                    }
+                }
+                .id("task-\(task.id.uuidString)")
+            }
         }
     }
 
