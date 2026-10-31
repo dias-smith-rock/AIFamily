@@ -339,6 +339,10 @@ struct TodoStickyBoardView: View {
             whiteboardBackground
                 .frame(width: boardSize.width, height: boardSize.height)
                 .contentShape(Rectangle())
+                // 仅空白纸面：双击放大（便签会先命中，不会进到这里）。
+                .onTapGesture(count: 2) { location in
+                    zoomIn(towardBoardPoint: location)
+                }
 
             ForEach(displayedTasks) { task in
                 stickyNote(for: task)
@@ -755,6 +759,38 @@ struct TodoStickyBoardView: View {
                 boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
                 savePersistedScale(scale)
             }
+    }
+
+    /// 双击空白处：以点击点为锚放大一档。
+    private func zoomIn(towardBoardPoint boardPoint: CGPoint, factor: CGFloat = 1.5) {
+        guard draggingID == nil, isBoardFlipping == false else { return }
+        guard viewportSize.width > 1, viewportSize.height > 1 else { return }
+
+        let minScale = minimumScaleToFillViewport(viewportSize)
+        let nextScale = min(max(scale * factor, minScale), scaleRange.upperBound)
+        guard abs(nextScale - scale) > 0.01 else { return }
+
+        let anchorViewport = viewportPoint(forBoardPoint: boardPoint)
+        let viewportCenter = CGPoint(x: viewportSize.width / 2, y: viewportSize.height / 2)
+        var dx = (boardPoint.x - boardSize.width / 2) * nextScale
+        let dy = (boardPoint.y - boardSize.height / 2) * nextScale
+        if showingFarSide {
+            dx = -dx
+        }
+        let proposedOffset = CGSize(
+            width: anchorViewport.x - viewportCenter.x - dx,
+            height: anchorViewport.y - viewportCenter.y - dy
+        )
+
+        withAnimation(.easeInOut(duration: 0.25)) {
+            scale = nextScale
+            committedScale = nextScale
+            boardOffset = clampedBoardOffset(proposedOffset, scale: nextScale, viewport: viewportSize)
+        }
+        savePersistedScale(nextScale)
+        #if canImport(UIKit)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
     }
 
     /// 缩放后白板仍盖住视口：限制平移，不露出灰边。
@@ -1239,26 +1275,16 @@ private struct TodoStickyNoteCard: View {
 
             ZStack(alignment: .topLeading) {
                 StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
+                    // 内容区纯平色，光影只走边缘描边。
                     .fill(paperFill)
                     .overlay {
                         StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
-                            .stroke(Color.primary.opacity(0.05), lineWidth: 0.8)
+                            .stroke(edgeLightingStroke, lineWidth: 2.2)
+                            .allowsHitTesting(false)
                     }
                     .overlay {
-                        // 极淡高光，避免压暗文字
                         StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.22),
-                                        Color.clear,
-                                        Color.black.opacity(0.03)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .allowsHitTesting(false)
+                            .stroke(Color.primary.opacity(0.06), lineWidth: 0.7)
                     }
 
                 if look.curlStyle != .flat {
@@ -1310,13 +1336,18 @@ private struct TodoStickyNoteCard: View {
         }
     }
 
-    private var paperFill: some ShapeStyle {
-        // 以系统浅底为主，主题色只做淡淡染色。
+    /// 内容区域无渐变光影，避免文字被染色/压暗。
+    private var paperFill: Color {
+        Color(.secondarySystemGroupedBackground)
+    }
+
+    /// 仅贴合纸缘的高光 + 主题色 + 阴影，不进入内容区。
+    private var edgeLightingStroke: some ShapeStyle {
         LinearGradient(
             colors: [
-                Color(.secondarySystemGroupedBackground),
-                Color(.secondarySystemGroupedBackground).opacity(0.96),
-                look.paper
+                Color.white.opacity(0.34),
+                look.paper.opacity(0.85),
+                Color.black.opacity(0.16)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
