@@ -18,7 +18,7 @@ struct WriteTargetHouseholdPicker: View {
             List {
                 ForEach(organizations) { organization in
                     Button {
-                        selectedId = organization.id
+                        selectAndDismiss(organization)
                     } label: {
                         HStack(spacing: 12) {
                             HouseholdColorDot(householdId: organization.id, size: 10)
@@ -39,23 +39,18 @@ struct WriteTargetHouseholdPicker: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.Common.cancel) { dismiss() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(L10n.Common.select) {
-                        guard let selectedId,
-                              let option = organizations.first(where: { $0.id == selectedId }) else {
-                            return
-                        }
-                        appRouter.chooseHouseholdForWrite(option)
-                        onConfirm(option)
-                        dismiss()
-                    }
-                    .disabled(selectedId == nil)
-                }
             }
             .onAppear {
                 selectedId = appRouter.selectedHouseholdId ?? organizations.first?.id
                 HouseholdColorStore.ensureAssigned(ids: organizations.map(\.id))
             }
         }
+    }
+
+    private func selectAndDismiss(_ organization: AppRouter.HouseholdOption) {
+        selectedId = organization.id
+        appRouter.chooseHouseholdForWrite(organization)
+        onConfirm(organization)
+        dismiss()
     }
 }

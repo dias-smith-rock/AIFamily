@@ -13,7 +13,6 @@ struct TodoListView: View {
     @State private var showOverdueSheet = false
     @State private var showCompletedSheet = false
     @State private var isShowingCreateFlexibleSheet = false
-    @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
     @State private var isShowingBackgroundSettings = false
     @State private var createTaskFormInstanceID = UUID()
@@ -113,17 +112,6 @@ struct TodoListView: View {
             .sheet(isPresented: $showOverdueSheet) { overdueTasksSheet }
             .sheet(item: $taskForEditSheet) { task in editFlexibleSheet(task: task) }
             .sheet(isPresented: $isShowingCreateFlexibleSheet) { createFlexibleSheet }
-            .sheet(isPresented: $isShowingWriteTargetPicker) {
-                WriteTargetHouseholdPicker { _ in
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(350))
-                        createTaskFormInstanceID = UUID()
-                        isShowingCreateFlexibleSheet = true
-                    }
-                }
-                .environmentObject(appRouter)
-                .presentationDetents([.medium])
-            }
             .sheet(isPresented: $isShowingSearch) {
                 ScheduleSearchView(
                     onOpenTask: { _ in },
@@ -707,12 +695,9 @@ struct TodoListView: View {
     }
 
     private func presentCreateFlexible() {
-        if appRouter.needsWriteTargetSelection {
-            isShowingWriteTargetPicker = true
-        } else {
-            createTaskFormInstanceID = UUID()
-            isShowingCreateFlexibleSheet = true
-        }
+        // 与 Schedule 一致：直接打开创建页；多群组时在表单顶栏切换写入组织。
+        createTaskFormInstanceID = UUID()
+        isShowingCreateFlexibleSheet = true
     }
 
     /// household 或 auth bootstrap 完成后触发待办加载，避免 JWT 刷新前过早请求。

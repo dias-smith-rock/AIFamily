@@ -55,6 +55,9 @@ struct TodoStickyBoardView: View {
     @State private var persistPositionsTask: Task<Void, Never>?
     /// 仅首次进入便签模式时自动适配缩放，之后由用户手势控制。
     @State private var didPerformInitialFit = false
+    /// 用于检测新建便签；首批载入不触发自动揭示。
+    @State private var knownTaskIDs: Set<UUID> = []
+    @State private var revealAddedTasksTask: Task<Void, Never>?
     private let pinInsertDuration: TimeInterval = 0.2
     /// 白板绕 Y 轴累计旋转角；每 +180° 翻一面。
     @State private var boardFlipDegrees: Double = 0
@@ -181,7 +184,8 @@ struct TodoStickyBoardView: View {
                 divisionFrame = metrics.divisionFrame
                 loadPositions()
                 syncBoardSideAvailability()
-                ensurePositions(for: displayedTasks, viewport: viewport)
+                knownTaskIDs = Set((nearTasks + farTasks).map(\.id))
+                ensurePositions(for: nearTasks + farTasks, viewport: viewport)
                 expandBoardIfNeeded(viewport: viewport)
                 performInitialFitIfNeeded(in: viewport)
                 refreshFitVisibility(in: viewport)
@@ -211,10 +215,19 @@ struct TodoStickyBoardView: View {
             }
             .onChange(of: stickyTaskIDFingerprint) { _, _ in
                 syncBoardSideAvailability()
-                ensurePositions(for: displayedTasks, viewport: viewport)
-                prunePositions(keeping: Set((nearTasks + farTasks).map(\.id)))
+                let allIDs = Set((nearTasks + farTasks).map(\.id))
+                let addedIDs = allIDs.subtracting(knownTaskIDs)
+                let shouldRevealNewNotes = knownTaskIDs.isEmpty == false && addedIDs.isEmpty == false
+                // 正反面任务都预占位，避免新建落在背面时迟迟没有坐标。
+                ensurePositions(for: nearTasks + farTasks, viewport: viewport)
+                prunePositions(keeping: allIDs)
                 expandBoardIfNeeded(viewport: viewport)
-                scheduleFitVisibilityRefresh()
+                knownTaskIDs = allIDs
+                if shouldRevealNewNotes {
+                    revealNewlyAddedTasks(addedIDs)
+                } else {
+                    scheduleFitVisibilityRefresh()
+                }
             }
             .onChange(of: fitAllNotesRequestID) { _, _ in
                 guard viewportSize.width > 1, viewportSize.height > 1 else { return }
@@ -296,6 +309,7 @@ struct TodoStickyBoardView: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(boardFlipDuration * 1_000_000_000))
             isBoardFlipping = false
+            scheduleFitVisibilityRefresh()
         }
     }
 
@@ -303,6 +317,43 @@ struct TodoStickyBoardView: View {
         if canFlipBoard == false {
             boardFlipDegrees = 0
             isBoardFlipping = false
+        }
+    }
+
+    /// 新建便签后：必要时翻到所在面，并自动缩放以保证便签落入可视区。
+    private func revealNewlyAddedTasks(_ addedIDs: Set<UUID>) {
+        revealAddedTasksTask?.cancel()
+        revealAddedTasksTask = Task { @MainActor in
+            let addedNear = nearTasks.contains { addedIDs.contains($0.id) }
+            let addedFar = farTasks.contains { addedIDs.contains($0.id) }
+
+            // 仅当新增只在背面/正面之一、且当前面看不到时才翻面；两侧都有新增则留在当前面。
+            let targetFarSide: Bool?
+            if addedFar, addedNear == false {
+                targetFarSide = true
+            } else if addedNear, addedFar == false {
+                targetFarSide = false
+            } else {
+                targetFarSide = nil
+            }
+
+            if let targetFarSide,
+               canFlipBoard,
+               targetFarSide != showingFarSide,
+               isBoardFlipping == false {
+                flipWhiteboard()
+                try? await Task.sleep(for: .seconds(boardFlipDuration + 0.05))
+                guard Task.isCancelled == false else { return }
+            }
+
+            guard viewportSize.width > 1, viewportSize.height > 1 else { return }
+            // 等 sheet 收起、布局稳定后再适配，避免首帧视口不准。
+            try? await Task.sleep(for: .milliseconds(180))
+            guard Task.isCancelled == false else { return }
+            guard viewportSize.width > 1, viewportSize.height > 1 else { return }
+
+            fitAllNotes(in: viewportSize, animated: true)
+            savePersistedScale(scale)
         }
     }
 
@@ -1257,7 +1308,6 @@ private struct StickyNoteLook {
     /// 纸面贴近 group 主题色；图钉颜色按任务 ID 稳定随机。
     static func stable(for id: UUID, theme: Color) -> StickyNoteLook {
         let seed = id.uuidString.utf8.reduce(0) { $0 &* 31 &+ Int($1) }
-        let styles = StickyNoteCurlStyle.allCases
         // 浅透明主题色：保持色系一致，避免纸面过深影响文字。
         let strengths: [Double] = [0.18, 0.22, 0.26, 0.30, 0.20, 0.24]
         let strength = strengths[abs(seed) % strengths.count]
@@ -1268,7 +1318,8 @@ private struct StickyNoteLook {
         return StickyNoteLook(
             paper: theme.opacity(strength),
             pin: pinPalette[abs(seed / 7) % pinPalette.count],
-            curlStyle: styles[abs(seed / 41) % styles.count],
+            // 便签统一平整，不再随机卷角 / 掀边。
+            curlStyle: .flat,
             rotationDegrees: Double((abs(seed / 11) % 11) - 5) * 0.85,
             jitter: CGPoint(
                 x: CGFloat((abs(seed / 17) % 17) - 8),
