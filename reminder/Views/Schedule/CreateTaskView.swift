@@ -1940,7 +1940,15 @@ struct CreateTaskView: View {
         taskId: UUID,
         uploads: [TaskAttachmentSupabaseSupport.UploadedFile]
     ) async throws {
-        try await TaskAttachmentSupabaseSupport.insertRecords(taskId: taskId, uploads: uploads)
+        try await persistAttachmentRecords(taskIds: [taskId], uploads: uploads)
+    }
+
+    @MainActor
+    private func persistAttachmentRecords(
+        taskIds: [UUID],
+        uploads: [TaskAttachmentSupabaseSupport.UploadedFile]
+    ) async throws {
+        try await TaskAttachmentSupabaseSupport.insertRecords(taskIds: taskIds, uploads: uploads)
     }
 
     private func sheetCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -2818,6 +2826,7 @@ struct CreateTaskView: View {
             let attachmentUploads = try await uploadSelectedAttachments(householdId: householdId)
             let client = SupabaseManager.shared.client
             let updated: FamilyTask
+            var seriesAttachmentTaskIds: [UUID] = []
 
             switch scope {
             case .singleOnly:
@@ -2888,6 +2897,7 @@ struct CreateTaskView: View {
                 }
 
                 var refreshedCurrent: FamilyTask?
+                seriesAttachmentTaskIds = rows.map(\.id)
 
                 for row in rows {
                     let metaOnly = isMotherMetaOnly(row: row)
@@ -2978,13 +2988,26 @@ struct CreateTaskView: View {
             }
 
             if attachmentsToDelete.isEmpty == false {
+                let deletedFileURLs = attachmentsToDelete.map(\.fileUrl)
                 try await TaskAttachmentSupabaseSupport.deleteRecords(
                     ids: attachmentsToDelete.map(\.id)
                 )
+                if scope == .thisAndFuture, seriesAttachmentTaskIds.isEmpty == false {
+                    try await TaskAttachmentSupabaseSupport.deleteRecords(
+                        matchingFileURLs: deletedFileURLs,
+                        fromTaskIds: seriesAttachmentTaskIds
+                    )
+                }
             }
 
             if attachmentUploads.isEmpty == false {
-                try await persistAttachmentRecords(taskId: updated.id, uploads: attachmentUploads)
+                let uploadTargetIds = scope == .thisAndFuture && seriesAttachmentTaskIds.isEmpty == false
+                    ? seriesAttachmentTaskIds
+                    : [updated.id]
+                try await persistAttachmentRecords(
+                    taskIds: uploadTargetIds,
+                    uploads: attachmentUploads
+                )
             }
 
             try await applyRecurrenceTransitionIfNeeded(
@@ -3159,6 +3182,7 @@ struct CreateTaskView: View {
 
             async let attachmentUploads = uploadSelectedAttachments(householdId: householdId)
             var persistedTaskId: UUID?
+            var seriesTaskIdsForAttachments: [UUID] = []
 
             if recurrence == nil {
                 let newTaskId = UUID()
@@ -3265,6 +3289,7 @@ struct CreateTaskView: View {
             } else {
                 let newTaskId = UUID()
                 persistedTaskId = newTaskId
+                seriesTaskIdsForAttachments = [newTaskId]
                 let motherPayload = TaskInsertPayload(
                     id: newTaskId,
                     householdId: householdId,
@@ -3345,6 +3370,7 @@ struct CreateTaskView: View {
                         .from("tasks")
                         .insert(childPayloads)
                         .execute()
+                    seriesTaskIdsForAttachments.append(contentsOf: childPayloads.map(\.id))
                     for payload in childPayloads {
                         if let synthetic = familyTaskFromInsertPayload(payload) {
                             onAlarmSync?(synthetic)
@@ -3354,11 +3380,21 @@ struct CreateTaskView: View {
             }
 
             let resolvedAttachmentUploads = try await attachmentUploads
-            if resolvedAttachmentUploads.isEmpty == false, let persistedTaskId {
-                try await persistAttachmentRecords(
-                    taskId: persistedTaskId,
-                    uploads: resolvedAttachmentUploads
-                )
+            if resolvedAttachmentUploads.isEmpty == false {
+                let attachmentTaskIds: [UUID]
+                if seriesTaskIdsForAttachments.isEmpty == false {
+                    attachmentTaskIds = seriesTaskIdsForAttachments
+                } else if let persistedTaskId {
+                    attachmentTaskIds = [persistedTaskId]
+                } else {
+                    attachmentTaskIds = []
+                }
+                if attachmentTaskIds.isEmpty == false {
+                    try await persistAttachmentRecords(
+                        taskIds: attachmentTaskIds,
+                        uploads: resolvedAttachmentUploads
+                    )
+                }
             }
 
             let hasAttachment = resolvedAttachmentUploads.isEmpty == false

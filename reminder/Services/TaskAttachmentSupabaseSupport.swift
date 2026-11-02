@@ -199,19 +199,32 @@ enum TaskAttachmentSupabaseSupport {
 
     @MainActor
     static func insertRecords(taskId: UUID, uploads: [UploadedFile]) async throws {
-        guard uploads.isEmpty == false else { return }
+        try await insertRecords(taskIds: [taskId], uploads: uploads)
+    }
+
+    /// 将同一批附件（共享 `file_url`，不重复上传）关联到多个任务。
+    @MainActor
+    static func insertRecords(taskIds: [UUID], uploads: [UploadedFile]) async throws {
+        let uniqueTaskIds = Array(Set(taskIds))
+        guard uniqueTaskIds.isEmpty == false, uploads.isEmpty == false else { return }
 
         #if canImport(Supabase)
-        let rows = uploads.map {
-            TaskAttachmentInsertRow(
-                taskId: taskId,
-                fileUrl: $0.fileUrl,
-                fileType: $0.fileType,
-                fileSizeBytes: $0.fileSizeBytes
-            )
+        var rows: [TaskAttachmentInsertRow] = []
+        rows.reserveCapacity(uniqueTaskIds.count * uploads.count)
+        for taskId in uniqueTaskIds {
+            for upload in uploads {
+                rows.append(
+                    TaskAttachmentInsertRow(
+                        taskId: taskId,
+                        fileUrl: upload.fileUrl,
+                        fileType: upload.fileType,
+                        fileSizeBytes: upload.fileSizeBytes
+                    )
+                )
+            }
         }
         print("👉 准备向 task_attachments 插入 \(rows.count) 条数据...")
-        print("👉 关联的 Task ID 为: \(taskId.uuidString)")
+        print("👉 关联的 Task IDs 为: \(uniqueTaskIds.map(\.uuidString).joined(separator: ", "))")
 
         do {
             _ = try await SupabaseManager.shared.client
@@ -225,7 +238,7 @@ enum TaskAttachmentSupabaseSupport {
             throw error
         }
         #else
-        _ = taskId
+        _ = uniqueTaskIds
         _ = uploads
         throw TaskAttachmentSupabaseError.sdkUnavailable
         #endif
@@ -238,6 +251,79 @@ enum TaskAttachmentSupabaseSupport {
             UploadedFile(fileUrl: $0, fileSizeBytes: 0, fileType: mimeType)
         }
         try await insertRecords(taskId: taskId, uploads: uploads)
+    }
+
+    /// 将源任务附件按 `file_url` 复制到目标任务（跳过目标上已有相同 URL）。
+    @MainActor
+    static func cloneAttachments(from sourceTaskId: UUID, to targetTaskIds: [UUID]) async throws {
+        let uniqueTargets = Array(Set(targetTaskIds).subtracting([sourceTaskId]))
+        guard uniqueTargets.isEmpty == false else { return }
+
+        #if canImport(Supabase)
+        let sourceAttachments = try await fetchRecords(taskId: sourceTaskId)
+        guard sourceAttachments.isEmpty == false else { return }
+
+        let targetIdStrings = uniqueTargets.map { $0.uuidString.lowercased() }
+        let existingOnTargets: [TaskAttachment] = try await SupabaseManager.shared.client
+            .from("task_attachments")
+            .select(tableSelectColumns)
+            .in("task_id", values: targetIdStrings)
+            .execute()
+            .value
+
+        var existingURLsByTask: [UUID: Set<String>] = [:]
+        for row in existingOnTargets {
+            existingURLsByTask[row.taskId, default: []].insert(row.fileUrl)
+        }
+
+        var rows: [TaskAttachmentInsertRow] = []
+        for taskId in uniqueTargets {
+            let existingURLs = existingURLsByTask[taskId] ?? []
+            for attachment in sourceAttachments where existingURLs.contains(attachment.fileUrl) == false {
+                rows.append(
+                    TaskAttachmentInsertRow(
+                        taskId: taskId,
+                        fileUrl: attachment.fileUrl,
+                        fileType: attachment.fileType,
+                        fileSizeBytes: attachment.fileSizeBytes
+                    )
+                )
+            }
+        }
+
+        guard rows.isEmpty == false else { return }
+
+        _ = try await SupabaseManager.shared.client
+            .from("task_attachments")
+            .insert(rows)
+            .execute()
+        #else
+        _ = sourceTaskId
+        _ = uniqueTargets
+        throw TaskAttachmentSupabaseError.sdkUnavailable
+        #endif
+    }
+
+    /// 在多个任务上按 `file_url` 删除附件行（用于系列「此及以后」同步删除）。
+    @MainActor
+    static func deleteRecords(matchingFileURLs fileURLs: [String], fromTaskIds taskIds: [UUID]) async throws {
+        let uniqueURLs = Array(Set(fileURLs.filter { $0.isEmpty == false }))
+        let uniqueTaskIds = Array(Set(taskIds))
+        guard uniqueURLs.isEmpty == false, uniqueTaskIds.isEmpty == false else { return }
+
+        #if canImport(Supabase)
+        let taskIdStrings = uniqueTaskIds.map { $0.uuidString.lowercased() }
+        try await SupabaseManager.shared.client
+            .from("task_attachments")
+            .delete()
+            .in("task_id", values: taskIdStrings)
+            .in("file_url", values: uniqueURLs)
+            .execute()
+        #else
+        _ = uniqueURLs
+        _ = uniqueTaskIds
+        throw TaskAttachmentSupabaseError.sdkUnavailable
+        #endif
     }
 
     /// 仅上传并返回公共 URL（不写表）。

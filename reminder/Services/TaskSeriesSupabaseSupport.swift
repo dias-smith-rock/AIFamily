@@ -222,6 +222,12 @@ enum TaskSeriesSupabaseSupport {
             .from("tasks")
             .insert(payloads)
             .execute()
+
+        let childIds = payloads.map(\.id)
+        try await TaskAttachmentSupabaseSupport.cloneAttachments(
+            from: rootTaskId,
+            to: childIds
+        )
     }
 
     /// 周期序列改为「不重复」时，确保母任务行上的 `recurrence_*` 被清空。
