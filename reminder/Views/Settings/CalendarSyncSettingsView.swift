@@ -20,6 +20,7 @@ struct CalendarSyncSettingsView: View {
                             viewModel.openSystemSettings()
                         }
                     } else {
+                        // App Review：系统权限前自定义按钮须用 Continue/Next，不可用 Grant Access。
                         Button(L10n.Settings.calendarSyncGrantAccess) {
                             Task { await viewModel.requestAccess() }
                         }

@@ -1187,55 +1187,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Grant Access"
+            "value": "Continue"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "授予权限"
+            "value": "继续"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "授予權限"
+            "value": "繼續"
           }
         }
       }
