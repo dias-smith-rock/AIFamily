@@ -36,7 +36,6 @@ extension L10n {
     static let subscriptionSuccessful = Entry(key: "vip_subscription_successful", table: .vip)
     static let successYourProBenefitsAreActiveUntil2027 = Entry(key: "vip_success_your_pro_benefits_are_active_until_2027", table: .vip)
     static let successYourProBenefitsAreActiveUntilLld = Entry(key: "vip_success_your_pro_benefits_are_active_until_lld", table: .vip)
-    static let takeOrPickAPhotoToAutoFillTasks = Entry(key: "vip_take_or_pick_a_photo_to_auto_fill_tasks", table: .vip)
     static let thankYouForYourSupportEnjoyProFeatures = Entry(key: "vip_thank_you_for_your_support_enjoy_pro_features", table: .vip)
     static let unlimitedGroupsToCreateAndJoinUnlimitedMe = Entry(key: "vip_unlimited_groups_to_create_and_join_unlimited_me", table: .vip)
     static let unlimitedImagesPerTaskOriginalQualityPlus = Entry(key: "vip_unlimited_images_per_task_original_quality_plus", table: .vip)

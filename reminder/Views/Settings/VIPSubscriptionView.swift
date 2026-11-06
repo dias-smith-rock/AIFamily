@@ -222,14 +222,6 @@ struct VIPSubscriptionView: View {
                 )
 
                 VIPPremiumBenefitRow(
-                    systemImage: "camera.viewfinder",
-                    iconTint: .cyan,
-                    title: L10n.Schedule.aiPhotoToTask.localized,
-                    description: L10n.Schedule.snapAPhotoToExtractKeySchedulesAndSimpli.localized,
-                    showsDivider: true
-                )
-
-                VIPPremiumBenefitRow(
                     systemImage: "point.topleft.down.to.point.bottomright.filled.curvepath",
                     iconTint: .green,
                     title: L10n.Location.n20LocationHistoryPoints.localized,
