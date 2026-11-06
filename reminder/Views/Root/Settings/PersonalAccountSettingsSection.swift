@@ -697,7 +697,8 @@ struct PersonalVIPSubscriptionSection: View {
     @ObservedObject private var revenueCat = RevenueCatSubscriptionService.shared
 
     var body: some View {
-        if isUserLoggedIn, appRouter.vipFeatureGatingEnabled {
+        // 入口必须常显（含游客），否则审核找不到 IAP；功能限额仍由 `vipFeatureGatingEnabled` 控制。
+        if isUserLoggedIn {
             Section {
                 NavigationLink {
                     VIPSubscriptionView()
