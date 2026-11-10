@@ -10,6 +10,9 @@ enum TaskReminderLabel {
         case 15: L10n.Common.n15MinutesBefore.localized
         case 30: L10n.Common.n30MinutesBefore.localized
         case 60: L10n.Common.n1HourBefore.localized
+        case 1_440: L10n.Common.n1DayBefore.localized
+        case 4_320: L10n.Common.n3DaysBefore.localized
+        case 10_080: L10n.Common.n7DaysBefore.localized
         default: L10n.Common.lldMinutesBefore.localized
         }
     }
@@ -24,7 +27,7 @@ enum TaskReminderLabel {
                         Text(verbatim: ", ")
                     }
                     switch minutes {
-                    case 0, 5, 10, 15, 30, 60:
+                    case 0, 5, 10, 15, 30, 60, 1_440, 4_320, 10_080:
                         Text(titleKey(forMinutes: minutes))
                             .lineLimit(1)
                             .minimumScaleFactor(0.8)

@@ -46,6 +46,7 @@ extension L10n {
     static let itHasBeenUrgedAndTheAdministratorWillRec = Entry(key: "schedule_it_has_been_urged_and_the_administrator_will_rec", table: .schedule)
     static let letAiCreateForMe = Entry(key: "schedule_let_ai_create_for_me", table: .schedule)
     static let lastEditedByNameAtTime = Entry(key: "schedule_last_edited_by_name_at_time", table: .schedule)
+    static let lldDaysBeforeTaskStartingSoon = Entry(key: "schedule_lld_days_before_task_starting_soon", table: .schedule)
     static let lldMinBeforeTaskStartingSoon = Entry(key: "schedule_lld_min_before_task_starting_soon", table: .schedule)
     static let loadingTasks = Entry(key: "schedule_loading_tasks", table: .schedule)
     static let missionDetails = Entry(key: "schedule_mission_details", table: .schedule)

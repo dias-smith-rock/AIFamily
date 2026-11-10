@@ -3543,6 +3543,9 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
     case minutesBefore15
     case minutesBefore30
     case hourBefore1
+    case daysBefore1
+    case daysBefore3
+    case daysBefore7
 
     var id: String { rawValue }
 
@@ -3554,6 +3557,9 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         case .minutesBefore15: L10n.Common.n15MinutesBefore.localized
         case .minutesBefore30: L10n.Common.n30MinutesBefore.localized
         case .hourBefore1: L10n.Common.n1HourBefore.localized
+        case .daysBefore1: L10n.Common.n1DayBefore.localized
+        case .daysBefore3: L10n.Common.n3DaysBefore.localized
+        case .daysBefore7: L10n.Common.n7DaysBefore.localized
         }
     }
 
@@ -3565,6 +3571,9 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         case .minutesBefore15: return [15]
         case .minutesBefore30: return [30]
         case .hourBefore1: return [60]
+        case .daysBefore1: return [1_440]
+        case .daysBefore3: return [4_320]
+        case .daysBefore7: return [10_080]
         }
     }
 
@@ -3575,6 +3584,19 @@ private enum TaskReminderOption: String, CaseIterable, Identifiable {
         }
         if offsets.contains(0), offsets.allSatisfy({ $0 == 0 }) {
             self = .atTimeOfEvent
+            return
+        }
+        // 先匹配更长周期，避免误命中。
+        if offsets.contains(10_080) {
+            self = .daysBefore7
+            return
+        }
+        if offsets.contains(4_320) {
+            self = .daysBefore3
+            return
+        }
+        if offsets.contains(1_440) {
+            self = .daysBefore1
             return
         }
         if offsets.contains(5) {

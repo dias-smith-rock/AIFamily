@@ -7426,5 +7426,29 @@
     "new_key": "settings_widget_show_lunar_date_footer",
     "table": "Settings",
     "swift_property": "widgetShowLunarDateFooter"
+  },
+  {
+    "legacy_key": "提前1天",
+    "new_key": "common_n_1_day_before",
+    "table": "Common",
+    "swift_property": "n1DayBefore"
+  },
+  {
+    "legacy_key": "提前3天",
+    "new_key": "common_n_3_days_before",
+    "table": "Common",
+    "swift_property": "n3DaysBefore"
+  },
+  {
+    "legacy_key": "提前7天",
+    "new_key": "common_n_7_days_before",
+    "table": "Common",
+    "swift_property": "n7DaysBefore"
+  },
+  {
+    "legacy_key": "提前 %lld 天 · 任务即将开始",
+    "new_key": "schedule_lld_days_before_task_starting_soon",
+    "table": "Schedule",
+    "swift_property": "lldDaysBeforeTaskStartingSoon"
   }
 ]

@@ -329,6 +329,13 @@ actor NotificationManager {
         if minutesBefore == 0 {
             return AppLocalized.localizedSync(L10n.Schedule.taskStartingSoon)
         }
+        let minutesPerDay = 24 * 60
+        if minutesBefore >= minutesPerDay, minutesBefore % minutesPerDay == 0 {
+            return String(
+                format: AppLocalized.localizedSync(L10n.Schedule.lldDaysBeforeTaskStartingSoon),
+                minutesBefore / minutesPerDay
+            )
+        }
         return String(
             format: AppLocalized.localizedSync(L10n.Schedule.lldMinBeforeTaskStartingSoon),
             minutesBefore
