@@ -21,6 +21,7 @@ struct PersonalAccountSettingsSection: View {
     @AppStorage("isUserLoggedIn") private var isUserLoggedIn = false
     @AppStorage("requireFaceID") private var requireFaceID = false
     @AppStorage(BackgroundLocationPreferences.storageKey) private var backgroundLocationEnabled = true
+    @State private var showLunarDateOnWidget = ScheduleWidgetPreferences.showsLunarDate
     @ObservedObject private var backgroundLocationCoordinator = BackgroundLocationCoordinator.shared
 
     /// 与 `mineNavigationRow` 中「图标列 + 间距」一致，避免居中文字导致系统把分隔线对齐到屏幕中间。
@@ -193,6 +194,40 @@ struct PersonalAccountSettingsSection: View {
                     value: LocationPersistPreferences.summaryValue(locale: locale),
                     showsChevron: false
                 )
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 12) {
+                    Image(systemName: "moon.stars.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.indigo)
+                        .frame(width: 30, height: 30)
+                        .background(Color.indigo.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                    Text(L10n.Settings.widgetShowLunarDate.localized)
+                        .font(AppTheme.FontToken.bodyStrong)
+                        .foregroundStyle(.primary)
+
+                    Spacer(minLength: 8)
+
+                    Toggle("", isOn: $showLunarDateOnWidget)
+                        .labelsHidden()
+                }
+                .contentShape(Rectangle())
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(AppLocalized.string(L10n.Settings.widgetShowLunarDate, locale: locale))
+
+                Text(L10n.Settings.widgetShowLunarDateFooter.localized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 42)
+            }
+            .onAppear {
+                showLunarDateOnWidget = ScheduleWidgetPreferences.showsLunarDate
+            }
+            .onChange(of: showLunarDateOnWidget) { _, enabled in
+                ScheduleWidgetPreferences.showsLunarDate = enabled
             }
         } header: {
             mineSectionHeader(L10n.Common.appSettings)

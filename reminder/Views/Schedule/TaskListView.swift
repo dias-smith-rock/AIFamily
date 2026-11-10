@@ -19,10 +19,27 @@ struct TaskListView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
 
-    @State private var currentViewMode: CalendarViewMode = .day
+    @AppStorage("schedule_calendar_view_mode") private var scheduleViewModeRaw = CalendarViewMode.day.rawValue
+    @AppStorage("schedule_year_drill_down_view_mode") private var yearDrillDownViewModeRaw = CalendarViewMode.day.rawValue
     @State private var selectedDate: Date = Date()
-    /// 从年视图钻取时恢复到的微观视图（日 / 周）。
-    @State private var yearDrillDownViewMode: CalendarViewMode = .day
+
+    /// 日程展示样式（List / Day / Week / Month / Year），跨启动持久化。
+    private var currentViewMode: CalendarViewMode {
+        Self.resolvedScheduleMode(from: scheduleViewModeRaw)
+    }
+
+    /// 从年视图钻取时恢复到的微观视图（日 / 周 / 月等）。
+    private var yearDrillDownViewMode: CalendarViewMode {
+        Self.resolvedScheduleMode(from: yearDrillDownViewModeRaw)
+    }
+
+    private func setCurrentViewMode(_ mode: CalendarViewMode) {
+        scheduleViewModeRaw = mode.rawValue
+    }
+
+    private func setYearDrillDownViewMode(_ mode: CalendarViewMode) {
+        yearDrillDownViewModeRaw = mode.rawValue
+    }
 
     @State private var isShowingCalendarSheet = false
     /// 用 `sheet(item:)` 携带预填标题，避免 `isPresented` 首次弹出时读到旧 state。
@@ -36,6 +53,9 @@ struct TaskListView: View {
     /// 周视图「回到本周」：由 `TaskWeekGridView` 同步可见性；递增 trigger 触发跳转。
     @State private var showsWeekBackToCurrentWeekButton = false
     @State private var weekBackToCurrentWeekTrigger = 0
+    /// 月视图「回到本月」。
+    @State private var showsMonthBackToCurrentMonthButton = false
+    @State private var monthBackToCurrentMonthTrigger = 0
     @State private var isShowingInviteSheet = false
     @State private var isShowingScheduleBackgroundSettings = false
     @State private var containerSize: CGSize = .zero
@@ -281,7 +301,9 @@ struct TaskListView: View {
                     openPendingScheduledTaskIfNeeded()
                 }
             }
-            .onChange(of: currentViewMode) { oldMode, mode in
+            .onChange(of: scheduleViewModeRaw) { oldRaw, newRaw in
+                let oldMode = Self.resolvedScheduleMode(from: oldRaw)
+                let mode = Self.resolvedScheduleMode(from: newRaw)
                 if mode == .week {
                     WeekViewPerformanceTracer.beginTrace(
                         entryPath: "modeSwitch.\(oldMode.rawValue)->\(mode.rawValue)",
@@ -302,7 +324,7 @@ struct TaskListView: View {
                     viewModel.setYearViewYear(year, locale: locale)
                 }
                 if mode != .year, mode != .list {
-                    yearDrillDownViewMode = mode
+                    setYearDrillDownViewMode(mode)
                 }
             }
             .onChange(of: selectedDate) { _, newValue in
@@ -406,10 +428,20 @@ struct TaskListView: View {
                         }
                     )
                 case .month:
-                    Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    TaskMonthView(
+                        selectedDate: $selectedDate,
+                        tasks: viewModel.scheduledTasks,
+                        titleForTask: { viewModel.displayTitle(for: $0) },
+                        onSelectDay: { date in
+                            selectedDate = dayID(for: date)
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                setCurrentViewMode(.day)
+                            }
+                        },
+                        onSelectTask: { taskForDetailSheet = $0 },
+                        showsBackToCurrentMonthButton: $showsMonthBackToCurrentMonthButton,
+                        backToCurrentMonthTrigger: $monthBackToCurrentMonthTrigger
+                    )
                 case .threeDay:
                     Text(AppLocalized.string(L10n.Common.underDevelopment, locale: locale))
                         .font(.subheadline)
@@ -455,6 +487,19 @@ struct TaskListView: View {
         if currentViewMode == .week, showsWeekBackToCurrentWeekButton {
             Button {
                 weekBackToCurrentWeekTrigger += 1
+            } label: {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 56, height: 56)
+                    .background(AppTheme.ColorToken.accent, in: Circle())
+                    .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Common.today)
+        } else if currentViewMode == .month, showsMonthBackToCurrentMonthButton {
+            Button {
+                monthBackToCurrentMonthTrigger += 1
             } label: {
                 Image(systemName: "calendar.badge.clock")
                     .font(.system(size: 20, weight: .semibold))
@@ -572,7 +617,7 @@ struct TaskListView: View {
             Section {
                 ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
                     Button {
-                        currentViewMode = mode
+                        setCurrentViewMode(mode)
                     } label: {
                         HStack {
                             Text(mode.menuTitleKey)
@@ -638,11 +683,11 @@ struct TaskListView: View {
         switch route {
         case .openDay(let year, let month, let day):
             selectedDate = date(year: year, month: month, day: day)
-            currentViewMode = .day
+            setCurrentViewMode(.day)
         case .createTask(let year, let month, let day):
             let due = date(year: year, month: month, day: day)
             selectedDate = due
-            currentViewMode = .day
+            setCurrentViewMode(.day)
             openCreateTask(prefill: "", defaultDueDateOverride: due)
         }
     }
@@ -668,11 +713,21 @@ struct TaskListView: View {
         appSettings.effectiveCalendar.startOfDay(for: date)
     }
 
+    private static func resolvedScheduleMode(from raw: String) -> CalendarViewMode {
+        let mode = CalendarViewMode(rawValue: raw) ?? .day
+        switch mode {
+        case .threeDay:
+            return .day
+        case .list, .day, .week, .month, .year:
+            return mode
+        }
+    }
+
     private func drillDownFromYear(to date: Date) {
         let normalized = dayID(for: date)
         selectedDate = normalized
         withAnimation(.easeInOut(duration: 0.25)) {
-            currentViewMode = yearDrillDownViewMode
+            setCurrentViewMode(yearDrillDownViewMode)
         }
     }
 

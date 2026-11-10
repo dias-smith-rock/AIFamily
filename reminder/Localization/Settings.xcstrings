@@ -2242,6 +2242,124 @@
           }
         }
       }
+    },
+    "settings_widget_show_lunar_date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小组件显示农历"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "小組件顯示農曆"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Lunar Date on Widget"
+          }
+        }
+      }
+    },
+    "settings_widget_show_lunar_date_footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "开启后，日程主屏幕小组件会在公历日期下方显示农历。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟後，日程主畫面小組件會在公曆日期下方顯示農曆。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

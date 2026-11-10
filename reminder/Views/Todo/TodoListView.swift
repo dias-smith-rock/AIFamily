@@ -21,10 +21,11 @@ struct TodoListView: View {
     @State private var completionInFlightTaskIDs: Set<UUID> = []
     @State private var stickyShowsFitAllNotes = false
     @State private var stickyFitAllNotesRequestID = 0
+    /// To-Dos 展示样式（list / sticky），跨启动持久化。
     @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
 
     private var displayMode: TodoDisplayMode {
-        TodoDisplayMode(rawValue: displayModeRaw) ?? .list
+        TodoDisplayMode(rawValue: displayModeRaw) ?? .sticky
     }
 
     var body: some View {

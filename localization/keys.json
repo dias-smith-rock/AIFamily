@@ -7414,5 +7414,17 @@
     "table": "Schedule",
     "swift_property": "backgroundImageFitTile",
     "orphan": false
+  },
+  {
+    "legacy_key": "Show Lunar Date on Widget",
+    "new_key": "settings_widget_show_lunar_date",
+    "table": "Settings",
+    "swift_property": "widgetShowLunarDate"
+  },
+  {
+    "legacy_key": "When enabled, the schedule home-screen widget shows the Chinese lunar date under the day number.",
+    "new_key": "settings_widget_show_lunar_date_footer",
+    "table": "Settings",
+    "swift_property": "widgetShowLunarDateFooter"
   }
 ]

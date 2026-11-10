@@ -4,16 +4,27 @@ import WidgetKit
 struct ScheduleWidgetEntry: TimelineEntry {
     let date: Date
     let snapshot: ScheduleWidgetSnapshot?
+    let showsLunarDate: Bool
 }
 
 struct ScheduleWidgetProvider: TimelineProvider {
     func placeholder(in context: Context) -> ScheduleWidgetEntry {
-        ScheduleWidgetEntry(date: Date(), snapshot: Self.placeholderSnapshot())
+        ScheduleWidgetEntry(
+            date: Date(),
+            snapshot: Self.placeholderSnapshot(),
+            showsLunarDate: false
+        )
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ScheduleWidgetEntry) -> Void) {
         let snapshot = ScheduleWidgetSnapshotStore.load() ?? Self.placeholderSnapshot()
-        completion(ScheduleWidgetEntry(date: Date(), snapshot: snapshot))
+        completion(
+            ScheduleWidgetEntry(
+                date: Date(),
+                snapshot: snapshot,
+                showsLunarDate: ScheduleWidgetPreferences.showsLunarDate
+            )
+        )
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<ScheduleWidgetEntry>) -> Void) {
@@ -25,7 +36,11 @@ struct ScheduleWidgetProvider: TimelineProvider {
             matching: DateComponents(hour: 0, minute: 0),
             matchingPolicy: .nextTime
         ) ?? now.addingTimeInterval(60 * 60)
-        let entry = ScheduleWidgetEntry(date: now, snapshot: snapshot)
+        let entry = ScheduleWidgetEntry(
+            date: now,
+            snapshot: snapshot,
+            showsLunarDate: ScheduleWidgetPreferences.showsLunarDate
+        )
         completion(Timeline(entries: [entry], policy: .after(nextMidnight)))
     }
 
@@ -73,15 +88,51 @@ struct ScheduleWidgetView: View {
     private var dayColumn: some View {
         VStack(alignment: .leading, spacing: 6) {
             Link(destination: openURL(for: entry.date)) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(entry.date, format: weekdayFormat)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.blue)
                         .textCase(.uppercase)
-                    Text(entry.date, format: dayFormat)
-                        .font(.system(size: 40, weight: .regular))
-                        .foregroundStyle(.primary)
-                        .minimumScaleFactor(0.8)
+
+                    let holidayName = entry.showsLunarDate
+                        ? ChineseHolidayLookup.name(on: entry.date, gregorian: calendar)
+                        : nil
+                    let lunarLabel = entry.showsLunarDate
+                        ? LunarDateFormatting.shortLabel(for: entry.date)
+                        : ""
+
+                    if entry.showsLunarDate, holidayName != nil, lunarLabel.isEmpty == false {
+                        // 有节假日：农历上移一行，节假日名在阳历下方。
+                        Text(lunarLabel)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Text(entry.date, format: dayFormat)
+                            .font(.system(size: 40, weight: .regular))
+                            .foregroundStyle(.primary)
+                            .minimumScaleFactor(0.8)
+                        Text(holidayName ?? "")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.blue)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    } else {
+                        HStack(alignment: .lastTextBaseline, spacing: 6) {
+                            Text(entry.date, format: dayFormat)
+                                .font(.system(size: 40, weight: .regular))
+                                .foregroundStyle(.primary)
+                                .minimumScaleFactor(0.8)
+                            if entry.showsLunarDate, lunarLabel.isEmpty == false {
+                                Text(lunarLabel)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
+                            }
+                        }
+                    }
+
                     taskSummary
                 }
             }

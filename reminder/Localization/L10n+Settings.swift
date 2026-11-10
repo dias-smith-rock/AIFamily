@@ -42,5 +42,7 @@ extension L10n {
     static let calendarSyncContinuous = Entry(key: "settings_calendar_sync_continuous", table: .settings)
     static let calendarSyncChangeGroup = Entry(key: "settings_calendar_sync_change_group", table: .settings)
     static let calendarSyncUntitled = Entry(key: "settings_calendar_sync_untitled", table: .settings)
+    static let widgetShowLunarDate = Entry(key: "settings_widget_show_lunar_date", table: .settings)
+    static let widgetShowLunarDateFooter = Entry(key: "settings_widget_show_lunar_date_footer", table: .settings)
     }
 }

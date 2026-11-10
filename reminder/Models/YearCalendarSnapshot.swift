@@ -137,6 +137,19 @@ enum YearCalendarBuilder {
         }
     }
 
+    /// 单月 6×7 格子（含月外占位），供年微缩图与月视图共用。
+    static func monthGridCells(
+        monthStart: Date,
+        calendar: Calendar,
+        now: Date = Date()
+    ) -> [YearDayCellData] {
+        monthGridCells(
+            monthStart: monthStart,
+            calendar: calendar,
+            todayKey: dayKey(for: now, calendar: calendar)
+        )
+    }
+
     private static func monthGridCells(
         monthStart: Date,
         calendar: Calendar,
