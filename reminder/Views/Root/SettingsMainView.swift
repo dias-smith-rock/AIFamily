@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SettingsMainView: View {
     @Environment(\.locale) private var locale
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appBootstrap: AppBootstrap
     @EnvironmentObject private var appSettings: AppSettingsManager
@@ -26,20 +25,12 @@ struct SettingsMainView: View {
     @State private var showPrivacySheet = false
     @State private var showClearGuestDataAlert = false
     @State private var isClearingGuestData = false
-    @State private var containerSize: CGSize = .zero
     #if DEBUG
     @State private var isSeedingMockData = false
     @State private var mockSeedResultMessage: String?
     @State private var mockSeedErrorMessage: String?
     @AppStorage(DebugVIPOverride.defaultsKey) private var debugForceVIPEnabled = false
     #endif
-
-    private var usesSplitDetail: Bool {
-        DuoLayoutSupport.prefersSplitNavigation(
-            size: containerSize,
-            horizontalSizeClass: horizontalSizeClass
-        )
-    }
 
     var body: some View {
         settingsNavigationWithLifecycle
@@ -113,25 +104,9 @@ struct SettingsMainView: View {
     }
 
     private var settingsNavigationWithLifecycle: some View {
-        Group {
-            if usesSplitDetail {
-                NavigationSplitView {
-                    NavigationStack {
-                        settingsPrimaryColumn
-                    }
-                } detail: {
-                    settingsSplitDetailPlaceholder
-                }
-            } else {
-                NavigationStack {
-                    settingsPrimaryColumn
-                }
-            }
-        }
-        .onGeometryChange(for: CGSize.self) { proxy in
-            proxy.size
-        } action: { _, newSize in
-            containerSize = newSize
+        // 设置以单列表单 + push/sheet 为主；Duo 宽屏不做空详情分栏，避免半屏「Select」。
+        NavigationStack {
+            settingsPrimaryColumn
         }
         .environment(\.locale, appSettings.appLocale)
         .task {
@@ -416,17 +391,7 @@ struct SettingsMainView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationBarHidden(true)
-        .modifier(SettingsReadableWidthIfNeeded(enabled: usesSplitDetail == false))
-    }
-
-    private var settingsSplitDetailPlaceholder: some View {
-        ContentUnavailableView {
-            Label(L10n.Common.settingsTab.localized, systemImage: "gearshape.2")
-        } description: {
-            Text(L10n.Common.select.localized)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemGroupedBackground).ignoresSafeArea())
+        .duoReadableContentWidth()
     }
 
     private var settingsListBody: some View {
@@ -731,18 +696,6 @@ struct SettingsMainView: View {
         }
         familyViewModel.clearRequiresLogin()
         await appRouter.refreshStateFromBackend()
-    }
-}
-
-private struct SettingsReadableWidthIfNeeded: ViewModifier {
-    let enabled: Bool
-
-    func body(content: Content) -> some View {
-        if enabled {
-            content.duoReadableContentWidth()
-        } else {
-            content
-        }
     }
 }
 

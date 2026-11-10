@@ -23,6 +23,10 @@ struct TodoStickyBoardView: View {
     /// 由外层底栏展示「适配全部」；白板只负责可见性与执行。
     @Binding var showsFitAllNotesButton: Bool
     @Binding var fitAllNotesRequestID: Int
+    /// 由外层底栏展示「转面」；与「+」同一行，避免压在 Duo 折痕上。
+    @Binding var showsFlipBoardButton: Bool
+    @Binding var flipBoardRequestID: Int
+    @Binding var showingFarSideForChrome: Bool
 
     @State private var positions: [UUID: CGPoint] = [:]
     @State private var draggingID: UUID?
@@ -40,6 +44,8 @@ struct TodoStickyBoardView: View {
     @State private var viewportSize: CGSize = .zero
     /// Duo 折痕（视口坐标）；无 SDK / 无折痕时为 `nil`。
     @State private var divisionFrame: CGRect?
+    /// 折痕避让 insets；仅随视口变化更新，避免拖移白板时每帧改 padding。
+    @State private var divisionAvoidanceInsets = EdgeInsets()
     @State private var trashFrameGlobal: CGRect = .zero
     @State private var shelfFrameGlobal: CGRect = .zero
     @State private var activeDropTarget: StickyDropTarget?
@@ -117,27 +123,18 @@ struct TodoStickyBoardView: View {
         return nearTasks + farTasks
     }
 
+    /// 非翻面时跳过 3D 变换，避免 Duo 宽屏每帧做透视合成。
+    private var needsBoardFlipEffect: Bool {
+        isBoardFlipping || abs(boardFlipDegrees.truncatingRemainder(dividingBy: 360)) > 0.5
+    }
+
     var body: some View {
         GeometryReader { geo in
             let viewport = geo.size
 
-            let metrics = geo.duoLayoutMetrics(horizontalSizeClass: nil)
-            let divisionInsets = metrics.divisionAvoidanceInsets
-
             ZStack {
                 // 先把布局尺寸压回视口，避免 2000×2000 白板把 ZStack 撑乱，导致角落控件被居中/裁切。
-                boardLayer(viewport: viewport)
-                    .scaleEffect(scale, anchor: .center)
-                    .offset(boardOffset)
-                    .frame(width: viewport.width, height: viewport.height)
-                    .clipped()
-                    .rotation3DEffect(
-                        .degrees(boardFlipDegrees),
-                        axis: (x: 0, y: 1, z: 0),
-                        perspective: 0.55
-                    )
-                    // 背面朝向镜头时水平镜像，保证文字正向可读。
-                    .scaleEffect(x: showingFarSide ? -1 : 1, y: 1)
+                boardCanvas(viewport: viewport)
                     .gesture(boardPanGesture)
                     .simultaneousGesture(boardMagnifyGesture)
                     .allowsHitTesting(isBoardFlipping == false && isDropResolutionInProgress == false)
@@ -145,17 +142,10 @@ struct TodoStickyBoardView: View {
                 cornerBinsOverlay
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                     // 侧栏 Tab / 刘海安全区：避免 bin 压到系统 chrome。
-                    .duoCanvasChromePadding(extra: divisionInsets)
+                    .duoCanvasChromePadding(extra: divisionAvoidanceInsets)
                     .zIndex(10_000)
 
-                if canFlipBoard {
-                    flipBoardButton
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                        .padding(.bottom, 18)
-                        .zIndex(10_001)
-                }
-
-                // 拖到垃圾桶/书架时浮在 bin 上方，避免被角标挡住。
+                // 浮起层放在白板 clipped 之外，避免拖到边缘 / Duo 折痕时被裁切「消失」。
                 if let session = liftSession {
                     liftedStickyNote(for: session)
                         .position(viewportPoint(forBoardPoint: session.boardPoint))
@@ -165,7 +155,6 @@ struct TodoStickyBoardView: View {
                 }
             }
             .frame(width: viewport.width, height: viewport.height)
-            .clipped()
             .alert(
                 L10n.Schedule.deleteTask,
                 isPresented: $showStickyDeleteConfirm
@@ -181,7 +170,7 @@ struct TodoStickyBoardView: View {
             }
             .onAppear {
                 viewportSize = viewport
-                divisionFrame = metrics.divisionFrame
+                applyDuoMetrics(geo.duoLayoutMetrics(horizontalSizeClass: nil))
                 loadPositions()
                 syncBoardSideAvailability()
                 knownTaskIDs = Set((nearTasks + farTasks).map(\.id))
@@ -193,10 +182,12 @@ struct TodoStickyBoardView: View {
             .onChange(of: viewport) { oldViewport, newViewport in
                 let previous = viewportSize.width > 1 ? viewportSize : oldViewport
                 viewportSize = newViewport
-                divisionFrame = geo.duoDivisionFrame
+                applyDuoMetrics(geo.duoLayoutMetrics(horizontalSizeClass: nil))
                 expandBoardIfNeeded(viewport: newViewport)
                 // 首帧 Geometry 可能为 0，等视口有效后再做唯一一次自动适配。
                 performInitialFitIfNeeded(in: newViewport)
+                // 拖便签时冻结平移，避免 Duo 几何抖动把浮层甩出视野。
+                guard draggingID == nil, liftSession == nil else { return }
                 // Duo 开合 / 窗口缩放：保留用户缩放，仅重新夹紧并尽量让内容回到视野。
                 if didPerformInitialFit, previous.width > 1, previous.height > 1,
                    newViewport.width > 1, newViewport.height > 1 {
@@ -234,6 +225,9 @@ struct TodoStickyBoardView: View {
                 fitAllNotes(in: viewportSize, animated: true)
                 savePersistedScale(scale)
             }
+            .onChange(of: flipBoardRequestID) { _, _ in
+                flipWhiteboard()
+            }
         }
     }
 
@@ -241,30 +235,37 @@ struct TodoStickyBoardView: View {
         nearTasks.map(\.id) + farTasks.map(\.id)
     }
 
-    private var flipBoardButton: some View {
-        Button {
-            flipWhiteboard()
-        } label: {
-            Image(systemName: "arrow.triangle.2.circlepath")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: 48, height: 48)
-                .background {
-                    Circle()
-                        .fill(AppTheme.ColorToken.surfaceMuted)
-                        .shadow(color: .black.opacity(0.22), radius: 10, y: 3)
-                }
-                .overlay {
-                    Circle()
-                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-                }
+    @ViewBuilder
+    private func boardCanvas(viewport: CGSize) -> some View {
+        let layered = boardLayer(viewport: viewport)
+            .scaleEffect(scale, anchor: .center)
+            .offset(boardOffset)
+            .frame(width: viewport.width, height: viewport.height)
+            .clipped()
+
+        if needsBoardFlipEffect {
+            layered
+                .rotation3DEffect(
+                    .degrees(boardFlipDegrees),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.55
+                )
+                // 背面朝向镜头时水平镜像，保证文字正向可读。
+                .scaleEffect(x: showingFarSide ? -1 : 1, y: 1)
+        } else {
+            layered
         }
-        .buttonStyle(.plain)
-        .disabled(isBoardFlipping)
-        .opacity(isBoardFlipping ? 0.55 : 1)
-        .accessibilityLabel(
-            showingFarSide ? L10n.Todo.showNearTermTasks : L10n.Todo.showLaterTasks
-        )
+    }
+
+    private func applyDuoMetrics(_ metrics: DuoLayoutMetrics) {
+        let nextDivision = metrics.divisionFrame
+        if divisionFrame != nextDivision {
+            divisionFrame = nextDivision
+        }
+        let nextInsets = metrics.divisionAvoidanceInsets
+        if divisionAvoidanceInsets != nextInsets {
+            divisionAvoidanceInsets = nextInsets
+        }
     }
 
     /// 当前面全部便签（含缩放后的尺寸）是否完全落在可用视口内。
@@ -309,6 +310,7 @@ struct TodoStickyBoardView: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(boardFlipDuration * 1_000_000_000))
             isBoardFlipping = false
+            syncBoardSideAvailability()
             scheduleFitVisibilityRefresh()
         }
     }
@@ -317,6 +319,13 @@ struct TodoStickyBoardView: View {
         if canFlipBoard == false {
             boardFlipDegrees = 0
             isBoardFlipping = false
+        }
+        if showsFlipBoardButton != canFlipBoard {
+            showsFlipBoardButton = canFlipBoard
+        }
+        let far = showingFarSide
+        if showingFarSideForChrome != far {
+            showingFarSideForChrome = far
         }
     }
 
@@ -553,10 +562,16 @@ struct TodoStickyBoardView: View {
                 }
                 guard let start = dragStartBoardPosition else { return }
                 let safeScale = max(scale, 0.01)
+                // 背面有水平镜像：屏幕左右与白板 x 相反，不修正会把浮层甩出视野。
+                var dx = drag.translation.width / safeScale
+                let dy = drag.translation.height / safeScale
+                if showingFarSide {
+                    dx = -dx
+                }
                 let next = clampPoint(
                     CGPoint(
-                        x: start.x + drag.translation.width / safeScale,
-                        y: start.y + drag.translation.height / safeScale
+                        x: start.x + dx,
+                        y: start.y + dy
                     )
                 )
                 // 拖动中只更新浮层坐标，避免每帧写 positions 触发整板 100 卡 diff。
@@ -1131,23 +1146,38 @@ struct TodoStickyFullscreenChrome: View {
                 AppTheme.ColorToken.surface
             }
             Color.primary.opacity(usesSharedPageBackground ? 0.04 : 0.025)
-            Canvas { context, size in
-                let step = BoardMetrics.gridStep
-                var path = Path()
-                stride(from: 0.0, through: Double(size.width), by: Double(step)).forEach { x in
-                    path.move(to: CGPoint(x: x, y: 0))
-                    path.addLine(to: CGPoint(x: x, y: size.height))
-                }
-                stride(from: 0.0, through: Double(size.height), by: Double(step)).forEach { y in
-                    path.move(to: CGPoint(x: 0, y: y))
-                    path.addLine(to: CGPoint(x: size.width, y: y))
-                }
-                let lineOpacity = usesSharedPageBackground ? 0.14 : 0.07
-                context.stroke(path, with: .color(.primary.opacity(lineOpacity)), lineWidth: 1)
-            }
-            .drawingGroup(opaque: false, colorMode: .nonLinear)
+            StickyBoardGridLines(
+                lineOpacity: usesSharedPageBackground ? 0.14 : 0.07
+            )
         }
         .ignoresSafeArea()
+        .allowsHitTesting(false)
+    }
+}
+
+/// Duo 宽屏上避免全屏 `drawingGroup` 栅格化巨幅纹理；按面积加大步长降低线段数。
+private struct StickyBoardGridLines: View, Equatable {
+    let lineOpacity: Double
+
+    var body: some View {
+        Canvas { context, size in
+            let step = BoardMetrics.gridStep(for: size)
+            guard step > 1, size.width > 1, size.height > 1 else { return }
+            var path = Path()
+            var x: CGFloat = 0
+            while x <= size.width {
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x, y: size.height))
+                x += step
+            }
+            var y: CGFloat = 0
+            while y <= size.height {
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+                y += step
+            }
+            context.stroke(path, with: .color(.primary.opacity(lineOpacity)), lineWidth: 1)
+        }
         .allowsHitTesting(false)
     }
 }
@@ -1156,13 +1186,21 @@ struct TodoStickyFullscreenChrome: View {
 private enum BoardMetrics {
     static let noteSize = CGSize(width: 148, height: 158)
     static let noteGap: CGFloat = 28
-    /// 背景小方格边长（与 Canvas 网格一致）。
+    /// 背景小方格基础边长（与 Canvas 网格一致）。
     static let gridStep: CGFloat = 28
     /// 自动适配时，内容四周保留的小方格数。
     static let fitEdgeGridCount = 3
     static let edgePadding: CGFloat = 80
     static let gridColumns = 10
     static let capacity = gridColumns * gridColumns
+
+    /// Duo / 超宽屏加大网格步长，显著减少全屏描边数量。
+    static func gridStep(for size: CGSize) -> CGFloat {
+        let area = size.width * size.height
+        if area > 1_400_000 { return 56 }
+        if area > 700_000 { return 40 }
+        return gridStep
+    }
 
     /// 相邻便签中心距（按较高便签边 + 间距，保证网格接近正方形）。
     static var tileStride: CGFloat {
@@ -1401,7 +1439,7 @@ private struct TodoStickyNoteCard: View {
                 }
             }
             .clipShape(StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift))
-            .drawingGroup(opaque: false, colorMode: .nonLinear)
+            // 不做 per-note drawingGroup：Duo 宽屏平移/缩放时大量离屏纹理会导致明显掉帧。
 
             StickyBoardPushPin(color: look.pin)
                 .opacity(isDragging ? 0 : 1)
@@ -1752,7 +1790,10 @@ private struct StickyBoardPushPin: View {
         onDropComplete: { _ in },
         onDropDelete: { _ in },
         showsFitAllNotesButton: .constant(false),
-        fitAllNotesRequestID: .constant(0)
+        fitAllNotesRequestID: .constant(0),
+        showsFlipBoardButton: .constant(false),
+        flipBoardRequestID: .constant(0),
+        showingFarSideForChrome: .constant(false)
     )
 }
 #endif

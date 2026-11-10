@@ -1,27 +1,57 @@
 {
-  "sourceLanguage": "zh-Hans",
-  "strings": {
-    "": {},
-    " ": {},
-    "·": {},
-    "%@ %@": {
-      "localizations": {}
+  "sourceLanguage" : "zh-Hans",
+  "strings" : {
+    "" : {
+
     },
-    "%lld": {},
-    "%lld / %lld": {
-      "localizations": {}
+    " " : {
+
     },
-    "%lld people": {},
-    "%lld%%": {},
-    "0": {},
-    "Amount": {},
-    "Category": {},
-    "channel: %@": {},
-    "nonce: %@": {},
-    "Pro": {},
-    "SIG": {},
-    "token: %@": {},
-    "valid: %@": {}
+    "·" : {
+
+    },
+    "%@ %@" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld / %lld" : {
+
+    },
+    "%lld people" : {
+
+    },
+    "%lld%%" : {
+
+    },
+    "0" : {
+
+    },
+    "Amount" : {
+
+    },
+    "Category" : {
+
+    },
+    "channel: %@" : {
+
+    },
+    "nonce: %@" : {
+
+    },
+    "Pro" : {
+
+    },
+    "SIG" : {
+
+    },
+    "token: %@" : {
+
+    },
+    "valid: %@" : {
+
+    }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

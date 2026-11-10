@@ -219,6 +219,9 @@ struct AppTabRootView: View {
         .onGeometryChange(for: CGSize.self) { proxy in
             proxy.size
         } action: { _, newSize in
+            // 忽略亚像素抖动，避免 Duo 宽屏反复改 environment 触发全 Tab 重算。
+            guard abs(newSize.width - rootViewportSize.width) > 1
+                || abs(newSize.height - rootViewportSize.height) > 1 else { return }
             rootViewportSize = newSize
         }
     }

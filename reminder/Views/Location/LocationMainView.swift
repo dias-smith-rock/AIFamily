@@ -59,13 +59,21 @@ struct LocationMainView: View {
 
     private var mainMapStack: some View {
         ZStack {
-            mapLayer
+            // 非 Location Tab 时卸下 Map，避免 Duo 宽屏上 MapKit 在后台持续合成。
+            if isTabActive {
+                mapLayer
+            } else {
+                AppTheme.ColorToken.background
+                    .ignoresSafeArea()
+            }
 
-            if viewModel.isMemberListExpanded || isLiveSharingPanelExpanded {
+            if isTabActive, viewModel.isMemberListExpanded || isLiveSharingPanelExpanded {
                 mapDismissOverlay
             }
 
-            mapChromeOverlay
+            if isTabActive {
+                mapChromeOverlay
+            }
         }
         .animation(.easeInOut(duration: 0.3), value: liveManager.isLiveModeActive)
         .animation(.easeInOut(duration: 0.3), value: liveManager.showInactivityEndedNotice)

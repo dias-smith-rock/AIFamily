@@ -21,6 +21,9 @@ struct TodoListView: View {
     @State private var completionInFlightTaskIDs: Set<UUID> = []
     @State private var stickyShowsFitAllNotes = false
     @State private var stickyFitAllNotesRequestID = 0
+    @State private var stickyShowsFlipBoard = false
+    @State private var stickyFlipBoardRequestID = 0
+    @State private var stickyShowingFarSide = false
     /// To-Dos 展示样式（list / sticky），跨启动持久化。
     @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
 
@@ -103,6 +106,8 @@ struct TodoListView: View {
             .onChange(of: displayModeRaw) { _, _ in
                 if displayMode != .sticky {
                     stickyShowsFitAllNotes = false
+                    stickyShowsFlipBoard = false
+                    stickyShowingFarSide = false
                 }
             }
             .sheet(isPresented: $isShowingBackgroundSettings) {
@@ -220,6 +225,7 @@ struct TodoListView: View {
 
     /// 与 Schedule `bottomAccessoryBar` 对齐：safeAreaInset + 相同上下边距。
     /// 列表模式：逾期 / 已完成入口与「+」同一行。
+    /// 便签模式：转面与「+」同一行（右对齐）。
     private var todoBottomAccessoryBar: some View {
         HStack(alignment: .center, spacing: 10) {
             if displayMode == .sticky, stickyShowsFitAllNotes {
@@ -233,11 +239,40 @@ struct TodoListView: View {
                     .allowsHitTesting(false)
             }
 
+            if displayMode == .sticky, stickyShowsFlipBoard {
+                todoFlipBoardFAB
+            }
+
             createTodoFAB
         }
         .padding(.horizontal, displayMode != .sticky && showsTodoSummaryFooter ? 16 : 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+    }
+
+    private var todoFlipBoardFAB: some View {
+        Button {
+            stickyFlipBoardRequestID &+= 1
+        } label: {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 56, height: 56)
+                .background {
+                    Circle()
+                        .fill(AppTheme.ColorToken.surfaceMuted)
+                        .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
+                }
+                .overlay {
+                    Circle()
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            stickyShowingFarSide ? L10n.Todo.showNearTermTasks : L10n.Todo.showLaterTasks
+        )
+        .transition(.opacity.combined(with: .scale(scale: 0.85)))
     }
 
     private var todoFitAllNotesFAB: some View {
@@ -509,7 +544,10 @@ struct TodoListView: View {
                 Task { await beginDeleteFlexibleTask(task) }
             },
             showsFitAllNotesButton: $stickyShowsFitAllNotes,
-            fitAllNotesRequestID: $stickyFitAllNotesRequestID
+            fitAllNotesRequestID: $stickyFitAllNotesRequestID,
+            showsFlipBoardButton: $stickyShowsFlipBoard,
+            flipBoardRequestID: $stickyFlipBoardRequestID,
+            showingFarSideForChrome: $stickyShowingFarSide
         )
         .refreshable {
             await refreshTodos()

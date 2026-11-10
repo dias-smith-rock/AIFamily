@@ -72,13 +72,14 @@ struct TaskWeekGridView: View {
         .duoCanvasChromePadding(extra: divisionAvoidanceInsets)
         .background {
             GeometryReader { geo in
-                let metrics = geo.duoLayoutMetrics(horizontalSizeClass: horizontalSizeClass)
                 Color.clear
-                    .onAppear { divisionAvoidanceInsets = metrics.divisionAvoidanceInsets }
-                    .onChange(of: geo.size) { _, _ in
-                        divisionAvoidanceInsets = geo.duoLayoutMetrics(
-                            horizontalSizeClass: horizontalSizeClass
-                        ).divisionAvoidanceInsets
+                    .onAppear {
+                        updateDivisionInsets(from: geo)
+                    }
+                    .onChange(of: geo.size) { oldSize, newSize in
+                        guard abs(oldSize.width - newSize.width) > 1
+                            || abs(oldSize.height - newSize.height) > 1 else { return }
+                        updateDivisionInsets(from: geo)
                     }
             }
         }
@@ -125,6 +126,14 @@ struct TaskWeekGridView: View {
             guard newValue != oldValue else { return }
             jumpToCurrentWeek()
         }
+    }
+
+    private func updateDivisionInsets(from geo: GeometryProxy) {
+        let next = geo.duoLayoutMetrics(
+            horizontalSizeClass: horizontalSizeClass
+        ).divisionAvoidanceInsets
+        guard divisionAvoidanceInsets != next else { return }
+        divisionAvoidanceInsets = next
     }
 
     // MARK: - Week pager

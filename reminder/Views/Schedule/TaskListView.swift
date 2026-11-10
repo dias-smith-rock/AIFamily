@@ -14,7 +14,6 @@ private struct CreateTaskSheetRequest: Identifiable {
 /// 任务 / 日程主页：顶栏日历风格导航 + 多视图模式路由。
 struct TaskListView: View {
     @Environment(\.locale) private var locale
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @EnvironmentObject private var appRouter: AppRouter
     @EnvironmentObject private var appSettings: AppSettingsManager
     @StateObject private var viewModel = AppViewModels.makeScheduleViewModel()
@@ -58,39 +57,10 @@ struct TaskListView: View {
     @State private var monthBackToCurrentMonthTrigger = 0
     @State private var isShowingInviteSheet = false
     @State private var isShowingScheduleBackgroundSettings = false
-    @State private var containerSize: CGSize = .zero
-
-    private var usesSplitDetail: Bool {
-        DuoLayoutSupport.prefersSplitNavigation(
-            size: containerSize,
-            horizontalSizeClass: horizontalSizeClass
-        )
-    }
 
     var body: some View {
-        GeometryReader { proxy in
-            Group {
-                if usesSplitDetail {
-                    NavigationSplitView {
-                        schedulePrimaryNavigation(presentsDetailAsSheet: false)
-                    } detail: {
-                        scheduleDetailColumn
-                    }
-                } else {
-                    schedulePrimaryNavigation(presentsDetailAsSheet: true)
-                }
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-            .onAppear { containerSize = proxy.size }
-            .onChange(of: proxy.size) { _, newSize in
-                containerSize = newSize
-            }
-        }
-        .appLocaleEnvironment(using: appSettings)
-    }
-
-    @ViewBuilder
-    private func schedulePrimaryNavigation(presentsDetailAsSheet: Bool) -> some View {
+        // 日程是全幅画布（日/周/月）；Duo / iPad 宽屏也不做列表+详情分栏，
+        // 否则半屏会落成空的「Select」占位，周视图被挤到一侧。
         NavigationStack {
             ZStack {
                 mainContent
@@ -111,7 +81,6 @@ struct TaskListView: View {
             }
             .modifier(
                 ScheduleEditSheetModifier(
-                    isEnabled: presentsDetailAsSheet,
                     task: $taskForDetailSheet,
                     viewModel: viewModel,
                     appRouter: appRouter,
@@ -349,34 +318,7 @@ struct TaskListView: View {
                 openPendingScheduledTaskIfNeeded()
             }
         }
-    }
-
-    @ViewBuilder
-    private var scheduleDetailColumn: some View {
-        if let task = taskForDetailSheet {
-            EditTaskView(
-                task: task,
-                familyProfiles: viewModel.familyProfiles,
-                onUpdateSuccess: { _ in
-                    Task { await viewModel.loadTasks(silent: true) }
-                },
-                onAlarmSync: { updated in
-                    viewModel.syncAlarms(for: updated)
-                }
-            )
-            .environmentObject(appRouter)
-            .environment(\.locale, appSettings.appLocale)
-            .environment(\.layoutDirection, appSettings.layoutDirection)
-            .id(task.id)
-        } else {
-            ContentUnavailableView {
-                Label(L10n.Schedule.schedule.localized, systemImage: "calendar")
-            } description: {
-                Text(L10n.Common.select.localized)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .schedulePageBackground()
-        }
+        .appLocaleEnvironment(using: appSettings)
     }
 
     private var mainContent: some View {
@@ -768,17 +710,16 @@ struct TaskListView: View {
     }
 }
 
-// MARK: - Edit presentation (sheet vs split column；点击任务直接进入编辑，跳过详情)
+// MARK: - Edit presentation（点击任务直接进入编辑 sheet）
 
 private struct ScheduleEditSheetModifier: ViewModifier {
-    let isEnabled: Bool
     @Binding var task: FamilyTask?
     @ObservedObject var viewModel: ScheduleViewModel
     @ObservedObject var appRouter: AppRouter
     @ObservedObject var appSettings: AppSettingsManager
 
     func body(content: Content) -> some View {
-        content.sheet(item: sheetBinding) { presented in
+        content.sheet(item: $task) { presented in
             EditTaskView(
                 task: presented,
                 familyProfiles: viewModel.familyProfiles,
@@ -795,17 +736,6 @@ private struct ScheduleEditSheetModifier: ViewModifier {
             .presentationDetents([.large])
             .duoReadableContentWidth()
         }
-    }
-
-    private var sheetBinding: Binding<FamilyTask?> {
-        Binding(
-            get: { isEnabled ? task : nil },
-            set: { newValue in
-                if isEnabled {
-                    task = newValue
-                }
-            }
-        )
     }
 }
 
