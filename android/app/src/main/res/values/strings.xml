@@ -16,7 +16,7 @@
     <string name="legal_terms_url">https://www.wefamily.ai/en/terms</string>
 
     <!-- Org routing / household selection (iOS parity) -->
-    <string name="common_welcome_to_wesync">Welcome to Family Link</string>
+    <string name="common_welcome_to_wesync">Welcome to ShareCal</string>
     <string name="family_my_groups">My groups</string>
     <string name="family_enter_group_name">Group name</string>
     <string name="family_invite_code_label">Invite code</string>

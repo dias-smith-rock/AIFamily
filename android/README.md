@@ -1,4 +1,4 @@
-# Family Link — Android
+# ShareCal — Android
 
 Native Kotlin + Jetpack Compose client in the AIFamily monorepo.
 

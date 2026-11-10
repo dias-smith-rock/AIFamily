@@ -12,7 +12,7 @@
     <string name="auth_google_sign_in_failed">Google 登录失败。</string>
     <string name="auth_google_developer_error">Google 登录配置错误（status 10）。请在 Google Cloud 为包名 %1$s 创建 Android OAuth 客户端，并填入本机 debug SHA-1。</string>
 
-    <string name="common_welcome_to_wesync">欢迎使用 Family Link</string>
+    <string name="common_welcome_to_wesync">欢迎使用 ShareCal</string>
     <string name="family_my_groups">我的群组</string>
     <string name="family_enter_group_name">群组名称</string>
     <string name="family_invite_code_label">邀请码</string>

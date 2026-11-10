@@ -1423,55 +1423,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسجيل الدخول إلى Family Link"
+            "value": "تسجيل الدخول إلى ShareCal"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sign in to Family Link"
+            "value": "Sign in to ShareCal"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Iniciar sesión en Family Link"
+            "value": "Iniciar sesión en ShareCal"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connexion à Family Link"
+            "value": "Connexion à ShareCal"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link में साइन इन करें"
+            "value": "ShareCal में साइन इन करें"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Entrar no Family Link"
+            "value": "Entrar no ShareCal"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link இல் உள்நுழைக"
+            "value": "ShareCal இல் உள்நுழைக"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "登录家庭记事"
+            "value": "登录 ShareCal"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "登入家庭記事"
+            "value": "登入 ShareCal"
           }
         }
       }
@@ -1774,43 +1774,178 @@
     "auth_identity_already_linked_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "该账号已被使用" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "該帳號已被使用" } },
-        "es": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "This account is already in use" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "This account is already in use" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "该账号已被使用"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "該帳號已被使用"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This account is already in use"
+          }
+        }
       }
     },
     "auth_identity_already_linked_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 账号已绑定其他家庭记事用户。请换一个账号绑定，或继续以游客使用——当前群组仍保留在本游客账号下。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "此 Google 或 Apple 帳號已綁定其他家庭記事使用者。請換一個帳號綁定，或繼續以遊客使用——目前群組仍保留在本遊客帳號下。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "This Google or Apple account is already linked to another Family Link user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Google 或 Apple 账号已绑定其他 ShareCal用户。请换一个账号绑定，或继续以游客使用——当前群组仍保留在本游客账号下。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此 Google 或 Apple 帳號已綁定其他 ShareCal使用者。請換一個帳號綁定，或繼續以遊客使用——目前群組仍保留在本遊客帳號下。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Google or Apple account is already linked to another ShareCal user. Try a different account to bind, or continue as a guest—your current groups stay on this guest profile."
+          }
+        }
       }
     },
     "auth_manual_linking_disabled": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "服务端尚未开启账号绑定功能，请稍后再试或联系支持。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "伺服器尚未開啟帳號綁定功能，請稍後再試或聯絡支援。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Account linking is not enabled on the server. Please try again later or contact support." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务端尚未开启账号绑定功能，请稍后再试或联系支持。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "伺服器尚未開啟帳號綁定功能，請稍後再試或聯絡支援。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Account linking is not enabled on the server. Please try again later or contact support."
+          }
+        }
       }
     },
     "auth_unable_to_complete_login": {
@@ -2170,15 +2305,60 @@
     "auth_link_account": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Link Account" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定账号" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定帳號" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Link Account" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Link Account" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Link Account" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Link Account" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Link Account" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Link Account" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定账号"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "綁定帳號"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Account"
+          }
+        }
       }
     },
     "auth_anonymous_account_link_subtitle": {
@@ -2243,267 +2423,1122 @@
     "auth_guest_exit_options_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Guest session" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "游客会话" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "遊客會話" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Guest session" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Guest session" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Guest session" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Guest session" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Guest session" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Guest session" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "游客会话"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "遊客會話"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guest session"
+          }
+        }
       }
     },
     "auth_guest_exit_options_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回登录页可在本机保留群组；绑定账号可换机同步；清除游客数据将创建新游客且无法恢复。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回登入頁可在本機保留群組；綁定帳號可換機同步；清除遊客資料將建立新遊客且無法恢復。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回登录页可在本机保留群组；绑定账号可换机同步；清除游客数据将创建新游客且无法恢复。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回登入頁可在本機保留群組；綁定帳號可換機同步；清除遊客資料將建立新遊客且無法恢復。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login keeps your groups on this device. Link an account to sync on other devices. Clear guest data creates a new guest and cannot be undone."
+          }
+        }
       }
     },
     "auth_guest_return_to_login_keep_data": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回登录页（本机保留数据）" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回登入頁（本機保留資料）" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Return to login (keep data on this device)" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回登录页（本机保留数据）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回登入頁（本機保留資料）"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login (keep data on this device)"
+          }
+        }
       }
     },
     "auth_guest_bind_account": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定 Apple 或 Google" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定 Apple 或 Google" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 或 Google"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "綁定 Apple 或 Google"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google"
+          }
+        }
       }
     },
     "auth_guest_start_fresh_experience": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清除游客数据并重新开始" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除遊客資料並重新開始" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data & start over" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除游客数据并重新开始"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除遊客資料並重新開始"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data & start over"
+          }
+        }
       }
     },
     "auth_return_to_login": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Return to login" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "返回登录页" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "返回登入頁" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Return to login" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Return to login" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Return to login" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Return to login" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Return to login" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Return to login" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回登录页"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回登入頁"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to login"
+          }
+        }
       }
     },
     "auth_i_already_have_an_account_or_want_to_register": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "我已有账号或我要注册账号" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "我已有帳號或我要註冊帳號" } },
-        "es": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "I already have an account or want to register" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我已有账号或我要注册账号"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我已有帳號或我要註冊帳號"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I already have an account or want to register"
+          }
+        }
       }
     },
     "auth_i_already_have_an_account_or_want_to_register_subtitle": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "使用 Apple 或 Google 登录 / 注册" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "使用 Apple 或 Google 登入 / 註冊" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Sign in with Apple or Google" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Apple 或 Google 登录 / 注册"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用 Apple 或 Google 登入 / 註冊"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in with Apple or Google"
+          }
+        }
       }
     },
     "auth_anonymous_bind_after_group_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "要在所有设备保留群组吗？" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "要在所有裝置保留群組嗎？" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Keep your group on every device?" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要在所有设备保留群组吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要在所有裝置保留群組嗎？"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep your group on every device?"
+          }
+        }
       }
     },
     "auth_anonymous_bind_after_group_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定 Apple 或 Google 可在换机后保留群组与 Pro 权益，用户 ID 不变。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定 Apple 或 Google 可在換機後保留群組與 Pro 權益，使用者 ID 不變。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 或 Google 可在换机后保留群组与 Pro 权益，用户 ID 不变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "綁定 Apple 或 Google 可在換機後保留群組與 Pro 權益，使用者 ID 不變。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep this group and Pro benefits if you switch devices. Your user ID stays the same."
+          }
+        }
       }
     },
     "auth_anonymous_bind_prompt_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定账号，保存你的进度？" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定帳號，保存你的進度？" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Save your progress with a real account?" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定账号，保存你的进度？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "綁定帳號，保存你的進度？"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your progress with a real account?"
+          }
+        }
       }
     },
     "auth_anonymous_bind_prompt_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "绑定 Apple 或 Google，换机后仍可保留任务、待办、记账与成员，用户 ID 不变。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "綁定 Apple 或 Google，換機後仍可保留任務、待辦、記帳與成員，使用者 ID 不變。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绑定 Apple 或 Google，换机后仍可保留任务、待办、记账与成员，用户 ID 不变。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "綁定 Apple 或 Google，換機後仍可保留任務、待辦、記帳與成員，使用者 ID 不變。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link Apple or Google to keep your tasks, todos, ledger, and members if you switch devices. Your user ID stays the same."
+          }
+        }
       }
     },
     "auth_no_saved_guest_session_was_found_on_this_device": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "本设备未找到已保存的游客会话。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "本裝置未找到已保存的游客會話。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "No saved guest session was found on this device." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本设备未找到已保存的游客会话。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本裝置未找到已保存的游客會話。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No saved guest session was found on this device."
+          }
+        }
       }
     },
     "auth_your_guest_session_could_not_be_restored_please_try_again": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法恢复游客会话，请重试。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法恢復游客會話，請重試。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Your guest session could not be restored. Please try again." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法恢复游客会话，请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法恢復游客會話，請重試。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your guest session could not be restored. Please try again."
+          }
+        }
       }
     },
     "auth_guest_session_restore_failed_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法恢复游客会话" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "無法恢復游客會話" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Unable to restore guest session" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法恢复游客会话"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法恢復游客會話"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unable to restore guest session"
+          }
+        }
       }
     },
     "auth_guest_session_restore_failed_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "本机保存的游客会话已在服务端失效，无法恢复原有群组。你可以清除游客数据并重新开始。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "本機保存的游客會話已在伺服器端失效，無法恢復原有群組。你可以清除游客資料並重新開始。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本机保存的游客会话已在服务端失效，无法恢复原有群组。你可以清除游客数据并重新开始。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本機保存的游客會話已在伺服器端失效，無法恢復原有群組。你可以清除游客資料並重新開始。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The guest session saved on this device is no longer valid on the server, so your previous groups cannot be restored. You can clear guest data and start fresh."
+          }
+        }
       }
     },
     "auth_clear_guest_data_and_start_fresh": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清除游客数据并重新开始" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除游客資料並重新開始" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data and start fresh" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除游客数据并重新开始"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除游客資料並重新開始"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data and start fresh"
+          }
+        }
       }
     },
     "auth_clear_guest_data_confirm_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "清除游客数据？" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "清除遊客資料？" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
-        "fr": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
-        "pt": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
-        "ar": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
-        "hi": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } },
-        "ta": { "stringUnit": { "state": "translated", "value": "Clear guest data?" } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除游客数据？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "清除遊客資料？"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear guest data?"
+          }
+        }
       }
     },
     "auth_clear_guest_data_confirm_message": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
-        "zh-Hans": { "stringUnit": { "state": "translated", "value": "将清除本机的游客群组与数据，并创建新的游客会话。此操作无法撤销。" } },
-        "zh-Hant": { "stringUnit": { "state": "translated", "value": "將清除本機的遊客群組與資料，並建立新的遊客會話。此操作無法撤銷。" } },
-        "es": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
-        "fr": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
-        "pt": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
-        "ar": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
-        "hi": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } },
-        "ta": { "stringUnit": { "state": "translated", "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone." } }
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将清除本机的游客群组与数据，并创建新的游客会话。此操作无法撤销。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將清除本機的遊客群組與資料，並建立新的遊客會話。此操作無法撤銷。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This will remove your guest groups and data on this device and create a new guest session. This cannot be undone."
+          }
+        }
       }
     }
   },

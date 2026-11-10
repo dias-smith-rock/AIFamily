@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Normalize product naming: zh=同圈, en/other=Family Sync."""
+"""Normalize product naming: zh=同圈, en/other=ShareCal."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ LOCALES = ["en", "zh-Hans", "zh-Hant", "es", "pt", "ar", "hi", "fr", "ta"]
 OLD_ZH = "家音"
 NEW_ZH = "同圈"
 OLD_EN = "WeFamily"
-NEW_EN = "Family Sync"
+NEW_EN = "ShareCal"
 
 
 def make_unit(value: str) -> dict:
@@ -28,85 +28,85 @@ KEY_MIGRATIONS: dict[str, tuple[str, dict[str, str]]] = {
     "关于 WeFamily": (
         "关于同圈",
         {
-            "en": "About Family Sync",
+            "en": "About ShareCal",
             "zh-Hans": "关于同圈",
             "zh-Hant": "關於同圈",
-            "es": "Acerca de Family Sync",
-            "pt": "Sobre Family Sync",
-            "fr": "À propos de Family Sync",
-            "ar": "حول Family Sync",
-            "hi": "Family Sync के बारे में",
-            "ta": "Family Sync பற்றி",
+            "es": "Acerca de ShareCal",
+            "pt": "Sobre ShareCal",
+            "fr": "À propos de ShareCal",
+            "ar": "حول ShareCal",
+            "hi": "ShareCal के बारे में",
+            "ta": "ShareCal பற்றி",
         },
     ),
     "欢迎来到 WeFamily": (
         "欢迎来到同圈",
         {
-            "en": "Welcome to Family Sync",
+            "en": "Welcome to ShareCal",
             "zh-Hans": "欢迎来到同圈",
             "zh-Hant": "歡迎來到同圈",
-            "es": "Bienvenido a Family Sync",
-            "pt": "Bem-vindo ao Family Sync",
-            "fr": "Bienvenue sur Family Sync",
-            "ar": "مرحبًا بك في Family Sync",
-            "hi": "Family Sync में आपका स्वागत है",
-            "ta": "Family Syncக்கு வரவேற்கிறோம்",
+            "es": "Bienvenido a ShareCal",
+            "pt": "Bem-vindo ao ShareCal",
+            "fr": "Bienvenue sur ShareCal",
+            "ar": "مرحبًا بك في ShareCal",
+            "hi": "ShareCal में आपका स्वागत है",
+            "ta": "ShareCalக்கு வரவேற்கிறோம்",
         },
     ),
     "登录 家音": (
         "登录同圈",
         {
-            "en": "Sign in to Family Sync",
+            "en": "Sign in to ShareCal",
             "zh-Hans": "登录同圈",
             "zh-Hant": "登入同圈",
-            "es": "Iniciar sesión en Family Sync",
-            "pt": "Entrar no Family Sync",
-            "fr": "Connexion à Family Sync",
-            "ar": "تسجيل الدخول إلى Family Sync",
-            "hi": "Family Sync में साइन इन करें",
-            "ta": "Family Sync இல் உள்நுழைக",
+            "es": "Iniciar sesión en ShareCal",
+            "pt": "Entrar no ShareCal",
+            "fr": "Connexion à ShareCal",
+            "ar": "تسجيل الدخول إلى ShareCal",
+            "hi": "ShareCal में साइन इन करें",
+            "ta": "ShareCal இல் உள்நுழைக",
         },
     ),
     "WeFamily": (
-        "Family Sync",
+        "ShareCal",
         {
-            "en": "Family Sync",
+            "en": "ShareCal",
             "zh-Hans": "同圈",
             "zh-Hant": "同圈",
-            "es": "Family Sync",
-            "pt": "Family Sync",
-            "fr": "Family Sync",
-            "ar": "Family Sync",
-            "hi": "Family Sync",
-            "ta": "Family Sync",
+            "es": "ShareCal",
+            "pt": "ShareCal",
+            "fr": "ShareCal",
+            "ar": "ShareCal",
+            "hi": "ShareCal",
+            "ta": "ShareCal",
         },
     ),
     "让对方使用家音 App 扫码，或输入下方邀请码即可加入。": (
         "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。",
         {
-            "en": "Ask the other party to use the Family Sync app to scan the code, or enter the invitation code below to join.",
+            "en": "Ask the other party to use the ShareCal app to scan the code, or enter the invitation code below to join.",
             "zh-Hans": "让对方使用同圈 App 扫码，或输入下方邀请码即可加入。",
             "zh-Hant": "請對方使用同圈 App 掃碼，或輸入下方邀請碼即可加入。",
-            "es": "Pídale a la otra parte que use la aplicación Family Sync para escanear el código o ingrese el código de invitación a continuación para unirse.",
-            "pt": "Peça à outra parte para usar o aplicativo Family Sync para escanear o código ou insira o código de convite abaixo para participar.",
-            "fr": "Demandez à l'autre partie d'utiliser l'application Family Sync pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre.",
-            "ar": "اطلب من الطرف الآخر استخدام تطبيق Family Sync لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام.",
-            "hi": "दूसरे पक्ष से कोड स्कैन करने के लिए Family Sync ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।",
-            "ta": "குறியீட்டை ஸ்கேன் செய்ய Family Sync ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்.",
+            "es": "Pídale a la otra parte que use la aplicación ShareCal para escanear el código o ingrese el código de invitación a continuación para unirse.",
+            "pt": "Peça à outra parte para usar o aplicativo ShareCal para escanear o código ou insira o código de convite abaixo para participar.",
+            "fr": "Demandez à l'autre partie d'utiliser l'application ShareCal pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre.",
+            "ar": "اطلب من الطرف الآخر استخدام تطبيق ShareCal لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام.",
+            "hi": "दूसरे पक्ष से कोड स्कैन करने के लिए ShareCal ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।",
+            "ta": "குறியீட்டை ஸ்கேன் செய்ய ShareCal ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்.",
         },
     ),
     "邀请你加入家音群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。": (
         "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。",
         {
-            "en": "You're invited to join a Family Sync group! Copy this invite code: %1$@, or scan the QR code in the app.",
+            "en": "You're invited to join a ShareCal group! Copy this invite code: %1$@, or scan the QR code in the app.",
             "zh-Hans": "邀请你加入同圈群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。",
             "zh-Hant": "邀請你加入同圈群組空間！請複製此邀請碼：%1$@，或使用 App 掃碼加入。",
-            "es": "¡Te invitan a unirte a un grupo de Family Sync! Copia este código de invitación: %1$@, o escanea el código QR en la app.",
-            "pt": "Você foi convidado a entrar em um grupo Family Sync! Copie este código de convite: %1$@, ou escaneie o QR code no app.",
-            "fr": "Vous êtes invité à rejoindre un groupe Family Sync ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app.",
-            "ar": "أنت مدعو للانضمام إلى مجموعة Family Sync! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق.",
-            "hi": "आपको Family Sync समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।",
-            "ta": "Family Sync குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்.",
+            "es": "¡Te invitan a unirte a un grupo de ShareCal! Copia este código de invitación: %1$@, o escanea el código QR en la app.",
+            "pt": "Você foi convidado a entrar em um grupo ShareCal! Copie este código de convite: %1$@, ou escaneie o QR code no app.",
+            "fr": "Vous êtes invité à rejoindre un groupe ShareCal ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app.",
+            "ar": "أنت مدعو للانضمام إلى مجموعة ShareCal! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق.",
+            "hi": "आपको ShareCal समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।",
+            "ta": "ShareCal குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்.",
         },
     ),
 }

@@ -66,55 +66,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "حول Family Link"
+            "value": "حول ShareCal"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "About Family Link"
+            "value": "About ShareCal"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Acerca de Family Link"
+            "value": "Acerca de ShareCal"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "À propos de Family Link"
+            "value": "À propos de ShareCal"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link के बारे में"
+            "value": "ShareCal के बारे में"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sobre Family Link"
+            "value": "Sobre ShareCal"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link பற்றி"
+            "value": "ShareCal பற்றி"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "关于家庭记事"
+            "value": "关于 ShareCal"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "關於家庭記事"
+            "value": "關於 ShareCal"
           }
         }
       }
@@ -8739,55 +8739,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "هل تستمتع بـ Family Link؟"
+            "value": "هل تستمتع بـ ShareCal؟"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enjoying Family Link?"
+            "value": "Enjoying ShareCal?"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¿Te gusta Family Link?"
+            "value": "¿Te gusta ShareCal?"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vous aimez Family Link ?"
+            "value": "Vous aimez ShareCal ?"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link पसंद आ रहा है?"
+            "value": "ShareCal पसंद आ रहा है?"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Está a gostar do Family Link?"
+            "value": "Está a gostar do ShareCal?"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link பிடிக்கிறதா?"
+            "value": "ShareCal பிடிக்கிறதா?"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "喜欢家庭记事吗？"
+            "value": "喜欢 ShareCal 吗？"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "喜歡家庭記事嗎？"
+            "value": "喜歡 ShareCal 嗎？"
           }
         }
       }
@@ -14167,55 +14167,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تم إكمال %lld مهمة"
+            "value": "تم إكمال %lld"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld to-do(s) completed"
+            "value": "%lld completed"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld tarea(s) completada(s)"
+            "value": "%lld completadas"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld tâche(s) terminée(s)"
+            "value": "%lld terminée(s)"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld कार्य पूर्ण"
+            "value": "%lld पूर्ण"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld tarefa(s) concluída(s)"
+            "value": "%lld concluídas"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld பணி முடிந்தது"
+            "value": "%lld முடிந்தது"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 个待办已完成"
+            "value": "已完成 %lld"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 個待辦已完成"
+            "value": "已完成 %lld"
           }
         }
       }
@@ -28445,55 +28445,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "مرحبًا بك في Family Link"
+            "value": "مرحبًا بك في ShareCal"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welcome to Family Link"
+            "value": "Welcome to ShareCal"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bienvenido a Family Link"
+            "value": "Bienvenido a ShareCal"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bienvenue sur Family Link"
+            "value": "Bienvenue sur ShareCal"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link में आपका स्वागत है"
+            "value": "ShareCal में आपका स्वागत है"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bem-vindo ao Family Link"
+            "value": "Bem-vindo ao ShareCal"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Linkக்கு வரவேற்கிறோம்"
+            "value": "ShareCalக்கு வரவேற்கிறோம்"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "欢迎来到家庭记事"
+            "value": "欢迎来到 ShareCal"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "歡迎來到家庭記事"
+            "value": "歡迎來到 ShareCal"
           }
         }
       }
@@ -28504,55 +28504,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link"
+            "value": "ShareCal"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "家庭记事"
+            "value": "ShareCal"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "家庭記事"
+            "value": "ShareCal"
           }
         }
       }

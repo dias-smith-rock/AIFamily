@@ -1,9 +1,9 @@
 export type AppLocale = "en" | "zh-Hans" | "zh-Hant";
 
 export const PRODUCT_NAMES: Record<AppLocale, string> = {
-  en: "Family Sync",
-  "zh-Hans": "记事本",
-  "zh-Hant": "記事本",
+  en: "ShareCal",
+  "zh-Hans": "ShareCal",
+  "zh-Hant": "ShareCal",
 };
 
 export interface UiStrings {
@@ -81,7 +81,7 @@ export interface UiStrings {
 
 export const UI: Record<AppLocale, UiStrings> = {
   en: {
-    loginTitle: "Sign in to Family Sync",
+    loginTitle: "Sign in to ShareCal",
     loginSubtitle: "Coordinate schedules, tasks, and family finances together.",
     signInWithGoogle: "Continue with Google",
     signOut: "Sign out",
@@ -153,7 +153,7 @@ export const UI: Record<AppLocale, UiStrings> = {
     expenseDetailsPlaceholder: "You can fill in expense details, payment methods, etc...",
   },
   "zh-Hans": {
-    loginTitle: "登录记事本",
+    loginTitle: "登录 ShareCal",
     loginSubtitle: "与家人一起协调日程、待办与家庭账本。",
     signInWithGoogle: "使用 Google 继续",
     signOut: "退出登录",
@@ -225,7 +225,7 @@ export const UI: Record<AppLocale, UiStrings> = {
     expenseDetailsPlaceholder: "可填写费用明细、支付方式等…",
   },
   "zh-Hant": {
-    loginTitle: "登入記事本",
+    loginTitle: "登入 ShareCal",
     loginSubtitle: "與家人一起協調日程、待辦與家庭帳本。",
     signInWithGoogle: "使用 Google 繼續",
     signOut: "登出",

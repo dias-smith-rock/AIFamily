@@ -87,7 +87,7 @@
     <string name="location_tracked_background_on">已開啟</string>
     <string name="location_tracked_bind_device_action">綁定定位裝置</string>
     <string name="location_tracked_bind_device_footer">產生一次性配對碼，供小孩手機僅上報位置。</string>
-    <string name="location_tracked_bind_subtitle">請用%s的手機在 Family Link 中掃描此碼。無需註冊帳號。</string>
+    <string name="location_tracked_bind_subtitle">請用%s的手機在 ShareCal 中掃描此碼。無需註冊帳號。</string>
     <string name="location_tracked_bind_title">綁定定位裝置</string>
     <string name="location_tracked_claim_card_subtitle">掃描或輸入家長配對碼。僅上報位置，無需註冊。</string>
     <string name="location_tracked_claim_footer">請向家長索取「綁定定位裝置」中的配對碼。</string>
@@ -164,7 +164,7 @@
     <string name="settings_calendar_sync_calendars_section">日曆</string>
     <string name="settings_calendar_sync_change_group">切換組織</string>
     <string name="settings_calendar_sync_continuous">系統日曆變更時持續同步</string>
-    <string name="settings_calendar_sync_footer">從系統「日曆」匯入事件（含已在 iOS 設定中新增的 Google 日曆）。同步為單向（系統 → 家庭記事），在 App 內的修改不會寫回系統日曆。</string>
+    <string name="settings_calendar_sync_footer">從系統「日曆」匯入事件（含已在 iOS 設定中新增的 Google 日曆）。同步為單向（系統 → ShareCal），在 App 內的修改不會寫回系統日曆。</string>
     <string name="settings_calendar_sync_grant_access">授予權限</string>
     <string name="settings_calendar_sync_in_progress">同步中…</string>
     <string name="settings_calendar_sync_last_synced">上次同步：%s</string>

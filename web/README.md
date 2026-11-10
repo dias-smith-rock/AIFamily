@@ -1,4 +1,4 @@
-# WeFamily / Family Sync Web App
+# WeFamily / ShareCal Web App
 
 部署域名：**https://app.wefamily.ai/**
 

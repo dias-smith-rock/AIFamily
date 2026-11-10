@@ -8,16 +8,9 @@ export const localeLabels: Record<Locale, string> = {
   "zh-Hant": "繁體中文",
 };
 
-/** Product display name by locale — locked brand rule. */
-export function productName(locale: Locale): string {
-  switch (locale) {
-    case "zh-Hans":
-      return "记事本";
-    case "zh-Hant":
-      return "記事本";
-    default:
-      return "Family Sync";
-  }
+/** Product display name — locked brand rule (all locales). */
+export function productName(_locale: Locale): string {
+  return "ShareCal";
 }
 
 export const site = {
@@ -58,7 +51,7 @@ export type Messages = {
 };
 
 const en: Messages = {
-  metaTitle: "Family Sync — Lightweight coordination for small circles",
+  metaTitle: "ShareCal — Lightweight coordination for small circles",
   metaDescription:
     "Calendar, to-dos, shared wallet, and member profiles for trusted groups of 3–20. Sync on iPhone or the web—without forcing everyone to install the app.",
   navWeb: "Web app",
@@ -71,7 +64,7 @@ const en: Messages = {
   screensHint: "Swipe or use arrows to browse screens",
   scenariosTitle: "Built for tight circles",
   scenariosIntro:
-    "Wherever 3–20 people need to divide work and stay on a shared timeline, Family Sync keeps the noise out of the chat.",
+    "Wherever 3–20 people need to divide work and stay on a shared timeline, ShareCal keeps the noise out of the chat.",
   scenarios: [
     {
       icon: "👥",
@@ -136,7 +129,7 @@ const en: Messages = {
   termsTitle: "Terms of Service",
   legalBack: "Back to home",
   privacyBody: [
-    "Family Sync (“we”, “us”) provides family and small-group scheduling, to-dos, wallet, and related features via our iOS app and web app at wefamily.ai.",
+    "ShareCal (“we”, “us”) provides family and small-group scheduling, to-dos, wallet, and related features via our iOS app and web app at wefamily.ai.",
     "Account data is handled through our authentication providers (such as Sign in with Apple and Google) and our cloud backend. Household content you create is stored to operate the service and sync across your devices.",
     "We do not sell your personal information. We use data to provide the product, secure accounts, prevent abuse, and improve reliability.",
     "You may request account deletion from in-app settings or by emailing us. Some records may be retained where required for security, legal, or billing obligations.",
@@ -144,7 +137,7 @@ const en: Messages = {
     "Last updated: July 2026.",
   ],
   termsBody: [
-    "By using Family Sync (the iOS app or web app), you agree to these Terms of Service.",
+    "By using ShareCal (the iOS app or web app), you agree to these Terms of Service.",
     "You must be able to form a binding contract in your jurisdiction. You are responsible for activity under your account and for content you post within a household.",
     "The service is provided “as is.” We may modify or discontinue features with reasonable notice when practical. Paid subscriptions, if any, are governed by Apple’s App Store terms when purchased on iOS.",
     "You may not misuse the service, attempt unauthorized access, or use it to harass others.",
@@ -155,7 +148,7 @@ const en: Messages = {
 };
 
 const zhHans: Messages = {
-  metaTitle: "记事本 — 小圈子轻量协作中枢",
+  metaTitle: "ShareCal — 小圈子轻量协作中枢",
   metaDescription:
     "日程、待办、家庭账本与成员档案，适合 3–20 人的信任小圈子。iPhone 与网页同步，不必全员下载 App。",
   navWeb: "Web 应用",
@@ -168,7 +161,7 @@ const zhHans: Messages = {
   screensHint: "左右滑动或点击箭头查看更多界面",
   scenariosTitle: "适用场景",
   scenariosIntro:
-    "凡是有协作需求的紧密小圈子——3 到 20 人、彼此信任、需要分事排期——都能用记事本理清琐事。",
+    "凡是有协作需求的紧密小圈子——3 到 20 人、彼此信任、需要分事排期——都能用 ShareCal 理清琐事。",
   scenarios: [
     {
       icon: "👥",
@@ -233,7 +226,7 @@ const zhHans: Messages = {
   termsTitle: "服务条款",
   legalBack: "返回首页",
   privacyBody: [
-    "记事本（Family Sync，「我们」）通过 iOS 应用与 wefamily.ai 网页应用，提供家庭与小圈子的日程、待办、账本等相关功能。",
+    "ShareCal（「我们」）通过 iOS 应用与 wefamily.ai 网页应用，提供家庭与小圈子的日程、待办、账本等相关功能。",
     "账号数据经由认证服务商（如通过 Apple、Google 登录）及云端后端处理。你在家庭组织中创建的内容用于提供服务并在多端同步。",
     "我们不会出售你的个人信息。数据用于提供产品、保障账号安全、防止滥用并提升稳定性。",
     "你可在应用内设置中申请注销账号，或通过页脚邮箱联系我们。出于安全、法律或计费等义务，部分记录可能依法保留。",
@@ -241,7 +234,7 @@ const zhHans: Messages = {
     "最近更新：2026 年 7 月。",
   ],
   termsBody: [
-    "使用记事本（Family Sync）的 iOS 应用或网页应用，即表示你同意本服务条款。",
+    "使用 ShareCal 的 iOS 应用或网页应用，即表示你同意本服务条款。",
     "你须具备所在司法辖区订立约束性合同的能力。你须对账号下的行为及在家庭组织中发布的内容负责。",
     "服务按「现状」提供。我们可能在合理可行时调整或下线功能。若存在付费订阅且通过 iOS 购买，则同时适用 Apple App Store 相关条款。",
     "不得滥用服务、尝试未授权访问，或利用服务骚扰他人。",
@@ -252,7 +245,7 @@ const zhHans: Messages = {
 };
 
 const zhHant: Messages = {
-  metaTitle: "記事本 — 小圈子輕量協作中樞",
+  metaTitle: "ShareCal — 小圈子輕量協作中樞",
   metaDescription:
     "日程、待辦、家庭帳簿與成員檔案，適合 3–20 人的信任小圈子。iPhone 與網頁同步，不必全員下載 App。",
   navWeb: "Web 應用",
@@ -265,7 +258,7 @@ const zhHant: Messages = {
   screensHint: "左右滑動或點擊箭頭查看更多界面",
   scenariosTitle: "適用場景",
   scenariosIntro:
-    "凡是有協作需求的緊密小圈子——3 到 20 人、彼此信任、需要分事排期——都能用記事本理清瑣事。",
+    "凡是有協作需求的緊密小圈子——3 到 20 人、彼此信任、需要分事排期——都能用 ShareCal 理清瑣事。",
   scenarios: [
     {
       icon: "👥",
@@ -330,7 +323,7 @@ const zhHant: Messages = {
   termsTitle: "服務條款",
   legalBack: "返回首頁",
   privacyBody: [
-    "記事本（Family Sync，「我們」）透過 iOS 應用與 wefamily.ai 網頁應用，提供家庭與小圈子的日程、待辦、帳簿等相關功能。",
+    "ShareCal（「我們」）透過 iOS 應用與 wefamily.ai 網頁應用，提供家庭與小圈子的日程、待辦、帳簿等相關功能。",
     "帳號資料經由認證服務商（如透過 Apple、Google 登入）及雲端後端處理。你在家庭組織中建立的內容用於提供服務並在多端同步。",
     "我們不會出售你的個人資訊。資料用於提供產品、保障帳號安全、防止濫用並提升穩定性。",
     "你可在應用內設定中申請註銷帳號，或透過頁腳郵箱聯絡我們。出於安全、法律或計費等義務，部分記錄可能依法保留。",
@@ -338,7 +331,7 @@ const zhHant: Messages = {
     "最近更新：2026 年 7 月。",
   ],
   termsBody: [
-    "使用記事本（Family Sync）的 iOS 應用或網頁應用，即表示你同意本服務條款。",
+    "使用 ShareCal 的 iOS 應用或網頁應用，即表示你同意本服務條款。",
     "你須具備所在司法轄區訂立約束性合約的能力。你須對帳號下的行為及在家庭組織中發佈的內容負責。",
     "服務按「現狀」提供。我們可能在合理可行時調整或下線功能。若存在付費訂閱且透過 iOS 購買，則同時適用 Apple App Store 相關條款。",
     "不得濫用服務、嘗試未授權存取，或利用服務騷擾他人。",

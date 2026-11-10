@@ -4373,55 +4373,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في Family Link."
+            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في ShareCal."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verify your identity to access group schedules and tasks in Family Link."
+            "value": "Verify your identity to access group schedules and tasks in ShareCal."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en Family Link."
+            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en ShareCal."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans Family Link."
+            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans ShareCal."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+            "value": "ShareCal में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no Family Link."
+            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no ShareCal."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Family Link இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+            "value": "ShareCal இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请验证身份以访问家庭记事中的群组日程与任务。"
+            "value": "请验证身份以访问 ShareCal 中的群组日程与任务。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請驗證身分以存取家庭記事中的群組日程與任務。"
+            "value": "請驗證身分以存取 ShareCal 中的群組日程與任務。"
           }
         }
       }

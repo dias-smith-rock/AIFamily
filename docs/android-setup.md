@@ -1,4 +1,4 @@
-# Android setup (Family Link monorepo)
+# Android setup (ShareCal monorepo)
 
 ## Requirements
 

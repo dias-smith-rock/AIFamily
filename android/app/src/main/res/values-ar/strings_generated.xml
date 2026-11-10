@@ -87,7 +87,7 @@
     <string name="location_tracked_background_on">On</string>
     <string name="location_tracked_bind_device_action">Bind location device</string>
     <string name="location_tracked_bind_device_footer">Generate a one-time code for a child’s phone to report location only.</string>
-    <string name="location_tracked_bind_subtitle">Ask %s\'s device to scan this code in Family Link. No account signup needed.</string>
+    <string name="location_tracked_bind_subtitle">Ask %s\'s device to scan this code in ShareCal. No account signup needed.</string>
     <string name="location_tracked_bind_title">Bind location device</string>
     <string name="location_tracked_claim_card_subtitle">Scan or enter a parent pairing code. Location only — no signup.</string>
     <string name="location_tracked_claim_footer">Get the code from a parent’s Bind location device screen.</string>
@@ -164,7 +164,7 @@
     <string name="settings_calendar_sync_calendars_section">Calendars</string>
     <string name="settings_calendar_sync_change_group">Change Group</string>
     <string name="settings_calendar_sync_continuous">Keep syncing when calendars change</string>
-    <string name="settings_calendar_sync_footer">Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → Family Link). Edits in the app are not written back.</string>
+    <string name="settings_calendar_sync_footer">Import events from Apple Calendar and Google calendars already added in iOS Settings. Sync is one-way (system → ShareCal). Edits in the app are not written back.</string>
     <string name="settings_calendar_sync_grant_access">Grant Access</string>
     <string name="settings_calendar_sync_in_progress">Syncing…</string>
     <string name="settings_calendar_sync_last_synced">Last synced: %s</string>

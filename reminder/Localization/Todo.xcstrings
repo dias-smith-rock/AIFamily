@@ -7,55 +7,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld مهام متأخرة"
+            "value": "%lld متأخرة"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld to-dos overdue"
+            "value": "%lld overdue"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld tareas vencidas"
+            "value": "%lld vencidas"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld tâche(s) en retard"
+            "value": "%lld en retard"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld कार्य अतिदेय"
+            "value": "%lld अतिदेय"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld tarefas atrasadas"
+            "value": "%lld atrasadas"
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld பணிகள் காலாவதி"
+            "value": "%lld காலாவதி"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 个待办已过期"
+            "value": "已逾期 %lld"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld 個待辦已過期"
+            "value": "已逾期 %lld"
           }
         }
       }

@@ -219,18 +219,23 @@ struct TodoListView: View {
     }
 
     /// 与 Schedule `bottomAccessoryBar` 对齐：safeAreaInset + 相同上下边距。
+    /// 列表模式：逾期 / 已完成入口与「+」同一行。
     private var todoBottomAccessoryBar: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .center, spacing: 10) {
             if displayMode == .sticky, stickyShowsFitAllNotes {
                 todoFitAllNotesFAB
             }
 
-            Spacer(minLength: 8)
-                .allowsHitTesting(false)
+            if displayMode != .sticky, showsTodoSummaryFooter {
+                todoSummaryFooterRow
+            } else {
+                Spacer(minLength: 8)
+                    .allowsHitTesting(false)
+            }
 
             createTodoFAB
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, displayMode != .sticky && showsTodoSummaryFooter ? 16 : 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
     }
@@ -476,9 +481,6 @@ struct TodoListView: View {
             .padding(.bottom, 24)
         }
         .scrollBounceBehavior(.always)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            todoSummaryFooterInset
-        }
         .refreshable {
             await refreshTodos()
         }
@@ -531,34 +533,15 @@ struct TodoListView: View {
         }
     }
 
-    private var todoSummaryFooterInset: some View {
-        Group {
-            if showsTodoSummaryFooter {
-                todoSummaryFooterRow
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 8)
-                    .background {
-                        AppTheme.ColorToken.background
-                            .shadow(color: Color.black.opacity(0.08), radius: 8, y: -2)
-                    }
-            }
-        }
-    }
-
     private var todoSummaryFooterRow: some View {
-        Group {
-            if viewModel.overdueTasks.isEmpty == false || viewModel.completedTasks.isEmpty == false {
-                HStack(spacing: 10) {
-                    if viewModel.overdueTasks.isEmpty == false {
-                        compactOverdueSummaryCard
-                            .frame(maxWidth: .infinity)
-                    }
-                    if viewModel.completedTasks.isEmpty == false {
-                        compactCompletedSummaryCard
-                            .frame(maxWidth: .infinity)
-                    }
-                }
+        HStack(spacing: 10) {
+            if viewModel.overdueTasks.isEmpty == false {
+                compactOverdueSummaryCard
+                    .frame(maxWidth: .infinity)
+            }
+            if viewModel.completedTasks.isEmpty == false {
+                compactCompletedSummaryCard
+                    .frame(maxWidth: .infinity)
             }
         }
     }
@@ -578,9 +561,6 @@ struct TodoListView: View {
             .padding(.bottom, 24)
         }
         .scrollBounceBehavior(.always)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            todoSummaryFooterInset
-        }
         .refreshable {
             await refreshTodos()
         }
@@ -674,7 +654,7 @@ struct TodoListView: View {
                         .foregroundStyle(.tertiary)
                 }
 
-                Text(L10n.Todo.overdueCount.formatted(locale: locale, viewModel.overdueTasks.count))
+                Text(L10n.Common.lldOverdue.formatted(locale: locale, viewModel.overdueTasks.count))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
