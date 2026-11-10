@@ -110,6 +110,7 @@ extension L10n {
     static let date = Entry(key: "common_date", table: .common)
     static let day = Entry(key: "common_day", table: .common)
     static let decorateVenueAndPickUpBirthdayCakeFor = Entry(key: "common_decorate_venue_and_pick_up_birthday_cake_for", table: .common)
+    static let delete = Entry(key: "common_delete", table: .common)
     static let deleteAccount = Entry(key: "common_delete_account", table: .common)
     static let deleteAccount2 = Entry(key: "common_delete_account_2", table: .common)
     static let deleteFailed = Entry(key: "common_delete_failed", table: .common)

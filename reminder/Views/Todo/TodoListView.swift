@@ -8,6 +8,7 @@ struct TodoListView: View {
     @EnvironmentObject private var groupSwitcher: GroupSwitcherCoordinator
     @StateObject private var viewModel = AppViewModels.makeTodoListViewModel()
     @StateObject private var scheduleViewModel = AppViewModels.makeScheduleViewModel()
+    @StateObject private var listViewModel = AppViewModels.makeListViewModel()
 
     @State private var taskForEditSheet: FamilyTask?
     @State private var showOverdueSheet = false
@@ -24,23 +25,39 @@ struct TodoListView: View {
     @State private var stickyShowsFlipBoard = false
     @State private var stickyFlipBoardRequestID = 0
     @State private var stickyShowingFarSide = false
+    @State private var selectedHouseholdList: HouseholdList?
     /// To-Dos 展示样式（list / sticky），跨启动持久化。
     @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
+    /// To-Dos Tab 主分区：待办 / 清单。
+    @AppStorage("todo_content_section") private var contentSectionRaw: String = TodoContentSection.todos.rawValue
 
     private var displayMode: TodoDisplayMode {
         TodoDisplayMode(rawValue: displayModeRaw) ?? .sticky
     }
 
+    private var contentSection: TodoContentSection {
+        TodoContentSection(rawValue: contentSectionRaw) ?? .todos
+    }
+
+    private var showsTodosWorkspace: Bool {
+        contentSection == .todos
+    }
+
     var body: some View {
         NavigationStack {
             todoStackContent
+                .navigationDestination(item: $selectedHouseholdList) { list in
+                    ListDetailView(viewModel: listViewModel, list: list)
+                }
         }
         .appLocaleEnvironment(using: appSettings)
     }
 
     @ViewBuilder
     private var todoMainContent: some View {
-        if viewModel.isLoading {
+        if contentSection == .lists {
+            ListsHomeView(viewModel: listViewModel, selectedList: $selectedHouseholdList)
+        } else if viewModel.isLoading {
             pullToRefreshScrollContainer {
                 ProgressView(L10n.Schedule.loadingTasks.localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -85,17 +102,35 @@ struct TodoListView: View {
     }
 
     private var todoStackContent: some View {
-        todoMainContent
+        VStack(spacing: 0) {
+            todoContentSectionPicker
+                .frame(maxWidth: 280)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
+                .padding(.top, 4)
+                .padding(.bottom, 8)
+                .zIndex(2)
+
+            todoMainContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+                .zIndex(0)
+        }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { todoToolbar }
             // 便签模式：隐藏导航栏底，全屏网格透到顶栏后方；垃圾桶仍在内容安全区内。
-            .toolbarBackground(displayMode == .sticky ? .hidden : .automatic, for: .navigationBar)
+            .toolbarBackground(
+                showsTodosWorkspace && displayMode == .sticky ? .hidden : .automatic,
+                for: .navigationBar
+            )
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                todoBottomAccessoryBar
+                if showsTodosWorkspace {
+                    todoBottomAccessoryBar
+                }
             }
             .background {
-                if displayMode == .sticky {
+                if showsTodosWorkspace, displayMode == .sticky {
                     TodoStickyFullscreenChrome()
                         .environmentObject(appSettings)
                 } else {
@@ -108,6 +143,13 @@ struct TodoListView: View {
                     stickyShowsFitAllNotes = false
                     stickyShowsFlipBoard = false
                     stickyShowingFarSide = false
+                }
+            }
+            .onChange(of: contentSectionRaw) { _, _ in
+                if contentSection == .lists {
+                    stickyShowsFitAllNotes = false
+                    selectedHouseholdList = nil
+                    Task { await listViewModel.loadLists(force: true) }
                 }
             }
             .sheet(isPresented: $isShowingBackgroundSettings) {
@@ -136,6 +178,9 @@ struct TodoListView: View {
                 bindHouseholdContext()
                 guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasksIfNeeded()
+                if contentSection == .lists {
+                    await listViewModel.loadLists(force: false)
+                }
                 openPendingFlexibleTaskIfNeeded()
             }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
@@ -159,59 +204,74 @@ struct TodoListView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
-                Button {
-                    isShowingSearch = true
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 17, weight: .semibold))
+                if showsTodosWorkspace {
+                    Button {
+                        isShowingSearch = true
+                    } label: {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    .accessibilityLabel(L10n.Schedule.search)
                 }
-                .accessibilityLabel(L10n.Schedule.search)
                 todoOptionsMenu
             }
         }
     }
 
+    private var todoContentSectionPicker: some View {
+        Picker("", selection: $contentSectionRaw) {
+            Text(L10n.Todo.toDos).tag(TodoContentSection.todos.rawValue)
+            Text(L10n.Todo.lists).tag(TodoContentSection.lists.rawValue)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .accessibilityLabel(L10n.Todo.toDos)
+        .contentShape(Rectangle())
+    }
+
     private var todoOptionsMenu: some View {
         Menu {
-            Section {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        displayModeRaw = TodoDisplayMode.list.rawValue
+            if showsTodosWorkspace {
+                Section {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            displayModeRaw = TodoDisplayMode.list.rawValue
+                        }
+                    } label: {
+                        HStack {
+                            Text(L10n.Todo.showAsList)
+                            Spacer(minLength: 8)
+                            if displayMode == .list {
+                                Image(systemName: "checkmark")
+                            }
+                        }
                     }
-                } label: {
-                    HStack {
-                        Text(L10n.Todo.showAsList)
-                        Spacer(minLength: 8)
-                        if displayMode == .list {
-                            Image(systemName: "checkmark")
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            displayModeRaw = TodoDisplayMode.sticky.rawValue
+                        }
+                    } label: {
+                        HStack {
+                            Text(L10n.Todo.showAsStickyNotes)
+                            Spacer(minLength: 8)
+                            if displayMode == .sticky {
+                                Image(systemName: "checkmark")
+                            }
                         }
                     }
                 }
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        displayModeRaw = TodoDisplayMode.sticky.rawValue
-                    }
-                } label: {
-                    HStack {
-                        Text(L10n.Todo.showAsStickyNotes)
-                        Spacer(minLength: 8)
-                        if displayMode == .sticky {
-                            Image(systemName: "checkmark")
+                Section {
+                    Button {
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .milliseconds(80))
+                            isShowingBackgroundSettings = true
                         }
-                    }
-                }
-            }
-            Section {
-                Button {
-                    Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(80))
-                        isShowingBackgroundSettings = true
-                    }
-                } label: {
-                    Label {
-                        Text(L10n.Schedule.background)
-                    } icon: {
-                        Image(systemName: "photo.on.rectangle")
+                    } label: {
+                        Label {
+                            Text(L10n.Schedule.background)
+                        } icon: {
+                            Image(systemName: "photo.on.rectangle")
+                        }
                     }
                 }
             }
@@ -221,6 +281,8 @@ struct TodoListView: View {
                 .foregroundStyle(.primary)
         }
         .buttonStyle(.plain)
+        .opacity(showsTodosWorkspace ? 1 : 0)
+        .allowsHitTesting(showsTodosWorkspace)
     }
 
     /// 与 Schedule `bottomAccessoryBar` 对齐：safeAreaInset + 相同上下边距。
@@ -729,6 +791,10 @@ struct TodoListView: View {
         viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
         scheduleViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
         scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+        listViewModel.setHouseholdContext(
+            householdId: appRouter.selectedHouseholdId,
+            membershipId: appRouter.selectedMembershipId
+        )
     }
 
     private func completedLabel(for task: FamilyTask) -> String {
@@ -940,6 +1006,11 @@ private struct OverdueTasksListView: View {
 private enum TodoDisplayMode: String {
     case list
     case sticky
+}
+
+private enum TodoContentSection: String {
+    case todos
+    case lists
 }
 
 // MARK: - Row

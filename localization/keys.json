@@ -7450,5 +7450,137 @@
     "new_key": "schedule_lld_days_before_task_starting_soon",
     "table": "Schedule",
     "swift_property": "lldDaysBeforeTaskStartingSoon"
+  },
+  {
+    "legacy_key": "清单",
+    "new_key": "todo_lists",
+    "table": "Todo",
+    "swift_property": "lists"
+  },
+  {
+    "legacy_key": "新建清单",
+    "new_key": "todo_new_list",
+    "table": "Todo",
+    "swift_property": "newList"
+  },
+  {
+    "legacy_key": "创建清单",
+    "new_key": "todo_list_create",
+    "table": "Todo",
+    "swift_property": "listCreate"
+  },
+  {
+    "legacy_key": "清单名称",
+    "new_key": "todo_list_name",
+    "table": "Todo",
+    "swift_property": "listName"
+  },
+  {
+    "legacy_key": "周末采购",
+    "new_key": "todo_list_name_placeholder",
+    "table": "Todo",
+    "swift_property": "listNamePlaceholder"
+  },
+  {
+    "legacy_key": "类型",
+    "new_key": "todo_list_kind",
+    "table": "Todo",
+    "swift_property": "listKind"
+  },
+  {
+    "legacy_key": "购物",
+    "new_key": "todo_list_kind_shopping",
+    "table": "Todo",
+    "swift_property": "listKindShopping"
+  },
+  {
+    "legacy_key": "旅行",
+    "new_key": "todo_list_kind_trip",
+    "table": "Todo",
+    "swift_property": "listKindTrip"
+  },
+  {
+    "legacy_key": "自定义",
+    "new_key": "todo_list_kind_custom",
+    "table": "Todo",
+    "swift_property": "listKindCustom"
+  },
+  {
+    "legacy_key": "开始日期",
+    "new_key": "todo_list_trip_start",
+    "table": "Todo",
+    "swift_property": "listTripStart"
+  },
+  {
+    "legacy_key": "结束日期",
+    "new_key": "todo_list_trip_end",
+    "table": "Todo",
+    "swift_property": "listTripEnd"
+  },
+  {
+    "legacy_key": "还没有清单",
+    "new_key": "todo_lists_empty",
+    "table": "Todo",
+    "swift_property": "listsEmpty"
+  },
+  {
+    "legacy_key": "为群组创建购物清单、旅行计划或自定义清单。",
+    "new_key": "todo_lists_empty_hint",
+    "table": "Todo",
+    "swift_property": "listsEmptyHint"
+  },
+  {
+    "legacy_key": "还没有条目",
+    "new_key": "todo_list_items_empty",
+    "table": "Todo",
+    "swift_property": "listItemsEmpty"
+  },
+  {
+    "legacy_key": "添加条目",
+    "new_key": "todo_list_add_item_placeholder",
+    "table": "Todo",
+    "swift_property": "listAddItemPlaceholder"
+  },
+  {
+    "legacy_key": "已勾选",
+    "new_key": "todo_list_checked_section",
+    "table": "Todo",
+    "swift_property": "listCheckedSection"
+  },
+  {
+    "legacy_key": "%lld 项未完成",
+    "new_key": "todo_list_open_items_count",
+    "table": "Todo",
+    "swift_property": "listOpenItemsCount"
+  },
+  {
+    "legacy_key": "删除清单？",
+    "new_key": "todo_list_delete_confirm_title",
+    "table": "Todo",
+    "swift_property": "listDeleteConfirmTitle"
+  },
+  {
+    "legacy_key": "将永久删除该清单及其全部条目。",
+    "new_key": "todo_list_delete_confirm_message",
+    "table": "Todo",
+    "swift_property": "listDeleteConfirmMessage"
+  },
+  {
+    "legacy_key": "重命名清单",
+    "new_key": "todo_list_rename",
+    "table": "Todo",
+    "swift_property": "listRename"
+  },
+  {
+    "legacy_key": "删除",
+    "new_key": "common_delete",
+    "table": "Common",
+    "swift_property": "delete"
+  },
+  {
+    "legacy_key": "待办",
+    "new_key": "todo_to_dos",
+    "table": "Todo",
+    "swift_property": "toDos"
   }
 ]

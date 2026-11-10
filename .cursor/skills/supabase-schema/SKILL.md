@@ -75,7 +75,30 @@ description: >-
 | `task_type` | `taskType` | 日程/待办：`scheduled` / `flexible` / `birthday_reminder`。**`expense` / `income`：历史兼容，新公账勿再写入** → 见 `ledger_transactions` |
 | `timezone` | `timezone` | IANA（如 `Asia/Shanghai`）；全天/重复按此解释日历日；`nil` 回退显示时区/系统时区 |
 | `estimated_cost` | `estimatedCost` | 任务预估费用（日程创建 UI）；≠ 公账实付 |
-| `list_id` | `listId` | 购物清单等外键（预留） |
+| `list_id` | `listId` | 购物清单等外键（预留；MVP 清单走 `household_lists` / `list_items`，暂不写此列） |
+
+### `household_lists` / `list_items`（通用清单）
+
+迁移：`reminder/Services/Supabase/migrations/20261110240000_household_lists.sql`。
+
+| 表 | 数据库列 | Swift | 说明 |
+|----|----------|-------|------|
+| `household_lists` | `id` | `HouseholdList.id` | UUID |
+| | `household_id` | `householdId` | 群组 |
+| | `creator_id` | `creatorId` | **membership id** |
+| | `title` | `title` | |
+| | `kind` | `kind` → `ListKind` | `shopping` / `trip` / `custom` |
+| | `trip_start_date` / `trip_end_date` | `tripStartDate` / `tripEndDate` | Postgres `date` → `yyyy-MM-dd` **String?** |
+| | `sort_order` | `sortOrder` | |
+| `list_items` | `id` | `ListItem.id` | UUID |
+| | `list_id` | `listId` | FK → `household_lists` ON DELETE CASCADE |
+| | `household_id` | `householdId` | 冗余，便于 RLS |
+| | `title` | `title` | |
+| | `is_checked` | `isChecked` | |
+| | `note` | `note` | nullable |
+| | `sort_order` | `sortOrder` | |
+| | `creator_id` / `completed_by` | `creatorId` / `completedBy` | **membership id** |
+| | `completed_at` | `completedAt` | |
 | `actual_amount` | `actualAmount` | **已废弃 · 公账勿写入** → `ledger_transactions.amount` |
 | `payer_id` | `payerId` | **已废弃 · 公账勿写入** → `ledger_transactions.payer_ids`（**profile id[]**） |
 | `split_member_ids` | `splitMemberIds` | **已废弃 · 公账勿写入**（旧均摊 membership id[]）；目标人见 `ledger_transactions.target_member_ids` |
