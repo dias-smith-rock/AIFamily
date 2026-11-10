@@ -31,6 +31,7 @@ struct SettingsMainView: View {
     @State private var isSeedingMockData = false
     @State private var mockSeedResultMessage: String?
     @State private var mockSeedErrorMessage: String?
+    @AppStorage(DebugVIPOverride.defaultsKey) private var debugForceVIPEnabled = false
     #endif
 
     private var usesSplitDetail: Bool {
@@ -521,11 +522,25 @@ struct SettingsMainView: View {
                 Label("Seed Location (San Jose ×2 members)", systemImage: "mappin.and.ellipse")
             }
             .disabled(isSeedingMockData || appRouter.selectedHouseholdId == nil)
+
+            Toggle(isOn: debugForceVIPBinding) {
+                Label("Force VIP", systemImage: "crown.fill")
+            }
         } header: {
             Text(verbatim: "Developer")
         } footer: {
-            Text(verbatim: "DEBUG only. Creates 3 orgs; each gets this month’s schedules (10–20/week), todos (10–20/week), ledger (10–20/month). First org also gets San Jose location points. May take a minute.")
+            Text(verbatim: "DEBUG only. Creates 3 orgs; each gets this month’s schedules (10–20/week), todos (10–20/week), ledger (10–20/month). First org also gets San Jose location points. May take a minute. Force VIP unlocks premium locally without StoreKit.")
         }
+    }
+
+    private var debugForceVIPBinding: Binding<Bool> {
+        Binding(
+            get: { debugForceVIPEnabled },
+            set: { newValue in
+                debugForceVIPEnabled = newValue
+                appRouter.setDebugForceVIPEnabled(newValue)
+            }
+        )
     }
 
     private func seedDebugMockData() async {

@@ -303,6 +303,9 @@ enum SupabaseAuthManager {
 
         let isOnline = await NetworkMonitor.shared.isConnected
 
+        // Best-effort: drop this device's APNs token while the session is still valid.
+        await APNsDeviceTokenRegistrar.clearCurrentDeviceToken()
+
         if let session = client.auth.currentSession {
             if session.user.isAnonymous {
                 persistGuestSession(session)

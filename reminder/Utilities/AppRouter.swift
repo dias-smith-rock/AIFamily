@@ -162,6 +162,9 @@ final class AppRouter: ObservableObject {
 
     /// 当前上下文是否享有 Pro / Premium 能力（个人权益或当前组织创建者继承）。
     var hasPremiumAccess: Bool {
+        #if DEBUG
+        if DebugVIPOverride.isEnabled { return true }
+        #endif
         return PremiumAccess.hasPremiumAccess(
             userEntitlement: userEntitlement,
             creatorHasActivePro: selectedHouseholdCreatorHasActivePro
@@ -170,13 +173,27 @@ final class AppRouter: ObservableObject {
 
     /// 本人是否享有 Pro（仅 `user_entitlements`，不含组织继承与游客放行）。
     var hasPersonalPremiumAccess: Bool {
-        userEntitlement?.isActive == true
+        #if DEBUG
+        if DebugVIPOverride.isEnabled { return true }
+        #endif
+        return userEntitlement?.isActive == true
     }
 
     /// 设置页 / 订阅页是否展示「本人已订阅」（云端权益或本会话已确认的本机订阅）。
     var showsPersonalVIP: Bool {
-        RevenueCatSubscriptionService.shared.isPersonalSubscriber(userEntitlement: userEntitlement)
+        #if DEBUG
+        if DebugVIPOverride.isEnabled { return true }
+        #endif
+        return RevenueCatSubscriptionService.shared.isPersonalSubscriber(userEntitlement: userEntitlement)
     }
+
+    #if DEBUG
+    func setDebugForceVIPEnabled(_ enabled: Bool) {
+        DebugVIPOverride.isEnabled = enabled
+        objectWillChange.send()
+        logVIPAccessState(trigger: "debugForceVIP.\(enabled)")
+    }
+    #endif
 
     /// 输出 VIP 三元诊断日志（创建者 VIP / 本人 VIP / 当前组织内 VIP）。
     func logVIPAccessState(trigger: String) {

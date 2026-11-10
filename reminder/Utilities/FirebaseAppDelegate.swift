@@ -8,7 +8,7 @@ import UIKit
 import FirebaseCore
 #endif
 
-/// 在 App 启动时配置 Firebase（Analytics、Crashlytics 等模块依赖此初始化）。
+/// 在 App 启动时配置 Firebase（Analytics、Crashlytics 等模块依赖此初始化）；并转发 APNs device token。
 #if canImport(UIKit)
 final class FirebaseAppDelegate: NSObject, UIApplicationDelegate {
     func application(
@@ -17,6 +17,24 @@ final class FirebaseAppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         Self.configureFirebaseIfNeeded()
         return true
+    }
+
+    func application(
+        _ application: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+    ) {
+        Task { @MainActor in
+            APNsDeviceTokenRegistrar.handleDeviceToken(deviceToken)
+        }
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        Task { @MainActor in
+            APNsDeviceTokenRegistrar.handleRegistrationFailure(error)
+        }
     }
 
     static func configureFirebaseIfNeeded() {

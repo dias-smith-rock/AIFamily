@@ -3073,6 +3073,11 @@ struct CreateTaskView: View {
                 clearAttachmentSelection()
             }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            notifyTaskAssignedIfNeeded(
+                taskId: updated.id,
+                householdId: householdId,
+                actorMembershipId: appRouter.selectedMembershipId
+            )
             finishAfterSuccessfulUpdate()
         } catch {
             #if DEBUG
@@ -3459,6 +3464,13 @@ struct CreateTaskView: View {
             clearAttachmentSelection()
             onSaveSuccess?(isFlexibleMode ? flexibleDeadlineDate : dueDate)
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            if let persistedTaskId {
+                notifyTaskAssignedIfNeeded(
+                    taskId: persistedTaskId,
+                    householdId: householdId,
+                    actorMembershipId: creatorMembershipId
+                )
+            }
             dismiss()
         } catch {
             errorMessage = String(
@@ -3471,6 +3483,26 @@ struct CreateTaskView: View {
         _ = creatorMembershipId
         errorMessage = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
         #endif
+    }
+
+    /// Explicit assignees only; failures are swallowed so save UX is unchanged.
+    private func notifyTaskAssignedIfNeeded(
+        taskId: UUID,
+        householdId: UUID,
+        actorMembershipId: UUID?
+    ) {
+        guard let actorMembershipId else { return }
+        guard let assignees = resolvedInvolvedMemberIds, assignees.isEmpty == false else { return }
+        let titleSnapshot = normalizedTitle
+        Task {
+            await NotifyTaskAssignedSupport.notify(
+                taskId: taskId,
+                householdId: householdId,
+                assigneeMembershipIds: assignees,
+                title: titleSnapshot,
+                actorMembershipId: actorMembershipId
+            )
+        }
     }
 
     private static func normalizedStoredHex(_ raw: String?) -> String? {

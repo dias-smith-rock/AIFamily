@@ -100,12 +100,10 @@ struct ContentView: View {
             .environment(\.locale, appSettings.appLocale)
             .environment(\.layoutDirection, appSettings.layoutDirection)
         }
-        .task(id: appRouter.appState) {
-            if isLaunchBootstrapComplete,
-               isUserLoggedIn,
-               biometricManager.isUnlocked {
-                _ = await NotificationManager.shared.requestAuthorizationIfNeeded()
-            }
+        .task(id: apnsRegistrationTrigger) {
+            guard let apnsRegistrationTrigger else { return }
+            _ = apnsRegistrationTrigger
+            await APNsDeviceTokenRegistrar.requestAuthorizationAndRegister()
         }
         .task {
             guard isLaunchBootstrapComplete == false else { return }
@@ -230,6 +228,14 @@ struct ContentView: View {
         guard isLaunchBootstrapComplete else { return nil }
         guard isUserLoggedIn else { return "signedOut" }
         return "signedIn"
+    }
+
+    /// Face ID 关闭时 `isUnlocked` 可能一直为 false；与锁屏门闸保持一致。
+    private var apnsRegistrationTrigger: String? {
+        guard isLaunchBootstrapComplete, isUserLoggedIn else { return nil }
+        let unlocked = requireFaceID == false || biometricManager.isUnlocked
+        guard unlocked else { return nil }
+        return "ready"
     }
 
     @ViewBuilder
@@ -675,6 +681,7 @@ struct ContentView: View {
     private func runPostAuthForegroundServices() async {
         refreshForegroundLocationSchedulerContext()
         reloadTasksIfActiveMember()
+        await APNsDeviceTokenRegistrar.requestAuthorizationAndRegister()
         guard await NetworkMonitor.shared.isConnected else { return }
         await reportLocationWhenEnteringForeground()
         await syncBackgroundLocationService()
