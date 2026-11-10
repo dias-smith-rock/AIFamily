@@ -717,12 +717,49 @@ struct CreateTaskView: View {
                 flexibleDeadlineGroup
             }
             createTaskChipTrayInset
+            if let editingTask {
+                lastEditedFooter(for: editingTask)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .padding(.bottom, 24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .font(.footnote)
+    }
+
+    private func lastEditedFooter(for task: FamilyTask) -> some View {
+        let editorId = task.updatedBy ?? task.creatorId
+        let editorName = assignees.first(where: { $0.id == editorId })?.name
+            ?? AppLocalized.string(L10n.Family.unknownMember, locale: locale)
+        let editedAt = task.updatedAt.formatted(
+            .dateTime
+                .year()
+                .month(.abbreviated)
+                .day()
+                .hour()
+                .minute()
+                .locale(locale)
+        )
+        return Text(
+            L10n.Schedule.lastEditedByNameAtTime.formatted(
+                locale: locale,
+                editorName,
+                editedAt
+            )
+        )
+        .font(.caption)
+        .foregroundStyle(.tertiary)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.top, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            L10n.Schedule.lastEditedByNameAtTime.formatted(
+                locale: locale,
+                editorName,
+                editedAt
+            )
+        )
     }
 
     private var titleInputCard: some View {
@@ -2850,7 +2887,10 @@ struct CreateTaskView: View {
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
                     priority: formPriority.rawValue,
                     locationData: resolvedLocationData(),
-                    updatedAt: Date()
+                    updatedAt: Date(),
+                    updatedBy: appRouter.selectedMembershipId?.uuidString.lowercased()
+                        ?? existing.updatedBy?.uuidString.lowercased()
+                        ?? existing.creatorId.uuidString.lowercased()
                 )
                 var refreshed: FamilyTask = try await client
                     .from("tasks")
@@ -2965,7 +3005,10 @@ struct CreateTaskView: View {
                         emergencyPhone: resolvedEmergencyPhoneForPayload(),
                         priority: formPriority.rawValue,
                         locationData: resolvedLocationData(),
-                        updatedAt: Date()
+                        updatedAt: Date(),
+                        updatedBy: appRouter.selectedMembershipId?.uuidString.lowercased()
+                            ?? existing.updatedBy?.uuidString.lowercased()
+                            ?? existing.creatorId.uuidString.lowercased()
                     )
                     let rowUpdated: FamilyTask = try await client
                         .from("tasks")
@@ -3215,7 +3258,8 @@ struct CreateTaskView: View {
                     locationData: resolvedLocationData(),
                     geofence: geofence,
                     createdAt: now,
-                    updatedAt: now
+                    updatedAt: now,
+                    updatedBy: creatorIdLowercased
                 )
                 let spatialParams = CreateTaskWithSpatialParams(
                     pTitle: normalizedTitle,
@@ -3259,7 +3303,8 @@ struct CreateTaskView: View {
                         locationData: singlePayload.locationData,
                         geofence: singlePayload.geofence,
                         createdAt: createdRow.createdAt,
-                        updatedAt: now
+                        updatedAt: now,
+                        updatedBy: singlePayload.updatedBy
                     )
                     _ = try await client
                         .from("tasks")
@@ -3318,7 +3363,8 @@ struct CreateTaskView: View {
                     locationData: resolvedLocationData(),
                     geofence: resolvedLocationData()?.toTaskGeofence(),
                     createdAt: now,
-                    updatedAt: now
+                    updatedAt: now,
+                    updatedBy: creatorIdLowercased
                 )
                 _ = try await client
                     .from("tasks")
@@ -3363,7 +3409,8 @@ struct CreateTaskView: View {
                             locationData: resolvedLocationData(),
                             geofence: nil,
                             createdAt: now,
-                            updatedAt: now
+                            updatedAt: now,
+                            updatedBy: creatorIdLowercased
                         )
                     }
                     _ = try await client
@@ -3570,6 +3617,7 @@ private struct TaskInsertPayload: Encodable {
     let geofence: TaskGeofence?
     let createdAt: Date
     let updatedAt: Date
+    let updatedBy: String
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -3600,6 +3648,7 @@ private struct TaskInsertPayload: Encodable {
         case geofence
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case updatedBy = "updated_by"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -3684,6 +3733,7 @@ private struct TaskInsertPayload: Encodable {
         }
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(updatedBy, forKey: .updatedBy)
     }
 }
 
@@ -3708,6 +3758,7 @@ private struct TaskUpdatePayload: Encodable {
     let priority: String
     let locationData: FamilyTask.LocationData?
     let updatedAt: Date
+    let updatedBy: String
 
     enum CodingKeys: String, CodingKey {
         case title
@@ -3730,6 +3781,7 @@ private struct TaskUpdatePayload: Encodable {
         case priority
         case locationData = "location_data"
         case updatedAt = "updated_at"
+        case updatedBy = "updated_by"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -3798,6 +3850,7 @@ private struct TaskUpdatePayload: Encodable {
             try container.encodeNil(forKey: .locationData)
         }
         try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(updatedBy, forKey: .updatedBy)
     }
 }
 
@@ -4088,7 +4141,8 @@ private extension CreateTaskView {
             backgroundColor: payload.backgroundColor,
             emergencyPhone: payload.emergencyPhone,
             createdAt: payload.createdAt,
-            updatedAt: payload.updatedAt
+            updatedAt: payload.updatedAt,
+            updatedBy: UUID(uuidString: payload.updatedBy)
         )
     }
 }

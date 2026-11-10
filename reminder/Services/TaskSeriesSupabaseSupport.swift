@@ -192,6 +192,7 @@ enum TaskSeriesSupabaseSupport {
         let client = SupabaseManager.shared.client
         let now = Date()
         let creatorIdLowercased = mother.creatorId.uuidString.lowercased()
+        let updatedByLowercased = (mother.updatedBy ?? mother.creatorId).uuidString.lowercased()
         let payloads = children.map { child in
             RecurrenceChildInsertPayload(
                 id: child.id,
@@ -214,7 +215,8 @@ enum TaskSeriesSupabaseSupport {
                 emergencyPhone: child.emergencyPhone,
                 locationData: child.locationData,
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
+                updatedBy: updatedByLowercased
             )
         }
 
@@ -295,6 +297,7 @@ private struct RecurrenceChildInsertPayload: Encodable {
     let locationData: FamilyTask.LocationData?
     let createdAt: Date
     let updatedAt: Date
+    let updatedBy: String
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -321,6 +324,7 @@ private struct RecurrenceChildInsertPayload: Encodable {
         case locationData = "location_data"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+        case updatedBy = "updated_by"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -373,6 +377,7 @@ private struct RecurrenceChildInsertPayload: Encodable {
         }
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encode(updatedBy, forKey: .updatedBy)
     }
 }
 

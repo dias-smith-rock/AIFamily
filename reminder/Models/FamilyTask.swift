@@ -78,6 +78,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 
     let createdAt: Date
     let updatedAt: Date
+    /// `tasks.updated_by`：最近编辑人 **membership id**（与 `creator_id` 同维度）；缺省历史数据可能为 `nil`。
+    var updatedBy: UUID? = nil
 
     // MARK: - JSONB Nested Structs
     struct LocationData: Codable, Equatable {
@@ -139,7 +141,8 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         backgroundColor: String? = nil,
         emergencyPhone: String? = nil,
         createdAt: Date,
-        updatedAt: Date
+        updatedAt: Date,
+        updatedBy: UUID? = nil
     ) {
         self.id = id
         self.householdId = householdId
@@ -187,6 +190,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         self.emergencyPhone = emergencyPhone
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.updatedBy = updatedBy
     }
 
     enum CodingKeys: String, CodingKey {
@@ -237,6 +241,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         case emergencyPhone
         case createdAt
         case updatedAt
+        case updatedBy
     }
 
     init(from decoder: Decoder) throws {
@@ -300,6 +305,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         emergencyPhone = try container.decodeIfPresent(String.self, forKey: .emergencyPhone)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        updatedBy = try container.decodeIfPresent(UUID.self, forKey: .updatedBy)
     }
 
     func encode(to encoder: Encoder) throws {
@@ -351,6 +357,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
         try container.encodeIfPresent(emergencyPhone, forKey: .emergencyPhone)
         try container.encode(createdAt, forKey: .createdAt)
         try container.encode(updatedAt, forKey: .updatedAt)
+        try container.encodeIfPresent(updatedBy, forKey: .updatedBy)
     }
 }
 

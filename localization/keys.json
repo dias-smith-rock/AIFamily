@@ -4448,6 +4448,13 @@
     "orphan": true
   },
   {
+    "legacy_key": "Last edited by %@ · %@",
+    "new_key": "schedule_last_edited_by_name_at_time",
+    "table": "Schedule",
+    "swift_property": "lastEditedByNameAtTime",
+    "orphan": false
+  },
+  {
     "legacy_key": "编辑头像",
     "new_key": "common_edit_avatar",
     "table": "Common",

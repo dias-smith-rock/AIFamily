@@ -377,7 +377,8 @@ struct SupabaseTaskDataService: TaskDataService {
             backgroundColor: sanitized.backgroundColor,
             emergencyPhone: sanitized.emergencyPhone,
             createdAt: created.createdAt,
-            updatedAt: Date()
+            updatedAt: Date(),
+            updatedBy: sanitized.updatedBy ?? sanitized.creatorId
         )
         return try await updateTask(merged)
         #else

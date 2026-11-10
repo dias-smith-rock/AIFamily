@@ -231,7 +231,8 @@ enum RecurrenceEngine {
             backgroundColor: mother.backgroundColor,
             emergencyPhone: mother.emergencyPhone,
             createdAt: materializedAt,
-            updatedAt: materializedAt
+            updatedAt: materializedAt,
+            updatedBy: mother.updatedBy ?? mother.creatorId
         )
     }
 
