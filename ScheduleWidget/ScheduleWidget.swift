@@ -86,7 +86,11 @@ struct ScheduleWidgetView: View {
     }
 
     private var dayColumn: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let tasks = snapshot?.tasks(on: entry.date) ?? []
+        let visibleTasks = Array(tasks.prefix(2))
+        let moreCount = max(0, tasks.count - visibleTasks.count)
+
+        return VStack(alignment: .leading, spacing: 6) {
             Link(destination: openURL(for: entry.date)) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(entry.date, format: weekdayFormat)
@@ -133,32 +137,34 @@ struct ScheduleWidgetView: View {
                         }
                     }
 
-                    taskSummary
+                    ForEach(visibleTasks) { task in
+                        taskChip(task.title)
+                    }
                 }
             }
             Spacer(minLength: 0)
-            Link(destination: createURL(for: entry.date)) {
-                Image(systemName: "plus")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
-                    .background(Color.blue, in: Circle())
-            }
-            .accessibilityLabel(Text("widget_create_task"))
-        }
-    }
+            // 「N more」与「+」同行，避免第三条任务提示把左栏撑出小组件。
+            HStack(alignment: .center, spacing: 8) {
+                Link(destination: createURL(for: entry.date)) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 30, height: 30)
+                        .background(Color.blue, in: Circle())
+                }
+                .accessibilityLabel(Text("widget_create_task"))
 
-    @ViewBuilder
-    private var taskSummary: some View {
-        let tasks = snapshot?.tasks(on: entry.date) ?? []
-        let visible = Array(tasks.prefix(2))
-        ForEach(visible) { task in
-            taskChip(task.title)
-        }
-        if tasks.count > visible.count {
-            Text(moreLabel(tasks.count - visible.count))
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                if moreCount > 0 {
+                    Link(destination: openURL(for: entry.date)) {
+                        Text(moreLabel(moreCount))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
+
+                Spacer(minLength: 0)
+            }
         }
     }
 
