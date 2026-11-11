@@ -1132,7 +1132,25 @@ struct TaskDetailView: View {
     }
 
     private func performDelete(scope: RecurringDeleteScope) async {
-        guard isDeletingTask == false else { return }
+        guard isDeletingTask == false else {
+            TaskDeleteLogger.step(
+                .failed,
+                source: .taskDetail,
+                taskId: task.id,
+                detail: "already_deleting"
+            )
+            return
+        }
+        let scopeLabel = scope == .singleOnly ? "single_only" : "this_and_future"
+        TaskDeleteLogger.step(
+            .confirmAccepted,
+            source: .taskDetail,
+            taskId: task.id,
+            householdId: task.householdId,
+            scope: scopeLabel,
+            membershipId: appRouter.selectedMembershipId,
+            isCreator: appRouter.selectedMembershipId == task.creatorId
+        )
         isDeletingTask = true
         statusError = nil
         defer { isDeletingTask = false }
@@ -1140,10 +1158,17 @@ struct TaskDetailView: View {
         do {
             switch scope {
             case .singleOnly:
-                await scheduleViewModel.deleteTask(taskId: task.id)
+                try await scheduleViewModel.deleteTask(taskId: task.id)
             case .thisAndFuture:
                 guard let grouping = task.seriesGrouping else {
                     statusError = AppLocalized.string(L10n.Schedule.couldNotResolveTheRecurringSeriesGroupBul, locale: locale)
+                    TaskDeleteLogger.step(
+                        .failed,
+                        source: .taskDetail,
+                        taskId: task.id,
+                        scope: scopeLabel,
+                        detail: "missing_series_grouping"
+                    )
                     return
                 }
                 let cutoff = task.dueDate ?? .distantPast
@@ -1160,8 +1185,22 @@ struct TaskDetailView: View {
                 await scheduleViewModel.loadTasks()
             }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            TaskDeleteLogger.succeeded(
+                source: .taskDetail,
+                taskId: task.id,
+                householdId: task.householdId,
+                scope: scopeLabel
+            )
             dismiss()
         } catch {
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                source: .taskDetail,
+                taskId: task.id,
+                householdId: task.householdId,
+                scope: scopeLabel
+            )
             statusError = String(
                 format: L10n.Common.deleteFailed.string(locale: locale),
                 error.localizedDescription

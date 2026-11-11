@@ -10,6 +10,8 @@ struct TaskMonthView: View {
     let titleForTask: (FamilyTask) -> String
     let onSelectDay: (Date) -> Void
     let onSelectTask: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
 
     @Binding var showsBackToCurrentMonthButton: Bool
     @Binding var backToCurrentMonthTrigger: Int
@@ -28,6 +30,8 @@ struct TaskMonthView: View {
         titleForTask: @escaping (FamilyTask) -> String,
         onSelectDay: @escaping (Date) -> Void,
         onSelectTask: @escaping (FamilyTask) -> Void,
+        onTaskComplete: ((FamilyTask) -> Void)? = nil,
+        onTaskDelete: ((FamilyTask) -> Void)? = nil,
         showsBackToCurrentMonthButton: Binding<Bool> = .constant(false),
         backToCurrentMonthTrigger: Binding<Int> = .constant(0)
     ) {
@@ -36,6 +40,8 @@ struct TaskMonthView: View {
         self.titleForTask = titleForTask
         self.onSelectDay = onSelectDay
         self.onSelectTask = onSelectTask
+        self.onTaskComplete = onTaskComplete
+        self.onTaskDelete = onTaskDelete
         self._showsBackToCurrentMonthButton = showsBackToCurrentMonthButton
         self._backToCurrentMonthTrigger = backToCurrentMonthTrigger
 
@@ -137,7 +143,9 @@ struct TaskMonthView: View {
                 selectedDate = calendar.startOfDay(for: date)
                 onSelectDay(date)
             },
-            onSelectTask: onSelectTask
+            onSelectTask: onSelectTask,
+            onTaskComplete: onTaskComplete,
+            onTaskDelete: onTaskDelete
         )
         .padding(.horizontal, 8)
         .padding(.bottom, 8)
@@ -241,6 +249,8 @@ private struct TaskMonthBoardPage: View {
     let titleForTask: (FamilyTask) -> String
     let onSelectDay: (Date) -> Void
     let onSelectTask: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
 
     private var cells: [YearDayCellData] {
         YearCalendarBuilder.monthGridCells(monthStart: monthStart, calendar: calendar)
@@ -275,7 +285,9 @@ private struct TaskMonthBoardPage: View {
                         calendar: calendar,
                         rowHeight: rowHeight,
                         onSelectDay: onSelectDay,
-                        onSelectTask: onSelectTask
+                        onSelectTask: onSelectTask,
+                        onTaskComplete: onTaskComplete,
+                        onTaskDelete: onTaskDelete
                     )
                     .frame(width: geometry.size.width, height: rowHeight)
                 }
@@ -339,6 +351,8 @@ private struct TaskMonthWeekRow: View {
     let rowHeight: CGFloat
     let onSelectDay: (Date) -> Void
     let onSelectTask: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
 
     private var metrics: TaskMonthRowMetrics {
         TaskMonthRowMetrics.make(rowHeight: rowHeight)
@@ -374,6 +388,14 @@ private struct TaskMonthWeekRow: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .taskLongPressContextMenu(
+                        showsComplete: span.task.status != .completed
+                            && span.task.status != .cancelled
+                            && onTaskComplete != nil,
+                        onEdit: { onSelectTask(span.task) },
+                        onComplete: { onTaskComplete?(span.task) },
+                        onDelete: { onTaskDelete?(span.task) }
+                    )
                     .frame(width: max(8, width), height: rowMetrics.chipHeight, alignment: .leading)
                     .offset(x: x, y: y)
                 }

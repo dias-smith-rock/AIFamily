@@ -43,6 +43,9 @@ enum AnalyticsManager {
         case ledgerCategoryDeleteBlocked(reason: String)
         case ledgerWalletLoad(step: String, detail: String)
         case ledgerPresetL10n(step: String, detail: String)
+        case taskDeleteStep(step: String, source: String, detail: String)
+        case taskDeleteFailed(step: String, source: String, errorCode: String, detail: String)
+        case taskDeleteSucceeded(source: String, taskId: String)
     }
 
     enum OnboardingStep {
@@ -522,6 +525,36 @@ enum AnalyticsManager {
                     "detail": detail,
                 ]
             )
+
+        case .taskDeleteStep(let step, let source, let detail):
+            return (
+                "task_delete_step",
+                [
+                    "step": step,
+                    "source": source,
+                    "detail": detail,
+                ]
+            )
+
+        case .taskDeleteFailed(let step, let source, let errorCode, let detail):
+            return (
+                "task_delete_failed",
+                [
+                    "step": step,
+                    "source": source,
+                    "error_code": errorCode,
+                    "detail": detail,
+                ]
+            )
+
+        case .taskDeleteSucceeded(let source, let taskId):
+            return (
+                "task_delete_succeeded",
+                [
+                    "source": source,
+                    "task_id": taskId,
+                ]
+            )
         }
     }
 
@@ -603,6 +636,12 @@ enum AnalyticsManager {
             return "ledger_wallet_load step=\(step) \(detail)"
         case .ledgerPresetL10n(let step, let detail):
             return "ledger_preset_l10n step=\(step) \(detail)"
+        case .taskDeleteStep(let step, let source, let detail):
+            return "task_delete_step step=\(step) source=\(source) \(detail)"
+        case .taskDeleteFailed(let step, let source, let errorCode, let detail):
+            return "task_delete_failed step=\(step) source=\(source) error=\(errorCode) \(detail)"
+        case .taskDeleteSucceeded(let source, let taskId):
+            return "task_delete_succeeded source=\(source) task_id=\(taskId)"
         }
     }
 }

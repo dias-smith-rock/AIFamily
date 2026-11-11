@@ -80,9 +80,15 @@ struct TaskRowView: View {
     let assigneeLabel: String
     var hasAttachments: Bool = false
     let onTap: () -> Void
+    var onComplete: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
 
     private var timeText: String {
         ScheduleTimeFormatting.timelineClockTime(anchor, locale: locale)
+    }
+
+    private var showsCompleteAction: Bool {
+        task.status != .completed && task.status != .cancelled
     }
 
     var body: some View {
@@ -93,6 +99,12 @@ struct TaskRowView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture(perform: onTap)
+        .taskLongPressContextMenu(
+            showsComplete: showsCompleteAction && onComplete != nil,
+            onEdit: onTap,
+            onComplete: { onComplete?() },
+            onDelete: { onDelete?() }
+        )
     }
 
     // MARK: - 左：时间

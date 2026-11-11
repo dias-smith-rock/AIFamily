@@ -8,6 +8,8 @@ struct TaskModeListView: View {
     /// 切换到列表时定位的目标日（通常为今天 / 当前选中日）。
     var scrollAnchorDate: Date = Date()
     var onTaskTap: ((FamilyTask) -> Void)?
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
     var onRefresh: (() async -> Void)?
 
     /// 按日历日分组（忽略时分），日期升序；组内按锚点时间升序。
@@ -61,6 +63,14 @@ struct TaskModeListView: View {
                                         .onTapGesture {
                                             onTaskTap?(task)
                                         }
+                                        .taskLongPressContextMenu(
+                                            showsComplete: task.status != .completed
+                                                && task.status != .cancelled
+                                                && onTaskComplete != nil,
+                                            onEdit: { onTaskTap?(task) },
+                                            onComplete: { onTaskComplete?(task) },
+                                            onDelete: { onTaskDelete?(task) }
+                                        )
                                     }
                                 }
                                 .id(section.id)

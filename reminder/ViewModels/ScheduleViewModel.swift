@@ -434,6 +434,10 @@ final class ScheduleViewModel: ObservableObject {
         errorMessage = nil
     }
 
+    func presentErrorMessage(_ message: String) {
+        errorMessage = message
+    }
+
     func createTask(_ task: FamilyTask) async {
         guard let householdId = currentHouseholdId else {
             errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
@@ -683,12 +687,28 @@ final class ScheduleViewModel: ObservableObject {
         return ordered
     }
 
-    func deleteTask(taskId: UUID) async {
+    func deleteTask(taskId: UUID) async throws {
         errorMessage = nil
-        let householdId = tasks.first(where: { $0.id == taskId })?.householdId ?? currentHouseholdId
+        let snapshot = tasks.first(where: { $0.id == taskId })
+        let householdId = snapshot?.householdId ?? currentHouseholdId
+        TaskDeleteLogger.step(
+            .begin,
+            source: .unknown,
+            taskId: taskId,
+            householdId: householdId,
+            detail: "ScheduleViewModel.deleteTask local_present=\(snapshot != nil)"
+        )
         guard let householdId else {
-            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
-            return
+            let message = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
+            errorMessage = message
+            let error = ScheduleViewModelError.message(message)
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                taskId: taskId,
+                detail: "missing_household"
+            )
+            throw error
         }
         do {
             try await TaskLocalWriteSupport.commitDelete(taskId: taskId, householdId: householdId)
@@ -698,8 +718,22 @@ final class ScheduleViewModel: ObservableObject {
             }
             publishScheduleWidgetSnapshot()
             syncUpcomingLocalNotifications()
+            TaskDeleteLogger.succeeded(
+                source: .unknown,
+                taskId: taskId,
+                householdId: householdId,
+                detail: "ScheduleViewModel.deleteTask"
+            )
         } catch {
             errorMessage = error.localizedDescription
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                taskId: taskId,
+                householdId: householdId,
+                detail: "ScheduleViewModel.deleteTask"
+            )
+            throw error
         }
     }
 
@@ -855,6 +889,17 @@ final class ScheduleViewModel: ObservableObject {
         } catch {
             aiProcessingError = AITaskParserUserMessage.message(for: error)
             AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: source)
+        }
+    }
+}
+
+private enum ScheduleViewModelError: LocalizedError {
+    case message(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .message(let text):
+            return text
         }
     }
 }

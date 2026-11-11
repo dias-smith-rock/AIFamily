@@ -18,6 +18,8 @@ struct TaskWeekGridView: View {
     private var displayCalendar: Calendar { appSettings.effectiveCalendar }
 
     let onTaskSelect: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
     let onRefresh: (() async -> Void)?
     @Binding var showsBackToCurrentWeekButton: Bool
     @Binding var backToCurrentWeekTrigger: Int
@@ -40,6 +42,8 @@ struct TaskWeekGridView: View {
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
+        onTaskComplete: ((FamilyTask) -> Void)? = nil,
+        onTaskDelete: ((FamilyTask) -> Void)? = nil,
         onRefresh: (() async -> Void)? = nil,
         showsBackToCurrentWeekButton: Binding<Bool> = .constant(false),
         backToCurrentWeekTrigger: Binding<Int> = .constant(0)
@@ -47,6 +51,8 @@ struct TaskWeekGridView: View {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
+        self.onTaskComplete = onTaskComplete
+        self.onTaskDelete = onTaskDelete
         self.onRefresh = onRefresh
         self._showsBackToCurrentWeekButton = showsBackToCurrentWeekButton
         self._backToCurrentWeekTrigger = backToCurrentWeekTrigger
@@ -191,6 +197,8 @@ struct TaskWeekGridView: View {
             horizontalPadding: horizontalPadding,
             viewModel: viewModel,
             onTaskSelect: onTaskSelect,
+            onTaskComplete: onTaskComplete,
+            onTaskDelete: onTaskDelete,
             onRefresh: refreshTasks
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -399,6 +407,8 @@ private struct WeekAgendaScrollArea: View {
     let horizontalPadding: CGFloat
     @ObservedObject var viewModel: ScheduleViewModel
     let onTaskSelect: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
     let onRefresh: () async -> Void
 
     var body: some View {
@@ -419,7 +429,9 @@ private struct WeekAgendaScrollArea: View {
                         onSelectDay: {
                             selectedDate = calendar.startOfDay(for: day)
                         },
-                        onTaskSelect: onTaskSelect
+                        onTaskSelect: onTaskSelect,
+                        onTaskComplete: onTaskComplete,
+                        onTaskDelete: onTaskDelete
                     )
                     .frame(height: metrics.dayRowHeight)
 
@@ -478,6 +490,8 @@ private struct WeekAgendaDayRow: View {
     @ObservedObject var viewModel: ScheduleViewModel
     let onSelectDay: () -> Void
     let onTaskSelect: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
 
     @State private var taskStripViewportWidth: CGFloat = 0
 
@@ -565,6 +579,14 @@ private struct WeekAgendaDayRow: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .taskLongPressContextMenu(
+                    showsComplete: task.status != .completed
+                        && task.status != .cancelled
+                        && onTaskComplete != nil,
+                    onEdit: { onTaskSelect(task) },
+                    onComplete: { onTaskComplete?(task) },
+                    onDelete: { onTaskDelete?(task) }
+                )
             }
         }
         .padding(.trailing, leadingInset)

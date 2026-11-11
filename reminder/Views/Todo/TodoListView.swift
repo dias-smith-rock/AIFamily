@@ -20,6 +20,9 @@ struct TodoListView: View {
     @State private var completionCheckedTaskIDs: Set<UUID> = []
     @State private var completionFlyingTaskIDs: Set<UUID> = []
     @State private var completionInFlightTaskIDs: Set<UUID> = []
+    /// 删除退出动画中的待办（列表行 / 便签纸）。
+    @State private var deletionFadingTaskIDs: Set<UUID> = []
+    @State private var deletionInFlightTaskIDs: Set<UUID> = []
     @State private var stickyShowsFitAllNotes = false
     @State private var stickyFitAllNotesRequestID = 0
     @State private var stickyShowsFlipBoard = false
@@ -27,6 +30,9 @@ struct TodoListView: View {
     @State private var stickyShowingFarSide = false
     @State private var selectedHouseholdList: HouseholdList?
     @State private var taskPendingDelete: FamilyTask?
+    /// 与 `taskPendingDelete` 分离，避免 alert 关闭先清空 pending 导致确认按钮空跑。
+    @State private var isShowingTodoDeleteAlert = false
+    private let todoDeletionFadeDuration: TimeInterval = 0.5
     /// To-Dos 展示样式（list / sticky），跨启动持久化。
     @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
     /// To-Dos Tab 主分区：待办 / 清单。
@@ -224,10 +230,7 @@ struct TodoListView: View {
             }
             .alert(
                 L10n.Schedule.deleteTask,
-                isPresented: Binding(
-                    get: { taskPendingDelete != nil },
-                    set: { if $0 == false { taskPendingDelete = nil } }
-                )
+                isPresented: $isShowingTodoDeleteAlert
             ) {
                 Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive) {
                     guard let task = taskPendingDelete else { return }
@@ -425,7 +428,7 @@ struct TodoListView: View {
             },
             onDeleteTask: { task in
                 showCompletedSheet = false
-                taskPendingDelete = task
+                presentTodoDeleteConfirm(task)
             }
         )
         .environment(\.locale, appSettings.appLocale)
@@ -447,7 +450,7 @@ struct TodoListView: View {
             },
             onDeleteTask: { task in
                 showOverdueSheet = false
-                taskPendingDelete = task
+                presentTodoDeleteConfirm(task)
             },
             onClearTrash: {
                 Task { @MainActor in
@@ -604,6 +607,7 @@ struct TodoListView: View {
 
                             ForEach(tasks) { task in
                                 let isFlying = completionFlyingTaskIDs.contains(task.id)
+                                let isDeleteFading = deletionFadingTaskIDs.contains(task.id)
                                 TodoFlexibleRow(
                                     task: task,
                                     displayTitle: viewModel.displayTitle(for: task),
@@ -619,14 +623,22 @@ struct TodoListView: View {
                                         taskForEditSheet = task
                                     },
                                     onDelete: {
-                                        taskPendingDelete = task
+                                        presentTodoDeleteConfirm(task)
                                     }
                                 )
-                                .scaleEffect(isFlying ? 0.22 : 1, anchor: .center)
+                                .scaleEffect(
+                                    isDeleteFading ? 0.86 : (isFlying ? 0.22 : 1),
+                                    anchor: .center
+                                )
                                 .offset(x: isFlying ? 72 : 0, y: isFlying ? 220 : 0)
-                                .opacity(isFlying ? 0 : 1)
-                                .zIndex(isFlying ? 2 : 0)
-                                .allowsHitTesting(isFlying == false && completionInFlightTaskIDs.contains(task.id) == false)
+                                .opacity((isFlying || isDeleteFading) ? 0 : 1)
+                                .zIndex(isFlying || isDeleteFading ? 2 : 0)
+                                .allowsHitTesting(
+                                    isFlying == false
+                                        && isDeleteFading == false
+                                        && completionInFlightTaskIDs.contains(task.id) == false
+                                        && deletionInFlightTaskIDs.contains(task.id) == false
+                                )
                             }
                         }
                     }
@@ -655,14 +667,20 @@ struct TodoListView: View {
             hasAttachments: { viewModel.taskHasAttachments($0) },
             isCompletionChecked: { completionCheckedTaskIDs.contains($0) },
             isFlying: { completionFlyingTaskIDs.contains($0) },
-            isInteractionLocked: { completionInFlightTaskIDs.contains($0) },
+            isDeleteFading: { deletionFadingTaskIDs.contains($0) },
+            isInteractionLocked: {
+                completionInFlightTaskIDs.contains($0) || deletionInFlightTaskIDs.contains($0)
+            },
             onToggleComplete: { beginCompleteFlexibleTask($0) },
             onOpen: { taskForEditSheet = $0 },
             onOpenOverdueBin: { showOverdueSheet = true },
             onOpenCompletedArchive: { showCompletedSheet = true },
             onDropComplete: { beginCompleteFlexibleTask($0, playsListExitAnimation: false) },
             onDropDelete: { task in
-                Task { await beginDeleteFlexibleTask(task) }
+                Task { await beginDeleteFlexibleTask(task, playsExitAnimation: false) }
+            },
+            onAnimatedDelete: { task in
+                Task { await beginDeleteFlexibleTask(task, playsExitAnimation: true) }
             },
             showsFitAllNotesButton: $stickyShowsFitAllNotes,
             fitAllNotesRequestID: $stickyFitAllNotesRequestID,
@@ -675,17 +693,43 @@ struct TodoListView: View {
         }
     }
 
+    private func presentTodoDeleteConfirm(_ task: FamilyTask) {
+        taskPendingDelete = task
+        isShowingTodoDeleteAlert = true
+    }
+
     @MainActor
-    private func beginDeleteFlexibleTask(_ task: FamilyTask) async {
+    private func beginDeleteFlexibleTask(
+        _ task: FamilyTask,
+        playsExitAnimation: Bool = true
+    ) async {
+        guard deletionInFlightTaskIDs.contains(task.id) == false else { return }
+        deletionInFlightTaskIDs.insert(task.id)
+
+        if playsExitAnimation {
+            withAnimation(.easeOut(duration: todoDeletionFadeDuration)) {
+                deletionFadingTaskIDs.insert(task.id)
+            }
+            try? await Task.sleep(
+                nanoseconds: UInt64(todoDeletionFadeDuration * 1_000_000_000)
+            )
+        }
+
         do {
             try await viewModel.deleteFlexibleTask(
                 task,
                 actingMembershipId: appRouter.selectedMembershipId
             )
+            deletionFadingTaskIDs.remove(task.id)
             await scheduleViewModel.loadTasks(silent: true)
         } catch {
+            withAnimation(.easeOut(duration: 0.2)) {
+                deletionFadingTaskIDs.remove(task.id)
+            }
             await viewModel.loadTasks(silent: true, force: true)
         }
+
+        deletionInFlightTaskIDs.remove(task.id)
     }
 
     private var todoSummaryFooterRow: some View {

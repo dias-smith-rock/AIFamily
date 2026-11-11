@@ -36,10 +36,46 @@ enum TaskLocalWriteSupport {
     }
 
     static func commitDelete(taskId: UUID, householdId: UUID) async throws {
-        try await ensureOnline()
-        let service = try taskService()
+        TaskDeleteLogger.step(
+            .begin,
+            taskId: taskId,
+            householdId: householdId,
+            detail: "commitDelete"
+        )
+        do {
+            try await ensureOnline()
+            TaskDeleteLogger.step(.networkCheck, taskId: taskId, householdId: householdId, detail: "online")
+        } catch {
+            TaskDeleteLogger.failure(
+                step: .networkCheck,
+                error: error,
+                taskId: taskId,
+                householdId: householdId,
+                detail: "offline_or_network"
+            )
+            throw error
+        }
+        let service: TaskDataService
+        do {
+            service = try taskService()
+        } catch {
+            TaskDeleteLogger.failure(
+                step: .serviceStarted,
+                error: error,
+                taskId: taskId,
+                householdId: householdId,
+                detail: "task_service_unavailable"
+            )
+            throw error
+        }
         try await service.deleteTask(taskId: taskId)
         HouseholdLocalCache.removeTaskFromCache(taskId: taskId, householdId: householdId)
+        TaskDeleteLogger.step(
+            .localCacheUpdated,
+            taskId: taskId,
+            householdId: householdId,
+            detail: "cache_removed"
+        )
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
     }
 

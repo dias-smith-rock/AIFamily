@@ -9,17 +9,30 @@ struct AllDayTaskRowView: View {
     let displayTitle: String
     let forWhomAvatars: [TaskCardAvatarSource]
     var hasAttachments: Bool = false
+    var onEdit: (() -> Void)? = nil
+    var onComplete: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
 
     init(
         task: FamilyTask,
         displayTitle: String? = nil,
         forWhomAvatars: [TaskCardAvatarSource],
-        hasAttachments: Bool? = nil
+        hasAttachments: Bool? = nil,
+        onEdit: (() -> Void)? = nil,
+        onComplete: (() -> Void)? = nil,
+        onDelete: (() -> Void)? = nil
     ) {
         self.task = task
         self.displayTitle = displayTitle ?? task.title
         self.forWhomAvatars = forWhomAvatars
         self.hasAttachments = hasAttachments ?? task.hasAttachmentURLs
+        self.onEdit = onEdit
+        self.onComplete = onComplete
+        self.onDelete = onDelete
+    }
+
+    private var showsCompleteAction: Bool {
+        task.status != .completed && task.status != .cancelled
     }
 
     var body: some View {
@@ -61,6 +74,12 @@ struct AllDayTaskRowView: View {
             }
         }
         .shadow(color: Color.black.opacity(0.08), radius: 3, x: 0, y: 1)
+        .taskLongPressContextMenu(
+            showsComplete: showsCompleteAction && onComplete != nil,
+            onEdit: { onEdit?() },
+            onComplete: { onComplete?() },
+            onDelete: { onDelete?() }
+        )
     }
 
     private var cardTitleText: String {

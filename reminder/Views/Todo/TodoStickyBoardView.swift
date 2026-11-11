@@ -13,13 +13,17 @@ struct TodoStickyBoardView: View {
     let hasAttachments: (FamilyTask) -> Bool
     let isCompletionChecked: (UUID) -> Bool
     let isFlying: (UUID) -> Bool
+    var isDeleteFading: (UUID) -> Bool = { _ in false }
     let isInteractionLocked: (UUID) -> Bool
     let onToggleComplete: (FamilyTask) -> Void
     let onOpen: (FamilyTask) -> Void
     let onOpenOverdueBin: () -> Void
     let onOpenCompletedArchive: () -> Void
     let onDropComplete: (FamilyTask) -> Void
+    /// 拖入垃圾桶后（板内已播消失动画）提交删除。
     let onDropDelete: (FamilyTask) -> Void
+    /// 长按菜单确认删除：由外层播 0.5s 消失动画再提交。
+    var onAnimatedDelete: ((FamilyTask) -> Void)? = nil
     /// 由外层底栏展示「适配全部」；白板只负责可见性与执行。
     @Binding var showsFitAllNotesButton: Bool
     @Binding var fitAllNotesRequestID: Int
@@ -54,6 +58,8 @@ struct TodoStickyBoardView: View {
     /// 拖到角落后浮在 bin 之上的便签会话（确认删除 / 完成消失 / 取消回位）。
     @State private var liftSession: NoteLiftSession?
     @State private var showStickyDeleteConfirm = false
+    /// 长按菜单删除（无拖放浮起会话）。
+    @State private var taskPendingContextDelete: FamilyTask?
     /// 松手回板后触发图钉钉入动画的便签 id。
     @State private var pinInsertingID: UUID?
     @State private var notesOverflowViewport = false
@@ -75,7 +81,7 @@ struct TodoStickyBoardView: View {
     private let scaleRange: ClosedRange<CGFloat> = 0.45...2.4
     private let boardSpace = "todoStickyBoardSpace"
     private let boardFlipDuration: TimeInterval = 1.0
-    private let dropFadeDuration: TimeInterval = 0.8
+    private let dropFadeDuration: TimeInterval = 0.5
     private let dropReturnDuration: TimeInterval = 0.5
 
     private enum StickyDropTarget: Equatable {
@@ -167,6 +173,11 @@ struct TodoStickyBoardView: View {
                 }
             } message: {
                 Text(L10n.Common.thisActionCannotBeUndone2.localized)
+            }
+            .onChange(of: showStickyDeleteConfirm) { _, isPresented in
+                if isPresented == false, liftSession == nil {
+                    taskPendingContextDelete = nil
+                }
             }
             .onAppear {
                 viewportSize = viewport
@@ -436,6 +447,7 @@ struct TodoStickyBoardView: View {
     private func stickyNote(for task: FamilyTask) -> some View {
         let look = StickyNoteLook.stable(for: task.id, theme: task.cardThemeAccentColor)
         let flying = isFlying(task.id)
+        let deleteFading = isDeleteFading(task.id)
         let lifted = liftSession?.task.id == task.id
         let dragging = draggingID == task.id
 
@@ -447,21 +459,34 @@ struct TodoStickyBoardView: View {
             hasAttachments: hasAttachments(task),
             isDragging: dragging || lifted,
             isPinInserting: pinInsertingID == task.id,
+            isCompletionChecked: isCompletionChecked(task.id),
             onActivate: { bringToFront(task.id) },
             onOpen: {
                 bringToFront(task.id)
                 onOpen(task)
+            },
+            onComplete: {
+                bringToFront(task.id)
+                onToggleComplete(task)
+            },
+            onDelete: {
+                bringToFront(task.id)
+                taskPendingContextDelete = task
+                showStickyDeleteConfirm = true
             }
         )
         .frame(width: noteSize.width, height: noteSize.height)
-        .rotationEffect(.degrees((dragging || lifted) ? 0 : look.rotationDegrees))
-        .scaleEffect(dragging ? 1.08 : (flying ? 0.15 : 1))
-        .opacity((flying || lifted) ? 0 : 1)
+        .rotationEffect(.degrees((dragging || lifted || deleteFading) ? 0 : look.rotationDegrees))
+        .scaleEffect(
+            dragging ? 1.08 : (flying ? 0.15 : (deleteFading ? 0.86 : 1))
+        )
+        .opacity((flying || lifted || deleteFading) ? 0 : 1)
         .scaleEffect(dropHoverScale(for: task.id), anchor: .center)
         // 触点落在便签上 → 拖便签；空白处由白板 pan 手势处理。
         .gesture(noteMoveGesture(for: task))
         .allowsHitTesting(
             flying == false
+                && deleteFading == false
                 && lifted == false
                 && isDropResolutionInProgress == false
                 && isInteractionLocked(task.id) == false
@@ -658,9 +683,21 @@ struct TodoStickyBoardView: View {
     }
 
     private func confirmStickyDelete() {
+        if let pending = taskPendingContextDelete, liftSession == nil {
+            taskPendingContextDelete = nil
+            if let onAnimatedDelete {
+                onAnimatedDelete(pending)
+            } else {
+                positions.removeValue(forKey: pending.id)
+                savePositions()
+                onDropDelete(pending)
+            }
+            return
+        }
         guard var session = liftSession, session.phase == .awaitingDeleteConfirm else {
             liftSession = nil
             activeDropTarget = nil
+            taskPendingContextDelete = nil
             return
         }
         let task = session.task
@@ -685,9 +722,14 @@ struct TodoStickyBoardView: View {
     }
 
     private func cancelStickyDelete() {
+        if taskPendingContextDelete != nil, liftSession == nil {
+            taskPendingContextDelete = nil
+            return
+        }
         guard var session = liftSession, session.phase == .awaitingDeleteConfirm else {
             liftSession = nil
             activeDropTarget = nil
+            taskPendingContextDelete = nil
             return
         }
         let home = session.homeBoardPoint
@@ -1386,8 +1428,11 @@ private struct TodoStickyNoteCard: View {
     var hasAttachments: Bool = false
     let isDragging: Bool
     var isPinInserting: Bool = false
+    var isCompletionChecked: Bool = false
     let onActivate: () -> Void
     let onOpen: () -> Void
+    var onComplete: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
 
     /// `false` = 悬在纸面上方（钉入起点）；`true` = 已钉入。
     @State private var pinPlanted = true
@@ -1458,6 +1503,21 @@ private struct TodoStickyNoteCard: View {
             onActivate()
             onOpen()
         }
+        .taskLongPressContextMenu(
+            showsComplete: onComplete != nil && isCompletionChecked == false,
+            onEdit: {
+                onActivate()
+                onOpen()
+            },
+            onComplete: {
+                onActivate()
+                onComplete?()
+            },
+            onDelete: {
+                onActivate()
+                onDelete?()
+            }
+        )
         .onChange(of: isDragging) { _, dragging in
             if dragging {
                 pinPlanted = false

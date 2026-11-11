@@ -55,11 +55,17 @@ enum TaskSeriesSupabaseSupport {
     static func deleteTasks(ids: [UUID]) async throws {
         let client = SupabaseManager.shared.client
         for id in ids {
-            try await client
+            struct DeletedID: Decodable { let id: UUID }
+            let deleted: [DeletedID] = try await client
                 .from("tasks")
                 .delete()
                 .eq("id", value: id.uuidString.lowercased())
+                .select("id")
                 .execute()
+                .value
+            guard deleted.isEmpty == false else {
+                throw SupabaseServiceError.deleteNotPermittedOrMissing
+            }
         }
     }
 

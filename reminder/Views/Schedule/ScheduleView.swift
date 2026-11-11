@@ -39,17 +39,23 @@ struct TaskModeDayView: View {
     private let daySwipeSuppressTapClearDelayNanoseconds: UInt64 = 80_000_000
 
     let onTaskSelect: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
     let onRefresh: (() async -> Void)?
 
     init(
         selectedDate: Binding<Date>,
         viewModel: ScheduleViewModel,
         onTaskSelect: @escaping (FamilyTask) -> Void,
+        onTaskComplete: ((FamilyTask) -> Void)? = nil,
+        onTaskDelete: ((FamilyTask) -> Void)? = nil,
         onRefresh: (() async -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self.viewModel = viewModel
         self.onTaskSelect = onTaskSelect
+        self.onTaskComplete = onTaskComplete
+        self.onTaskDelete = onTaskDelete
         self.onRefresh = onRefresh
     }
 
@@ -125,6 +131,8 @@ struct TaskModeDayView: View {
                 taskFlowLongIdleThreshold: taskFlowLongIdleThreshold,
                 viewModel: viewModel,
                 onTaskSelect: onTaskSelect,
+                onTaskComplete: onTaskComplete,
+                onTaskDelete: onTaskDelete,
                 onRefresh: onRefresh
             )
             .id(selectedDay)
@@ -322,6 +330,8 @@ private struct TaskModeDaySchedulePane: View {
     let taskFlowLongIdleThreshold: TimeInterval
     @ObservedObject var viewModel: ScheduleViewModel
     let onTaskSelect: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
     let onRefresh: (() async -> Void)?
 
     var body: some View {
@@ -374,7 +384,9 @@ private struct TaskModeDaySchedulePane: View {
                                         assigneeLabel: { viewModel.assigneeLabel(for: $0, locale: locale) },
                                         displayTitle: { viewModel.displayTitle(for: $0) },
                                         taskHasAttachments: { viewModel.taskHasAttachments($0) },
-                                        onTaskTap: onTaskSelect
+                                        onTaskTap: onTaskSelect,
+                                        onTaskComplete: onTaskComplete,
+                                        onTaskDelete: onTaskDelete
                                     )
                                 }
                             }
@@ -420,7 +432,10 @@ private struct TaskModeDaySchedulePane: View {
                             task: task,
                             displayTitle: viewModel.displayTitle(for: task),
                             forWhomAvatars: viewModel.forWhomAvatarSources(for: task),
-                            hasAttachments: viewModel.taskHasAttachments(task)
+                            hasAttachments: viewModel.taskHasAttachments(task),
+                            onEdit: { onTaskSelect(task) },
+                            onComplete: onTaskComplete.map { handler in { handler(task) } },
+                            onDelete: onTaskDelete.map { handler in { handler(task) } }
                         )
                         .frame(width: resolvedAllDayCardWidth)
                         .fixedSize(horizontal: false, vertical: true)

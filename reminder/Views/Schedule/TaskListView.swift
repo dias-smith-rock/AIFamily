@@ -47,6 +47,9 @@ struct TaskListView: View {
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
     @State private var taskForDetailSheet: FamilyTask?
+    @State private var taskPendingDelete: FamilyTask?
+    /// 与 `taskPendingDelete` 分离：alert 关闭时会先把 isPresented 置 false，若用 pending!=nil 绑定会清掉任务再跑按钮。
+    @State private var isShowingContextMenuDeleteAlert = false
     @State private var listScrollToken = 0
     @State private var aiPrefillFormInstanceID = UUID()
     /// 周视图「回到本周」：由 `TaskWeekGridView` 同步可见性；递增 trigger 触发跳转。
@@ -257,6 +260,32 @@ struct TaskListView: View {
                     Text(message)
                 }
             }
+            .alert(
+                L10n.Schedule.deleteTask,
+                isPresented: $isShowingContextMenuDeleteAlert
+            ) {
+                if taskPendingDelete?.seriesGrouping != nil {
+                    Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive) {
+                        Task { await performContextMenuDelete(scope: .singleOnly) }
+                    }
+                    Button(L10n.Schedule.deleteThisTaskAndLater, role: .destructive) {
+                        Task { await performContextMenuDelete(scope: .thisAndFuture) }
+                    }
+                } else {
+                    Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive) {
+                        Task { await performContextMenuDelete(scope: .singleOnly) }
+                    }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {
+                    taskPendingDelete = nil
+                }
+            } message: {
+                if taskPendingDelete?.seriesGrouping == nil {
+                    Text(L10n.Common.thisActionCannotBeUndone2.localized)
+                } else {
+                    Text(L10n.Common.pleaseSelectAScopeToDelete.localized)
+                }
+            }
             .task(id: taskLoadTrigger) {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
                 viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
@@ -355,6 +384,8 @@ struct TaskListView: View {
                         listScrollToken: listScrollToken,
                         scrollAnchorDate: selectedDate,
                         onTaskTap: { taskForDetailSheet = $0 },
+                        onTaskComplete: { completeTaskFromContextMenu($0) },
+                        onTaskDelete: { requestDeleteFromContextMenu($0) },
                         onRefresh: refreshTasks
                     )
                 case .day:
@@ -362,6 +393,8 @@ struct TaskListView: View {
                         selectedDate: $selectedDate,
                         viewModel: viewModel,
                         onTaskSelect: { taskForDetailSheet = $0 },
+                        onTaskComplete: { completeTaskFromContextMenu($0) },
+                        onTaskDelete: { requestDeleteFromContextMenu($0) },
                         onRefresh: refreshTasks
                     )
                 case .week:
@@ -369,6 +402,8 @@ struct TaskListView: View {
                         selectedDate: $selectedDate,
                         viewModel: viewModel,
                         onTaskSelect: { taskForDetailSheet = $0 },
+                        onTaskComplete: { completeTaskFromContextMenu($0) },
+                        onTaskDelete: { requestDeleteFromContextMenu($0) },
                         onRefresh: refreshTasks,
                         showsBackToCurrentWeekButton: $showsWeekBackToCurrentWeekButton,
                         backToCurrentWeekTrigger: $weekBackToCurrentWeekTrigger
@@ -396,6 +431,8 @@ struct TaskListView: View {
                             }
                         },
                         onSelectTask: { taskForDetailSheet = $0 },
+                        onTaskComplete: { completeTaskFromContextMenu($0) },
+                        onTaskDelete: { requestDeleteFromContextMenu($0) },
                         showsBackToCurrentMonthButton: $showsMonthBackToCurrentMonthButton,
                         backToCurrentMonthTrigger: $monthBackToCurrentMonthTrigger
                     )
@@ -724,6 +761,180 @@ struct TaskListView: View {
         await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshSchedule")
         await viewModel.loadTasks(silent: true)
     }
+
+    private func completeTaskFromContextMenu(_ task: FamilyTask) {
+        Task { @MainActor in
+            let completionLocation: TaskCompletionLocation?
+            if let membershipId = appRouter.selectedMembershipId {
+                completionLocation = await TaskCompletionLocationProvider.currentSnapshot(
+                    completedBy: membershipId
+                )
+            } else {
+                completionLocation = nil
+            }
+            do {
+                _ = try await viewModel.patchTaskStatus(
+                    taskId: task.id,
+                    to: .completed,
+                    completionLocation: completionLocation,
+                    actingMembershipId: appRouter.selectedMembershipId
+                )
+                AnalyticsManager.logTaskCompleted(
+                    taskId: task.id,
+                    householdId: task.householdId,
+                    taskType: AnalyticsManager.analyticsTaskType(for: task)
+                )
+                ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstCompletion)
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            } catch {
+                // `viewModel.errorMessage` 已由 patch 写入，顶层 notice alert 会展示。
+            }
+        }
+    }
+
+    private func requestDeleteFromContextMenu(_ task: FamilyTask) {
+        let role = TaskEditAccess.role(
+            of: appRouter.selectedMembershipId,
+            in: viewModel.householdMembers
+        )
+        let canEdit = TaskEditAccess.canEdit(
+            task,
+            membershipId: appRouter.selectedMembershipId,
+            role: role
+        )
+        TaskDeleteLogger.step(
+            .tapDelete,
+            source: .contextMenu,
+            taskId: task.id,
+            householdId: task.householdId,
+            membershipId: appRouter.selectedMembershipId,
+            isCreator: appRouter.selectedMembershipId == task.creatorId,
+            allowsEditing: canEdit,
+            detail: "role=\(role?.rawValue ?? "nil") status=\(task.status.rawValue)"
+        )
+        guard canEdit else {
+            TaskDeleteLogger.step(
+                .permissionBlocked,
+                source: .contextMenu,
+                taskId: task.id,
+                householdId: task.householdId,
+                membershipId: appRouter.selectedMembershipId,
+                isCreator: appRouter.selectedMembershipId == task.creatorId,
+                allowsEditing: false,
+                detail: "TaskEditAccess.canEdit=false"
+            )
+            viewModel.presentErrorMessage(
+                AppLocalized.string(L10n.Common.youDonTHavePermissionToPerformThisAction, locale: locale)
+            )
+            return
+        }
+        taskPendingDelete = task
+        isShowingContextMenuDeleteAlert = true
+        TaskDeleteLogger.step(
+            .confirmPresented,
+            source: .contextMenu,
+            taskId: task.id,
+            householdId: task.householdId,
+            detail: "series=\(task.seriesGrouping != nil)"
+        )
+    }
+
+    @MainActor
+    private func performContextMenuDelete(scope: ScheduleContextMenuDeleteScope) async {
+        guard let task = taskPendingDelete else {
+            TaskDeleteLogger.step(.failed, source: .contextMenu, detail: "taskPendingDelete_nil")
+            return
+        }
+        let scopeLabel = scope == .singleOnly ? "single_only" : "this_and_future"
+        TaskDeleteLogger.step(
+            .confirmAccepted,
+            source: .contextMenu,
+            taskId: task.id,
+            householdId: task.householdId,
+            scope: scopeLabel,
+            membershipId: appRouter.selectedMembershipId,
+            isCreator: appRouter.selectedMembershipId == task.creatorId
+        )
+        taskPendingDelete = nil
+        #if canImport(Supabase)
+        do {
+            switch scope {
+            case .singleOnly:
+                try await viewModel.deleteTask(taskId: task.id)
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            case .thisAndFuture:
+                guard let grouping = task.seriesGrouping else {
+                    try await viewModel.deleteTask(taskId: task.id)
+                    NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+                    return
+                }
+                let cutoff = task.dueDate ?? .distantPast
+                let rows = try await TaskSeriesSupabaseSupport.fetchSeriesTasks(
+                    householdId: task.householdId,
+                    grouping: grouping,
+                    dueOnOrAfter: cutoff
+                )
+                let ids = rows.map(\.id)
+                TaskDeleteLogger.step(
+                    .remoteReturned,
+                    source: .contextMenu,
+                    taskId: task.id,
+                    householdId: task.householdId,
+                    scope: scopeLabel,
+                    detail: "series_count=\(ids.count)"
+                )
+                for id in ids {
+                    await NotificationManager.shared.cancelAllPending(for: id)
+                }
+                try await TaskSeriesSupabaseSupport.deleteTasks(ids: ids)
+                await viewModel.loadTasks()
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            }
+            TaskDeleteLogger.succeeded(
+                source: .contextMenu,
+                taskId: task.id,
+                householdId: task.householdId,
+                scope: scopeLabel
+            )
+        } catch {
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                source: .contextMenu,
+                taskId: task.id,
+                householdId: task.householdId,
+                scope: scopeLabel
+            )
+            viewModel.presentErrorMessage(
+                String(
+                    format: L10n.Common.deleteFailed.string(locale: locale),
+                    error.localizedDescription
+                )
+            )
+        }
+        #else
+        _ = scope
+        do {
+            try await viewModel.deleteTask(taskId: task.id)
+        } catch {
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                source: .contextMenu,
+                taskId: task.id,
+                householdId: task.householdId,
+                scope: scopeLabel,
+                detail: "sdk_unavailable_build"
+            )
+            viewModel.presentErrorMessage(error.localizedDescription)
+        }
+        #endif
+    }
+}
+
+private enum ScheduleContextMenuDeleteScope {
+    case singleOnly
+    case thisAndFuture
 }
 
 // MARK: - Edit presentation（点击任务直接进入编辑 sheet）

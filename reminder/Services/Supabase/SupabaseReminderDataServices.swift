@@ -438,15 +438,43 @@ struct SupabaseTaskDataService: TaskDataService {
 
     func deleteTask(taskId: UUID) async throws {
         #if canImport(Supabase)
-        try await provider.client
-            .from(SupabaseTable.tasks)
-            .delete()
-            .eq("id", value: taskId.uuidString.lowercased())
-            .execute()
+        TaskDeleteLogger.step(.serviceStarted, taskId: taskId, detail: "supabase_delete")
+        // 必须 `.select` 校验：RLS 拒绝时 PostgREST 仍可能返回 200 且 0 行。
+        let deleted: [TaskDeletedRow]
+        do {
+            deleted = try await provider.client
+                .from(SupabaseTable.tasks)
+                .delete()
+                .eq("id", value: taskId.uuidString.lowercased())
+                .select("id")
+                .execute()
+                .value
+        } catch {
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                taskId: taskId,
+                detail: "supabase_delete_throw"
+            )
+            throw error
+        }
+        TaskDeleteLogger.step(
+            .remoteReturned,
+            taskId: taskId,
+            detail: "deleted_count=\(deleted.count)"
+        )
+        guard deleted.isEmpty == false else {
+            TaskDeleteLogger.step(.remoteEmpty, taskId: taskId, detail: "rls_or_missing")
+            throw SupabaseServiceError.deleteNotPermittedOrMissing
+        }
         #else
         _ = taskId
         throw SupabaseServiceError.sdkUnavailable
         #endif
+    }
+
+    private struct TaskDeletedRow: Decodable {
+        let id: UUID
     }
 
     private static func normalizeInvolvedMemberIdsForRowSemantics(_ task: FamilyTask) -> FamilyTask {

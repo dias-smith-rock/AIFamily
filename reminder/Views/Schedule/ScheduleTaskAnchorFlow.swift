@@ -20,6 +20,8 @@ struct ScheduleTaskAnchorFlow: View {
     var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
 
     let onTaskTap: (FamilyTask) -> Void
+    var onTaskComplete: ((FamilyTask) -> Void)? = nil
+    var onTaskDelete: ((FamilyTask) -> Void)? = nil
     @State private var taskRowFrames: [UUID: CGRect] = [:]
 
     private var sortedTasks: [FamilyTask] {
@@ -99,7 +101,9 @@ struct ScheduleTaskAnchorFlow: View {
                     forWhomAvatars: forWhomAvatars(task),
                     assigneeLabel: assigneeLabel(task),
                     hasAttachments: taskHasAttachments(task),
-                    onTap: { onTaskTap(task) }
+                    onTap: { onTaskTap(task) },
+                    onComplete: onTaskComplete.map { handler in { handler(task) } },
+                    onDelete: onTaskDelete.map { handler in { handler(task) } }
                 )
                 .background {
                     // 仅「今天」需要此刻指示器几何；其它日收集 Preference 会在换日动画中连帧写 State，易卡顿。

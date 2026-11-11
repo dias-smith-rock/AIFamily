@@ -343,6 +343,11 @@ struct CreateTaskView: View {
     @State private var errorMessage: String?
     @State private var pendingRecurringUpdateTask: FamilyTask?
     @State private var isShowingRecurringUpdateScopeDialog = false
+    /// 编辑页底部「接受 / 完成」用的本地状态（避免依赖不可变的 `editingTask`）。
+    @State private var actionTaskStatus: TaskStatus
+    @State private var isUpdatingActionStatus = false
+    @State private var isDeletingTask = false
+    @State private var isShowingDeleteAlert = false
 
     @State private var selectedItems: [PhotosPickerItem] = []
     @State private var selectedImages: [UIImage] = []
@@ -460,6 +465,7 @@ struct CreateTaskView: View {
         self.onAlarmSync = onAlarmSync
         self.onCancelEdit = onCancelEdit
         self._embeddedSaveTrigger = embeddedSaveTrigger
+        self._actionTaskStatus = State(initialValue: editingTask?.status ?? .new)
 
         if let task = editingTask {
             let resolvedTitle: String
@@ -729,9 +735,113 @@ struct CreateTaskView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .padding(.bottom, 24)
+        .padding(.bottom, showsEditFormLifecycleActions ? 12 : 24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .font(.footnote)
+    }
+
+    private var showsEditFormLifecycleActions: Bool {
+        guard let editingTask, editingTask.source.isReadOnly == false else { return false }
+        // 接受/完成：UPDATE RLS 允许执行人；删除：仅 creator/admin（与 `allowsEditing` / DELETE RLS 对齐）。
+        return editFormPrimaryStatusAction(for: editingTask) != nil || allowsEditing
+    }
+
+    @ViewBuilder
+    private var editFormLifecycleActionsInset: some View {
+        if showsEditFormLifecycleActions, let editingTask {
+            editFormLifecycleActions(for: editingTask)
+                .padding(.horizontal, 16)
+                .padding(.top, 10)
+                .padding(.bottom, 10)
+                .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func editFormLifecycleActions(for task: FamilyTask) -> some View {
+        HStack(spacing: 10) {
+            if let primary = editFormPrimaryStatusAction(for: task) {
+                Button {
+                    Task { await performEditFormStatusUpdate(to: primary.targetStatus) }
+                } label: {
+                    Text(primary.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(primary.tint)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color(.tertiarySystemFill), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(isSaving || isUpdatingActionStatus || isDeletingTask)
+            }
+
+            if allowsEditing {
+                Button(role: .destructive) {
+                    TaskDeleteLogger.step(
+                        .tapDelete,
+                        source: .editForm,
+                        taskId: task.id,
+                        householdId: task.householdId,
+                        membershipId: appRouter.selectedMembershipId,
+                        isCreator: appRouter.selectedMembershipId == task.creatorId,
+                        allowsEditing: allowsEditing,
+                        detail: "status=\(task.status.rawValue) type=\(task.taskType ?? "nil")"
+                    )
+                    isShowingDeleteAlert = true
+                    TaskDeleteLogger.step(
+                        .confirmPresented,
+                        source: .editForm,
+                        taskId: task.id,
+                        householdId: task.householdId,
+                        detail: "series=\(task.seriesGrouping != nil)"
+                    )
+                } label: {
+                    Text(L10n.Schedule.deleteTask.localized)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color(.tertiarySystemFill), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(isSaving || isUpdatingActionStatus || isDeletingTask)
+            }
+        }
+    }
+
+    private struct EditFormPrimaryStatusAction {
+        let title: LocalizedStringResource
+        let tint: Color
+        let targetStatus: TaskStatus
+        let leavesFormAfterSuccess: Bool
+    }
+
+    private func editFormPrimaryStatusAction(for _: FamilyTask) -> EditFormPrimaryStatusAction? {
+        // 日程与待办编辑页同一套：新建→接受；已接受/进行中→完成。
+        switch actionTaskStatus {
+        case .new:
+            return EditFormPrimaryStatusAction(
+                title: L10n.Schedule.acceptTask.localized,
+                tint: .orange,
+                targetStatus: .accepted,
+                leavesFormAfterSuccess: false
+            )
+        case .accepted:
+            return EditFormPrimaryStatusAction(
+                title: L10n.Schedule.completeTheTask.localized,
+                tint: .green,
+                targetStatus: .completed,
+                leavesFormAfterSuccess: true
+            )
+        case .inProgress:
+            return EditFormPrimaryStatusAction(
+                title: L10n.Common.markAsComplete.localized,
+                tint: .green,
+                targetStatus: .completed,
+                leavesFormAfterSuccess: true
+            )
+        case .completed, .issue, .failed, .expired, .cancelled:
+            return nil
+        }
     }
 
     private func lastEditedFooter(for task: FamilyTask) -> some View {
@@ -1674,8 +1784,11 @@ struct CreateTaskView: View {
                     .disabled(allowsEditing == false)
             }
             .scrollDismissesKeyboard(.interactively)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                editFormLifecycleActionsInset
+            }
 
-            if isSaving {
+            if isSaving || isUpdatingActionStatus || isDeletingTask {
                 Color.black.opacity(0.12)
                     .ignoresSafeArea()
                 ProgressView()
@@ -1769,6 +1882,10 @@ struct CreateTaskView: View {
         insertedSections = seeded
     }
 
+    private var editingTaskHasSeriesGrouping: Bool {
+        editingTask?.seriesGrouping != nil
+    }
+
     private var formStackWithDialogs: some View {
         Group {
             if isEmbeddedInParent {
@@ -1786,10 +1903,12 @@ struct CreateTaskView: View {
                         guard allowsEditing else { return }
                         Task { await saveTask() }
                     }
+                    .modifier(editFormDeleteConfirmAlert)
             } else {
                 NavigationStack {
                     formNavigationContent
                         .toolbar { formChromeToolbar }
+                        .modifier(editFormDeleteConfirmAlert)
                 }
             }
         }
@@ -1822,6 +1941,20 @@ struct CreateTaskView: View {
             Text(L10n.Common.pleaseSelectAModificationScope.localized)
         }
         .forcesNonPopoverDialogPresentation()
+    }
+
+    /// 删除确认挂在导航内容上，避开外层 `presentationCompactAdaptation`。
+    private var editFormDeleteConfirmAlert: EditFormDeleteConfirmAlertModifier {
+        EditFormDeleteConfirmAlertModifier(
+            isPresented: $isShowingDeleteAlert,
+            hasSeriesGrouping: editingTaskHasSeriesGrouping,
+            onDeleteSingle: {
+                Task { await performEditFormDelete(scope: .singleOnly) }
+            },
+            onDeleteThisAndFuture: {
+                Task { await performEditFormDelete(scope: .thisAndFuture) }
+            }
+        )
     }
 
     @ToolbarContentBuilder
@@ -1895,6 +2028,179 @@ struct CreateTaskView: View {
             return
         }
         dismiss()
+    }
+
+    @MainActor
+    private func performEditFormStatusUpdate(to newStatus: TaskStatus) async {
+        guard let existing = editingTask else { return }
+        guard isUpdatingActionStatus == false, isDeletingTask == false, isSaving == false else { return }
+        let leavesForm = editFormPrimaryStatusAction(for: existing)?.leavesFormAfterSuccess ?? (newStatus == .completed)
+
+        isUpdatingActionStatus = true
+        errorMessage = nil
+        defer { isUpdatingActionStatus = false }
+
+        do {
+            let completionLocation: TaskCompletionLocation?
+            if newStatus == .completed, let membershipId = appRouter.selectedMembershipId {
+                completionLocation = await TaskCompletionLocationProvider.currentSnapshot(
+                    completedBy: membershipId
+                )
+            } else {
+                completionLocation = nil
+            }
+
+            let patched = try await TaskLocalWriteSupport.commitPatchStatus(
+                taskId: existing.id,
+                status: newStatus,
+                localTask: existing,
+                completionLocation: completionLocation,
+                actingMembershipId: appRouter.selectedMembershipId
+            )
+            actionTaskStatus = patched.status
+            onUpdateSuccess?(patched)
+            if newStatus == .accepted {
+                ReviewRedirectManager.shared.checkAndTriggerAlert(for: .taskAcceptance)
+            }
+            if newStatus == .completed {
+                AnalyticsManager.logTaskCompleted(
+                    taskId: patched.id,
+                    householdId: patched.householdId,
+                    taskType: AnalyticsManager.analyticsTaskType(for: patched)
+                )
+                ReviewRedirectManager.shared.checkAndTriggerAlert(for: .firstCompletion)
+                await NotificationManager.shared.cancelAllPending(for: patched.id)
+            } else {
+                onAlarmSync?(patched)
+            }
+
+            if leavesForm {
+                if isEmbeddedInParent {
+                    onCancelEdit?()
+                } else {
+                    dismiss()
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    @MainActor
+    private func performEditFormDelete(scope: RecurringTaskScope) async {
+        guard let existing = editingTask else {
+            TaskDeleteLogger.step(
+                .failed,
+                source: .editForm,
+                detail: "editingTask_nil"
+            )
+            return
+        }
+        guard isDeletingTask == false, isUpdatingActionStatus == false, isSaving == false else {
+            TaskDeleteLogger.step(
+                .failed,
+                source: .editForm,
+                taskId: existing.id,
+                detail: "busy saving=\(isSaving) updating=\(isUpdatingActionStatus) deleting=\(isDeletingTask)"
+            )
+            return
+        }
+
+        let scopeLabel = scope == .singleOnly ? "single_only" : "this_and_future"
+        TaskDeleteLogger.step(
+            .confirmAccepted,
+            source: .editForm,
+            taskId: existing.id,
+            householdId: existing.householdId,
+            scope: scopeLabel,
+            membershipId: appRouter.selectedMembershipId,
+            isCreator: appRouter.selectedMembershipId == existing.creatorId,
+            allowsEditing: allowsEditing
+        )
+
+        isDeletingTask = true
+        errorMessage = nil
+        defer { isDeletingTask = false }
+
+        #if canImport(Supabase)
+        do {
+            switch scope {
+            case .singleOnly:
+                try await TaskLocalWriteSupport.commitDelete(
+                    taskId: existing.id,
+                    householdId: existing.householdId
+                )
+                await NotificationManager.shared.cancelAllPending(for: existing.id)
+            case .thisAndFuture:
+                guard let grouping = existing.seriesGrouping else {
+                    try await TaskLocalWriteSupport.commitDelete(
+                        taskId: existing.id,
+                        householdId: existing.householdId
+                    )
+                    await NotificationManager.shared.cancelAllPending(for: existing.id)
+                    break
+                }
+                let cutoff = existing.dueDate ?? .distantPast
+                let rows = try await TaskSeriesSupabaseSupport.fetchSeriesTasks(
+                    householdId: existing.householdId,
+                    grouping: grouping,
+                    dueOnOrAfter: cutoff
+                )
+                let ids = rows.map(\.id)
+                TaskDeleteLogger.step(
+                    .remoteReturned,
+                    source: .editForm,
+                    taskId: existing.id,
+                    householdId: existing.householdId,
+                    scope: scopeLabel,
+                    detail: "series_count=\(ids.count)"
+                )
+                for id in ids {
+                    await NotificationManager.shared.cancelAllPending(for: id)
+                }
+                try await TaskSeriesSupabaseSupport.deleteTasks(ids: ids)
+                for id in ids {
+                    HouseholdLocalCache.removeTaskFromCache(taskId: id, householdId: existing.householdId)
+                }
+                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+            }
+            TaskDeleteLogger.step(
+                .uiDismiss,
+                source: .editForm,
+                taskId: existing.id,
+                householdId: existing.householdId,
+                scope: scopeLabel,
+                detail: "embedded=\(isEmbeddedInParent)"
+            )
+            TaskDeleteLogger.succeeded(
+                source: .editForm,
+                taskId: existing.id,
+                householdId: existing.householdId,
+                scope: scopeLabel
+            )
+            // 与保存成功一致：嵌详情时先退出编辑，再关掉外层 sheet。
+            if isEmbeddedInParent {
+                onCancelEdit?()
+            }
+            dismiss()
+        } catch {
+            TaskDeleteLogger.failure(
+                step: .failed,
+                error: error,
+                source: .editForm,
+                taskId: existing.id,
+                householdId: existing.householdId,
+                scope: scopeLabel
+            )
+            errorMessage = String(
+                format: L10n.Common.deleteFailed.string(locale: locale),
+                error.localizedDescription
+            )
+        }
+        #else
+        _ = scope
+        errorMessage = L10n.Common.supabaseSdkIsNotAvailableInThisBuild.string(locale: locale)
+        #endif
     }
 
     var body: some View {
@@ -4155,6 +4461,31 @@ private extension CreateTaskView {
             updatedAt: payload.updatedAt,
             updatedBy: UUID(uuidString: payload.updatedBy)
         )
+    }
+}
+
+// MARK: - Delete confirm alert
+
+private struct EditFormDeleteConfirmAlertModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    let hasSeriesGrouping: Bool
+    let onDeleteSingle: () -> Void
+    let onDeleteThisAndFuture: () -> Void
+
+    func body(content: Content) -> some View {
+        content.alert(L10n.Schedule.deleteTask, isPresented: $isPresented) {
+            Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive, action: onDeleteSingle)
+            if hasSeriesGrouping {
+                Button(L10n.Schedule.deleteThisTaskAndLater, role: .destructive, action: onDeleteThisAndFuture)
+            }
+            Button(L10n.Common.cancel, role: .cancel) {}
+        } message: {
+            if hasSeriesGrouping {
+                Text(L10n.Common.pleaseSelectAScopeToDelete.localized)
+            } else {
+                Text(L10n.Common.thisActionCannotBeUndone2.localized)
+            }
+        }
     }
 }
 
