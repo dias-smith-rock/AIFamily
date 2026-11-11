@@ -420,55 +420,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "اطلب من الطرف الآخر استخدام تطبيق ShareCal لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام."
+            "value": "اطلب من الطرف الآخر استخدام تطبيق Calendly لمسح الرمز ضوئيًا، أو إدخال رمز الدعوة أدناه للانضمام."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ask the other party to use the ShareCal app to scan the code, or enter the invitation code below to join."
+            "value": "Ask the other party to use the Calendly app to scan the code, or enter the invitation code below to join."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pídale a la otra parte que use la aplicación ShareCal para escanear el código o ingrese el código de invitación a continuación para unirse."
+            "value": "Pídale a la otra parte que use la aplicación Calendly para escanear el código o ingrese el código de invitación a continuación para unirse."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Demandez à l'autre partie d'utiliser l'application ShareCal pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre."
+            "value": "Demandez à l'autre partie d'utiliser l'application Calendly pour scanner le code, ou entrez le code d'invitation ci-dessous pour vous joindre."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "दूसरे पक्ष से कोड स्कैन करने के लिए ShareCal ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।"
+            "value": "दूसरे पक्ष से कोड स्कैन करने के लिए Calendly ऐप का उपयोग करने के लिए कहें, या शामिल होने के लिए नीचे निमंत्रण कोड दर्ज करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Peça à outra parte para usar o aplicativo ShareCal para escanear o código ou insira o código de convite abaixo para participar."
+            "value": "Peça à outra parte para usar o aplicativo Calendly para escanear o código ou insira o código de convite abaixo para participar."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "குறியீட்டை ஸ்கேன் செய்ய ShareCal ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்."
+            "value": "குறியீட்டை ஸ்கேன் செய்ய Calendly ஆப்ஸைப் பயன்படுத்தும்படி மற்ற தரப்பினரிடம் கேட்கவும் அல்லது சேர்வதற்கு கீழே உள்ள அழைப்புக் குறியீட்டை உள்ளிடவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "让对方使用 ShareCal App 扫码，或输入下方邀请码即可加入。"
+            "value": "让对方使用 Calendly App 扫码，或输入下方邀请码即可加入。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請對方使用 ShareCal App 掃碼，或輸入下方邀請碼即可加入。"
+            "value": "請對方使用 Calendly App 掃碼，或輸入下方邀請碼即可加入。"
           }
         }
       }
@@ -8562,55 +8562,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أنت مدعو للانضمام إلى مجموعة ShareCal! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق."
+            "value": "أنت مدعو للانضمام إلى مجموعة Calendly! انسخ رمز الدعوة: %1$@، أو امسح رمز QR في التطبيق."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "You're invited to join a ShareCal group! Copy this invite code: %1$@, or scan the QR code in the app."
+            "value": "You're invited to join a Calendly group! Copy this invite code: %1$@, or scan the QR code in the app."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¡Te invitan a unirte a un grupo de ShareCal! Copia este código de invitación: %1$@, o escanea el código QR en la app."
+            "value": "¡Te invitan a unirte a un grupo de Calendly! Copia este código de invitación: %1$@, o escanea el código QR en la app."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vous êtes invité à rejoindre un groupe ShareCal ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app."
+            "value": "Vous êtes invité à rejoindre un groupe Calendly ! Copiez ce code d'invitation : %1$@, ou scannez le QR code dans l'app."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "आपको ShareCal समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।"
+            "value": "आपको Calendly समूह में शामिल होने के लिए आमंत्रित किया गया है! यह निमंत्रण कोड कॉपी करें: %1$@, या ऐप में QR कोड स्कैन करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Você foi convidado a entrar em um grupo ShareCal! Copie este código de convite: %1$@, ou escaneie o QR code no app."
+            "value": "Você foi convidado a entrar em um grupo Calendly! Copie este código de convite: %1$@, ou escaneie o QR code no app."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "ShareCal குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்."
+            "value": "Calendly குழுவில் சேர அழைக்கப்பட்டுள்ளீர்கள்! இந்த அழைப்புக் குறியீட்டை நகலெடுக்கவும்: %1$@, அல்லது ஆப்ஸில் QR குறியீட்டை ஸ்கேன் செய்யவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "邀请你加入 ShareCal 群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。"
+            "value": "邀请你加入 Calendly 群组空间！请复制此邀请码：%1$@，或使用 App 扫码加入。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "邀請你加入 ShareCal 群組空間！請複製此邀請碼：%1$@，或使用 App 掃碼加入。"
+            "value": "邀請你加入 Calendly 群組空間！請複製此邀請碼：%1$@，或使用 App 掃碼加入。"
           }
         }
       }

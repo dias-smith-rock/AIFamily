@@ -14,6 +14,6 @@ enum AppInfo {
     }
 
     static var copyrightLine: String {
-        "Copyright © 2026 ShareCal. All rights reserved."
+        "Copyright © 2026 Calendly. All rights reserved."
     }
 }

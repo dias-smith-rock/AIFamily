@@ -1,9 +1,9 @@
 /* App display name shown on Home Screen */
-"CFBundleDisplayName" = "ShareCal";
-"CFBundleName" = "ShareCal";
+"CFBundleDisplayName" = "Calendly";
+"CFBundleName" = "Calendly";
 
-"NSCameraUsageDescription" = "ShareCal a besoin de l'appareil photo pour scanner les codes d'invitation et photographier des avis ou reçus afin de créer des tâches automatiquement.";
+"NSCameraUsageDescription" = "Calendly a besoin de l'appareil photo pour scanner les codes d'invitation et photographier des avis ou reçus afin de créer des tâches automatiquement.";
 "NSPhotoLibraryAddUsageDescription" = "Permet d'enregistrer les images jointes aux tâches dans votre album photo.";
-"NSFaceIDUsageDescription" = "ShareCal utilise Face ID pour protéger vos plannings et tâches de groupe privés.";
+"NSFaceIDUsageDescription" = "Calendly utilise Face ID pour protéger vos plannings et tâches de groupe privés.";
 "NSLocationWhenInUseUsageDescription" = "Permet d'afficher votre position approximative et celle des membres sur la carte, et d'enregistrer les lieux lors de l'achèvement des tâches.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Permet de mettre à jour votre position approximative auprès des membres du groupe lorsque l'app est en arrière-plan ; vous pouvez désactiver la localisation en arrière-plan dans « Moi ».";

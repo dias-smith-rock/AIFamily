@@ -47,7 +47,7 @@
 
 /* Begin PBXFileReference section */
 		AA1000012FC91B21009FE64F /* ScheduleWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		DD17A5EF2F9F4E500059AE67 /* ShareCal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShareCal.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DD17A5EF2F9F4E500059AE67 /* Calendly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Calendly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -135,7 +135,7 @@
 		DD17A5F02F9F4E500059AE67 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DD17A5EF2F9F4E500059AE67 /* ShareCal.app */,
+				DD17A5EF2F9F4E500059AE67 /* Calendly.app */,
 				AA1000012FC91B21009FE64F /* ScheduleWidget.appex */,
 			);
 			name = Products;
@@ -205,8 +205,8 @@
 				DDD16A152FC91B21009FE64F /* FirebaseRemoteConfig */,
 				DDE1RC022FC91B21009FE64F /* RevenueCat */,
 			);
-			productName = ShareCal;
-			productReference = DD17A5EF2F9F4E500059AE67 /* ShareCal.app */;
+			productName = Calendly;
+			productReference = DD17A5EF2F9F4E500059AE67 /* Calendly.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -337,7 +337,7 @@
 				DEVELOPMENT_TEAM = 34878H47P6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ScheduleWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShareCal;
+				INFOPLIST_KEY_CFBundleDisplayName = Calendly;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -364,7 +364,7 @@
 				DEVELOPMENT_TEAM = 34878H47P6;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ScheduleWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShareCal;
+				INFOPLIST_KEY_CFBundleDisplayName = Calendly;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -516,11 +516,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = reminder/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShareCal;
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "ShareCal needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
-				INFOPLIST_KEY_NSCalendarsUsageDescription = "ShareCal needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "ShareCal needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "ShareCal uses Face ID to protect your private group schedules and tasks.";
+				INFOPLIST_KEY_CFBundleDisplayName = Calendly;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Calendly needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Calendly uses Face ID to protect your private group schedules and tasks.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to show your approximate location and members on the map, and record locations when completing tasks.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Used to save task attachment images to your photo library.";
@@ -536,7 +536,7 @@
 				);
 				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = ShareCal;
+				PRODUCT_NAME = Calendly;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -559,11 +559,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = reminder/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ShareCal;
-				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "ShareCal needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
-				INFOPLIST_KEY_NSCalendarsUsageDescription = "ShareCal needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
-				INFOPLIST_KEY_NSCameraUsageDescription = "ShareCal needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "ShareCal uses Face ID to protect your private group schedules and tasks.";
+				INFOPLIST_KEY_CFBundleDisplayName = Calendly;
+				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCalendarsUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Calendly needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Calendly uses Face ID to protect your private group schedules and tasks.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to show your approximate location and members on the map, and record locations when completing tasks.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Used to save task attachment images to your photo library.";
@@ -579,7 +579,7 @@
 				);
 				MARKETING_VERSION = 1.6.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder;
-				PRODUCT_NAME = ShareCal;
+				PRODUCT_NAME = Calendly;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

@@ -66,55 +66,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "حول ShareCal"
+            "value" : "حول Calendly"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "About ShareCal"
+            "value" : "About Calendly"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Acerca de ShareCal"
+            "value" : "Acerca de Calendly"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "À propos de ShareCal"
+            "value" : "À propos de Calendly"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal के बारे में"
+            "value" : "Calendly के बारे में"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sobre ShareCal"
+            "value" : "Sobre Calendly"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal பற்றி"
+            "value" : "Calendly பற்றி"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "关于 ShareCal"
+            "value" : "关于 Calendly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "關於 ShareCal"
+            "value" : "關於 Calendly"
           }
         }
       }
@@ -8798,55 +8798,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "هل تستمتع بـ ShareCal؟"
+            "value" : "هل تستمتع بـ Calendly؟"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enjoying ShareCal?"
+            "value" : "Enjoying Calendly?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Te gusta ShareCal?"
+            "value" : "¿Te gusta Calendly?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vous aimez ShareCal ?"
+            "value" : "Vous aimez Calendly ?"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal पसंद आ रहा है?"
+            "value" : "Calendly पसंद आ रहा है?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Está a gostar do ShareCal?"
+            "value" : "Está a gostar do Calendly?"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal பிடிக்கிறதா?"
+            "value" : "Calendly பிடிக்கிறதா?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "喜欢 ShareCal 吗？"
+            "value" : "喜欢 Calendly 吗？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "喜歡 ShareCal 嗎？"
+            "value" : "喜歡 Calendly 嗎？"
           }
         }
       }
@@ -28681,55 +28681,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "مرحبًا بك في ShareCal"
+            "value" : "مرحبًا بك في Calendly"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Welcome to ShareCal"
+            "value" : "Welcome to Calendly"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bienvenido a ShareCal"
+            "value" : "Bienvenido a Calendly"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bienvenue sur ShareCal"
+            "value" : "Bienvenue sur Calendly"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal में आपका स्वागत है"
+            "value" : "Calendly में आपका स्वागत है"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bem-vindo ao ShareCal"
+            "value" : "Bem-vindo ao Calendly"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCalக்கு வரவேற்கிறோம்"
+            "value" : "Calendlyக்கு வரவேற்கிறோம்"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "欢迎来到 ShareCal"
+            "value" : "欢迎来到 Calendly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "歡迎來到 ShareCal"
+            "value" : "歡迎來到 Calendly"
           }
         }
       }
@@ -28740,55 +28740,55 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "ta" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ShareCal"
+            "value" : "Calendly"
           }
         }
       }
