@@ -42,6 +42,10 @@ final class ListViewModel: ObservableObject {
         }
     }
 
+    func clearErrorMessage() {
+        errorMessage = nil
+    }
+
     func loadLists(force: Bool = false) async {
         guard let householdId = currentHouseholdId else {
             lists = []
@@ -53,16 +57,15 @@ final class ListViewModel: ObservableObject {
         defer { isLoading = false }
 
         if let cached = await HouseholdLocalCache.loadLists(for: householdId) {
-            lists = mergePendingLists(cached, householdId: householdId)
+            lists = cached
         }
 
         guard await NetworkMonitor.shared.isConnected else { return }
 
         do {
             let remote = try await listService.fetchLists(in: householdId)
-            let merged = mergePendingLists(remote, householdId: householdId)
-            lists = merged
-            HouseholdLocalCache.saveLists(merged, for: householdId)
+            lists = remote
+            HouseholdLocalCache.saveLists(remote, for: householdId)
         } catch {
             if lists.isEmpty {
                 errorMessage = error.localizedDescription
@@ -77,16 +80,15 @@ final class ListViewModel: ObservableObject {
         defer { isLoading = false }
 
         if let cached = await HouseholdLocalCache.loadListItems(for: listId) {
-            items = mergePendingItems(cached)
+            items = cached
         }
 
         guard await NetworkMonitor.shared.isConnected else { return }
 
         do {
             let remote = try await listService.fetchItems(in: listId)
-            let merged = mergePendingItems(remote)
-            items = merged
-            HouseholdLocalCache.saveListItems(merged, for: listId)
+            items = remote
+            HouseholdLocalCache.saveListItems(remote, for: listId)
         } catch {
             if items.isEmpty {
                 errorMessage = error.localizedDescription
@@ -107,8 +109,13 @@ final class ListViewModel: ObservableObject {
               let membershipId = currentMembershipId
         else { return nil }
 
+        guard await NetworkMonitor.shared.isConnected else {
+            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            return nil
+        }
+
         let now = Date()
-        let created = HouseholdList(
+        let draft = HouseholdList(
             id: UUID(),
             householdId: householdId,
             creatorId: membershipId,
@@ -120,39 +127,75 @@ final class ListViewModel: ObservableObject {
             createdAt: now,
             updatedAt: now
         )
-        lists.insert(created, at: 0)
-        HouseholdLocalCache.upsertListInCache(created)
-        ListOfflineOutbox.shared.enqueue(.createList(created))
-        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        LocalFirstSyncCoordinator.requestSync(reason: "listCreate")
-        return created
+        let payload = HouseholdListInsertPayload(
+            id: draft.id,
+            householdId: draft.householdId,
+            creatorId: draft.creatorId,
+            title: draft.title,
+            kind: draft.kind.rawValue,
+            tripStartDate: draft.tripStartDate,
+            tripEndDate: draft.tripEndDate,
+            sortOrder: draft.sortOrder
+        )
+
+        do {
+            let created = try await listService.createList(payload)
+            lists.insert(created, at: 0)
+            HouseholdLocalCache.upsertListInCache(created)
+            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+            return created
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
+        }
     }
 
     func renameList(_ list: HouseholdList, title: String) async {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return }
-        var updated = list
-        updated.title = trimmed
-        updated.updatedAt = Date()
-        if let index = lists.firstIndex(where: { $0.id == list.id }) {
-            lists[index] = updated
+
+        guard await NetworkMonitor.shared.isConnected else {
+            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            return
         }
-        HouseholdLocalCache.upsertListInCache(updated)
-        ListOfflineOutbox.shared.enqueue(.updateList(updated))
-        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        LocalFirstSyncCoordinator.requestSync(reason: "listUpdate")
+
+        let payload = HouseholdListUpdatePayload(
+            title: trimmed,
+            kind: list.kind.rawValue,
+            tripStartDate: list.tripStartDate,
+            tripEndDate: list.tripEndDate,
+            sortOrder: list.sortOrder
+        )
+        do {
+            let updated = try await listService.updateList(id: list.id, payload: payload)
+            if let index = lists.firstIndex(where: { $0.id == list.id }) {
+                lists[index] = updated
+            }
+            HouseholdLocalCache.upsertListInCache(updated)
+            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func deleteList(_ list: HouseholdList) async {
-        lists.removeAll { $0.id == list.id }
-        if activeListId == list.id {
-            items = []
-            activeListId = nil
+        guard await NetworkMonitor.shared.isConnected else {
+            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            return
         }
-        HouseholdLocalCache.removeListFromCache(listId: list.id, householdId: list.householdId)
-        ListOfflineOutbox.shared.enqueue(.deleteList(listId: list.id))
-        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        LocalFirstSyncCoordinator.requestSync(reason: "listDelete")
+
+        do {
+            try await listService.deleteList(id: list.id)
+            lists.removeAll { $0.id == list.id }
+            if activeListId == list.id {
+                items = []
+                activeListId = nil
+            }
+            HouseholdLocalCache.removeListFromCache(listId: list.id, householdId: list.householdId)
+            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     @discardableResult
@@ -162,8 +205,13 @@ final class ListViewModel: ObservableObject {
               let membershipId = currentMembershipId
         else { return nil }
 
+        guard await NetworkMonitor.shared.isConnected else {
+            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            return nil
+        }
+
         let now = Date()
-        let created = ListItem(
+        let draft = ListItem(
             id: UUID(),
             listId: list.id,
             householdId: list.householdId,
@@ -177,36 +225,73 @@ final class ListViewModel: ObservableObject {
             createdAt: now,
             updatedAt: now
         )
-        if activeListId == list.id {
-            items.append(created)
+        let payload = ListItemInsertPayload(
+            id: draft.id,
+            listId: draft.listId,
+            householdId: draft.householdId,
+            title: draft.title,
+            isChecked: draft.isChecked,
+            note: draft.note,
+            sortOrder: draft.sortOrder,
+            creatorId: draft.creatorId
+        )
+
+        do {
+            let created = try await listService.createItem(payload)
+            if activeListId == list.id {
+                items.append(created)
+            }
+            HouseholdLocalCache.upsertListItemInCache(created)
+            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+            return created
+        } catch {
+            errorMessage = error.localizedDescription
+            return nil
         }
-        HouseholdLocalCache.upsertListItemInCache(created)
-        ListOfflineOutbox.shared.enqueue(.createItem(created))
-        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        LocalFirstSyncCoordinator.requestSync(reason: "listItemCreate")
-        return created
     }
 
     func toggleChecked(_ item: ListItem) async {
-        guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
+        guard await NetworkMonitor.shared.isConnected else {
+            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            return
+        }
+
         let nextChecked = item.isChecked == false
-        items[index].isChecked = nextChecked
-        items[index].completedBy = nextChecked ? currentMembershipId : nil
-        items[index].completedAt = nextChecked ? Date() : nil
-        items[index].updatedAt = Date()
-        let snapshot = items[index]
-        HouseholdLocalCache.upsertListItemInCache(snapshot)
-        ListOfflineOutbox.shared.enqueue(.updateItem(snapshot))
-        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        LocalFirstSyncCoordinator.requestSync(reason: "listItemToggle")
+        let payload = ListItemUpdatePayload(
+            title: item.title,
+            isChecked: nextChecked,
+            note: item.note,
+            sortOrder: item.sortOrder,
+            completedBy: nextChecked ? currentMembershipId : nil,
+            completedAt: nextChecked ? Date() : nil
+        )
+
+        do {
+            let updated = try await listService.updateItem(id: item.id, payload: payload)
+            if let index = items.firstIndex(where: { $0.id == item.id }) {
+                items[index] = updated
+            }
+            HouseholdLocalCache.upsertListItemInCache(updated)
+            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func deleteItem(_ item: ListItem) async {
-        items.removeAll { $0.id == item.id }
-        HouseholdLocalCache.removeListItemFromCache(itemId: item.id, listId: item.listId)
-        ListOfflineOutbox.shared.enqueue(.deleteItem(itemId: item.id, listId: item.listId))
-        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        LocalFirstSyncCoordinator.requestSync(reason: "listItemDelete")
+        guard await NetworkMonitor.shared.isConnected else {
+            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
+            return
+        }
+
+        do {
+            try await listService.deleteItem(id: item.id)
+            items.removeAll { $0.id == item.id }
+            HouseholdLocalCache.removeListItemFromCache(itemId: item.id, listId: item.listId)
+            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     var openItems: [ListItem] {
@@ -215,44 +300,6 @@ final class ListViewModel: ObservableObject {
 
     var checkedItems: [ListItem] {
         items.filter(\.isChecked)
-    }
-
-    private func mergePendingLists(_ remote: [HouseholdList], householdId: UUID) -> [HouseholdList] {
-        let pendingIDs = ListOfflineOutbox.shared.pendingListIDs
-        guard pendingIDs.isEmpty == false else { return remote }
-        let cached = LocalCacheManager.shared.load(
-            forKey: HouseholdLocalCache.listsCacheKey(for: householdId)
-        ) as [HouseholdList]? ?? []
-        let cachedById = Dictionary(uniqueKeysWithValues: cached.map { ($0.id, $0) })
-        var merged = remote.map { row in
-            if pendingIDs.contains(row.id), let local = cachedById[row.id] { return local }
-            return row
-        }
-        for id in pendingIDs {
-            if merged.contains(where: { $0.id == id }) == false, let local = cachedById[id] {
-                merged.insert(local, at: 0)
-            }
-        }
-        return merged
-    }
-
-    private func mergePendingItems(_ remote: [ListItem]) -> [ListItem] {
-        let pendingIDs = ListOfflineOutbox.shared.pendingItemIDs
-        guard pendingIDs.isEmpty == false, let listId = activeListId else { return remote }
-        let cached = LocalCacheManager.shared.load(
-            forKey: HouseholdLocalCache.listItemsCacheKey(for: listId)
-        ) as [ListItem]? ?? []
-        let cachedById = Dictionary(uniqueKeysWithValues: cached.map { ($0.id, $0) })
-        var merged = remote.map { row in
-            if pendingIDs.contains(row.id), let local = cachedById[row.id] { return local }
-            return row
-        }
-        for id in pendingIDs {
-            if merged.contains(where: { $0.id == id }) == false, let local = cachedById[id] {
-                merged.append(local)
-            }
-        }
-        return merged
     }
 
     private func nextItemSortOrder() -> Int {

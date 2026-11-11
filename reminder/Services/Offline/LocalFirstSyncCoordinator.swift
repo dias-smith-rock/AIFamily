@@ -6,8 +6,22 @@ enum LocalFirstSyncCoordinator {
     private static var isSyncing = false
     private static var debounceTask: Task<Void, Never>?
     private static var pendingReason: String?
+    private static var retryTask: Task<Void, Never>?
 
-    /// 立即同步（启动 / 联网 / 回前台）。
+    /// 仅冲 Outbox（供 loadTasks 拉网前调用，避免再发通知造成递归）。
+    static func flushOutboxesOnly(reason: String) async {
+        guard await NetworkMonitor.shared.isConnected else { return }
+        #if DEBUG
+        print("[LocalFirstSync] flushOnly reason=\(reason)")
+        #endif
+        _ = await TaskOfflineOutbox.shared.flushIfNeeded()
+        await ListOfflineOutbox.shared.flushIfNeeded()
+        if TaskOfflineOutbox.shared.pendingCount > 0 {
+            scheduleRetryIfNeeded()
+        }
+    }
+
+    /// 立即同步（启动 / 联网 / 回前台 / 下拉刷新）：flush + 通知拉取。
     static func syncNow(reason: String) async {
         guard await NetworkMonitor.shared.isConnected else {
             #if DEBUG
@@ -31,13 +45,13 @@ enum LocalFirstSyncCoordinator {
         #if DEBUG
         print("[LocalFirstSync] begin reason=\(reason)")
         #endif
-        await TaskOfflineOutbox.shared.flushIfNeeded()
-        await ListOfflineOutbox.shared.flushIfNeeded()
-        // 即使队列为空也要拉服务端，保证其他设备的变更能进来。
+        await flushOutboxesOnly(reason: reason)
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
         NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
         #if DEBUG
-        print("[LocalFirstSync] end reason=\(reason)")
+        print(
+            "[LocalFirstSync] end reason=\(reason) taskPending=\(TaskOfflineOutbox.shared.pendingCount)"
+        )
         #endif
     }
 
@@ -51,6 +65,17 @@ enum LocalFirstSyncCoordinator {
             let resolved = pendingReason ?? reason
             pendingReason = nil
             await syncNow(reason: resolved)
+        }
+    }
+
+    private static func scheduleRetryIfNeeded() {
+        guard retryTask == nil else { return }
+        retryTask = Task {
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            retryTask = nil
+            guard Task.isCancelled == false else { return }
+            guard TaskOfflineOutbox.shared.pendingCount > 0 else { return }
+            await syncNow(reason: "pendingRetry")
         }
     }
 }

@@ -91,22 +91,30 @@ struct OfflineListMutation: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-/// Planner 清单离线出站队列：本地写缓存后入队，联网 FIFO flush。
+/// Planner 清单离线出站队列：内存权威 + 磁盘持久化。
 @MainActor
 final class ListOfflineOutbox {
     static let shared = ListOfflineOutbox()
 
     private static let storageKey = "offline.list.outbox.v1"
+    private var queue: [OfflineListMutation] = []
+    private var didLoadFromDisk = false
     private var isFlushing = false
 
     private init() {}
 
+    private func ensureLoaded() {
+        guard didLoadFromDisk == false else { return }
+        queue = LocalCacheManager.shared.load(forKey: Self.storageKey) ?? []
+        didLoadFromDisk = true
+    }
+
     func enqueue(_ mutation: OfflineListMutation) {
-        var queue = loadQueue()
+        ensureLoaded()
         switch mutation.kind {
         case .updateList:
             if let listId = mutation.listId {
-                queue.removeAll { $0.listId == listId && ($0.kind == .updateList) }
+                queue.removeAll { $0.listId == listId && $0.kind == .updateList }
             }
         case .deleteList:
             if let listId = mutation.listId {
@@ -124,28 +132,28 @@ final class ListOfflineOutbox {
             break
         }
         queue.append(mutation)
-        persist(queue)
+        persist()
         #if DEBUG
         print("[ListOfflineOutbox] enqueue kind=\(mutation.kind.rawValue) pending=\(queue.count)")
         #endif
     }
 
     var pendingListIDs: Set<UUID> {
-        Set(loadQueue().compactMap(\.listId))
+        ensureLoaded()
+        return Set(queue.compactMap(\.listId))
     }
 
     var pendingItemIDs: Set<UUID> {
-        Set(loadQueue().compactMap(\.itemId))
+        ensureLoaded()
+        return Set(queue.compactMap(\.itemId))
     }
 
     func flushIfNeeded() async {
         guard await NetworkMonitor.shared.isConnected else { return }
+        ensureLoaded()
         guard isFlushing == false else { return }
         isFlushing = true
         defer { isFlushing = false }
-
-        var queue = loadQueue()
-        guard queue.isEmpty == false else { return }
 
         guard let service = AppBootstrapLocator.shared?.services.listService else {
             #if DEBUG
@@ -154,26 +162,33 @@ final class ListOfflineOutbox {
             return
         }
 
-        var index = 0
-        while index < queue.count {
+        var failedIDs = Set<UUID>()
+        while await NetworkMonitor.shared.isConnected, queue.isEmpty == false {
+            guard let index = queue.firstIndex(where: { failedIDs.contains($0.id) == false }) else {
+                break
+            }
             let mutation = queue[index]
             do {
                 try await apply(mutation, using: service)
-                queue.remove(at: index)
-                persist(queue)
+                queue.removeAll { $0.id == mutation.id }
+                persist()
             } catch {
                 #if DEBUG
                 print(
                     "[ListOfflineOutbox] flush item failed kind=\(mutation.kind.rawValue) error=\(error.localizedDescription)"
                 )
                 #endif
-                break
+                failedIDs.insert(mutation.id)
+                if let currentIndex = queue.firstIndex(where: { $0.id == mutation.id }) {
+                    let item = queue.remove(at: currentIndex)
+                    queue.append(item)
+                    persist()
+                }
+                if failedIDs.count >= queue.count {
+                    break
+                }
             }
         }
-        if queue.isEmpty == false {
-            persist(queue)
-        }
-        // 拉取通知由 `LocalFirstSyncCoordinator.syncNow` 统一发出。
     }
 
     private func apply(_ mutation: OfflineListMutation, using service: ListDataService) async throws {
@@ -234,11 +249,7 @@ final class ListOfflineOutbox {
         }
     }
 
-    private func loadQueue() -> [OfflineListMutation] {
-        LocalCacheManager.shared.load(forKey: Self.storageKey) ?? []
-    }
-
-    private func persist(_ queue: [OfflineListMutation]) {
+    private func persist() {
         if queue.isEmpty {
             LocalCacheManager.shared.remove(forKey: Self.storageKey)
         } else {

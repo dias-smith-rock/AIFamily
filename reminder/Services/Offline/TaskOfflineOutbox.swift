@@ -81,19 +81,26 @@ struct OfflineTaskMutation: Codable, Identifiable, Equatable, Sendable {
     }
 }
 
-/// 任务离线出站队列：乐观写本地缓存后入队，恢复网络再 FIFO flush。
+/// 任务离线出站队列：内存为权威快照，磁盘仅作持久化；flush await 期间 enqueue 不会丢项。
 @MainActor
 final class TaskOfflineOutbox {
     static let shared = TaskOfflineOutbox()
 
     private static let storageKey = "offline.task.outbox.v1"
+    private var queue: [OfflineTaskMutation] = []
+    private var didLoadFromDisk = false
     private var isFlushing = false
 
     private init() {}
 
+    private func ensureLoaded() {
+        guard didLoadFromDisk == false else { return }
+        queue = LocalCacheManager.shared.load(forKey: Self.storageKey) ?? []
+        didLoadFromDisk = true
+    }
+
     func enqueue(_ mutation: OfflineTaskMutation) {
-        var queue = loadQueue()
-        // 同 task 的后续 update/patch/delete 覆盖更早的同类写，减少冗余。
+        ensureLoaded()
         if let taskId = mutation.taskId {
             switch mutation.kind {
             case .update, .patchStatus:
@@ -107,69 +114,84 @@ final class TaskOfflineOutbox {
             }
         }
         queue.append(mutation)
-        persist(queue)
+        persist()
         #if DEBUG
         print("[TaskOfflineOutbox] enqueue kind=\(mutation.kind.rawValue) taskId=\(mutation.taskId?.uuidString ?? "nil") pending=\(queue.count)")
         #endif
     }
 
-    var pendingCount: Int { loadQueue().count }
+    var pendingCount: Int {
+        ensureLoaded()
+        return queue.count
+    }
 
     /// 尚未 flush 的 task id（pull 合并时保留本地 pending 行）。
     var pendingTaskIDs: Set<UUID> {
-        Set(loadQueue().compactMap(\.taskId))
+        ensureLoaded()
+        return Set(queue.compactMap(\.taskId))
     }
 
-    func flushIfNeeded() async {
-        guard await NetworkMonitor.shared.isConnected else { return }
-        guard isFlushing == false else { return }
+    @discardableResult
+    func flushIfNeeded() async -> Int {
+        guard await NetworkMonitor.shared.isConnected else { return 0 }
+        ensureLoaded()
+        guard isFlushing == false else { return 0 }
         isFlushing = true
         defer { isFlushing = false }
-
-        var queue = loadQueue()
-        guard queue.isEmpty == false else { return }
-
-        #if DEBUG
-        print("[TaskOfflineOutbox] flush begin count=\(queue.count)")
-        #endif
 
         guard let service = AppBootstrapLocator.shared?.services.taskService else {
             #if DEBUG
             print("[TaskOfflineOutbox] flush aborted - taskService unavailable")
             #endif
-            return
+            return 0
         }
-        var index = 0
-        while index < queue.count {
+
+        #if DEBUG
+        print("[TaskOfflineOutbox] flush begin count=\(queue.count)")
+        #endif
+
+        var flushed = 0
+        var failedIDs = Set<UUID>()
+
+        while await NetworkMonitor.shared.isConnected, queue.isEmpty == false {
+            // 跳过本轮已失败的项，避免一条坏数据堵死整队。
+            guard let index = queue.firstIndex(where: { failedIDs.contains($0.id) == false }) else {
+                break
+            }
             let mutation = queue[index]
             do {
                 let remapped = try await apply(mutation, using: service)
+                queue.removeAll { $0.id == mutation.id }
                 if let remapped {
                     Self.remapTaskIdentity(from: remapped.fromId, to: remapped.toId, in: &queue)
                 }
-                queue.remove(at: index)
-                persist(queue)
+                persist()
+                flushed += 1
             } catch {
                 #if DEBUG
                 print(
                     "[TaskOfflineOutbox] flush item failed kind=\(mutation.kind.rawValue) taskId=\(mutation.taskId?.uuidString ?? "nil") error=\(error.localizedDescription)"
                 )
                 #endif
-                // 保留失败项及后续项，下次联网再试。
-                break
+                failedIDs.insert(mutation.id)
+                // 旋转到队尾，继续尝试后续独立变更。
+                if let currentIndex = queue.firstIndex(where: { $0.id == mutation.id }) {
+                    let item = queue.remove(at: currentIndex)
+                    queue.append(item)
+                    persist()
+                }
+                if failedIDs.count >= queue.count {
+                    break
+                }
             }
         }
 
-        if queue.isEmpty == false {
-            persist(queue)
-        }
-        // 拉取通知由 `LocalFirstSyncCoordinator.syncNow` 统一发出。
         #if DEBUG
-        print("[TaskOfflineOutbox] flush end remaining=\(queue.count)")
+        print("[TaskOfflineOutbox] flush end flushed=\(flushed) remaining=\(queue.count)")
         #endif
+        return flushed
     }
 
-    /// - Returns: 若 create 经 RPC 换了服务端 id，返回旧→新映射，供后续队列项改写。
     @discardableResult
     private func apply(
         _ mutation: OfflineTaskMutation,
@@ -220,18 +242,17 @@ final class TaskOfflineOutbox {
         for index in queue.indices {
             guard queue[index].taskId == oldId else { continue }
             queue[index].taskId = newId
-            if var task = queue[index].task {
-                task = task.replacingIdentity(id: newId, createdAt: task.createdAt, status: task.status)
-                queue[index].task = task
+            if let task = queue[index].task {
+                queue[index].task = task.replacingIdentity(
+                    id: newId,
+                    createdAt: task.createdAt,
+                    status: task.status
+                )
             }
         }
     }
 
-    private func loadQueue() -> [OfflineTaskMutation] {
-        LocalCacheManager.shared.load(forKey: Self.storageKey) ?? []
-    }
-
-    private func persist(_ queue: [OfflineTaskMutation]) {
+    private func persist() {
         if queue.isEmpty {
             LocalCacheManager.shared.remove(forKey: Self.storageKey)
         } else {

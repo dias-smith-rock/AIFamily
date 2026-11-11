@@ -190,6 +190,9 @@ final class TodoListViewModel: ObservableObject {
             return
         }
 
+        // 拉网前先冲 Outbox，避免「本地有、服务端无」。
+        await LocalFirstSyncCoordinator.flushOutboxesOnly(reason: "todoLoadTasks")
+
         do {
             if rosterLoadedForHouseholdId != primaryId {
                 await loadHouseholdRosterFromNetwork(in: primaryId)
@@ -501,6 +504,10 @@ final class TodoListViewModel: ObservableObject {
         return ordered
     }
 
+    func clearErrorMessage() {
+        errorMessage = nil
+    }
+
     func applyOptimisticCompletion(for task: FamilyTask) {
         flexibleTasks.removeAll { $0.id == task.id }
         var optimistic = task
@@ -516,63 +523,70 @@ final class TodoListViewModel: ObservableObject {
         optimistic.status = .cancelled
         deletedTasks.removeAll { $0.id == optimistic.id }
         deletedTasks.insert(optimistic, at: 0)
-        HouseholdLocalCache.upsertTaskInCache(optimistic)
     }
 
     /// 白板拖入垃圾桶：软删除为 `cancelled`，保留在垃圾桶列表中（非硬删行）。
     func deleteFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID? = nil) async throws {
-        applyOptimisticDeletion(for: task)
-        await NotificationManager.shared.cancelAllPending(for: task.id)
-        var optimistic = task
-        optimistic.status = .cancelled
-        TaskLocalWriteSupport.commitPatchStatus(
-            taskId: task.id,
-            status: .cancelled,
-            localTask: optimistic,
-            completionLocation: nil,
-            actingMembershipId: actingMembershipId
-        )
+        errorMessage = nil
+        do {
+            let patched = try await TaskLocalWriteSupport.commitPatchStatus(
+                taskId: task.id,
+                status: .cancelled,
+                localTask: task,
+                completionLocation: nil,
+                actingMembershipId: actingMembershipId
+            )
+            await NotificationManager.shared.cancelAllPending(for: task.id)
+            applyOptimisticDeletion(for: patched)
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
     }
 
     /// 一键清空垃圾桶：永久删除其中所有过期与已软删待办。
     func clearTrashBin() async throws {
         let targets = trashBinTasks
         guard targets.isEmpty == false else { return }
+        errorMessage = nil
 
-        let ids = Set(targets.map(\.id))
-        pendingHardDeletedTaskIDs.formUnion(ids)
-        flexibleTasks.removeAll { ids.contains($0.id) }
-        deletedTasks.removeAll { ids.contains($0.id) }
-        completedTasks.removeAll { ids.contains($0.id) }
-
-        for task in targets {
-            HouseholdLocalCache.removeTaskFromCache(taskId: task.id, householdId: task.householdId)
-            await NotificationManager.shared.cancelAllPending(for: task.id)
-        }
-
-        for task in targets {
-            TaskLocalWriteSupport.commitDelete(taskId: task.id, householdId: task.householdId)
+        do {
+            for task in targets {
+                try await TaskLocalWriteSupport.commitDelete(taskId: task.id, householdId: task.householdId)
+                await NotificationManager.shared.cancelAllPending(for: task.id)
+            }
+            let ids = Set(targets.map(\.id))
+            pendingHardDeletedTaskIDs.formUnion(ids)
+            flexibleTasks.removeAll { ids.contains($0.id) }
+            deletedTasks.removeAll { ids.contains($0.id) }
+            completedTasks.removeAll { ids.contains($0.id) }
+        } catch {
+            errorMessage = error.localizedDescription
+            await loadTasks(silent: true, force: true)
+            throw error
         }
     }
 
     func completeFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID?) async throws {
-        var optimistic = task
-        optimistic.status = .completed
-        flexibleTasks.removeAll { $0.id == optimistic.id }
-        completedTasks.removeAll { $0.id == optimistic.id }
-        completedTasks.insert(optimistic, at: 0)
-        TaskLocalWriteSupport.commitPatchStatus(
-            taskId: task.id,
-            status: .completed,
-            localTask: optimistic,
-            completionLocation: nil,
-            actingMembershipId: actingMembershipId
-        )
-        AnalyticsManager.logTaskCompleted(
-            taskId: task.id,
-            householdId: task.householdId,
-            taskType: AnalyticsManager.analyticsTaskType(for: task)
-        )
+        errorMessage = nil
+        do {
+            let patched = try await TaskLocalWriteSupport.commitPatchStatus(
+                taskId: task.id,
+                status: .completed,
+                localTask: task,
+                completionLocation: nil,
+                actingMembershipId: actingMembershipId
+            )
+            applyOptimisticCompletion(for: patched)
+            AnalyticsManager.logTaskCompleted(
+                taskId: task.id,
+                householdId: task.householdId,
+                taskType: AnalyticsManager.analyticsTaskType(for: task)
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
+        }
     }
 
     private static func isLikelyNetworkFailure(_ error: Error) -> Bool {

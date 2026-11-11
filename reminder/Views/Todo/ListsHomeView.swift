@@ -88,6 +88,21 @@ struct ListsHomeView: View {
         } message: {
             Text(L10n.Todo.listDeleteConfirmMessage.localized)
         }
+        .alert(
+            L10n.Common.notice,
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if $0 == false { viewModel.clearErrorMessage() } }
+            )
+        ) {
+            Button(L10n.Common.ok, role: .cancel) {
+                viewModel.clearErrorMessage()
+            }
+        } message: {
+            if let message = viewModel.errorMessage {
+                Text(message)
+            }
+        }
     }
 
     private var listScroll: some View {

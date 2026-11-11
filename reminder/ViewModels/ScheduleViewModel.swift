@@ -210,6 +210,8 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
 
+        await LocalFirstSyncCoordinator.flushOutboxesOnly(reason: "scheduleLoadTasks")
+
         do {
             if rosterLoadedForHouseholdId != primaryId {
                 await loadHouseholdRosterFromNetwork(in: primaryId)
@@ -428,6 +430,10 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
+    func clearErrorMessage() {
+        errorMessage = nil
+    }
+
     func createTask(_ task: FamilyTask) async {
         guard let householdId = currentHouseholdId else {
             errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
@@ -442,9 +448,13 @@ final class ScheduleViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
-        applyOptimisticTaskUpsert(task)
-        syncAlarms(for: task)
-        TaskLocalWriteSupport.commitCreate(task)
+        do {
+            let created = try await TaskLocalWriteSupport.commitCreate(task)
+            applyOptimisticTaskUpsert(created)
+            syncAlarms(for: created)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     func updateTask(_ task: FamilyTask) async {
@@ -452,9 +462,13 @@ final class ScheduleViewModel: ObservableObject {
         errorMessage = nil
         defer { isLoading = false }
 
-        applyOptimisticTaskUpsert(task)
-        syncAlarms(for: task)
-        TaskLocalWriteSupport.commitUpdate(task)
+        do {
+            let updated = try await TaskLocalWriteSupport.commitUpdate(task)
+            applyOptimisticTaskUpsert(updated)
+            syncAlarms(for: updated)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func applyOptimisticTaskUpsert(_ task: FamilyTask) {
@@ -525,35 +539,26 @@ final class ScheduleViewModel: ObservableObject {
         actingMembershipId: UUID? = nil
     ) async throws -> FamilyTask {
         errorMessage = nil
-
-        var optimistic = tasks.first(where: { $0.id == taskId })
-        if var local = optimistic {
-            local.status = status
-            if let completionLocation {
-                local.completionLocation = completionLocation
+        let snapshot = tasks.first(where: { $0.id == taskId })
+        do {
+            let patched = try await TaskLocalWriteSupport.commitPatchStatus(
+                taskId: taskId,
+                status: status,
+                localTask: snapshot,
+                completionLocation: completionLocation,
+                actingMembershipId: actingMembershipId
+            )
+            applyOptimisticTaskUpsert(patched)
+            if status == .completed {
+                await NotificationManager.shared.cancelAllPending(for: taskId)
+            } else {
+                syncAlarms(for: patched)
             }
-            applyOptimisticTaskUpsert(local)
-            optimistic = local
+            return patched
+        } catch {
+            errorMessage = error.localizedDescription
+            throw error
         }
-
-        TaskLocalWriteSupport.commitPatchStatus(
-            taskId: taskId,
-            status: status,
-            localTask: optimistic,
-            completionLocation: completionLocation,
-            actingMembershipId: actingMembershipId
-        )
-
-        if status == .completed {
-            await NotificationManager.shared.cancelAllPending(for: taskId)
-        } else if let optimistic {
-            syncAlarms(for: optimistic)
-        }
-
-        guard let optimistic else {
-            throw TaskOfflineMutationError.taskNotFoundLocally
-        }
-        return optimistic
     }
 
     func noteVisibleMonth(containing day: Date) {
@@ -680,18 +685,21 @@ final class ScheduleViewModel: ObservableObject {
 
     func deleteTask(taskId: UUID) async {
         errorMessage = nil
-        await NotificationManager.shared.cancelAllPending(for: taskId)
         let householdId = tasks.first(where: { $0.id == taskId })?.householdId ?? currentHouseholdId
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-            tasks.removeAll { $0.id == taskId }
+        guard let householdId else {
+            errorMessage = AppLocalized.localized(L10n.Family.noGroupIsCurrentlySelected)
+            return
         }
-        publishScheduleWidgetSnapshot()
-        syncUpcomingLocalNotifications()
-        if let householdId {
-            TaskLocalWriteSupport.commitDelete(taskId: taskId, householdId: householdId)
-        } else {
-            TaskOfflineOutbox.shared.enqueue(.delete(taskId: taskId))
-            LocalFirstSyncCoordinator.requestSync(reason: "taskDeleteNoHousehold")
+        do {
+            try await TaskLocalWriteSupport.commitDelete(taskId: taskId, householdId: householdId)
+            await NotificationManager.shared.cancelAllPending(for: taskId)
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                tasks.removeAll { $0.id == taskId }
+            }
+            publishScheduleWidgetSnapshot()
+            syncUpcomingLocalNotifications()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 

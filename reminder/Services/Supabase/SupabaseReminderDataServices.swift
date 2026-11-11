@@ -307,40 +307,20 @@ struct SupabaseTaskDataService: TaskDataService {
     func createTask(_ task: FamilyTask, geofence: TaskGeofence?) async throws -> FamilyTask {
         #if canImport(Supabase)
         let spatialGeofence = geofence ?? task.geofence ?? task.locationData?.toTaskGeofence()
-        let params = CreateTaskWithSpatialParams(
-            pTitle: task.title,
-            pDescription: task.description,
-            pCreatorId: task.creatorId.uuidString.lowercased(),
-            pTenantId: task.householdId.uuidString.lowercased(),
-            pGeofence: spatialGeofence
-        )
+        var toInsert = task.sanitizedForPersistence()
+        if let spatialGeofence {
+            toInsert.geofence = spatialGeofence
+        }
+        if toInsert.involvedMemberIds?.isEmpty == true {
+            toInsert.involvedMemberIds = nil
+        }
+        // 灵活待办本地可用 0，写入库表时至少 1，避免部分约束/下游逻辑异常。
+        if toInsert.durationMinutes < 1 {
+            toInsert.durationMinutes = FamilyTask.defaultDurationMinutes
+        }
+
+        // 本地优先：优先带客户端 UUID 直插，保证 Outbox 身份稳定、一次成功即入库。
         do {
-            // 线上主路径：SECURITY DEFINER RPC 创建行，再 PATCH 补齐本地优先写入的字段。
-            let created: FamilyTask = try await provider.client
-                .rpc("create_task_with_spatial", params: params)
-                .execute()
-                .value
-            var merged = task.sanitizedForPersistence().replacingIdentity(
-                id: created.id,
-                createdAt: created.createdAt,
-                status: created.status
-            )
-            if let spatialGeofence {
-                merged.geofence = spatialGeofence
-            }
-            if merged.involvedMemberIds?.isEmpty == true {
-                merged.involvedMemberIds = nil
-            }
-            merged.updatedAt = Date()
-            return try await updateTask(merged)
-        } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
-            var toInsert = task.sanitizedForPersistence()
-            if let spatialGeofence {
-                toInsert.geofence = spatialGeofence
-            }
-            if toInsert.involvedMemberIds?.isEmpty == true {
-                toInsert.involvedMemberIds = nil
-            }
             return try await provider.client
                 .from(SupabaseTable.tasks)
                 .insert(toInsert)
@@ -348,6 +328,29 @@ struct SupabaseTaskDataService: TaskDataService {
                 .single()
                 .execute()
                 .value
+        } catch {
+            let params = CreateTaskWithSpatialParams(
+                pTitle: task.title,
+                pDescription: task.description,
+                pCreatorId: task.creatorId.uuidString.lowercased(),
+                pTenantId: task.householdId.uuidString.lowercased(),
+                pGeofence: spatialGeofence
+            )
+            do {
+                let created: FamilyTask = try await provider.client
+                    .rpc("create_task_with_spatial", params: params)
+                    .execute()
+                    .value
+                var merged = toInsert.replacingIdentity(
+                    id: created.id,
+                    createdAt: created.createdAt,
+                    status: created.status
+                )
+                merged.updatedAt = Date()
+                return try await updateTask(merged)
+            } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
+                throw error
+            }
         }
         #else
         _ = task

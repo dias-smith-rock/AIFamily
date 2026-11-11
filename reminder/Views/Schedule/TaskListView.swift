@@ -242,6 +242,21 @@ struct TaskListView: View {
                     Text(message)
                 }
             }
+            .alert(
+                L10n.Common.notice,
+                isPresented: Binding(
+                    get: { viewModel.errorMessage != nil },
+                    set: { if $0 == false { viewModel.clearErrorMessage() } }
+                )
+            ) {
+                Button(L10n.Common.ok, role: .cancel) {
+                    viewModel.clearErrorMessage()
+                }
+            } message: {
+                if let message = viewModel.errorMessage {
+                    Text(message)
+                }
+            }
             .task(id: taskLoadTrigger) {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
                 viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)

@@ -58,6 +58,21 @@ struct ListDetailView: View {
             await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshListDetail")
             await viewModel.loadItems(for: list.id)
         }
+        .alert(
+            L10n.Common.notice,
+            isPresented: Binding(
+                get: { viewModel.errorMessage != nil },
+                set: { if $0 == false { viewModel.clearErrorMessage() } }
+            )
+        ) {
+            Button(L10n.Common.ok, role: .cancel) {
+                viewModel.clearErrorMessage()
+            }
+        } message: {
+            if let message = viewModel.errorMessage {
+                Text(message)
+            }
+        }
         .duoReadableContentWidth()
     }
 

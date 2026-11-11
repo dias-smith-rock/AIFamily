@@ -2876,6 +2876,11 @@ struct CreateTaskView: View {
             let updated: FamilyTask
             var seriesAttachmentTaskIds: [UUID] = []
 
+            guard await NetworkMonitor.shared.isConnected else {
+                errorMessage = L10n.Common.networkConnectionErrorPleaseCheckYourConne.string(locale: locale)
+                return
+            }
+
             switch scope {
             case .singleOnly:
                 var refreshed = makeLocalUpdatedTask(from: existing, scope: .singleOnly)
@@ -2883,9 +2888,9 @@ struct CreateTaskView: View {
                     refreshed.parentTaskId = nil
                     refreshed.groupId = nil
                 }
-                TaskLocalWriteSupport.commitUpdate(refreshed)
-                onAlarmSync?(refreshed)
-                updated = refreshed
+                let saved = try await TaskLocalWriteSupport.commitUpdate(refreshed)
+                onAlarmSync?(saved)
+                updated = saved
 
             case .thisAndFuture:
                 guard let grouping = existing.seriesGrouping else {
@@ -2986,9 +2991,9 @@ struct CreateTaskView: View {
                     rowUpdated.updatedBy = appRouter.selectedMembershipId
                         ?? existing.updatedBy
                         ?? existing.creatorId
-                    TaskLocalWriteSupport.commitUpdate(rowUpdated)
-                    if rowUpdated.id == existing.id {
-                        refreshedCurrent = rowUpdated
+                    let saved = try await TaskLocalWriteSupport.commitUpdate(rowUpdated)
+                    if saved.id == existing.id {
+                        refreshedCurrent = saved
                     }
                 }
 
@@ -3274,6 +3279,10 @@ struct CreateTaskView: View {
                 errorMessage = L10n.Common.flexibleToDosDonTSupportRecurrence.string(locale: locale)
                 return
             }
+            guard await NetworkMonitor.shared.isConnected else {
+                errorMessage = L10n.Common.networkConnectionErrorPleaseCheckYourConne.string(locale: locale)
+                return
+            }
 
             var persistedTaskId: UUID?
             var seriesTaskIdsForAttachments: [UUID] = []
@@ -3281,7 +3290,7 @@ struct CreateTaskView: View {
             if recurrence == nil {
                 let newTaskId = UUID()
                 let geofence = resolvedLocationData()?.toTaskGeofence()
-                let created = FamilyTask(
+                let draft = FamilyTask(
                     id: newTaskId,
                     householdId: householdId,
                     creatorId: creatorId,
@@ -3307,14 +3316,12 @@ struct CreateTaskView: View {
                     updatedAt: now,
                     updatedBy: creatorId
                 )
-                TaskLocalWriteSupport.commitCreate(created)
+                let created = try await TaskLocalWriteSupport.commitCreate(draft)
                 onAlarmSync?(created)
-                persistedTaskId = newTaskId
+                persistedTaskId = created.id
             } else {
                 let newTaskId = UUID()
-                persistedTaskId = newTaskId
-                seriesTaskIdsForAttachments = [newTaskId]
-                let mother = FamilyTask(
+                let motherDraft = FamilyTask(
                     id: newTaskId,
                     householdId: householdId,
                     creatorId: creatorId,
@@ -3343,8 +3350,10 @@ struct CreateTaskView: View {
                     updatedAt: now,
                     updatedBy: creatorId
                 )
-                TaskLocalWriteSupport.commitCreate(mother)
+                let mother = try await TaskLocalWriteSupport.commitCreate(motherDraft)
                 onAlarmSync?(mother)
+                persistedTaskId = mother.id
+                seriesTaskIdsForAttachments = [mother.id]
 
                 let children = await Task.detached(priority: .userInitiated) {
                     RecurrenceEngine.generateInstances(from: mother)
@@ -3366,8 +3375,8 @@ struct CreateTaskView: View {
                         instance.emergencyPhone = resolvedEmergencyPhoneForPayload()
                         instance.locationData = resolvedLocationData()
                         instance.updatedBy = creatorId
-                        TaskLocalWriteSupport.commitCreate(instance)
-                        onAlarmSync?(instance)
+                        let createdChild = try await TaskLocalWriteSupport.commitCreate(instance)
+                        onAlarmSync?(createdChild)
                     }
                 }
             }

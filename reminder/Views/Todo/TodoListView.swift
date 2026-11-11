@@ -26,6 +26,7 @@ struct TodoListView: View {
     @State private var stickyFlipBoardRequestID = 0
     @State private var stickyShowingFarSide = false
     @State private var selectedHouseholdList: HouseholdList?
+    @State private var taskPendingDelete: FamilyTask?
     /// To-Dos 展示样式（list / sticky），跨启动持久化。
     @AppStorage("todo_display_mode") private var displayModeRaw: String = TodoDisplayMode.sticky.rawValue
     /// To-Dos Tab 主分区：待办 / 清单。
@@ -205,6 +206,39 @@ struct TodoListView: View {
             }
             .onChange(of: viewModel.flexibleTasks) { _, _ in
                 openPendingFlexibleTaskIfNeeded()
+            }
+            .alert(
+                L10n.Common.notice,
+                isPresented: Binding(
+                    get: { viewModel.errorMessage != nil },
+                    set: { if $0 == false { viewModel.clearErrorMessage() } }
+                )
+            ) {
+                Button(L10n.Common.ok, role: .cancel) {
+                    viewModel.clearErrorMessage()
+                }
+            } message: {
+                if let message = viewModel.errorMessage {
+                    Text(message)
+                }
+            }
+            .alert(
+                L10n.Schedule.deleteTask,
+                isPresented: Binding(
+                    get: { taskPendingDelete != nil },
+                    set: { if $0 == false { taskPendingDelete = nil } }
+                )
+            ) {
+                Button(L10n.Schedule.deleteThisTaskOnly, role: .destructive) {
+                    guard let task = taskPendingDelete else { return }
+                    taskPendingDelete = nil
+                    Task { await beginDeleteFlexibleTask(task) }
+                }
+                Button(L10n.Common.cancel, role: .cancel) {
+                    taskPendingDelete = nil
+                }
+            } message: {
+                Text(L10n.Common.thisActionCannotBeUndone2.localized)
             }
     }
 
@@ -388,6 +422,10 @@ struct TodoListView: View {
             onSelectTask: { task in
                 showCompletedSheet = false
                 taskForEditSheet = task
+            },
+            onDeleteTask: { task in
+                showCompletedSheet = false
+                taskPendingDelete = task
             }
         )
         .environment(\.locale, appSettings.appLocale)
@@ -406,6 +444,10 @@ struct TodoListView: View {
             onSelectTask: { task in
                 showOverdueSheet = false
                 taskForEditSheet = task
+            },
+            onDeleteTask: { task in
+                showOverdueSheet = false
+                taskPendingDelete = task
             },
             onClearTrash: {
                 Task { @MainActor in
@@ -498,9 +540,6 @@ struct TodoListView: View {
         completionInFlightTaskIDs.insert(task.id)
 
         if playsListExitAnimation == false {
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                viewModel.applyOptimisticCompletion(for: task)
-            }
             Task { @MainActor in
                 do {
                     try await viewModel.completeFlexibleTask(
@@ -529,20 +568,17 @@ struct TodoListView: View {
 
             try? await Task.sleep(nanoseconds: 520_000_000)
 
-            withAnimation(.spring(response: 0.38, dampingFraction: 0.82)) {
-                viewModel.applyOptimisticCompletion(for: task)
-            }
-
-            completionFlyingTaskIDs.remove(task.id)
-            completionCheckedTaskIDs.remove(task.id)
-
             do {
                 try await viewModel.completeFlexibleTask(
                     task,
                     actingMembershipId: appRouter.selectedMembershipId
                 )
+                completionFlyingTaskIDs.remove(task.id)
+                completionCheckedTaskIDs.remove(task.id)
                 await scheduleViewModel.loadTasks(silent: true)
             } catch {
+                completionFlyingTaskIDs.remove(task.id)
+                completionCheckedTaskIDs.remove(task.id)
                 await viewModel.loadTasks(silent: true, force: true)
             }
 
@@ -581,6 +617,9 @@ struct TodoListView: View {
                                     },
                                     onOpen: {
                                         taskForEditSheet = task
+                                    },
+                                    onDelete: {
+                                        taskPendingDelete = task
                                     }
                                 )
                                 .scaleEffect(isFlying ? 0.22 : 1, anchor: .center)
@@ -638,11 +677,7 @@ struct TodoListView: View {
 
     @MainActor
     private func beginDeleteFlexibleTask(_ task: FamilyTask) async {
-        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
-            viewModel.applyOptimisticDeletion(for: task)
-        }
         do {
-            // 软删除为 cancelled，进入垃圾桶列表（过期 + 已删除）。
             try await viewModel.deleteFlexibleTask(
                 task,
                 actingMembershipId: appRouter.selectedMembershipId
@@ -904,6 +939,7 @@ private struct CompletedTasksListView: View {
     var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
     let completedLabel: (FamilyTask) -> String
     let onSelectTask: (FamilyTask) -> Void
+    var onDeleteTask: ((FamilyTask) -> Void)? = nil
 
     var body: some View {
         NavigationStack {
@@ -926,7 +962,9 @@ private struct CompletedTasksListView: View {
                                     forWhomAvatars: forWhomAvatars(task),
                                     deadlineLabel: completedLabel(task),
                                     style: .completed,
-                                    hasAttachments: taskHasAttachments(task)
+                                    hasAttachments: taskHasAttachments(task),
+                                    onOpen: { onSelectTask(task) },
+                                    onDelete: { onDeleteTask?(task) }
                                 )
                             }
                             .buttonStyle(.plain)
@@ -964,6 +1002,7 @@ private struct OverdueTasksListView: View {
     var taskHasAttachments: (FamilyTask) -> Bool = { $0.hasAttachmentURLs }
     let deadlineLabel: (FamilyTask) -> String?
     let onSelectTask: (FamilyTask) -> Void
+    var onDeleteTask: ((FamilyTask) -> Void)? = nil
     var onClearTrash: (() -> Void)? = nil
 
     @State private var showClearConfirm = false
@@ -981,7 +1020,9 @@ private struct OverdueTasksListView: View {
                             forWhomAvatars: forWhomAvatars(task),
                             deadlineLabel: deadlineLabel(task),
                             style: .overdue,
-                            hasAttachments: taskHasAttachments(task)
+                            hasAttachments: taskHasAttachments(task),
+                            onOpen: { onSelectTask(task) },
+                            onDelete: { onDeleteTask?(task) }
                         )
                     }
                     .buttonStyle(.plain)
@@ -1055,6 +1096,7 @@ private struct TodoFlexibleRow: View {
     var isCompletionChecked: Bool = false
     var onToggleComplete: (() -> Void)? = nil
     var onOpen: (() -> Void)? = nil
+    var onDelete: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -1113,6 +1155,12 @@ private struct TodoFlexibleRow: View {
                     .accessibilityLabel(L10n.Common.attachments.localized)
             }
         }
+        .taskLongPressContextMenu(
+            showsComplete: style == .active && onToggleComplete != nil && isCompletionChecked == false,
+            onEdit: { onOpen?() },
+            onComplete: { onToggleComplete?() },
+            onDelete: { onDelete?() }
+        )
     }
 
     private var rowBackground: Color {
