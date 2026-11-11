@@ -11,7 +11,6 @@ struct AppTabRootView: View {
     @State private var showAnonymousBindLinkSheet = false
     /// 冷启动只解析一次默认 Tab，避免覆盖用户手动切换或深链路由。
     @State private var didApplyPreferredLandingTab = false
-    @State private var isResolvingPreferredLandingTab = false
     /// 跟当前窗口尺寸走，供侧栏 Tab / 宽屏 chrome 判断（勿用 UIScreen）。
     @State private var rootViewportSize: CGSize = .zero
 
@@ -115,10 +114,6 @@ struct AppTabRootView: View {
         }
         .onChange(of: selectedTab) { _, newTab in
             AnalyticsManager.logTabSelected(newTab.analyticsName)
-            // 解析尚未落盘时用户已手动切 Tab：取消后续自动落地。
-            if isResolvingPreferredLandingTab {
-                didApplyPreferredLandingTab = true
-            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .anonymousBindPromptDidSchedule)) { _ in
             Task { @MainActor in
@@ -238,49 +233,15 @@ struct AppTabRootView: View {
     private func applyPreferredLandingTabIfNeeded() {
         guard didApplyPreferredLandingTab == false else { return }
         guard appRouter.isTrackedDeviceShellActive == false else { return }
+        // 深链 / Widget 路由优先；否则冷启动默认 Schedule。
         if appRouter.pendingTaskReminderTap != nil
             || appRouter.pendingScheduleWidgetRoute != nil
             || appRouter.pendingOpenGroupSettings {
             didApplyPreferredLandingTab = true
             return
         }
-
-        let householdIds = appRouter.selectedHouseholdIds
-        guard householdIds.isEmpty == false else { return }
-        guard isResolvingPreferredLandingTab == false else { return }
-
-        isResolvingPreferredLandingTab = true
-        Task { @MainActor in
-            defer { isResolvingPreferredLandingTab = false }
-            guard didApplyPreferredLandingTab == false else { return }
-            if appRouter.pendingTaskReminderTap != nil
-                || appRouter.pendingScheduleWidgetRoute != nil
-                || appRouter.pendingOpenGroupSettings {
-                didApplyPreferredLandingTab = true
-                return
-            }
-
-            var merged: [FamilyTask] = []
-            var seen = Set<UUID>()
-            for householdId in householdIds {
-                guard let cached = await HouseholdLocalCache.loadTasks(for: householdId) else { continue }
-                for task in cached where seen.insert(task.id).inserted {
-                    merged.append(task)
-                }
-            }
-
-            guard didApplyPreferredLandingTab == false else { return }
-            if appRouter.pendingTaskReminderTap != nil
-                || appRouter.pendingScheduleWidgetRoute != nil
-                || appRouter.pendingOpenGroupSettings {
-                didApplyPreferredLandingTab = true
-                return
-            }
-
-            let preferred = AppLandingTabPreference.resolve(tasks: merged)
-            selectedTab = preferred == .schedule ? .schedule : .todos
-            didApplyPreferredLandingTab = true
-        }
+        selectedTab = .schedule
+        didApplyPreferredLandingTab = true
     }
 }
 
