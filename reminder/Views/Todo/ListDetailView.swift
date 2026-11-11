@@ -41,6 +41,11 @@ struct ListDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background {
+            SchedulePageBackgroundFill()
+                .ignoresSafeArea()
+        }
         .navigationTitle(Text(verbatim: list.title))
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -50,6 +55,7 @@ struct ListDetailView: View {
             await viewModel.loadItems(for: list.id)
         }
         .refreshable {
+            await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshListDetail")
             await viewModel.loadItems(for: list.id)
         }
         .duoReadableContentWidth()

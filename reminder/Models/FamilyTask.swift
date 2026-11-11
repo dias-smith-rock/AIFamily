@@ -77,7 +77,7 @@ struct FamilyTask: Identifiable, Codable, Equatable {
     var emergencyPhone: String? = nil
 
     let createdAt: Date
-    let updatedAt: Date
+    var updatedAt: Date
     /// `tasks.updated_by`：最近编辑人 **membership id**（与 `creator_id` 同维度）；缺省历史数据可能为 `nil`。
     var updatedBy: UUID? = nil
 
@@ -362,6 +362,59 @@ struct FamilyTask: Identifiable, Codable, Equatable {
 }
 
 extension FamilyTask {
+    /// Outbox flush 经 RPC 拿到服务端 id 后，保留本地字段并替换身份主键。
+    func replacingIdentity(id: UUID, createdAt: Date, status: TaskStatus) -> FamilyTask {
+        FamilyTask(
+            id: id,
+            householdId: householdId,
+            creatorId: creatorId,
+            parentTaskId: parentTaskId,
+            groupId: groupId,
+            originalDueDate: originalDueDate,
+            involvedMemberIds: involvedMemberIds,
+            targetProfileId: targetProfileId,
+            targetProfileIds: targetProfileIds,
+            targetSubject: targetSubject,
+            title: title,
+            description: description,
+            originalPrompt: originalPrompt,
+            attachmentUrls: attachmentUrls,
+            externalContacts: externalContacts,
+            locationData: locationData,
+            geofence: geofence,
+            completionLocation: completionLocation,
+            externalSyncRefs: externalSyncRefs,
+            alarmSetBy: alarmSetBy,
+            status: status,
+            priority: priority,
+            source: source,
+            taskType: taskType,
+            dueDate: dueDate,
+            endDatetime: endDatetime,
+            durationMinutes: durationMinutes,
+            isAllDay: isAllDay,
+            timezone: timezone,
+            recurrenceRule: recurrenceRule,
+            recurrenceEndDate: recurrenceEndDate,
+            issue: issue,
+            recurrenceInterval: recurrenceInterval,
+            reminderOffsets: reminderOffsets,
+            estimatedCost: estimatedCost,
+            listId: listId,
+            actualAmount: actualAmount,
+            payerId: payerId,
+            splitMemberIds: splitMemberIds,
+            expenseCategory: expenseCategory,
+            rewardPoints: rewardPoints,
+            pointApprovedBy: pointApprovedBy,
+            backgroundColor: backgroundColor,
+            emergencyPhone: emergencyPhone,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            updatedBy: updatedBy
+        )
+    }
+
     /// `tasks.attachment_urls` 非空，或列表层已合并的 `task_attachments` 存在性。
     var hasAttachmentURLs: Bool {
         guard let attachmentUrls else { return false }

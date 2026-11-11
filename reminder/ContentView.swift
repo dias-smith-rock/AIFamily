@@ -111,7 +111,7 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .networkDidBecomeConnected)) { _ in
             Task { @MainActor in
-                await TaskOfflineOutbox.shared.flushIfNeeded()
+                await LocalFirstSyncCoordinator.syncNow(reason: "networkConnected")
             }
         }
         .task(id: postLaunchForegroundBootstrapToken) {
@@ -187,6 +187,7 @@ struct ContentView: View {
                     }
                     guard isUserLoggedIn, isLaunchBootstrapComplete else { return }
                     await runForegroundLocationBootstrap(vipLogTrigger: "App回到前台")
+                    await LocalFirstSyncCoordinator.syncNow(reason: "scenePhaseActive")
                     _ = try? await CalendarInboundSyncCoordinator.shared.syncIfConfigured(reason: "scenePhaseActive")
                 }
             } else if newPhase == .inactive {
@@ -464,7 +465,7 @@ struct ContentView: View {
                             "launchBootstrap.reconcileStaleLoginSession.done",
                             appRouter: appRouter
                         )
-                        await TaskOfflineOutbox.shared.flushIfNeeded()
+                        await LocalFirstSyncCoordinator.syncNow(reason: "launchGuestDeferred")
                     } catch {
                         GuestLoginPerformanceTracer.cancelTrace(
                             reason: "coldStartFailed \(error.localizedDescription)"
@@ -500,7 +501,7 @@ struct ContentView: View {
                         "launchBootstrap.reconcileStaleLoginSession.done",
                         appRouter: appRouter
                     )
-                    await TaskOfflineOutbox.shared.flushIfNeeded()
+                    await LocalFirstSyncCoordinator.syncNow(reason: "launchGuest")
                 } catch {
                     GuestLoginPerformanceTracer.cancelTrace(reason: "coldStartFailed \(error.localizedDescription)")
                     LaunchBootstrapPerformanceTracing.cancelTrace(reason: "guestColdStartFailed")
@@ -531,35 +532,43 @@ struct ContentView: View {
             if dismissedSplashEarly {
                 Task { @MainActor in
                     defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
-                    await LaunchBootstrapPerformanceTracing.measure(
+                    let authFailed = await LaunchBootstrapPerformanceTracing.measure(
                         "launchBootstrap.runAuthAndHouseholdBootstrap.deferred",
                         note: "vipLogTrigger=冷启动 bootstrapTrigger=coldStart",
                         appRouter: appRouter
                     ) {
                         await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动", bootstrapTrigger: "coldStart")
                     }
+                    if authFailed {
+                        kickToLoginAfterAuthFailure(reason: "deferredBootstrapAuthFailed")
+                        return
+                    }
                     reconcileStaleLoginSession()
                     LaunchBootstrapPerformanceTracing.mark(
                         "launchBootstrap.reconcileStaleLoginSession.done",
                         appRouter: appRouter
                     )
-                    await TaskOfflineOutbox.shared.flushIfNeeded()
+                    await LocalFirstSyncCoordinator.syncNow(reason: "launchFormalDeferred")
                 }
             } else {
                 defer { appRouter.finishHouseholdRoutingResolveAfterRefresh() }
-                await LaunchBootstrapPerformanceTracing.measure(
+                let authFailed = await LaunchBootstrapPerformanceTracing.measure(
                     "launchBootstrap.runAuthAndHouseholdBootstrap",
                     note: "vipLogTrigger=冷启动 bootstrapTrigger=coldStart",
                     appRouter: appRouter
                 ) {
                     await runAuthAndHouseholdBootstrap(vipLogTrigger: "冷启动", bootstrapTrigger: "coldStart")
                 }
-                reconcileStaleLoginSession()
-                LaunchBootstrapPerformanceTracing.mark(
-                    "launchBootstrap.reconcileStaleLoginSession.done",
-                    appRouter: appRouter
-                )
-                await TaskOfflineOutbox.shared.flushIfNeeded()
+                if authFailed {
+                    kickToLoginAfterAuthFailure(reason: "blockingBootstrapAuthFailed")
+                } else {
+                    reconcileStaleLoginSession()
+                    LaunchBootstrapPerformanceTracing.mark(
+                        "launchBootstrap.reconcileStaleLoginSession.done",
+                        appRouter: appRouter
+                    )
+                    await LocalFirstSyncCoordinator.syncNow(reason: "launchFormal")
+                }
             }
             if isLaunchBootstrapComplete == false {
                 withAnimation(.easeInOut) {
@@ -588,11 +597,13 @@ struct ContentView: View {
         }
     }
 
+    /// - Returns: `true` 表示鉴权不可恢复失败，调用方应踢回登录。
     @MainActor
+    @discardableResult
     private func runAuthAndHouseholdBootstrap(
         vipLogTrigger: String?,
         bootstrapTrigger: String = "foreground"
-    ) async {
+    ) async -> Bool {
         LoginFlowPerformanceTracing.mark(
             "authBootstrap.begin",
             note: [vipLogTrigger.map { "trigger=\($0)" }, "bootstrapTrigger=\(bootstrapTrigger)"]
@@ -611,11 +622,15 @@ struct ContentView: View {
 
         let skippedPostOAuthBootstrap = appRouter.consumeSkipNextLoginBootstrapRefresh()
         if skippedPostOAuthBootstrap == false {
-            await LoginFlowPerformanceTracing.measure(
+            let refreshFailed = await LoginFlowPerformanceTracing.measure(
                 "authBootstrap.authSessionRefresher",
                 appRouter: appRouter
             ) {
                 await AuthSessionRefresher.refreshOnForegroundIfNeeded()
+            }
+            if refreshFailed {
+                LoginFlowPerformanceTracing.mark("authBootstrap.end", note: "sessionRefreshAuthFailed", appRouter: appRouter)
+                return true
             }
         } else {
             LoginFlowPerformanceTracing.mark(
@@ -642,6 +657,10 @@ struct ContentView: View {
                     appRouter: appRouter
                 ) {
                     await appRouter.refreshStateFromBackend()
+                }
+                if appRouter.appState == .unauthenticated {
+                    LoginFlowPerformanceTracing.mark("authBootstrap.end", note: "refreshStateUnauthenticated", appRouter: appRouter)
+                    return true
                 }
             }
         } else {
@@ -675,6 +694,7 @@ struct ContentView: View {
         }
         reloadTasksIfActiveMember()
         LoginFlowPerformanceTracing.mark("authBootstrap.end", appRouter: appRouter)
+        return false
     }
 
     @MainActor
@@ -699,10 +719,14 @@ struct ContentView: View {
             await runPostAuthForegroundServices()
             return
         }
-        await runAuthAndHouseholdBootstrap(
+        let authFailed = await runAuthAndHouseholdBootstrap(
             vipLogTrigger: vipLogTrigger,
             bootstrapTrigger: "foreground"
         )
+        if authFailed {
+            kickToLoginAfterAuthFailure(reason: "foregroundBootstrapAuthFailed")
+            return
+        }
         await runPostAuthForegroundServices()
     }
 
@@ -731,10 +755,16 @@ struct ContentView: View {
         appRouter.clearOfflineHouseholdSnapshot()
     }
 
-    /// 本地有会话时立刻收起 Splash（不依赖离线）；有家庭快照进主 Tab，否则先进组织路由页。
+    /// 已登录且有家庭快照（或本地 session）时立刻收起 Splash，先进主 Tab / 组织路由；不阻塞等 refresh。
     @MainActor
     private func dismissLaunchSplashEarlyIfLocalSessionReady() -> Bool {
-        guard appRouter.hasPersistedSupabaseSession else { return false }
+        let hasSnapshot = appRouter.hasPersistedHouseholdSnapshot
+        let hasSession = appRouter.hasPersistedSupabaseSession
+        // 1B：有家庭快照即可进主界面；无快照但有本地 session 时仍可进组织路由页。
+        guard isUserLoggedIn || hasSession || hasSnapshot else { return false }
+        if isUserLoggedIn == false, hasSnapshot || hasSession {
+            isUserLoggedIn = true
+        }
         appRouter.syncSessionIdentityFromPersistedSessionIfAvailable()
         let enteredMainTab = appRouter.tryFastEnterFromPersistedHouseholdSnapshot()
         if enteredMainTab == false {
@@ -750,6 +780,18 @@ struct ContentView: View {
             appRouter: appRouter
         )
         return true
+    }
+
+    /// 后台鉴权不可恢复失败：踢回登录（保留任务/清单磁盘缓存；家庭路由快照由 softExit 策略决定）。
+    @MainActor
+    private func kickToLoginAfterAuthFailure(reason: String) {
+        LaunchBootstrapPerformanceTracing.mark(
+            "launchBootstrap.authFailureKickLogin",
+            note: reason,
+            appRouter: appRouter
+        )
+        SupabaseAuthManager.softExitToLogin(appRouter: appRouter)
+        isUserLoggedIn = false
     }
 
     @MainActor
@@ -815,14 +857,16 @@ struct ContentView: View {
             return
         }
         #if DEBUG
-        print("[ContentView] bootstrap complete → reload tasks household=\(appRouter.selectedHouseholdId?.uuidString ?? "nil")")
+        print("[ContentView] bootstrap complete → sync tasks household=\(appRouter.selectedHouseholdId?.uuidString ?? "nil")")
         #endif
         LoginFlowPerformanceTracing.mark(
             "authBootstrap.reloadTasksIfActiveMember",
             note: "householdId=\(appRouter.selectedHouseholdId?.uuidString.lowercased() ?? "nil")",
             appRouter: appRouter
         )
-        NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+        Task { @MainActor in
+            await LocalFirstSyncCoordinator.syncNow(reason: "activeMemberReload")
+        }
     }
 
     /// 本会话首次进入前台：启动上报；之后回前台仍走 `appEnteredForeground`（后台定位开启时不重复上报）。

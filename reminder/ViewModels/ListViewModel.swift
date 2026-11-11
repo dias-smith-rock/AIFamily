@@ -51,10 +51,22 @@ final class ListViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        if let cached = await HouseholdLocalCache.loadLists(for: householdId) {
+            lists = mergePendingLists(cached, householdId: householdId)
+        }
+
+        guard await NetworkMonitor.shared.isConnected else { return }
+
         do {
-            lists = try await listService.fetchLists(in: householdId)
+            let remote = try await listService.fetchLists(in: householdId)
+            let merged = mergePendingLists(remote, householdId: householdId)
+            lists = merged
+            HouseholdLocalCache.saveLists(merged, for: householdId)
         } catch {
-            errorMessage = error.localizedDescription
+            if lists.isEmpty {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
@@ -63,10 +75,22 @@ final class ListViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        if let cached = await HouseholdLocalCache.loadListItems(for: listId) {
+            items = mergePendingItems(cached)
+        }
+
+        guard await NetworkMonitor.shared.isConnected else { return }
+
         do {
-            items = try await listService.fetchItems(in: listId)
+            let remote = try await listService.fetchItems(in: listId)
+            let merged = mergePendingItems(remote)
+            items = merged
+            HouseholdLocalCache.saveListItems(merged, for: listId)
         } catch {
-            errorMessage = error.localizedDescription
+            if items.isEmpty {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 
@@ -83,57 +107,52 @@ final class ListViewModel: ObservableObject {
               let membershipId = currentMembershipId
         else { return nil }
 
-        let payload = HouseholdListInsertPayload(
+        let now = Date()
+        let created = HouseholdList(
             id: UUID(),
             householdId: householdId,
             creatorId: membershipId,
             title: trimmed,
-            kind: kind.rawValue,
+            kind: kind,
             tripStartDate: kind == .trip ? tripStart.map(Self.dayString(from:)) : nil,
             tripEndDate: kind == .trip ? tripEnd.map(Self.dayString(from:)) : nil,
-            sortOrder: (lists.map(\.sortOrder).max() ?? -1) + 1
+            sortOrder: (lists.map(\.sortOrder).max() ?? -1) + 1,
+            createdAt: now,
+            updatedAt: now
         )
-        do {
-            let created = try await listService.createList(payload)
-            lists.insert(created, at: 0)
-            return created
-        } catch {
-            errorMessage = error.localizedDescription
-            return nil
-        }
+        lists.insert(created, at: 0)
+        HouseholdLocalCache.upsertListInCache(created)
+        ListOfflineOutbox.shared.enqueue(.createList(created))
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        LocalFirstSyncCoordinator.requestSync(reason: "listCreate")
+        return created
     }
 
     func renameList(_ list: HouseholdList, title: String) async {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return }
-        let payload = HouseholdListUpdatePayload(
-            title: trimmed,
-            kind: list.kind.rawValue,
-            tripStartDate: list.tripStartDate,
-            tripEndDate: list.tripEndDate,
-            sortOrder: list.sortOrder
-        )
-        do {
-            let updated = try await listService.updateList(id: list.id, payload: payload)
-            if let index = lists.firstIndex(where: { $0.id == list.id }) {
-                lists[index] = updated
-            }
-        } catch {
-            errorMessage = error.localizedDescription
+        var updated = list
+        updated.title = trimmed
+        updated.updatedAt = Date()
+        if let index = lists.firstIndex(where: { $0.id == list.id }) {
+            lists[index] = updated
         }
+        HouseholdLocalCache.upsertListInCache(updated)
+        ListOfflineOutbox.shared.enqueue(.updateList(updated))
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        LocalFirstSyncCoordinator.requestSync(reason: "listUpdate")
     }
 
     func deleteList(_ list: HouseholdList) async {
-        do {
-            try await listService.deleteList(id: list.id)
-            lists.removeAll { $0.id == list.id }
-            if activeListId == list.id {
-                items = []
-                activeListId = nil
-            }
-        } catch {
-            errorMessage = error.localizedDescription
+        lists.removeAll { $0.id == list.id }
+        if activeListId == list.id {
+            items = []
+            activeListId = nil
         }
+        HouseholdLocalCache.removeListFromCache(listId: list.id, householdId: list.householdId)
+        ListOfflineOutbox.shared.enqueue(.deleteList(listId: list.id))
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        LocalFirstSyncCoordinator.requestSync(reason: "listDelete")
     }
 
     @discardableResult
@@ -143,7 +162,8 @@ final class ListViewModel: ObservableObject {
               let membershipId = currentMembershipId
         else { return nil }
 
-        let payload = ListItemInsertPayload(
+        let now = Date()
+        let created = ListItem(
             id: UUID(),
             listId: list.id,
             householdId: list.householdId,
@@ -151,54 +171,42 @@ final class ListViewModel: ObservableObject {
             isChecked: false,
             note: nil,
             sortOrder: nextItemSortOrder(),
-            creatorId: membershipId
+            creatorId: membershipId,
+            completedBy: nil,
+            completedAt: nil,
+            createdAt: now,
+            updatedAt: now
         )
-        do {
-            let created = try await listService.createItem(payload)
-            if activeListId == list.id {
-                items.append(created)
-            }
-            return created
-        } catch {
-            errorMessage = error.localizedDescription
-            return nil
+        if activeListId == list.id {
+            items.append(created)
         }
+        HouseholdLocalCache.upsertListItemInCache(created)
+        ListOfflineOutbox.shared.enqueue(.createItem(created))
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        LocalFirstSyncCoordinator.requestSync(reason: "listItemCreate")
+        return created
     }
 
     func toggleChecked(_ item: ListItem) async {
         guard let index = items.firstIndex(where: { $0.id == item.id }) else { return }
         let nextChecked = item.isChecked == false
-        let previous = items[index]
         items[index].isChecked = nextChecked
         items[index].completedBy = nextChecked ? currentMembershipId : nil
         items[index].completedAt = nextChecked ? Date() : nil
-
-        let payload = ListItemUpdatePayload(
-            title: nil,
-            isChecked: nextChecked,
-            note: nil,
-            sortOrder: nil,
-            completedBy: nextChecked ? currentMembershipId : nil,
-            completedAt: nextChecked ? Date() : nil
-        )
-        do {
-            let updated = try await listService.updateItem(id: item.id, payload: payload)
-            if let latest = items.firstIndex(where: { $0.id == item.id }) {
-                items[latest] = updated
-            }
-        } catch {
-            items[index] = previous
-            errorMessage = error.localizedDescription
-        }
+        items[index].updatedAt = Date()
+        let snapshot = items[index]
+        HouseholdLocalCache.upsertListItemInCache(snapshot)
+        ListOfflineOutbox.shared.enqueue(.updateItem(snapshot))
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        LocalFirstSyncCoordinator.requestSync(reason: "listItemToggle")
     }
 
     func deleteItem(_ item: ListItem) async {
-        do {
-            try await listService.deleteItem(id: item.id)
-            items.removeAll { $0.id == item.id }
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        items.removeAll { $0.id == item.id }
+        HouseholdLocalCache.removeListItemFromCache(itemId: item.id, listId: item.listId)
+        ListOfflineOutbox.shared.enqueue(.deleteItem(itemId: item.id, listId: item.listId))
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        LocalFirstSyncCoordinator.requestSync(reason: "listItemDelete")
     }
 
     var openItems: [ListItem] {
@@ -207,6 +215,44 @@ final class ListViewModel: ObservableObject {
 
     var checkedItems: [ListItem] {
         items.filter(\.isChecked)
+    }
+
+    private func mergePendingLists(_ remote: [HouseholdList], householdId: UUID) -> [HouseholdList] {
+        let pendingIDs = ListOfflineOutbox.shared.pendingListIDs
+        guard pendingIDs.isEmpty == false else { return remote }
+        let cached = LocalCacheManager.shared.load(
+            forKey: HouseholdLocalCache.listsCacheKey(for: householdId)
+        ) as [HouseholdList]? ?? []
+        let cachedById = Dictionary(uniqueKeysWithValues: cached.map { ($0.id, $0) })
+        var merged = remote.map { row in
+            if pendingIDs.contains(row.id), let local = cachedById[row.id] { return local }
+            return row
+        }
+        for id in pendingIDs {
+            if merged.contains(where: { $0.id == id }) == false, let local = cachedById[id] {
+                merged.insert(local, at: 0)
+            }
+        }
+        return merged
+    }
+
+    private func mergePendingItems(_ remote: [ListItem]) -> [ListItem] {
+        let pendingIDs = ListOfflineOutbox.shared.pendingItemIDs
+        guard pendingIDs.isEmpty == false, let listId = activeListId else { return remote }
+        let cached = LocalCacheManager.shared.load(
+            forKey: HouseholdLocalCache.listItemsCacheKey(for: listId)
+        ) as [ListItem]? ?? []
+        let cachedById = Dictionary(uniqueKeysWithValues: cached.map { ($0.id, $0) })
+        var merged = remote.map { row in
+            if pendingIDs.contains(row.id), let local = cachedById[row.id] { return local }
+            return row
+        }
+        for id in pendingIDs {
+            if merged.contains(where: { $0.id == id }) == false, let local = cachedById[id] {
+                merged.append(local)
+            }
+        }
+        return merged
     }
 
     private func nextItemSortOrder() -> Int {

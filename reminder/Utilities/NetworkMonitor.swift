@@ -22,7 +22,8 @@ final class NetworkMonitor: ObservableObject {
                 guard let self else { return }
                 let wasConnected = self.isConnected
                 self.isConnected = connected
-                if self.hasReceivedInitialPathUpdate == false {
+                let isInitialPath = self.hasReceivedInitialPathUpdate == false
+                if isInitialPath {
                     self.hasReceivedInitialPathUpdate = true
                     LoginFlowPerformanceTracing.logAlways(
                         "networkMonitor.initialPath",
@@ -34,7 +35,8 @@ final class NetworkMonitor: ObservableObject {
                         waiter.resume(returning: connected)
                     }
                 }
-                if connected, wasConnected == false, self.hasReceivedInitialPathUpdate {
+                // 任意「断 → 连」都通知（含首帧若从离线变为在线），供 Outbox flush。
+                if connected, wasConnected == false {
                     NotificationCenter.default.post(name: .networkDidBecomeConnected, object: nil)
                 }
             }

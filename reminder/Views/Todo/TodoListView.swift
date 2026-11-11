@@ -70,7 +70,10 @@ struct TodoListView: View {
                     Text(message)
                 } actions: {
                     Button(L10n.Common.reload) {
-                        Task { await viewModel.loadTasks(force: true) }
+                        Task {
+                            await LocalFirstSyncCoordinator.syncNow(reason: "reloadTodosButton")
+                            await viewModel.loadTasks(force: true)
+                        }
                     }
                 }
             }
@@ -189,6 +192,14 @@ struct TodoListView: View {
                     await viewModel.loadTasks(silent: true, force: true)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .plannerListsDidChange)) { _ in
+                Task {
+                    await listViewModel.loadLists(force: true)
+                    if let selectedHouseholdList {
+                        await listViewModel.loadItems(for: selectedHouseholdList.id)
+                    }
+                }
+            }
             .onChange(of: appRouter.pendingTaskReminderTap) { _, _ in
                 openPendingFlexibleTaskIfNeeded()
             }
@@ -260,18 +271,19 @@ struct TodoListView: View {
                         }
                     }
                 }
-                Section {
-                    Button {
-                        Task { @MainActor in
-                            try? await Task.sleep(for: .milliseconds(80))
-                            isShowingBackgroundSettings = true
-                        }
-                    } label: {
-                        Label {
-                            Text(L10n.Schedule.background)
-                        } icon: {
-                            Image(systemName: "photo.on.rectangle")
-                        }
+            }
+            Section {
+                Button {
+                    Task { @MainActor in
+                        // Menu 收起后再呈 Sheet，避免同帧冲突导致不弹出。
+                        try? await Task.sleep(for: .milliseconds(80))
+                        isShowingBackgroundSettings = true
+                    }
+                } label: {
+                    Label {
+                        Text(L10n.Schedule.background)
+                    } icon: {
+                        Image(systemName: "photo.on.rectangle")
                     }
                 }
             }
@@ -281,8 +293,6 @@ struct TodoListView: View {
                 .foregroundStyle(.primary)
         }
         .buttonStyle(.plain)
-        .opacity(showsTodosWorkspace ? 1 : 0)
-        .allowsHitTesting(showsTodosWorkspace)
     }
 
     /// 与 Schedule `bottomAccessoryBar` 对齐：safeAreaInset + 相同上下边距。
@@ -692,7 +702,9 @@ struct TodoListView: View {
     }
 
     private func refreshTodos() async {
+        await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshTodos")
         await viewModel.loadTasks(silent: true, force: true)
+        await scheduleViewModel.loadTasks(silent: true)
     }
 
     private var compactCompletedSummaryCard: some View {

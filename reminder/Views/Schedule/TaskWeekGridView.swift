@@ -372,7 +372,8 @@ struct TaskWeekGridView: View {
         if let onRefresh {
             await onRefresh()
         } else {
-            await viewModel.loadTasks()
+            await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshScheduleWeek")
+            await viewModel.loadTasks(silent: true)
         }
     }
 }

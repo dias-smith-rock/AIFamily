@@ -167,17 +167,14 @@ final class ScheduleViewModel: ObservableObject {
         }
 
         var restoredFromDisk = false
-        // 有网也先展示磁盘缓存；silent 刷新在列表为空时同样回填，避免空闪。
-        let shouldHydrateDisk = contextChanged || tasks.isEmpty || silent == false
-        if shouldHydrateDisk {
-            for householdId in householdIds {
-                if await restoreTasksFromDiskIfNeeded(
-                    householdId: householdId,
-                    allowWhenSilent: true,
-                    merge: true
-                ) {
-                    restoredFromDisk = true
-                }
+        // 本地优先：每次加载都并入磁盘，避免离线 Outbox 写入后日程列表不更新。
+        for householdId in householdIds {
+            if await restoreTasksFromDiskIfNeeded(
+                householdId: householdId,
+                allowWhenSilent: true,
+                merge: true
+            ) {
+                restoredFromDisk = true
             }
         }
 
@@ -232,10 +229,14 @@ final class ScheduleViewModel: ObservableObject {
                     }
                 }
             }
+            var mergedByHousehold: [UUID: [FamilyTask]] = [:]
             for householdId in householdIds {
                 let subset = merged.filter { $0.householdId == householdId }
-                LocalCacheManager.shared.save(subset, forKey: Self.tasksCacheKey(for: householdId))
+                let reconciled = TaskLocalWriteSupport.mergeFetchedTasks(subset, householdId: householdId)
+                mergedByHousehold[householdId] = reconciled
+                LocalCacheManager.shared.save(reconciled, forKey: Self.tasksCacheKey(for: householdId))
             }
+            merged = householdIds.flatMap { mergedByHousehold[$0] ?? [] }
             let tasksChanged = CacheFirstContent.areTasksEquivalent(tasks, merged) == false
             if tasksChanged {
                 tasks = merged
@@ -442,26 +443,8 @@ final class ScheduleViewModel: ObservableObject {
         defer { isLoading = false }
 
         applyOptimisticTaskUpsert(task)
-        HouseholdLocalCache.upsertTaskInCache(task)
         syncAlarms(for: task)
-
-        if await NetworkMonitor.shared.isConnected == false {
-            TaskOfflineOutbox.shared.enqueue(.create(task))
-            return
-        }
-
-        do {
-            let createdTask = try await taskService.createTask(task)
-            applyOptimisticTaskUpsert(createdTask)
-            HouseholdLocalCache.upsertTaskInCache(createdTask)
-            syncAlarms(for: createdTask)
-        } catch {
-            if Self.isLikelyNetworkFailure(error) {
-                TaskOfflineOutbox.shared.enqueue(.create(task))
-                return
-            }
-            errorMessage = error.localizedDescription
-        }
+        TaskLocalWriteSupport.commitCreate(task)
     }
 
     func updateTask(_ task: FamilyTask) async {
@@ -470,26 +453,8 @@ final class ScheduleViewModel: ObservableObject {
         defer { isLoading = false }
 
         applyOptimisticTaskUpsert(task)
-        HouseholdLocalCache.upsertTaskInCache(task)
         syncAlarms(for: task)
-
-        if await NetworkMonitor.shared.isConnected == false {
-            TaskOfflineOutbox.shared.enqueue(.update(task))
-            return
-        }
-
-        do {
-            let updatedTask = try await taskService.updateTask(task)
-            applyOptimisticTaskUpsert(updatedTask)
-            HouseholdLocalCache.upsertTaskInCache(updatedTask)
-            syncAlarms(for: updatedTask)
-        } catch {
-            if Self.isLikelyNetworkFailure(error) {
-                TaskOfflineOutbox.shared.enqueue(.update(task))
-                return
-            }
-            errorMessage = error.localizedDescription
-        }
+        TaskLocalWriteSupport.commitUpdate(task)
     }
 
     private func applyOptimisticTaskUpsert(_ task: FamilyTask) {
@@ -568,59 +533,27 @@ final class ScheduleViewModel: ObservableObject {
                 local.completionLocation = completionLocation
             }
             applyOptimisticTaskUpsert(local)
-            HouseholdLocalCache.upsertTaskInCache(local)
             optimistic = local
         }
 
-        if await NetworkMonitor.shared.isConnected == false {
-            TaskOfflineOutbox.shared.enqueue(
-                .patchStatus(
-                    taskId: taskId,
-                    status: status,
-                    completionLocation: completionLocation,
-                    actingMembershipId: actingMembershipId
-                )
-            )
-            if status == .completed {
-                await NotificationManager.shared.cancelAllPending(for: taskId)
-            } else if let optimistic {
-                syncAlarms(for: optimistic)
-            }
-            guard let optimistic else {
-                throw TaskOfflineMutationError.taskNotFoundLocally
-            }
-            return optimistic
+        TaskLocalWriteSupport.commitPatchStatus(
+            taskId: taskId,
+            status: status,
+            localTask: optimistic,
+            completionLocation: completionLocation,
+            actingMembershipId: actingMembershipId
+        )
+
+        if status == .completed {
+            await NotificationManager.shared.cancelAllPending(for: taskId)
+        } else if let optimistic {
+            syncAlarms(for: optimistic)
         }
 
-        do {
-            let updated = try await taskService.patchTaskStatus(
-                taskId: taskId,
-                to: status,
-                completionLocation: completionLocation,
-                actingMembershipId: actingMembershipId
-            )
-            if status == .completed {
-                await NotificationManager.shared.cancelAllPending(for: taskId)
-            } else {
-                syncAlarms(for: updated)
-            }
-            applyOptimisticTaskUpsert(updated)
-            HouseholdLocalCache.upsertTaskInCache(updated)
-            return updated
-        } catch {
-            if Self.isLikelyNetworkFailure(error), let optimistic {
-                TaskOfflineOutbox.shared.enqueue(
-                    .patchStatus(
-                        taskId: taskId,
-                        status: status,
-                        completionLocation: completionLocation,
-                        actingMembershipId: actingMembershipId
-                    )
-                )
-                return optimistic
-            }
-            throw error
+        guard let optimistic else {
+            throw TaskOfflineMutationError.taskNotFoundLocally
         }
+        return optimistic
     }
 
     func noteVisibleMonth(containing day: Date) {
@@ -753,24 +686,12 @@ final class ScheduleViewModel: ObservableObject {
             tasks.removeAll { $0.id == taskId }
         }
         publishScheduleWidgetSnapshot()
-        if let householdId {
-            HouseholdLocalCache.removeTaskFromCache(taskId: taskId, householdId: householdId)
-        }
         syncUpcomingLocalNotifications()
-
-        if await NetworkMonitor.shared.isConnected == false {
+        if let householdId {
+            TaskLocalWriteSupport.commitDelete(taskId: taskId, householdId: householdId)
+        } else {
             TaskOfflineOutbox.shared.enqueue(.delete(taskId: taskId))
-            return
-        }
-
-        do {
-            try await taskService.deleteTask(taskId: taskId)
-        } catch {
-            if Self.isLikelyNetworkFailure(error) {
-                TaskOfflineOutbox.shared.enqueue(.delete(taskId: taskId))
-                return
-            }
-            errorMessage = error.localizedDescription
+            LocalFirstSyncCoordinator.requestSync(reason: "taskDeleteNoHousehold")
         }
     }
 

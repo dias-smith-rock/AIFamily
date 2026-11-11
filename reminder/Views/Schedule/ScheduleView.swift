@@ -275,7 +275,8 @@ struct TaskModeDayView: View {
         if let onRefresh {
             await onRefresh()
         } else {
-            await viewModel.loadTasks()
+            await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshScheduleDay")
+            await viewModel.loadTasks(silent: true)
         }
     }
 
@@ -458,7 +459,8 @@ private struct TaskModeDaySchedulePane: View {
         if let onRefresh {
             await onRefresh()
         } else {
-            await viewModel.loadTasks()
+            await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshScheduleList")
+            await viewModel.loadTasks(silent: true)
         }
     }
 

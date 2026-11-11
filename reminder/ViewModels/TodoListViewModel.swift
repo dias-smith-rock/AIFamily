@@ -140,8 +140,9 @@ final class TodoListViewModel: ObservableObject {
             || completedTasks.isEmpty == false
             || deletedTasks.isEmpty == false
 
-        // 有网也先灌磁盘缓存，避免转菊花空等；force 静默刷新在内存为空时同样回填。
-        if hasMemoryTodos == false || (force == false && silent == false) {
+        // 有网也先灌磁盘；force 时必须回填，否则离线本地写后静默刷新会跳过磁盘、列表不更新。
+        let shouldHydrateFromDisk = hasMemoryTodos == false || force || silent == false
+        if shouldHydrateFromDisk {
             var mergedCache: [FamilyTask] = []
             var seen = Set<UUID>()
             for householdId in householdIds {
@@ -204,8 +205,9 @@ final class TodoListViewModel: ObservableObject {
                 }
                 for try await (householdId, batch) in group {
                     let filteredBatch = batch.filter { pendingHardDeletedTaskIDs.contains($0.id) == false }
-                    LocalCacheManager.shared.save(filteredBatch, forKey: Self.tasksCacheKey(for: householdId))
-                    for task in filteredBatch where seen.insert(task.id).inserted {
+                    let reconciled = TaskLocalWriteSupport.mergeFetchedTasks(filteredBatch, householdId: householdId)
+                    LocalCacheManager.shared.save(reconciled, forKey: Self.tasksCacheKey(for: householdId))
+                    for task in reconciled where seen.insert(task.id).inserted {
                         merged.append(task)
                     }
                 }
@@ -521,49 +523,15 @@ final class TodoListViewModel: ObservableObject {
     func deleteFlexibleTask(_ task: FamilyTask, actingMembershipId: UUID? = nil) async throws {
         applyOptimisticDeletion(for: task)
         await NotificationManager.shared.cancelAllPending(for: task.id)
-
-        if await NetworkMonitor.shared.isConnected == false {
-            TaskOfflineOutbox.shared.enqueue(
-                .patchStatus(
-                    taskId: task.id,
-                    status: .cancelled,
-                    completionLocation: nil,
-                    actingMembershipId: actingMembershipId
-                )
-            )
-            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-            return
-        }
-
-        do {
-            let updated = try await taskService.patchTaskStatus(
-                taskId: task.id,
-                to: .cancelled,
-                completionLocation: nil,
-                actingMembershipId: actingMembershipId
-            )
-            flexibleTasks.removeAll { $0.id == updated.id }
-            completedTasks.removeAll { $0.id == updated.id }
-            deletedTasks.removeAll { $0.id == updated.id }
-            deletedTasks.insert(updated, at: 0)
-            HouseholdLocalCache.upsertTaskInCache(updated)
-            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-        } catch {
-            if Self.isLikelyNetworkFailure(error) {
-                TaskOfflineOutbox.shared.enqueue(
-                    .patchStatus(
-                        taskId: task.id,
-                        status: .cancelled,
-                        completionLocation: nil,
-                        actingMembershipId: actingMembershipId
-                    )
-                )
-                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-                return
-            }
-            await loadTasks(silent: true, force: true)
-            throw error
-        }
+        var optimistic = task
+        optimistic.status = .cancelled
+        TaskLocalWriteSupport.commitPatchStatus(
+            taskId: task.id,
+            status: .cancelled,
+            localTask: optimistic,
+            completionLocation: nil,
+            actingMembershipId: actingMembershipId
+        )
     }
 
     /// 一键清空垃圾桶：永久删除其中所有过期与已软删待办。
@@ -582,33 +550,8 @@ final class TodoListViewModel: ObservableObject {
             await NotificationManager.shared.cancelAllPending(for: task.id)
         }
 
-        if await NetworkMonitor.shared.isConnected == false {
-            for task in targets {
-                TaskOfflineOutbox.shared.enqueue(.delete(taskId: task.id))
-            }
-            // 不广播全量刷新，避免其它 VM 立刻拉旧快照覆盖本地缓存。
-            return
-        }
-
-        var encounteredHardFailure: Error?
         for task in targets {
-            do {
-                try await taskService.deleteTask(taskId: task.id)
-                HouseholdLocalCache.removeTaskFromCache(taskId: task.id, householdId: task.householdId)
-            } catch {
-                if Self.isLikelyNetworkFailure(error) {
-                    TaskOfflineOutbox.shared.enqueue(.delete(taskId: task.id))
-                } else {
-                    encounteredHardFailure = error
-                }
-            }
-        }
-
-        // 静默对齐一次；pendingHardDeletedTaskIDs 会挡住删后仍短暂返回的行。
-        await loadTasks(silent: true, force: true)
-
-        if let encounteredHardFailure {
-            throw encounteredHardFailure
+            TaskLocalWriteSupport.commitDelete(taskId: task.id, householdId: task.householdId)
         }
     }
 
@@ -618,58 +561,18 @@ final class TodoListViewModel: ObservableObject {
         flexibleTasks.removeAll { $0.id == optimistic.id }
         completedTasks.removeAll { $0.id == optimistic.id }
         completedTasks.insert(optimistic, at: 0)
-        HouseholdLocalCache.upsertTaskInCache(optimistic)
-
-        if await NetworkMonitor.shared.isConnected == false {
-            TaskOfflineOutbox.shared.enqueue(
-                .patchStatus(
-                    taskId: task.id,
-                    status: .completed,
-                    completionLocation: nil,
-                    actingMembershipId: actingMembershipId
-                )
-            )
-            AnalyticsManager.logTaskCompleted(
-                taskId: task.id,
-                householdId: task.householdId,
-                taskType: AnalyticsManager.analyticsTaskType(for: task)
-            )
-            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-            return
-        }
-
-        do {
-            let updated = try await taskService.patchTaskStatus(
-                taskId: task.id,
-                to: .completed,
-                completionLocation: nil,
-                actingMembershipId: actingMembershipId
-            )
-            flexibleTasks.removeAll { $0.id == updated.id }
-            completedTasks.removeAll { $0.id == updated.id }
-            completedTasks.insert(updated, at: 0)
-            HouseholdLocalCache.upsertTaskInCache(updated)
-            AnalyticsManager.logTaskCompleted(
-                taskId: updated.id,
-                householdId: updated.householdId,
-                taskType: AnalyticsManager.analyticsTaskType(for: updated)
-            )
-            NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-        } catch {
-            if Self.isLikelyNetworkFailure(error) {
-                TaskOfflineOutbox.shared.enqueue(
-                    .patchStatus(
-                        taskId: task.id,
-                        status: .completed,
-                        completionLocation: nil,
-                        actingMembershipId: actingMembershipId
-                    )
-                )
-                NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
-                return
-            }
-            throw error
-        }
+        TaskLocalWriteSupport.commitPatchStatus(
+            taskId: task.id,
+            status: .completed,
+            localTask: optimistic,
+            completionLocation: nil,
+            actingMembershipId: actingMembershipId
+        )
+        AnalyticsManager.logTaskCompleted(
+            taskId: task.id,
+            householdId: task.householdId,
+            taskType: AnalyticsManager.analyticsTaskType(for: task)
+        )
     }
 
     private static func isLikelyNetworkFailure(_ error: Error) -> Bool {

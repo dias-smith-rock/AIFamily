@@ -20,7 +20,8 @@ final class LocalCacheManager {
     }
 
     func save<T: Codable>(_ object: T, forKey key: String) {
-        ioQueue.async { [encoder, fileManager, cacheDirectoryURL] in
+        // 同步落盘：本地优先写后立刻 `load` / 通知刷新时必须读到最新快照。
+        ioQueue.sync { [encoder, fileManager, cacheDirectoryURL] in
             let url = Self.fileURL(forKey: key, directory: cacheDirectoryURL)
             do {
                 let data = try encoder.encode(object)

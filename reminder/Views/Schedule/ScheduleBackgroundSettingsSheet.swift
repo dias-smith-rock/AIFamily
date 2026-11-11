@@ -87,13 +87,15 @@ struct ScheduleBackgroundSettingsSheet: View {
             }
             .padding(16)
         }
-        .frame(height: 120)
+        // 竖屏比例预览，方便区分 Fill（裁切）与 Fit（留白 + 模糊镜像）。
+        .frame(maxWidth: .infinity)
+        .frame(height: 220)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
         }
-        .id(appSettings.scheduleBackgroundRevision)
+        .id("\(appSettings.scheduleBackgroundRevision)-\(appSettings.scheduleBackgroundImageFit.rawValue)")
     }
 
     private var previewSubtitle: String {
@@ -103,7 +105,9 @@ struct ScheduleBackgroundSettingsSheet: View {
         case .solidColor:
             return AppLocalized.string(L10n.Schedule.backgroundModeSolidColor, locale: locale)
         case .image:
-            return AppLocalized.string(L10n.Schedule.backgroundModeImage, locale: locale)
+            let mode = AppLocalized.string(L10n.Schedule.backgroundModeImage, locale: locale)
+            let fit = AppLocalized.string(appSettings.scheduleBackgroundImageFit.titleKey, locale: locale)
+            return "\(mode) · \(fit)"
         }
     }
 

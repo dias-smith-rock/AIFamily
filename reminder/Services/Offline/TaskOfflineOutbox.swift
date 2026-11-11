@@ -115,6 +115,11 @@ final class TaskOfflineOutbox {
 
     var pendingCount: Int { loadQueue().count }
 
+    /// 尚未 flush 的 task id（pull 合并时保留本地 pending 行）。
+    var pendingTaskIDs: Set<UUID> {
+        Set(loadQueue().compactMap(\.taskId))
+    }
+
     func flushIfNeeded() async {
         guard await NetworkMonitor.shared.isConnected else { return }
         guard isFlushing == false else { return }
@@ -138,7 +143,10 @@ final class TaskOfflineOutbox {
         while index < queue.count {
             let mutation = queue[index]
             do {
-                try await apply(mutation, using: service)
+                let remapped = try await apply(mutation, using: service)
+                if let remapped {
+                    Self.remapTaskIdentity(from: remapped.fromId, to: remapped.toId, in: &queue)
+                }
                 queue.remove(at: index)
                 persist(queue)
             } catch {
@@ -155,31 +163,67 @@ final class TaskOfflineOutbox {
         if queue.isEmpty == false {
             persist(queue)
         }
-        NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
+        // 拉取通知由 `LocalFirstSyncCoordinator.syncNow` 统一发出。
         #if DEBUG
         print("[TaskOfflineOutbox] flush end remaining=\(queue.count)")
         #endif
     }
 
-    private func apply(_ mutation: OfflineTaskMutation, using service: TaskDataService) async throws {
+    /// - Returns: 若 create 经 RPC 换了服务端 id，返回旧→新映射，供后续队列项改写。
+    @discardableResult
+    private func apply(
+        _ mutation: OfflineTaskMutation,
+        using service: TaskDataService
+    ) async throws -> (fromId: UUID, toId: UUID)? {
         switch mutation.kind {
         case .create:
-            guard let task = mutation.task else { return }
-            _ = try await service.createTask(task)
+            guard let task = mutation.task else {
+                throw TaskOfflineMutationError.missingPayload
+            }
+            let created = try await service.createTask(task, geofence: task.geofence)
+            if created.id != task.id {
+                HouseholdLocalCache.replaceTask(fromId: task.id, with: created)
+                return (task.id, created.id)
+            }
+            HouseholdLocalCache.upsertTaskInCache(created)
+            return nil
         case .update:
-            guard let task = mutation.task else { return }
-            _ = try await service.updateTask(task)
+            guard let task = mutation.task else {
+                throw TaskOfflineMutationError.missingPayload
+            }
+            let updated = try await service.updateTask(task)
+            HouseholdLocalCache.upsertTaskInCache(updated)
+            return nil
         case .delete:
-            guard let taskId = mutation.taskId else { return }
+            guard let taskId = mutation.taskId else {
+                throw TaskOfflineMutationError.missingPayload
+            }
             try await service.deleteTask(taskId: taskId)
+            return nil
         case .patchStatus:
-            guard let taskId = mutation.taskId, let status = mutation.status else { return }
-            _ = try await service.patchTaskStatus(
+            guard let taskId = mutation.taskId, let status = mutation.status else {
+                throw TaskOfflineMutationError.missingPayload
+            }
+            let patched = try await service.patchTaskStatus(
                 taskId: taskId,
                 to: status,
                 completionLocation: mutation.completionLocation,
                 actingMembershipId: mutation.actingMembershipId
             )
+            HouseholdLocalCache.upsertTaskInCache(patched)
+            return nil
+        }
+    }
+
+    private static func remapTaskIdentity(from oldId: UUID, to newId: UUID, in queue: inout [OfflineTaskMutation]) {
+        guard oldId != newId else { return }
+        for index in queue.indices {
+            guard queue[index].taskId == oldId else { continue }
+            queue[index].taskId = newId
+            if var task = queue[index].task {
+                task = task.replacingIdentity(id: newId, createdAt: task.createdAt, status: task.status)
+                queue[index].task = task
+            }
         }
     }
 
@@ -198,11 +242,14 @@ final class TaskOfflineOutbox {
 
 enum TaskOfflineMutationError: LocalizedError {
     case taskNotFoundLocally
+    case missingPayload
 
     var errorDescription: String? {
         switch self {
         case .taskNotFoundLocally:
             return "Task not found in local cache."
+        case .missingPayload:
+            return "Offline task mutation payload is missing."
         }
     }
 }

@@ -25,6 +25,14 @@ enum HouseholdLocalCache {
         "location.states.snapshot.\(householdId.uuidString.lowercased())"
     }
 
+    static func listsCacheKey(for householdId: UUID) -> String {
+        "planner.lists.snapshot.\(householdId.uuidString.lowercased())"
+    }
+
+    static func listItemsCacheKey(for listId: UUID) -> String {
+        "planner.list_items.snapshot.\(listId.uuidString.lowercased())"
+    }
+
     static func loadMembers(for householdId: UUID) async -> MembersSnapshot? {
         await LocalCacheManager.shared.load(forKey: membersCacheKey(for: householdId))
     }
@@ -53,6 +61,68 @@ enum HouseholdLocalCache {
         let key = tasksCacheKey(for: householdId)
         var cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: key) ?? []
         cached.removeAll { $0.id == taskId }
+        LocalCacheManager.shared.save(cached, forKey: key)
+    }
+
+    /// RPC 创建后服务端 id 与本地临时 id 不一致时，替换缓存行。
+    static func replaceTask(fromId: UUID, with task: FamilyTask) {
+        let key = tasksCacheKey(for: task.householdId)
+        var cached: [FamilyTask] = LocalCacheManager.shared.load(forKey: key) ?? []
+        cached.removeAll { $0.id == fromId || $0.id == task.id }
+        cached.append(task)
+        LocalCacheManager.shared.save(cached, forKey: key)
+    }
+
+    static func loadLists(for householdId: UUID) async -> [HouseholdList]? {
+        await LocalCacheManager.shared.load(forKey: listsCacheKey(for: householdId))
+    }
+
+    static func saveLists(_ lists: [HouseholdList], for householdId: UUID) {
+        LocalCacheManager.shared.save(lists, forKey: listsCacheKey(for: householdId))
+    }
+
+    static func upsertListInCache(_ list: HouseholdList) {
+        let key = listsCacheKey(for: list.householdId)
+        var cached: [HouseholdList] = LocalCacheManager.shared.load(forKey: key) ?? []
+        if let index = cached.firstIndex(where: { $0.id == list.id }) {
+            cached[index] = list
+        } else {
+            cached.insert(list, at: 0)
+        }
+        LocalCacheManager.shared.save(cached, forKey: key)
+    }
+
+    static func removeListFromCache(listId: UUID, householdId: UUID) {
+        let key = listsCacheKey(for: householdId)
+        var cached: [HouseholdList] = LocalCacheManager.shared.load(forKey: key) ?? []
+        cached.removeAll { $0.id == listId }
+        LocalCacheManager.shared.save(cached, forKey: key)
+        LocalCacheManager.shared.remove(forKey: listItemsCacheKey(for: listId))
+    }
+
+    static func loadListItems(for listId: UUID) async -> [ListItem]? {
+        await LocalCacheManager.shared.load(forKey: listItemsCacheKey(for: listId))
+    }
+
+    static func saveListItems(_ items: [ListItem], for listId: UUID) {
+        LocalCacheManager.shared.save(items, forKey: listItemsCacheKey(for: listId))
+    }
+
+    static func upsertListItemInCache(_ item: ListItem) {
+        let key = listItemsCacheKey(for: item.listId)
+        var cached: [ListItem] = LocalCacheManager.shared.load(forKey: key) ?? []
+        if let index = cached.firstIndex(where: { $0.id == item.id }) {
+            cached[index] = item
+        } else {
+            cached.append(item)
+        }
+        LocalCacheManager.shared.save(cached, forKey: key)
+    }
+
+    static func removeListItemFromCache(itemId: UUID, listId: UUID) {
+        let key = listItemsCacheKey(for: listId)
+        var cached: [ListItem] = LocalCacheManager.shared.load(forKey: key) ?? []
+        cached.removeAll { $0.id == itemId }
         LocalCacheManager.shared.save(cached, forKey: key)
     }
 

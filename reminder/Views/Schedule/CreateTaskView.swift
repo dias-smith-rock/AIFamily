@@ -2871,55 +2871,20 @@ struct CreateTaskView: View {
         )
 
         do {
-            let attachmentUploads = try await uploadSelectedAttachments(householdId: householdId)
-            let client = SupabaseManager.shared.client
+            let pendingAttachmentDeletes = attachmentsToDelete
+            let hasPendingAttachmentUploads = selectedAttachmentJPEGData.isEmpty == false
             let updated: FamilyTask
             var seriesAttachmentTaskIds: [UUID] = []
 
             switch scope {
             case .singleOnly:
-                let payload = TaskUpdatePayload(
-                    title: normalizedTitle,
-                    description: mergedDescriptionForPayload,
-                    involvedMemberIds: resolvedInvolvedMemberIds,
-                    targetProfileIds: resolvedTargetProfileIds,
-                    taskType: resolvedTaskTypeForPayload(),
-                    dueDate: resolvedDueDateForPayload(),
-                    endDatetime: resolvedEndDatetimeForPayload(),
-                    durationMinutes: resolvedDurationMinutesForPayload(),
-                    isAllDay: resolvedIsAllDayForPayload(),
-                    timezone: resolvedTimezoneForPayload(),
-                    recurrenceRule: resolvedRecurrenceRuleForPayload(),
-                    recurrenceEndDate: resolvedRecurrenceEndDateForPayloadStrict(),
-                    recurrenceInterval: resolvedRecurrenceIntervalForPayloadStrict(),
-                    reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                    estimatedCost: estimatedCostMinorUnits,
-                    backgroundColor: resolvedBackgroundColorHex(),
-                    emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                    priority: formPriority.rawValue,
-                    locationData: resolvedLocationData(),
-                    updatedAt: Date(),
-                    updatedBy: appRouter.selectedMembershipId?.uuidString.lowercased()
-                        ?? existing.updatedBy?.uuidString.lowercased()
-                        ?? existing.creatorId.uuidString.lowercased()
-                )
-                var refreshed: FamilyTask = try await client
-                    .from("tasks")
-                    .update(payload)
-                    .eq("id", value: existing.id.uuidString.lowercased())
-                    .select()
-                    .single()
-                    .execute()
-                    .value
+                var refreshed = makeLocalUpdatedTask(from: existing, scope: .singleOnly)
                 if existing.seriesGrouping != nil, shouldDetachSeriesOnSingleSave(existing) {
-                    _ = try await client
-                        .from("tasks")
-                        .update(TaskClearSeriesLinksPatch())
-                        .eq("id", value: existing.id.uuidString.lowercased())
-                        .execute()
                     refreshed.parentTaskId = nil
                     refreshed.groupId = nil
                 }
+                TaskLocalWriteSupport.commitUpdate(refreshed)
+                onAlarmSync?(refreshed)
                 updated = refreshed
 
             case .thisAndFuture:
@@ -2928,7 +2893,7 @@ struct CreateTaskView: View {
                     return
                 }
                 let cutoff = existing.dueDate ?? .distantPast
-                let rows = try await TaskSeriesSupabaseSupport.fetchSeriesTasks(
+                let rows = await loadSeriesTasksForLocalUpdate(
                     householdId: householdId,
                     grouping: grouping,
                     dueOnOrAfter: cutoff
@@ -2994,41 +2959,34 @@ struct CreateTaskView: View {
                         recurrenceIntervalPayload = resolvedRecurrenceIntervalForPayload()
                     }
 
-                    let payload = TaskUpdatePayload(
-                        title: normalizedTitle,
-                        description: mergedDescriptionForPayload,
-                        involvedMemberIds: resolvedInvolvedMemberIds,
-                        targetProfileIds: resolvedTargetProfileIds,
-                        taskType: TaskTypeKind.scheduled.rawValue,
-                        dueDate: newDue,
-                        endDatetime: newEnd,
-                        durationMinutes: metaOnly
-                            ? row.durationMinutes
-                            : Self.durationMinutes(from: durationPickerDate),
-                        isAllDay: isAllDay,
-                        timezone: resolvedTimezoneForPayload(),
-                        recurrenceRule: recurrenceRulePayload,
-                        recurrenceEndDate: recurrenceEndPayload,
-                        recurrenceInterval: recurrenceIntervalPayload,
-                        reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                        estimatedCost: estimatedCostMinorUnits,
-                        backgroundColor: resolvedBackgroundColorHex(),
-                        emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                        priority: formPriority.rawValue,
-                        locationData: resolvedLocationData(),
-                        updatedAt: Date(),
-                        updatedBy: appRouter.selectedMembershipId?.uuidString.lowercased()
-                            ?? existing.updatedBy?.uuidString.lowercased()
-                            ?? existing.creatorId.uuidString.lowercased()
-                    )
-                    let rowUpdated: FamilyTask = try await client
-                        .from("tasks")
-                        .update(payload)
-                        .eq("id", value: row.id.uuidString.lowercased())
-                        .select()
-                        .single()
-                        .execute()
-                        .value
+                    var rowUpdated = row
+                    rowUpdated.title = normalizedTitle
+                    rowUpdated.description = mergedDescriptionForPayload
+                    rowUpdated.involvedMemberIds = resolvedInvolvedMemberIds
+                    rowUpdated.targetProfileIds = resolvedTargetProfileIds
+                    rowUpdated.taskType = TaskTypeKind.scheduled.rawValue
+                    rowUpdated.dueDate = newDue
+                    rowUpdated.endDatetime = newEnd
+                    rowUpdated.durationMinutes = metaOnly
+                        ? row.durationMinutes
+                        : Self.durationMinutes(from: durationPickerDate)
+                    rowUpdated.isAllDay = isAllDay
+                    rowUpdated.timezone = resolvedTimezoneForPayload()
+                    rowUpdated.recurrenceRule = recurrenceRulePayload
+                    rowUpdated.recurrenceEndDate = recurrenceEndPayload
+                    rowUpdated.recurrenceInterval = recurrenceIntervalPayload
+                    rowUpdated.reminderOffsets = reminderOption.reminderOffsetsMinutes
+                    rowUpdated.estimatedCost = estimatedCostMinorUnits
+                    rowUpdated.backgroundColor = resolvedBackgroundColorHex()
+                    rowUpdated.emergencyPhone = resolvedEmergencyPhoneForPayload()
+                    rowUpdated.priority = formPriority
+                    rowUpdated.locationData = resolvedLocationData()
+                    rowUpdated.geofence = resolvedLocationData()?.toTaskGeofence()
+                    rowUpdated.updatedAt = Date()
+                    rowUpdated.updatedBy = appRouter.selectedMembershipId
+                        ?? existing.updatedBy
+                        ?? existing.creatorId
+                    TaskLocalWriteSupport.commitUpdate(rowUpdated)
                     if rowUpdated.id == existing.id {
                         refreshedCurrent = rowUpdated
                     }
@@ -3041,34 +2999,44 @@ struct CreateTaskView: View {
                 updated = resolved
             }
 
-            if attachmentsToDelete.isEmpty == false {
-                let deletedFileURLs = attachmentsToDelete.map(\.fileUrl)
-                try await TaskAttachmentSupabaseSupport.deleteRecords(
-                    ids: attachmentsToDelete.map(\.id)
-                )
-                if scope == .thisAndFuture, seriesAttachmentTaskIds.isEmpty == false {
-                    try await TaskAttachmentSupabaseSupport.deleteRecords(
-                        matchingFileURLs: deletedFileURLs,
-                        fromTaskIds: seriesAttachmentTaskIds
+            let uploadTargetIds = scope == .thisAndFuture && seriesAttachmentTaskIds.isEmpty == false
+                ? seriesAttachmentTaskIds
+                : [updated.id]
+            let recurrenceContext = recurrenceSyncContext
+            Task {
+                do {
+                    if pendingAttachmentDeletes.isEmpty == false {
+                        let deletedFileURLs = pendingAttachmentDeletes.map(\.fileUrl)
+                        try await TaskAttachmentSupabaseSupport.deleteRecords(
+                            ids: pendingAttachmentDeletes.map(\.id)
+                        )
+                        if scope == .thisAndFuture, seriesAttachmentTaskIds.isEmpty == false {
+                            try await TaskAttachmentSupabaseSupport.deleteRecords(
+                                matchingFileURLs: deletedFileURLs,
+                                fromTaskIds: seriesAttachmentTaskIds
+                            )
+                        }
+                    }
+                    if hasPendingAttachmentUploads {
+                        let uploads = try await uploadSelectedAttachments(householdId: householdId)
+                        if uploads.isEmpty == false {
+                            try await persistAttachmentRecords(
+                                taskIds: uploadTargetIds,
+                                uploads: uploads
+                            )
+                        }
+                    }
+                    try await applyRecurrenceTransitionIfNeeded(
+                        context: recurrenceContext,
+                        updated: updated,
+                        householdId: householdId
                     )
+                } catch {
+                    #if DEBUG
+                    print("[CreateTaskView] background attachment/recurrence sync failed: \(error.localizedDescription)")
+                    #endif
                 }
             }
-
-            if attachmentUploads.isEmpty == false {
-                let uploadTargetIds = scope == .thisAndFuture && seriesAttachmentTaskIds.isEmpty == false
-                    ? seriesAttachmentTaskIds
-                    : [updated.id]
-                try await persistAttachmentRecords(
-                    taskIds: uploadTargetIds,
-                    uploads: attachmentUploads
-                )
-            }
-
-            try await applyRecurrenceTransitionIfNeeded(
-                context: recurrenceSyncContext,
-                updated: updated,
-                householdId: householdId
-            )
 
             onAlarmSync?(updated)
             onUpdateSuccess?(updated)
@@ -3077,10 +3045,10 @@ struct CreateTaskView: View {
                 householdId: updated.householdId,
                 taskType: AnalyticsManager.analyticsTaskType(for: updated)
             )
-            if attachmentsToDelete.isEmpty == false {
+            if pendingAttachmentDeletes.isEmpty == false {
                 attachmentsToDelete = []
             }
-            if attachmentUploads.isEmpty == false {
+            if hasPendingAttachmentUploads {
                 clearAttachmentSelection()
             }
             NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
@@ -3197,6 +3165,74 @@ struct CreateTaskView: View {
         return false
     }
 
+    /// 将表单字段合并进本地 `FamilyTask`（本地优先写，再入 Outbox）。
+    private func makeLocalUpdatedTask(from existing: FamilyTask, scope: RecurringTaskScope) -> FamilyTask {
+        _ = scope
+        var task = existing
+        task.title = normalizedTitle
+        task.description = mergedDescriptionForPayload
+        task.involvedMemberIds = resolvedInvolvedMemberIds
+        task.targetProfileIds = resolvedTargetProfileIds
+        task.taskType = resolvedTaskTypeForPayload()
+        task.dueDate = resolvedDueDateForPayload()
+        task.endDatetime = resolvedEndDatetimeForPayload()
+        task.durationMinutes = resolvedDurationMinutesForPayload()
+        task.isAllDay = resolvedIsAllDayForPayload()
+        task.timezone = resolvedTimezoneForPayload()
+        task.recurrenceRule = resolvedRecurrenceRuleForPayload()
+        task.recurrenceEndDate = resolvedRecurrenceEndDateForPayloadStrict()
+        task.recurrenceInterval = resolvedRecurrenceIntervalForPayloadStrict()
+        task.reminderOffsets = reminderOption.reminderOffsetsMinutes
+        task.estimatedCost = estimatedCostMinorUnits
+        task.backgroundColor = resolvedBackgroundColorHex()
+        task.emergencyPhone = resolvedEmergencyPhoneForPayload()
+        task.priority = formPriority
+        task.locationData = resolvedLocationData()
+        task.geofence = resolvedLocationData()?.toTaskGeofence()
+        task.updatedAt = Date()
+        task.updatedBy = appRouter.selectedMembershipId ?? existing.updatedBy ?? existing.creatorId
+        return task
+    }
+
+    /// 系列更新优先本地缓存；在线时再尝试服务端补全。
+    private func loadSeriesTasksForLocalUpdate(
+        householdId: UUID,
+        grouping: FamilyTask.SeriesGrouping,
+        dueOnOrAfter cutoff: Date
+    ) async -> [FamilyTask] {
+        let cached = await HouseholdLocalCache.loadTasks(for: householdId) ?? []
+        let localRows: [FamilyTask]
+        switch grouping {
+        case .byParentRoot(let root):
+            localRows = cached.filter { task in
+                if task.id == root { return true }
+                guard task.parentTaskId == root else { return false }
+                return (task.dueDate ?? .distantPast) >= cutoff
+            }
+        case .byLegacyGroup(let gid):
+            localRows = cached.filter { task in
+                task.groupId == gid && (task.dueDate ?? .distantPast) >= cutoff
+            }
+        }
+        if await NetworkMonitor.shared.isConnected == false {
+            return localRows.sorted {
+                ($0.dueDate ?? .distantPast) < ($1.dueDate ?? .distantPast)
+            }
+        }
+        #if canImport(Supabase)
+        if let remote = try? await TaskSeriesSupabaseSupport.fetchSeriesTasks(
+            householdId: householdId,
+            grouping: grouping,
+            dueOnOrAfter: cutoff
+        ), remote.isEmpty == false {
+            return TaskLocalWriteSupport.mergeFetchedTasks(remote, householdId: householdId)
+        }
+        #endif
+        return localRows.sorted {
+            ($0.dueDate ?? .distantPast) < ($1.dueDate ?? .distantPast)
+        }
+    }
+
     private func loadParentRecurrenceTemplateIfNeeded() async {
         #if canImport(Supabase)
         guard let parentId = editingTask?.parentTaskId else { return }
@@ -3231,138 +3267,65 @@ struct CreateTaskView: View {
         defer { isSaving = false }
         do {
             let now = Date()
-            let client = SupabaseManager.shared.client
-            let creatorIdLowercased = creatorMembershipId.uuidString.lowercased()
+            let creatorId = creatorMembershipId
+            let hasPendingAttachmentUploads = selectedAttachmentJPEGData.isEmpty == false
             let recurrence = resolvedRecurrenceRuleForPayload()
             if isFlexibleMode, recurrence != nil {
                 errorMessage = L10n.Common.flexibleToDosDonTSupportRecurrence.string(locale: locale)
                 return
             }
 
-            async let attachmentUploads = uploadSelectedAttachments(householdId: householdId)
             var persistedTaskId: UUID?
             var seriesTaskIdsForAttachments: [UUID] = []
 
             if recurrence == nil {
                 let newTaskId = UUID()
                 let geofence = resolvedLocationData()?.toTaskGeofence()
-                let singlePayload = TaskInsertPayload(
+                let created = FamilyTask(
                     id: newTaskId,
                     householdId: householdId,
-                    creatorId: creatorIdLowercased,
-                    parentTaskId: nil,
-                    groupId: nil,
+                    creatorId: creatorId,
                     involvedMemberIds: resolvedInvolvedMemberIds,
                     targetProfileIds: resolvedTargetProfileIds,
                     title: normalizedTitle,
                     description: mergedDescriptionForPayload,
-                    status: TaskStatus.new.rawValue,
-                    priority: formPriority.rawValue,
+                    locationData: resolvedLocationData(),
+                    geofence: geofence,
+                    status: .new,
+                    priority: formPriority,
                     taskType: resolvedTaskTypeForPayload(),
                     dueDate: resolvedDueDateForPayload(),
                     endDatetime: resolvedEndDatetimeForPayload(),
                     durationMinutes: resolvedDurationMinutesForPayload(),
                     isAllDay: resolvedIsAllDayForPayload(),
                     timezone: resolvedTimezoneForPayload(),
-                    recurrenceRule: nil,
-                    recurrenceEndDate: nil,
-                    recurrenceInterval: nil,
                     reminderOffsets: reminderOption.reminderOffsetsMinutes,
                     estimatedCost: estimatedCostMinorUnits,
                     backgroundColor: resolvedBackgroundColorHex(),
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                    locationData: resolvedLocationData(),
-                    geofence: geofence,
                     createdAt: now,
                     updatedAt: now,
-                    updatedBy: creatorIdLowercased
+                    updatedBy: creatorId
                 )
-                let spatialParams = CreateTaskWithSpatialParams(
-                    pTitle: normalizedTitle,
-                    pDescription: mergedDescriptionForPayload,
-                    pCreatorId: creatorIdLowercased,
-                    pTenantId: householdId.uuidString.lowercased(),
-                    pGeofence: geofence
-                )
-                var didPersistViaRPC = false
-                do {
-                    let createdRow: FamilyTask = try await client
-                        .rpc("create_task_with_spatial", params: spatialParams)
-                        .execute()
-                        .value
-                    // 用 RPC 返回的 id / created_at，其余字段仍由 update 写入
-                    let rpcPayload = TaskInsertPayload(
-                        id: createdRow.id,
-                        householdId: singlePayload.householdId,
-                        creatorId: singlePayload.creatorId,
-                        parentTaskId: singlePayload.parentTaskId,
-                        groupId: singlePayload.groupId,
-                        involvedMemberIds: singlePayload.involvedMemberIds,
-                        targetProfileIds: singlePayload.targetProfileIds,
-                        title: singlePayload.title,
-                        description: singlePayload.description,
-                        status: singlePayload.status,
-                        priority: singlePayload.priority,
-                        taskType: singlePayload.taskType,
-                        dueDate: singlePayload.dueDate,
-                        endDatetime: singlePayload.endDatetime,
-                        durationMinutes: singlePayload.durationMinutes,
-                        isAllDay: singlePayload.isAllDay,
-                        timezone: singlePayload.timezone,
-                        recurrenceRule: singlePayload.recurrenceRule,
-                        recurrenceEndDate: singlePayload.recurrenceEndDate,
-                        recurrenceInterval: singlePayload.recurrenceInterval,
-                        reminderOffsets: singlePayload.reminderOffsets,
-                        estimatedCost: singlePayload.estimatedCost,
-                        backgroundColor: singlePayload.backgroundColor,
-                        emergencyPhone: singlePayload.emergencyPhone,
-                        locationData: singlePayload.locationData,
-                        geofence: singlePayload.geofence,
-                        createdAt: createdRow.createdAt,
-                        updatedAt: now,
-                        updatedBy: singlePayload.updatedBy
-                    )
-                    _ = try await client
-                        .from("tasks")
-                        .update(rpcPayload)
-                        .eq("id", value: createdRow.id.uuidString.lowercased())
-                        .execute()
-                    persistedTaskId = createdRow.id
-                    if let synthetic = familyTaskFromInsertPayload(rpcPayload) {
-                        onAlarmSync?(synthetic)
-                    }
-                    didPersistViaRPC = true
-                } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
-                    #if DEBUG
-                    print("[CreateTaskView] create_task_with_spatial unavailable; falling back to tasks.insert")
-                    #endif
-                }
-                if didPersistViaRPC == false {
-                    _ = try await client
-                        .from("tasks")
-                        .insert(singlePayload)
-                        .execute()
-                    persistedTaskId = newTaskId
-                    if let synthetic = familyTaskFromInsertPayload(singlePayload) {
-                        onAlarmSync?(synthetic)
-                    }
-                }
+                TaskLocalWriteSupport.commitCreate(created)
+                onAlarmSync?(created)
+                persistedTaskId = newTaskId
             } else {
                 let newTaskId = UUID()
                 persistedTaskId = newTaskId
                 seriesTaskIdsForAttachments = [newTaskId]
-                let motherPayload = TaskInsertPayload(
+                let mother = FamilyTask(
                     id: newTaskId,
                     householdId: householdId,
-                    creatorId: creatorIdLowercased,
-                    parentTaskId: nil,
-                    groupId: nil,
+                    creatorId: creatorId,
                     involvedMemberIds: resolvedInvolvedMemberIds,
                     targetProfileIds: resolvedTargetProfileIds,
                     title: normalizedTitle,
                     description: mergedDescriptionForPayload,
-                    status: TaskStatus.new.rawValue,
-                    priority: formPriority.rawValue,
+                    locationData: resolvedLocationData(),
+                    geofence: resolvedLocationData()?.toTaskGeofence(),
+                    status: .new,
+                    priority: formPriority,
                     taskType: TaskTypeKind.scheduled.rawValue,
                     dueDate: dueDate,
                     endDatetime: resolvedEndDatetime(for: dueDate),
@@ -3376,93 +3339,67 @@ struct CreateTaskView: View {
                     estimatedCost: estimatedCostMinorUnits,
                     backgroundColor: resolvedBackgroundColorHex(),
                     emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                    locationData: resolvedLocationData(),
-                    geofence: resolvedLocationData()?.toTaskGeofence(),
                     createdAt: now,
                     updatedAt: now,
-                    updatedBy: creatorIdLowercased
+                    updatedBy: creatorId
                 )
-                _ = try await client
-                    .from("tasks")
-                    .insert(motherPayload)
-                    .execute()
-
-                guard let syntheticMother = familyTaskFromInsertPayload(motherPayload) else {
-                    throw TaskAttachmentSupabaseError.taskPayloadAssemblyFailed
-                }
-                onAlarmSync?(syntheticMother)
+                TaskLocalWriteSupport.commitCreate(mother)
+                onAlarmSync?(mother)
 
                 let children = await Task.detached(priority: .userInitiated) {
-                    RecurrenceEngine.generateInstances(from: syntheticMother)
+                    RecurrenceEngine.generateInstances(from: mother)
                 }.value
                 if children.isEmpty == false {
-                    let childPayloads = children.map { child in
-                        TaskInsertPayload(
-                            id: child.id,
-                            householdId: householdId,
-                            creatorId: creatorIdLowercased,
-                            parentTaskId: newTaskId,
-                            groupId: nil,
-                            involvedMemberIds: resolvedInvolvedMemberIds,
-                            targetProfileIds: resolvedTargetProfileIds,
-                            title: normalizedTitle,
-                            description: mergedDescriptionForPayload,
-                            status: TaskStatus.new.rawValue,
-                            priority: formPriority.rawValue,
-                            taskType: TaskTypeKind.scheduled.rawValue,
-                            dueDate: child.dueDate ?? dueDate,
-                            endDatetime: child.endDatetime,
-                            durationMinutes: child.durationMinutes,
-                            isAllDay: isAllDay,
-                            timezone: resolvedTimezoneForPayload(),
-                            recurrenceRule: nil,
-                            recurrenceEndDate: nil,
-                            recurrenceInterval: nil,
-                            reminderOffsets: reminderOption.reminderOffsetsMinutes,
-                            estimatedCost: estimatedCostMinorUnits,
-                            backgroundColor: resolvedBackgroundColorHex(),
-                            emergencyPhone: resolvedEmergencyPhoneForPayload(),
-                            locationData: resolvedLocationData(),
-                            geofence: nil,
-                            createdAt: now,
-                            updatedAt: now,
-                            updatedBy: creatorIdLowercased
-                        )
+                    seriesTaskIdsForAttachments.append(contentsOf: children.map(\.id))
+                    for child in children {
+                        var instance = child
+                        instance.involvedMemberIds = resolvedInvolvedMemberIds
+                        instance.targetProfileIds = resolvedTargetProfileIds
+                        instance.title = normalizedTitle
+                        instance.description = mergedDescriptionForPayload
+                        instance.priority = formPriority
+                        instance.isAllDay = isAllDay
+                        instance.timezone = resolvedTimezoneForPayload()
+                        instance.reminderOffsets = reminderOption.reminderOffsetsMinutes
+                        instance.estimatedCost = estimatedCostMinorUnits
+                        instance.backgroundColor = resolvedBackgroundColorHex()
+                        instance.emergencyPhone = resolvedEmergencyPhoneForPayload()
+                        instance.locationData = resolvedLocationData()
+                        instance.updatedBy = creatorId
+                        TaskLocalWriteSupport.commitCreate(instance)
+                        onAlarmSync?(instance)
                     }
-                    _ = try await client
-                        .from("tasks")
-                        .insert(childPayloads)
-                        .execute()
-                    seriesTaskIdsForAttachments.append(contentsOf: childPayloads.map(\.id))
-                    for payload in childPayloads {
-                        if let synthetic = familyTaskFromInsertPayload(payload) {
-                            onAlarmSync?(synthetic)
+                }
+            }
+
+            let attachmentTaskIds: [UUID]
+            if seriesTaskIdsForAttachments.isEmpty == false {
+                attachmentTaskIds = seriesTaskIdsForAttachments
+            } else if let persistedTaskId {
+                attachmentTaskIds = [persistedTaskId]
+            } else {
+                attachmentTaskIds = []
+            }
+            if hasPendingAttachmentUploads, attachmentTaskIds.isEmpty == false {
+                Task {
+                    do {
+                        let uploads = try await uploadSelectedAttachments(householdId: householdId)
+                        if uploads.isEmpty == false {
+                            try await persistAttachmentRecords(
+                                taskIds: attachmentTaskIds,
+                                uploads: uploads
+                            )
                         }
+                    } catch {
+                        #if DEBUG
+                        print("[CreateTaskView] background attachment upload failed: \(error.localizedDescription)")
+                        #endif
                     }
                 }
             }
 
-            let resolvedAttachmentUploads = try await attachmentUploads
-            if resolvedAttachmentUploads.isEmpty == false {
-                let attachmentTaskIds: [UUID]
-                if seriesTaskIdsForAttachments.isEmpty == false {
-                    attachmentTaskIds = seriesTaskIdsForAttachments
-                } else if let persistedTaskId {
-                    attachmentTaskIds = [persistedTaskId]
-                } else {
-                    attachmentTaskIds = []
-                }
-                if attachmentTaskIds.isEmpty == false {
-                    try await persistAttachmentRecords(
-                        taskIds: attachmentTaskIds,
-                        uploads: resolvedAttachmentUploads
-                    )
-                }
-            }
-
-            let hasAttachment = resolvedAttachmentUploads.isEmpty == false
             AnalyticsManager.logTaskCreated(
-                hasAttachment: hasAttachment,
+                hasAttachment: hasPendingAttachmentUploads,
                 householdId: householdId,
                 taskType: AnalyticsManager.analyticsTaskType(isFlexible: isFlexibleMode)
             )

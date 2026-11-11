@@ -314,73 +314,41 @@ struct SupabaseTaskDataService: TaskDataService {
             pTenantId: task.householdId.uuidString.lowercased(),
             pGeofence: spatialGeofence
         )
-        let created: FamilyTask
         do {
-            created = try await provider.client
+            // 线上主路径：SECURITY DEFINER RPC 创建行，再 PATCH 补齐本地优先写入的字段。
+            let created: FamilyTask = try await provider.client
                 .rpc("create_task_with_spatial", params: params)
                 .execute()
                 .value
+            var merged = task.sanitizedForPersistence().replacingIdentity(
+                id: created.id,
+                createdAt: created.createdAt,
+                status: created.status
+            )
+            if let spatialGeofence {
+                merged.geofence = spatialGeofence
+            }
+            if merged.involvedMemberIds?.isEmpty == true {
+                merged.involvedMemberIds = nil
+            }
+            merged.updatedAt = Date()
+            return try await updateTask(merged)
         } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
-            let payload = task.sanitizedForPersistence()
+            var toInsert = task.sanitizedForPersistence()
+            if let spatialGeofence {
+                toInsert.geofence = spatialGeofence
+            }
+            if toInsert.involvedMemberIds?.isEmpty == true {
+                toInsert.involvedMemberIds = nil
+            }
             return try await provider.client
                 .from(SupabaseTable.tasks)
-                .insert(payload)
+                .insert(toInsert)
                 .select()
                 .single()
                 .execute()
                 .value
         }
-        let sanitized = task.sanitizedForPersistence()
-        let merged = FamilyTask(
-            id: created.id,
-            householdId: sanitized.householdId,
-            creatorId: sanitized.creatorId,
-            parentTaskId: sanitized.parentTaskId,
-            groupId: sanitized.groupId,
-            originalDueDate: sanitized.originalDueDate,
-            involvedMemberIds: sanitized.involvedMemberIds,
-            targetProfileId: sanitized.targetProfileId,
-            targetProfileIds: sanitized.targetProfileIds,
-            targetSubject: sanitized.targetSubject,
-            title: sanitized.title,
-            description: sanitized.description,
-            originalPrompt: sanitized.originalPrompt,
-            attachmentUrls: sanitized.attachmentUrls,
-            externalContacts: sanitized.externalContacts,
-            locationData: sanitized.locationData,
-            geofence: spatialGeofence ?? created.geofence,
-            completionLocation: sanitized.completionLocation,
-            externalSyncRefs: sanitized.externalSyncRefs,
-            alarmSetBy: sanitized.alarmSetBy,
-            status: created.status,
-            priority: sanitized.priority,
-            source: sanitized.source,
-            taskType: sanitized.taskType,
-            dueDate: sanitized.dueDate,
-            endDatetime: sanitized.endDatetime,
-            durationMinutes: sanitized.durationMinutes,
-            isAllDay: sanitized.isAllDay,
-            timezone: sanitized.timezone,
-            recurrenceRule: sanitized.recurrenceRule,
-            recurrenceEndDate: sanitized.recurrenceEndDate,
-            issue: sanitized.issue,
-            recurrenceInterval: sanitized.recurrenceInterval,
-            reminderOffsets: sanitized.reminderOffsets,
-            estimatedCost: sanitized.estimatedCost,
-            listId: sanitized.listId,
-            actualAmount: sanitized.actualAmount,
-            payerId: sanitized.payerId,
-            splitMemberIds: sanitized.splitMemberIds,
-            expenseCategory: sanitized.expenseCategory,
-            rewardPoints: sanitized.rewardPoints,
-            pointApprovedBy: sanitized.pointApprovedBy,
-            backgroundColor: sanitized.backgroundColor,
-            emergencyPhone: sanitized.emergencyPhone,
-            createdAt: created.createdAt,
-            updatedAt: Date(),
-            updatedBy: sanitized.updatedBy ?? sanitized.creatorId
-        )
-        return try await updateTask(merged)
         #else
         _ = task
         _ = geofence

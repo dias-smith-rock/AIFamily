@@ -116,7 +116,9 @@ struct ListsHomeView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
         .refreshable {
+            await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshPlanner")
             await viewModel.loadLists(force: true)
         }
     }

@@ -407,6 +407,11 @@ final class AppRouter: ObservableObject {
         return snapshot
     }
 
+    /// 是否有冷启动可用的家庭路由快照（不依赖当前 Supabase session 是否有效）。
+    var hasPersistedHouseholdSnapshot: Bool {
+        loadPersistedHouseholdSnapshot() != nil
+    }
+
     func clearOfflineHouseholdSnapshot() {
         UserDefaults.standard.removeObject(forKey: Self.offlineHouseholdSnapshotKey)
     }
@@ -414,6 +419,11 @@ final class AppRouter: ObservableObject {
     /// 本地是否仍存有 Supabase 会话（未必有效，离线启动时用于避免误踢回登录页）。
     var hasPersistedSupabaseSession: Bool {
         clientHasPersistedSession()
+    }
+
+    /// 鉴权错误判定（供 ContentView / AuthSessionRefresher 踢登录）。
+    func isLikelyAuthenticationFailure(_ error: Error) -> Bool {
+        isAuthenticationError(error)
     }
 
     func refreshStateFromBackend() async {

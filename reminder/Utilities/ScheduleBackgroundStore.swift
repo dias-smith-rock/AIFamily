@@ -149,11 +149,15 @@ struct SchedulePageBackgroundFill: View {
     private var imageFill: some View {
         #if canImport(UIKit)
         if let uiImage = ScheduleBackgroundStore.loadUIImage() {
-            ZStack {
-                AppTheme.ColorToken.background
-                fittedBackgroundImage(uiImage)
-                // 压暗蒙层，保证顶栏/周条/时间轴等浅色文字可读。
-                Color.black.opacity(0.48)
+            GeometryReader { proxy in
+                let size = proxy.size
+                ZStack {
+                    AppTheme.ColorToken.background
+                    fittedBackgroundImage(uiImage, in: size)
+                    // 压暗蒙层，保证顶栏/周条/时间轴等浅色文字可读。
+                    Color.black.opacity(0.48)
+                }
+                .frame(width: size.width, height: size.height)
             }
         } else {
             AppTheme.ColorToken.background
@@ -165,28 +169,63 @@ struct SchedulePageBackgroundFill: View {
 
     #if canImport(UIKit)
     @ViewBuilder
-    private func fittedBackgroundImage(_ uiImage: UIImage) -> some View {
+    private func fittedBackgroundImage(_ uiImage: UIImage, in size: CGSize) -> some View {
+        let imageSize = uiImage.size
         switch appSettings.scheduleBackgroundImageFit {
         case .fill:
+            let scale = fillScale(imageSize: imageSize, canvas: size)
             Image(uiImage: uiImage)
                 .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: imageSize.width * scale, height: imageSize.height * scale)
+                .frame(width: size.width, height: size.height)
                 .clipped()
         case .fit:
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            let scale = fitScale(imageSize: imageSize, canvas: size)
+            let drawn = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+            ZStack {
+                // 留白区：镜像模糊垫底（再压暗一层，避免看起来像 Fill）。
+                blurredMirrorBackdrop(uiImage, canvas: size)
+                Color.black.opacity(0.22)
+                    .allowsHitTesting(false)
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .frame(width: drawn.width, height: drawn.height)
+                    .shadow(color: .black.opacity(0.35), radius: 18, y: 4)
+            }
+            .frame(width: size.width, height: size.height)
         case .stretch:
             Image(uiImage: uiImage)
                 .resizable()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: size.width, height: size.height)
         case .tile:
             Image(uiImage: uiImage)
                 .resizable(resizingMode: .tile)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(width: size.width, height: size.height)
         }
+    }
+
+    private func fillScale(imageSize: CGSize, canvas: CGSize) -> CGFloat {
+        guard imageSize.width > 0, imageSize.height > 0, canvas.width > 0, canvas.height > 0 else { return 1 }
+        return max(canvas.width / imageSize.width, canvas.height / imageSize.height)
+    }
+
+    private func fitScale(imageSize: CGSize, canvas: CGSize) -> CGFloat {
+        guard imageSize.width > 0, imageSize.height > 0, canvas.width > 0, canvas.height > 0 else { return 1 }
+        return min(canvas.width / imageSize.width, canvas.height / imageSize.height)
+    }
+
+    /// 等比适应时的留白垫底：铺满裁切 + 镜像 + 强模糊。
+    private func blurredMirrorBackdrop(_ uiImage: UIImage, canvas: CGSize) -> some View {
+        let imageSize = uiImage.size
+        let scale = fillScale(imageSize: imageSize, canvas: canvas) * 1.12
+        return Image(uiImage: uiImage)
+            .resizable()
+            .frame(width: imageSize.width * scale, height: imageSize.height * scale)
+            .scaleEffect(x: -1, y: 1)
+            .blur(radius: 36, opaque: true)
+            .frame(width: canvas.width, height: canvas.height)
+            .clipped()
+            .allowsHitTesting(false)
     }
     #endif
 }

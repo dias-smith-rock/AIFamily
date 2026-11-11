@@ -706,7 +706,8 @@ struct TaskListView: View {
 
     @MainActor
     private func refreshTasks() async {
-        await viewModel.loadTasks()
+        await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshSchedule")
+        await viewModel.loadTasks(silent: true)
     }
 }
 
