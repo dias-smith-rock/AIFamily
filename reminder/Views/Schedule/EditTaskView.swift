@@ -26,11 +26,14 @@ struct EditTaskView: View {
     private let onSaveSuccess: ((Date) -> Void)?
     private let onUpdateSuccess: ((FamilyTask) -> Void)?
     private let onAlarmSync: ((FamilyTask) -> Void)?
+    /// 无编辑权限时打开只读表单（字段不可改、无保存勾）。
+    private let allowsEditing: Bool
 
     /// 编辑已有任务（模式由任务 `task_type` 推断）。
     init(
         task: FamilyTask,
         familyProfiles: [FamilyProfile] = [],
+        allowsEditing: Bool = true,
         onUpdateSuccess: @escaping (FamilyTask) -> Void,
         onAlarmSync: ((FamilyTask) -> Void)? = nil
     ) {
@@ -55,6 +58,7 @@ struct EditTaskView: View {
         self.onSaveSuccess = nil
         self.onUpdateSuccess = onUpdateSuccess
         self.onAlarmSync = onAlarmSync
+        self.allowsEditing = allowsEditing
     }
 
     /// 新建任务（由入口指定 `.scheduled` 或 `.flexible`）。
@@ -100,6 +104,7 @@ struct EditTaskView: View {
         self.onSaveSuccess = onSaveSuccess
         self.onUpdateSuccess = nil
         self.onAlarmSync = onAlarmSync
+        self.allowsEditing = true
     }
 
     var body: some View {
@@ -107,6 +112,7 @@ struct EditTaskView: View {
             editingTask: editingTask,
             formMode: formMode,
             familyProfiles: familyProfiles,
+            allowsEditing: allowsEditing,
             initialTitle: initialTitle,
             initialNote: initialNote,
             initialLocationName: initialLocationName,

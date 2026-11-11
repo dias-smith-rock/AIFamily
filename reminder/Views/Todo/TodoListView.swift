@@ -434,9 +434,19 @@ struct TodoListView: View {
     }
 
     private func editFlexibleSheet(task: FamilyTask) -> some View {
-        EditTaskView(
+        let role = TaskEditAccess.role(
+            of: appRouter.selectedMembershipId,
+            in: viewModel.householdMembers
+        )
+        let allowsEditing = TaskEditAccess.canEdit(
+            task,
+            membershipId: appRouter.selectedMembershipId,
+            role: role
+        )
+        return EditTaskView(
             task: task,
             familyProfiles: viewModel.familyProfiles,
+            allowsEditing: allowsEditing,
             onUpdateSuccess: { _ in
                 Task {
                     await viewModel.loadTasks(silent: true, force: true)

@@ -957,20 +957,11 @@ struct TaskDetailView: View {
     }
 
     private var canEditTask: Bool {
-        guard task.source.isReadOnly == false else { return false }
-
-        // `tasks.creator_id` 存的是 household_memberships.id，须与当前上下文 membership 比较，禁止用 auth user id。
-        let isTaskCreator = appRouter.selectedMembershipId == task.creatorId
-
-        let isGroupAdmin: Bool
-        switch currentUserRole {
-        case .admin, .creator:
-            isGroupAdmin = true
-        case .member:
-            isGroupAdmin = false
-        }
-
-        return isTaskCreator || isGroupAdmin
+        TaskEditAccess.canEdit(
+            task,
+            membershipId: appRouter.selectedMembershipId,
+            role: currentUserRole
+        )
     }
 
     /// 已完成任务按历史只读处理，不展示编辑入口（删除仍可由管理员操作）。

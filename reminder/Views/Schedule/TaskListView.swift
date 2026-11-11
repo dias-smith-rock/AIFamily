@@ -720,9 +720,19 @@ private struct ScheduleEditSheetModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content.sheet(item: $task) { presented in
+            let role = TaskEditAccess.role(
+                of: appRouter.selectedMembershipId,
+                in: viewModel.householdMembers
+            )
+            let allowsEditing = TaskEditAccess.canEdit(
+                presented,
+                membershipId: appRouter.selectedMembershipId,
+                role: role
+            )
             EditTaskView(
                 task: presented,
                 familyProfiles: viewModel.familyProfiles,
+                allowsEditing: allowsEditing,
                 onUpdateSuccess: { _ in
                     Task { await viewModel.loadTasks(silent: true) }
                 },

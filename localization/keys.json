@@ -7452,7 +7452,7 @@
     "swift_property": "lldDaysBeforeTaskStartingSoon"
   },
   {
-    "legacy_key": "清单",
+    "legacy_key": "计划",
     "new_key": "todo_lists",
     "table": "Todo",
     "swift_property": "lists"

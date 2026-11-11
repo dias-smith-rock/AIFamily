@@ -356,6 +356,8 @@ struct CreateTaskView: View {
     private let editingTask: FamilyTask?
     private let formMode: EditTaskViewModel.TaskMode
     private let familyProfiles: [FamilyProfile]
+    /// 编辑态无权限时为 `false`：表单只读、隐藏保存。
+    private let allowsEditing: Bool
     private let embedMode: CreateTaskEmbedMode
     private let initialTitle: String?
     private let initialNote: String?
@@ -410,6 +412,7 @@ struct CreateTaskView: View {
         editingTask: FamilyTask? = nil,
         formMode: EditTaskViewModel.TaskMode = .scheduled,
         familyProfiles: [FamilyProfile] = [],
+        allowsEditing: Bool = true,
         embedMode: CreateTaskEmbedMode = .standalone,
         initialTitle: String? = nil,
         initialNote: String? = nil,
@@ -435,6 +438,7 @@ struct CreateTaskView: View {
         self.editingTask = editingTask
         self.formMode = editingTask.map { EditTaskViewModel.mode(forEditing: $0) } ?? formMode
         self.familyProfiles = familyProfiles
+        self.allowsEditing = allowsEditing
         self.embedMode = embedMode
         self.initialTitle = initialTitle
         self.initialNote = initialNote
@@ -716,7 +720,9 @@ struct CreateTaskView: View {
             if isFlexibleMode {
                 flexibleDeadlineGroup
             }
-            createTaskChipTrayInset
+            if allowsEditing {
+                createTaskChipTrayInset
+            }
             if let editingTask {
                 lastEditedFooter(for: editingTask)
             }
@@ -1665,6 +1671,7 @@ struct CreateTaskView: View {
 
             ScrollView(.vertical) {
                 formScrollContent
+                    .disabled(allowsEditing == false)
             }
             .scrollDismissesKeyboard(.interactively)
 
@@ -1728,7 +1735,7 @@ struct CreateTaskView: View {
         }
         .onAppear {
             seedInsertedSectionsIfNeeded()
-            if editingTask == nil {
+            if editingTask == nil, allowsEditing {
                 focusedField = .title
             }
         }
@@ -1776,6 +1783,7 @@ struct CreateTaskView: View {
                         }
                     }
                     .onChange(of: embeddedSaveTrigger) { _, _ in
+                        guard allowsEditing else { return }
                         Task { await saveTask() }
                     }
             } else {
@@ -1851,16 +1859,18 @@ struct CreateTaskView: View {
                 .accessibilityLabel(formHouseholdNavigationTitle)
             }
         }
-        ToolbarItem(placement: .confirmationAction) {
-            Button {
-                Task { await saveTask() }
-            } label: {
-                Image(systemName: "checkmark")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(formChromeTint)
+        if allowsEditing {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    Task { await saveTask() }
+                } label: {
+                    Image(systemName: "checkmark")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(formChromeTint)
+                }
+                .tint(formChromeTint)
+                .disabled(isSaving || normalizedTitle.isEmpty)
             }
-            .tint(formChromeTint)
-            .disabled(isSaving || normalizedTitle.isEmpty)
         }
         ToolbarItemGroup(placement: .keyboard) {
             Spacer()
@@ -2750,6 +2760,7 @@ struct CreateTaskView: View {
     }
 
     private func saveTask() async {
+        guard allowsEditing else { return }
         guard normalizedTitle.isEmpty == false else {
             errorMessage = L10n.Schedule.pleaseEnterATaskTitleFirst.string(locale: locale)
             return
