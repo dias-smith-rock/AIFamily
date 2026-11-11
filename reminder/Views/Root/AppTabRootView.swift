@@ -5,7 +5,7 @@ struct AppTabRootView: View {
     @EnvironmentObject private var appSettings: AppSettingsManager
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var selectedTab: Tab = .todos
+    @State private var selectedTab: Tab = .schedule
     @StateObject private var reviewRedirectManager = ReviewRedirectManager.shared
     @State private var showAnonymousBindPrompt = false
     @State private var showAnonymousBindLinkSheet = false
