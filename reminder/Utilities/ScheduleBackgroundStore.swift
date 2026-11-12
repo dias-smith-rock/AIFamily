@@ -214,15 +214,18 @@ struct SchedulePageBackgroundFill: View {
         return min(canvas.width / imageSize.width, canvas.height / imageSize.height)
     }
 
-    /// 等比适应时的留白垫底：铺满裁切 + 镜像 + 强模糊。
+    /// 等比适应时的留白垫底：铺满裁切 + 镜像 + 模糊。
+    /// Duo / 超大画布上降低模糊半径，避免全屏高斯模糊拖垮帧率。
     private func blurredMirrorBackdrop(_ uiImage: UIImage, canvas: CGSize) -> some View {
         let imageSize = uiImage.size
         let scale = fillScale(imageSize: imageSize, canvas: canvas) * 1.12
+        let area = canvas.width * canvas.height
+        let blurRadius: CGFloat = area > 1_400_000 ? 12 : (area > 700_000 ? 22 : 36)
         return Image(uiImage: uiImage)
             .resizable()
             .frame(width: imageSize.width * scale, height: imageSize.height * scale)
             .scaleEffect(x: -1, y: 1)
-            .blur(radius: 36, opaque: true)
+            .blur(radius: blurRadius, opaque: true)
             .frame(width: canvas.width, height: canvas.height)
             .clipped()
             .allowsHitTesting(false)

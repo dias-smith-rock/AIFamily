@@ -494,7 +494,7 @@ struct SettingsMainView: View {
         } header: {
             Text(verbatim: "Developer")
         } footer: {
-            Text(verbatim: "DEBUG only. Creates 3 orgs; each gets this month’s schedules (10–20/week), todos (10–20/week), ledger (10–20/month). First org also gets San Jose location points. May take a minute. Force VIP unlocks premium locally without StoreKit.")
+            Text(verbatim: "DEBUG only. Creates 3 orgs; each gets this month’s schedules (10–20/week), todos (10–20/week), ledger (10–20/month), planner lists. First org also gets San Jose location points. May take a minute. Force VIP unlocks premium locally without StoreKit.")
         }
     }
 
@@ -532,12 +532,13 @@ struct SettingsMainView: View {
                         "Todos overdue: \(result.overdueTodos)",
                         "Todos completed: \(result.completedTodos)",
                         "Wallet tx: \(result.ledgerTransactions)",
+                        "Planner lists: \(result.plannerLists) · items: \(result.plannerItems)",
                         "Location members: \(result.locationMembers) · points: \(result.locationPoints)",
                         "Switched to first mock org if available.",
                     ]
             ).joined(separator: "\n")
         } catch {
-            mockSeedErrorMessage = error.localizedDescription
+            mockSeedErrorMessage = Self.debugSeedErrorDescription(error)
         }
     }
 
@@ -558,8 +559,26 @@ struct SettingsMainView: View {
                 "Open Location tab to view.",
             ].joined(separator: "\n")
         } catch {
-            mockSeedErrorMessage = error.localizedDescription
+            mockSeedErrorMessage = Self.debugSeedErrorDescription(error)
         }
+    }
+
+    private static func debugSeedErrorDescription(_ error: Error) -> String {
+        if let decoding = error as? DecodingError {
+            switch decoding {
+            case .typeMismatch(let type, let context):
+                return "Decode typeMismatch \(type) at \(context.codingPath.map(\.stringValue).joined(separator: ".")): \(context.debugDescription)"
+            case .valueNotFound(let type, let context):
+                return "Decode valueNotFound \(type) at \(context.codingPath.map(\.stringValue).joined(separator: ".")): \(context.debugDescription)"
+            case .keyNotFound(let key, let context):
+                return "Decode keyNotFound \(key.stringValue) at \(context.codingPath.map(\.stringValue).joined(separator: ".")): \(context.debugDescription)"
+            case .dataCorrupted(let context):
+                return "Decode dataCorrupted at \(context.codingPath.map(\.stringValue).joined(separator: ".")): \(context.debugDescription)"
+            @unknown default:
+                return String(describing: decoding)
+            }
+        }
+        return error.localizedDescription
     }
     #endif
 

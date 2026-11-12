@@ -61,14 +61,16 @@ struct JoinedHousehold: Identifiable, Codable, Equatable {
         return uuid
     }
 
-    /// PostgREST 嵌套 `households` 可能为 `{}` 或 `[{}]`。
+    /// PostgREST 嵌套 `households` 可能为对象、单元素数组或 `null`；先 `try` 对象会在数组形态下直接抛 typeMismatch。
     private static func decodeHouseholdEmbed(
         from container: KeyedDecodingContainer<CodingKeys>
     ) throws -> HouseholdBasicInfo? {
-        if let info = try container.decodeIfPresent(HouseholdBasicInfo.self, forKey: .household) {
+        guard container.contains(.household) else { return nil }
+        if (try? container.decodeNil(forKey: .household)) == true { return nil }
+        if let info = try? container.decode(HouseholdBasicInfo.self, forKey: .household) {
             return info
         }
-        if let list = try container.decodeIfPresent([HouseholdBasicInfo].self, forKey: .household) {
+        if let list = try? container.decode([HouseholdBasicInfo].self, forKey: .household) {
             return list.first
         }
         return nil

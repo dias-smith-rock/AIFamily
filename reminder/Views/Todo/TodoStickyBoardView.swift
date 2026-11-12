@@ -74,6 +74,8 @@ struct TodoStickyBoardView: View {
     /// 白板绕 Y 轴累计旋转角；每 +180° 翻一面。
     @State private var boardFlipDegrees: Double = 0
     @State private var isBoardFlipping = false
+    /// 平移 / 捏合中：裁剪视口外便签并降级卡片开销，缓解 Duo 宽屏掉帧。
+    @State private var isBoardNavigating = false
 
     private let noteSize = BoardMetrics.noteSize
     private let positionsStorageKey = "todo_sticky_note_positions"
@@ -389,7 +391,7 @@ struct TodoStickyBoardView: View {
                     zoomIn(towardBoardPoint: location)
                 }
 
-            ForEach(displayedTasks) { task in
+            ForEach(visibleDisplayedTasks(in: viewport)) { task in
                 stickyNote(for: task)
                     .position(resolvedPosition(for: task, viewport: viewport))
                     .zIndex(stackingZIndex(for: task.id))
@@ -397,6 +399,34 @@ struct TodoStickyBoardView: View {
         }
         .frame(width: boardSize.width, height: boardSize.height)
         .coordinateSpace(name: boardSpace)
+    }
+
+    /// Duo / 多便签：只挂载落入视口（含边距）的卡片；拖动中的便签始终保留。
+    private func visibleDisplayedTasks(in viewport: CGSize) -> [FamilyTask] {
+        let tasks = displayedTasks
+        guard tasks.count > 10, viewport.width > 1, viewport.height > 1 else { return tasks }
+
+        let safeScale = max(scale, 0.01)
+        let margin: CGFloat = isBoardNavigating ? 160 : 96
+        let halfW = noteSize.width * safeScale * 0.5 + margin
+        let halfH = noteSize.height * safeScale * 0.5 + margin
+        let minX = -halfW
+        let maxX = viewport.width + halfW
+        let minY = -halfH
+        let maxY = viewport.height + halfH
+        let dragging = draggingID
+        let lifted = liftSession?.task.id
+
+        return tasks.filter { task in
+            if task.id == dragging || task.id == lifted { return true }
+            let center = viewportPoint(
+                forBoardPoint: resolvedPosition(for: task, viewport: viewport)
+            )
+            return center.x >= minX
+                && center.x <= maxX
+                && center.y >= minY
+                && center.y <= maxY
+        }
     }
 
     /// 可平移白板上不重复画网格；全屏网格由 `TodoStickyFullscreenChrome` 负责。
@@ -445,21 +475,27 @@ struct TodoStickyBoardView: View {
     // MARK: - Note
 
     private func stickyNote(for task: FamilyTask) -> some View {
-        let look = StickyNoteLook.stable(for: task.id, theme: task.cardThemeAccentColor)
+        let look = StickyNoteLook.stable(
+            for: task.id,
+            theme: task.cardThemeAccentColor,
+            backgroundHex: task.backgroundColor
+        )
         let flying = isFlying(task.id)
         let deleteFading = isDeleteFading(task.id)
         let lifted = liftSession?.task.id == task.id
         let dragging = draggingID == task.id
 
+        let navigating = isBoardNavigating && dragging == false && lifted == false
         return TodoStickyNoteCard(
             look: look,
             title: displayTitle(task),
             detailLines: Array(detailLines(task).prefix(2)),
-            avatars: forWhomAvatars(task),
+            avatars: navigating ? [] : forWhomAvatars(task),
             hasAttachments: hasAttachments(task),
             isDragging: dragging || lifted,
             isPinInserting: pinInsertingID == task.id,
             isCompletionChecked: isCompletionChecked(task.id),
+            isLightweightRendering: navigating,
             onActivate: { bringToFront(task.id) },
             onOpen: {
                 bringToFront(task.id)
@@ -495,7 +531,11 @@ struct TodoStickyBoardView: View {
 
     private func liftedStickyNote(for session: NoteLiftSession) -> some View {
         let task = session.task
-        let look = StickyNoteLook.stable(for: task.id, theme: task.cardThemeAccentColor)
+        let look = StickyNoteLook.stable(
+            for: task.id,
+            theme: task.cardThemeAccentColor,
+            backgroundHex: task.backgroundColor
+        )
         return TodoStickyNoteCard(
             look: look,
             title: displayTitle(task),
@@ -809,6 +849,7 @@ struct TodoStickyBoardView: View {
                 }
                 if boardPanAnchor == nil {
                     boardPanAnchor = boardOffset
+                    isBoardNavigating = true
                 }
                 guard let anchor = boardPanAnchor else { return }
                 let proposed = CGSize(
@@ -820,6 +861,7 @@ struct TodoStickyBoardView: View {
             .onEnded { _ in
                 boardPanAnchor = nil
                 boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
+                isBoardNavigating = false
                 scheduleFitVisibilityRefresh()
             }
     }
@@ -828,6 +870,9 @@ struct TodoStickyBoardView: View {
         MagnifyGesture()
             .onChanged { value in
                 guard draggingID == nil else { return }
+                if isBoardNavigating == false {
+                    isBoardNavigating = true
+                }
                 let next = committedScale * value.magnification
                 let clampedScale = min(max(next, minimumScaleToFillViewport(viewportSize)), scaleRange.upperBound)
                 scale = clampedScale
@@ -836,6 +881,7 @@ struct TodoStickyBoardView: View {
             .onEnded { _ in
                 committedScale = scale
                 boardOffset = clampedBoardOffset(boardOffset, scale: scale, viewport: viewportSize)
+                isBoardNavigating = false
                 savePersistedScale(scale)
                 scheduleFitVisibilityRefresh()
             }
@@ -1239,6 +1285,7 @@ private enum BoardMetrics {
     /// Duo / 超宽屏加大网格步长，显著减少全屏描边数量。
     static func gridStep(for size: CGSize) -> CGFloat {
         let area = size.width * size.height
+        if area > 2_000_000 { return 72 }
         if area > 1_400_000 { return 56 }
         if area > 700_000 { return 40 }
         return gridStep
@@ -1378,25 +1425,37 @@ private enum StickyNoteCurlStyle: CaseIterable {
 }
 
 private struct StickyNoteLook {
-    /// 纸面主色：组织主题色的浅透明变体（彼此仅深浅略有差异）。
+    /// 纸面主色：优先任务 `background_color`（近白视为未设置），否则组织主题浅色。
     let paper: Color
+    /// 标题墨水；`nil` 表示跟随环境 `.primary`。
+    let titleInk: Color?
+    /// 次要信息墨水；`nil` 表示跟随环境 `.secondary`。
+    let detailInk: Color?
     let pin: Color
     let curlStyle: StickyNoteCurlStyle
     let rotationDegrees: Double
     let jitter: CGPoint
 
-    /// 纸面贴近 group 主题色；图钉颜色按任务 ID 稳定随机。
-    static func stable(for id: UUID, theme: Color) -> StickyNoteLook {
+    /// 纸面用待办自定义色；近白 / 无效回退主题浅色。墨水色按亮度自适应。
+    static func stable(for id: UUID, theme: Color, backgroundHex: String? = nil) -> StickyNoteLook {
         let seed = id.uuidString.utf8.reduce(0) { $0 &* 31 &+ Int($1) }
-        // 浅透明主题色：保持色系一致，避免纸面过深影响文字。
         let strengths: [Double] = [0.18, 0.22, 0.26, 0.30, 0.20, 0.24]
         let strength = strengths[abs(seed) % strengths.count]
         let pinPalette: [Color] = [
             .red, .orange, .yellow, .green, .mint, .teal,
             .cyan, .blue, .indigo, .purple, .pink, .brown
         ]
+        let ink = Color.taskCardInkColors(forBackgroundHex: backgroundHex)
+        let paper: Color = {
+            if let custom = Color.taskCardCustomColor(fromHex: backgroundHex) {
+                return custom
+            }
+            return theme.opacity(strength)
+        }()
         return StickyNoteLook(
-            paper: theme.opacity(strength),
+            paper: paper,
+            titleInk: ink?.title,
+            detailInk: ink?.detail,
             pin: pinPalette[abs(seed / 7) % pinPalette.count],
             // 便签统一平整，不再随机卷角 / 掀边。
             curlStyle: .flat,
@@ -1429,6 +1488,8 @@ private struct TodoStickyNoteCard: View {
     let isDragging: Bool
     var isPinInserting: Bool = false
     var isCompletionChecked: Bool = false
+    /// 白板平移/缩放中：去掉阴影、描边叠层与长按菜单，降低 Duo 宽屏合成成本。
+    var isLightweightRendering: Bool = false
     let onActivate: () -> Void
     let onOpen: () -> Void
     var onComplete: (() -> Void)? = nil
@@ -1454,20 +1515,9 @@ private struct TodoStickyNoteCard: View {
 
             // 仅纸面 drawingGroup；图钉需超出顶边，整卡栅格化会被裁切。
             ZStack(alignment: .topLeading) {
-                StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
-                    // 内容区纯平色，光影只走边缘描边。
-                    .fill(paperFill)
-                    .overlay {
-                        StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
-                            .stroke(edgeLightingStroke, lineWidth: 2.2)
-                            .allowsHitTesting(false)
-                    }
-                    .overlay {
-                        StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift)
-                            .stroke(Color.primary.opacity(0.06), lineWidth: 0.7)
-                    }
+                paperBody
 
-                if look.curlStyle != .flat {
+                if look.curlStyle != .flat, isLightweightRendering == false {
                     curlFlap
                 }
 
@@ -1477,7 +1527,7 @@ private struct TodoStickyNoteCard: View {
                 if hasAttachments {
                     Image(systemName: "paperclip")
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(look.detailInk ?? Color.secondary)
                         .padding(.top, 10)
                         .padding(.trailing, 10)
                         .accessibilityLabel(L10n.Common.attachments.localized)
@@ -1486,37 +1536,42 @@ private struct TodoStickyNoteCard: View {
             .clipShape(StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift))
             // 不做 per-note drawingGroup：Duo 宽屏平移/缩放时大量离屏纹理会导致明显掉帧。
 
-            StickyBoardPushPin(color: look.pin)
-                .opacity(isDragging ? 0 : 1)
-                .offset(y: pinPlanted ? -8 : -18)
-                .scaleEffect(pinPlanted ? 1 : 1.28)
-                .allowsHitTesting(false)
+            if isLightweightRendering == false || isDragging {
+                StickyBoardPushPin(color: look.pin)
+                    .opacity(isDragging ? 0 : 1)
+                    .offset(y: pinPlanted ? -8 : -18)
+                    .scaleEffect(pinPlanted ? 1 : 1.28)
+                    .allowsHitTesting(false)
+            }
         }
         .shadow(
-            color: .black.opacity(isDragging ? 0.16 : 0.08),
-            radius: isDragging ? 10 : 5,
-            x: 1,
-            y: isDragging ? 6 : 3
+            color: .black.opacity(isLightweightRendering ? 0 : (isDragging ? 0.16 : 0.08)),
+            radius: isLightweightRendering ? 0 : (isDragging ? 10 : 5),
+            x: isLightweightRendering ? 0 : 1,
+            y: isLightweightRendering ? 0 : (isDragging ? 6 : 3)
         )
         .contentShape(StickyNotePaperShape(curlSize: curlSize, corner: curlCorner, softLift: look.curlStyle == .softLift))
         .onTapGesture {
             onActivate()
             onOpen()
         }
-        .taskLongPressContextMenu(
-            showsComplete: onComplete != nil && isCompletionChecked == false,
-            onEdit: {
-                onActivate()
-                onOpen()
-            },
-            onComplete: {
-                onActivate()
-                onComplete?()
-            },
-            onDelete: {
-                onActivate()
-                onDelete?()
-            }
+        .modifier(
+            StickyNoteContextMenuModifier(
+                isEnabled: isLightweightRendering == false,
+                showsComplete: onComplete != nil && isCompletionChecked == false,
+                onEdit: {
+                    onActivate()
+                    onOpen()
+                },
+                onComplete: {
+                    onActivate()
+                    onComplete?()
+                },
+                onDelete: {
+                    onActivate()
+                    onDelete?()
+                }
+            )
         )
         .onChange(of: isDragging) { _, dragging in
             if dragging {
@@ -1532,9 +1587,33 @@ private struct TodoStickyNoteCard: View {
         }
     }
 
-    /// 内容区域无渐变光影，避免文字被染色/压暗。
+    /// 纸面铺待办 `background_color`（经 `look.paper`）；无自定义色时为组织主题浅色。
     private var paperFill: Color {
-        Color(.secondarySystemGroupedBackground)
+        look.paper
+    }
+
+    @ViewBuilder
+    private var paperBody: some View {
+        let shape = StickyNotePaperShape(
+            curlSize: curlSize,
+            corner: curlCorner,
+            softLift: look.curlStyle == .softLift
+        )
+        if isLightweightRendering {
+            shape.fill(paperFill)
+        } else {
+            shape
+                .fill(paperFill)
+                .overlay {
+                    shape
+                        .stroke(edgeLightingStroke, lineWidth: 2.2)
+                        .allowsHitTesting(false)
+                }
+                .overlay {
+                    shape
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 0.7)
+                }
+        }
     }
 
     /// 仅贴合纸缘的高光 + 主题色 + 阴影，不进入内容区。
@@ -1644,7 +1723,7 @@ private struct TodoStickyNoteCard: View {
 
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
+                .foregroundStyle(look.titleInk ?? Color.primary)
                 .lineLimit(titleLineLimit)
                 .minimumScaleFactor(0.85)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1654,7 +1733,7 @@ private struct TodoStickyNoteCard: View {
             ForEach(Array(secondary.enumerated()), id: \.offset) { _, line in
                 Text(line)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(look.detailInk ?? Color.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -1670,6 +1749,28 @@ private struct TodoStickyNoteCard: View {
 private enum StickyNoteCurlCorner {
     case bottomTrailing
     case bottomLeading
+}
+
+/// 交互导航中卸下长按菜单，避免 Duo 宽屏上每张便签都挂手势识别器。
+private struct StickyNoteContextMenuModifier: ViewModifier {
+    let isEnabled: Bool
+    let showsComplete: Bool
+    let onEdit: () -> Void
+    let onComplete: () -> Void
+    let onDelete: () -> Void
+
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.taskLongPressContextMenu(
+                showsComplete: showsComplete,
+                onEdit: onEdit,
+                onComplete: onComplete,
+                onDelete: onDelete
+            )
+        } else {
+            content
+        }
+    }
 }
 
 private struct StickyNotePaperShape: Shape {

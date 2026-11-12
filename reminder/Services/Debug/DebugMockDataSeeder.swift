@@ -13,6 +13,8 @@ enum DebugMockDataSeeder {
         var overdueTodos: Int
         var completedTodos: Int
         var ledgerTransactions: Int
+        var plannerLists: Int
+        var plannerItems: Int
         var locationMembers: Int
         var locationPoints: Int
         var firstHouseholdId: UUID?
@@ -42,13 +44,18 @@ enum DebugMockDataSeeder {
     }
 
     private static let mockOrganizationNames = [
-        "[Mock] Sunrise Family",
-        "[Mock] Bay Studio",
-        "[Mock] Weekend Crew",
+        "Sunrise Family",
+        "Bay Studio",
+        "Weekend Crew",
     ]
 
     private static let countPerWeekRange = 10...20
     private static let ledgerCountPerMonthRange = 10...20
+
+    /// 与创建任务色板一致；始终写入非白色，避免库默认 `#FFFFFF` 造成便签白底白字。
+    private static func randomMockCardColorHex() -> String {
+        CreateTaskColorPreset.allCases.randomElement()?.rawValue ?? CreateTaskColorPreset.blue.rawValue
+    }
 
     // MARK: - Public entry
 
@@ -66,6 +73,8 @@ enum DebugMockDataSeeder {
             overdueTodos: 0,
             completedTodos: 0,
             ledgerTransactions: 0,
+            plannerLists: 0,
+            plannerItems: 0,
             locationMembers: 0,
             locationPoints: 0,
             firstHouseholdId: nil
@@ -74,7 +83,7 @@ enum DebugMockDataSeeder {
         for (index, name) in mockOrganizationNames.enumerated() {
             let householdId = try await services.householdRoutingService.createHousehold(
                 displayName: name,
-                description: "DEBUG mock organization #\(index + 1)"
+                description: nil
             )
             let context = try await resolveCreatedHouseholdContext(
                 services: services,
@@ -99,6 +108,8 @@ enum DebugMockDataSeeder {
             aggregate.overdueTodos += orgResult.overdueTodos
             aggregate.completedTodos += orgResult.completedTodos
             aggregate.ledgerTransactions += orgResult.ledgerTransactions
+            aggregate.plannerLists += orgResult.plannerLists
+            aggregate.plannerItems += orgResult.plannerItems
             aggregate.locationMembers += orgResult.locationMembers
             aggregate.locationPoints += orgResult.locationPoints
             if aggregate.firstHouseholdId == nil {
@@ -108,6 +119,7 @@ enum DebugMockDataSeeder {
 
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
         NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
         NotificationCenter.default.post(name: .locationStatesDidChange, object: nil)
 
         return aggregate
@@ -142,6 +154,7 @@ enum DebugMockDataSeeder {
 
         NotificationCenter.default.post(name: .scheduleTasksDidChange, object: nil)
         NotificationCenter.default.post(name: .ledgerDataDidChange, object: nil)
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
         NotificationCenter.default.post(name: .locationStatesDidChange, object: nil)
 
         return SeedResult(
@@ -152,6 +165,8 @@ enum DebugMockDataSeeder {
             overdueTodos: orgResult.overdueTodos,
             completedTodos: orgResult.completedTodos,
             ledgerTransactions: orgResult.ledgerTransactions,
+            plannerLists: orgResult.plannerLists,
+            plannerItems: orgResult.plannerItems,
             locationMembers: orgResult.locationMembers,
             locationPoints: orgResult.locationPoints,
             firstHouseholdId: householdId
@@ -185,6 +200,8 @@ enum DebugMockDataSeeder {
         var overdueTodos: Int
         var completedTodos: Int
         var ledgerTransactions: Int
+        var plannerLists: Int
+        var plannerItems: Int
         var locationMembers: Int
         var locationPoints: Int
     }
@@ -198,12 +215,7 @@ enum DebugMockDataSeeder {
         services: ReminderServiceContainer,
         householdId: UUID
     ) async throws -> HouseholdContext {
-        let joined = try await services.householdRoutingService.fetchMyJoinedHouseholds()
-        if let match = joined.first(where: { $0.householdId == householdId }),
-           let profileId = match.profileId {
-            return HouseholdContext(membershipId: match.id, profileId: profileId)
-        }
-
+        // 优先按新家庭直查 membership，避免 joined 列表里嵌套 `households` 形态导致整表解码失败。
         let memberships = try await services.membershipService.fetchMemberships(in: householdId)
         if let creator = memberships.first(where: { $0.parsedRole == .creator }),
            let profileId = creator.profileId {
@@ -211,6 +223,12 @@ enum DebugMockDataSeeder {
         }
         if let any = memberships.first, let profileId = any.profileId {
             return HouseholdContext(membershipId: any.id, profileId: profileId)
+        }
+
+        if let joined = try? await services.householdRoutingService.fetchMyJoinedHouseholds(),
+           let match = joined.first(where: { $0.householdId == householdId }),
+           let profileId = match.profileId {
+            return HouseholdContext(membershipId: match.id, profileId: profileId)
         }
 
         throw SeedError.failedToResolveCreatedHousehold(householdId)
@@ -290,6 +308,14 @@ enum DebugMockDataSeeder {
             txCount += 1
         }
 
+        let planner = try await seedPlannerLists(
+            services: services,
+            householdId: householdId,
+            membershipId: membershipId,
+            calendar: calendar,
+            now: now
+        )
+
         var locationMembers = 0
         var locationPoints = 0
         if includeLocation {
@@ -309,6 +335,8 @@ enum DebugMockDataSeeder {
             overdueTodos: overdueCount,
             completedTodos: completedCount,
             ledgerTransactions: txCount,
+            plannerLists: planner.lists,
+            plannerItems: planner.items,
             locationMembers: locationMembers,
             locationPoints: locationPoints
         )
@@ -422,8 +450,8 @@ enum DebugMockDataSeeder {
                         creatorId: membershipId,
                         involvedMemberIds: [membershipId],
                         targetProfileIds: [profileId],
-                        title: "[Mock] \(title) · W\(week.weekIndex + 1) #\(slot + 1)",
-                        description: "DEBUG mock schedule week \(week.weekIndex + 1), item \(slot + 1).",
+                        title: title,
+                        description: nil,
                         status: status,
                         priority: priority,
                         taskType: TaskTypeKind.scheduled.rawValue,
@@ -432,6 +460,7 @@ enum DebugMockDataSeeder {
                         durationMinutes: duration,
                         isAllDay: false,
                         reminderOffsets: slot % 4 == 0 ? [15] : nil,
+                        backgroundColor: randomMockCardColorHex(),
                         createdAt: stamp,
                         updatedAt: stamp
                     )
@@ -507,8 +536,8 @@ enum DebugMockDataSeeder {
                         creatorId: membershipId,
                         involvedMemberIds: [membershipId],
                         targetProfileIds: [profileId],
-                        title: "[Mock] \(title) · W\(week.weekIndex + 1) #\(slot + 1)",
-                        description: "DEBUG mock todo week \(week.weekIndex + 1), item \(slot + 1).",
+                        title: title,
+                        description: nil,
                         status: status,
                         priority: priority,
                         taskType: TaskTypeKind.flexible.rawValue,
@@ -516,6 +545,7 @@ enum DebugMockDataSeeder {
                         endDatetime: end,
                         durationMinutes: 0,
                         isAllDay: false,
+                        backgroundColor: randomMockCardColorHex(),
                         createdAt: stamp,
                         updatedAt: stamp
                     )
@@ -587,12 +617,99 @@ enum DebugMockDataSeeder {
                     payerIds: [payer],
                     targetMemberIds: targets,
                     visibleMemberIds: Array(Set([creatorProfileId, peerProfileId])),
-                    note: "[Mock] \(category.name) #\(entryIndex + 1)",
+                    note: category.name,
                     creatorProfileId: creatorProfileId
                 )
             )
         }
         return drafts
+    }
+
+    // MARK: - Planner（清单 + 条目）
+
+    private static let plannerListBlueprints: [(title: String, kind: ListKind, items: [String])] = [
+        (
+            "Weekly Groceries",
+            .shopping,
+            ["Organic milk", "Sourdough bread", "Avocados", "Chicken thighs", "Sparkling water", "Berry mix"]
+        ),
+        (
+            "Weekend Carmel Trip",
+            .trip,
+            ["Book coastal hotel", "Pack hiking shoes", "Reserve dinner", "Charge camera batteries", "Print parking permit"]
+        ),
+        (
+            "Home Projects",
+            .custom,
+            ["Replace kitchen faucet washer", "Touch up hallway paint", "Organize garage shelf", "Test smoke detectors"]
+        ),
+        (
+            "Party Prep",
+            .shopping,
+            ["Birthday candles", "Paper plates", "Balloon pack", "Ice bags", "Playlist speakers check"]
+        ),
+    ]
+
+    private static func seedPlannerLists(
+        services: ReminderServiceContainer,
+        householdId: UUID,
+        membershipId: UUID,
+        calendar: Calendar,
+        now: Date
+    ) async throws -> (lists: Int, items: Int) {
+        let dayFormatter = DateFormatter()
+        dayFormatter.calendar = calendar
+        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dayFormatter.timeZone = calendar.timeZone
+        dayFormatter.dateFormat = "yyyy-MM-dd"
+
+        var listCount = 0
+        var itemCount = 0
+
+        for (index, blueprint) in plannerListBlueprints.enumerated() {
+            let listId = UUID()
+            let tripStart: String?
+            let tripEnd: String?
+            if blueprint.kind == .trip {
+                let start = calendar.date(byAdding: .day, value: 10 + index, to: now) ?? now
+                let end = calendar.date(byAdding: .day, value: 12 + index, to: now) ?? start
+                tripStart = dayFormatter.string(from: start)
+                tripEnd = dayFormatter.string(from: end)
+            } else {
+                tripStart = nil
+                tripEnd = nil
+            }
+
+            let listPayload = HouseholdListInsertPayload(
+                id: listId,
+                householdId: householdId,
+                creatorId: membershipId,
+                title: blueprint.title,
+                kind: blueprint.kind.rawValue,
+                tripStartDate: tripStart,
+                tripEndDate: tripEnd,
+                sortOrder: index
+            )
+            _ = try await services.listService.createList(listPayload)
+            listCount += 1
+
+            for (itemIndex, itemTitle) in blueprint.items.enumerated() {
+                let itemPayload = ListItemInsertPayload(
+                    id: UUID(),
+                    listId: listId,
+                    householdId: householdId,
+                    title: itemTitle,
+                    isChecked: itemIndex % 3 == 0,
+                    note: nil,
+                    sortOrder: itemIndex,
+                    creatorId: membershipId
+                )
+                _ = try await services.listService.createItem(itemPayload)
+                itemCount += 1
+            }
+        }
+
+        return (lists: listCount, items: itemCount)
     }
 
     // MARK: - Location（圣何塞市区，2 人 × 3 点）
@@ -632,7 +749,7 @@ enum DebugMockDataSeeder {
                 return LocationPayload(
                     latitude: point.lat,
                     longitude: point.lng,
-                    addressName: "[Mock] \(point.name)",
+                    addressName: point.name,
                     recordedAt: recordedAt,
                     batteryLevel: 70 + (pointIndex * 8),
                     isCharging: pointIndex == 0

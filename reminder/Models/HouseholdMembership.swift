@@ -79,11 +79,14 @@ struct HouseholdMembership: Identifiable, Codable, Equatable {
         isTrackedDevice = (try? container.decodeIfPresent(Bool.self, forKey: .isTrackedDevice)) ?? false
         createdAt = try Self.decodeOptionalDate(container: container, key: .createdAt) ?? Date.distantPast
         updatedAt = try Self.decodeOptionalDate(container: container, key: .updatedAt) ?? Date.distantPast
-        if let nestedProfile = try container.decodeIfPresent(FamilyProfile.self, forKey: .profile) {
-            profile = nestedProfile
-        } else if let nestedProfiles = try container.decodeIfPresent([FamilyProfile].self, forKey: .profile),
-                  let first = nestedProfiles.first {
-            profile = first
+        if container.contains(.profile), (try? container.decodeNil(forKey: .profile)) != true {
+            if let nestedProfile = try? container.decode(FamilyProfile.self, forKey: .profile) {
+                profile = nestedProfile
+            } else if let nestedProfiles = try? container.decode([FamilyProfile].self, forKey: .profile) {
+                profile = nestedProfiles.first
+            } else {
+                profile = nil
+            }
         } else {
             profile = nil
         }

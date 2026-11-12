@@ -52,16 +52,29 @@ extension Color {
 
     /// 列表卡片：无自定义色或解析失败时使用系统二级分组背景。
     static func taskCardListBackground(fromHex hex: String?) -> Color {
-        guard let rgb = RGBComponents.parseOptionalHex(hex) else {
+        guard let rgb = RGBComponents.parseOptionalHex(hex), rgb.isNearWhite == false else {
             return Color(.secondarySystemGroupedBackground)
         }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
     }
 
-    /// 解析任务自定义色；无效或未设置时返回 `nil`。
+    /// 解析任务自定义色；无效、未设置或近白（库默认 `#FFFFFF`）时返回 `nil`。
     static func taskCardCustomColor(fromHex hex: String?) -> Color? {
-        guard let rgb = RGBComponents.parseOptionalHex(hex) else { return nil }
+        guard let rgb = RGBComponents.parseOptionalHex(hex), rgb.isNearWhite == false else {
+            return nil
+        }
         return Color(red: rgb.red, green: rgb.green, blue: rgb.blue)
+    }
+
+    /// 根据卡片底色亮度选择墨水色；近白 / 无效 hex 时返回 `nil`（调用方回退 `.primary` / `.secondary`）。
+    static func taskCardInkColors(forBackgroundHex hex: String?) -> (title: Color, detail: Color)? {
+        guard let rgb = RGBComponents.parseOptionalHex(hex), rgb.isNearWhite == false else {
+            return nil
+        }
+        if rgb.prefersDarkInk {
+            return (Color.black.opacity(0.92), Color.black.opacity(0.55))
+        }
+        return (Color.white.opacity(0.96), Color.white.opacity(0.72))
     }
 
     /// 写入数据库：与「默认白卡片」等价的浅色不写入（`nil`）；否则返回 `#RRGGBB` 大写。
@@ -149,6 +162,20 @@ private struct RGBComponents {
     let red: Double
     let green: Double
     let blue: Double
+
+    /// 与写入侧「默认白卡片不落库」一致：近白视为未设置自定义色。
+    var isNearWhite: Bool {
+        red >= 0.97 && green >= 0.97 && blue >= 0.97
+    }
+
+    /// 相对亮度（简化 sRGB）；高于阈值时用深色文字。
+    var relativeLuminance: Double {
+        0.2126 * red + 0.7152 * green + 0.0722 * blue
+    }
+
+    var prefersDarkInk: Bool {
+        relativeLuminance > 0.55
+    }
 
     static func parseOptionalHex(_ source: String?) -> RGBComponents? {
         guard let raw = source?.trimmingCharacters(in: .whitespacesAndNewlines),

@@ -329,6 +329,7 @@ struct SupabaseTaskDataService: TaskDataService {
                 .execute()
                 .value
         } catch {
+            let insertError = error
             let params = CreateTaskWithSpatialParams(
                 pTitle: task.title,
                 pDescription: task.description,
@@ -348,7 +349,14 @@ struct SupabaseTaskDataService: TaskDataService {
                 )
                 merged.updatedAt = Date()
                 return try await updateTask(merged)
-            } catch where TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
+            } catch {
+                #if DEBUG
+                print("❌ [createTask] insert failed: \(insertError)")
+                print("❌ [createTask] RPC/update failed: \(error)")
+                #endif
+                if TaskSpatialRPCSupport.isMissingCreateTaskRPC(error) {
+                    throw insertError
+                }
                 throw error
             }
         }
