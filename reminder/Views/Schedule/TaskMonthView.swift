@@ -480,7 +480,7 @@ private struct MonthTaskChip: View {
         .padding(.leading, 5)
         .padding(.trailing, 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(accent.opacity(isDimmed ? 0.1 : 0.18))
+        .background(accent.opacity(isDimmed ? 0.32 : 0.5))
         .overlay(alignment: .leading) {
             Rectangle()
                 .fill(accent.opacity(isDimmed ? 0.45 : 0.95))

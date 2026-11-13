@@ -1439,7 +1439,7 @@ private struct StickyNoteLook {
     /// 纸面用待办自定义色；近白 / 无效回退主题浅色。墨水色按亮度自适应。
     static func stable(for id: UUID, theme: Color, backgroundHex: String? = nil) -> StickyNoteLook {
         let seed = id.uuidString.utf8.reduce(0) { $0 &* 31 &+ Int($1) }
-        let strengths: [Double] = [0.18, 0.22, 0.26, 0.30, 0.20, 0.24]
+        let strengths: [Double] = [0.62, 0.68, 0.74, 0.82, 0.66, 0.72]
         let strength = strengths[abs(seed) % strengths.count]
         let pinPalette: [Color] = [
             .red, .orange, .yellow, .green, .mint, .teal,

@@ -660,7 +660,7 @@ private struct WeekTaskEventCard: View {
     }
 
     private var cardFill: Color {
-        accent.opacity(colorScheme == .dark ? 0.22 : 0.12)
+        accent.opacity(colorScheme == .dark ? 0.58 : 0.46)
     }
 
     private var metaLabel: String {
