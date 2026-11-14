@@ -3,6 +3,7 @@ import SwiftUI
 /// 单个通用清单详情：勾选条目 + 底部快速新增。
 struct ListDetailView: View {
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var appRouter: AppRouter
     @ObservedObject var viewModel: ListViewModel
     let list: HouseholdList
 
@@ -48,6 +49,13 @@ struct ListDetailView: View {
         }
         .navigationTitle(Text(verbatim: list.title))
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                FamilyPrintToolbarButton {
+                    printList()
+                }
+            }
+        }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             addItemBar
         }
@@ -74,6 +82,17 @@ struct ListDetailView: View {
             }
         }
         .duoReadableContentWidth()
+    }
+
+    private func printList() {
+        TodoPrintComposer.printPlannerItems(
+            jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(list.title)",
+            title: list.title,
+            open: viewModel.openItems.map(\.title),
+            checked: viewModel.checkedItems.map(\.title),
+            checkedHeading: L10n.Todo.listCheckedSection.string(locale: locale),
+            locale: locale
+        )
     }
 
     private func itemRow(_ item: ListItem) -> some View {

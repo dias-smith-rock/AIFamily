@@ -579,6 +579,9 @@ struct TaskListView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
+                FamilyPrintToolbarButton {
+                    printSchedule()
+                }
                 Button {
                     isShowingSearch = true
                 } label: {
@@ -644,6 +647,90 @@ struct TaskListView: View {
                 .foregroundStyle(.primary)
         }
         .buttonStyle(.plain)
+    }
+
+    private func printSchedule() {
+        let calendar = appSettings.effectiveCalendar
+        let jobName = "\(GroupSwitcherData.currentName(for: appRouter)) · \(schedulePrintRangeTitle(calendar: calendar))"
+        let context = SchedulePrintContext(
+            jobName: jobName,
+            householdName: GroupSwitcherData.currentName(for: appRouter),
+            tasks: viewModel.scheduledTasks,
+            calendar: calendar,
+            locale: locale,
+            selectedDate: selectedDate,
+            displayTitle: { viewModel.displayTitle(for: $0) },
+            avatars: { viewModel.forWhomAvatarSources(for: $0) },
+            assigneeLabel: { viewModel.assigneeLabel(for: $0, locale: locale) },
+            hasAttachments: { viewModel.taskHasAttachments($0) }
+        )
+        switch currentViewMode {
+        case .week:
+            SchedulePrintComposer.printWeek(context)
+        case .month:
+            SchedulePrintComposer.printMonth(context)
+        case .year:
+            viewModel.refreshYearViewSnapshot(locale: locale)
+            SchedulePrintComposer.printYear(context, snapshot: viewModel.yearCalendarSnapshot)
+        case .list:
+            SchedulePrintComposer.printList(context)
+        case .day, .threeDay:
+            SchedulePrintComposer.printDay(context)
+        }
+    }
+
+    private func schedulePrintInterval(calendar: Calendar) -> DateInterval? {
+        switch currentViewMode {
+        case .list:
+            return nil
+        case .year:
+            return calendar.dateInterval(of: .year, for: navigationReferenceDate)
+        case .month:
+            return calendar.dateInterval(of: .month, for: selectedDate)
+        case .week:
+            return calendar.dateInterval(of: .weekOfYear, for: selectedDate)
+        case .threeDay:
+            let start = calendar.startOfDay(for: selectedDate)
+            let end = calendar.date(byAdding: .day, value: 3, to: start) ?? start
+            return DateInterval(start: start, end: end)
+        case .day:
+            let start = calendar.startOfDay(for: selectedDate)
+            let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start
+            return DateInterval(start: start, end: end)
+        }
+    }
+
+    private func schedulePrintRangeTitle(calendar: Calendar) -> String {
+        switch currentViewMode {
+        case .list:
+            return L10n.Common.list.string(locale: locale)
+        case .year:
+            return navigationReferenceDate.formatted(.dateTime.year().locale(locale))
+        case .month:
+            return selectedDate.formatted(.dateTime.month(.wide).year().locale(locale))
+        case .day:
+            return selectedDate.formatted(
+                .dateTime.weekday(.wide).month(.abbreviated).day().locale(locale)
+            )
+        case .week:
+            let days = ScheduleWeekCalendar.daysInWeek(
+                weekStart: ScheduleWeekCalendar.startOfWeek(for: selectedDate, calendar: calendar),
+                calendar: calendar
+            )
+            let start = (days.first ?? selectedDate).formatted(
+                .dateTime.month(.abbreviated).day().locale(locale)
+            )
+            let end = (days.last ?? selectedDate).formatted(
+                .dateTime.month(.abbreviated).day().locale(locale)
+            )
+            return "\(start) – \(end)"
+        case .threeDay:
+            guard let interval = schedulePrintInterval(calendar: calendar) else { return "" }
+            let start = interval.start.formatted(.dateTime.month(.abbreviated).day().locale(locale))
+            let last = calendar.date(byAdding: .day, value: -1, to: interval.end) ?? interval.start
+            let end = last.formatted(.dateTime.month(.abbreviated).day().locale(locale))
+            return "\(start) – \(end)"
+        }
     }
 
     private var navigationReferenceDate: Date {

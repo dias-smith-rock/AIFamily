@@ -73,6 +73,17 @@ final class ListViewModel: ObservableObject {
         }
     }
 
+    /// 打印用：当前打开的清单用内存数据，其余优先磁盘缓存，再向服务端补一次。
+    func itemsForPrinting(listId: UUID) async -> [ListItem] {
+        if activeListId == listId {
+            return items
+        }
+        if let cached = await HouseholdLocalCache.loadListItems(for: listId) {
+            return cached
+        }
+        return (try? await listService.fetchItems(in: listId)) ?? []
+    }
+
     func loadItems(for listId: UUID) async {
         activeListId = listId
         isLoading = true

@@ -252,6 +252,9 @@ struct TodoListView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
+                FamilyPrintToolbarButton {
+                    Task { await printCurrentWorkspace() }
+                }
                 if showsTodosWorkspace {
                     Button {
                         isShowingSearch = true
@@ -263,6 +266,112 @@ struct TodoListView: View {
                 }
                 todoOptionsMenu
             }
+        }
+    }
+
+    private func printCurrentWorkspace() async {
+        if showsTodosWorkspace {
+            printTodos()
+            return
+        }
+        if let list = selectedHouseholdList {
+            let items = await listViewModel.itemsForPrinting(listId: list.id)
+            printPlannerList(list, items: items)
+            return
+        }
+        await printAllPlannerLists()
+    }
+
+    private func printTodos() {
+        let jobName = "\(GroupSwitcherData.currentName(for: appRouter)) · \(L10n.Todo.toDos.string(locale: locale))"
+        let calendar = appSettings.effectiveCalendar
+        if displayMode == .sticky {
+            let partitions = viewModel.stickyBoardPartitions(calendar: calendar)
+            let source: [FamilyTask]
+            if partitions.near.isEmpty == false, partitions.far.isEmpty == false {
+                source = stickyShowingFarSide ? partitions.far : partitions.near
+            } else {
+                source = partitions.near + partitions.far
+            }
+            TodoPrintComposer.printSticky(
+                jobName: jobName,
+                householdName: GroupSwitcherData.currentName(for: appRouter),
+                notes: source.map { todoPrintTask(for: $0) },
+                locale: locale
+            )
+            return
+        }
+
+        let sections = viewModel.mainSectionedTasks(calendar: calendar).map { section, tasks in
+            TodoPrintSection(
+                title: todoPrintHeading(section),
+                tasks: tasks.map { todoPrintTask(for: $0) }
+            )
+        }
+        TodoPrintComposer.printList(
+            jobName: jobName,
+            householdName: GroupSwitcherData.currentName(for: appRouter),
+            sections: sections,
+            locale: locale
+        )
+    }
+
+    private func todoPrintTask(for task: FamilyTask) -> TodoPrintTask {
+        TodoPrintTask(
+            id: task.id,
+            task: task,
+            title: viewModel.displayTitle(for: task),
+            deadline: deadlineLabel(for: task),
+            details: stickyDetailLines(for: task),
+            avatars: viewModel.forWhomAvatarSources(for: task),
+            hasAttachments: viewModel.taskHasAttachments(task),
+            backgroundHex: task.backgroundColor,
+            theme: task.cardThemeAccentColor
+        )
+    }
+
+    private func todoPrintHeading(_ section: TodoListViewModel.TodoSection) -> String {
+        switch section {
+        case .overdue: L10n.Common.overdue.string(locale: locale)
+        case .today: L10n.Common.dueToday.string(locale: locale)
+        case .thisWeek: L10n.Common.dueThisWeek.string(locale: locale)
+        case .later: L10n.Common.later.string(locale: locale)
+        }
+    }
+
+    private func printPlannerList(_ list: HouseholdList, items: [ListItem]) {
+        let sorted = items.sorted { $0.sortOrder < $1.sortOrder }
+        TodoPrintComposer.printPlannerItems(
+            jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(list.title)",
+            title: list.title,
+            open: sorted.filter { $0.isChecked == false }.map(\.title),
+            checked: sorted.filter(\.isChecked).map(\.title),
+            checkedHeading: L10n.Todo.listCheckedSection.string(locale: locale),
+            locale: locale
+        )
+    }
+
+    private func printAllPlannerLists() async {
+        let rows = listViewModel.lists.map { list in
+            PlannerPrintRow(
+                title: list.title,
+                subtitle: plannerKindTitle(list.kind),
+                systemImage: list.kind.systemImage
+            )
+        }
+        TodoPrintComposer.printPlannerHome(
+            jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(L10n.Todo.lists.string(locale: locale))",
+            householdName: GroupSwitcherData.currentName(for: appRouter),
+            rows: rows,
+            locale: locale
+        )
+    }
+
+    private func plannerKindTitle(_ kind: ListKind) -> String {
+        switch kind {
+        case .shopping: L10n.Todo.listKindShopping.string(locale: locale)
+        case .trip: L10n.Todo.listKindTrip.string(locale: locale)
+        case .custom: L10n.Todo.listKindCustom.string(locale: locale)
         }
     }
 
@@ -1122,7 +1231,7 @@ private enum TodoContentSection: String {
 
 // MARK: - Row
 
-private struct TodoFlexibleRow: View {
+struct TodoFlexibleRow: View {
     enum Style {
         case active
         case overdue

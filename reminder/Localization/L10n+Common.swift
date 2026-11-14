@@ -505,5 +505,7 @@ extension L10n {
     static let youDonTHavePermissionToPerformThisAction = Entry(key: "common_you_don_t_have_permission_to_perform_this_action", table: .common)
     static let yourJoinRequestHasBeenSubmittedPleaseWait = Entry(key: "common_your_join_request_has_been_submitted_please_wait", table: .common)
     static let yr = Entry(key: "common_yr", table: .common)
+    static let print = Entry(key: "common_print", table: .common)
+    static let nothingToPrint = Entry(key: "common_nothing_to_print", table: .common)
     }
 }

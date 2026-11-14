@@ -522,7 +522,7 @@ private struct MonthGridLines: View {
 
 // MARK: - Span layout
 
-private struct MonthWeekSpanItem: Identifiable {
+struct MonthWeekSpanItem: Identifiable {
     let id: String
     let task: FamilyTask
     let title: String
@@ -533,7 +533,7 @@ private struct MonthWeekSpanItem: Identifiable {
     let isDimmed: Bool
 }
 
-private enum MonthWeekSpanLayout {
+enum MonthWeekSpanLayout {
     static func spans(
         weekCells: [YearDayCellData],
         tasks: [FamilyTask],
