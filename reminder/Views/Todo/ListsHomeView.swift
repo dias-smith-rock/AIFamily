@@ -3,6 +3,7 @@ import SwiftUI
 /// To-Dos Tab「清单」分区：家庭共享通用清单列表。
 struct ListsHomeView: View {
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var appRouter: AppRouter
     @ObservedObject var viewModel: ListViewModel
     @Binding var selectedList: HouseholdList?
 
@@ -54,6 +55,14 @@ struct ListsHomeView: View {
         }
         .sheet(isPresented: $isShowingCreateSheet) {
             CreateHouseholdListSheet { title, kind, start, end in
+                let householdId = appRouter.selectedHouseholdId
+                let membershipId = appRouter.selectableHouseholds
+                    .first(where: { $0.id == householdId })?
+                    .membershipId ?? appRouter.selectedMembershipId
+                viewModel.setHouseholdContext(
+                    householdId: householdId,
+                    membershipId: membershipId
+                )
                 if let created = await viewModel.createList(
                     title: title,
                     kind: kind,
@@ -192,6 +201,7 @@ extension HouseholdList {
 private struct CreateHouseholdListSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
+    @EnvironmentObject private var appRouter: AppRouter
 
     let onCreate: (String, ListKind, Date?, Date?) async -> Void
 
@@ -200,6 +210,15 @@ private struct CreateHouseholdListSheet: View {
     @State private var tripStart = Date()
     @State private var tripEnd = Calendar.current.date(byAdding: .day, value: 3, to: Date()) ?? Date()
     @State private var isSaving = false
+    @State private var isShowingSpacePicker = false
+
+    private var canSwitchSpace: Bool {
+        appRouter.selectableHouseholds.count > 1
+    }
+
+    private var currentSpaceTitle: String {
+        GroupSwitcherData.currentName(for: appRouter)
+    }
 
     var body: some View {
         NavigationStack {
@@ -239,11 +258,30 @@ private struct CreateHouseholdListSheet: View {
                     }
                 }
             }
-            .navigationTitle(L10n.Todo.newList.localized)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.Common.cancel) { dismiss() }
+                }
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        if canSwitchSpace {
+                            isShowingSpacePicker = true
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text(currentSpaceTitle)
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
+                            if canSwitchSpace {
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2.weight(.semibold))
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                    }
+                    .disabled(isSaving || canSwitchSpace == false)
+                    .accessibilityLabel(currentSpaceTitle)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(L10n.Todo.listCreate) {
@@ -262,6 +300,9 @@ private struct CreateHouseholdListSheet: View {
                     .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSaving)
                 }
             }
+        }
+        .sheet(isPresented: $isShowingSpacePicker) {
+            WriteTargetHouseholdPicker { _ in }
         }
         .presentationDetents([.medium, .large])
         .duoReadableContentWidth()

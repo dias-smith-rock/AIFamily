@@ -12,6 +12,8 @@ final class ListViewModel: ObservableObject {
     private var currentHouseholdId: UUID?
     private var currentMembershipId: UUID?
     private var activeListId: UUID?
+    /// 切换 space 或新建清单后作废进行中的列表刷新，避免旧请求盖掉刚保存的清单。
+    private var listsLoadGeneration = 0
 
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -52,11 +54,18 @@ final class ListViewModel: ObservableObject {
             return
         }
         if force == false, isLoading { return }
+        listsLoadGeneration += 1
+        let generation = listsLoadGeneration
         isLoading = true
         errorMessage = nil
-        defer { isLoading = false }
+        defer {
+            if generation == listsLoadGeneration {
+                isLoading = false
+            }
+        }
 
         if let cached = await HouseholdLocalCache.loadLists(for: householdId) {
+            guard generation == listsLoadGeneration, currentHouseholdId == householdId else { return }
             lists = cached
         }
 
@@ -64,9 +73,11 @@ final class ListViewModel: ObservableObject {
 
         do {
             let remote = try await listService.fetchLists(in: householdId)
+            guard generation == listsLoadGeneration, currentHouseholdId == householdId else { return }
             lists = remote
             HouseholdLocalCache.saveLists(remote, for: householdId)
         } catch {
+            guard generation == listsLoadGeneration else { return }
             if lists.isEmpty {
                 errorMessage = error.localizedDescription
             }
@@ -151,6 +162,8 @@ final class ListViewModel: ObservableObject {
 
         do {
             let created = try await listService.createList(payload)
+            listsLoadGeneration += 1
+            guard currentHouseholdId == created.householdId else { return created }
             lists.insert(created, at: 0)
             HouseholdLocalCache.upsertListInCache(created)
             NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
