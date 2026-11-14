@@ -51,8 +51,8 @@ struct ListDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                FamilyPrintToolbarButton {
-                    printList()
+                FamilyPrintToolbarButton { delivery in
+                    printList(delivery: delivery)
                 }
             }
         }
@@ -84,14 +84,15 @@ struct ListDetailView: View {
         .duoReadableContentWidth()
     }
 
-    private func printList() {
+    private func printList(delivery: FamilyPrintDelivery) {
         TodoPrintComposer.printPlannerItems(
             jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(list.title)",
             title: list.title,
             open: viewModel.openItems.map(\.title),
             checked: viewModel.checkedItems.map(\.title),
             checkedHeading: L10n.Todo.listCheckedSection.string(locale: locale),
-            locale: locale
+            locale: locale,
+            delivery: delivery
         )
     }
 

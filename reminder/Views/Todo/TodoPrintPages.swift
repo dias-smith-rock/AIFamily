@@ -32,7 +32,8 @@ enum TodoPrintComposer {
         jobName: String,
         householdName: String,
         sections: [TodoPrintSection],
-        locale: Locale
+        locale: Locale,
+        delivery: FamilyPrintDelivery
     ) {
         let pieces = listPieces(sections)
         let pages = paginate(pieces, locale: locale, sticksToNext: { piece in
@@ -45,14 +46,15 @@ enum TodoPrintComposer {
         }, page: { slice in
             TodoListPrintPage(householdName: householdName, pieces: slice, fillsPage: true)
         })
-        present(jobName: jobName, pages: pages, locale: locale)
+        present(jobName: jobName, pages: pages, locale: locale, delivery: delivery)
     }
 
     static func printSticky(
         jobName: String,
         householdName: String,
         notes: [TodoPrintTask],
-        locale: Locale
+        locale: Locale,
+        delivery: FamilyPrintDelivery
     ) {
         let grid = StickyPrintGrid.make()
         let chunks: [[TodoPrintTask]]
@@ -70,14 +72,15 @@ enum TodoPrintComposer {
                 grid: grid
             )
         }
-        present(jobName: jobName, pages: pages, locale: locale)
+        present(jobName: jobName, pages: pages, locale: locale, delivery: delivery)
     }
 
     static func printPlannerHome(
         jobName: String,
         householdName: String,
         rows: [PlannerPrintRow],
-        locale: Locale
+        locale: Locale,
+        delivery: FamilyPrintDelivery
     ) {
         let pieces = rows.map { PlannerPrintPiece.row($0) }
         let pages = paginate(pieces, locale: locale, measure: { piece in
@@ -87,7 +90,7 @@ enum TodoPrintComposer {
         }, page: { slice in
             PlannerHomePrintPage(householdName: householdName, rows: slice, fillsPage: true)
         })
-        present(jobName: jobName, pages: pages, locale: locale)
+        present(jobName: jobName, pages: pages, locale: locale, delivery: delivery)
     }
 
     static func printPlannerItems(
@@ -96,7 +99,8 @@ enum TodoPrintComposer {
         open: [String],
         checked: [String],
         checkedHeading: String,
-        locale: Locale
+        locale: Locale,
+        delivery: FamilyPrintDelivery
     ) {
         var pieces: [PlannerItemPrintPiece] = open.map { .item($0, checked: false) }
         if checked.isEmpty == false {
@@ -113,7 +117,7 @@ enum TodoPrintComposer {
         }, page: { slice in
             PlannerItemPrintPage(title: title, pieces: slice, fillsPage: true)
         })
-        present(jobName: jobName, pages: pages, locale: locale)
+        present(jobName: jobName, pages: pages, locale: locale, delivery: delivery)
     }
 
     private static func listPieces(_ sections: [TodoPrintSection]) -> [TodoListPrintPiece] {
@@ -189,9 +193,14 @@ enum TodoPrintComposer {
         return pages.isEmpty ? [[]] : pages
     }
 
-    private static func present<V: View>(jobName: String, pages: [V], locale: Locale) {
+    private static func present<V: View>(
+        jobName: String,
+        pages: [V],
+        locale: Locale,
+        delivery: FamilyPrintDelivery
+    ) {
         let images = pages.map { render($0, locale: locale) }
-        FamilyDocumentPrinter.printImages(jobName: jobName, images: images)
+        FamilyDocumentPrinter.deliver(jobName: jobName, images: images, delivery: delivery)
     }
 
     private static func render<V: View>(_ page: V, locale: Locale) -> UIImage {

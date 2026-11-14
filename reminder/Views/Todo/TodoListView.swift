@@ -193,6 +193,20 @@ struct TodoListView: View {
                 }
                 openPendingFlexibleTaskIfNeeded()
             }
+            .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
+                let membershipId = appRouter.selectableHouseholds
+                    .first(where: { $0.id == newValue })?
+                    .membershipId ?? appRouter.selectedMembershipId
+                listViewModel.setHouseholdContext(
+                    householdId: newValue,
+                    membershipId: membershipId
+                )
+                selectedHouseholdList = nil
+                Task {
+                    guard contentSection == .lists else { return }
+                    await listViewModel.loadLists(force: true)
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .scheduleTasksDidChange)) { _ in
                 Task {
                     await scheduleViewModel.loadTasks(silent: true)
@@ -252,8 +266,8 @@ struct TodoListView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
-                FamilyPrintToolbarButton {
-                    Task { await printCurrentWorkspace() }
+                FamilyPrintToolbarButton { delivery in
+                    Task { await printCurrentWorkspace(delivery: delivery) }
                 }
                 if showsTodosWorkspace {
                     Button {
@@ -269,20 +283,20 @@ struct TodoListView: View {
         }
     }
 
-    private func printCurrentWorkspace() async {
+    private func printCurrentWorkspace(delivery: FamilyPrintDelivery) async {
         if showsTodosWorkspace {
-            printTodos()
+            printTodos(delivery: delivery)
             return
         }
         if let list = selectedHouseholdList {
             let items = await listViewModel.itemsForPrinting(listId: list.id)
-            printPlannerList(list, items: items)
+            printPlannerList(list, items: items, delivery: delivery)
             return
         }
-        await printAllPlannerLists()
+        await printAllPlannerLists(delivery: delivery)
     }
 
-    private func printTodos() {
+    private func printTodos(delivery: FamilyPrintDelivery) {
         let jobName = "\(GroupSwitcherData.currentName(for: appRouter)) · \(L10n.Todo.toDos.string(locale: locale))"
         let calendar = appSettings.effectiveCalendar
         if displayMode == .sticky {
@@ -297,7 +311,8 @@ struct TodoListView: View {
                 jobName: jobName,
                 householdName: GroupSwitcherData.currentName(for: appRouter),
                 notes: source.map { todoPrintTask(for: $0) },
-                locale: locale
+                locale: locale,
+                delivery: delivery
             )
             return
         }
@@ -312,7 +327,8 @@ struct TodoListView: View {
             jobName: jobName,
             householdName: GroupSwitcherData.currentName(for: appRouter),
             sections: sections,
-            locale: locale
+            locale: locale,
+            delivery: delivery
         )
     }
 
@@ -339,7 +355,11 @@ struct TodoListView: View {
         }
     }
 
-    private func printPlannerList(_ list: HouseholdList, items: [ListItem]) {
+    private func printPlannerList(
+        _ list: HouseholdList,
+        items: [ListItem],
+        delivery: FamilyPrintDelivery
+    ) {
         let sorted = items.sorted { $0.sortOrder < $1.sortOrder }
         TodoPrintComposer.printPlannerItems(
             jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(list.title)",
@@ -347,11 +367,12 @@ struct TodoListView: View {
             open: sorted.filter { $0.isChecked == false }.map(\.title),
             checked: sorted.filter(\.isChecked).map(\.title),
             checkedHeading: L10n.Todo.listCheckedSection.string(locale: locale),
-            locale: locale
+            locale: locale,
+            delivery: delivery
         )
     }
 
-    private func printAllPlannerLists() async {
+    private func printAllPlannerLists(delivery: FamilyPrintDelivery) async {
         let rows = listViewModel.lists.map { list in
             PlannerPrintRow(
                 title: list.title,
@@ -363,7 +384,8 @@ struct TodoListView: View {
             jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(L10n.Todo.lists.string(locale: locale))",
             householdName: GroupSwitcherData.currentName(for: appRouter),
             rows: rows,
-            locale: locale
+            locale: locale,
+            delivery: delivery
         )
     }
 

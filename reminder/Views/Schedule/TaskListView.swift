@@ -579,8 +579,8 @@ struct TaskListView: View {
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
-                FamilyPrintToolbarButton {
-                    printSchedule()
+                FamilyPrintToolbarButton { delivery in
+                    printSchedule(delivery: delivery)
                 }
                 Button {
                     isShowingSearch = true
@@ -649,7 +649,7 @@ struct TaskListView: View {
         .buttonStyle(.plain)
     }
 
-    private func printSchedule() {
+    private func printSchedule(delivery: FamilyPrintDelivery) {
         let calendar = appSettings.effectiveCalendar
         let jobName = "\(GroupSwitcherData.currentName(for: appRouter)) · \(schedulePrintRangeTitle(calendar: calendar))"
         let context = SchedulePrintContext(
@@ -662,7 +662,8 @@ struct TaskListView: View {
             displayTitle: { viewModel.displayTitle(for: $0) },
             avatars: { viewModel.forWhomAvatarSources(for: $0) },
             assigneeLabel: { viewModel.assigneeLabel(for: $0, locale: locale) },
-            hasAttachments: { viewModel.taskHasAttachments($0) }
+            hasAttachments: { viewModel.taskHasAttachments($0) },
+            delivery: delivery
         )
         switch currentViewMode {
         case .week:

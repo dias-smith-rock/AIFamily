@@ -506,6 +506,7 @@ extension L10n {
     static let yourJoinRequestHasBeenSubmittedPleaseWait = Entry(key: "common_your_join_request_has_been_submitted_please_wait", table: .common)
     static let yr = Entry(key: "common_yr", table: .common)
     static let print = Entry(key: "common_print", table: .common)
+    static let saveAsPDF = Entry(key: "common_save_as_pdf", table: .common)
     static let nothingToPrint = Entry(key: "common_nothing_to_print", table: .common)
     }
 }

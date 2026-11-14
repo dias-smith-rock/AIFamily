@@ -13,6 +13,7 @@ struct SchedulePrintContext {
     let avatars: (FamilyTask) -> [TaskCardAvatarSource]
     let assigneeLabel: (FamilyTask) -> String
     let hasAttachments: (FamilyTask) -> Bool
+    let delivery: FamilyPrintDelivery
 }
 
 @MainActor
@@ -179,7 +180,11 @@ enum SchedulePrintComposer {
     }
 
     private static func present(_ context: SchedulePrintContext, images: [UIImage]) {
-        FamilyDocumentPrinter.printImages(jobName: context.jobName, images: images)
+        FamilyDocumentPrinter.deliver(
+            jobName: context.jobName,
+            images: images,
+            delivery: context.delivery
+        )
     }
 
     /// 整页内容不超过纸高时保持一页；超出后再按实测行高拆页。
