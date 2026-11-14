@@ -391,8 +391,16 @@ struct TaskWeekGridView: View {
 private enum WeekAgendaMetrics {
     static let dayCount = 7
     static let dateColumnWidth: CGFloat = 44
-    static let cardWidth: CGFloat = 132
     static let cardSpacing: CGFloat = 8
+    /// 可视区域内完整放下的卡片数。
+    static let visibleCardCount: CGFloat = 3
+
+    static func cardWidth(fitting viewport: CGFloat, trailingInset: CGFloat) -> CGFloat {
+        let gaps = cardSpacing * (visibleCardCount - 1)
+        let available = viewport - trailingInset - gaps
+        guard available > 90 else { return 96 }
+        return floor(available / visibleCardCount)
+    }
     static let dividerHeight: CGFloat = 0.5
     /// 卡片相对日行内边距（上下合计），避免贴死分割线。
     static let cardVerticalInset: CGFloat = 12
@@ -493,23 +501,17 @@ private struct WeekAgendaDayRow: View {
     var onTaskComplete: ((FamilyTask) -> Void)? = nil
     var onTaskDelete: ((FamilyTask) -> Void)? = nil
 
-    @State private var taskStripViewportWidth: CGFloat = 0
-
     private var dayNumber: Int {
         calendar.component(.day, from: day)
     }
 
     /// 任务条内容总宽（含尾部 inset）；大于可视宽度时才由卡片横向滚动接手手势。
-    private var taskStripContentWidth: CGFloat {
+    private func taskStripContentWidth(cardWidth: CGFloat) -> CGFloat {
         guard tasks.isEmpty == false else { return 0 }
         let count = CGFloat(tasks.count)
-        return count * WeekAgendaMetrics.cardWidth
+        return count * cardWidth
             + max(0, count - 1) * WeekAgendaMetrics.cardSpacing
             + leadingInset
-    }
-
-    private var canScrollTaskStrip: Bool {
-        tasks.isEmpty == false && taskStripContentWidth > taskStripViewportWidth + 1
     }
 
     var body: some View {
@@ -530,39 +532,43 @@ private struct WeekAgendaDayRow: View {
             .padding(.leading, leadingInset)
 
             taskStrip
-                .frame(maxWidth: .infinity)
-                .background {
-                    GeometryReader { geo in
-                        Color.clear
-                            .onAppear { taskStripViewportWidth = geo.size.width }
-                            .onChange(of: geo.size.width) { _, newWidth in
-                                taskStripViewportWidth = newWidth
-                            }
-                    }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private func taskStrip(cardWidth: CGFloat, viewport: CGFloat) -> some View {
+        let contentWidth = taskStripContentWidth(cardWidth: cardWidth)
+        let cards = taskCardsRow(cardWidth: cardWidth)
+        return Group {
+            if tasks.isEmpty == false, contentWidth > viewport + 1 {
+                // 超过三张才横滑；前三张在可视区内完整显示。
+                ScrollView(.horizontal, showsIndicators: false) {
+                    cards
                 }
+                .scrollBounceBehavior(.basedOnSize)
+                .background {
+                    WeekAgendaNestedScrollGestureBridge()
+                        .allowsHitTesting(false)
+                }
+            } else {
+                cards
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            }
         }
     }
 
-    @ViewBuilder
     private var taskStrip: some View {
-        if canScrollTaskStrip {
-            // 内容超出可视宽度：横向 ScrollView 优先响应侧滑，避免被 TabView 换周抢走。
-            ScrollView(.horizontal, showsIndicators: false) {
-                taskCardsRow
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            .background {
-                WeekAgendaNestedScrollGestureBridge()
-                    .allowsHitTesting(false)
-            }
-        } else {
-            // 卡片装得下 / 无任务：不装 ScrollView，横向手势交给外层换周。
-            taskCardsRow
-                .frame(maxWidth: .infinity, alignment: .leading)
+        GeometryReader { geo in
+            let cardWidth = WeekAgendaMetrics.cardWidth(
+                fitting: geo.size.width,
+                trailingInset: leadingInset
+            )
+            taskStrip(cardWidth: cardWidth, viewport: geo.size.width)
+                .frame(width: geo.size.width, height: geo.size.height, alignment: .leading)
         }
     }
 
-    private var taskCardsRow: some View {
+    private func taskCardsRow(cardWidth: CGFloat) -> some View {
         HStack(alignment: .center, spacing: WeekAgendaMetrics.cardSpacing) {
             ForEach(tasks) { task in
                 Button {
@@ -574,7 +580,7 @@ private struct WeekAgendaDayRow: View {
                         locale: locale
                     )
                     .frame(
-                        width: WeekAgendaMetrics.cardWidth,
+                        width: cardWidth,
                         height: cardHeight
                     )
                 }
