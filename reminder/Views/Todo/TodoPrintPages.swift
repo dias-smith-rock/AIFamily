@@ -24,6 +24,7 @@ struct PlannerPrintRow: Identifiable {
     let title: String
     let subtitle: String
     let systemImage: String
+    let tint: Color
 }
 
 @MainActor
@@ -533,10 +534,10 @@ private struct PlannerHomePrintPage: View {
         HStack(spacing: 14) {
             Image(systemName: row.systemImage)
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(AppTheme.ColorToken.accent)
+                .foregroundStyle(row.tint)
                 .frame(width: 36, height: 36)
                 .background(
-                    AppTheme.ColorToken.accent.opacity(0.12),
+                    row.tint.opacity(0.12),
                     in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                 )
             VStack(alignment: .leading, spacing: 4) {

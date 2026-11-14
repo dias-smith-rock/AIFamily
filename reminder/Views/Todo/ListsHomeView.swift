@@ -150,14 +150,24 @@ struct ListsHomeView: View {
 
 private struct HouseholdListRow: View {
     let list: HouseholdList
+    @State private var themeToken = 0
+
+    private var spaceTint: Color {
+        HouseholdColorStore.color(for: list.householdId)
+    }
 
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: list.kind.systemImage)
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(AppTheme.ColorToken.accent)
+                .foregroundStyle(spaceTint)
                 .frame(width: 36, height: 36)
-                .background(AppTheme.ColorToken.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(spaceTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .id(themeToken)
+                .onReceive(NotificationCenter.default.publisher(for: .householdThemeColorDidChange)) { note in
+                    guard let changed = note.object as? UUID, changed == list.householdId else { return }
+                    themeToken &+= 1
+                }
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(list.title)

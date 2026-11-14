@@ -377,7 +377,8 @@ struct TodoListView: View {
             PlannerPrintRow(
                 title: list.title,
                 subtitle: plannerKindTitle(list.kind),
-                systemImage: list.kind.systemImage
+                systemImage: list.kind.systemImage,
+                tint: HouseholdColorStore.color(for: list.householdId)
             )
         }
         TodoPrintComposer.printPlannerHome(
