@@ -586,16 +586,14 @@ struct TodoStickyBoardView: View {
         return 0.92
     }
 
-    /// 白板坐标 → 视口坐标（含缩放、平移与翻面镜像）。
+    /// 白板坐标 → 视口坐标（含缩放与平移）。
+    /// 背面是 180° 翻转再水平镜像，视觉上左右已经转正，这里不要再翻一次。
     private func viewportPoint(forBoardPoint boardPoint: CGPoint) -> CGPoint {
         let safeScale = max(scale, 0.01)
         let boardCenter = CGPoint(x: boardSize.width / 2, y: boardSize.height / 2)
         let viewportCenter = CGPoint(x: viewportSize.width / 2, y: viewportSize.height / 2)
-        var dx = (boardPoint.x - boardCenter.x) * safeScale
+        let dx = (boardPoint.x - boardCenter.x) * safeScale
         let dy = (boardPoint.y - boardCenter.y) * safeScale
-        if showingFarSide {
-            dx = -dx
-        }
         return CGPoint(
             x: viewportCenter.x + boardOffset.width + dx,
             y: viewportCenter.y + boardOffset.height + dy
@@ -627,12 +625,8 @@ struct TodoStickyBoardView: View {
                 }
                 guard let start = dragStartBoardPosition else { return }
                 let safeScale = max(scale, 0.01)
-                // 背面有水平镜像：屏幕左右与白板 x 相反，不修正会把浮层甩出视野。
-                var dx = drag.translation.width / safeScale
+                let dx = drag.translation.width / safeScale
                 let dy = drag.translation.height / safeScale
-                if showingFarSide {
-                    dx = -dx
-                }
                 let next = clampPoint(
                     CGPoint(
                         x: start.x + dx,
@@ -898,11 +892,8 @@ struct TodoStickyBoardView: View {
 
         let anchorViewport = viewportPoint(forBoardPoint: boardPoint)
         let viewportCenter = CGPoint(x: viewportSize.width / 2, y: viewportSize.height / 2)
-        var dx = (boardPoint.x - boardSize.width / 2) * nextScale
+        let dx = (boardPoint.x - boardSize.width / 2) * nextScale
         let dy = (boardPoint.y - boardSize.height / 2) * nextScale
-        if showingFarSide {
-            dx = -dx
-        }
         let proposedOffset = CGSize(
             width: anchorViewport.x - viewportCenter.x - dx,
             height: anchorViewport.y - viewportCenter.y - dy
