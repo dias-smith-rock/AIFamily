@@ -170,6 +170,9 @@ struct TaskWeekGridView: View {
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background {
+            WeekPagerOneScreenGate()
+        }
         .allowsHitTesting(isAdjacentWeekPagesReady && isRecenteringPager == false)
         .onAppear {
             WeekViewPerformanceTracer.mark("weekPager.onAppear")
@@ -288,6 +291,7 @@ struct TaskWeekGridView: View {
             shiftDisplayedWeek(by: delta)
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
         }
+        WeekPagerOneScreenGate.stopInertia()
         scheduleClearPagerRecenterFlag()
     }
 
@@ -315,8 +319,14 @@ struct TaskWeekGridView: View {
     private func scheduleClearPagerRecenterFlag() {
         pagerRecenterTask?.cancel()
         pagerRecenterTask = Task { @MainActor in
-            await Task.yield()
-            await Task.yield()
+            for _ in 0..<6 {
+                await Task.yield()
+                guard Task.isCancelled == false else { return }
+                if WeekPagerOneScreenGate.isPagerGestureActive == false {
+                    break
+                }
+                WeekPagerOneScreenGate.stopInertia()
+            }
             guard Task.isCancelled == false else { return }
             isRecenteringPager = false
         }
@@ -709,6 +719,125 @@ private enum WeekAgendaDurationFormatting {
 
 #if canImport(UIKit)
 import UIKit
+
+/// 周视图分页一次手势最多翻一屏。快速甩动时系统分页会跨过多页，回中后残留惯性还会再翻一次。
+private struct WeekPagerOneScreenGate: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            WeekPagerOneScreenGate.attach(from: uiView)
+        }
+    }
+
+    static var isPagerGestureActive: Bool {
+        guard let scrollView = Session.shared.scrollView else { return false }
+        return scrollView.isTracking || scrollView.isDragging || scrollView.isDecelerating
+    }
+
+    static func stopInertia() {
+        Session.shared.stopInertia()
+    }
+
+    fileprivate static func attach(from anchor: UIView) {
+        Session.shared.attach(from: anchor)
+    }
+
+    fileprivate final class Session: NSObject {
+        static let shared = Session()
+
+        weak var scrollView: UIScrollView?
+        private var observation: NSKeyValueObservation?
+        private var dragStartX: CGFloat = 0
+        private var isArmed = false
+        private var isAdjusting = false
+
+        func attach(from anchor: UIView) {
+            guard let paging = Self.findPagerScrollView(from: anchor) else { return }
+            guard paging !== scrollView else { return }
+            scrollView = paging
+            observation = paging.observe(\.contentOffset, options: [.new]) { [weak self] scroll, _ in
+                self?.clamp(scroll)
+            }
+            paging.panGestureRecognizer.addTarget(self, action: #selector(handlePan(_:)))
+        }
+
+        @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
+            guard let scrollView = gesture.view as? UIScrollView else { return }
+            if gesture.state == .began {
+                dragStartX = scrollView.contentOffset.x
+                isArmed = true
+            }
+        }
+
+        private func clamp(_ scrollView: UIScrollView) {
+            guard isAdjusting == false, isArmed, scrollView === self.scrollView else { return }
+            guard scrollView.isTracking || scrollView.isDecelerating else { return }
+            let width = scrollView.bounds.width
+            guard width > 1 else { return }
+            let minX = dragStartX - width
+            let maxX = dragStartX + width
+            let x = scrollView.contentOffset.x
+            guard x < minX - 0.5 || x > maxX + 0.5 else { return }
+            isAdjusting = true
+            scrollView.setContentOffset(
+                CGPoint(x: min(max(x, minX), maxX), y: scrollView.contentOffset.y),
+                animated: false
+            )
+            isAdjusting = false
+        }
+
+        func stopInertia() {
+            isArmed = false
+            guard let scrollView, scrollView.bounds.width > 1 else { return }
+            isAdjusting = true
+            scrollView.panGestureRecognizer.isEnabled = false
+            scrollView.setContentOffset(
+                CGPoint(x: scrollView.bounds.width, y: scrollView.contentOffset.y),
+                animated: false
+            )
+            scrollView.panGestureRecognizer.isEnabled = true
+            isAdjusting = false
+        }
+
+        private static func findPagerScrollView(from anchor: UIView) -> UIScrollView? {
+            var current: UIView? = anchor
+            while let node = current {
+                if let match = firstPagerScrollView(in: node) {
+                    return match
+                }
+                current = node.superview
+            }
+            return nil
+        }
+
+        private static func firstPagerScrollView(in root: UIView) -> UIScrollView? {
+            if let scroll = root as? UIScrollView, isWeekPager(scroll) {
+                return scroll
+            }
+            for child in root.subviews {
+                if let found = firstPagerScrollView(in: child) {
+                    return found
+                }
+            }
+            return nil
+        }
+
+        private static func isWeekPager(_ scroll: UIScrollView) -> Bool {
+            let width = scroll.bounds.width
+            let height = scroll.bounds.height
+            guard width > 200, height > 200 else { return false }
+            let pages = scroll.contentSize.width / width
+            guard pages > 1.8, pages < 3.2 else { return false }
+            return scroll.contentSize.height <= height + 2
+        }
+    }
+}
 
 /// 让 page TabView 的分页手势等待内层横向 ScrollView 失败后再触发：
 /// 卡片还能横滑时由任务条响应；滑到尽头或无法继续时再换周。

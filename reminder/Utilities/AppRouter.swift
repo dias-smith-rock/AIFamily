@@ -957,6 +957,25 @@ final class AppRouter: ObservableObject {
         #endif
     }
 
+    /// 点选一个 space：立刻切过去，写成默认 space，并取消其它 space 的选中。
+    func switchToExclusiveHousehold(_ option: HouseholdOption) {
+        selectedHouseholdIds = [option.id]
+        HouseholdColorStore.ensureAssigned(option.id)
+        guard let userId = authUserId else {
+            exclusiveViewHouseholdId = option.id
+            chooseHousehold(option)
+            return
+        }
+        saveViewHouseholdIds([option.id], for: userId)
+        selectHouseholdAndEnter(option: option, userId: userId)
+        Task {
+            await refreshSelectedHouseholdCreatorPro(householdId: option.id)
+            await MainActor.run {
+                self.logVIPAccessState(trigger: L10n.Family.switchOrganization.string())
+            }
+        }
+    }
+
     /// Sheet 多选确认：更新查看集合；若当前主组织不在集合内则切到集合首项。
     func setViewHouseholdIds(_ ids: [UUID]) {
         let allowed = Set(selectableHouseholds.map(\.id))
@@ -1307,7 +1326,17 @@ final class AppRouter: ObservableObject {
         appState = .activeMember
     }
 
+    /// 异步切组尚未拿到 userId 时，记下本次要点中的唯一 space，避免把旧的多选集合合并回来。
+    private var exclusiveViewHouseholdId: UUID?
+
     private func restoreOrMergeViewHouseholdIds(primaryId: UUID, userId: UUID) {
+        if exclusiveViewHouseholdId == primaryId {
+            exclusiveViewHouseholdId = nil
+            selectedHouseholdIds = [primaryId]
+            saveViewHouseholdIds([primaryId], for: userId)
+            HouseholdColorStore.ensureAssigned(primaryId)
+            return
+        }
         let allowed = Set(selectableHouseholds.map(\.id))
         var stored = loadViewHouseholdIds(for: userId).filter { allowed.contains($0) }
         if stored.isEmpty {

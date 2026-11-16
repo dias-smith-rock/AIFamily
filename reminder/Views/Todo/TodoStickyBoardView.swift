@@ -1722,7 +1722,7 @@ private struct TodoStickyNoteCard: View {
             }
 
             Text(title)
-                .font(.subheadline.weight(.semibold))
+                .font(.headline)
                 .foregroundStyle(look.titleInk ?? Color.primary)
                 .lineLimit(titleLineLimit)
                 .minimumScaleFactor(0.85)
@@ -1732,7 +1732,7 @@ private struct TodoStickyNoteCard: View {
 
             ForEach(Array(secondary.enumerated()), id: \.offset) { _, line in
                 Text(line)
-                    .font(.caption2)
+                    .font(.footnote)
                     .foregroundStyle(look.detailInk ?? Color.secondary)
                     .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)

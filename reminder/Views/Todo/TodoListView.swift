@@ -187,10 +187,11 @@ struct TodoListView: View {
             .task(id: todoLoadTrigger) {
                 bindHouseholdContext()
                 guard appRouter.hasCompletedAuthBootstrap else { return }
-                await viewModel.loadTasksIfNeeded()
-                if contentSection == .lists {
-                    await listViewModel.loadLists(force: false)
-                }
+                // 清单缓存已在 bind 时铺上；与待办并行拉网，避免 Planner 等待办请求结束才出现。
+                async let todos: Void = viewModel.loadTasksIfNeeded()
+                async let lists: Void = listViewModel.loadLists(force: false)
+                await lists
+                await todos
                 openPendingFlexibleTaskIfNeeded()
             }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
@@ -201,6 +202,7 @@ struct TodoListView: View {
                     householdId: newValue,
                     membershipId: membershipId
                 )
+                listViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
                 selectedHouseholdList = nil
                 Task {
                     guard contentSection == .lists else { return }
@@ -373,13 +375,16 @@ struct TodoListView: View {
     }
 
     private func printAllPlannerLists(delivery: FamilyPrintDelivery) async {
-        let rows = listViewModel.lists.map { list in
-            PlannerPrintRow(
-                title: list.title,
-                subtitle: plannerKindTitle(list.kind),
-                systemImage: list.kind.systemImage,
-                tint: HouseholdColorStore.color(for: list.householdId)
-            )
+        let groups = listViewModel.groupedLists(primaryHouseholdId: appRouter.selectedHouseholdId)
+        let rows = groups.flatMap { group in
+            group.lists.map { list in
+                PlannerPrintRow(
+                    title: list.title,
+                    subtitle: "\(plannerSpaceName(group.id)) · \(plannerKindTitle(list.kind))",
+                    systemImage: list.kind.systemImage,
+                    tint: HouseholdColorStore.color(for: list.householdId)
+                )
+            }
         }
         TodoPrintComposer.printPlannerHome(
             jobName: "\(GroupSwitcherData.currentName(for: appRouter)) · \(L10n.Todo.lists.string(locale: locale))",
@@ -388,6 +393,20 @@ struct TodoListView: View {
             locale: locale,
             delivery: delivery
         )
+    }
+
+    private func plannerSpaceName(_ householdId: UUID) -> String {
+        if householdId == appRouter.selectedHouseholdId {
+            return GroupSwitcherData.currentName(for: appRouter)
+        }
+        let raw = appRouter.selectableHouseholds
+            .first(where: { $0.id == householdId })?
+            .name
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if raw.isEmpty {
+            return L10n.Family.unnamedGroup.string(locale: locale)
+        }
+        return StoredDisplayNameResolver.householdName(raw)
     }
 
     private func plannerKindTitle(_ kind: ListKind) -> String {
@@ -1028,6 +1047,7 @@ struct TodoListView: View {
             householdId: appRouter.selectedHouseholdId,
             membershipId: appRouter.selectedMembershipId
         )
+        listViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
     }
 
     private func completedLabel(for task: FamilyTask) -> String {
@@ -1280,14 +1300,14 @@ struct TodoFlexibleRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(displayTitle)
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .foregroundStyle(titleColor)
                     .strikethrough(style == .completed)
                     .lineLimit(2)
 
                 if let deadlineLabel {
                     Text(deadlineLabel)
-                        .font(.caption)
+                        .font(.footnote)
                         .foregroundStyle(subtitleColor)
                 }
             }
@@ -1324,7 +1344,7 @@ struct TodoFlexibleRow: View {
         .overlay(alignment: .bottomTrailing) {
             if hasAttachments {
                 Image(systemName: "paperclip")
-                    .font(.caption2.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.taskCardSecondary(for: colorScheme))
                     .padding(.trailing, 10)
                     .padding(.bottom, 6)

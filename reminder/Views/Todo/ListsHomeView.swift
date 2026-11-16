@@ -14,7 +14,7 @@ struct ListsHomeView: View {
 
     var body: some View {
         Group {
-            if viewModel.isLoading, viewModel.lists.isEmpty {
+            if viewModel.lists.isEmpty, viewModel.isLoading || viewModel.didFinishListsLoad == false {
                 ProgressView(L10n.Common.loading.localized)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if viewModel.lists.isEmpty {
@@ -114,28 +114,38 @@ struct ListsHomeView: View {
         }
     }
 
+    private var spaceGroups: [(id: UUID, lists: [HouseholdList])] {
+        viewModel.groupedLists(primaryHouseholdId: appRouter.selectedHouseholdId)
+    }
+
+    /// 有清单的 space 都展示；默认 space 即使暂时没有清单也留在第一组。
+    private var visibleSpaceGroups: [(id: UUID, lists: [HouseholdList])] {
+        spaceGroups.filter { group in
+            group.lists.isEmpty == false || group.id == appRouter.selectedHouseholdId
+        }
+    }
+
     private var listScroll: some View {
         List {
-            ForEach(viewModel.lists) { list in
-                Button {
-                    selectedList = list
-                } label: {
-                    HouseholdListRow(list: list)
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button(role: .destructive) {
-                        listPendingDelete = list
-                    } label: {
-                        Label(L10n.Common.delete.localized, systemImage: "trash")
+            ForEach(visibleSpaceGroups, id: \.id) { group in
+                Section {
+                    if group.lists.isEmpty {
+                        Text(L10n.Todo.listsEmpty.localized)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(group.lists) { list in
+                            listRow(list)
+                        }
                     }
-                    Button {
-                        listPendingRename = list
-                        renameDraft = list.title
-                    } label: {
-                        Label(L10n.Todo.listRename.localized, systemImage: "pencil")
+                } header: {
+                    HStack(spacing: 8) {
+                        HouseholdColorDot(householdId: group.id, size: 8)
+                        Text(spaceName(for: group.id))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .textCase(nil)
                     }
-                    .tint(.orange)
                 }
             }
         }
@@ -145,6 +155,44 @@ struct ListsHomeView: View {
             await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshPlanner")
             await viewModel.loadLists(force: true)
         }
+    }
+
+    private func listRow(_ list: HouseholdList) -> some View {
+        Button {
+            viewModel.presentCachedItems(for: list.id)
+            selectedList = list
+        } label: {
+            HouseholdListRow(list: list)
+        }
+        .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                listPendingDelete = list
+            } label: {
+                Label(L10n.Common.delete.localized, systemImage: "trash")
+            }
+            Button {
+                listPendingRename = list
+                renameDraft = list.title
+            } label: {
+                Label(L10n.Todo.listRename.localized, systemImage: "pencil")
+            }
+            .tint(.orange)
+        }
+    }
+
+    private func spaceName(for householdId: UUID) -> String {
+        if householdId == appRouter.selectedHouseholdId {
+            return GroupSwitcherData.currentName(for: appRouter)
+        }
+        let raw = appRouter.selectableHouseholds
+            .first(where: { $0.id == householdId })?
+            .name
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if raw.isEmpty {
+            return AppLocalized.string(L10n.Family.unnamedGroup, locale: locale)
+        }
+        return StoredDisplayNameResolver.householdName(raw)
     }
 }
 
@@ -171,11 +219,11 @@ private struct HouseholdListRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(list.title)
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(list.kindTitle)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 

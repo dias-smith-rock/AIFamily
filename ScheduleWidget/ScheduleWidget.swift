@@ -143,27 +143,13 @@ struct ScheduleWidgetView: View {
                 }
             }
             Spacer(minLength: 0)
-            // 「N more」与「+」同行，避免第三条任务提示把左栏撑出小组件。
-            HStack(alignment: .center, spacing: 8) {
-                Link(destination: createURL(for: entry.date)) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 30, height: 30)
-                        .background(Color.blue, in: Circle())
+            if moreCount > 0 {
+                Link(destination: openURL(for: entry.date)) {
+                    Text(moreLabel(moreCount))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
-                .accessibilityLabel(Text("widget_create_task"))
-
-                if moreCount > 0 {
-                    Link(destination: openURL(for: entry.date)) {
-                        Text(moreLabel(moreCount))
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-
-                Spacer(minLength: 0)
             }
         }
     }
@@ -283,11 +269,6 @@ struct ScheduleWidgetView: View {
     private func openURL(for date: Date) -> URL {
         let parts = ScheduleWidgetLink.components(of: date, calendar: calendar)
         return ScheduleWidgetLink.openDay(year: parts.year, month: parts.month, day: parts.day)
-    }
-
-    private func createURL(for date: Date) -> URL {
-        let parts = ScheduleWidgetLink.components(of: date, calendar: calendar)
-        return ScheduleWidgetLink.createTask(year: parts.year, month: parts.month, day: parts.day)
     }
 
     private func moreLabel(_ count: Int) -> String {

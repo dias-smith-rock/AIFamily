@@ -12,7 +12,11 @@ struct ListDetailView: View {
 
     var body: some View {
         List {
-            if viewModel.openItems.isEmpty, viewModel.checkedItems.isEmpty, viewModel.isLoading == false {
+            if viewModel.activeListId == list.id,
+               viewModel.openItems.isEmpty,
+               viewModel.checkedItems.isEmpty,
+               viewModel.isLoading == false,
+               viewModel.didFinishItemsLoad {
                 ContentUnavailableView {
                     Label(L10n.Todo.listItemsEmpty.localized, systemImage: list.kind.systemImage)
                 }
@@ -105,7 +109,7 @@ struct ListDetailView: View {
                     .font(.title3)
                     .foregroundStyle(item.isChecked ? Color.green : Color.secondary)
                 Text(item.title)
-                    .font(.body)
+                    .font(.headline)
                     .foregroundStyle(item.isChecked ? .secondary : .primary)
                     .strikethrough(item.isChecked)
                     .frame(maxWidth: .infinity, alignment: .leading)

@@ -430,7 +430,7 @@ private struct TodoPrintStickyNote: View {
                 }
             VStack(alignment: .leading, spacing: 4) {
                 Text(note.title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline)
                     .foregroundStyle(look.titleInk ?? .primary)
                     .lineLimit(4)
                     .minimumScaleFactor(0.85)
@@ -438,7 +438,7 @@ private struct TodoPrintStickyNote: View {
                 Spacer(minLength: 0)
                 ForEach(Array(note.details.prefix(2).enumerated()), id: \.offset) { _, line in
                     Text(line)
-                        .font(.caption2)
+                        .font(.footnote)
                         .foregroundStyle(look.detailInk ?? .secondary)
                         .lineLimit(1)
                 }
@@ -542,10 +542,10 @@ private struct PlannerHomePrintPage: View {
                 )
             VStack(alignment: .leading, spacing: 4) {
                 Text(row.title)
-                    .font(.body.weight(.semibold))
+                    .font(.headline)
                     .lineLimit(1)
                 Text(row.subtitle)
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
@@ -563,8 +563,8 @@ private struct PlannerHomePrintMeasure: View {
     var body: some View {
         if case .row(let row) = piece {
             HStack {
-                Text(row.title).font(.body.weight(.semibold))
-                Text(row.subtitle).font(.caption)
+                Text(row.title).font(.headline)
+                Text(row.subtitle).font(.footnote)
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 14)
@@ -608,7 +608,7 @@ private struct PlannerItemPrintPage: View {
                                 .font(.title3)
                                 .foregroundStyle(checked ? Color.green : Color.secondary)
                             Text(title)
-                                .font(.body)
+                                .font(.headline)
                                 .foregroundStyle(checked ? .secondary : .primary)
                                 .strikethrough(checked)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -643,7 +643,7 @@ private struct PlannerItemPrintMeasure: View {
                 Image(systemName: checked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                 Text(itemTitle)
-                    .font(.body)
+                    .font(.headline)
                     .strikethrough(checked)
             }
             .padding(.horizontal, 22)

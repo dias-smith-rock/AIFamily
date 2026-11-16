@@ -77,6 +77,11 @@ enum HouseholdLocalCache {
         await LocalCacheManager.shared.load(forKey: listsCacheKey(for: householdId))
     }
 
+    /// 同步读盘，供切换 space 的第一帧直接画出清单，不必等后台队列。
+    static func loadListsNow(for householdId: UUID) -> [HouseholdList]? {
+        LocalCacheManager.shared.load(forKey: listsCacheKey(for: householdId))
+    }
+
     static func saveLists(_ lists: [HouseholdList], for householdId: UUID) {
         LocalCacheManager.shared.save(lists, forKey: listsCacheKey(for: householdId))
     }
@@ -102,6 +107,10 @@ enum HouseholdLocalCache {
 
     static func loadListItems(for listId: UUID) async -> [ListItem]? {
         await LocalCacheManager.shared.load(forKey: listItemsCacheKey(for: listId))
+    }
+
+    static func loadListItemsNow(for listId: UUID) -> [ListItem]? {
+        LocalCacheManager.shared.load(forKey: listItemsCacheKey(for: listId))
     }
 
     static func saveListItems(_ items: [ListItem], for listId: UUID) {
