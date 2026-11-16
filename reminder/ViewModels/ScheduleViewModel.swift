@@ -487,8 +487,19 @@ final class ScheduleViewModel: ObservableObject {
         publishScheduleWidgetSnapshot()
     }
 
+    private var viewerProfileId: UUID?
+
+    func setViewerProfileId(_ profileId: UUID?) {
+        viewerProfileId = profileId
+        publishScheduleWidgetSnapshot()
+    }
+
     private func publishScheduleWidgetSnapshot() {
-        ScheduleWidgetPublisher.publish(tasks: tasks, householdId: currentHouseholdId)
+        ScheduleWidgetPublisher.publish(
+            tasks: tasks,
+            householdId: currentHouseholdId,
+            profileId: viewerProfileId
+        )
     }
 
     private static func isLikelyNetworkFailure(_ error: Error) -> Bool {

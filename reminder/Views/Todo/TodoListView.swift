@@ -1043,9 +1043,11 @@ struct TodoListView: View {
         viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
         scheduleViewModel.setHouseholdContext(appRouter.selectedHouseholdId)
         scheduleViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+        scheduleViewModel.setViewerProfileId(appRouter.selectedProfileId)
         listViewModel.setHouseholdContext(
             householdId: appRouter.selectedHouseholdId,
-            membershipId: appRouter.selectedMembershipId
+            membershipId: appRouter.selectedMembershipId,
+            profileId: appRouter.selectedProfileId
         )
         listViewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
     }

@@ -16,7 +16,7 @@ enum LocalFirstSyncCoordinator {
         #endif
         _ = await TaskOfflineOutbox.shared.flushIfNeeded()
         await ListOfflineOutbox.shared.flushIfNeeded()
-        if TaskOfflineOutbox.shared.pendingCount > 0 {
+        if TaskOfflineOutbox.shared.pendingCount > 0 || ListOfflineOutbox.shared.hasPending {
             scheduleRetryIfNeeded()
         }
     }
@@ -74,7 +74,7 @@ enum LocalFirstSyncCoordinator {
             try? await Task.sleep(nanoseconds: 2_500_000_000)
             retryTask = nil
             guard Task.isCancelled == false else { return }
-            guard TaskOfflineOutbox.shared.pendingCount > 0 else { return }
+            guard TaskOfflineOutbox.shared.pendingCount > 0 || ListOfflineOutbox.shared.hasPending else { return }
             await syncNow(reason: "pendingRetry")
         }
     }

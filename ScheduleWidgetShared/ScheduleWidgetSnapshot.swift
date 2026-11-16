@@ -13,6 +13,8 @@ struct ScheduleWidgetTask: Codable, Identifiable, Hashable {
     var day: Int
     var isAllDay: Bool
     var minutesFromMidnight: Int?
+    /// `schedule`、`todo` 或 `list`。旧快照没有这个字段时按日程显示。
+    var source: String? = nil
 }
 
 struct ScheduleWidgetSnapshot: Codable {
@@ -21,6 +23,8 @@ struct ScheduleWidgetSnapshot: Codable {
     var localeIdentifier: String
     var timeZoneIdentifier: String
     var tasks: [ScheduleWidgetTask]
+    /// 主 App 写好的「今天和我有关」，小组件直接显示。
+    var mineTitle: String? = nil
 
     var locale: Locale { Locale(identifier: localeIdentifier) }
 

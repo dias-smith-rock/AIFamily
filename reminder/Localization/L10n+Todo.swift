@@ -19,6 +19,7 @@ extension L10n {
     static let later = Entry(key: "todo_later", table: .todo)
     static let listAddItemPlaceholder = Entry(key: "todo_list_add_item_placeholder", table: .todo)
     static let listCheckedSection = Entry(key: "todo_list_checked_section", table: .todo)
+    static let listCheckedBy = Entry(key: "todo_list_checked_by", table: .todo)
     static let listCreate = Entry(key: "todo_list_create", table: .todo)
     static let listDeleteConfirmMessage = Entry(key: "todo_list_delete_confirm_message", table: .todo)
     static let listDeleteConfirmTitle = Entry(key: "todo_list_delete_confirm_title", table: .todo)

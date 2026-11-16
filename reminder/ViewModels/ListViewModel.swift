@@ -16,6 +16,7 @@ final class ListViewModel: ObservableObject {
     private let listService: ListDataService
     private var currentHouseholdId: UUID?
     private var currentMembershipId: UUID?
+    private var viewerProfileId: UUID?
     /// 当前要一起查看的 space。默认 space 由界面排到第一组。
     private var viewHouseholdIds: [UUID] = []
     /// 切换 space 或新建清单后作废进行中的列表刷新，避免旧请求盖掉刚保存的清单。
@@ -35,10 +36,13 @@ final class ListViewModel: ObservableObject {
         self.listService = listService
     }
 
-    func setHouseholdContext(householdId: UUID?, membershipId: UUID?) {
+    func setHouseholdContext(householdId: UUID?, membershipId: UUID?, profileId: UUID? = nil) {
         let householdChanged = currentHouseholdId != householdId
         currentHouseholdId = householdId
         currentMembershipId = membershipId
+        if let profileId {
+            viewerProfileId = profileId
+        }
         if householdId == nil, viewHouseholdIds.isEmpty {
             lists = []
             items = []
@@ -92,8 +96,9 @@ final class ListViewModel: ObservableObject {
     }
 
     private func replaceLists(_ remote: [HouseholdList], for householdId: UUID) {
+        let merged = Self.mergePendingLists(remote, householdId: householdId)
         lists.removeAll { $0.householdId == householdId }
-        lists.append(contentsOf: remote)
+        lists.append(contentsOf: merged)
     }
 
     func clearErrorMessage() {
@@ -117,6 +122,7 @@ final class ListViewModel: ObservableObject {
             if generation == listsLoadGeneration {
                 isLoading = false
                 didFinishListsLoad = true
+                publishWidgetSnapshot()
             }
         }
 
@@ -127,13 +133,14 @@ final class ListViewModel: ObservableObject {
             do {
                 let remote = try await listService.fetchLists(in: householdId)
                 guard generation == listsLoadGeneration, effectiveViewHouseholdIds.contains(householdId) else { return }
-                replaceLists(remote, for: householdId)
-                HouseholdLocalCache.saveLists(remote, for: householdId)
+                let merged = Self.mergePendingLists(remote, householdId: householdId)
+                replaceLists(merged, for: householdId)
+                HouseholdLocalCache.saveLists(merged, for: householdId)
             } catch {
                 guard generation == listsLoadGeneration else { return }
-                if lists.isEmpty {
-                    errorMessage = error.localizedDescription
-                }
+            if lists.isEmpty {
+                errorMessage = error.localizedDescription
+            }
             }
         }
     }
@@ -174,6 +181,7 @@ final class ListViewModel: ObservableObject {
             if generation == itemsLoadGeneration {
                 isLoading = false
                 didFinishItemsLoad = true
+                publishWidgetSnapshot()
             }
         }
 
@@ -182,10 +190,11 @@ final class ListViewModel: ObservableObject {
         do {
             let remote = try await listService.fetchItems(in: listId)
             guard generation == itemsLoadGeneration, activeListId == listId else { return }
-            if items != remote {
-                items = remote
+            let merged = Self.mergePendingItems(remote, listId: listId)
+            if items != merged {
+                items = merged
             }
-            HouseholdLocalCache.saveListItems(remote, for: listId)
+            HouseholdLocalCache.saveListItems(merged, for: listId)
         } catch {
             guard generation == itemsLoadGeneration else { return }
             if items.isEmpty {
@@ -207,11 +216,6 @@ final class ListViewModel: ObservableObject {
               let membershipId = currentMembershipId
         else { return nil }
 
-        guard await NetworkMonitor.shared.isConnected else {
-            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
-            return nil
-        }
-
         let now = Date()
         let draft = HouseholdList(
             id: UUID(),
@@ -225,77 +229,30 @@ final class ListViewModel: ObservableObject {
             createdAt: now,
             updatedAt: now
         )
-        let payload = HouseholdListInsertPayload(
-            id: draft.id,
-            householdId: draft.householdId,
-            creatorId: draft.creatorId,
-            title: draft.title,
-            kind: draft.kind.rawValue,
-            tripStartDate: draft.tripStartDate,
-            tripEndDate: draft.tripEndDate,
-            sortOrder: draft.sortOrder
-        )
-
-        do {
-            let created = try await listService.createList(payload)
-            listsLoadGeneration += 1
-            guard effectiveViewHouseholdIds.contains(created.householdId) else { return created }
-            lists.insert(created, at: 0)
-            HouseholdLocalCache.upsertListInCache(created)
-            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-            return created
-        } catch {
-            errorMessage = error.localizedDescription
-            return nil
-        }
+        upsertLocalList(draft)
+        enqueuePlannerChange(.createList(draft))
+        return draft
     }
 
     func renameList(_ list: HouseholdList, title: String) async {
         let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.isEmpty == false else { return }
 
-        guard await NetworkMonitor.shared.isConnected else {
-            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
-            return
-        }
-
-        let payload = HouseholdListUpdatePayload(
-            title: trimmed,
-            kind: list.kind.rawValue,
-            tripStartDate: list.tripStartDate,
-            tripEndDate: list.tripEndDate,
-            sortOrder: list.sortOrder
-        )
-        do {
-            let updated = try await listService.updateList(id: list.id, payload: payload)
-            if let index = lists.firstIndex(where: { $0.id == list.id }) {
-                lists[index] = updated
-            }
-            HouseholdLocalCache.upsertListInCache(updated)
-            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        var updated = list
+        updated.title = trimmed
+        updated.updatedAt = Date()
+        upsertLocalList(updated)
+        enqueuePlannerChange(.updateList(updated))
     }
 
     func deleteList(_ list: HouseholdList) async {
-        guard await NetworkMonitor.shared.isConnected else {
-            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
-            return
+        lists.removeAll { $0.id == list.id }
+        if activeListId == list.id {
+            items = []
+            activeListId = nil
         }
-
-        do {
-            try await listService.deleteList(id: list.id)
-            lists.removeAll { $0.id == list.id }
-            if activeListId == list.id {
-                items = []
-                activeListId = nil
-            }
-            HouseholdLocalCache.removeListFromCache(listId: list.id, householdId: list.householdId)
-            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        HouseholdLocalCache.removeListFromCache(listId: list.id, householdId: list.householdId)
+        enqueuePlannerChange(.deleteList(listId: list.id))
     }
 
     @discardableResult
@@ -304,11 +261,6 @@ final class ListViewModel: ObservableObject {
         guard trimmed.isEmpty == false,
               let membershipId = currentMembershipId
         else { return nil }
-
-        guard await NetworkMonitor.shared.isConnected else {
-            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
-            return nil
-        }
 
         let now = Date()
         let draft = ListItem(
@@ -325,73 +277,32 @@ final class ListViewModel: ObservableObject {
             createdAt: now,
             updatedAt: now
         )
-        let payload = ListItemInsertPayload(
-            id: draft.id,
-            listId: draft.listId,
-            householdId: draft.householdId,
-            title: draft.title,
-            isChecked: draft.isChecked,
-            note: draft.note,
-            sortOrder: draft.sortOrder,
-            creatorId: draft.creatorId
-        )
-
-        do {
-            let created = try await listService.createItem(payload)
-            if activeListId == list.id {
-                items.append(created)
-            }
-            HouseholdLocalCache.upsertListItemInCache(created)
-            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-            return created
-        } catch {
-            errorMessage = error.localizedDescription
-            return nil
+        if activeListId == list.id {
+            items.append(draft)
         }
+        HouseholdLocalCache.upsertListItemInCache(draft)
+        enqueuePlannerChange(.createItem(draft))
+        return draft
     }
 
     func toggleChecked(_ item: ListItem) async {
-        guard await NetworkMonitor.shared.isConnected else {
-            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
-            return
-        }
-
         let nextChecked = item.isChecked == false
-        let payload = ListItemUpdatePayload(
-            title: item.title,
-            isChecked: nextChecked,
-            note: item.note,
-            sortOrder: item.sortOrder,
-            completedBy: nextChecked ? currentMembershipId : nil,
-            completedAt: nextChecked ? Date() : nil
-        )
-
-        do {
-            let updated = try await listService.updateItem(id: item.id, payload: payload)
-            if let index = items.firstIndex(where: { $0.id == item.id }) {
-                items[index] = updated
-            }
-            HouseholdLocalCache.upsertListItemInCache(updated)
-            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        } catch {
-            errorMessage = error.localizedDescription
+        var updated = item
+        updated.isChecked = nextChecked
+        updated.completedBy = nextChecked ? currentMembershipId : nil
+        updated.completedAt = nextChecked ? Date() : nil
+        updated.updatedAt = Date()
+        if let index = items.firstIndex(where: { $0.id == item.id }) {
+            items[index] = updated
         }
+        HouseholdLocalCache.upsertListItemInCache(updated)
+        enqueuePlannerChange(.updateItem(updated))
     }
 
     func deleteItem(_ item: ListItem) async {
-        guard await NetworkMonitor.shared.isConnected else {
-            errorMessage = AppLocalized.localized(L10n.Common.networkConnectionErrorPleaseCheckYourConne)
-            return
-        }
-
-        do {
-            try await listService.deleteItem(id: item.id)
-            items.removeAll { $0.id == item.id }
-            HouseholdLocalCache.removeListItemFromCache(itemId: item.id, listId: item.listId)
-            NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        items.removeAll { $0.id == item.id }
+        HouseholdLocalCache.removeListItemFromCache(itemId: item.id, listId: item.listId)
+        enqueuePlannerChange(.deleteItem(itemId: item.id, listId: item.listId))
     }
 
     var openItems: [ListItem] {
@@ -400,6 +311,73 @@ final class ListViewModel: ObservableObject {
 
     var checkedItems: [ListItem] {
         items.filter(\.isChecked)
+    }
+
+    private func upsertLocalList(_ list: HouseholdList) {
+        if let index = lists.firstIndex(where: { $0.id == list.id }) {
+            lists[index] = list
+        } else if effectiveViewHouseholdIds.contains(list.householdId) {
+            lists.insert(list, at: 0)
+        }
+        HouseholdLocalCache.upsertListInCache(list)
+        didFinishListsLoad = true
+    }
+
+    private func enqueuePlannerChange(_ mutation: OfflineListMutation) {
+        errorMessage = nil
+        ListOfflineOutbox.shared.enqueue(mutation)
+        LocalFirstSyncCoordinator.requestSync(reason: "plannerLocalWrite")
+        NotificationCenter.default.post(name: .plannerListsDidChange, object: nil)
+        publishWidgetSnapshot()
+    }
+
+    private func publishWidgetSnapshot() {
+        let householdId = currentHouseholdId
+        ScheduleWidgetPublisher.refreshFromCache(householdId: householdId, profileId: viewerProfileId)
+    }
+
+    private static func mergePendingLists(_ remote: [HouseholdList], householdId: UUID) -> [HouseholdList] {
+        var merged = remote
+        for mutation in ListOfflineOutbox.shared.pendingMutations() {
+            switch mutation.kind {
+            case .createList, .updateList:
+                guard let list = mutation.list, list.householdId == householdId else { continue }
+                if let index = merged.firstIndex(where: { $0.id == list.id }) {
+                    merged[index] = list
+                } else {
+                    merged.insert(list, at: 0)
+                }
+            case .deleteList:
+                if let listId = mutation.listId {
+                    merged.removeAll { $0.id == listId }
+                }
+            case .createItem, .updateItem, .deleteItem:
+                break
+            }
+        }
+        return merged
+    }
+
+    private static func mergePendingItems(_ remote: [ListItem], listId: UUID) -> [ListItem] {
+        var merged = remote
+        for mutation in ListOfflineOutbox.shared.pendingMutations() where mutation.listId == listId {
+            switch mutation.kind {
+            case .createItem, .updateItem:
+                guard let item = mutation.item else { continue }
+                if let index = merged.firstIndex(where: { $0.id == item.id }) {
+                    merged[index] = item
+                } else {
+                    merged.append(item)
+                }
+            case .deleteItem:
+                if let itemId = mutation.itemId {
+                    merged.removeAll { $0.id == itemId }
+                }
+            case .createList, .updateList, .deleteList:
+                break
+            }
+        }
+        return merged
     }
 
     private func nextItemSortOrder() -> Int {

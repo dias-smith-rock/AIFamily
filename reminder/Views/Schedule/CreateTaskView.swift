@@ -343,6 +343,8 @@ struct CreateTaskView: View {
     @State private var errorMessage: String?
     @State private var pendingRecurringUpdateTask: FamilyTask?
     @State private var isShowingRecurringUpdateScopeDialog = false
+    @State private var pendingConflictTask: FamilyTask?
+    @State private var isShowingRemoteConflictAlert = false
     /// 编辑页底部「接受 / 完成」用的本地状态（避免依赖不可变的 `editingTask`）。
     @State private var actionTaskStatus: TaskStatus
     @State private var isUpdatingActionStatus = false
@@ -1940,6 +1942,22 @@ struct CreateTaskView: View {
         } message: {
             Text(L10n.Common.pleaseSelectAModificationScope.localized)
         }
+        .alert(
+            L10n.Schedule.remoteTaskChangedTitle.localized,
+            isPresented: $isShowingRemoteConflictAlert
+        ) {
+            Button(L10n.Schedule.overwriteRemoteTask.localized) {
+                guard let existing = pendingConflictTask else { return }
+                pendingConflictTask = nil
+                Task { await continueEditingSave(existing) }
+            }
+            Button(L10n.Schedule.discardMyTaskChanges.localized, role: .cancel) {
+                pendingConflictTask = nil
+                dismiss()
+            }
+        } message: {
+            Text(L10n.Schedule.remoteTaskChangedMessage.localized)
+        }
         .forcesNonPopoverDialogPresentation()
     }
 
@@ -3065,6 +3083,33 @@ struct CreateTaskView: View {
         #endif
     }
 
+    private func continueEditingSave(_ existing: FamilyTask) async {
+        if existing.needsRecurringScopeDialog {
+            pendingRecurringUpdateTask = existing
+            isShowingRecurringUpdateScopeDialog = true
+        } else {
+            await performUpdate(existing: existing, scope: .singleOnly)
+        }
+    }
+
+    /// 打开编辑后，若服务端这条日程的 `updated_at` 更新，先问覆盖还是放弃。
+    private func remoteCopyIsNewer(than existing: FamilyTask) async -> Bool {
+        guard await NetworkMonitor.shared.isConnected else { return false }
+        #if canImport(Supabase)
+        do {
+            let remote = try await TaskSeriesSupabaseSupport.fetchTask(
+                id: existing.id,
+                householdId: existing.householdId
+            )
+            return remote.updatedAt.timeIntervalSince(existing.updatedAt) > 1
+        } catch {
+            return false
+        }
+        #else
+        return false
+        #endif
+    }
+
     private func saveTask() async {
         guard allowsEditing else { return }
         guard normalizedTitle.isEmpty == false else {
@@ -3082,12 +3127,12 @@ struct CreateTaskView: View {
 
         #if canImport(Supabase)
         if let existing = editingTask {
-            if existing.needsRecurringScopeDialog {
-                pendingRecurringUpdateTask = existing
-                isShowingRecurringUpdateScopeDialog = true
-            } else {
-                await performUpdate(existing: existing, scope: .singleOnly)
+            if await remoteCopyIsNewer(than: existing) {
+                pendingConflictTask = existing
+                isShowingRemoteConflictAlert = true
+                return
             }
+            await continueEditingSave(existing)
             return
         }
 

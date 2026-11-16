@@ -37,6 +37,10 @@ enum HouseholdLocalCache {
         await LocalCacheManager.shared.load(forKey: membersCacheKey(for: householdId))
     }
 
+    static func loadTasksNow(for householdId: UUID) -> [FamilyTask]? {
+        LocalCacheManager.shared.load(forKey: tasksCacheKey(for: householdId))
+    }
+
     static func loadTasks(for householdId: UUID) async -> [FamilyTask]? {
         await LocalCacheManager.shared.load(forKey: tasksCacheKey(for: householdId))
     }

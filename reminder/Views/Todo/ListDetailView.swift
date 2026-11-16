@@ -8,6 +8,7 @@ struct ListDetailView: View {
     let list: HouseholdList
 
     @State private var draftItemTitle = ""
+    @State private var checkerNames: [UUID: String] = [:]
     @FocusState private var isDraftFocused: Bool
 
     var body: some View {
@@ -66,6 +67,9 @@ struct ListDetailView: View {
         .task(id: list.id) {
             await viewModel.loadItems(for: list.id)
         }
+        .task(id: list.householdId) {
+            checkerNames = await Self.checkerNames(in: list.householdId)
+        }
         .refreshable {
             await LocalFirstSyncCoordinator.syncNow(reason: "pullToRefreshListDetail")
             await viewModel.loadItems(for: list.id)
@@ -100,6 +104,36 @@ struct ListDetailView: View {
         )
     }
 
+    private func checkerCaption(for item: ListItem) -> String? {
+        guard let membershipId = item.completedBy else { return nil }
+        guard let name = checkerNames[membershipId], name.isEmpty == false else { return nil }
+        return L10n.Todo.listCheckedBy.formatted(locale: locale, name)
+    }
+
+    private static func checkerNames(in householdId: UUID) async -> [UUID: String] {
+        guard let snapshot = await HouseholdLocalCache.loadMembers(for: householdId) else { return [:] }
+        var names: [UUID: String] = [:]
+        for member in snapshot.members where member.householdId == householdId {
+            let name: String?
+            if let profile = member.profile {
+                name = profile.displayName
+            } else if let profileId = member.profileId,
+                      let profile = snapshot.profiles.first(where: { $0.id == profileId }) {
+                name = profile.displayName
+            } else if let nickname = member.nickname?.trimmingCharacters(in: .whitespacesAndNewlines),
+                      nickname.isEmpty == false,
+                      let profileId = member.profileId {
+                name = GuestMemberDisplayName.resolvedDisplayName(stored: nickname, profileId: profileId)
+            } else {
+                name = member.nickname
+            }
+            if let name, name.isEmpty == false {
+                names[member.id] = name
+            }
+        }
+        return names
+    }
+
     private func itemRow(_ item: ListItem) -> some View {
         Button {
             Task { await viewModel.toggleChecked(item) }
@@ -108,11 +142,18 @@ struct ListDetailView: View {
                 Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
                     .font(.title3)
                     .foregroundStyle(item.isChecked ? Color.green : Color.secondary)
-                Text(item.title)
-                    .font(.headline)
-                    .foregroundStyle(item.isChecked ? .secondary : .primary)
-                    .strikethrough(item.isChecked)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(.headline)
+                        .foregroundStyle(item.isChecked ? .secondary : .primary)
+                        .strikethrough(item.isChecked)
+                    if item.isChecked, let caption = checkerCaption(for: item) {
+                        Text(caption)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .contentShape(Rectangle())
         }

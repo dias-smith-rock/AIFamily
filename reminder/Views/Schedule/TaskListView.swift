@@ -289,6 +289,7 @@ struct TaskListView: View {
             .task(id: taskLoadTrigger) {
                 viewModel.setHouseholdContext(appRouter.selectedHouseholdId)
                 viewModel.setViewHouseholdIds(appRouter.selectedHouseholdIds)
+                viewModel.setViewerProfileId(appRouter.selectedProfileId)
                 guard appRouter.hasCompletedAuthBootstrap else { return }
                 await viewModel.loadTasks()
                 openPendingScheduledTaskIfNeeded()
@@ -299,8 +300,12 @@ struct TaskListView: View {
                     await viewModel.stopRealtimeListener()
                 }
             }
+            .onChange(of: appRouter.selectedProfileId) { _, newValue in
+                viewModel.setViewerProfileId(newValue)
+            }
             .onChange(of: appRouter.selectedHouseholdId) { _, newValue in
                 viewModel.setHouseholdContext(newValue)
+                viewModel.setViewerProfileId(appRouter.selectedProfileId)
                 Task {
                     guard appRouter.hasCompletedAuthBootstrap else { return }
                     await viewModel.setupRealtimeListener()

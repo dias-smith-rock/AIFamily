@@ -785,7 +785,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
             .execute()
             .value
         let existingName = existingRows.first?.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if GuestMemberDisplayName.isSixDigitIdentifier(existingName) {
+        if GuestMemberDisplayName.isPersistedGuestNumericIdentifier(existingName) {
             let incoming = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard incoming == existingName else {
                 throw SupabaseServiceError.invalidResponse
@@ -793,7 +793,7 @@ struct SupabaseFamilyProfileDataService: FamilyProfileDataService {
         }
 
         var updatePayload = FamilyProfileUpdatePayload.build(from: draft)
-        if GuestMemberDisplayName.isSixDigitIdentifier(existingName) {
+        if GuestMemberDisplayName.isPersistedGuestNumericIdentifier(existingName) {
             updatePayload["name"] = .string(existingName)
         }
 
@@ -932,7 +932,7 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
             .value
         let existingNickname = existingRows.first?.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         var membershipToWrite = membership
-        if GuestMemberDisplayName.isSixDigitIdentifier(existingNickname) {
+        if GuestMemberDisplayName.isPersistedGuestNumericIdentifier(existingNickname) {
             let incoming = membership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             if incoming.isEmpty == false, incoming != existingNickname {
                 throw SupabaseServiceError.invalidResponse
@@ -972,7 +972,7 @@ struct SupabaseHouseholdMembershipDataService: HouseholdMembershipDataService {
             .execute()
             .value
         let existing = rows.first?.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if GuestMemberDisplayName.isSixDigitIdentifier(existing), trimmed != existing {
+        if GuestMemberDisplayName.isPersistedGuestNumericIdentifier(existing), trimmed != existing {
             throw SupabaseServiceError.invalidResponse
         }
         struct NicknamePatch: Encodable {

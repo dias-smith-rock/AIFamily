@@ -355,7 +355,7 @@ extension FamilyProfile {
     }
 
     /// 千组织千面：优先 `household_memberships[0].nickname` → 回退 `family_profiles.name` → 兜底。
-    /// 「新成员」占位对多人不可区分：展示为档案 id 稳定的六位数字（加入时也会写入随机六位持久化名）。
+    /// 「新成员」占位对多人不可区分：展示为档案 id 稳定的八位数字（加入时也会写入随机八位持久化名）。已有六位编号保持不变。
     var displayName: String {
         if let list = householdMemberships,
            let firstMembership = list.first {
@@ -382,13 +382,13 @@ extension FamilyProfile {
         return MemberDisplayName.unknownFallback
     }
 
-    /// 已写入库内的游客六位 ID（`nickname` 或 `name`）；分配后不可再改。
+    /// 已写入库内的游客数字 ID（六位或八位，`nickname` 或 `name`）；分配后不可再改。
     var immutableGuestNumericDisplayName: String? {
         guard userId != nil, isVirtualUser == false else { return nil }
-        if let nickname = membershipNickname, GuestMemberDisplayName.isSixDigitIdentifier(nickname) {
+        if let nickname = membershipNickname, GuestMemberDisplayName.isPersistedGuestNumericIdentifier(nickname) {
             return nickname
         }
-        if let profileName, GuestMemberDisplayName.isSixDigitIdentifier(profileName) {
+        if let profileName, GuestMemberDisplayName.isPersistedGuestNumericIdentifier(profileName) {
             return profileName
         }
         return nil

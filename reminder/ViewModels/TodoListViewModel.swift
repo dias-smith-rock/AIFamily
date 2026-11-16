@@ -217,6 +217,7 @@ final class TodoListViewModel: ObservableObject {
             }
             applyFlexibleTasks(from: merged, onlyIfChanged: true)
             reconcilePendingHardDeletes(with: merged)
+            ScheduleWidgetPublisher.refreshFromCache(householdId: currentHouseholdId)
             await refreshAttachmentPresence(for: flexibleTasks + completedTasks + deletedTasks)
             loadedViewToken = token
             if !silent {

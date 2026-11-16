@@ -118,7 +118,12 @@ final class ListOfflineOutbox {
             }
         case .deleteList:
             if let listId = mutation.listId {
+                let createdLocally = queue.contains { $0.listId == listId && $0.kind == .createList }
                 queue.removeAll { $0.listId == listId }
+                if createdLocally {
+                    persist()
+                    return
+                }
             }
         case .updateItem:
             if let itemId = mutation.itemId {
@@ -126,7 +131,12 @@ final class ListOfflineOutbox {
             }
         case .deleteItem:
             if let itemId = mutation.itemId {
+                let createdLocally = queue.contains { $0.itemId == itemId && $0.kind == .createItem }
                 queue.removeAll { $0.itemId == itemId }
+                if createdLocally {
+                    persist()
+                    return
+                }
             }
         case .createList, .createItem:
             break
@@ -146,6 +156,16 @@ final class ListOfflineOutbox {
     var pendingItemIDs: Set<UUID> {
         ensureLoaded()
         return Set(queue.compactMap(\.itemId))
+    }
+
+    var hasPending: Bool {
+        ensureLoaded()
+        return queue.isEmpty == false
+    }
+
+    func pendingMutations() -> [OfflineListMutation] {
+        ensureLoaded()
+        return queue
     }
 
     func flushIfNeeded() async {

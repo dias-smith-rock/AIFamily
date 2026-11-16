@@ -4,41 +4,43 @@ import Foundation
 import Supabase
 #endif
 
-/// 游客（匿名 Auth）加入群组时的默认可区分展示名：六位数字。
+/// 游客（匿名 Auth）加入群组时的默认可区分展示名：八位数字。已写入的六位编号保持原样。
 enum GuestMemberDisplayName {
-    /// 库内持久化的游客六位 ID（纯数字、固定长度）。
+    /// 库内已经写好的游客编号：六位（历史）或八位（新分配）。
+    static func isPersistedGuestNumericIdentifier(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.range(of: "^[0-9]{6}$|^[0-9]{8}$", options: .regularExpression) != nil
+    }
+
     static func isSixDigitIdentifier(_ raw: String) -> Bool {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.range(of: "^[0-9]{6}$", options: .regularExpression) != nil
     }
 
-    /// 新随机六位数字（000000–999999）。
-    static func generateRandomSixDigit() -> String {
-        String(format: "%06d", Int.random(in: 0 ... 999_999))
+    /// 新随机八位数字（00000000–99999999）。
+    static func generateRandomEightDigit() -> String {
+        String(format: "%08d", Int.random(in: 0 ... 99_999_999))
     }
 
-    /// 由 `family_profiles.id` 推导的稳定六位标签（用于历史占位数据展示兜底）。
-    static func stableSixDigitLabel(profileId: UUID) -> String {
+    /// 由 `family_profiles.id` 推导的稳定八位标签（占位名还没写入库时，各设备看到同一个数）。
+    static func stableEightDigitLabel(profileId: UUID) -> String {
         let uuid = profileId.uuid
-        var value: UInt32 = 0
+        var value: UInt64 = 0
         withUnsafeBytes(of: uuid) { raw in
-            for byte in raw.prefix(6) {
-                value = value &* 31 &+ UInt32(byte)
+            for byte in raw.prefix(8) {
+                value = value &* 131 &+ UInt64(byte)
             }
         }
-        return String(format: "%06d", value % 1_000_000)
+        return String(format: "%08d", value % 100_000_000)
     }
 
     /// 占位名（「新成员」等）在 UI 中应展示的字符串。
     static func resolvedDisplayName(stored: String, profileId: UUID) -> String {
         let trimmed = stored.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return stableSixDigitLabel(profileId: profileId)
+        if trimmed.isEmpty || FamilyProfile.isNewMemberPlaceholder(trimmed) {
+            return stableEightDigitLabel(profileId: profileId)
         }
-        if FamilyProfile.isNewMemberPlaceholder(trimmed) {
-            return stableSixDigitLabel(profileId: profileId)
-        }
-        if isSixDigitIdentifier(trimmed) {
+        if isPersistedGuestNumericIdentifier(trimmed) {
             return trimmed
         }
         return trimmed
@@ -46,7 +48,7 @@ enum GuestMemberDisplayName {
 }
 
 #if canImport(Supabase)
-/// 游客成功 `join_household` 后，将 membership / profile 的占位名写入随机六位数字。
+/// 游客成功 `join_household` 后，将 membership / profile 的占位名写入随机八位数字。
 enum GuestMemberDisplayNameAssigner {
     private struct MembershipRow: Decodable {
         let id: UUID
@@ -85,7 +87,7 @@ enum GuestMemberDisplayNameAssigner {
             guard let membership = memberships.first else { return }
 
             let nicknameTrimmed = membership.nickname?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            if GuestMemberDisplayName.isSixDigitIdentifier(nicknameTrimmed) {
+            if GuestMemberDisplayName.isPersistedGuestNumericIdentifier(nicknameTrimmed) {
                 return
             }
 
@@ -103,7 +105,7 @@ enum GuestMemberDisplayNameAssigner {
                     .execute()
                     .value
                 profileNameTrimmed = profiles.first?.name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-                if GuestMemberDisplayName.isSixDigitIdentifier(profileNameTrimmed) {
+                if GuestMemberDisplayName.isPersistedGuestNumericIdentifier(profileNameTrimmed) {
                     return
                 }
                 profileNameIsPlaceholder = profileNameTrimmed.isEmpty
@@ -112,7 +114,7 @@ enum GuestMemberDisplayNameAssigner {
 
             guard nicknameIsPlaceholder || profileNameIsPlaceholder else { return }
 
-            let displayName = GuestMemberDisplayName.generateRandomSixDigit()
+            let displayName = GuestMemberDisplayName.generateRandomEightDigit()
 
             try await client
                 .from("household_memberships")

@@ -87,7 +87,7 @@ struct ScheduleWidgetView: View {
 
     private var dayColumn: some View {
         let tasks = snapshot?.tasks(on: entry.date) ?? []
-        let visibleTasks = Array(tasks.prefix(2))
+        let visibleTasks = previewTasks(tasks)
         let moreCount = max(0, tasks.count - visibleTasks.count)
 
         return VStack(alignment: .leading, spacing: 6) {
@@ -137,8 +137,14 @@ struct ScheduleWidgetView: View {
                         }
                     }
 
+                    if let mineTitle = snapshot?.mineTitle, mineTitle.isEmpty == false {
+                        Text(mineTitle)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                     ForEach(visibleTasks) { task in
-                        taskChip(task.title)
+                        taskChip(task)
                     }
                 }
             }
@@ -154,18 +160,45 @@ struct ScheduleWidgetView: View {
         }
     }
 
-    private func taskChip(_ title: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: "calendar")
+    private func previewTasks(_ tasks: [ScheduleWidgetTask]) -> [ScheduleWidgetTask] {
+        var picked: [ScheduleWidgetTask] = []
+        for source in ["schedule", "todo", "list"] {
+            if let item = tasks.first(where: { ($0.source ?? "schedule") == source }) {
+                picked.append(item)
+            }
+        }
+        for task in tasks where picked.contains(task) == false && picked.count < 3 {
+            picked.append(task)
+        }
+        return Array(picked.prefix(3))
+    }
+
+    private func taskChip(_ task: ScheduleWidgetTask) -> some View {
+        let source = task.source ?? "schedule"
+        let symbol: String
+        let tint: Color
+        switch source {
+        case "todo":
+            symbol = "checklist"
+            tint = .orange
+        case "list":
+            symbol = "cart"
+            tint = .green
+        default:
+            symbol = "calendar"
+            tint = .blue
+        }
+        return HStack(spacing: 4) {
+            Image(systemName: symbol)
                 .font(.caption2.weight(.semibold))
-            Text(title)
+            Text(task.title)
                 .font(.caption.weight(.semibold))
                 .lineLimit(1)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color.blue, in: Capsule())
+        .background(tint, in: Capsule())
     }
 
     private var monthColumn: some View {
