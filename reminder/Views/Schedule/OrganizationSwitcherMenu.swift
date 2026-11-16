@@ -53,10 +53,6 @@ struct GroupSwitcherToolbarButton: View {
     /// Schedule / Todo 用多选；Wallet 用单选活动组织。
     var presentationMode: GroupSwitcherCoordinator.PresentationMode = .multiView
 
-    private var selectedCount: Int {
-        max(appRouter.selectedHouseholdIds.count, appRouter.selectedHouseholdId == nil ? 0 : 1)
-    }
-
     var body: some View {
         Button {
             groupSwitcher.present(mode: presentationMode)
@@ -68,14 +64,6 @@ struct GroupSwitcherToolbarButton: View {
                 Text(GroupSwitcherData.currentName(for: appRouter))
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
-                if presentationMode == .multiView, selectedCount > 1 {
-                    Text("\(selectedCount)")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(Color.accentColor, in: Capsule())
-                }
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
             }
@@ -84,14 +72,10 @@ struct GroupSwitcherToolbarButton: View {
     }
 
     private var accessibilityTitle: String {
-        let name = GroupSwitcherData.currentName(for: appRouter)
-        if selectedCount > 1 {
-            return L10n.Family.group.formatted(
-                locale: locale,
-                "\(name) · \(L10n.Family.viewingGroupsCount.formatted(locale: locale, selectedCount))"
-            )
-        }
-        return L10n.Family.group.formatted(locale: locale, name)
+        L10n.Family.group.formatted(
+            locale: locale,
+            GroupSwitcherData.currentName(for: appRouter)
+        )
     }
 }
 

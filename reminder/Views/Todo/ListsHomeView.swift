@@ -118,25 +118,17 @@ struct ListsHomeView: View {
         viewModel.groupedLists(primaryHouseholdId: appRouter.selectedHouseholdId)
     }
 
-    /// 有清单的 space 都展示；默认 space 即使暂时没有清单也留在第一组。
+    /// 没有清单的 space 整组不显示。
     private var visibleSpaceGroups: [(id: UUID, lists: [HouseholdList])] {
-        spaceGroups.filter { group in
-            group.lists.isEmpty == false || group.id == appRouter.selectedHouseholdId
-        }
+        spaceGroups.filter { $0.lists.isEmpty == false }
     }
 
     private var listScroll: some View {
         List {
             ForEach(visibleSpaceGroups, id: \.id) { group in
                 Section {
-                    if group.lists.isEmpty {
-                        Text(L10n.Todo.listsEmpty.localized)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(group.lists) { list in
-                            listRow(list)
-                        }
+                    ForEach(group.lists) { list in
+                        listRow(list)
                     }
                 } header: {
                     HStack(spacing: 8) {

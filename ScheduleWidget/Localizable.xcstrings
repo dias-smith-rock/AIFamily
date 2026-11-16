@@ -5,6 +5,7 @@
 
     },
     "widget_create_task" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {

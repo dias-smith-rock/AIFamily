@@ -31,6 +31,9 @@ struct TaskWeekGridView: View {
     /// 程序化回中中：忽略 TabView selection 回写触发的 `onChange`，避免双驱动打架。
     @State private var isRecenteringPager = false
     @State private var pagerRecenterTask: Task<Void, Never>?
+    /// 一次侧滑只提交一周。回中后惯性再落到邻页时不再累加周数，直到手势停稳或下一次按下。
+    @State private var didConsumeWeekSwipe = false
+    @State private var weekSwipeUnlockTask: Task<Void, Never>?
     /// 首帧后再挂载上一周 / 下一周页。
     @State private var isAdjacentWeekPagesReady = false
     @State private var firstPaintExpansionTask: Task<Void, Never>?
@@ -108,7 +111,10 @@ struct TaskWeekGridView: View {
             firstPaintExpansionTask = nil
             pagerRecenterTask?.cancel()
             pagerRecenterTask = nil
+            weekSwipeUnlockTask?.cancel()
+            weekSwipeUnlockTask = nil
             isRecenteringPager = false
+            didConsumeWeekSwipe = false
             showsBackToCurrentWeekButton = false
         }
         .onChange(of: weekOffset) { oldOffset, newOffset in
@@ -171,7 +177,11 @@ struct TaskWeekGridView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background {
-            WeekPagerOneScreenGate()
+            WeekPagerOneScreenGate {
+                didConsumeWeekSwipe = false
+                weekSwipeUnlockTask?.cancel()
+                weekSwipeUnlockTask = nil
+            }
         }
         .allowsHitTesting(isAdjacentWeekPagesReady && isRecenteringPager == false)
         .onAppear {
@@ -270,8 +280,37 @@ struct TaskWeekGridView: View {
             return
         }
 
+        if didConsumeWeekSwipe {
+            recenterPagerSlotOnly()
+            scheduleWeekSwipeUnlock()
+            return
+        }
+
+        didConsumeWeekSwipe = true
         WeekViewPerformanceTracer.notePendingWeekOffsetChange(source: "tabViewSwipe")
         commitWeekSwipe(delta: weekDelta)
+        scheduleWeekSwipeUnlock()
+    }
+
+    /// 惯性再次跨页时只把分页拉回中间，不改变当前周。
+    private func recenterPagerSlotOnly() {
+        isRecenteringPager = true
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            pagerSlot = ScheduleWeekCalendar.pagerCenterSlot
+        }
+        WeekPagerOneScreenGate.stopInertia()
+        scheduleClearPagerRecenterFlag()
+    }
+
+    private func scheduleWeekSwipeUnlock() {
+        weekSwipeUnlockTask?.cancel()
+        weekSwipeUnlockTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 450_000_000)
+            guard Task.isCancelled == false else { return }
+            didConsumeWeekSwipe = false
+        }
     }
 
     private func shiftDisplayedWeek(by weeks: Int) {
@@ -722,6 +761,8 @@ import UIKit
 
 /// 周视图分页一次手势最多翻一屏。快速甩动时系统分页会跨过多页，回中后残留惯性还会再翻一次。
 private struct WeekPagerOneScreenGate: UIViewRepresentable {
+    var onPanBegan: () -> Void
+
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: .zero)
         view.isUserInteractionEnabled = false
@@ -730,8 +771,10 @@ private struct WeekPagerOneScreenGate: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {
+        let onPanBegan = onPanBegan
         DispatchQueue.main.async {
-            WeekPagerOneScreenGate.attach(from: uiView)
+            Session.shared.onPanBegan = onPanBegan
+            Session.shared.attach(from: uiView)
         }
     }
 
@@ -744,18 +787,17 @@ private struct WeekPagerOneScreenGate: UIViewRepresentable {
         Session.shared.stopInertia()
     }
 
-    fileprivate static func attach(from anchor: UIView) {
-        Session.shared.attach(from: anchor)
-    }
-
     fileprivate final class Session: NSObject {
         static let shared = Session()
 
         weak var scrollView: UIScrollView?
+        var onPanBegan: () -> Void = {}
         private var observation: NSKeyValueObservation?
         private var dragStartX: CGFloat = 0
         private var isArmed = false
         private var isAdjusting = false
+        /// 同一次按住只允许解锁一次，避免回中时系统再发 began 把后面的惯性算成新手势。
+        private var acceptsNextBegan = true
 
         func attach(from anchor: UIView) {
             guard let paging = Self.findPagerScrollView(from: anchor) else { return }
@@ -769,9 +811,19 @@ private struct WeekPagerOneScreenGate: UIViewRepresentable {
 
         @objc private func handlePan(_ gesture: UIPanGestureRecognizer) {
             guard let scrollView = gesture.view as? UIScrollView else { return }
-            if gesture.state == .began {
+            switch gesture.state {
+            case .began:
                 dragStartX = scrollView.contentOffset.x
                 isArmed = true
+                if acceptsNextBegan {
+                    acceptsNextBegan = false
+                    onPanBegan()
+                }
+            case .ended, .cancelled, .failed:
+                acceptsNextBegan = true
+                isArmed = false
+            default:
+                break
             }
         }
 
@@ -796,12 +848,10 @@ private struct WeekPagerOneScreenGate: UIViewRepresentable {
             isArmed = false
             guard let scrollView, scrollView.bounds.width > 1 else { return }
             isAdjusting = true
-            scrollView.panGestureRecognizer.isEnabled = false
             scrollView.setContentOffset(
                 CGPoint(x: scrollView.bounds.width, y: scrollView.contentOffset.y),
                 animated: false
             )
-            scrollView.panGestureRecognizer.isEnabled = true
             isAdjusting = false
         }
 
@@ -832,9 +882,8 @@ private struct WeekPagerOneScreenGate: UIViewRepresentable {
             let width = scroll.bounds.width
             let height = scroll.bounds.height
             guard width > 200, height > 200 else { return false }
-            let pages = scroll.contentSize.width / width
-            guard pages > 1.8, pages < 3.2 else { return false }
-            return scroll.contentSize.height <= height + 2
+            guard scroll.contentSize.width > width * 1.5 else { return false }
+            return scroll.contentSize.width > scroll.contentSize.height
         }
     }
 }
