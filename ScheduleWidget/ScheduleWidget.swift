@@ -162,15 +162,15 @@ struct ScheduleWidgetView: View {
 
     private func previewTasks(_ tasks: [ScheduleWidgetTask]) -> [ScheduleWidgetTask] {
         var picked: [ScheduleWidgetTask] = []
-        for source in ["schedule", "todo", "list"] {
+        for source in ["schedule", "todo", "list"] where picked.count < 2 {
             if let item = tasks.first(where: { ($0.source ?? "schedule") == source }) {
                 picked.append(item)
             }
         }
-        for task in tasks where picked.contains(task) == false && picked.count < 3 {
+        for task in tasks where picked.contains(task) == false && picked.count < 2 {
             picked.append(task)
         }
-        return Array(picked.prefix(3))
+        return picked
     }
 
     private func taskChip(_ task: ScheduleWidgetTask) -> some View {
