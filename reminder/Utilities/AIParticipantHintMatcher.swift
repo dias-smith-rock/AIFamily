@@ -21,18 +21,12 @@ enum AIParticipantHintMatcher {
         var result = MatchResult()
         let mergedProfiles = FamilyProfile.mergingMembershipRows(profiles, memberships: memberships)
 
-        for profile in mergedProfiles {
-            let candidates = searchableTokens(for: profile)
-            guard candidates.isEmpty == false else { continue }
-
-            let matched = normalizedHints.contains { hint in
-                candidates.contains { token in
-                    token.contains(hint) || hint.contains(token)
-                }
+        for hint in normalizedHints {
+            let matches = mergedProfiles.filter { profile in
+                searchableTokens(for: profile).contains(hint)
             }
-
-            guard matched else { continue }
-
+            // A name shared by two people is a suggestion, never an assignment.
+            guard matches.count == 1, let profile = matches.first else { continue }
             result.targetProfileIds.insert(profile.id)
             if let membershipId = profile.primaryMembership?.id {
                 result.assigneeMembershipIds.insert(membershipId)

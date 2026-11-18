@@ -171,6 +171,7 @@ struct AITaskParserService: Sendable {
     private static func iso8601DateString(for date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate]
+        formatter.timeZone = AppDisplayTimeZone.effectiveTimeZone
         return formatter.string(from: date)
     }
 
@@ -233,9 +234,14 @@ struct AITaskParserService: Sendable {
             path: "\(uploadResult.bucket)/\(uploadResult.path)"
         )
 
-        let imageAccessURL = try await client.storage
-            .from(uploadResult.bucket)
-            .createSignedURL(path: uploadResult.path, expiresIn: 600)
+        let imageAccessURL: URL
+        do {
+            imageAccessURL = try await client.storage.from(uploadResult.bucket)
+                .createSignedURL(path: uploadResult.path, expiresIn: 600)
+        } catch {
+            await deleteTemporaryUpload(temporaryUpload)
+            throw error
+        }
 
         AIPhotoTaskCreationLogger.step(
             .publicURLResolved,
@@ -246,11 +252,17 @@ struct AITaskParserService: Sendable {
 
         struct InvokeBody: Encodable {
             let imageUrl: String
+            let referenceInstant = ISO8601DateFormatter().string(from: Date())
+            let timeZone = AppDisplayTimeZone.effectiveTimeZone.identifier
+            let locale = Locale.current.identifier
             let targetDate: String?
             let recognitionRegion: RecognitionRegionPayload?
 
             enum CodingKeys: String, CodingKey {
                 case imageUrl = "image_url"
+                case referenceInstant = "reference_instant"
+                case timeZone = "time_zone"
+                case locale
                 case targetDate = "target_date"
                 case recognitionRegion = "recognition_region"
             }
@@ -263,7 +275,6 @@ struct AITaskParserService: Sendable {
             recognitionRegion: recognitionRegion?.apiPayload
         )
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
 
         AIPhotoTaskCreationLogger.step(
             .edgeFunctionStarted,

@@ -59,3 +59,22 @@ supabase functions deploy consume-invite-link
 - JWT 负责防篡改（HMAC-SHA256）
 - `exp` 限制有效期
 - `invite_link_nonces.used_at` 实现一次性消费
+
+### Task recognition context and text fallback
+
+`POST parse-create-task-from-text` accepts `{text, reference_instant, selected_calendar_day, time_zone, locale}`. `text` is 1–6000 Unicode characters, `reference_instant` is an ISO8601 instant with explicit offset, `time_zone` is an IANA timezone, `locale` is a language identifier, and optional `selected_calendar_day` is `YYYY-MM-DD`. Relative dates use the reference instant in the supplied timezone; the calendar selection only locates image content. Unknown clock times remain null. The response is `{success:true,task:{...}}`, with the same fields consumed by `AIParsedTaskPayload`. Recognition never writes tasks.
+
+Images accept the same optional context alongside existing `image_url`, `target_date`, and `recognition_region`. Supplying any modern context field requires the complete reference/timezone/locale context. Legacy image requests use server current time with the historical Asia/Hong_Kong timezone default; `target_date` remains a cell-selection hint. OCR text is no longer included in logs or responses.
+
+Both endpoints require a real, non-anonymous user access token in `Authorization: Bearer ...`; tokens are verified using Supabase Auth `/auth/v1/user`, rather than trusting a Bearer prefix. Keep gateway JWT verification enabled for deployment. Runtime secrets: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `DEEPSEEK_API_KEY`; optional `DEEPSEEK_API_BASE_URL` and `DEEPSEEK_TASK_MODEL` retain their existing defaults. Images additionally require `OCR_API_KEY` (and optional `OCR_MODEL`). Auth, image download and provider requests time out after 8, 15 and 30 seconds respectively. Provider failure details and task content are not returned as errors. Each warm function instance allows ten requests per authenticated user per minute; this is basic abuse protection, not a distributed quota—configure gateway quotas separately before a broad launch.
+
+Local verification (no live provider calls):
+
+```sh
+deno test --allow-env supabase/functions/tests/task-parsing_test.ts
+deno check supabase/functions/parse-create-task-from-text/index.ts supabase/functions/parse-create-task-from-images/index.ts
+```
+
+When a target **test project** is authorized, deploy using `supabase functions deploy parse-create-task-from-text --project-ref <test-project-ref>` and likewise for `parse-create-task-from-images`; never pass `--no-verify-jwt`. No deployment is performed by this implementation.
+
+Image downloads accept signed/public Storage object URLs from the configured `SUPABASE_URL` origin, including existing fallback attachment buckets; redirects are rejected. HTTPS is required except when the configured project is a localhost development instance. This matches the app's upload/sign workflow and prevents arbitrary server-side URL fetches. Downloaded images are limited to 12 MiB and JPEG/PNG/WebP/HEIC/HEIF content types.

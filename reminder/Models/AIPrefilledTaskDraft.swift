@@ -16,7 +16,7 @@ struct AIPrefilledTaskDraft: Identifiable {
     var isPriorityUrgent: Bool
     var prefersFlexibleTask: Bool
     /// 原图（压缩后）预览。
-    var attachmentImage: UIImage
+    var attachmentImage: UIImage?
     /// 与上传 Supabase 相同的 JPEG 字节，保存任务时原样上传为附件。
-    var attachmentJPEGData: Data
+    var attachmentJPEGData: Data?
 }

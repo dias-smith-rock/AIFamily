@@ -520,6 +520,8 @@
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Calendly needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Used to transcribe your spoken task on this device before you review and confirm a draft.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Used for on-device speech recognition to prepare an editable task draft.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Calendly uses Face ID to protect your private group schedules and tasks.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to show your approximate location and members on the map, and record locations when completing tasks.";
@@ -563,6 +565,8 @@
 				INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Calendly needs calendar access to import events from Apple Calendar and Google Calendar into your group schedule.";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Calendly needs camera access to scan invite codes and capture notices or receipts to create tasks automatically.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Used to transcribe your spoken task on this device before you review and confirm a draft.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Used for on-device speech recognition to prepare an editable task draft.";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Calendly uses Face ID to protect your private group schedules and tasks.";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Used to update your approximate location to group members while the app is in the background; you can turn off background location in Me.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Used to show your approximate location and members on the map, and record locations when completing tasks.";

@@ -46,6 +46,7 @@ struct TaskListView: View {
     @State private var pendingCreateAfterWritePick: CreateTaskSheetRequest?
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
+    @State private var isShowingVoiceCreation = false
     @State private var taskForDetailSheet: FamilyTask?
     @State private var taskPendingDelete: FamilyTask?
     /// 与 `taskPendingDelete` 分离：alert 关闭时会先把 isPresented 置 false，若用 pending!=nil 绑定会清掉任务再跑按钮。
@@ -78,6 +79,11 @@ struct TaskListView: View {
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { scheduleToolbar }
+            .sheet(isPresented: $isShowingVoiceCreation) {
+                TaskVoiceDraftSheet { payload in
+                    viewModel.presentRecognizedTask(payload)
+                }
+            }
             .sheet(isPresented: $isShowingScheduleBackgroundSettings) {
                 ScheduleBackgroundSettingsSheet()
                     .environmentObject(appSettings)
@@ -180,8 +186,8 @@ struct TaskListView: View {
                     initialAssigneeMembershipIds: draft.assigneeMembershipIds,
                     initialTargetProfileIds: draft.targetProfileIds,
                     initialPriorityUrgent: draft.isPriorityUrgent,
-                    initialAttachmentImages: [draft.attachmentImage],
-                    initialAttachmentJPEGData: [draft.attachmentJPEGData],
+                    initialAttachmentImages: draft.attachmentImage.map { [$0] } ?? [],
+                    initialAttachmentJPEGData: draft.attachmentJPEGData.map { [$0] } ?? [],
                     defaultDueDate: draft.dueDate.map { dayID(for: $0) } ?? dayID(for: selectedDate),
                     defaultAllDayForNewTask: draft.isAllDay,
                     onSaveSuccess: { createdDueDate in
@@ -237,7 +243,13 @@ struct TaskListView: View {
                 .ignoresSafeArea()
             }
             .alert(L10n.Common.imageRecognitionFailed, isPresented: aiErrorAlertBinding) {
+                if viewModel.hasPendingCloudPhoto {
+                    Button("Use cloud recognition (uploads photo)") {
+                        Task { await viewModel.retryPhotoUsingCloud() }
+                    }
+                }
                 Button(L10n.Common.ok, role: .cancel) {
+                    viewModel.cancelPendingPhoto()
                     viewModel.aiProcessingError = nil
                 }
             } message: {
@@ -617,6 +629,11 @@ struct TaskListView: View {
     private var scheduleOptionsMenu: some View {
         Menu {
             Section {
+                Button("Create task by voice", systemImage: "mic.fill") {
+                    if PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) {
+                        isShowingVoiceCreation = true
+                    } else { appRouter.presentPremiumUpgrade() }
+                }
                 ForEach(CalendarViewMode.menuCases, id: \.self) { mode in
                     Button {
                         setCurrentViewMode(mode)

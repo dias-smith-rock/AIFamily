@@ -43,6 +43,33 @@ final class ScheduleViewModel: ObservableObject {
     @Published var pendingCropContext: AIPhotoCropPendingContext?
 
     private let aiTaskParserService = AITaskParserService()
+    private var recognitionGeneration = UUID()
+    private var pendingCloudPhoto: (Data, UIImage, NormalizedCropQuad, Date)?
+    var hasPendingCloudPhoto: Bool { pendingCloudPhoto != nil }
+
+    func cancelPendingPhoto() {
+        recognitionGeneration = UUID()
+        pendingCloudPhoto = nil
+    }
+
+    func retryPhotoUsingCloud() async {
+        guard let pending = pendingCloudPhoto else { return }
+        pendingCloudPhoto = nil
+        await processCapturedImage(imageJPEG: pending.0, attachmentImage: pending.1,
+            recognitionRegion: pending.2, source: .camera, targetDate: pending.3,
+            hasPremiumAccess: true, useCloud: true)
+    }
+
+    func presentRecognizedTask(_ task: AIParsedTaskPayload, image: UIImage? = nil, jpeg: Data? = nil) {
+        let match = AIParticipantHintMatcher.match(hints: task.participantHints, profiles: familyProfiles, memberships: householdMembers)
+        prefilledTaskForAI = AIPrefilledTaskDraft(title: task.title, description: task.description,
+            dueDate: task.dueDate, endDatetime: task.endDatetime, isAllDay: task.isAllDay,
+            durationMinutes: task.durationMinutes, costDisplay: task.costDisplayString,
+            locationName: task.spatialKeywords, assigneeMembershipIds: match.assigneeMembershipIds,
+            targetProfileIds: match.targetProfileIds, isPriorityUrgent: task.isPriorityUrgent,
+            prefersFlexibleTask: task.prefersFlexibleTask || task.dueDate == nil,
+            attachmentImage: image, attachmentJPEGData: jpeg)
+    }
 
     private let taskService: TaskDataService
     private let membershipService: HouseholdMembershipDataService
@@ -96,6 +123,7 @@ final class ScheduleViewModel: ObservableObject {
 
     func setHouseholdContext(_ householdId: UUID?) {
         let previous = currentHouseholdId
+        if previous != householdId { cancelPendingPhoto(); prefilledTaskForAI = nil }
         currentHouseholdId = householdId
         if householdId == nil {
             tasks = []
@@ -850,56 +878,40 @@ final class ScheduleViewModel: ObservableObject {
         recognitionRegion: NormalizedCropQuad,
         source: AIPhotoTaskCreationLogger.CaptureSource,
         targetDate: Date,
-        hasPremiumAccess: Bool
+        hasPremiumAccess: Bool,
+        useCloud: Bool = false
     ) async {
         guard PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: hasPremiumAccess) else {
             return
         }
 
+        guard !isAIProcessing else { return }
         isAIProcessing = true
         aiProcessingError = nil
         defer { isAIProcessing = false }
 
-        AIPhotoTaskCreationLogger.step(.flowStarted, source: source, byteCount: imageJPEG.count)
-
+        let generation = UUID()
+        recognitionGeneration = generation
+        let household = currentHouseholdId
         do {
-            let parseResult = try await aiTaskParserService.parseTask(
-                fromJPEGData: imageJPEG,
-                targetDate: targetDate,
-                recognitionRegion: recognitionRegion
-            )
-
-            let participantMatch = AIParticipantHintMatcher.match(
-                hints: parseResult.task.participantHints,
-                profiles: familyProfiles,
-                memberships: householdMembers
-            )
-
-            prefilledTaskForAI = AIPrefilledTaskDraft(
-                title: parseResult.task.title.trimmingCharacters(in: .whitespacesAndNewlines),
-                description: parseResult.task.description?.trimmingCharacters(in: .whitespacesAndNewlines),
-                dueDate: parseResult.task.dueDate,
-                endDatetime: parseResult.task.endDatetime,
-                isAllDay: parseResult.task.isAllDay,
-                durationMinutes: parseResult.task.durationMinutes,
-                costDisplay: parseResult.task.costDisplayString,
-                locationName: parseResult.task.spatialKeywords?.trimmingCharacters(in: .whitespacesAndNewlines),
-                assigneeMembershipIds: participantMatch.assigneeMembershipIds,
-                targetProfileIds: participantMatch.targetProfileIds,
-                isPriorityUrgent: parseResult.task.isPriorityUrgent,
-                prefersFlexibleTask: parseResult.task.prefersFlexibleTask,
-                attachmentImage: attachmentImage,
-                attachmentJPEGData: imageJPEG
-            )
-
-            await aiTaskParserService.deleteTemporaryUpload(parseResult.temporaryUpload)
-
-            AIPhotoTaskCreationLogger.step(.prefilledDraftReady, source: source)
-            AIPhotoTaskCreationLogger.step(.flowSucceeded, source: source)
-            AnalyticsManager.log(event: .aiPhotoTaskSucceeded)
+            let payload: AIParsedTaskPayload
+            if useCloud {
+                let result = try await aiTaskParserService.parseTask(fromJPEGData: imageJPEG,
+                    targetDate: targetDate, recognitionRegion: recognitionRegion)
+                await aiTaskParserService.deleteTemporaryUpload(result.temporaryUpload)
+                payload = result.task
+            } else {
+                payload = try await AppleTaskRecognitionService().parseImage(attachmentImage,
+                    region: recognitionRegion, referenceDate: Date(),
+                    timeZone: AppDisplayTimeZone.effectiveTimeZone, locale: Locale.current)
+            }
+            guard generation == recognitionGeneration, household == currentHouseholdId else { return }
+            pendingCloudPhoto = nil
+            presentRecognizedTask(payload, image: attachmentImage, jpeg: imageJPEG)
         } catch {
-            aiProcessingError = AITaskParserUserMessage.message(for: error)
-            AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: source)
+            guard generation == recognitionGeneration, household == currentHouseholdId else { return }
+            if !useCloud { pendingCloudPhoto = (imageJPEG, attachmentImage, recognitionRegion, targetDate) }
+            aiProcessingError = error.localizedDescription
         }
     }
 }

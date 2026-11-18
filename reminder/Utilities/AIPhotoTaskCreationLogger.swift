@@ -51,9 +51,9 @@ enum AIPhotoTaskCreationLogger {
         var parts: [String] = ["step=\(step.rawValue)"]
         if let source { parts.append("source=\(source.rawValue)") }
         if let byteCount { parts.append("bytes=\(byteCount)") }
-        if let path { parts.append("path=\(path)") }
-        if let url { parts.append("url=\(url)") }
-        if detail.isEmpty == false { parts.append("detail=\(detail)") }
+
+
+
         let message = parts.joined(separator: " ")
 
         logger.info("\(message, privacy: .public)")
@@ -65,9 +65,9 @@ enum AIPhotoTaskCreationLogger {
         source: CaptureSource? = nil,
         detail: String = ""
     ) {
-        var parts: [String] = ["step=\(step.rawValue)", "error=\(error.localizedDescription)"]
+        var parts: [String] = ["step=\(step.rawValue)", "error=\(analyticsErrorCode(for: error))"]
         if let source { parts.append("source=\(source.rawValue)") }
-        if detail.isEmpty == false { parts.append("detail=\(detail)") }
+
         let message = parts.joined(separator: " ")
 
         logger.error("\(message, privacy: .public)")
@@ -75,7 +75,7 @@ enum AIPhotoTaskCreationLogger {
             event: .aiPhotoTaskFailed(
                 step: step.rawValue,
                 message: analyticsErrorCode(for: error),
-                detail: analyticsDetail(step: step, detail: detail)
+                detail: step.rawValue
             )
         )
     }
@@ -139,24 +139,6 @@ enum AIPhotoTaskCreationLogger {
     }
 
     nonisolated static func logOcrExtract(_ ocr: OcrExtractDebugLog) {
-        var payload: [String: Any] = [
-            "stage": ocr.stage ?? "ocr_extract",
-            "char_count": ocr.charCount ?? 0,
-            "line_count": ocr.lineCount ?? 0,
-        ]
-        if let model = ocr.model { payload["model"] = model }
-        if let timestamp = ocr.timestamp { payload["timestamp"] = timestamp }
-        if let lines = ocr.lines { payload["lines"] = lines }
-        if let text = ocr.text { payload["text"] = text }
-
-        guard JSONSerialization.isValidJSONObject(payload),
-              let data = try? JSONSerialization.data(withJSONObject: payload, options: [.prettyPrinted]),
-              let json = String(data: data, encoding: .utf8) else {
-            step(.ocrExtractLogged, detail: ocr.text ?? "")
-            return
-        }
-
-        logger.info("[AIPhotoTask] ocr_extract_result\n\(json, privacy: .public)")
-        step(.ocrExtractLogged, detail: "chars=\(ocr.charCount ?? 0) lines=\(ocr.lineCount ?? 0)")
+        logger.info("OCR completed chars=\(ocr.charCount ?? 0) lines=\(ocr.lineCount ?? 0)")
     }
 }

@@ -296,6 +296,7 @@ enum CreateTaskEmbedMode {
 }
 
 struct CreateTaskView: View {
+    @State private var showingVoiceTaskDraft = false
     @Environment(\.dismiss) private var dismiss
     @Environment(\.locale) private var locale
     @EnvironmentObject private var appRouter: AppRouter
@@ -542,7 +543,7 @@ struct CreateTaskView: View {
             _flexibleDeadlineDate = State(
                 initialValue: initialEndDatetime ?? EditTaskViewModel.defaultFlexibleDeadlineDate()
             )
-            _hasFlexibleDeadline = State(initialValue: true)
+            _hasFlexibleDeadline = State(initialValue: initialTitle == nil || initialEndDatetime != nil)
             _selectedRecurrence = State(initialValue: .none)
             _recurrenceInterval = State(initialValue: 2)
             _recurrenceEndDate = State(initialValue: Calendar.current.date(byAdding: .month, value: 6, to: resolvedDue) ?? resolvedDue)
@@ -1800,6 +1801,38 @@ struct CreateTaskView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .tint(formChromeTint)
+        .sheet(isPresented: $showingVoiceTaskDraft) {
+            TaskVoiceDraftSheet { task in
+                if editingTask != nil, formMode == .scheduled, task.dueDate == nil {
+                    errorMessage = "未识别到明确时间，请手动补充日程时间后再保存。"
+                    return
+                }
+                if editingTask == nil { saveAsMemo = task.prefersFlexibleTask || task.dueDate == nil }
+                title = task.title
+                if let description = task.description { note = description }
+                if let date = task.dueDate { dueDate = date }
+                isAllDay = task.isAllDay
+                if let minutes = task.durationMinutes, minutes > 0 {
+                    durationPickerDate = Self.makeDurationPickerDate(minutes: min(minutes, 1440))
+                }
+                if let cost = task.costDisplayString { costInput = cost }
+                if let location = task.spatialKeywords { locationName = location }
+                if !task.participantHints.isEmpty {
+                    let match = AIParticipantHintMatcher.match(hints: task.participantHints,
+                        profiles: familyProfiles, memberships: familyProfiles.compactMap(\.primaryMembership))
+                    selectedAssigneeIds = match.assigneeMembershipIds
+                    selectedTargetProfileIds = match.targetProfileIds
+                    // Keep original names visible even when no unique roster match is available.
+                    note += "\n参与人（请核对）：" + task.participantHints.joined(separator: "、")
+                }
+                hasFlexibleDeadline = task.endDatetime != nil
+                if let deadline = task.endDatetime {
+                    flexibleDeadlineDate = deadline
+                    hasFlexibleDeadline = true
+                }
+                formPriority = task.isPriorityUrgent ? .urgent : .normal
+            }
+        }
         .sheet(isPresented: $isShowingWriteTargetPicker) {
             WriteTargetHouseholdPicker { _ in }
                 .environmentObject(appRouter)
@@ -2349,7 +2382,9 @@ struct CreateTaskView: View {
 
                 if isShowingMoreOptions {
                     Button {
-                        // 语音输入：占位，后续接入识别管线
+                        if PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) {
+                            showingVoiceTaskDraft = true
+                        } else { appRouter.presentPremiumUpgrade() }
                     } label: {
                         Image(systemName: "mic.fill")
                             .font(.title3)
@@ -2359,7 +2394,7 @@ struct CreateTaskView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.Assistant.voiceInput.localized)
-                    .accessibilityHint(L10n.Common.featureComingSoon.localized)
+
                 }
             }
         }
@@ -2461,7 +2496,7 @@ struct CreateTaskView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(L10n.Common.selectFromAddressBook)
-                    .accessibilityHint(L10n.Common.featureComingSoon.localized)
+
                 }
             }
         }
