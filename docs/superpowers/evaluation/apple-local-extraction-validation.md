@@ -17,3 +17,22 @@ Direct image inference checks iOS 27 and model vision/guided-generation capabili
 
 Runtime recognition quality, model downloads, Apple Intelligence availability/locale behavior, real photographs, orientation/perspective quality and timing remain device acceptance checks. Date validation cannot guarantee model semantic accuracy. Apple official API reference checked alongside installed SDK:
 https://developer.apple.com/documentation/foundationmodels/analyzing-images-with-multimodal-prompting
+
+## Executed image fixtures
+
+The actual Vision/CoreImage/UIKit paths passed generated-image assertions on the booted iOS 27.2 simulator (2026-11-19). Fixtures verify selected-region text is retained while text outside the region is excluded; OCR positions are preserved; non-axis perspective crop retains intended text; EXIF upside-down, sideways and mirrored images normalize correctly; non-finite/crossing/collapsed quads reject; blank OCR rejects; empty and >6000-character text reject before model availability checks.
+
+```sh
+xcrun swiftc -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" -target arm64-apple-ios18.6-simulator -strict-concurrency=complete reminder/Services/TaskCreation/TaskRecognitionDateValidator.swift reminder/Services/TaskCreation/AppleTaskRecognitionService.swift tests/TaskCreation/AppleRecognitionImageTests.swift -o /tmp/apple-image-tests
+xcrun simctl spawn FAD7BA54-4901-4903-BEE5-C86DAE46617E /tmp/apple-image-tests
+```
+
+Replace the simulator identifier with an available booted arm64 iOS simulator. This standalone executable supplies only lightweight crop/DTO fixtures; inference, database and app UI are not invoked. Model route/locale availability and multimodal output accuracy still require Apple Intelligence device acceptance checks.
+
+Both public parse methods now accept optional trailing `selectedCalendarDay: Date? = nil`. The value assists locating a photographed calendar cell; instructions explicitly forbid using it as the anchor for relative dates or inventing dates missing from source data. The reference instant remains independent.
+
+The same image harness additionally passed cancellation-before-inference and unavailable-local-model routing checks on this simulator. A valid input with `SystemLanguageModel.default.availability == .unavailable` throws the explicit local-unavailable error; it does not invoke cloud. This check is conditional when executing on a model-capable runtime.
+
+## Reviewer field-preservation checks
+
+The same simulator harness additionally passed deterministic mapper assertions for deadline-only flexible tasks (end timestamp retained with no start), explicit 120-minute event duration, undated flexible tasks, invalid deadline dates, scheduled events missing their required start, zero/negative/over-seven-day duration, and end-before-start. Duration candidates are limited to 1–10080 minutes; values outside this range surface a clarification error. These checks execute the actual service payload mapper with typed extraction fixtures and do not claim model semantic accuracy.

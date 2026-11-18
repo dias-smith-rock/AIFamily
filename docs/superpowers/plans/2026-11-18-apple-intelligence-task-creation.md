@@ -10,7 +10,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-18-apple-intelligence-task-creation-design.md`
 
-**Status:** 待用户审核的实施草案；阅读本文件不构成开工批准。规格中的 C 路线、草稿确认、会员策略和 Siri 分期均尚待审核。
+**Status:** 用户于 2026-11-18 批准执行任务 0–6；Siri 任务 7 留待后续。实际进度与验证证据见 `docs/apple-task-recognition-evaluation.md`。
 
 ## Global Constraints
 

@@ -899,6 +899,20 @@ struct CreateTaskView: View {
                     .allowsHitTesting(false)
             }
         }
+        .overlay(alignment: .bottomTrailing) {
+            Button {
+                if PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) {
+                    showingVoiceTaskDraft = true
+                } else {
+                    appRouter.presentPremiumUpgrade()
+                }
+            } label: {
+                Image(systemName: "mic.fill").padding(10)
+                    .background(.ultraThinMaterial, in: Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.Assistant.voiceInput.localized)
+        }
         // 与详情 `titleCard` 同一套修饰顺序，避免切换时高度跳动。
         .frame(maxWidth: .infinity, minHeight: 52, alignment: .topLeading)
         .padding(.horizontal, 14)
@@ -1802,21 +1816,23 @@ struct CreateTaskView: View {
         .navigationBarTitleDisplayMode(.inline)
         .tint(formChromeTint)
         .sheet(isPresented: $showingVoiceTaskDraft) {
-            TaskVoiceDraftSheet { task in
+            TaskVoiceDraftSheet { task, sourceText in
                 if editingTask != nil, formMode == .scheduled, task.dueDate == nil {
                     errorMessage = "未识别到明确时间，请手动补充日程时间后再保存。"
                     return
                 }
                 if editingTask == nil { saveAsMemo = task.prefersFlexibleTask || task.dueDate == nil }
                 title = task.title
-                if let description = task.description { note = description }
+                note = task.description ?? ""
+                note += "\n识别原文：\n" + sourceText
                 if let date = task.dueDate { dueDate = date }
                 isAllDay = task.isAllDay
-                if let minutes = task.durationMinutes, minutes > 0 {
-                    durationPickerDate = Self.makeDurationPickerDate(minutes: min(minutes, 1440))
-                }
-                if let cost = task.costDisplayString { costInput = cost }
-                if let location = task.spatialKeywords { locationName = location }
+                durationPickerDate = Self.makeDurationPickerDate(minutes: Self.resolvedInitialDurationMinutes(
+                    dueDate: task.dueDate, endDatetime: task.endDatetime, durationMinutes: task.durationMinutes))
+                costInput = task.costDisplayString ?? ""
+                locationName = task.spatialKeywords ?? ""
+                selectedAssigneeIds = []
+                selectedTargetProfileIds = []
                 if !task.participantHints.isEmpty {
                     let match = AIParticipantHintMatcher.match(hints: task.participantHints,
                         profiles: familyProfiles, memberships: familyProfiles.compactMap(\.primaryMembership))

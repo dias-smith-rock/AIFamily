@@ -1,22 +1,21 @@
 import SwiftUI
+import Combine
 import AVFoundation
 
 @MainActor
 private final class VoiceCaptureModel: ObservableObject {
     @Published var text = ""
-    @Published var busy = false
-    @Published var recording = false
+    @Published private var lifecycle = VoiceCaptureSessionState()
     @Published var message: String?
+    var busy: Bool { lifecycle.busy }
+    var recording: Bool { lifecycle.recording }
     private var service: (any SpeechTaskTranscribing)?
     private var work: Task<Void, Never>?
     private var deadline: Task<Void, Never>?
-    private var generation = UUID()
 
     func start(locale: Locale) {
-        guard !busy, !recording else { return }
-        busy = true
+        guard let token = lifecycle.begin() else { return }
         message = "正在检查本地语音资源，首次使用可能需要下载语言模型…"
-        let token = UUID(); generation = token
         work = Task { [self] in
             do {
                 let allowed = await AVAudioApplication.requestRecordPermission()
@@ -28,48 +27,53 @@ private final class VoiceCaptureModel: ObservableObject {
                 let transcriber = makeTaskSpeechTranscriber()
                 service = transcriber
                 try await transcriber.start(locale: locale, onText: { [weak self] text in
-                    guard let self, self.generation == token else { return }
+                    guard let self, self.lifecycle.acceptsResults(token) else { return }
                     self.text = text
-                }, onFailure: { [weak self] error in
-                    guard let self, self.generation == token else { return }
+                }, onFailure: { [weak self] _ in
+                    guard let self, self.lifecycle.acceptsResults(token) else { return }
                     Task {
+                        // Recheck after scheduling: cancellation may already have occurred.
+                        guard self.lifecycle.acceptsResults(token) else { return }
                         await self.cancel()
                         self.message = "语音识别已停止，请编辑已有文字或重试。"
                     }
                 })
                 try Task.checkCancellation()
-                guard generation == token else { return }
-                busy = false; recording = true; message = "正在本地识别，最长 60 秒。"
+                guard lifecycle.markRecording(token) else { return }
+                message = "正在本地识别，最长 60 秒。"
                 deadline = Task { [weak self] in
                     try? await Task.sleep(for: .seconds(60))
-                    guard !Task.isCancelled else { return }
-                    await self?.stop()
+                    guard !Task.isCancelled, let self,
+                          self.lifecycle.shouldStop(token, elapsed: 60) else { return }
+                    await self.stop()
                 }
             } catch {
-                guard generation == token else { return }
-                message = error.localizedDescription
-                busy = false; recording = false
-                await service?.cancel(); service = nil
-                releaseAudio()
+                guard lifecycle.acceptsResults(token) else { return }
+                let reason = error.localizedDescription
+                await cancel()
+                message = reason
             }
         }
     }
     func stop() async {
-        guard recording else { return }
-        recording = false; busy = true
+        let token = lifecycle.token
+        guard lifecycle.beginFinishing(token) else { return }
         deadline?.cancel(); deadline = nil
         message = "正在完成转写…"
-        await service?.stop(); service = nil
-        busy = false; message = text.isEmpty ? "未识别到文字，可以重试或直接输入。" : "请核对文字后生成草稿。"
+        let active = service
+        await active?.stop()
+        guard lifecycle.complete(token) else { return }
+        service = nil
+        message = text.isEmpty ? "未识别到文字，可以重试或直接输入。" : "请核对文字后生成草稿。"
         releaseAudio()
     }
     func cancel() async {
-        generation = UUID()
+        guard let cancellation = lifecycle.beginCancelling() else { return }
         work?.cancel(); work = nil
         deadline?.cancel(); deadline = nil
         let active = service; service = nil
         await active?.cancel()
-        recording = false; busy = false
+        guard lifecycle.complete(cancellation) else { return }
         releaseAudio()
     }
     private func releaseAudio() {

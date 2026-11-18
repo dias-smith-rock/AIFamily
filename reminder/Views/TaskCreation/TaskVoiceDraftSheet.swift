@@ -1,11 +1,8 @@
 import SwiftUI
-#if canImport(Supabase)
-import Supabase
-#endif
 
 /// Recognition never saves a task. The caller presents the existing editable form.
 struct TaskVoiceDraftSheet: View {
-    var onDraft: (AIParsedTaskPayload) -> Void
+    var onDraft: (AIParsedTaskPayload, String) -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
     @State private var text = ""
@@ -33,10 +30,13 @@ struct TaskVoiceDraftSheet: View {
             Text("Only the confirmed text will be sent to the cloud service. Audio is not uploaded.")
         }
         .onDisappear { request?.cancel() }
+        .onChange(of: appRouter.selectedHouseholdId) { _, _ in request?.cancel(); dismiss() }
+        .onChange(of: appRouter.selectedMembershipId) { _, _ in request?.cancel(); dismiss() }
     }
     private func recognize(cloud: Bool) {
         guard !processing, PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) else { return }
         let household = appRouter.selectedHouseholdId
+        let membership = appRouter.selectedMembershipId
         let input = text
         error = nil
         processing = true
@@ -51,13 +51,13 @@ struct TaskVoiceDraftSheet: View {
                         timeZone: AppDisplayTimeZone.effectiveTimeZone, locale: Locale.current)
                 }
                 try Task.checkCancellation()
-                guard household == appRouter.selectedHouseholdId else { return }
+                guard household == appRouter.selectedHouseholdId, membership == appRouter.selectedMembershipId else { return }
                 dismiss()
                 // Let the recording sheet dismiss before the parent presents the draft.
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(350))
-                    guard household == appRouter.selectedHouseholdId else { return }
-                    onDraft(draft)
+                    guard household == appRouter.selectedHouseholdId, membership == appRouter.selectedMembershipId else { return }
+                    onDraft(draft, input)
                 }
             } catch is CancellationError {
             } catch {
@@ -65,24 +65,5 @@ struct TaskVoiceDraftSheet: View {
                 if !cloud { showCloudChoice = true }
             }
         }
-    }
-}
-
-struct CloudTextTaskParserService {
-    func parse(_ text: String) async throws -> AIParsedTaskPayload {
-        #if canImport(Supabase)
-        let client = SupabaseManager.shared.client
-        _ = try await client.auth.session
-        struct Response: Decodable { let success: Bool; let task: AIParsedTaskPayload? }
-        let body = ["text": text, "reference_instant": ISO8601DateFormatter().string(from: Date()),
-                    "time_zone": AppDisplayTimeZone.effectiveTimeZone.identifier,
-                    "locale": Locale.current.identifier]
-        let result: Response = try await client.functions.invoke("parse-create-task-from-text",
-            options: FunctionInvokeOptions(body: body))
-        guard result.success, let task = result.task else { throw AITaskParserError.invalidResponse }
-        return task
-        #else
-        throw AITaskParserError.sdkUnavailable
-        #endif
     }
 }

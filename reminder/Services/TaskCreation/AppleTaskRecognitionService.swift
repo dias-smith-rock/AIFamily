@@ -17,7 +17,7 @@ enum AppleTaskRecognitionError: LocalizedError {
         case .invalidCrop: "识别区域无效，请重新裁切。"
         case .noText: "未识别到文字，请重新拍摄或手动输入。"
         case .noTask: "未找到单一明确事项，请选择一件事并补充说明。"
-        case .invalidDate: "日期或时间不明确，请补充后重试。"
+        case .invalidDate: "日期、时间或时长不明确，请补充后重试。"
         }
     }
 }
@@ -25,7 +25,7 @@ enum AppleTaskRecognitionError: LocalizedError {
 /// Local inference only. Errors return to the caller; cloud use requires an explicit UI action.
 @MainActor
 struct AppleTaskRecognitionService {
-    func parseText(_ text: String, referenceDate: Date, timeZone: TimeZone, locale: Locale) async throws -> AIParsedTaskPayload {
+    func parseText(_ text: String, referenceDate: Date, timeZone: TimeZone, locale: Locale, selectedCalendarDay: Date? = nil) async throws -> AIParsedTaskPayload {
         try Task.checkCancellation()
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { throw AppleTaskRecognitionError.emptyInput }
@@ -34,7 +34,7 @@ struct AppleTaskRecognitionService {
         if #available(iOS 26.0, *) {
             try checkModel(locale: locale)
             let session = LanguageModelSession(instructions: Self.instructions)
-            let response = try await session.respond(to: context(referenceDate, timeZone, locale) + "\nSOURCE DATA:\n" + text,
+            let response = try await session.respond(to: context(referenceDate, timeZone, locale, selectedCalendarDay: selectedCalendarDay) + "\nSOURCE DATA:\n" + text,
                                                      generating: AppleExtractedTask.self)
             try Task.checkCancellation()
             return try payload(response.content, timeZone: timeZone)
@@ -43,7 +43,7 @@ struct AppleTaskRecognitionService {
         throw AppleTaskRecognitionError.unavailable
     }
 
-    func parseImage(_ image: UIImage, region: NormalizedCropQuad, referenceDate: Date, timeZone: TimeZone, locale: Locale) async throws -> AIParsedTaskPayload {
+    func parseImage(_ image: UIImage, region: NormalizedCropQuad, referenceDate: Date, timeZone: TimeZone, locale: Locale, selectedCalendarDay: Date? = nil) async throws -> AIParsedTaskPayload {
         try Task.checkCancellation()
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *) { try checkModel(locale: locale) }
@@ -52,12 +52,13 @@ struct AppleTaskRecognitionService {
         throw AppleTaskRecognitionError.unavailable
         #endif
         let cropped = try Self.correctedImage(image, region: region)
-        #if canImport(FoundationModels)
+        // Xcode 26 toolchains can build the OCR/text path without iOS 27 image symbols.
+        #if canImport(FoundationModels) && compiler(>=6.4)
         if #available(iOS 27.0, *), SystemLanguageModel.default.capabilities.contains(.vision),
            SystemLanguageModel.default.capabilities.contains(.guidedGeneration) {
             let session = LanguageModelSession(instructions: Self.instructions)
             let prompt = Prompt {
-                context(referenceDate, timeZone, locale)
+                context(referenceDate, timeZone, locale, selectedCalendarDay: selectedCalendarDay)
                 "Extract the single task visible in this selected image. Preserve table/calendar row and column relationships."
                 Attachment(cropped)
             }
@@ -67,13 +68,14 @@ struct AppleTaskRecognitionService {
         }
         #endif
         let text = try await Self.recognizeText(cropped, locale: locale)
-        return try await parseText(text, referenceDate: referenceDate, timeZone: timeZone, locale: locale)
+        return try await parseText(text, referenceDate: referenceDate, timeZone: timeZone, locale: locale, selectedCalendarDay: selectedCalendarDay)
     }
 
-    private func context(_ date: Date, _ zone: TimeZone, _ locale: Locale) -> String {
+    private func context(_ date: Date, _ zone: TimeZone, _ locale: Locale, selectedCalendarDay: Date?) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = zone
-        return "Reference instant: \(formatter.string(from: date)); application time zone: \(zone.identifier); language: \(locale.identifier). Resolve relative dates against this instant in this time zone."
+        let selected = selectedCalendarDay.map { formatter.string(from: $0) } ?? "unspecified"
+        return "Selected calendar day: \(selected). Use only to identify the intended cell in a photographed calendar, never to reinterpret relative dates or invent a missing date. Reference instant: \(formatter.string(from: date)); application time zone: \(zone.identifier); language: \(locale.identifier). Resolve relative dates against this instant in this time zone."
     }
 
     #if canImport(FoundationModels)
@@ -90,16 +92,20 @@ struct AppleTaskRecognitionService {
     Resolve dates using the supplied reference instant/time zone. Local date format is yyyy-MM-dd'T'HH:mm,
     or yyyy-MM-dd only for explicitly all-day tasks. Missing time means nil date and flexible task;
     never default to 09:00. Set hasExplicitTime only if the source specifies a clock time.
+    Distinguish deadlines from event start times: "submit before Friday 17:00" has localEnd only,
+    no localStart, and isScheduledEvent=false. A meeting, appointment or other explicit scheduled
+    event has isScheduledEvent=true; leave missing start/time nil so the user can clarify it.
+    Extract explicit duration in minutes (for example two hours is 120); unknown duration is nil.
     Preserve recurrence instructions in notes; do not invent a recurrence configuration.
     """
 
     @available(iOS 26.0, *)
-    private func payload(_ value: AppleExtractedTask, timeZone: TimeZone) throws -> AIParsedTaskPayload {
+    func payload(_ value: AppleExtractedTask, timeZone: TimeZone) throws -> AIParsedTaskPayload {
         let title = value.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard value.actionable, !title.isEmpty else { throw AppleTaskRecognitionError.noTask }
         var object: [String: Any] = ["title": title, "is_all_day": value.isAllDay,
                                      "participant_hints": value.participantHints,
-                                     "task_type_hint": value.hasExplicitTime || value.isAllDay ? "scheduled" : "flexible"]
+                                     "task_type_hint": "flexible"]
         object["priority"] = value.urgent ? "high" : nil
         object["description"] = value.notes
         object["spatial_keywords"] = value.location
@@ -113,8 +119,15 @@ struct AppleTaskRecognitionService {
             start = date
             object["due_date"] = formatter.string(from: date)
         }
-        if let raw = value.localEnd, let start {
-            guard let end = TaskRecognitionDateValidator.date(raw, timeZone: timeZone, allDay: value.isAllDay), end > start else {
+        if value.isScheduledEvent && start == nil { throw AppleTaskRecognitionError.invalidDate }
+        if start != nil { object["task_type_hint"] = "scheduled" }
+        if let duration = value.durationMinutes {
+            guard (1...10080).contains(duration) else { throw AppleTaskRecognitionError.invalidDate }
+            object["duration_minutes"] = duration
+        }
+        if let raw = value.localEnd {
+            guard let end = TaskRecognitionDateValidator.date(raw, timeZone: timeZone, allDay: value.isAllDay),
+                  start.map({ end > $0 }) ?? true else {
                 throw AppleTaskRecognitionError.invalidDate
             }
             object["end_datetime"] = formatter.string(from: end)
@@ -123,7 +136,7 @@ struct AppleTaskRecognitionService {
     }
     #endif
 
-    private static func correctedImage(_ image: UIImage, region: NormalizedCropQuad) throws -> CGImage {
+    static func correctedImage(_ image: UIImage, region: NormalizedCropQuad) throws -> CGImage {
         let points = [region.topLeft, region.topRight, region.bottomRight, region.bottomLeft]
         guard points.allSatisfy({ $0.x.isFinite && $0.y.isFinite && (0...1).contains($0.x) && (0...1).contains($0.y) }), region.isValidRegion, Self.isConvex(points),
               image.size.width > 0, image.size.height > 0 else { throw AppleTaskRecognitionError.invalidCrop }
@@ -156,7 +169,7 @@ struct AppleTaskRecognitionService {
         return crosses.allSatisfy { $0 > 0.000001 }
     }
 
-    private static func recognizeText(_ image: CGImage, locale: Locale) async throws -> String {
+    static func recognizeText(_ image: CGImage, locale: Locale) async throws -> String {
         let text = try await Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
             let request = VNRecognizeTextRequest()
@@ -184,7 +197,7 @@ struct AppleTaskRecognitionService {
 #if canImport(FoundationModels)
 @available(iOS 26.0, *)
 @Generable
-private struct AppleExtractedTask {
+struct AppleExtractedTask {
     var actionable: Bool
     var urgent: Bool
     var title: String
@@ -192,6 +205,8 @@ private struct AppleExtractedTask {
     var localStart: String?
     var localEnd: String?
     var hasExplicitTime: Bool
+    var isScheduledEvent: Bool
+    var durationMinutes: Int?
     var isAllDay: Bool
     var amountYuan: Double?
     var location: String?

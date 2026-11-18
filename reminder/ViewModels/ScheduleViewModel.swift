@@ -44,25 +44,36 @@ final class ScheduleViewModel: ObservableObject {
 
     private let aiTaskParserService = AITaskParserService()
     private var recognitionGeneration = UUID()
+    private var recognitionTask: Task<Void, Never>?
     private var pendingCloudPhoto: (Data, UIImage, NormalizedCropQuad, Date)?
     var hasPendingCloudPhoto: Bool { pendingCloudPhoto != nil }
 
     func cancelPendingPhoto() {
         recognitionGeneration = UUID()
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        isAIProcessing = false
         pendingCloudPhoto = nil
     }
 
-    func retryPhotoUsingCloud() async {
+    func retryPhotoUsingCloud(hasPremiumAccess: Bool) {
         guard let pending = pendingCloudPhoto else { return }
         pendingCloudPhoto = nil
-        await processCapturedImage(imageJPEG: pending.0, attachmentImage: pending.1,
-            recognitionRegion: pending.2, source: .camera, targetDate: pending.3,
-            hasPremiumAccess: true, useCloud: true)
+        recognitionTask = Task {
+            await processCapturedImage(imageJPEG: pending.0, attachmentImage: pending.1,
+                recognitionRegion: pending.2, source: .camera, targetDate: pending.3,
+                hasPremiumAccess: hasPremiumAccess, useCloud: true)
+        }
     }
 
-    func presentRecognizedTask(_ task: AIParsedTaskPayload, image: UIImage? = nil, jpeg: Data? = nil) {
+    func presentRecognizedTask(_ task: AIParsedTaskPayload, image: UIImage? = nil, jpeg: Data? = nil, sourceText: String? = nil) {
         let match = AIParticipantHintMatcher.match(hints: task.participantHints, profiles: familyProfiles, memberships: householdMembers)
-        prefilledTaskForAI = AIPrefilledTaskDraft(title: task.title, description: task.description,
+        var notes = task.description ?? ""
+        if !task.participantHints.isEmpty {
+            notes += "\n参与人（请核对）：" + task.participantHints.joined(separator: "、")
+        }
+        if let sourceText, !sourceText.isEmpty { notes += "\n识别原文：\n" + sourceText }
+        prefilledTaskForAI = AIPrefilledTaskDraft(title: task.title, description: notes.isEmpty ? nil : notes,
             dueDate: task.dueDate, endDatetime: task.endDatetime, isAllDay: task.isAllDay,
             durationMinutes: task.durationMinutes, costDisplay: task.costDisplayString,
             locationName: task.spatialKeywords, assigneeMembershipIds: match.assigneeMembershipIds,
@@ -860,7 +871,7 @@ final class ScheduleViewModel: ObservableObject {
 
         let attachmentImage = UIImage(data: compressed) ?? image
 
-        Task {
+        recognitionTask = Task {
             await processCapturedImage(
                 imageJPEG: compressed,
                 attachmentImage: attachmentImage,
@@ -888,10 +899,9 @@ final class ScheduleViewModel: ObservableObject {
         guard !isAIProcessing else { return }
         isAIProcessing = true
         aiProcessingError = nil
-        defer { isAIProcessing = false }
-
         let generation = UUID()
         recognitionGeneration = generation
+        defer { if generation == recognitionGeneration { isAIProcessing = false } }
         let household = currentHouseholdId
         do {
             let payload: AIParsedTaskPayload
@@ -903,15 +913,18 @@ final class ScheduleViewModel: ObservableObject {
             } else {
                 payload = try await AppleTaskRecognitionService().parseImage(attachmentImage,
                     region: recognitionRegion, referenceDate: Date(),
-                    timeZone: AppDisplayTimeZone.effectiveTimeZone, locale: Locale.current)
+                    timeZone: AppDisplayTimeZone.effectiveTimeZone, locale: Locale.current,
+                    selectedCalendarDay: targetDate)
             }
             guard generation == recognitionGeneration, household == currentHouseholdId else { return }
             pendingCloudPhoto = nil
             presentRecognizedTask(payload, image: attachmentImage, jpeg: imageJPEG)
+            AnalyticsManager.log(event: .aiPhotoTaskSucceeded)
         } catch {
             guard generation == recognitionGeneration, household == currentHouseholdId else { return }
             if !useCloud { pendingCloudPhoto = (imageJPEG, attachmentImage, recognitionRegion, targetDate) }
             aiProcessingError = error.localizedDescription
+            AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: source)
         }
     }
 }

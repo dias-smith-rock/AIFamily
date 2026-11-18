@@ -29,6 +29,7 @@
 			remoteGlobalIDString = AA1000022FC91B21009FE64F;
 			remoteInfo = ScheduleWidget;
 		};
+		EE10000B2FC91B21009FE64F = {isa = PBXContainerItemProxy; containerPortal = DD17A5E72F9F4E500059AE67; proxyType = 1; remoteGlobalIDString = DD17A5EE2F9F4E500059AE67; remoteInfo = reminder; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -49,6 +50,7 @@
 		AA1000012FC91B21009FE64F /* ScheduleWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScheduleWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD17A5EF2F9F4E500059AE67 /* Calendly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Calendly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DD3C1F7B2FD9037500B8AC17 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		EE1000022FC91B21009FE64F /* reminderTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = reminderTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -90,6 +92,7 @@
 			path = reminder;
 			sourceTree = "<group>";
 		};
+		EE1000032FC91B21009FE64F /* reminderUnitTests */ = {isa = PBXFileSystemSynchronizedRootGroup; path = reminderUnitTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -118,6 +121,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE1000052FC91B21009FE64F = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -125,6 +129,7 @@
 			isa = PBXGroup;
 			children = (
 				DD17A5F12F9F4E500059AE67 /* reminder */,
+                EE1000032FC91B21009FE64F /* reminderUnitTests */,
 				AA1000062FC91B21009FE64F /* ScheduleWidget */,
 				AA10000F2FC91B21009FE64F /* ScheduleWidgetShared */,
 				DD3C1F7A2FD9037500B8AC17 /* Frameworks */,
@@ -136,6 +141,7 @@
 			isa = PBXGroup;
 			children = (
 				DD17A5EF2F9F4E500059AE67 /* Calendly.app */,
+                EE1000022FC91B21009FE64F /* reminderTests.xctest */,
 				AA1000012FC91B21009FE64F /* ScheduleWidget.appex */,
 			);
 			name = Products;
@@ -209,6 +215,18 @@
 			productReference = DD17A5EF2F9F4E500059AE67 /* Calendly.app */;
 			productType = "com.apple.product-type.application";
 		};
+		EE1000012FC91B21009FE64F /* reminderTests */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = EE1000072FC91B21009FE64F;
+            buildPhases = (EE1000042FC91B21009FE64F, EE1000052FC91B21009FE64F, EE1000062FC91B21009FE64F);
+            buildRules = ();
+            dependencies = (EE10000A2FC91B21009FE64F);
+            fileSystemSynchronizedGroups = (EE1000032FC91B21009FE64F);
+            name = reminderTests;
+            productName = reminderTests;
+            productReference = EE1000022FC91B21009FE64F;
+            productType = "com.apple.product-type.bundle.unit-test";
+        };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -219,6 +237,7 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+                    EE1000012FC91B21009FE64F = { CreatedOnToolsVersion = 27.0; TestTargetID = DD17A5EE2F9F4E500059AE67; };
 					AA1000022FC91B21009FE64F = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -255,6 +274,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                EE1000012FC91B21009FE64F /* reminderTests */,
 				DD17A5EE2F9F4E500059AE67 /* reminder */,
 				AA1000022FC91B21009FE64F /* ScheduleWidget */,
 			);
@@ -276,6 +296,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE1000062FC91B21009FE64F = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
@@ -316,6 +337,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		EE1000042FC91B21009FE64F = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -324,6 +346,7 @@
 			target = AA1000022FC91B21009FE64F /* ScheduleWidget */;
 			targetProxy = AA10000D2FC91B21009FE64F /* PBXContainerItemProxy */;
 		};
+		EE10000A2FC91B21009FE64F = {isa = PBXTargetDependency; target = DD17A5EE2F9F4E500059AE67; targetProxy = EE10000B2FC91B21009FE64F; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -594,6 +617,40 @@
 			};
 			name = Release;
 		};
+        EE1000082FC91B21009FE64F /* Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                BUNDLE_LOADER = "$(TEST_HOST)";
+                CODE_SIGN_STYLE = Automatic;
+                DEVELOPMENT_TEAM = 34878H47P6;
+                GENERATE_INFOPLIST_FILE = YES;
+                IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+                LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks");
+                PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder.tests;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = "1,2";
+                TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Calendly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Calendly";
+            };
+            name = Debug;
+        };
+        EE1000092FC91B21009FE64F /* Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                BUNDLE_LOADER = "$(TEST_HOST)";
+                CODE_SIGN_STYLE = Automatic;
+                DEVELOPMENT_TEAM = 34878H47P6;
+                GENERATE_INFOPLIST_FILE = YES;
+                IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+                LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@loader_path/Frameworks");
+                PRODUCT_BUNDLE_IDENTIFIER = com.aifamilygroup.reminder.tests;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = "1,2";
+                TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Calendly.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Calendly";
+            };
+            name = Release;
+        };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -624,6 +681,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+        EE1000072FC91B21009FE64F = {isa = XCConfigurationList; buildConfigurations = (EE1000082FC91B21009FE64F, EE1000092FC91B21009FE64F); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */

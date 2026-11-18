@@ -14,10 +14,34 @@ Implemented local-first photo/text parsing, iOS26 guided extraction, iOS27 image
 
 ## Still required before completion
 
-Full App/widget build is running but blocked in Swift Package Manager fetch of RevenueCat `purchases-ios`. It has not compiled the App yet. Log `/tmp/aifamily-build.log`; derived data `/tmp/AIFamilyDerived`. Do not interpret isolated compilation as whole-App success.
+Full Debug App + widget simulator build **passed** (`/tmp/aifamily-build-2.log`). Hosted XCTest against the real Calendly module **passed**, five tests, zero failures on iOS27.2 (`/tmp/aifamily-acceptance-final.log`) and iOS26.2 (`/tmp/aifamily-xctest-26-valid.log`). Dependency download required using the existing system HTTP proxy for the build command only; no global proxy configuration changed. Derived data: `/tmp/AIFamilyDerived`. Unsigned generic iOS Release App/widget build also **passed** (`/tmp/aifamily-release.log`); this verifies compilation/linking, not signing or device execution.
+
+Generated-photo fixtures executed against actual Vision/CoreImage/UIKit in the iOS27.2 simulator: crop exclusion, perspective, rotated/mirrored EXIF, invalid coordinates and blank input pass. Mapper assertions cover deadline-only tasks, duration, invalid/missing scheduled time and canceled/unavailable recognition. Speech lifecycle/transcript tests exercise the production reducer, including cancellation/restart and late results.
 
 No true-device microphone, model availability/download, image OCR quality, interruption/background, VoiceOver or end-to-end save verification has been completed. The proposed 30 photo/30 voice quality sample gates have not run. No recognition accuracy or latency figures are available.
 
 Cloud functions have not been deployed. New text fallback requires deployment plus existing DeepSeek secrets as documented in `supabase/functions/README.md`; no production release/push is authorized. Until deployed, local recognition and manual task creation remain usable in principle, but new cloud text requests will fail.
 
-Implementation rulings: kept existing `AIPrefilledTaskDraft` name and made paired attachments optional; used runnable standalone Swift tests rather than editing the App test target during SPM dependency blockage. Online audio recognition deliberately unavailable; local failures allow edited text and explicit cloud text parsing, never audio upload.
+Implementation rulings: kept existing `AIPrefilledTaskDraft` name and made paired attachments optional. Added both runnable standalone regression tests and a hosted `reminderTests` XCTest target (sources `reminderUnitTests`, separate from standalone @main harness). Online audio recognition deliberately unavailable; local failures allow edited text and explicit cloud text parsing, never audio upload.
+
+## Remaining acceptance blockers
+
+`xcrun devicectl list devices` shows only a connected physical iPhone 12, which cannot exercise Apple Intelligence. The Mac probe also returns `deviceNotEligible`; simulator inference returns unavailable. No substitute quality numbers are claimed. User was asked to connect an enabled iOS26+ Apple Intelligence iPhone for real model/microphone/end-to-end acceptance. The approved quality gate remains open.
+
+Current computer-use connector does not expose Simulator and cannot launch it; GUI click-through is not claimed. Hosted XCTest launches the App successfully, but that is not proof of complete UI flow correctness.
+
+## Requirement audit
+
+| Approved requirement | Current evidence | Status |
+| --- | --- | --- |
+| New branch, preserve user work | Feature branch, clean initial baseline, local commits only | Done |
+| Apple-first photo extraction, 26 OCR/27 image branch | Compiled App, generated-image simulator fixtures and capability/error tests | Implemented; real model quality open |
+| Local speech, 60s, cancellation, no silent audio upload | Compiled Speech APIs, production lifecycle/segment harness and hosted tests | Implemented; hardware capture open |
+| Shared editable task preview and existing save path | Optional attachments, active form mic, source/member notes, field mapping and guarded routing | Implemented; GUI/end-to-end save acceptance open |
+| Explicit cloud choice, text endpoint, context/auth/privacy | Seven Deno tests, endpoint typecheck, scoped image fetch and controlled errors | Implemented; test project deployment/integration open |
+| iOS18.6 minimum, 26/27 capability protection | Actual target deployment settings; Debug/Release builds; tests on 26.2/27.2 | Compiled; no 18.6 runtime installed |
+| 30 images/30 voice real model quality and latency gate | No eligible device/model; user asked to provide one | Not completed |
+| Independent review and important fixes | Deadline/duration/field replacement, decoding, member hints, cancellation and real active mic fixed | Done |
+| Siri follow-up | No Siri implementation added | Deferred as approved |
+
+No production deploy, remote push, or merge has occurred. New cloud functions require an authorized test project; no project ref or CLI linkage was found. These remaining acceptance requirements prevent claiming the whole goal complete.

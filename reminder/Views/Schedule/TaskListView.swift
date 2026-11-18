@@ -80,8 +80,8 @@ struct TaskListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { scheduleToolbar }
             .sheet(isPresented: $isShowingVoiceCreation) {
-                TaskVoiceDraftSheet { payload in
-                    viewModel.presentRecognizedTask(payload)
+                TaskVoiceDraftSheet { payload, sourceText in
+                    viewModel.presentRecognizedTask(payload, sourceText: sourceText)
                 }
             }
             .sheet(isPresented: $isShowingScheduleBackgroundSettings) {
@@ -245,7 +245,7 @@ struct TaskListView: View {
             .alert(L10n.Common.imageRecognitionFailed, isPresented: aiErrorAlertBinding) {
                 if viewModel.hasPendingCloudPhoto {
                     Button("Use cloud recognition (uploads photo)") {
-                        Task { await viewModel.retryPhotoUsingCloud() }
+                        viewModel.retryPhotoUsingCloud(hasPremiumAccess: appRouter.hasPremiumAccess)
                     }
                 }
                 Button(L10n.Common.ok, role: .cancel) {
@@ -311,6 +311,11 @@ struct TaskListView: View {
                 Task {
                     await viewModel.stopRealtimeListener()
                 }
+            }
+            .onChange(of: appRouter.selectedMembershipId) { _, _ in
+                viewModel.cancelPendingPhoto()
+                viewModel.prefilledTaskForAI = nil
+                viewModel.cancelCrop()
             }
             .onChange(of: appRouter.selectedProfileId) { _, newValue in
                 viewModel.setViewerProfileId(newValue)
@@ -541,6 +546,8 @@ struct TaskListView: View {
             VStack(spacing: 16) {
                 ProgressView()
                     .controlSize(.large)
+                    .tint(.white)
+                Button(L10n.Common.cancel, role: .cancel) { viewModel.cancelPendingPhoto() }
                     .tint(.white)
                 Text(L10n.Common.aiIsReadingYourImage.localized)
                     .font(.subheadline.weight(.semibold))

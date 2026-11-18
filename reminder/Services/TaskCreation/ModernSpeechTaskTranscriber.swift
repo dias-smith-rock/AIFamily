@@ -35,13 +35,16 @@ final class ModernSpeechTaskTranscriber: SpeechTaskTranscribing {
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         self.analyzer = analyzer
         resultsTask = Task {
-            var finalText = ""
+            var transcript = SpeechTranscriptAccumulator()
             do {
                 for try await result in transcriber.results {
                     guard !Task.isCancelled else { return }
                     // This preset emits finalized, nonoverlapping segments only.
-                    finalText += String(result.text.characters)
-                    onText(finalText)
+                    let start = result.range.start
+                    let duration = result.range.duration
+                    let segment = "\(start.value)/\(start.timescale):\(duration.value)/\(duration.timescale)"
+                    transcript.update(segment: segment, text: String(result.text.characters), isFinal: true)
+                    onText(transcript.finalText)
                 }
             } catch {
                 if !Task.isCancelled { onFailure(error) }

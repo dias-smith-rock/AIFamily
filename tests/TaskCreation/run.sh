@@ -23,3 +23,5 @@ swiftc "$TASK_TEST_DIR/payload.swift" tests/TaskCreation/PayloadDecodingTests.sw
 "$TASK_TEST_DIR/payload"
 swiftc "$TASK_TEST_DIR/matching.swift" reminder/Utilities/AIParticipantHintMatcher.swift tests/TaskCreation/ParticipantMatchingTests.swift -o "$TASK_TEST_DIR/matching"
 "$TASK_TEST_DIR/matching"
+swiftc -parse-as-library reminder/Services/TaskCreation/VoiceCaptureSessionState.swift reminderTests/VoiceCaptureStateHarness.swift -o "$TASK_TEST_DIR/voice"
+"$TASK_TEST_DIR/voice"
