@@ -1,6 +1,6 @@
 import Foundation
 
-/// 将 AI 识图返回的 `participant_hints` 与当前群组档案/成员昵称做模糊匹配。
+/// 仅将唯一、完整匹配的成员名称用于自动预填；歧义名称由表单提示核对。
 enum AIParticipantHintMatcher {
     struct MatchResult: Sendable, Equatable {
         var assigneeMembershipIds: Set<UUID> = []
@@ -33,10 +33,8 @@ enum AIParticipantHintMatcher {
             }
         }
 
-        let everyoneHints = ["全班", "全家", "所有人", "每位", "all", "everyone", "whole family"]
-        if normalizedHints.contains(where: { hint in
-            everyoneHints.contains { hint.contains(normalize($0)) || normalize($0).contains(hint) }
-        }) {
+        let everyoneHints = Set(["全班", "全家", "全家人", "所有人", "所有成员", "每位", "all", "everyone", "whole family", "all family members"].map(normalize))
+        if normalizedHints.contains(where: everyoneHints.contains) {
             result.assigneeMembershipIds = []
             result.targetProfileIds = []
         }

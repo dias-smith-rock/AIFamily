@@ -69,4 +69,10 @@ final class TaskRecognitionTests: XCTestCase {
         XCTAssertTrue(AIParticipantHintMatcher.match(hints: ["小明"], profiles: [first, second], memberships: []).targetProfileIds.isEmpty)
         XCTAssertTrue(AIParticipantHintMatcher.match(hints: ["小"], profiles: [first], memberships: []).targetProfileIds.isEmpty)
     }
+    func testEnglishNamesContainingAllAreNotEveryoneHints() {
+        let sally = FamilyProfile(id: UUID(), householdId: UUID(), name: "Sally", userId: nil)
+        XCTAssertEqual(AIParticipantHintMatcher.match(hints: ["Sally"], profiles: [sally], memberships: []).targetProfileIds, [sally.id])
+        XCTAssertTrue(AIParticipantHintMatcher.match(hints: ["Sally", "whole family"], profiles: [sally], memberships: []).targetProfileIds.isEmpty)
+    }
+
 }

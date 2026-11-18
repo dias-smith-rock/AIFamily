@@ -6,7 +6,7 @@ Implemented local-first photo/text parsing, iOS26 guided extraction, iOS27 image
 
 ## Verification performed
 
-- `tests/TaskCreation/run.sh`: passes seven date assertions, cloud snake_case payload regression, four participant checks. Participant tests stub unrelated roster merge types; they exercise actual matcher logic, not Supabase integration.
+- `tests/TaskCreation/run.sh`: passes seven date assertions, cloud snake_case payload regression, six participant checks. Participant tests stub unrelated roster merge types; they exercise actual matcher logic, not Supabase integration.
 - `/tmp/task-deno/bin/deno test --allow-env --allow-net supabase/functions/tests/task-parsing_test.ts`: seven tests pass.
 - Both Edge Function entrypoints pass Deno typecheck.
 - Actual iOS27.2 SDK isolated component typechecks targeting iOS18.6 pass; details in `docs/superpowers/evaluation/apple-local-extraction-validation.md`. These use unrelated dependency stubs and do not replace an App build.
@@ -45,3 +45,9 @@ Current computer-use connector does not expose Simulator and cannot launch it; G
 | Siri follow-up | No Siri implementation added | Deferred as approved |
 
 No production deploy, remote push, or merge has occurred. New cloud functions require an authorized test project; no project ref or CLI linkage was found. These remaining acceptance requirements prevent claiming the whole goal complete.
+
+## Final member-matching regression
+
+The 2026-11-19 follow-up audit reproduced a real failure: `Sally` was interpreted as an everyone hint because `all` was matched as a substring. A new standalone assertion failed before the fix (exit 133), then passed after replacing substring detection with complete normalized everyone phrases. The real App XCTest suite now passes **six tests, zero failures** (`/tmp/aifamily-xctest-members.log`). Full names and explicit `whole family` are separately covered.
+
+Rechecked available hardware and project linkage after the fix: the sole connected physical iPhone remains iPhone 12, and no authorized staging Supabase project is linked. All local build/test processes have finished. Real Apple Intelligence quality, microphone/end-to-end UI acceptance and deployed cloud integration still require the requested device/test project; the overall goal remains unproven.
