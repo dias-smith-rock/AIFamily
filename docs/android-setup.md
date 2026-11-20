@@ -1,4 +1,4 @@
-# Android setup (ShareCal monorepo)
+# Android setup (Nudge monorepo)
 
 ## Requirements
 

@@ -1,4 +1,4 @@
-# WeFamily / ShareCal 官网
+# WeFamily / Nudge 官网
 
 部署到 **https://www.wefamily.ai/** 的营销站（Astro 静态站）。
 
@@ -8,9 +8,9 @@ Web App（**https://app.wefamily.ai/**）不在本目录，后续单独建 `web/
 
 | 语言 | 产品名 |
 |------|--------|
-| English（默认 `/`） | ShareCal |
-| 简体中文 `/zh-Hans/` | ShareCal |
-| 繁體中文 `/zh-Hant/` | ShareCal |
+| English（默认 `/`） | Nudge |
+| 简体中文 `/zh-Hans/` | Nudge |
+| 繁體中文 `/zh-Hant/` | Nudge |
 
 文案集中在 `src/i18n/ui.ts`。
 

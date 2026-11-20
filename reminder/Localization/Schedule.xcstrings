@@ -6261,55 +6261,55 @@
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في Calendly."
+            "value": "تحقق من هويتك للوصول إلى جداول ومهام المجموعة في Nudge."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verify your identity to access group schedules and tasks in Calendly."
+            "value": "Verify your identity to access group schedules and tasks in Nudge."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en Calendly."
+            "value": "Verifica tu identidad para acceder a los horarios y tareas del grupo en Nudge."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans Calendly."
+            "value": "Vérifiez votre identité pour accéder aux plannings et tâches de groupe dans Nudge."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Calendly में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
+            "value": "Nudge में समूह के शेड्यूल और कार्यों तक पहुँचने के लिए अपनी पहचान सत्यापित करें।"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no Calendly."
+            "value": "Verifique sua identidade para acessar horários e tarefas do grupo no Nudge."
           }
         },
         "ta": {
           "stringUnit": {
             "state": "translated",
-            "value": "Calendly இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
+            "value": "Nudge இல் குழு அட்டவணை மற்றும் பணிகளை அணுக உங்கள் அடையாளத்தை சரிபார்க்கவும்."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请验证身份以访问 Calendly 中的群组日程与任务。"
+            "value": "请验证身份以访问 Nudge 中的群组日程与任务。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請驗證身分以存取 Calendly 中的群組日程與任務。"
+            "value": "請驗證身分以存取 Nudge 中的群組日程與任務。"
           }
         }
       }

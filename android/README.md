@@ -1,4 +1,4 @@
-# ShareCal — Android
+# Nudge — Android
 
 Native Kotlin + Jetpack Compose client in the AIFamily monorepo.
 

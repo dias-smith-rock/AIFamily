@@ -35,7 +35,7 @@ LOCALE_DIR = {
 
 # Always merge into default `values` (UI bootstrap + app label)
 BOOTSTRAP_KEYS = {
-    "app_name": "Family Link",
+    "app_name": "Nudge",
     "common_schedule": "Schedule",
     "common_to_dos": "To-Dos",
     "common_location": "Location",
