@@ -50,6 +50,7 @@ enum SchedulePrintComposer {
         let monthStart = context.calendar.date(
             from: context.calendar.dateComponents([.year, .month], from: context.selectedDate)
         ) ?? context.selectedDate
+        // 竖版排版铺满 A4 高度；用户改横打时由 PrintRenderer 拉伸铺满。
         let image = render(
             ScheduleMonthPrintPage(
                 monthStart: monthStart,
@@ -59,9 +60,10 @@ enum SchedulePrintComposer {
                 locale: context.locale,
                 titleForTask: context.displayTitle
             ),
-            locale: context.locale
+            locale: context.locale,
+            pageSize: SchedulePrintMetrics.page
         )
-        present(context, images: [image])
+        present(context, images: [image], preferredOrientation: .portrait)
     }
 
     static func printDay(_ context: SchedulePrintContext) {
@@ -174,16 +176,22 @@ enum SchedulePrintComposer {
                 snapshot: snapshot,
                 selectedDayKey: YearCalendarBuilder.dayKey(for: context.selectedDate, calendar: context.calendar)
             ),
-            locale: context.locale
+            locale: context.locale,
+            pageSize: SchedulePrintMetrics.landscapePage
         )
-        present(context, images: [image])
+        present(context, images: [image], preferredOrientation: .landscape)
     }
 
-    private static func present(_ context: SchedulePrintContext, images: [UIImage]) {
+    private static func present(
+        _ context: SchedulePrintContext,
+        images: [UIImage],
+        preferredOrientation: UIPrintInfo.Orientation = .portrait
+    ) {
         FamilyDocumentPrinter.deliver(
             jobName: context.jobName,
             images: images,
-            delivery: context.delivery
+            delivery: context.delivery,
+            preferredOrientation: preferredOrientation
         )
     }
 
@@ -323,11 +331,15 @@ enum SchedulePrintComposer {
         return size.height
     }
 
-    private static func render<V: View>(_ page: V, locale: Locale) -> UIImage {
+    private static func render<V: View>(
+        _ page: V,
+        locale: Locale,
+        pageSize: CGSize = SchedulePrintMetrics.page
+    ) -> UIImage {
         let canvas = page
             .frame(
-                width: SchedulePrintMetrics.page.width,
-                height: SchedulePrintMetrics.page.height,
+                width: pageSize.width,
+                height: pageSize.height,
                 alignment: .top
             )
             .background(Color.white)
@@ -335,8 +347,8 @@ enum SchedulePrintComposer {
             .environment(\.locale, locale)
         let renderer = ImageRenderer(content: canvas)
         renderer.proposedSize = ProposedViewSize(
-            width: SchedulePrintMetrics.page.width,
-            height: SchedulePrintMetrics.page.height
+            width: pageSize.width,
+            height: pageSize.height
         )
         renderer.scale = 2
         renderer.isOpaque = true
@@ -424,7 +436,10 @@ enum SchedulePrintComposer {
 }
 
 private enum SchedulePrintMetrics {
+    /// A4 竖版（点）。
     static let page = CGSize(width: 595, height: 842)
+    /// A4 横版（点）：月/年历默认按此排版，横打时可铺满纸面。
+    static let landscapePage = CGSize(width: 842, height: 595)
     static let weekCard = CGSize(width: 108, height: 62)
     static let cardSpacing: CGFloat = 6
     static var weekCardRowWidth: CGFloat {
@@ -609,9 +624,9 @@ private struct ScheduleMonthPrintPage: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(monthStart.formatted(.dateTime.month(.wide).year().locale(locale)))
-                .font(.title.weight(.bold))
+                .font(.title2.weight(.bold))
 
             HStack(spacing: 0) {
                 ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
@@ -634,9 +649,10 @@ private struct ScheduleMonthPrintPage: View {
                     MonthPrintGridLines(weekRowCount: max(weeks.count, 1))
                 }
             }
-            .frame(height: 700)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(24)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 18)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
@@ -654,40 +670,42 @@ private struct ScheduleMonthPrintPage: View {
             calendar: calendar,
             titleForTask: titleForTask
         )
-        let dayNumberHeight: CGFloat = 22
-        let chipHeight: CGFloat = 16
-        let chipSpacing: CGFloat = 3
-        let usable = SchedulePrintMetrics.finite(max(0, rowHeight - dayNumberHeight - 6), fallback: chipHeight)
-        let maxLanes = max(1, Int(floor((usable + chipSpacing) / (chipHeight + chipSpacing))))
+        let metrics = SchedulePrintMonthRowMetrics.make(rowHeight: rowHeight)
         let columnWidth = SchedulePrintMetrics.finite(width, fallback: SchedulePrintMetrics.page.width) / 7
-        let hiddenByColumn = overflowCount(spans: spans, maxLanes: maxLanes)
+        let hiddenByColumn = overflowCount(spans: spans, maxLanes: metrics.maxLanes)
 
         return ZStack(alignment: .topLeading) {
             HStack(spacing: 0) {
                 ForEach(week) { cell in
-                    dayNumber(cell)
+                    dayNumber(cell, height: metrics.dayNumberHeight)
                         .frame(width: columnWidth, height: rowHeight, alignment: .topLeading)
                 }
             }
-            ForEach(spans.filter { $0.lane < maxLanes }) { span in
+            ForEach(spans.filter { $0.lane < metrics.maxLanes }) { span in
                 let x = CGFloat(span.startColumn) * columnWidth + 2
                 let chipWidth = CGFloat(span.endColumn - span.startColumn + 1) * columnWidth - 4
-                let y = dayNumberHeight + CGFloat(span.lane) * (chipHeight + chipSpacing)
+                let y = metrics.dayNumberHeight
+                    + metrics.chipTopInset
+                    + CGFloat(span.lane) * (metrics.chipHeight + metrics.chipSpacing)
                 SchedulePrintMonthChip(
                     title: span.showsTitle ? span.title : " ",
                     accent: span.task.cardHeaderAccentColor,
                     isDimmed: span.isDimmed,
-                    isCompleted: span.task.status == .completed
+                    isCompleted: span.task.status == .completed,
+                    titleFontSize: metrics.titleFontSize
                 )
-                .frame(width: max(8, chipWidth), height: chipHeight)
+                .frame(width: max(8, chipWidth), height: metrics.chipHeight)
                 .offset(x: x, y: y)
             }
             ForEach(0..<7, id: \.self) { column in
                 if let extra = hiddenByColumn[column], extra > 0 {
                     Text("+\(extra)")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(size: max(8, metrics.titleFontSize - 1), weight: .semibold))
                         .foregroundStyle(.secondary)
-                        .offset(x: CGFloat(column) * columnWidth + 4, y: rowHeight - 12)
+                        .offset(
+                            x: CGFloat(column) * columnWidth + 4,
+                            y: rowHeight - max(12, metrics.chipHeight)
+                        )
                 }
             }
         }
@@ -703,12 +721,13 @@ private struct ScheduleMonthPrintPage: View {
         return counts
     }
 
-    private func dayNumber(_ cell: YearDayCellData) -> some View {
+    private func dayNumber(_ cell: YearDayCellData, height: CGFloat) -> some View {
         let selected = cell.date.map { calendar.isDate($0, inSameDayAs: selectedDate) } ?? false
+        let fontSize = min(15, max(11, height * 0.55))
         return Text(cell.date == nil ? "" : "\(cell.dayNumber)")
-            .font(.caption.weight(selected || cell.isToday ? .bold : .semibold))
+            .font(.system(size: fontSize, weight: selected || cell.isToday ? .bold : .semibold))
             .foregroundStyle(dayNumberColor(cell, selected: selected))
-            .frame(minWidth: 18, minHeight: 18)
+            .frame(minWidth: height * 0.85, minHeight: height * 0.85)
             .background {
                 if selected {
                     Circle().fill(AppTheme.ColorToken.accent)
@@ -716,8 +735,8 @@ private struct ScheduleMonthPrintPage: View {
                     Circle().stroke(AppTheme.ColorToken.accent, lineWidth: 1.5)
                 }
             }
-            .padding(.top, 2)
-            .padding(.leading, 4)
+            .padding(.top, 3)
+            .padding(.leading, 5)
     }
 
     private func dayNumberColor(_ cell: YearDayCellData, selected: Bool) -> Color {
@@ -728,20 +747,59 @@ private struct ScheduleMonthPrintPage: View {
     }
 }
 
+/// 按周行高推导打印月历任务条尺寸：卡片更大、可见行数更多，竖版铺满纸高。
+private struct SchedulePrintMonthRowMetrics {
+    let dayNumberHeight: CGFloat
+    let chipHeight: CGFloat
+    let chipSpacing: CGFloat
+    let chipTopInset: CGFloat
+    let maxLanes: Int
+    let titleFontSize: CGFloat
+
+    static func make(rowHeight: CGFloat) -> SchedulePrintMonthRowMetrics {
+        let dayNumberHeight = min(30, max(20, floor(rowHeight * 0.15)))
+        let chipTopInset: CGFloat = 3
+        let bottomPad: CGFloat = 6
+        let chipSpacing = max(2, min(5, rowHeight * 0.025))
+        let usable = SchedulePrintMetrics.finite(
+            max(0, rowHeight - dayNumberHeight - chipTopInset - bottomPad),
+            fallback: 20
+        )
+        // 优先加高单条，再尽量多塞行（竖版纸上通常可到 5～7 行）。
+        let preferredChipHeight = min(26, max(18, floor(rowHeight * 0.17)))
+        let laneBudget = max(3, Int(floor((usable + chipSpacing) / (preferredChipHeight + chipSpacing))))
+        let maxLanes = min(8, laneBudget)
+        let chipHeight = max(
+            16,
+            floor((usable - chipSpacing * CGFloat(max(0, maxLanes - 1))) / CGFloat(maxLanes))
+        )
+        let titleFontSize = min(12, max(9, chipHeight * 0.55))
+        return SchedulePrintMonthRowMetrics(
+            dayNumberHeight: dayNumberHeight,
+            chipHeight: chipHeight,
+            chipSpacing: chipSpacing,
+            chipTopInset: chipTopInset,
+            maxLanes: maxLanes,
+            titleFontSize: titleFontSize
+        )
+    }
+}
+
 private struct SchedulePrintMonthChip: View {
     let title: String
     let accent: Color
     let isDimmed: Bool
     let isCompleted: Bool
+    var titleFontSize: CGFloat = 9
 
     var body: some View {
         HStack(spacing: 3) {
             if isCompleted {
                 Image(systemName: "checkmark.square.fill")
-                    .font(.system(size: 8, weight: .bold))
+                    .font(.system(size: max(8, titleFontSize - 1), weight: .bold))
             }
             Text(title)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: titleFontSize, weight: .semibold))
                 .lineLimit(1)
         }
         .foregroundStyle(Color.primary.opacity(isDimmed ? 0.45 : 0.9))

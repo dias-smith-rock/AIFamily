@@ -14,23 +14,32 @@ enum FamilyDocumentPrinter {
     }
 
     @MainActor
-    static func deliver(jobName: String, images: [UIImage], delivery: FamilyPrintDelivery) {
+    static func deliver(
+        jobName: String,
+        images: [UIImage],
+        delivery: FamilyPrintDelivery,
+        preferredOrientation: UIPrintInfo.Orientation = .portrait
+    ) {
         switch delivery {
         case .printer:
-            printImages(jobName: jobName, images: images)
+            printImages(jobName: jobName, images: images, preferredOrientation: preferredOrientation)
         case .pdf:
             sharePDF(jobName: jobName, images: images)
         }
     }
 
     @MainActor
-    static func printImages(jobName: String, images: [UIImage]) {
+    static func printImages(
+        jobName: String,
+        images: [UIImage],
+        preferredOrientation: UIPrintInfo.Orientation = .portrait
+    ) {
         let pages = images.isEmpty ? [UIImage()] : images
         let controller = UIPrintInteractionController.shared
         let info = UIPrintInfo.printInfo()
         info.jobName = jobName
         info.outputType = .general
-        info.orientation = .portrait
+        info.orientation = preferredOrientation
         controller.printInfo = info
         controller.printFormatter = nil
         controller.printPageRenderer = ScheduleImagePrintRenderer(images: pages)
@@ -65,16 +74,32 @@ enum FamilyDocumentPrinter {
     }
 
     private static func pdfData(from images: [UIImage]) -> Data {
-        let page = CGRect(x: 0, y: 0, width: 595, height: 842)
-        let renderer = UIGraphicsPDFRenderer(bounds: page)
         let pages = images.isEmpty ? [UIImage()] : images
+        let first = pages[0].size
+        let bounds = pdfPageBounds(matching: first)
+        let renderer = UIGraphicsPDFRenderer(bounds: bounds)
         return renderer.pdfData { context in
             for image in pages {
-                context.beginPage()
+                let page = pdfPageBounds(matching: image.size)
+                context.beginPage(withBounds: page, pageInfo: [:])
                 guard image.size.width > 1, image.size.height > 1 else { continue }
-                image.draw(in: aspectFit(image.size, in: page))
+                let paperIsLandscape = page.width > page.height
+                let imageIsLandscape = image.size.width >= image.size.height
+                if paperIsLandscape, imageIsLandscape {
+                    image.draw(in: page.insetBy(dx: 18, dy: 18))
+                } else {
+                    image.draw(in: aspectFit(image.size, in: page.insetBy(dx: 18, dy: 18)))
+                }
             }
         }
+    }
+
+    /// 按图片横竖选用 A4 竖版 / 横版点阵尺寸。
+    private static func pdfPageBounds(matching size: CGSize) -> CGRect {
+        let portrait = CGSize(width: 595, height: 842)
+        let landscape = CGSize(width: 842, height: 595)
+        let page = size.width >= size.height ? landscape : portrait
+        return CGRect(origin: .zero, size: page)
     }
 
     private static func aspectFit(_ size: CGSize, in rect: CGRect) -> CGRect {
@@ -189,20 +214,8 @@ final class ScheduleImagePrintRenderer: UIPrintPageRenderer {
         guard images.indices.contains(pageIndex) else { return }
         let image = images[pageIndex]
         guard image.size.width > 1, image.size.height > 1 else { return }
-        let fitted = Self.aspectFit(image.size, in: printableRect)
-        image.draw(in: fitted)
-    }
-
-    private static func aspectFit(_ size: CGSize, in rect: CGRect) -> CGRect {
-        let scale = min(rect.width / size.width, rect.height / size.height)
-        let width = size.width * scale
-        let height = size.height * scale
-        return CGRect(
-            x: rect.midX - width / 2,
-            y: rect.midY - height / 2,
-            width: width,
-            height: height
-        )
+        // 横/竖均铺满可打区域，避免预览上下或两侧大块留白。
+        image.draw(in: printableRect)
     }
 }
 
