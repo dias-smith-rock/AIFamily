@@ -53,6 +53,9 @@ struct CameraPicker: View {
                 Text(L10n.Common.chooseAnImageFromTheLibraryBelow.localized)
                     .font(.footnote)
                     .foregroundStyle(.tertiary)
+                Button(L10n.Common.cancel, role: .cancel, action: onCancel)
+                    .buttonStyle(.bordered)
+                    .foregroundStyle(.white)
             }
         }
     }

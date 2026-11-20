@@ -636,6 +636,15 @@ struct TaskListView: View {
     private var scheduleOptionsMenu: some View {
         Menu {
             Section {
+                Button {
+                    if PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) {
+                        viewModel.isShowingCamera = true
+                    } else { appRouter.presentPremiumUpgrade() }
+                } label: {
+                    Label { Text(L10n.Schedule.createTaskFromPhoto.localized) } icon: {
+                        Image(systemName: "camera")
+                    }
+                }
                 Button("Create task by voice", systemImage: "mic.fill") {
                     if PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) {
                         isShowingVoiceCreation = true

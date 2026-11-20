@@ -88,6 +88,7 @@ struct VoiceTaskCreationSheet: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = VoiceCaptureModel()
     @State private var language = Locale.current.identifier
+    @FocusState private var isEditingTranscript: Bool
 
     var body: some View {
         NavigationStack {
@@ -115,15 +116,8 @@ struct VoiceTaskCreationSheet: View {
                 Section("核对并编辑文字") {
                     TextEditor(text: $model.text)
                         .frame(minHeight: 180)
+                        .focused($isEditingTranscript)
                         .disabled(model.recording || model.busy)
-                }
-                Section {
-                    Button("生成草稿") {
-                        let text = model.text.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !text.isEmpty else { return }
-                        onText(text)
-                    }
-                    .disabled(model.busy || model.recording || model.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .navigationTitle("说话创建任务")
@@ -131,6 +125,15 @@ struct VoiceTaskCreationSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("取消") { Task { await model.cancel(); dismiss() } }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("生成草稿") {
+                        let text = model.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !text.isEmpty else { return }
+                        isEditingTranscript = false
+                        onText(text)
+                    }
+                    .disabled(model.busy || model.recording || model.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }
