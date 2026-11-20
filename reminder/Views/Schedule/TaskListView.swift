@@ -382,8 +382,7 @@ struct TaskListView: View {
     private var scheduleModeContent: some View {
         VStack(spacing: 0) {
             ScheduleMemberFilterBar(
-                members: viewModel.householdMembers.filter { $0.isActiveMembership() },
-                profiles: viewModel.familyProfiles,
+                members: viewModel.scheduleFilterMembers,
                 selectedIds: viewModel.selectedMemberFilterIds,
                 onToggle: { viewModel.toggleMemberFilter(id: $0) }
             )

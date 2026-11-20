@@ -29,10 +29,18 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var householdMembers: [HouseholdMembership] = []
     /// 当前群组档案（`family_profiles`），用于列表「为了谁」头像。
     @Published private(set) var familyProfiles: [FamilyProfile] = []
-    /// 日程成员筛选：选中的 `household_memberships.id`；切换家庭后默认全选。
+    /// 日程成员筛选：选中的筛选项 id（正式=membership id，虚拟=profile id）；切换家庭后默认全选。
     @Published private(set) var selectedMemberFilterIds: Set<UUID> = []
     /// 下次花名册更新时全选成员（切换家庭 / 首次加载）。
     private var shouldSelectAllMembersOnNextRoster = true
+
+    /// 筛选条：活跃正式成员 + 当前家庭虚拟档案。
+    var scheduleFilterMembers: [ScheduleFilterMember] {
+        Self.makeScheduleFilterMembers(
+            memberships: householdMembers,
+            profiles: familyProfiles
+        )
+    }
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     /// 当前查看上下文下是否已完成至少一次任务拉取（用于避免启动时空态 ↔ 有数据闪烁）。
@@ -128,52 +136,59 @@ final class ScheduleViewModel: ObservableObject {
         }
     }
 
-    func toggleMemberFilter(id membershipId: UUID) {
+    func toggleMemberFilter(id filterId: UUID) {
         var next = selectedMemberFilterIds
-        if next.contains(membershipId) {
-            next.remove(membershipId)
+        if next.contains(filterId) {
+            next.remove(filterId)
         } else {
-            next.insert(membershipId)
+            next.insert(filterId)
         }
         selectedMemberFilterIds = next
     }
 
     private func reconcileMemberFilterAfterRosterUpdate() {
-        let activeIds = Set(householdMembers.filter { $0.isActiveMembership() }.map(\.id))
+        let allIds = Set(scheduleFilterMembers.map(\.id))
         if shouldSelectAllMembersOnNextRoster {
-            selectedMemberFilterIds = activeIds
+            selectedMemberFilterIds = allIds
             // 缓存可能早于网络；仅在已有成员时清 flag，空花名册留给后续网络结果继续全选。
-            if activeIds.isEmpty == false {
+            if allIds.isEmpty == false {
                 shouldSelectAllMembersOnNextRoster = false
             }
         } else {
-            selectedMemberFilterIds = selectedMemberFilterIds.intersection(activeIds)
+            selectedMemberFilterIds = selectedMemberFilterIds.intersection(allIds)
         }
     }
 
     private func filterScheduledTasks(_ tasks: [FamilyTask]) -> [FamilyTask] {
-        let activeIds = Set(householdMembers.filter { $0.isActiveMembership() }.map(\.id))
-        guard activeIds.isEmpty == false else { return tasks }
+        let filterMembers = scheduleFilterMembers
+        let allIds = Set(filterMembers.map(\.id))
+        guard allIds.isEmpty == false else { return tasks }
         guard selectedMemberFilterIds.isEmpty == false else { return [] }
-        if selectedMemberFilterIds == activeIds {
+        if selectedMemberFilterIds == allIds {
             return tasks
         }
-        let selectedProfileIds = Set(
-            householdMembers
-                .filter { selectedMemberFilterIds.contains($0.id) }
-                .compactMap(\.profileId)
-        )
+        let selectedMembers = filterMembers.filter { selectedMemberFilterIds.contains($0.id) }
+        let selectedMembershipIds = Set(selectedMembers.compactMap(\.membershipId))
+        let selectedProfileIds = Set(selectedMembers.compactMap(\.profileId))
         return tasks.filter { task in
-            taskMatchesMemberFilter(task, selectedProfileIds: selectedProfileIds)
+            taskMatchesMemberFilter(
+                task,
+                selectedMembershipIds: selectedMembershipIds,
+                selectedProfileIds: selectedProfileIds
+            )
         }
     }
 
-    private func taskMatchesMemberFilter(_ task: FamilyTask, selectedProfileIds: Set<UUID>) -> Bool {
+    private func taskMatchesMemberFilter(
+        _ task: FamilyTask,
+        selectedMembershipIds: Set<UUID>,
+        selectedProfileIds: Set<UUID>
+    ) -> Bool {
         if task.involvesWholeHousehold {
             return true
         }
         if let ids = task.involvedMemberIds,
-           ids.contains(where: { selectedMemberFilterIds.contains($0) }) {
+           ids.contains(where: { selectedMembershipIds.contains($0) }) {
             return true
         }
         if let multi = task.targetProfileIds,
@@ -184,6 +199,91 @@ final class ScheduleViewModel: ObservableObject {
             return true
         }
         return false
+    }
+
+    /// 正式成员（有活跃 membership）+ 虚拟档案（无 membership）；每人一条。
+    static func makeScheduleFilterMembers(
+        memberships: [HouseholdMembership],
+        profiles: [FamilyProfile]
+    ) -> [ScheduleFilterMember] {
+        let activeMemberships = memberships.filter { $0.isActiveMembership() }
+        let membershipByProfileId = Dictionary(
+            activeMemberships.compactMap { membership -> (UUID, HouseholdMembership)? in
+                guard let profileId = membership.profileId else { return nil }
+                return (profileId, membership)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let membershipByUserId = Dictionary(
+            activeMemberships.compactMap { membership -> (UUID, HouseholdMembership)? in
+                guard let userId = membership.userId else { return nil }
+                return (userId, membership)
+            },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        var items: [ScheduleFilterMember] = []
+        var usedMembershipIds = Set<UUID>()
+        var usedProfileIds = Set<UUID>()
+
+        let sortedProfiles = profiles.sorted {
+            $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending
+        }
+
+        for profile in sortedProfiles {
+            let membership =
+                membershipByProfileId[profile.id]
+                ?? profile.userId.flatMap { membershipByUserId[$0] }
+                ?? profile.primaryMembership.flatMap { candidate in
+                    activeMemberships.contains(where: { $0.id == candidate.id }) ? candidate : nil
+                }
+
+            if let membership {
+                usedMembershipIds.insert(membership.id)
+                usedProfileIds.insert(profile.id)
+                items.append(
+                    ScheduleFilterMember(
+                        id: membership.id,
+                        membershipId: membership.id,
+                        profileId: profile.id,
+                        displayName: MemberDisplayName.displayName(for: membership, profiles: profiles),
+                        avatarURL: profile.avatarUrl.flatMap { URL(string: $0) },
+                        isVirtual: false
+                    )
+                )
+            } else if profile.isVirtualUser {
+                usedProfileIds.insert(profile.id)
+                items.append(
+                    ScheduleFilterMember(
+                        id: profile.id,
+                        membershipId: nil,
+                        profileId: profile.id,
+                        displayName: MemberDisplayName.nonEmpty(profile.displayName),
+                        avatarURL: profile.avatarUrl.flatMap { URL(string: $0) },
+                        isVirtual: true
+                    )
+                )
+            }
+        }
+
+        let orphanMemberships = activeMemberships
+            .filter { usedMembershipIds.contains($0.id) == false }
+            .sorted { $0.createdAt < $1.createdAt }
+        for membership in orphanMemberships {
+            let profile = MemberDisplayName.profile(for: membership, in: profiles)
+            items.append(
+                ScheduleFilterMember(
+                    id: membership.id,
+                    membershipId: membership.id,
+                    profileId: membership.profileId ?? profile?.id,
+                    displayName: MemberDisplayName.displayName(for: membership, profiles: profiles),
+                    avatarURL: profile?.avatarUrl.flatMap { URL(string: $0) },
+                    isVirtual: false
+                )
+            )
+        }
+
+        return items
     }
 
     func setViewHouseholdIds(_ ids: [UUID]) {

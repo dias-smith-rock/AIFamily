@@ -1,9 +1,19 @@
 import SwiftUI
 
+/// 日程成员筛选条中的一项：正式 membership 或无账号虚拟档案。
+struct ScheduleFilterMember: Identifiable, Equatable {
+    /// 筛选态 id：正式成员用 membership id，虚拟成员用 profile id。
+    let id: UUID
+    let membershipId: UUID?
+    let profileId: UUID?
+    let displayName: String
+    let avatarURL: URL?
+    let isVirtual: Bool
+}
+
 /// 日程日历上方的家庭成员头像筛选条：点击切换选中，选中者相关任务才会显示。
 struct ScheduleMemberFilterBar: View {
-    let members: [HouseholdMembership]
-    let profiles: [FamilyProfile]
+    let members: [ScheduleFilterMember]
     let selectedIds: Set<UUID>
     let onToggle: (UUID) -> Void
 
@@ -24,19 +34,16 @@ struct ScheduleMemberFilterBar: View {
         }
     }
 
-    private func memberButton(for member: HouseholdMembership) -> some View {
+    private func memberButton(for member: ScheduleFilterMember) -> some View {
         let isSelected = selectedIds.contains(member.id)
-        let profile = MemberDisplayName.profile(for: member, in: profiles)
-        let name = MemberDisplayName.displayName(for: member, profiles: profiles)
-        let avatarURL = profile?.avatarUrl.flatMap { URL(string: $0) }
 
         return Button {
             onToggle(member.id)
         } label: {
             ZStack(alignment: .bottomTrailing) {
                 LocationMemberAvatarView(
-                    displayName: name,
-                    avatarURL: avatarURL,
+                    displayName: member.displayName,
+                    avatarURL: member.avatarURL,
                     size: 40,
                     isGrayscale: isSelected == false
                 )
@@ -62,7 +69,7 @@ struct ScheduleMemberFilterBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(name)
+        .accessibilityLabel(member.displayName)
         .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
     }
 }
