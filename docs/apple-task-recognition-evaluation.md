@@ -34,6 +34,8 @@ Vision OCR remains available on that simulator. The photo failure panel opens th
 
 The voice handoff later passed a guest-mode walkthrough on the same simulator using a temporary Debug build that supplied a known structured response. The schedule entry opened a prefilled form and saved only upon confirmation. The form microphone entry applied the fields to the original form, and cancellation created no second task. The fixture was removed and the normal build was reinstalled. Nine hosted XCTest cases pass, including one-time result consumption and rejection after an account change. This walkthrough did not invoke Apple or cloud inference.
 
+The iOS cloud-text adapter now maps invalid input, expired sessions, rate limits, service failures, and connection issues to app messages. Cloud consent retains the account and household of the original submission. Hosted tests use the real Supabase Functions SDK with a fixture transport to verify the POST route, text-only JSON with language and time context, response decoding, and HTTP error mapping. The fixture carries a synthetic bearer header. These tests do not validate deployed Supabase authentication or a live provider. The Deno handler's seven tests cover its simulated auth and provider responses separately.
+
 ## Requirement audit
 
 | Approved requirement | Current evidence | Status |

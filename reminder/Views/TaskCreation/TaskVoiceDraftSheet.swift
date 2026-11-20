@@ -57,7 +57,7 @@ private struct TaskVoiceDraftSheet: View {
     var onDraft: (VoiceTaskDraftResult) -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
-    @State private var submittedInput: TaskVoiceRecognitionInput?
+    @State private var submission: (input: TaskVoiceRecognitionInput, context: VoiceTaskDraftContext)?
     @State private var processing = false
     @State private var error: String?
     @State private var showCloudChoice = false
@@ -74,26 +74,31 @@ private struct TaskVoiceDraftSheet: View {
                     text: text, locale: locale, referenceDate: Date(),
                     timeZone: AppDisplayTimeZone.effectiveTimeZone
                 )
-                submittedInput = input
-                recognize(input, cloud: false)
+                let context = appRouter.voiceTaskDraftContext
+                submission = (input, context)
+                recognize(input, context: context, cloud: false)
             }
             .disabled(processing)
         }
         .alert("Use cloud recognition?", isPresented: $showCloudChoice) {
             Button("Upload text and recognize") {
-                guard let submittedInput else { return }
-                recognize(submittedInput, cloud: true)
+                guard let submission else { return }
+                recognize(submission.input, context: submission.context, cloud: true)
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Only the confirmed text will be sent to the cloud service. Audio is not uploaded.")
         }
         .onDisappear { request?.cancel() }
-        .onChange(of: appRouter.voiceTaskDraftContext) { _, _ in request?.cancel(); dismiss() }
+        .onChange(of: appRouter.voiceTaskDraftContext) { _, _ in
+            submission = nil
+            request?.cancel()
+            dismiss()
+        }
     }
-    private func recognize(_ input: TaskVoiceRecognitionInput, cloud: Bool) {
-        guard !processing, PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) else { return }
-        let context = appRouter.voiceTaskDraftContext
+    private func recognize(_ input: TaskVoiceRecognitionInput, context: VoiceTaskDraftContext, cloud: Bool) {
+        guard context == appRouter.voiceTaskDraftContext, !processing,
+              PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) else { return }
         error = nil
         processing = true
         request = Task { @MainActor in

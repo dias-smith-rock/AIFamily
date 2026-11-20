@@ -1,9 +1,52 @@
 import XCTest
 import UIKit
+import Supabase
 @testable import Calendly
 
 @MainActor
 final class TaskRecognitionTests: XCTestCase {
+    func testCloudTextSDKInvokesExpectedRouteWithTextOnly() async throws {
+        let input = TaskVoiceRecognitionInput(text: "Pick up the parcel", locale: Locale(identifier: "en-US"),
+            referenceDate: Date(timeIntervalSince1970: 1_800_000_000), timeZone: TimeZone(secondsFromGMT: 0)!)
+        let expectedBody = ["text": input.text, "locale": "en-US", "time_zone": "GMT",
+            "reference_instant": ISO8601DateFormatter().string(from: input.referenceDate)]
+        let client = FunctionsClient(url: URL(string: "https://example.invalid/functions/v1")!,
+            headers: ["Authorization": "Bearer fixture-token"], fetch: { request in
+                XCTAssertEqual(request.url?.path, "/functions/v1/parse-create-task-from-text")
+                XCTAssertEqual(request.httpMethod, "POST")
+                XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer fixture-token")
+                let body = try JSONDecoder().decode([String: String].self, from: XCTUnwrap(request.httpBody))
+                XCTAssertEqual(body, expectedBody)
+                let response = HTTPURLResponse(url: try XCTUnwrap(request.url), statusCode: 200,
+                    httpVersion: nil, headerFields: nil)!
+                return (Data(#"{"success":true,"task":{"title":"Pick up the parcel"}}"#.utf8), response)
+            })
+        let task = try await CloudTextTaskParserService().parse(input, using: client)
+        XCTAssertEqual(task.title, input.text)
+        XCTAssertNil(task.dueDate)
+    }
+
+    func testCloudTextSDKMapsServerErrorsWithoutShowingResponseBody() async throws {
+        let input = TaskVoiceRecognitionInput(text: "Synthetic note", locale: .current,
+            referenceDate: Date(), timeZone: .current)
+        let failures: [(Int, CloudTextTaskParserError)] = [(400, .invalidInput), (401, .sessionExpired),
+            (429, .rateLimited), (502, .unavailable)]
+        for (status, expected) in failures {
+            let client = FunctionsClient(url: URL(string: "https://example.invalid/functions/v1")!, fetch: { request in
+                let response = HTTPURLResponse(url: try XCTUnwrap(request.url), statusCode: status,
+                    httpVersion: nil, headerFields: nil)!
+                return (Data("synthetic internal detail".utf8), response)
+            })
+            do {
+                _ = try await CloudTextTaskParserService().parse(input, using: client)
+                XCTFail("Expected HTTP \(status) to fail")
+            } catch let error as CloudTextTaskParserError {
+                XCTAssertEqual(error, expected)
+                XCTAssertFalse(error.localizedDescription.contains("synthetic internal detail"))
+            }
+        }
+    }
+
     func testVoiceDraftHandoffConsumesOnceAfterDismissalAndRejectsStaleAccount() throws {
         let original = VoiceTaskDraftContext(userID: UUID(), householdID: UUID(), membershipID: UUID())
         let otherAccount = VoiceTaskDraftContext(userID: UUID(), householdID: original.householdID, membershipID: original.membershipID)
