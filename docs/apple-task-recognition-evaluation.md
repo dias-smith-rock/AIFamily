@@ -32,6 +32,8 @@ Device Hub subsequently exposed the iPhone 17 Pro simulator running iOS 27.2. Gu
 
 Vision OCR remains available on that simulator. The photo failure panel opens the standard creation form with the selected region's recognized text in editable notes and the source photo as a removable attachment. The guest-mode walkthrough verified reading three lines from a synthetic notice, entering a title, removing the source photo, confirming save, reopening the notes with no attachment, and seeing the saved task after relaunch. This verifies OCR and the confirmation/save path. Structured model extraction and cloud response coverage remain open. Eight hosted XCTest cases pass on the same simulator, including a crop-exclusion case for the editable OCR path.
 
+The voice handoff later passed a guest-mode walkthrough on the same simulator using a temporary Debug build that supplied a known structured response. The schedule entry opened a prefilled form and saved only upon confirmation. The form microphone entry applied the fields to the original form, and cancellation created no second task. The fixture was removed and the normal build was reinstalled. Nine hosted XCTest cases pass, including one-time result consumption and rejection after an account change. This walkthrough did not invoke Apple or cloud inference.
+
 ## Requirement audit
 
 | Approved requirement | Current evidence | Status |

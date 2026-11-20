@@ -80,10 +80,8 @@ struct TaskListView: View {
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { scheduleToolbar }
-            .sheet(isPresented: $isShowingVoiceCreation) {
-                TaskVoiceDraftSheet { payload, sourceText in
-                    viewModel.presentRecognizedTask(payload, sourceText: sourceText)
-                }
+            .taskVoiceDraftSheet(isPresented: $isShowingVoiceCreation) { payload, sourceText in
+                viewModel.presentRecognizedTask(payload, sourceText: sourceText)
             }
             .sheet(isPresented: $isShowingScheduleBackgroundSettings) {
                 ScheduleBackgroundSettingsSheet()

@@ -1815,39 +1815,37 @@ struct CreateTaskView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .tint(formChromeTint)
-        .sheet(isPresented: $showingVoiceTaskDraft) {
-            TaskVoiceDraftSheet { task, sourceText in
-                if editingTask != nil, formMode == .scheduled, task.dueDate == nil {
-                    errorMessage = "未识别到明确时间，请手动补充日程时间后再保存。"
-                    return
-                }
-                if editingTask == nil { saveAsMemo = task.prefersFlexibleTask || task.dueDate == nil }
-                title = task.title
-                note = task.description ?? ""
-                note += "\n识别原文：\n" + sourceText
-                if let date = task.dueDate { dueDate = date }
-                isAllDay = task.isAllDay
-                durationPickerDate = Self.makeDurationPickerDate(minutes: Self.resolvedInitialDurationMinutes(
-                    dueDate: task.dueDate, endDatetime: task.endDatetime, durationMinutes: task.durationMinutes))
-                costInput = task.costDisplayString ?? ""
-                locationName = task.spatialKeywords ?? ""
-                selectedAssigneeIds = []
-                selectedTargetProfileIds = []
-                if !task.participantHints.isEmpty {
-                    let match = AIParticipantHintMatcher.match(hints: task.participantHints,
-                        profiles: familyProfiles, memberships: familyProfiles.compactMap(\.primaryMembership))
-                    selectedAssigneeIds = match.assigneeMembershipIds
-                    selectedTargetProfileIds = match.targetProfileIds
-                    // Keep original names visible even when no unique roster match is available.
-                    note += "\n参与人（请核对）：" + task.participantHints.joined(separator: "、")
-                }
-                hasFlexibleDeadline = task.endDatetime != nil
-                if let deadline = task.endDatetime {
-                    flexibleDeadlineDate = deadline
-                    hasFlexibleDeadline = true
-                }
-                formPriority = task.isPriorityUrgent ? .urgent : .normal
+        .taskVoiceDraftSheet(isPresented: $showingVoiceTaskDraft) { task, sourceText in
+            if editingTask != nil, formMode == .scheduled, task.dueDate == nil {
+                errorMessage = "未识别到明确时间，请手动补充日程时间后再保存。"
+                return
             }
+            if editingTask == nil { saveAsMemo = task.prefersFlexibleTask || task.dueDate == nil }
+            title = task.title
+            note = task.description ?? ""
+            note += "\n识别原文：\n" + sourceText
+            if let date = task.dueDate { dueDate = date }
+            isAllDay = task.isAllDay
+            durationPickerDate = Self.makeDurationPickerDate(minutes: Self.resolvedInitialDurationMinutes(
+                dueDate: task.dueDate, endDatetime: task.endDatetime, durationMinutes: task.durationMinutes))
+            costInput = task.costDisplayString ?? ""
+            locationName = task.spatialKeywords ?? ""
+            selectedAssigneeIds = []
+            selectedTargetProfileIds = []
+            if !task.participantHints.isEmpty {
+                let match = AIParticipantHintMatcher.match(hints: task.participantHints,
+                    profiles: familyProfiles, memberships: familyProfiles.compactMap(\.primaryMembership))
+                selectedAssigneeIds = match.assigneeMembershipIds
+                selectedTargetProfileIds = match.targetProfileIds
+                // Keep original names visible even when no unique roster match is available.
+                note += "\n参与人（请核对）：" + task.participantHints.joined(separator: "、")
+            }
+            hasFlexibleDeadline = task.endDatetime != nil
+            if let deadline = task.endDatetime {
+                flexibleDeadlineDate = deadline
+                hasFlexibleDeadline = true
+            }
+            formPriority = task.isPriorityUrgent ? .urgent : .normal
         }
         .sheet(isPresented: $isShowingWriteTargetPicker) {
             WriteTargetHouseholdPicker { _ in }

@@ -1,8 +1,60 @@
 import SwiftUI
 
-/// Recognition never saves a task. The caller presents the existing editable form.
-struct TaskVoiceDraftSheet: View {
+struct VoiceTaskDraftContext: Equatable {
+    let userID: UUID?
+    let householdID: UUID?
+    let membershipID: UUID?
+}
+
+struct VoiceTaskDraftResult {
+    let task: AIParsedTaskPayload
+    let sourceText: String
+    let context: VoiceTaskDraftContext
+}
+
+struct VoiceTaskDraftHandoff {
+    var pending: VoiceTaskDraftResult?
+
+    mutating func take(for context: VoiceTaskDraftContext) -> VoiceTaskDraftResult? {
+        let result = pending
+        pending = nil
+        guard result?.context == context else { return nil }
+        return result
+    }
+}
+
+@MainActor private extension AppRouter {
+    var voiceTaskDraftContext: VoiceTaskDraftContext {
+        VoiceTaskDraftContext(userID: authUserId, householdID: selectedHouseholdId, membershipID: selectedMembershipId)
+    }
+}
+
+extension View {
+    func taskVoiceDraftSheet(isPresented: Binding<Bool>, onDraft: @escaping (AIParsedTaskPayload, String) -> Void) -> some View {
+        modifier(TaskVoiceDraftPresentation(isPresented: isPresented, onDraft: onDraft))
+    }
+}
+
+private struct TaskVoiceDraftPresentation: ViewModifier {
+    var isPresented: Binding<Bool>
     var onDraft: (AIParsedTaskPayload, String) -> Void
+    @EnvironmentObject private var appRouter: AppRouter
+    @State private var handoff = VoiceTaskDraftHandoff()
+
+    func body(content: Content) -> some View {
+        content.sheet(isPresented: isPresented, onDismiss: {
+            guard let result = handoff.take(for: appRouter.voiceTaskDraftContext) else { return }
+            onDraft(result.task, result.sourceText)
+        }) {
+            TaskVoiceDraftSheet { result in handoff.pending = result }
+        }
+        .onChange(of: appRouter.voiceTaskDraftContext) { _, _ in handoff.pending = nil }
+    }
+}
+
+/// Recognition never saves a task. The caller presents the existing editable form.
+private struct TaskVoiceDraftSheet: View {
+    var onDraft: (VoiceTaskDraftResult) -> Void
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appRouter: AppRouter
     @State private var submittedInput: TaskVoiceRecognitionInput?
@@ -37,13 +89,11 @@ struct TaskVoiceDraftSheet: View {
             Text("Only the confirmed text will be sent to the cloud service. Audio is not uploaded.")
         }
         .onDisappear { request?.cancel() }
-        .onChange(of: appRouter.selectedHouseholdId) { _, _ in request?.cancel(); dismiss() }
-        .onChange(of: appRouter.selectedMembershipId) { _, _ in request?.cancel(); dismiss() }
+        .onChange(of: appRouter.voiceTaskDraftContext) { _, _ in request?.cancel(); dismiss() }
     }
     private func recognize(_ input: TaskVoiceRecognitionInput, cloud: Bool) {
         guard !processing, PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: appRouter.hasPremiumAccess) else { return }
-        let household = appRouter.selectedHouseholdId
-        let membership = appRouter.selectedMembershipId
+        let context = appRouter.voiceTaskDraftContext
         error = nil
         processing = true
         request = Task { @MainActor in
@@ -57,14 +107,9 @@ struct TaskVoiceDraftSheet: View {
                         timeZone: input.timeZone, locale: input.locale)
                 }
                 try Task.checkCancellation()
-                guard household == appRouter.selectedHouseholdId, membership == appRouter.selectedMembershipId else { return }
+                guard context == appRouter.voiceTaskDraftContext else { return }
+                onDraft(VoiceTaskDraftResult(task: draft, sourceText: input.text, context: context))
                 dismiss()
-                // Let the recording sheet dismiss before the parent presents the draft.
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(350))
-                    guard household == appRouter.selectedHouseholdId, membership == appRouter.selectedMembershipId else { return }
-                    onDraft(draft, input.text)
-                }
             } catch is CancellationError {
             } catch {
                 guard !Task.isCancelled else { return }

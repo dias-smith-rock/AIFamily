@@ -4,6 +4,23 @@ import UIKit
 
 @MainActor
 final class TaskRecognitionTests: XCTestCase {
+    func testVoiceDraftHandoffConsumesOnceAfterDismissalAndRejectsStaleAccount() throws {
+        let original = VoiceTaskDraftContext(userID: UUID(), householdID: UUID(), membershipID: UUID())
+        let otherAccount = VoiceTaskDraftContext(userID: UUID(), householdID: original.householdID, membershipID: original.membershipID)
+        let payload = try JSONDecoder().decode(AIParsedTaskPayload.self, from: Data(#"{"title":"Pick up the parcel"}"#.utf8))
+        let result = VoiceTaskDraftResult(task: payload, sourceText: "Pick up the parcel tomorrow", context: original)
+        var handoff = VoiceTaskDraftHandoff()
+        XCTAssertNil(handoff.take(for: original))
+        handoff.pending = result
+        XCTAssertNil(handoff.take(for: otherAccount))
+        XCTAssertNil(handoff.take(for: original))
+        handoff.pending = result
+        let ready = try XCTUnwrap(handoff.take(for: original))
+        XCTAssertEqual(ready.task.title, payload.title)
+        XCTAssertEqual(ready.sourceText, result.sourceText)
+        XCTAssertNil(handoff.take(for: original))
+    }
+
     func testCroppedPhotoTextForManualTaskPreservesOnlyReadableText() async throws {
         let image = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 430)).image { context in
             UIColor.white.setFill()
