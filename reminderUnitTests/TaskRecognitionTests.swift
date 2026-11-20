@@ -3,6 +3,22 @@ import XCTest
 
 @MainActor
 final class TaskRecognitionTests: XCTestCase {
+    func testCloudFallbackKeepsSubmittedLanguageAndReferenceInstant() throws {
+        let reference = Date(timeIntervalSince1970: 1_800_000_000)
+        let zone = try XCTUnwrap(TimeZone(identifier: "Asia/Shanghai"))
+        let input = TaskVoiceRecognitionInput(
+            text: "Pick up the parcel tomorrow",
+            locale: Locale(identifier: "en_US"),
+            referenceDate: reference,
+            timeZone: zone
+        )
+        let body = input.cloudBody
+        XCTAssertEqual(body["text"], input.text)
+        XCTAssertEqual(body["locale"], "en-US")
+        XCTAssertEqual(body["time_zone"], "Asia/Shanghai")
+        XCTAssertEqual(ISO8601DateFormatter().date(from: try XCTUnwrap(body["reference_instant"])), reference)
+    }
+
     func testLocalDatesRejectRolloverAndDSTAmbiguity() {
         let zone = TimeZone(identifier: "America/New_York")!
         XCTAssertNil(TaskRecognitionDateValidator.date("2026-02-30T15:00", timeZone: zone))

@@ -83,7 +83,7 @@ private final class VoiceCaptureModel: ObservableObject {
 
 /// Collects text only. The caller owns parsing, cloud consent, and draft presentation.
 struct VoiceTaskCreationSheet: View {
-    let onText: (String) -> Void
+    let onText: (String, Locale) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = VoiceCaptureModel()
@@ -131,7 +131,7 @@ struct VoiceTaskCreationSheet: View {
                         let text = model.text.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !text.isEmpty else { return }
                         isEditingTranscript = false
-                        onText(text)
+                        onText(text, Locale(identifier: language))
                     }
                     .disabled(model.busy || model.recording || model.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }

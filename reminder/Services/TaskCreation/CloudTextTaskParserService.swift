@@ -3,17 +3,30 @@ import Foundation
 import Supabase
 #endif
 
+struct TaskVoiceRecognitionInput {
+    let text: String
+    let locale: Locale
+    let referenceDate: Date
+    let timeZone: TimeZone
+
+    var cloudBody: [String: String] {
+        [
+            "text": text,
+            "reference_instant": ISO8601DateFormatter().string(from: referenceDate),
+            "time_zone": timeZone.identifier,
+            "locale": locale.identifier(.bcp47),
+        ]
+    }
+}
+
 struct CloudTextTaskParserService {
-    func parse(_ text: String) async throws -> AIParsedTaskPayload {
+    func parse(_ input: TaskVoiceRecognitionInput) async throws -> AIParsedTaskPayload {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
         _ = try await client.auth.session
         struct Response: Decodable { let success: Bool; let task: AIParsedTaskPayload? }
-        let body = ["text": text, "reference_instant": ISO8601DateFormatter().string(from: Date()),
-                    "time_zone": AppDisplayTimeZone.effectiveTimeZone.identifier,
-                    "locale": Locale.current.identifier]
         let result: Response = try await client.functions.invoke("parse-create-task-from-text",
-            options: FunctionInvokeOptions(body: body))
+            options: FunctionInvokeOptions(body: input.cloudBody))
         guard result.success, let task = result.task else { throw AITaskParserError.invalidResponse }
         return task
         #else
