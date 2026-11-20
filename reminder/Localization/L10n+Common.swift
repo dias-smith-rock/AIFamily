@@ -141,6 +141,7 @@ extension L10n {
     static let duration5min = Entry(key: "common_duration_5min", table: .common)
     static let edit = Entry(key: "common_edit", table: .common)
     static let editAvatar = Entry(key: "common_edit_avatar", table: .common)
+    static let editTextFromPhoto = Entry(key: "common_edit_text_from_photo", table: .common)
     static let editProfile = Entry(key: "common_edit_profile", table: .common)
     static let editToDo = Entry(key: "common_edit_to_do", table: .common)
     static let edited = Entry(key: "common_edited", table: .common)

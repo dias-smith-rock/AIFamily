@@ -47,7 +47,7 @@ struct TaskListView: View {
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
     @State private var isShowingVoiceCreation = false
-    @State private var photoRetryUsesCloud: Bool?
+    @State private var nextPhotoRecognitionMode: ScheduleViewModel.PhotoRecognitionMode?
     @State private var taskForDetailSheet: FamilyTask?
     @State private var taskPendingDelete: FamilyTask?
     /// 与 `taskPendingDelete` 分离：alert 关闭时会先把 isPresented 置 false，若用 pending!=nil 绑定会清掉任务再跑按钮。
@@ -561,9 +561,11 @@ struct TaskListView: View {
                         .foregroundStyle(.secondary)
                 }
                 if viewModel.hasPendingPhoto {
-                    Button(L10n.Common.reload) { dismissPhotoError(retryUsesCloud: false) }
+                    Button(L10n.Common.reload) { dismissPhotoError(nextMode: .apple) }
                         .buttonStyle(.borderedProminent)
-                    Button("Use cloud recognition (uploads photo)") { dismissPhotoError(retryUsesCloud: true) }
+                    Button(L10n.Common.editTextFromPhoto) { dismissPhotoError(nextMode: .editableText) }
+                        .buttonStyle(.bordered)
+                    Button("Use cloud recognition (uploads photo)") { dismissPhotoError(nextMode: .cloud) }
                         .buttonStyle(.bordered)
                 }
                 Button(L10n.Common.ok) { dismissPhotoError() }
@@ -576,16 +578,16 @@ struct TaskListView: View {
         .presentationDragIndicator(.visible)
     }
 
-    private func dismissPhotoError(retryUsesCloud: Bool? = nil) {
-        photoRetryUsesCloud = retryUsesCloud
+    private func dismissPhotoError(nextMode: ScheduleViewModel.PhotoRecognitionMode? = nil) {
+        nextPhotoRecognitionMode = nextMode
         viewModel.aiProcessingError = nil
     }
 
     private func handlePhotoErrorDismissal() {
-        let useCloud = photoRetryUsesCloud
-        photoRetryUsesCloud = nil
-        if let useCloud {
-            viewModel.retryPhotoRecognition(hasPremiumAccess: appRouter.hasPremiumAccess, useCloud: useCloud)
+        let nextMode = nextPhotoRecognitionMode
+        nextPhotoRecognitionMode = nil
+        if let nextMode {
+            viewModel.retryPhotoRecognition(hasPremiumAccess: appRouter.hasPremiumAccess, mode: nextMode)
         } else {
             viewModel.cancelPendingPhoto()
         }

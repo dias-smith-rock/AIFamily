@@ -28,7 +28,9 @@ Implementation rulings: kept existing `AIPrefilledTaskDraft` name and made paire
 
 `xcrun devicectl list devices` shows only a connected physical iPhone 12, which cannot exercise Apple Intelligence. The Mac probe also returns `deviceNotEligible`; simulator inference returns unavailable. No substitute quality numbers are claimed. User was asked to connect an enabled iOS26+ Apple Intelligence iPhone for real model/microphone/end-to-end acceptance. The approved quality gate remains open.
 
-Current computer-use connector does not expose Simulator and cannot launch it; GUI click-through is not claimed. Hosted XCTest launches the App successfully, but that is not proof of complete UI flow correctness.
+Device Hub subsequently exposed the iPhone 17 Pro simulator running iOS 27.2. Guest-mode UI verification used the signed Debug build and a Debug membership override. The local screenshot report is under `docs/evidence/2026-11-19-iphone17pro/REPORT.md`. Camera capture reports unavailable, Speech fails to create an on-device recognizer after permissions are granted, and Apple Intelligence returns unavailable for the photo and typed speech flows.
+
+Vision OCR remains available on that simulator. The photo failure panel opens the standard creation form with the selected region's recognized text in editable notes and the source photo as a removable attachment. The guest-mode walkthrough verified reading three lines from a synthetic notice, entering a title, removing the source photo, confirming save, reopening the notes with no attachment, and seeing the saved task after relaunch. This verifies OCR and the confirmation/save path. Structured model extraction and cloud response coverage remain open. Eight hosted XCTest cases pass on the same simulator, including a crop-exclusion case for the editable OCR path.
 
 ## Requirement audit
 
@@ -37,7 +39,7 @@ Current computer-use connector does not expose Simulator and cannot launch it; G
 | New branch, preserve user work | Feature branch, clean initial baseline, local commits only | Done |
 | Apple-first photo extraction, 26 OCR/27 image branch | Compiled App, generated-image simulator fixtures and capability/error tests | Implemented; real model quality open |
 | Local speech, 60s, cancellation, no silent audio upload | Compiled Speech APIs, production lifecycle/segment harness and hosted tests | Implemented; hardware capture open |
-| Shared editable task preview and existing save path | Optional attachments, active form mic, source/member notes, field mapping and guarded routing | Implemented; GUI/end-to-end save acceptance open |
+| Shared editable task preview and existing save path | Optional attachments, active form mic, source/member notes, field mapping and guarded routing; guest simulator saved OCR notes and reopened the task with no attachment | Implemented; structured AI draft-to-save acceptance open |
 | Explicit cloud choice, text endpoint, context/auth/privacy | Seven Deno tests, endpoint typecheck, scoped image fetch and controlled errors | Implemented; test project deployment/integration open |
 | iOS18.6 minimum, 26/27 capability protection | Actual target deployment settings; Debug/Release builds; tests on 26.2/27.2 | Compiled; no 18.6 runtime installed |
 | 30 images/30 voice real model quality and latency gate | No eligible device/model; user asked to provide one | Not completed |

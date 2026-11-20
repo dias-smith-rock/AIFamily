@@ -11742,6 +11742,14 @@
         }
       }
     },
+    "common_edit_text_from_photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Edit text from photo" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "编辑照片文字" } },
+        "zh-Hant": { "stringUnit": { "state": "translated", "value": "編輯照片文字" } }
+      }
+    },
     "common_image_recognition_failed": {
       "extractionState": "stale",
       "localizations": {

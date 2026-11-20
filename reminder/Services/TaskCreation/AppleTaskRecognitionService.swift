@@ -71,6 +71,12 @@ struct AppleTaskRecognitionService {
         return try await parseText(text, referenceDate: referenceDate, timeZone: timeZone, locale: locale, selectedCalendarDay: selectedCalendarDay)
     }
 
+    func editableImageText(_ image: UIImage, region: NormalizedCropQuad, locale: Locale) async throws -> String {
+        try Task.checkCancellation()
+        let cropped = try Self.correctedImage(image, region: region)
+        return try await Self.recognizeText(cropped, locale: locale, includesLayout: false)
+    }
+
     private func context(_ date: Date, _ zone: TimeZone, _ locale: Locale, selectedCalendarDay: Date?) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.timeZone = zone
@@ -169,7 +175,7 @@ struct AppleTaskRecognitionService {
         return crosses.allSatisfy { $0 > 0.000001 }
     }
 
-    static func recognizeText(_ image: CGImage, locale: Locale) async throws -> String {
+    static func recognizeText(_ image: CGImage, locale: Locale, includesLayout: Bool = true) async throws -> String {
         let text = try await Task.detached(priority: .userInitiated) {
             try Task.checkCancellation()
             let request = VNRecognizeTextRequest()
@@ -184,6 +190,7 @@ struct AppleTaskRecognitionService {
             // Keep bounding boxes so the model can preserve rows/columns rather than merging calendar cells.
             return (request.results ?? []).sorted { $0.boundingBox.midY > $1.boundingBox.midY }.compactMap { observation -> String? in
                 guard let candidate = observation.topCandidates(1).first else { return nil }
+                guard includesLayout else { return candidate.string }
                 let box = observation.boundingBox
                 return "[x=\(Int(box.minX * 1000)),y=\(Int((1-box.maxY) * 1000)),w=\(Int(box.width * 1000)),h=\(Int(box.height * 1000))] \(candidate.string)"
             }.joined(separator: "\n")

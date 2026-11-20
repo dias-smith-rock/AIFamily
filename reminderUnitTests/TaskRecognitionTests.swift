@@ -1,8 +1,25 @@
 import XCTest
+import UIKit
 @testable import Calendly
 
 @MainActor
 final class TaskRecognitionTests: XCTestCase {
+    func testCroppedPhotoTextForManualTaskPreservesOnlyReadableText() async throws {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 430)).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 800, height: 430))
+            let style: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 36), .foregroundColor: UIColor.black]
+            ("Pick up the parcel" as NSString).draw(at: CGPoint(x: 80, y: 90), withAttributes: style)
+            ("Outside crop" as NSString).draw(at: CGPoint(x: 80, y: 340), withAttributes: style)
+        }
+        let region = NormalizedCropQuad(
+            topLeft: CGPoint(x: 0.04, y: 0.05), topRight: CGPoint(x: 0.96, y: 0.05),
+            bottomLeft: CGPoint(x: 0.04, y: 0.62), bottomRight: CGPoint(x: 0.96, y: 0.62)
+        )
+        let text = try await AppleTaskRecognitionService().editableImageText(image, region: region, locale: Locale(identifier: "en-US"))
+        XCTAssertEqual(text, "Pick up the parcel")
+    }
+
     func testCloudFallbackKeepsSubmittedLanguageAndReferenceInstant() throws {
         let reference = Date(timeIntervalSince1970: 1_800_000_000)
         let zone = try XCTUnwrap(TimeZone(identifier: "Asia/Shanghai"))

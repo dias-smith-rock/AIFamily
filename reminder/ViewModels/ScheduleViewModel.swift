@@ -45,6 +45,10 @@ final class ScheduleViewModel: ObservableObject {
     private let aiTaskParserService = AITaskParserService()
     private var recognitionGeneration = UUID()
     private var recognitionTask: Task<Void, Never>?
+    enum PhotoRecognitionMode {
+        case apple, cloud, editableText
+    }
+
     private struct PhotoRecognitionInput {
         let jpeg: Data
         let attachmentImage: UIImage
@@ -68,9 +72,9 @@ final class ScheduleViewModel: ObservableObject {
         aiProcessingError = nil
     }
 
-    func retryPhotoRecognition(hasPremiumAccess: Bool, useCloud: Bool = false) {
+    func retryPhotoRecognition(hasPremiumAccess: Bool, mode: PhotoRecognitionMode) {
         guard let pendingPhoto else { return }
-        startPhotoRecognition(pendingPhoto, hasPremiumAccess: hasPremiumAccess, useCloud: useCloud)
+        startPhotoRecognition(pendingPhoto, hasPremiumAccess: hasPremiumAccess, mode: mode)
     }
 
     func presentRecognizedTask(_ task: AIParsedTaskPayload, image: UIImage? = nil, jpeg: Data? = nil, sourceText: String? = nil) {
@@ -892,18 +896,18 @@ final class ScheduleViewModel: ObservableObject {
     private func startPhotoRecognition(
         _ input: PhotoRecognitionInput,
         hasPremiumAccess: Bool,
-        useCloud: Bool = false
+        mode: PhotoRecognitionMode = .apple
     ) {
         guard !isAIProcessing,
               PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: hasPremiumAccess) else { return }
         recognitionTask?.cancel()
         recognitionTask = Task {
             guard !Task.isCancelled else { return }
-            await processCapturedImage(input, useCloud: useCloud)
+            await processCapturedImage(input, mode: mode)
         }
     }
 
-    private func processCapturedImage(_ input: PhotoRecognitionInput, useCloud: Bool) async {
+    private func processCapturedImage(_ input: PhotoRecognitionInput, mode: PhotoRecognitionMode) async {
         isAIProcessing = true
         aiProcessingError = nil
         let generation = UUID()
@@ -912,7 +916,21 @@ final class ScheduleViewModel: ObservableObject {
         let household = currentHouseholdId
         do {
             let payload: AIParsedTaskPayload
-            if useCloud {
+            switch mode {
+            case .editableText:
+                let text = try await AppleTaskRecognitionService().editableImageText(
+                    input.attachmentImage, region: input.region, locale: input.locale
+                )
+                guard generation == recognitionGeneration, household == currentHouseholdId else { return }
+                pendingPhoto = nil
+                prefilledTaskForAI = AIPrefilledTaskDraft(
+                    title: "", description: text, isAllDay: false,
+                    assigneeMembershipIds: [], targetProfileIds: [], isPriorityUrgent: false,
+                    prefersFlexibleTask: false, attachmentImage: input.attachmentImage,
+                    attachmentJPEGData: input.jpeg
+                )
+                return
+            case .cloud:
                 let result = try await aiTaskParserService.parseTask(
                     fromJPEGData: input.jpeg,
                     targetDate: input.selectedDay,
@@ -923,7 +941,7 @@ final class ScheduleViewModel: ObservableObject {
                 )
                 await aiTaskParserService.deleteTemporaryUpload(result.temporaryUpload)
                 payload = result.task
-            } else {
+            case .apple:
                 payload = try await AppleTaskRecognitionService().parseImage(
                     input.attachmentImage, region: input.region, referenceDate: input.referenceDate,
                     timeZone: input.timeZone, locale: input.locale, selectedCalendarDay: input.selectedDay
