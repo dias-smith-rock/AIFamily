@@ -11,9 +11,14 @@ import Supabase
 final class ScheduleViewModel: ObservableObject {
     @Published private(set) var tasks: [FamilyTask] = []
 
-    /// 日程 Tab：仅 `task_type == scheduled`（历史 `nil` 视为 scheduled），排除生日等系统任务。
-    var scheduledTasks: [FamilyTask] {
+    /// 未按成员筛选的日程任务（深链等需完整集合）。
+    var allScheduledTasks: [FamilyTask] {
         tasks.filter(\.isScheduledCalendarTask)
+    }
+
+    /// 日程 Tab：仅 `task_type == scheduled`（历史 `nil` 视为 scheduled），排除生日等系统任务；已套用成员头像筛选。
+    var scheduledTasks: [FamilyTask] {
+        filterScheduledTasks(allScheduledTasks)
     }
 
     /// 待办 Tab：`task_type == flexible`（排除账本行）。
@@ -24,6 +29,10 @@ final class ScheduleViewModel: ObservableObject {
     @Published private(set) var householdMembers: [HouseholdMembership] = []
     /// 当前群组档案（`family_profiles`），用于列表「为了谁」头像。
     @Published private(set) var familyProfiles: [FamilyProfile] = []
+    /// 日程成员筛选：选中的 `household_memberships.id`；切换家庭后默认全选。
+    @Published private(set) var selectedMemberFilterIds: Set<UUID> = []
+    /// 下次花名册更新时全选成员（切换家庭 / 首次加载）。
+    private var shouldSelectAllMembersOnNextRoster = true
     @Published private(set) var isLoading = false
     @Published private(set) var errorMessage: String?
     /// 当前查看上下文下是否已完成至少一次任务拉取（用于避免启动时空态 ↔ 有数据闪烁）。
@@ -97,10 +106,17 @@ final class ScheduleViewModel: ObservableObject {
     func setHouseholdContext(_ householdId: UUID?) {
         let previous = currentHouseholdId
         currentHouseholdId = householdId
+        if previous != householdId {
+            // 切换家庭后等花名册到位再默认全选。
+            selectedMemberFilterIds = []
+            shouldSelectAllMembersOnNextRoster = true
+        }
         if householdId == nil {
             tasks = []
             householdMembers = []
             familyProfiles = []
+            selectedMemberFilterIds = []
+            shouldSelectAllMembersOnNextRoster = true
             rosterLoadedForHouseholdId = nil
             invalidateScheduleLoadPresentation()
             publishScheduleWidgetSnapshot()
@@ -110,6 +126,64 @@ final class ScheduleViewModel: ObservableObject {
         if previous != householdId, householdId != nil {
             invalidateScheduleLoadPresentation()
         }
+    }
+
+    func toggleMemberFilter(id membershipId: UUID) {
+        var next = selectedMemberFilterIds
+        if next.contains(membershipId) {
+            next.remove(membershipId)
+        } else {
+            next.insert(membershipId)
+        }
+        selectedMemberFilterIds = next
+    }
+
+    private func reconcileMemberFilterAfterRosterUpdate() {
+        let activeIds = Set(householdMembers.filter { $0.isActiveMembership() }.map(\.id))
+        if shouldSelectAllMembersOnNextRoster {
+            selectedMemberFilterIds = activeIds
+            // 缓存可能早于网络；仅在已有成员时清 flag，空花名册留给后续网络结果继续全选。
+            if activeIds.isEmpty == false {
+                shouldSelectAllMembersOnNextRoster = false
+            }
+        } else {
+            selectedMemberFilterIds = selectedMemberFilterIds.intersection(activeIds)
+        }
+    }
+
+    private func filterScheduledTasks(_ tasks: [FamilyTask]) -> [FamilyTask] {
+        let activeIds = Set(householdMembers.filter { $0.isActiveMembership() }.map(\.id))
+        guard activeIds.isEmpty == false else { return tasks }
+        guard selectedMemberFilterIds.isEmpty == false else { return [] }
+        if selectedMemberFilterIds == activeIds {
+            return tasks
+        }
+        let selectedProfileIds = Set(
+            householdMembers
+                .filter { selectedMemberFilterIds.contains($0.id) }
+                .compactMap(\.profileId)
+        )
+        return tasks.filter { task in
+            taskMatchesMemberFilter(task, selectedProfileIds: selectedProfileIds)
+        }
+    }
+
+    private func taskMatchesMemberFilter(_ task: FamilyTask, selectedProfileIds: Set<UUID>) -> Bool {
+        if task.involvesWholeHousehold {
+            return true
+        }
+        if let ids = task.involvedMemberIds,
+           ids.contains(where: { selectedMemberFilterIds.contains($0) }) {
+            return true
+        }
+        if let multi = task.targetProfileIds,
+           multi.contains(where: { selectedProfileIds.contains($0) }) {
+            return true
+        }
+        if let single = task.targetProfileId, selectedProfileIds.contains(single) {
+            return true
+        }
+        return false
     }
 
     func setViewHouseholdIds(_ ids: [UUID]) {
@@ -324,6 +398,7 @@ final class ScheduleViewModel: ObservableObject {
             to: &householdMembers,
             familyProfiles: &familyProfiles
         )
+        reconcileMemberFilterAfterRosterUpdate()
         rosterLoadedForHouseholdId = householdId
     }
 
@@ -339,11 +414,13 @@ final class ScheduleViewModel: ObservableObject {
             householdMembers = merged
                 .filter { $0.isActiveMembership() }
                 .sorted { $0.createdAt < $1.createdAt }
+            reconcileMemberFilterAfterRosterUpdate()
             rosterLoadedForHouseholdId = householdId
         } catch {
             if rosterLoadedForHouseholdId != householdId {
                 householdMembers = []
                 familyProfiles = []
+                reconcileMemberFilterAfterRosterUpdate()
             }
         }
     }
@@ -359,6 +436,8 @@ final class ScheduleViewModel: ObservableObject {
         tasks = []
         householdMembers = []
         familyProfiles = []
+        selectedMemberFilterIds = []
+        shouldSelectAllMembersOnNextRoster = true
         rosterLoadedForHouseholdId = nil
         invalidateScheduleLoadPresentation()
         if currentHouseholdId == householdId {

@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// 月视图：参考日历月板——月标题 + 网格线 + 格内任务条（含跨天条），左右滑换月。
+/// 月视图：参考日历月板——星期头 + 网格线 + 格内任务条（含跨天条），左右滑换月。
 struct TaskMonthView: View {
-    @Environment(\.locale) private var locale
     @EnvironmentObject private var appSettings: AppSettingsManager
 
     @Binding var selectedDate: Date
@@ -57,15 +56,9 @@ struct TaskMonthView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(monthTitle)
-                .font(.title.weight(.bold))
-                .foregroundStyle(.primary)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-                .padding(.bottom, 10)
-
             weekdayHeader
                 .padding(.horizontal, 8)
+                .padding(.top, 4)
                 .padding(.bottom, 4)
 
             TabView(selection: $pagerSlot) {
@@ -81,7 +74,6 @@ struct TaskMonthView: View {
             .allowsHitTesting(isRecenteringPager == false)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .schedulePageBackground()
         .onAppear {
             syncMonthOffset(to: selectedDate, animated: false)
             syncBackToCurrentMonthButtonVisibility()
@@ -105,12 +97,6 @@ struct TaskMonthView: View {
             guard newValue != oldValue else { return }
             jumpToCurrentMonth()
         }
-    }
-
-    private var monthTitle: String {
-        monthDate(for: monthOffset).formatted(
-            .dateTime.month(.wide).year().locale(locale)
-        )
     }
 
     private var weekdayHeader: some View {

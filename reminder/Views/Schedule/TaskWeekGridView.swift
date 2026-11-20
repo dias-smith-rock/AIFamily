@@ -77,7 +77,6 @@ struct TaskWeekGridView: View {
                 weekPager
             }
         }
-        .schedulePageBackground()
         .duoCanvasChromePadding(extra: divisionAvoidanceInsets)
         .background {
             GeometryReader { geo in

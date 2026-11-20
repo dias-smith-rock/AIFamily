@@ -15,10 +15,10 @@ struct ScheduleMonthYearPickerButton: View {
                 Image(systemName: "chevron.down")
                     .font(.caption2.weight(.semibold))
             }
-            .foregroundStyle(AppTheme.ColorToken.accent.opacity(0.55))
+            .foregroundStyle(AppTheme.ColorToken.accent)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color(.secondarySystemFill).opacity(0.9), in: Capsule())
+            .background(AppTheme.ColorToken.surfaceMuted, in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

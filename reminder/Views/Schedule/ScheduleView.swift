@@ -94,7 +94,6 @@ struct TaskModeDayView: View {
                 dayContentHost
             }
         }
-        .schedulePageBackground()
         .onAppear {
             weekOffset = weekOffsetForDate(selectedDate)
             pagerSlot = ScheduleWeekCalendar.pagerCenterSlot

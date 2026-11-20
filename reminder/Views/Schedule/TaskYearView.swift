@@ -47,7 +47,6 @@ struct TaskYearView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .schedulePageBackground()
         .sensoryFeedback(.selection, trigger: hapticToken)
         .onAppear {
             viewModel.refreshYearViewSnapshot(locale: locale)
@@ -61,14 +60,14 @@ struct TaskYearView: View {
     }
 
     private var yearHeader: some View {
-        HStack {
+        HStack(spacing: 8) {
             Button {
                 shiftYear(by: -1)
             } label: {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -77,7 +76,7 @@ struct TaskYearView: View {
             Spacer(minLength: 0)
 
             Text(verbatim: "\(viewModel.yearViewSelectedYear)")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundStyle(.primary)
                 .monospacedDigit()
 
@@ -87,17 +86,17 @@ struct TaskYearView: View {
                 shiftYear(by: 1)
             } label: {
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 28, height: 28)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.Schedule.nextYear.localized)
         }
         .padding(.horizontal, 16)
-        .padding(.top, 4)
-        .padding(.bottom, 10)
+        .padding(.top, 2)
+        .padding(.bottom, 4)
     }
 
     private var selectedDayKey: String? {

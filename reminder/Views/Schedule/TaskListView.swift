@@ -381,6 +381,13 @@ struct TaskListView: View {
 
     private var scheduleModeContent: some View {
         VStack(spacing: 0) {
+            ScheduleMemberFilterBar(
+                members: viewModel.householdMembers.filter { $0.isActiveMembership() },
+                profiles: viewModel.familyProfiles,
+                selectedIds: viewModel.selectedMemberFilterIds,
+                onToggle: { viewModel.toggleMemberFilter(id: $0) }
+            )
+
             Group {
                 switch currentViewMode {
                 case .list:
@@ -565,7 +572,7 @@ struct TaskListView: View {
         guard let pending = appRouter.pendingTaskReminderTap else { return }
         guard pending.isFlexibleTodo == false else { return }
         guard appRouter.selectedHouseholdId == pending.householdId else { return }
-        guard let task = viewModel.scheduledTasks.first(where: { $0.id == pending.taskId }) else {
+        guard let task = viewModel.allScheduledTasks.first(where: { $0.id == pending.taskId }) else {
             // 组织已匹配且任务列表已更新，但目标任务不存在：留在组织主页，清空深链状态。
             appRouter.consumePendingTaskReminderTap()
             return
@@ -604,9 +611,9 @@ struct TaskListView: View {
             openCreateTask(prefill: "")
         } label: {
             Image(systemName: "plus")
-                .font(.system(size: 22, weight: .bold))
+                .font(.system(size: 18, weight: .bold))
                 .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
+                .frame(width: 44, height: 44)
                 .background(AppTheme.ColorToken.accent, in: Circle())
                 .shadow(color: .black.opacity(0.22), radius: 8, y: 4)
         }
