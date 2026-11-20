@@ -47,6 +47,7 @@ struct TaskListView: View {
     @State private var isShowingWriteTargetPicker = false
     @State private var isShowingSearch = false
     @State private var isShowingVoiceCreation = false
+    @State private var photoRetryUsesCloud: Bool?
     @State private var taskForDetailSheet: FamilyTask?
     @State private var taskPendingDelete: FamilyTask?
     /// 与 `taskPendingDelete` 分离：alert 关闭时会先把 isPresented 置 false，若用 pending!=nil 绑定会清掉任务再跑按钮。
@@ -242,20 +243,8 @@ struct TaskListView: View {
                 )
                 .ignoresSafeArea()
             }
-            .alert(L10n.Common.imageRecognitionFailed, isPresented: aiErrorAlertBinding) {
-                if viewModel.hasPendingCloudPhoto {
-                    Button("Use cloud recognition (uploads photo)") {
-                        viewModel.retryPhotoUsingCloud(hasPremiumAccess: appRouter.hasPremiumAccess)
-                    }
-                }
-                Button(L10n.Common.ok, role: .cancel) {
-                    viewModel.cancelPendingPhoto()
-                    viewModel.aiProcessingError = nil
-                }
-            } message: {
-                if let message = viewModel.aiProcessingError {
-                    Text(message)
-                }
+            .sheet(isPresented: photoErrorSheetBinding, onDismiss: handlePhotoErrorDismissal) {
+                photoErrorSheet
             }
             .alert(
                 L10n.Common.notice,
@@ -561,7 +550,48 @@ struct TaskListView: View {
         .animation(.easeInOut(duration: 0.2), value: viewModel.isAIProcessing)
     }
 
-    private var aiErrorAlertBinding: Binding<Bool> {
+    private var photoErrorSheet: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(L10n.Common.imageRecognitionFailed.localized)
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                if let message = viewModel.aiProcessingError {
+                    Text(message)
+                        .foregroundStyle(.secondary)
+                }
+                if viewModel.hasPendingPhoto {
+                    Button(L10n.Common.reload) { dismissPhotoError(retryUsesCloud: false) }
+                        .buttonStyle(.borderedProminent)
+                    Button("Use cloud recognition (uploads photo)") { dismissPhotoError(retryUsesCloud: true) }
+                        .buttonStyle(.bordered)
+                }
+                Button(L10n.Common.ok) { dismissPhotoError() }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(24)
+        }
+        .padding(.top, 12)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private func dismissPhotoError(retryUsesCloud: Bool? = nil) {
+        photoRetryUsesCloud = retryUsesCloud
+        viewModel.aiProcessingError = nil
+    }
+
+    private func handlePhotoErrorDismissal() {
+        let useCloud = photoRetryUsesCloud
+        photoRetryUsesCloud = nil
+        if let useCloud {
+            viewModel.retryPhotoRecognition(hasPremiumAccess: appRouter.hasPremiumAccess, useCloud: useCloud)
+        } else {
+            viewModel.cancelPendingPhoto()
+        }
+    }
+
+    private var photoErrorSheetBinding: Binding<Bool> {
         Binding(
             get: { viewModel.aiProcessingError != nil },
             set: { isPresented in

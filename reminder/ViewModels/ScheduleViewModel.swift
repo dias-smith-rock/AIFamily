@@ -45,25 +45,32 @@ final class ScheduleViewModel: ObservableObject {
     private let aiTaskParserService = AITaskParserService()
     private var recognitionGeneration = UUID()
     private var recognitionTask: Task<Void, Never>?
-    private var pendingCloudPhoto: (Data, UIImage, NormalizedCropQuad, Date)?
-    var hasPendingCloudPhoto: Bool { pendingCloudPhoto != nil }
+    private struct PhotoRecognitionInput {
+        let jpeg: Data
+        let attachmentImage: UIImage
+        let region: NormalizedCropQuad
+        let source: AIPhotoTaskCreationLogger.CaptureSource
+        let selectedDay: Date
+        let referenceDate: Date
+        let timeZone: TimeZone
+        let locale: Locale
+    }
+
+    private var pendingPhoto: PhotoRecognitionInput?
+    var hasPendingPhoto: Bool { pendingPhoto != nil }
 
     func cancelPendingPhoto() {
         recognitionGeneration = UUID()
         recognitionTask?.cancel()
         recognitionTask = nil
         isAIProcessing = false
-        pendingCloudPhoto = nil
+        pendingPhoto = nil
+        aiProcessingError = nil
     }
 
-    func retryPhotoUsingCloud(hasPremiumAccess: Bool) {
-        guard let pending = pendingCloudPhoto else { return }
-        pendingCloudPhoto = nil
-        recognitionTask = Task {
-            await processCapturedImage(imageJPEG: pending.0, attachmentImage: pending.1,
-                recognitionRegion: pending.2, source: .camera, targetDate: pending.3,
-                hasPremiumAccess: hasPremiumAccess, useCloud: true)
-        }
+    func retryPhotoRecognition(hasPremiumAccess: Bool, useCloud: Bool = false) {
+        guard let pendingPhoto else { return }
+        startPhotoRecognition(pendingPhoto, hasPremiumAccess: hasPremiumAccess, useCloud: useCloud)
     }
 
     func presentRecognizedTask(_ task: AIParsedTaskPayload, image: UIImage? = nil, jpeg: Data? = nil, sourceText: String? = nil) {
@@ -869,34 +876,34 @@ final class ScheduleViewModel: ObservableObject {
             return
         }
 
-        let attachmentImage = UIImage(data: compressed) ?? image
+        let input = PhotoRecognitionInput(
+            jpeg: compressed,
+            attachmentImage: UIImage(data: compressed) ?? image,
+            region: normalizedQuad,
+            source: source,
+            selectedDay: targetDate,
+            referenceDate: Date(),
+            timeZone: AppDisplayTimeZone.effectiveTimeZone,
+            locale: Locale.current
+        )
+        startPhotoRecognition(input, hasPremiumAccess: hasPremiumAccess)
+    }
 
+    private func startPhotoRecognition(
+        _ input: PhotoRecognitionInput,
+        hasPremiumAccess: Bool,
+        useCloud: Bool = false
+    ) {
+        guard !isAIProcessing,
+              PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: hasPremiumAccess) else { return }
+        recognitionTask?.cancel()
         recognitionTask = Task {
-            await processCapturedImage(
-                imageJPEG: compressed,
-                attachmentImage: attachmentImage,
-                recognitionRegion: normalizedQuad,
-                source: source,
-                targetDate: targetDate,
-                hasPremiumAccess: hasPremiumAccess
-            )
+            guard !Task.isCancelled else { return }
+            await processCapturedImage(input, useCloud: useCloud)
         }
     }
 
-    func processCapturedImage(
-        imageJPEG: Data,
-        attachmentImage: UIImage,
-        recognitionRegion: NormalizedCropQuad,
-        source: AIPhotoTaskCreationLogger.CaptureSource,
-        targetDate: Date,
-        hasPremiumAccess: Bool,
-        useCloud: Bool = false
-    ) async {
-        guard PremiumLimits.canUseAIPhotoTaskCreation(hasPremium: hasPremiumAccess) else {
-            return
-        }
-
-        guard !isAIProcessing else { return }
+    private func processCapturedImage(_ input: PhotoRecognitionInput, useCloud: Bool) async {
         isAIProcessing = true
         aiProcessingError = nil
         let generation = UUID()
@@ -906,25 +913,31 @@ final class ScheduleViewModel: ObservableObject {
         do {
             let payload: AIParsedTaskPayload
             if useCloud {
-                let result = try await aiTaskParserService.parseTask(fromJPEGData: imageJPEG,
-                    targetDate: targetDate, recognitionRegion: recognitionRegion)
+                let result = try await aiTaskParserService.parseTask(
+                    fromJPEGData: input.jpeg,
+                    targetDate: input.selectedDay,
+                    recognitionRegion: input.region,
+                    referenceDate: input.referenceDate,
+                    timeZone: input.timeZone,
+                    locale: input.locale
+                )
                 await aiTaskParserService.deleteTemporaryUpload(result.temporaryUpload)
                 payload = result.task
             } else {
-                payload = try await AppleTaskRecognitionService().parseImage(attachmentImage,
-                    region: recognitionRegion, referenceDate: Date(),
-                    timeZone: AppDisplayTimeZone.effectiveTimeZone, locale: Locale.current,
-                    selectedCalendarDay: targetDate)
+                payload = try await AppleTaskRecognitionService().parseImage(
+                    input.attachmentImage, region: input.region, referenceDate: input.referenceDate,
+                    timeZone: input.timeZone, locale: input.locale, selectedCalendarDay: input.selectedDay
+                )
             }
             guard generation == recognitionGeneration, household == currentHouseholdId else { return }
-            pendingCloudPhoto = nil
-            presentRecognizedTask(payload, image: attachmentImage, jpeg: imageJPEG)
+            pendingPhoto = nil
+            presentRecognizedTask(payload, image: input.attachmentImage, jpeg: input.jpeg)
             AnalyticsManager.log(event: .aiPhotoTaskSucceeded)
         } catch {
             guard generation == recognitionGeneration, household == currentHouseholdId else { return }
-            if !useCloud { pendingCloudPhoto = (imageJPEG, attachmentImage, recognitionRegion, targetDate) }
+            pendingPhoto = input
             aiProcessingError = error.localizedDescription
-            AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: source)
+            AIPhotoTaskCreationLogger.failure(step: .flowFailed, error: error, source: input.source)
         }
     }
 }

@@ -168,17 +168,20 @@ struct AITaskParserService: Sendable {
     static let storageBucket = "create-task-from-images"
     static let edgeFunctionName = "parse-create-task-from-images"
 
-    private static func iso8601DateString(for date: Date) -> String {
+    private static func iso8601DateString(for date: Date, timeZone: TimeZone) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withFullDate]
-        formatter.timeZone = AppDisplayTimeZone.effectiveTimeZone
+        formatter.timeZone = timeZone
         return formatter.string(from: date)
     }
 
     func parseTask(
         fromJPEGData data: Data,
-        targetDate: Date? = nil,
-        recognitionRegion: NormalizedCropQuad? = nil
+        targetDate: Date?,
+        recognitionRegion: NormalizedCropQuad?,
+        referenceDate: Date,
+        timeZone: TimeZone,
+        locale: Locale
     ) async throws -> AIParseTaskResult {
         #if canImport(Supabase)
         let client = SupabaseManager.shared.client
@@ -252,9 +255,9 @@ struct AITaskParserService: Sendable {
 
         struct InvokeBody: Encodable {
             let imageUrl: String
-            let referenceInstant = ISO8601DateFormatter().string(from: Date())
-            let timeZone = AppDisplayTimeZone.effectiveTimeZone.identifier
-            let locale = Locale.current.identifier
+            let referenceInstant: String
+            let timeZone: String
+            let locale: String
             let targetDate: String?
             let recognitionRegion: RecognitionRegionPayload?
 
@@ -268,9 +271,12 @@ struct AITaskParserService: Sendable {
             }
         }
 
-        let targetDateString = targetDate.map { Self.iso8601DateString(for: $0) }
+        let targetDateString = targetDate.map { Self.iso8601DateString(for: $0, timeZone: timeZone) }
         let body = InvokeBody(
             imageUrl: imageAccessURL.absoluteString,
+            referenceInstant: ISO8601DateFormatter().string(from: referenceDate),
+            timeZone: timeZone.identifier,
+            locale: locale.identifier(.bcp47),
             targetDate: targetDateString,
             recognitionRegion: recognitionRegion?.apiPayload
         )
