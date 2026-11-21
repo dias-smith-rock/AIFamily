@@ -36,6 +36,10 @@ The voice handoff later passed a guest-mode walkthrough on the same simulator us
 
 The iOS cloud-text adapter now maps invalid input, expired sessions, rate limits, service failures, and connection issues to app messages. Cloud consent retains the account and household of the original submission. Hosted tests use the real Supabase Functions SDK with a fixture transport to verify the POST route, text-only JSON with language and time context, response decoding, and HTTP error mapping. The fixture carries a synthetic bearer header. These tests do not validate deployed Supabase authentication or a live provider. The Deno handler's seven tests cover its simulated auth and provider responses separately.
 
+### Simulator dictation capability probe
+
+On the iPhone 17 Pro / iOS 27.2 simulator, the Apple Speech APIs returned `SpeechTranscriber.isAvailable == false` and no equivalent modern locale for `en-US`, `zh-CN`, or `zh-TW`. `DictationTranscriber` reported an equivalent locale for all three. The English short-dictation asset was `supported`, and its installation attempt threw `SFSpeechErrorDomain` code 3 (`Audio format is not supported`) before file analysis began. The standalone probe produced no transcript and cannot establish capability on a physical device. The existing App route and its latest screenshots are unchanged. [Apple DictationTranscriber documentation](https://developer.apple.com/documentation/speech/dictationtranscriber)
+
 ## Requirement audit
 
 | Approved requirement | Current evidence | Status |
