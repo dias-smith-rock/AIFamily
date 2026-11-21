@@ -80,6 +80,21 @@ final class TaskRecognitionTests: XCTestCase {
         XCTAssertEqual(text, "Pick up the parcel")
     }
 
+    func testEditablePhotoTextRejectsBlankCrop() async throws {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 400, height: 400)).image { context in
+            UIColor.white.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 400, height: 400))
+        }
+        do {
+            _ = try await AppleTaskRecognitionService().editableImageText(
+                image, region: .defaultCentered(), locale: Locale(identifier: "en-US")
+            )
+            XCTFail("The blank crop should not produce editable text")
+        } catch AppleTaskRecognitionError.noText {
+            // The same error is shown by the photo failure panel.
+        }
+    }
+
     func testCloudFallbackKeepsSubmittedLanguageAndReferenceInstant() throws {
         let reference = Date(timeIntervalSince1970: 1_800_000_000)
         let zone = try XCTUnwrap(TimeZone(identifier: "Asia/Shanghai"))
