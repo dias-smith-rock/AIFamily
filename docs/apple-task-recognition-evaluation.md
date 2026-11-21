@@ -1,63 +1,34 @@
-# Apple task creation implementation status — 2026-11-19
+# AIFamily 拍照与语音建任务分支总结
 
-User approved plan tasks 0–6. Siri task 7 is deferred. Branch `codex/apple-intelligence-task-plan`.
+截至 2026-11-21，分支 `codex/apple-intelligence-task-plan` 基于 `master` 的 `c8cae80`。本次覆盖已批准的 App 内拍照与语音建任务方案（任务 0–6）。Siri 唤起和快捷指令属于后续阶段。详见[设计方案](superpowers/specs/2026-11-18-apple-intelligence-task-creation-design.md)和[实施计划](superpowers/plans/2026-11-18-apple-intelligence-task-creation.md)。
 
-Implemented local-first photo/text parsing, iOS26 guided extraction, iOS27 image inference with OCR/perspective fallback, local speech recording UI and model downloads, optional-image shared draft, explicit cloud consent, authenticated cloud text parsing, existing form save integration, missing-time semantics, ambiguous-name protection, privacy-safe recognition logs and scoped cloud image fetching.
+## 实现内容
 
-## Verification performed
+- **拍照和相册**。支持选择照片、四边形裁切和透视校正。iOS 27 在系统模型支持图片和结构化输出时使用图片推理，iOS 26 使用 Vision OCR 加文字模型。失败后可保留素材重试、用 Vision 提取裁切区文字并手动填表，或明确选择上传照片走云端识别。手动 OCR 路径把原文放入可编辑备注，日期与标题由用户填写。
+- **语音**。日程菜单和任务表单的麦克风共用本地语音流程，沿用拍照会员规则。iOS 26 起优先使用 SpeechAnalyzer，旧系统使用要求端侧识别的 SFSpeechRecognizer。支持语言选择、资源下载、60 秒上限、取消以及编辑转写文字。本地解析失败时，经确认仅把文字发送给云端，录音不上传。
+- **草稿与保存**。识别结果交给现有表单，核对后手动保存。原图附件可移除，未知时间和歧义成员留给用户核对。语音页关闭后仅交付一次结果，切换账号、家庭或成员时丢弃旧结果。日期校验覆盖无时间、截止时间、时长和夏令时边界。
+- **云端备选**。新增 Supabase `parse-create-task-from-text`，更新既有图片接口和共享解析逻辑。传递原始识别时间、时区、语言及适用的日历日期或裁切范围。服务端校验用户身份和输入，约束错误信息，照片识别后清理临时文件。部署说明见[云端函数文档](../supabase/functions/README.md)。
 
-- `tests/TaskCreation/run.sh`: passes seven date assertions, cloud snake_case payload regression, six participant checks. Participant tests stub unrelated roster merge types; they exercise actual matcher logic, not Supabase integration.
-- `/tmp/task-deno/bin/deno test --allow-env --allow-net supabase/functions/tests/task-parsing_test.ts`: seven tests pass.
-- Both Edge Function entrypoints pass Deno typecheck.
-- Actual iOS27.2 SDK isolated component typechecks targeting iOS18.6 pass; details in `docs/superpowers/evaluation/apple-local-extraction-validation.md`. These use unrelated dependency stubs and do not replace an App build.
-- Integration Swift files frontend syntax parse and git diff whitespace check pass.
+## 已验证
 
-## Still required before completion
+| 环境 | 结果 |
+| --- | --- |
+| iPhone 17 Pro／iOS 27.2 模拟器，游客模式 | 使用签名 Debug 构建及测试会员开关，实际完成选图、裁切、失败后连续重试、Vision OCR 提取三行通知文字、手填标题、移除原图、保存、重开和重启复查。 |
+| 同一模拟器，普通 Debug 语音流程 | 验证录音权限及转写失败提示。手填文字提交后收到 Apple Intelligence 不可用提示，取消云端确认及再次尝试转写后仍保留原文，退出后无新增任务。 |
+| 同一模拟器，预设语音结果 | 从日程入口进入，可打开预填表单并在确认后保存一次。从表单麦克风进入，可将字段填回原表单，取消不新增任务。临时注入已移除，模拟器已恢复普通构建。 |
+| 自动化 | 指定模拟器的 12 项 XCTest 全部通过，含真实 Vision 空白裁切、裁切外文字排除、语音结果交付及 Supabase SDK 请求和错误响应。iOS 26.2 的早期 5 项 XCTest 通过。Deno 的 7 项测试及两个 Edge Function 的类型检查通过，另有日期、DTO、成员匹配和语音状态回归。 |
+| 工程构建 | App 和小组件的 Debug 模拟器构建及通用 iOS Release 构建通过。Release 使用无签名构建。最低部署目标仍为 iOS 18.6。 |
 
-Full Debug App + widget simulator build **passed** (`/tmp/aifamily-build-2.log`). Hosted XCTest against the real Calendly module **passed**, five tests, zero failures on iOS27.2 (`/tmp/aifamily-acceptance-final.log`) and iOS26.2 (`/tmp/aifamily-xctest-26-valid.log`). Dependency download required using the existing system HTTP proxy for the build command only; no global proxy configuration changed. Derived data: `/tmp/AIFamilyDerived`. Unsigned generic iOS Release App/widget build also **passed** (`/tmp/aifamily-release.log`); this verifies compilation/linking, not signing or device execution.
+逐步截图与操作记录保存在开发机的 `docs/evidence/2026-11-19-iphone17pro/REPORT.md`，由本地 Git 忽略规则保留。独立端侧验证细节见[本地提取验证](superpowers/evaluation/apple-local-extraction-validation.md)。
 
-Generated-photo fixtures executed against actual Vision/CoreImage/UIKit in the iOS27.2 simulator: crop exclusion, perspective, rotated/mirrored EXIF, invalid coordinates and blank input pass. Mapper assertions cover deadline-only tasks, duration, invalid/missing scheduled time and canceled/unavailable recognition. Speech lifecycle/transcript tests exercise the production reducer, including cancellation/restart and late results.
+## 尚未验证或完成
 
-No true-device microphone, model availability/download, image OCR quality, interruption/background, VoiceOver or end-to-end save verification has been completed. The proposed 30 photo/30 voice quality sample gates have not run. No recognition accuracy or latency figures are available.
+| 项目 | 现状 |
+| --- | --- |
+| 真机拍照与 Apple Intelligence 结构化草稿 | 指定模拟器报告相机和 Apple 本地模型不可用。实际 iOS 26 OCR 加文字模型、iOS 27 图片模型成功生成草稿，并核对后保存，均待支持 Apple Intelligence 的真机验收。模拟器的 Vision OCR 手动保存已验证。 |
+| 真实端侧录音与转写 | 指定模拟器的本地语音服务无法初始化识别器。独立探测中，现代 SpeechTranscriber 不可用，DictationTranscriber 虽报告语言受支持，英语听写资源安装仍因 SFSpeechErrorDomain code 3 失败。普通话、英语、繁体中文场景的真机成功转写，以及蓝牙、来电、后台中断和音频资源回收待验。 |
+| 真实云端集成与附件 | 本地测试使用模拟鉴权、传输或供应商响应。仍需在获授权的测试项目部署函数，使用非匿名账号核对真实鉴权、文本和图片响应、图片临时文件清理、网络超时及保留附件时的上传。游客实测覆盖端侧和取消流程。 |
+| 兼容性和完整回归 | 尚未在 iOS 18.6 运行。空白裁切已通过自动化验证，界面复测在打开菜单前被 Device Hub 的窗口点击错误中断。离线保存错误、运行时切换 Apple Intelligence、VoiceOver，以及识别保存后的通知和小组件刷新待完整回归。 |
+| 发布质量门槛 | 尚未完成 30 张图片和 30 段语音实测。日期时间正确率 ≥95% 和有效可编辑草稿率 ≥90% 为建议门槛，准确率及中位数和 p95 延迟均未测得。 |
 
-Cloud functions have not been deployed. New text fallback requires deployment plus existing DeepSeek secrets as documented in `supabase/functions/README.md`; no production release/push is authorized. Until deployed, local recognition and manual task creation remain usable in principle, but new cloud text requests will fail.
-
-Implementation rulings: kept existing `AIPrefilledTaskDraft` name and made paired attachments optional. Added both runnable standalone regression tests and a hosted `reminderTests` XCTest target (sources `reminderUnitTests`, separate from standalone @main harness). Online audio recognition deliberately unavailable; local failures allow edited text and explicit cloud text parsing, never audio upload.
-
-## Remaining acceptance blockers
-
-`xcrun devicectl list devices` shows only a connected physical iPhone 12, which cannot exercise Apple Intelligence. The Mac probe also returns `deviceNotEligible`; simulator inference returns unavailable. No substitute quality numbers are claimed. User was asked to connect an enabled iOS26+ Apple Intelligence iPhone for real model/microphone/end-to-end acceptance. The approved quality gate remains open.
-
-Device Hub subsequently exposed the iPhone 17 Pro simulator running iOS 27.2. Guest-mode UI verification used the signed Debug build and a Debug membership override. The local screenshot report is under `docs/evidence/2026-11-19-iphone17pro/REPORT.md`. Camera capture reports unavailable, Speech fails to create an on-device recognizer after permissions are granted, and Apple Intelligence returns unavailable for the photo and typed speech flows.
-
-Vision OCR remains available on that simulator. The photo failure panel opens the standard creation form with the selected region's recognized text in editable notes and the source photo as a removable attachment. The guest-mode walkthrough verified reading three lines from a synthetic notice, entering a title, removing the source photo, confirming save, reopening the notes with no attachment, and seeing the saved task after relaunch. This verifies OCR and the confirmation/save path. Structured model extraction and cloud response coverage remain open. Eight hosted XCTest cases pass on the same simulator, including a crop-exclusion case for the editable OCR path.
-
-The voice handoff later passed a guest-mode walkthrough on the same simulator using a temporary Debug build that supplied a known structured response. The schedule entry opened a prefilled form and saved only upon confirmation. The form microphone entry applied the fields to the original form, and cancellation created no second task. The fixture was removed and the normal build was reinstalled. Nine hosted XCTest cases pass, including one-time result consumption and rejection after an account change. This walkthrough did not invoke Apple or cloud inference.
-
-The iOS cloud-text adapter now maps invalid input, expired sessions, rate limits, service failures, and connection issues to app messages. Cloud consent retains the account and household of the original submission. Hosted tests use the real Supabase Functions SDK with a fixture transport to verify the POST route, text-only JSON with language and time context, response decoding, and HTTP error mapping. The fixture carries a synthetic bearer header. These tests do not validate deployed Supabase authentication or a live provider. The Deno handler's seven tests cover its simulated auth and provider responses separately.
-
-### Simulator dictation capability probe
-
-On the iPhone 17 Pro / iOS 27.2 simulator, the Apple Speech APIs returned `SpeechTranscriber.isAvailable == false` and no equivalent modern locale for `en-US`, `zh-CN`, or `zh-TW`. `DictationTranscriber` reported an equivalent locale for all three. The English short-dictation asset was `supported`, and its installation attempt threw `SFSpeechErrorDomain` code 3 (`Audio format is not supported`) before file analysis began. The standalone probe produced no transcript and cannot establish capability on a physical device. The existing App route and its latest screenshots are unchanged. [Apple DictationTranscriber documentation](https://developer.apple.com/documentation/speech/dictationtranscriber)
-
-## Requirement audit
-
-| Approved requirement | Current evidence | Status |
-| --- | --- | --- |
-| New branch, preserve user work | Feature branch, clean initial baseline, local commits only | Done |
-| Apple-first photo extraction, 26 OCR/27 image branch | Compiled App, generated-image simulator fixtures and capability/error tests | Implemented; real model quality open |
-| Local speech, 60s, cancellation, no silent audio upload | Compiled Speech APIs, production lifecycle/segment harness and hosted tests | Implemented; hardware capture open |
-| Shared editable task preview and existing save path | Optional attachments, active form mic, source/member notes, field mapping and guarded routing; guest simulator saved OCR notes and reopened the task with no attachment | Implemented; structured AI draft-to-save acceptance open |
-| Explicit cloud choice, text endpoint, context/auth/privacy | Seven Deno tests, endpoint typecheck, scoped image fetch and controlled errors | Implemented; test project deployment/integration open |
-| iOS18.6 minimum, 26/27 capability protection | Actual target deployment settings; Debug/Release builds; tests on 26.2/27.2 | Compiled; no 18.6 runtime installed |
-| 30 images/30 voice real model quality and latency gate | No eligible device/model; user asked to provide one | Not completed |
-| Independent review and important fixes | Deadline/duration/field replacement, decoding, member hints, cancellation and real active mic fixed | Done |
-| Siri follow-up | No Siri implementation added | Deferred as approved |
-
-No production deploy, remote push, or merge has occurred. New cloud functions require an authorized test project; no project ref or CLI linkage was found. These remaining acceptance requirements prevent claiming the whole goal complete.
-
-## Final member-matching regression
-
-The 2026-11-19 follow-up audit reproduced a real failure: `Sally` was interpreted as an everyone hint because `all` was matched as a substring. A new standalone assertion failed before the fix (exit 133), then passed after replacing substring detection with complete normalized everyone phrases. The real App XCTest suite now passes **six tests, zero failures** (`/tmp/aifamily-xctest-members.log`). Full names and explicit `whole family` are separately covered.
-
-Rechecked available hardware and project linkage after the fix: the sole connected physical iPhone remains iPhone 12, and no authorized staging Supabase project is linked. All local build/test processes have finished. Real Apple Intelligence quality, microphone/end-to-end UI acceptance and deployed cloud integration still require the requested device/test project; the overall goal remains unproven.
+本分支的发布操作限于提交和推送功能分支。生产部署与合并另行处理。
