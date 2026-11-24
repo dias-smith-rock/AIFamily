@@ -137,12 +137,6 @@ struct ScheduleWidgetView: View {
                         }
                     }
 
-                    if let mineTitle = snapshot?.mineTitle, mineTitle.isEmpty == false {
-                        Text(mineTitle)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
                     ForEach(visibleTasks) { task in
                         taskChip(task)
                     }

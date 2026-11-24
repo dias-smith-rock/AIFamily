@@ -48,8 +48,7 @@ enum ScheduleWidgetPublisher {
             generatedAt: now,
             localeIdentifier: AppSettingsManager.shared.appLocale.identifier,
             timeZoneIdentifier: calendar.timeZone.identifier,
-            tasks: items,
-            mineTitle: L10n.Schedule.todayForMe.string(locale: AppSettingsManager.shared.appLocale)
+            tasks: items
         )
         ScheduleWidgetSnapshotStore.save(snapshot)
     }
